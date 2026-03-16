@@ -13,6 +13,7 @@ name = "ascii-renderer"
 version = "0.1.0"
 dependencies = [
  "console_engine",
+ "crossterm",
  "rand",
 ]
 

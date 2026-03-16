@@ -5,4 +5,5 @@ edition = "2024"
 
 [dependencies]
 console_engine = "2.6.1"
+crossterm = "0.26"
 rand = "0.10.0"
