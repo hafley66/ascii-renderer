@@ -3,7 +3,8 @@ use pulldown_cmark::{Event, HeadingLevel, Parser, Tag, TagEnd};
 use rand::RngExt;
 use rand::rngs::StdRng;
 use rand::SeedableRng;
-use std::io::{self, Read as _, Write};
+use std::io::{self, IsTerminal, Read as _, Write};
+use unicode_width::UnicodeWidthChar;
 
 #[derive(Clone, Copy)]
 struct Cell {
@@ -27,6 +28,16 @@ impl Cell {
 }
 
 type Grid = Vec<Vec<Cell>>;
+
+/// Display width of a string (accounts for fullwidth CJK chars).
+fn display_width(s: &str) -> usize {
+    s.chars().map(|c| c.width().unwrap_or(0)).sum()
+}
+
+/// Display width of a single char.
+fn char_width(c: char) -> usize {
+    c.width().unwrap_or(0)
+}
 
 // ── Layout engine ──────────────────────────────────────────────────
 
@@ -56,18 +67,20 @@ fn wrap_text(text: &str, max_width: usize) -> Vec<String> {
     }
     let mut lines = Vec::new();
     let mut current = String::new();
+    let mut current_w: usize = 0;
     for word in text.split_whitespace() {
-        let word_len = word.chars().count();
-        let current_len = current.chars().count();
-        if current_len == 0 {
-            // first word on line - take it even if it overflows
+        let word_w = display_width(word);
+        if current_w == 0 {
             current = word.to_string();
-        } else if current_len + 1 + word_len <= max_width {
+            current_w = word_w;
+        } else if current_w + 1 + word_w <= max_width {
             current.push(' ');
             current.push_str(word);
+            current_w += 1 + word_w;
         } else {
             lines.push(current);
             current = word.to_string();
+            current_w = word_w;
         }
     }
     if !current.is_empty() {
@@ -89,7 +102,7 @@ fn measure_block(block: &ContentBlock, available_width: usize) -> (usize, usize)
             ContentItem::Text(s) => {
                 let wrapped = wrap_text(s, inner_w);
                 for line in &wrapped {
-                    max_line_w = max_line_w.max(line.chars().count());
+                    max_line_w = max_line_w.max(display_width(line));
                 }
                 total_lines += wrapped.len();
             }
@@ -105,6 +118,23 @@ fn measure_block(block: &ContentBlock, available_width: usize) -> (usize, usize)
         }
     }
     (max_line_w + block.padding * 2, total_lines + block.padding * 2)
+}
+
+/// Minimum width a block needs to avoid any text wrapping.
+fn min_block_width(block: &ContentBlock) -> usize {
+    let mut max_w: usize = 0;
+    for item in &block.items {
+        match item {
+            ContentItem::Text(s) => {
+                max_w = max_w.max(display_width(s));
+            }
+            ContentItem::Bar { label, .. } => {
+                max_w = max_w.max(display_width(label).max(8));
+            }
+            ContentItem::Rule => {}
+        }
+    }
+    max_w + block.padding * 2
 }
 
 /// Render a content block into the grid at (rect.x, rect.y).
@@ -128,22 +158,36 @@ fn render_block(grid: &mut Grid, block: &ContentBlock, rect: &Rect, fg: Color, b
             ContentItem::Text(s) => {
                 let wrapped = wrap_text(s, inner_w);
                 for line in &wrapped {
-                    for (j, ch) in line.chars().enumerate() {
-                        let gx = inner_x + j;
+                    let mut col = 0usize;
+                    for ch in line.chars() {
+                        let cw = char_width(ch);
+                        let gx = inner_x + col;
+                        if gx + cw > rect.x + rect.w { break; }
                         if cy < grid.len() && gx < grid[0].len() {
                             grid[cy][gx] = Cell::new(ch, fg);
+                            if cw == 2 && gx + 1 < grid[0].len() {
+                                grid[cy][gx + 1] = Cell::blank();
+                            }
                         }
+                        col += cw;
                     }
                     cy += 1;
                 }
             }
             ContentItem::Bar { label, value, max } => {
                 if !label.is_empty() {
-                    for (j, ch) in label.chars().enumerate() {
-                        let gx = inner_x + j;
+                    let mut col = 0usize;
+                    for ch in label.chars() {
+                        let cw = char_width(ch);
+                        let gx = inner_x + col;
+                        if gx + cw > rect.x + rect.w { break; }
                         if cy < grid.len() && gx < grid[0].len() {
                             grid[cy][gx] = Cell::new(ch, fg);
+                            if cw == 2 && gx + 1 < grid[0].len() {
+                                grid[cy][gx + 1] = Cell::blank();
+                            }
                         }
+                        col += cw;
                     }
                     cy += 1;
                 }
@@ -243,12 +287,12 @@ impl BspNode {
     }
 
     /// Recursively split until we have enough leaves or hit min size.
-    /// split_range: how far from center the split can deviate (0.3..0.7 means 30-70%)
-    fn split(&mut self, min_w: usize, min_h: usize, max_depth: usize, rng: &mut StdRng) {
+    /// gap: number of cells reserved between children (for grid lines).
+    fn split_with_gap(&mut self, min_w: usize, min_h: usize, max_depth: usize, gap: usize, rng: &mut StdRng) {
         if max_depth == 0 { return; }
 
-        let can_split_h = self.rect.w >= min_w * 2 + 1;
-        let can_split_v = self.rect.h >= min_h * 2 + 1;
+        let can_split_h = self.rect.w >= min_w * 2 + gap;
+        let can_split_v = self.rect.h >= min_h * 2 + gap;
 
         if !can_split_h && !can_split_v { return; }
 
@@ -269,7 +313,7 @@ impl BspNode {
         if split_horizontal {
             // split along x axis (left/right children)
             let range_lo = min_w;
-            let range_hi = self.rect.w.saturating_sub(min_w);
+            let range_hi = self.rect.w.saturating_sub(min_w + gap);
             if range_lo >= range_hi { return; }
             let split = rng.random_range(range_lo..range_hi);
 
@@ -277,17 +321,17 @@ impl BspNode {
                 self.rect.x, self.rect.y, split, self.rect.h,
             ));
             let mut right = Box::new(BspNode::new(
-                self.rect.x + split + 1, self.rect.y,
-                self.rect.w.saturating_sub(split + 1), self.rect.h,
+                self.rect.x + split + gap, self.rect.y,
+                self.rect.w.saturating_sub(split + gap), self.rect.h,
             ));
-            left.split(min_w, min_h, max_depth - 1, rng);
-            right.split(min_w, min_h, max_depth - 1, rng);
+            left.split_with_gap(min_w, min_h, max_depth - 1, gap, rng);
+            right.split_with_gap(min_w, min_h, max_depth - 1, gap, rng);
             self.left = Some(left);
             self.right = Some(right);
         } else {
             // split along y axis (top/bottom children)
             let range_lo = min_h;
-            let range_hi = self.rect.h.saturating_sub(min_h);
+            let range_hi = self.rect.h.saturating_sub(min_h + gap);
             if range_lo >= range_hi { return; }
             let split = rng.random_range(range_lo..range_hi);
 
@@ -295,14 +339,19 @@ impl BspNode {
                 self.rect.x, self.rect.y, self.rect.w, split,
             ));
             let mut bottom = Box::new(BspNode::new(
-                self.rect.x, self.rect.y + split + 1,
-                self.rect.w, self.rect.h.saturating_sub(split + 1),
+                self.rect.x, self.rect.y + split + gap,
+                self.rect.w, self.rect.h.saturating_sub(split + gap),
             ));
-            top.split(min_w, min_h, max_depth - 1, rng);
-            bottom.split(min_w, min_h, max_depth - 1, rng);
+            top.split_with_gap(min_w, min_h, max_depth - 1, gap, rng);
+            bottom.split_with_gap(min_w, min_h, max_depth - 1, gap, rng);
             self.left = Some(top);
             self.right = Some(bottom);
         }
+    }
+
+    /// Split with default gap of 1.
+    fn split(&mut self, min_w: usize, min_h: usize, max_depth: usize, rng: &mut StdRng) {
+        self.split_with_gap(min_w, min_h, max_depth, 1, rng);
     }
 
     /// Collect all leaf rects in traversal order.
@@ -370,6 +419,599 @@ fn layout_bsp(
     }
 
     all_rects
+}
+
+// ── Leaf walker ──────────────────────────────────────────────────────
+
+#[derive(Clone, Copy)]
+enum WalkerMood { Organic, Geometric, Empty }
+
+/// Randomizable parameters for a tile fill instance.
+#[derive(Clone, Copy)]
+struct TileParams {
+    variant: TileVariant,
+    density: f32,           // 0.0-1.0, cell draw probability
+    stagger_override: i8,   // -1 = use default, 0 = force no stagger, 1+ = override offset
+    rhythm_override: u8,    // 0 = use default, 1+ = override stagger_rhythm
+}
+
+impl TileParams {
+    fn new(variant: TileVariant) -> Self {
+        TileParams { variant, density: 1.0, stagger_override: -1, rhythm_override: 0 }
+    }
+
+    fn randomized(rng: &mut StdRng) -> Self {
+        let variant = tile_variant_from_index(rng.random_range(0..TILE_VARIANT_COUNT));
+        let density = if rng.random_range(0..4) == 0 { rng.random_range(60..95) as f32 / 100.0 } else { 1.0 };
+        // 40% chance to vary stagger from default
+        let stagger_override = if rng.random_range(0..5) < 2 {
+            rng.random_range(0..6) as i8  // 0 = no stagger, 1-5 = various offsets
+        } else {
+            -1  // default
+        };
+        // 30% chance to vary rhythm from default
+        let rhythm_override = if rng.random_range(0..10) < 3 {
+            rng.random_range(1..5)  // group 1-4 tile-rows before shifting
+        } else {
+            0  // default
+        };
+        TileParams { variant, density, stagger_override, rhythm_override }
+    }
+}
+
+enum LeafFill {
+    Tree(usize),
+    Fret(usize),
+    AztecDiamond(usize),
+    Flower(usize),
+    Fruit(usize),
+    Crosshatch,
+    Guilloche,
+    Weave,
+    Zigzag,
+    DiamondLattice,
+    Tile(TileParams),
+    Noise(NoiseVariant),
+    Nothing,
+}
+
+struct LeafWalker {
+    mood: WalkerMood,
+    energy: f32,
+    prev_x: usize,
+    prev_y: usize,
+}
+
+impl LeafWalker {
+    fn new(center_x: usize, center_y: usize) -> Self {
+        LeafWalker { mood: WalkerMood::Organic, energy: 1.0, prev_x: center_x, prev_y: center_y }
+    }
+
+    fn pick_fill(&self, rect: &Rect, rng: &mut StdRng) -> LeafFill {
+        let area = rect.w * rect.h;
+
+        // energy-based thinning
+        if self.energy < 0.5 && rng.random_range(0..10) < 3 {
+            return LeafFill::Nothing;
+        }
+
+        match self.mood {
+            WalkerMood::Empty => LeafFill::Nothing,
+            WalkerMood::Organic => {
+                if area > 300 && rect.h > 15 && rect.w > 20 {
+                    match rng.random_range(0..5) {
+                        0..=2 => LeafFill::Tree(rng.random_range(0..4)),
+                        3 => LeafFill::Noise(NoiseVariant::Grass),
+                        _ => LeafFill::Noise(NoiseVariant::Dot),
+                    }
+                } else if area > 80 && rect.h > 6 && rect.w > 10 {
+                    match rng.random_range(0..5) {
+                        0 => LeafFill::Fruit(rng.random_range(0..5)),
+                        1 => LeafFill::Noise(NoiseVariant::Grass),
+                        _ => LeafFill::Flower(rng.random_range(0..5)),
+                    }
+                } else if area > 20 && rect.w >= 5 && rect.h >= 3 {
+                    match rng.random_range(0..4) {
+                        0 => LeafFill::Flower(rng.random_range(0..5)),
+                        1 => LeafFill::Fruit(rng.random_range(0..5)),
+                        _ => LeafFill::Noise(NoiseVariant::Dot),
+                    }
+                } else {
+                    LeafFill::Nothing
+                }
+            }
+            WalkerMood::Geometric => {
+                if area > 300 && rect.h > 15 && rect.w > 20 {
+                    // large: aztec diamond, line art, tiles, or noise
+                    match rng.random_range(0..10) {
+                        0 => { let order = (rect.h / 2).min(rect.w / 4).max(2).min(6); LeafFill::AztecDiamond(order) }
+                        1 => LeafFill::Guilloche,
+                        2 => LeafFill::Weave,
+                        3 => LeafFill::DiamondLattice,
+                        4 => LeafFill::Crosshatch,
+                        5 => LeafFill::Noise(noise_variant_from_index(rng.random_range(0..NOISE_VARIANT_COUNT))),
+                        _ => LeafFill::Tile(TileParams::randomized(rng)),
+                    }
+                } else if area > 80 && rect.h > 6 && rect.w > 10 {
+                    // medium: frets, line art, aztec, tiles, noise
+                    match rng.random_range(0..12) {
+                        0 => { let steps = (rect.w.min(rect.h) / 3).max(2).min(5); LeafFill::Fret(steps) }
+                        1 => { let order = (rect.h / 2).min(rect.w / 4).max(2).min(6); LeafFill::AztecDiamond(order) }
+                        2 => LeafFill::Crosshatch,
+                        3 => LeafFill::Guilloche,
+                        4 => LeafFill::Weave,
+                        5 => LeafFill::Zigzag,
+                        6 => LeafFill::DiamondLattice,
+                        7 => LeafFill::Noise(noise_variant_from_index(rng.random_range(0..NOISE_VARIANT_COUNT))),
+                        _ => LeafFill::Tile(TileParams::randomized(rng)),
+                    }
+                } else if area > 20 && rect.w >= 5 && rect.h >= 3 {
+                    // small: flowers, compact line art, tiles, noise
+                    match rng.random_range(0..8) {
+                        0 => LeafFill::Flower(rng.random_range(3..5)),
+                        1 => LeafFill::Crosshatch,
+                        2 => LeafFill::Zigzag,
+                        3 => LeafFill::DiamondLattice,
+                        4 => LeafFill::Noise(noise_variant_from_index(rng.random_range(0..NOISE_VARIANT_COUNT))),
+                        _ => LeafFill::Tile(TileParams::randomized(rng)),
+                    }
+                } else {
+                    LeafFill::Nothing
+                }
+            }
+        }
+    }
+
+    fn step(&mut self, rect: &Rect, rng: &mut StdRng) {
+        self.prev_x = rect.x + rect.w / 2;
+        self.prev_y = rect.y + rect.h / 2;
+        self.energy -= rng.random_range(15..26) as f32 / 100.0;
+
+        if matches!(self.mood, WalkerMood::Empty) {
+            self.energy = 0.6;
+            self.mood = if rng.random_range(0..2) == 0 { WalkerMood::Organic } else { WalkerMood::Geometric };
+        } else if self.energy < 0.3 {
+            self.mood = match self.mood {
+                WalkerMood::Organic => {
+                    if rng.random_range(0..10) < 7 { WalkerMood::Geometric } else { WalkerMood::Empty }
+                }
+                WalkerMood::Geometric => {
+                    if rng.random_range(0..10) < 5 { WalkerMood::Organic } else { WalkerMood::Empty }
+                }
+                WalkerMood::Empty => unreachable!(),
+            };
+        }
+    }
+}
+
+/// Walk through leaf rects in nearest-neighbor order, filling each based on
+/// walker mood/energy state. Creates visual flow instead of pure random.
+fn walk_and_fill_leaves(
+    grid: &mut Grid,
+    leaves: &[Rect],
+    palette: &[Color; 5],
+    rng: &mut StdRng,
+) {
+    if leaves.is_empty() { return; }
+
+    let mut walker = LeafWalker::new(grid[0].len() / 2, grid.len() / 2);
+    let mut visited = vec![false; leaves.len()];
+
+    for _ in 0..leaves.len() {
+        // nearest unvisited leaf by Manhattan distance
+        let mut best_idx = None;
+        let mut best_dist = usize::MAX;
+        for (i, leaf) in leaves.iter().enumerate() {
+            if visited[i] { continue; }
+            let cx = leaf.x + leaf.w / 2;
+            let cy = leaf.y + leaf.h / 2;
+            let dist = cx.abs_diff(walker.prev_x) + cy.abs_diff(walker.prev_y);
+            if dist < best_dist {
+                best_dist = dist;
+                best_idx = Some(i);
+            }
+        }
+
+        let Some(idx) = best_idx else { break };
+        visited[idx] = true;
+        let rect = &leaves[idx];
+        let fill = walker.pick_fill(rect, rng);
+        let prim_color = palette[rng.random_range(1..4)];
+        let cx = rect.x + rect.w / 2;
+        let cy = rect.y + rect.h / 2;
+
+        match fill {
+            LeafFill::Tree(t) => {
+                let root_y = rect.y + rect.h - 2;
+                let canopy_y = rect.y + 2;
+                match t {
+                    0 => grow_tree(grid, cx, root_y, canopy_y, rect.w / 4, prim_color, rng),
+                    1 => draw_pine(grid, cx, root_y, 3, (rect.w / 2).min(12), prim_color),
+                    2 => draw_willow(grid, cx, root_y, canopy_y, rect.w / 4, prim_color),
+                    _ => draw_palm(grid, cx, root_y, rect.h.saturating_sub(4), prim_color, rng),
+                }
+                for _ in 0..rng.random_range(1..=3) {
+                    let fx = rect.x + rng.random_range(2..rect.w.saturating_sub(2).max(3));
+                    let fy = rect.y + rng.random_range(2..rect.h.saturating_sub(2).max(3));
+                    if rng.random_range(0..2) == 0 {
+                        draw_fruit(grid, fx, fy, rng.random_range(0..5), palette[3]);
+                    } else {
+                        draw_flower(grid, fx, fy, rng.random_range(0..5), palette[3]);
+                    }
+                }
+            }
+            LeafFill::Fret(steps) => {
+                draw_stepped_fret(grid, rect.x as i32 + 2, rect.y as i32 + 1, steps, Dir::Right, prim_color);
+            }
+            LeafFill::AztecDiamond(order) => {
+                draw_aztec_diamond(grid, cx, cy, order, palette, rng);
+            }
+            LeafFill::Flower(style) => {
+                draw_flower(grid, cx, cy, style, prim_color);
+            }
+            LeafFill::Fruit(style) => {
+                draw_fruit(grid, cx, cy, style, prim_color);
+            }
+            LeafFill::Crosshatch => {
+                let r = Rect { x: rect.x, y: rect.y, w: rect.w, h: rect.h };
+                draw_crosshatch(grid, &r, prim_color, darken(prim_color, 40));
+            }
+            LeafFill::Guilloche => {
+                let r = Rect { x: rect.x, y: rect.y, w: rect.w, h: rect.h };
+                draw_guilloche(grid, &r, prim_color, darken(prim_color, 30));
+            }
+            LeafFill::Weave => {
+                let r = Rect { x: rect.x, y: rect.y, w: rect.w, h: rect.h };
+                draw_weave(grid, &r, prim_color, lighten(prim_color, 30));
+            }
+            LeafFill::Zigzag => {
+                let r = Rect { x: rect.x, y: rect.y, w: rect.w, h: rect.h };
+                draw_zigzag(grid, &r, prim_color, darken(prim_color, 30));
+            }
+            LeafFill::DiamondLattice => {
+                let r = Rect { x: rect.x, y: rect.y, w: rect.w, h: rect.h };
+                draw_diamond_lattice(grid, &r, prim_color, darken(prim_color, 30));
+            }
+            LeafFill::Tile(params) => {
+                let r = Rect { x: rect.x, y: rect.y, w: rect.w, h: rect.h };
+                let jitter = (1.0 - walker.energy).max(0.0) * 0.15;
+                fill_tile_ex(grid, &r, &params, prim_color, darken(prim_color, 30), jitter, rng);
+            }
+            LeafFill::Noise(variant) => {
+                let r = Rect { x: rect.x, y: rect.y, w: rect.w, h: rect.h };
+                fill_noise(grid, &r, variant, prim_color, darken(prim_color, 30), rng);
+            }
+            LeafFill::Nothing => {}
+        }
+
+        walker.step(rect, rng);
+    }
+}
+
+// ── Mondrian layout ─────────────────────────────────────────────────
+
+/// Mondrian palette: classic Piet Mondrian primary colors + white.
+/// Returns (fill_colors, line_color).
+fn mondrian_colors() -> ([Color; 5], Color) {
+    let fills = [
+        rgb(255, 255, 255),  // white (most common)
+        rgb(220, 30, 30),    // red
+        rgb(30, 60, 180),    // blue
+        rgb(240, 210, 30),   // yellow
+        rgb(255, 255, 255),  // white again (weight toward white)
+    ];
+    let line = rgb(20, 20, 20); // near-black grid lines
+    (fills, line)
+}
+
+/// Draw thick Mondrian grid lines along all BSP split boundaries.
+/// Walks the BSP tree and draws lines at each split seam.
+fn draw_mondrian_lines(grid: &mut Grid, node: &BspNode, line_w: usize, color: Color) {
+    if node.is_leaf() { return; }
+
+    if let (Some(left), Some(right)) = (&node.left, &node.right) {
+        let l = &left.rect;
+        let r = &right.rect;
+        let p = &node.rect; // parent rect for full-span lines
+
+        if l.y == r.y {
+            // horizontal split (side by side): vertical line spans parent height
+            let line_x = l.x + l.w;
+            for y in p.y..p.y + p.h {
+                for dx in 0..line_w {
+                    let x = line_x + dx;
+                    if y < grid.len() && x < grid[0].len() {
+                        grid[y][x] = Cell::with_bg(' ', color, color);
+                    }
+                }
+            }
+        } else {
+            // vertical split (stacked): horizontal line spans parent width
+            let line_y = l.y + l.h;
+            for dy in 0..line_w {
+                let y = line_y + dy;
+                for x in p.x..p.x + p.w {
+                    if y < grid.len() && x < grid[0].len() {
+                        grid[y][x] = Cell::with_bg(' ', color, color);
+                    }
+                }
+            }
+        }
+
+        draw_mondrian_lines(grid, left, line_w, color);
+        draw_mondrian_lines(grid, right, line_w, color);
+    }
+}
+
+/// Mondrian layout: BSP partition with thick black grid lines and
+/// primary-color filled regions. Content blocks go in the largest leaves.
+fn layout_mondrian(
+    grid: &mut Grid,
+    blocks: &[ContentBlock],
+    margin: usize,
+    line_w: usize,
+    min_cell_w: usize,
+    min_cell_h: usize,
+    text_fg: Color,
+    bar_fg: Color,
+    fill_colors: &[Color; 5],
+    line_color: Color,
+    rng: &mut StdRng,
+) -> Vec<Rect> {
+    let grid_w = grid[0].len();
+    let grid_h = grid.len();
+
+    // inset BSP root by border (line_w) + margin so leaves never overlap the outer border
+    let inset = line_w + margin;
+    let canvas_w = grid_w.saturating_sub(inset * 2);
+    let canvas_h = grid_h.saturating_sub(inset * 2);
+
+    // more splits than regular BSP for the Mondrian look
+    let target_leaves = blocks.len().max(6);
+    let max_depth = (target_leaves as f64).log2().ceil() as usize + 2;
+
+    let mut root = BspNode::new(inset, inset, canvas_w, canvas_h);
+    root.split_with_gap(min_cell_w, min_cell_h, max_depth, line_w, rng);
+
+    // fill each leaf with a Mondrian color
+    let leaves = root.leaves();
+    for (i, leaf) in leaves.iter().enumerate() {
+        // weight toward white: small regions more likely to get color
+        let area = leaf.w * leaf.h;
+        let color_idx = if area > 400 {
+            if rng.random_range(0..4) == 0 { rng.random_range(1..4) } else { 0 }
+        } else if area > 100 {
+            if rng.random_range(0..3) == 0 { rng.random_range(1..4) } else { 0 }
+        } else {
+            if rng.random_range(0..2) == 0 { rng.random_range(1..4) } else { 0 }
+        };
+        let _ = i;
+        let bg = fill_colors[color_idx];
+
+        for y in leaf.y..leaf.y + leaf.h {
+            for x in leaf.x..leaf.x + leaf.w {
+                if y < grid.len() && x < grid[0].len() {
+                    grid[y][x] = Cell::with_bg(' ', Color::Reset, bg);
+                }
+            }
+        }
+    }
+
+    // draw grid lines at every BSP split boundary
+    draw_mondrian_lines(grid, &root, line_w, line_color);
+
+    // outer border
+    let w = grid_w;
+    let h = grid_h;
+    for dy in 0..line_w {
+        for x in 0..w {
+            if dy < h { grid[dy][x] = Cell::with_bg(' ', line_color, line_color); }
+            if h - 1 - dy < h { grid[h - 1 - dy][x] = Cell::with_bg(' ', line_color, line_color); }
+        }
+    }
+    for dx in 0..line_w {
+        for y in 0..h {
+            if dx < w { grid[y][dx] = Cell::with_bg(' ', line_color, line_color); }
+            if w - 1 - dx < w { grid[y][w - 1 - dx] = Cell::with_bg(' ', line_color, line_color); }
+        }
+    }
+
+    // assign content blocks to leaves by best fit:
+    // for each block, find the leaf that is wide enough and has the most area.
+    // fall back to widest leaf if none are wide enough.
+    let leaf_rects: Vec<Rect> = leaves.iter().map(|r| {
+        Rect { x: r.x, y: r.y, w: r.w, h: r.h }
+    }).collect();
+    let mut used = vec![false; leaf_rects.len()];
+    let mut content_rects = Vec::new();
+
+    for block in blocks.iter() {
+        let needed_w = min_block_width(block);
+        let (_, needed_h) = measure_block(block, needed_w);
+
+        // find best leaf: wide enough and tall enough, prefer largest area
+        let mut best: Option<usize> = None;
+        let mut best_area: usize = 0;
+        for (li, leaf) in leaf_rects.iter().enumerate() {
+            if used[li] { continue; }
+            let area = leaf.w * leaf.h;
+            if leaf.w >= needed_w + 2 && leaf.h >= needed_h + 2 && area > best_area {
+                best = Some(li);
+                best_area = area;
+            }
+        }
+        // fallback: widest unused leaf
+        if best.is_none() {
+            let mut best_w = 0;
+            for (li, leaf) in leaf_rects.iter().enumerate() {
+                if used[li] { continue; }
+                if leaf.w > best_w {
+                    best = Some(li);
+                    best_w = leaf.w;
+                }
+            }
+        }
+
+        if let Some(li) = best {
+            used[li] = true;
+            let leaf = &leaf_rects[li];
+            // measure at inner width (leaf minus border overhead) for accurate height
+            let inner_w = leaf.w.saturating_sub(2);
+            let (_, bh) = measure_block(block, inner_w);
+            let render_rect = Rect {
+                x: leaf.x,
+                y: leaf.y,
+                w: leaf.w,
+                h: bh.min(leaf.h),
+            };
+            render_block_with_border(grid, block, &render_rect, text_fg, bar_fg, false, rng);
+            content_rects.push(render_rect);
+        }
+    }
+
+    // return content rects first, then unused leaves
+    let mut all_rects = content_rects;
+    for (li, r) in leaf_rects.iter().enumerate() {
+        if !used[li] {
+            all_rects.push(Rect { x: r.x, y: r.y, w: r.w, h: r.h });
+        }
+    }
+
+    all_rects
+}
+
+/// Like render_block but preserves existing bg color of each cell
+/// instead of clearing to blank. Used by Mondrian to keep color fills.
+fn render_block_preserve_bg(grid: &mut Grid, block: &ContentBlock, rect: &Rect, fg: Color, bar_fg: Color) {
+    let inner_x = rect.x + block.padding;
+    let inner_y = rect.y + block.padding;
+    let inner_w = rect.w.saturating_sub(block.padding * 2);
+    let max_x = rect.x + rect.w;
+    let max_y = rect.y + rect.h;
+
+    let mut cy = inner_y;
+    for item in &block.items {
+        if cy >= max_y { break; }
+        match item {
+            ContentItem::Text(s) => {
+                let wrapped = wrap_text(s, inner_w);
+                for line in &wrapped {
+                    if cy >= max_y { break; }
+                    let mut col = 0usize; // display column offset
+                    for ch in line.chars() {
+                        let cw = char_width(ch);
+                        let x = inner_x + col;
+                        if x + cw > max_x { break; }
+                        if cy < grid.len() && x < grid[0].len() {
+                            let existing_bg = grid[cy][x].bg;
+                            grid[cy][x] = Cell::with_bg(ch, fg, existing_bg);
+                            // fullwidth chars: blank the next cell so it doesn't
+                            // show stale content (terminal cursor advances 2 cols)
+                            if cw == 2 && x + 1 < grid[0].len() {
+                                grid[cy][x + 1] = Cell::with_bg(' ', fg, existing_bg);
+                            }
+                        }
+                        col += cw;
+                    }
+                    cy += 1;
+                }
+            }
+            ContentItem::Bar { label, value, max } => {
+                if !label.is_empty() && cy < max_y {
+                    let mut col = 0usize;
+                    for ch in label.chars() {
+                        let cw = char_width(ch);
+                        let x = inner_x + col;
+                        if x + cw > max_x { break; }
+                        if cy < grid.len() && x < grid[0].len() {
+                            let existing_bg = grid[cy][x].bg;
+                            grid[cy][x] = Cell::with_bg(ch, fg, existing_bg);
+                            if cw == 2 && x + 1 < grid[0].len() {
+                                grid[cy][x + 1] = Cell::with_bg(' ', fg, existing_bg);
+                            }
+                        }
+                        col += cw;
+                    }
+                    cy += 1;
+                }
+                if cy >= max_y { continue; }
+                let bar_w = inner_w.min(max_x.saturating_sub(inner_x));
+                let filled = ((value / max) * bar_w as f64) as usize;
+                for j in 0..bar_w {
+                    let x = inner_x + j;
+                    if x >= max_x { break; }
+                    let ch = if j < filled { '█' } else { '░' };
+                    let color = if j < filled { bar_fg } else { fg };
+                    if cy < grid.len() && x < grid[0].len() {
+                        let existing_bg = grid[cy][x].bg;
+                        grid[cy][x] = Cell::with_bg(ch, color, existing_bg);
+                    }
+                }
+                cy += 1;
+            }
+            ContentItem::Rule => {
+                let rule_w = inner_w.min(max_x.saturating_sub(inner_x));
+                for j in 0..rule_w {
+                    let x = inner_x + j;
+                    if cy < grid.len() && x < grid[0].len() {
+                        let existing_bg = grid[cy][x].bg;
+                        grid[cy][x] = Cell::with_bg('─', fg, existing_bg);
+                    }
+                }
+                cy += 1;
+            }
+        }
+    }
+}
+
+/// Wrapper: draw a decorative border, then render content in the inset area.
+/// If `clear` is true, clears the rect before drawing (use for truchet bg).
+/// If false, preserves existing bg (use for mondrian color fills).
+fn render_block_with_border(
+    grid: &mut Grid,
+    block: &ContentBlock,
+    rect: &Rect,
+    fg: Color,
+    bar_fg: Color,
+    clear: bool,
+    rng: &mut StdRng,
+) {
+    if clear {
+        for y in rect.y..rect.y + rect.h {
+            for x in rect.x..rect.x + rect.w {
+                if y < grid.len() && x < grid[0].len() {
+                    grid[y][x] = Cell::blank();
+                }
+            }
+        }
+    }
+
+    let style = pick_border_style(rng, rect.w, rect.h);
+    let inset = border_inset(&style);
+
+    // fall back to borderless if rect too small for border + content
+    if rect.w <= inset * 2 + 4 || rect.h <= inset * 2 + 2 {
+        render_block_preserve_bg(grid, block, rect, fg, bar_fg);
+        return;
+    }
+
+    draw_box_border(grid, rect, &style, fg);
+
+    // corner embellishments on non-fret, non-rounded borders (50% chance, needs space)
+    if !matches!(style, BorderStyle::Fret | BorderStyle::Rounded) && rect.w >= 7 && rect.h >= 5 {
+        if rng.random_range(0..2) == 0 {
+            let corner_style = rng.random_range(0..6);
+            draw_corner_embellishments(grid, rect, corner_style, fg);
+        }
+    }
+
+    let inner = Rect {
+        x: rect.x + inset,
+        y: rect.y + inset,
+        w: rect.w - inset * 2,
+        h: rect.h - inset * 2,
+    };
+    render_block_preserve_bg(grid, block, &inner, fg, bar_fg);
 }
 
 // ── Markdown parser ────────────────────────────────────────────────
@@ -1031,6 +1673,693 @@ fn draw_fret_border(grid: &mut Grid, x0: usize, y0: usize, w: usize, h: usize, b
     }
 }
 
+// ── Box borders ─────────────────────────────────────────────────────
+
+enum BorderStyle { Light, Heavy, Double, Rounded, Fret }
+
+fn border_glyphs(style: &BorderStyle) -> (char, char, char, char, char, char) {
+    match style {
+        BorderStyle::Light   => ('┌', '┐', '└', '┘', '─', '│'),
+        BorderStyle::Heavy   => ('┏', '┓', '┗', '┛', '━', '┃'),
+        BorderStyle::Double  => ('╔', '╗', '╚', '╝', '═', '║'),
+        BorderStyle::Rounded => ('╭', '╮', '╰', '╯', '─', '│'),
+        BorderStyle::Fret    => unreachable!(),
+    }
+}
+
+/// Draw a box border around rect, preserving existing bg colors.
+/// No-op if rect < 3x3. Fret falls back to Light if rect < 8x6.
+fn draw_box_border(grid: &mut Grid, rect: &Rect, style: &BorderStyle, color: Color) {
+    if rect.w < 3 || rect.h < 3 { return; }
+
+    if matches!(style, BorderStyle::Fret) {
+        if rect.w < 8 || rect.h < 6 {
+            return draw_box_border(grid, rect, &BorderStyle::Light, color);
+        }
+        let band = 2;
+        for edge in 0..4 {
+            draw_fret_border(grid, rect.x, rect.y, rect.w, rect.h, band, edge, color);
+        }
+        return;
+    }
+
+    let (tl, tr, bl, br, horiz, vert) = border_glyphs(style);
+    let x0 = rect.x;
+    let y0 = rect.y;
+    let x1 = rect.x + rect.w - 1;
+    let y1 = rect.y + rect.h - 1;
+
+    let set = |grid: &mut Grid, x: usize, y: usize, ch: char, fg: Color| {
+        if y < grid.len() && x < grid[0].len() {
+            let bg = grid[y][x].bg;
+            grid[y][x] = Cell::with_bg(ch, fg, bg);
+        }
+    };
+
+    set(grid, x0, y0, tl, color);
+    set(grid, x1, y0, tr, color);
+    set(grid, x0, y1, bl, color);
+    set(grid, x1, y1, br, color);
+
+    for x in (x0 + 1)..x1 {
+        set(grid, x, y0, horiz, color);
+        set(grid, x, y1, horiz, color);
+    }
+    for y in (y0 + 1)..y1 {
+        set(grid, x0, y, vert, color);
+        set(grid, x1, y, vert, color);
+    }
+}
+
+/// Draw decorative corner embellishments on a bordered rect.
+/// Overlays triangle/block motifs at each corner, preserving bg.
+fn draw_corner_embellishments(grid: &mut Grid, rect: &Rect, style: usize, color: Color) {
+    if rect.w < 5 || rect.h < 4 { return; }
+
+    let x0 = rect.x;
+    let y0 = rect.y;
+    let x1 = rect.x + rect.w - 1;
+    let y1 = rect.y + rect.h - 1;
+
+    let set = |grid: &mut Grid, x: usize, y: usize, ch: char| {
+        if y < grid.len() && x < grid[0].len() {
+            let bg = grid[y][x].bg;
+            grid[y][x] = Cell::with_bg(ch, color, bg);
+        }
+    };
+
+    match style % 6 {
+        0 => {
+            // Fan: quarter-triangle + half-block extensions
+            set(grid, x0, y0, '◤'); set(grid, x0 + 1, y0, '▀'); set(grid, x0, y0 + 1, '▌');
+            set(grid, x1, y0, '◥'); set(grid, x1 - 1, y0, '▀'); set(grid, x1, y0 + 1, '▐');
+            set(grid, x0, y1, '◣'); set(grid, x0 + 1, y1, '▄'); set(grid, x0, y1 - 1, '▌');
+            set(grid, x1, y1, '◢'); set(grid, x1 - 1, y1, '▄'); set(grid, x1, y1 - 1, '▐');
+        }
+        1 => {
+            // Double triangle: two quarter-triangles per corner
+            set(grid, x0, y0, '◤'); set(grid, x0 + 1, y0, '◥'); set(grid, x0, y0 + 1, '◣');
+            set(grid, x1, y0, '◥'); set(grid, x1 - 1, y0, '◤'); set(grid, x1, y0 + 1, '◢');
+            set(grid, x0, y1, '◣'); set(grid, x0 + 1, y1, '◢'); set(grid, x0, y1 - 1, '◤');
+            set(grid, x1, y1, '◢'); set(grid, x1 - 1, y1, '◣'); set(grid, x1, y1 - 1, '◥');
+        }
+        2 => {
+            // Block: three-quadrant block chars
+            set(grid, x0, y0, '▛'); set(grid, x0 + 1, y0, '▀'); set(grid, x0, y0 + 1, '▌');
+            set(grid, x1, y0, '▜'); set(grid, x1 - 1, y0, '▀'); set(grid, x1, y0 + 1, '▐');
+            set(grid, x0, y1, '▙'); set(grid, x0 + 1, y1, '▄'); set(grid, x0, y1 - 1, '▌');
+            set(grid, x1, y1, '▟'); set(grid, x1 - 1, y1, '▄'); set(grid, x1, y1 - 1, '▐');
+        }
+        3 => {
+            // Arrow: triangle + directional pointer
+            set(grid, x0, y0, '◤'); set(grid, x0 + 1, y0, '▶'); set(grid, x0, y0 + 1, '▼');
+            set(grid, x1, y0, '◥'); set(grid, x1 - 1, y0, '◀'); set(grid, x1, y0 + 1, '▼');
+            set(grid, x0, y1, '◣'); set(grid, x0 + 1, y1, '▶'); set(grid, x0, y1 - 1, '▲');
+            set(grid, x1, y1, '◢'); set(grid, x1 - 1, y1, '◀'); set(grid, x1, y1 - 1, '▲');
+        }
+        4 if rect.w >= 7 && rect.h >= 5 => {
+            // Layered: 3-deep triangle cascade
+            set(grid, x0, y0, '◤'); set(grid, x0+1, y0, '◥'); set(grid, x0+2, y0, '▀');
+            set(grid, x0, y0+1, '◣'); set(grid, x0+1, y0+1, '◤'); set(grid, x0, y0+2, '▌');
+
+            set(grid, x1, y0, '◥'); set(grid, x1-1, y0, '◤'); set(grid, x1-2, y0, '▀');
+            set(grid, x1, y0+1, '◢'); set(grid, x1-1, y0+1, '◥'); set(grid, x1, y0+2, '▐');
+
+            set(grid, x0, y1, '◣'); set(grid, x0+1, y1, '◢'); set(grid, x0+2, y1, '▄');
+            set(grid, x0, y1-1, '◤'); set(grid, x0+1, y1-1, '◣'); set(grid, x0, y1-2, '▌');
+
+            set(grid, x1, y1, '◢'); set(grid, x1-1, y1, '◣'); set(grid, x1-2, y1, '▄');
+            set(grid, x1, y1-1, '◥'); set(grid, x1-1, y1-1, '◢'); set(grid, x1, y1-2, '▐');
+        }
+        _ => {
+            // Bracket: half-bracket corners with side accents
+            set(grid, x0, y0, '⌜'); set(grid, x0 + 1, y0, '▀'); set(grid, x0, y0 + 1, '▏');
+            set(grid, x1, y0, '⌝'); set(grid, x1 - 1, y0, '▀'); set(grid, x1, y0 + 1, '▕');
+            set(grid, x0, y1, '⌞'); set(grid, x0 + 1, y1, '▄'); set(grid, x0, y1 - 1, '▏');
+            set(grid, x1, y1, '⌟'); set(grid, x1 - 1, y1, '▄'); set(grid, x1, y1 - 1, '▕');
+        }
+    }
+}
+
+// ── Tile pattern system ─────────────────────────────────────────────
+
+/// A tile is a small rectangular char grid that repeats to fill any area.
+///
+/// Stagger controls:
+/// - `row_offset`: how many columns each tile-row shifts rightward
+/// - `stagger_rhythm`: how many tile-rows before the offset resets
+///   (1 = every row staggers, 2 = every other row, etc.)
+///
+/// Example with period_x=8, row_offset=4, stagger_rhythm=1:
+///   row 0: phase 0        (tile-row 0, offset = 0*4 = 0)
+///   row 4: phase 4        (tile-row 1, offset = 1*4 = 4)
+///   row 8: phase 0        (tile-row 2, offset = 2*4 = 8 mod 8 = 0)
+///
+/// With stagger_rhythm=2 and row_offset=4:
+///   tile-rows 0,1: phase 0  (group 0)
+///   tile-rows 2,3: phase 4  (group 1)
+///   tile-rows 4,5: phase 0  (group 2)
+struct TilePattern {
+    cells: Vec<Vec<(char, u8)>>,  // [y][x] -> (char, color_index: 0=primary, 1=secondary)
+    row_offset: usize,            // x-shift per stagger group (0 = no stagger)
+    stagger_rhythm: usize,        // tile-rows per stagger group (1 = every row, 2 = pairs, etc.)
+}
+
+impl TilePattern {
+    fn period_x(&self) -> usize { self.cells[0].len() }
+    fn period_y(&self) -> usize { self.cells.len() }
+
+    fn at(&self, x: usize, y: usize) -> (char, u8) {
+        let py = self.period_y();
+        let px = self.period_x();
+        let ty = y % py;
+        let tile_row = y / py;
+        let group = tile_row / self.stagger_rhythm;
+        let tx = (x + group * self.row_offset) % px;
+        self.cells[ty][tx]
+    }
+}
+
+#[derive(Clone, Copy)]
+enum TileVariant {
+    Asanoha,
+    Seigaiha,
+    Shippo,
+    BishamonKikko,
+    Yabane,
+    Nowaki,
+    Higaki,
+    ShellStitch,
+    GrannySquare,
+    CrocodileScale,
+}
+
+const TILE_VARIANT_COUNT: usize = 10;
+
+fn tile_variant_from_index(i: usize) -> TileVariant {
+    match i % TILE_VARIANT_COUNT {
+        0 => TileVariant::Asanoha,
+        1 => TileVariant::Seigaiha,
+        2 => TileVariant::Shippo,
+        3 => TileVariant::BishamonKikko,
+        4 => TileVariant::Yabane,
+        5 => TileVariant::Nowaki,
+        6 => TileVariant::Higaki,
+        7 => TileVariant::ShellStitch,
+        8 => TileVariant::GrannySquare,
+        _ => TileVariant::CrocodileScale,
+    }
+}
+
+/// Build the repeating char grid for a tile variant.
+fn make_tile(variant: TileVariant) -> TilePattern {
+    // Helper: parse a visual template into cells.
+    // Each char pair "c0" or "c1" means (char, color_index).
+    // We use a simpler approach: Vec of string slices for chars, separate color map.
+    match variant {
+        TileVariant::Asanoha => {
+            // Hemp leaf: 8x4, hex stagger (offset=4)
+            // Star pattern from ╱╲ diagonals meeting at vertices
+            let g = vec![
+                vec![('╲', 0), ('╱', 1), ('╲', 0), ('╱', 1), ('╲', 1), ('╱', 0), ('╲', 1), ('╱', 0)],
+                vec![('╱', 0), ('╲', 1), ('─', 0), ('─', 0), ('─', 1), ('─', 1), ('╱', 1), ('╲', 0)],
+                vec![('╲', 1), ('╱', 0), ('╲', 1), ('╱', 0), ('╲', 0), ('╱', 1), ('╲', 0), ('╱', 1)],
+                vec![('╱', 1), ('╲', 0), ('─', 1), ('─', 1), ('─', 0), ('─', 0), ('╱', 0), ('╲', 1)],
+            ];
+            TilePattern { cells: g, row_offset: 4, stagger_rhythm: 1 }
+        }
+        TileVariant::Seigaiha => {
+            // Blue ocean waves: overlapping arcs, 8x4, hex stagger
+            let g = vec![
+                vec![('╰', 0), ('─', 0), ('─', 0), ('╯', 0), ('╰', 1), ('─', 1), ('─', 1), ('╯', 1)],
+                vec![(' ', 0), ('╭', 0), ('╮', 0), (' ', 0), (' ', 1), ('╭', 1), ('╮', 1), (' ', 1)],
+                vec![(' ', 0), ('│', 0), ('│', 0), (' ', 0), (' ', 1), ('│', 1), ('│', 1), (' ', 1)],
+                vec![('╭', 0), ('╯', 0), ('╰', 0), ('╮', 0), ('╭', 1), ('╯', 1), ('╰', 1), ('╮', 1)],
+            ];
+            TilePattern { cells: g, row_offset: 4, stagger_rhythm: 1 }
+        }
+        TileVariant::Shippo => {
+            // Seven treasures: interlocking vesica shapes, 6x4, hex stagger
+            let g = vec![
+                vec![('╲', 0), ('╭', 1), ('─', 1), ('╮', 1), ('╱', 0), (' ', 0)],
+                vec![(' ', 0), ('│', 1), (' ', 0), ('│', 1), (' ', 0), (' ', 0)],
+                vec![('╱', 0), ('╰', 1), ('─', 1), ('╯', 1), ('╲', 0), (' ', 0)],
+                vec![(' ', 0), (' ', 0), ('╲', 0), ('╱', 0), (' ', 0), (' ', 0)],
+            ];
+            TilePattern { cells: g, row_offset: 3, stagger_rhythm: 1 }
+        }
+        TileVariant::BishamonKikko => {
+            // Tortoiseshell hexagons: 6x4, hex stagger
+            let g = vec![
+                vec![('╱', 0), ('─', 0), ('─', 0), ('╲', 0), (' ', 1), (' ', 1)],
+                vec![('│', 0), (' ', 0), (' ', 0), ('│', 0), (' ', 1), (' ', 1)],
+                vec![('╲', 0), ('─', 0), ('─', 0), ('╱', 0), (' ', 1), (' ', 1)],
+                vec![(' ', 0), (' ', 0), (' ', 0), (' ', 0), (' ', 1), (' ', 1)],
+            ];
+            TilePattern { cells: g, row_offset: 3, stagger_rhythm: 1 }
+        }
+        TileVariant::Yabane => {
+            // Arrow feather chevrons: 6x4, no stagger
+            let g = vec![
+                vec![('╱', 0), ('╱', 0), ('╱', 0), ('╲', 1), ('╲', 1), ('╲', 1)],
+                vec![('╱', 0), ('╱', 0), ('╱', 0), ('╲', 1), ('╲', 1), ('╲', 1)],
+                vec![('╲', 1), ('╲', 1), ('╲', 1), ('╱', 0), ('╱', 0), ('╱', 0)],
+                vec![('╲', 1), ('╲', 1), ('╲', 1), ('╱', 0), ('╱', 0), ('╱', 0)],
+            ];
+            TilePattern { cells: g, row_offset: 0, stagger_rhythm: 1 }
+        }
+        TileVariant::Nowaki => {
+            // Autumn storm diagonal grass: 4x6, no stagger
+            let g = vec![
+                vec![('│', 0), (' ', 0), ('╱', 1), (' ', 0)],
+                vec![('│', 0), ('╱', 1), (' ', 0), (' ', 0)],
+                vec![('╱', 1), (' ', 0), (' ', 0), ('│', 0)],
+                vec![(' ', 0), (' ', 0), ('│', 0), (' ', 0)],
+                vec![(' ', 0), ('│', 0), (' ', 0), ('╱', 1)],
+                vec![('│', 0), (' ', 0), ('╱', 1), (' ', 0)],
+            ];
+            TilePattern { cells: g, row_offset: 0, stagger_rhythm: 1 }
+        }
+        TileVariant::Higaki => {
+            // Cypress fence: tight diagonal crosshatch, 4x4
+            let g = vec![
+                vec![('╱', 0), ('╳', 1), ('╲', 0), (' ', 0)],
+                vec![('╳', 1), ('╲', 0), (' ', 0), ('╱', 0)],
+                vec![('╲', 0), (' ', 0), ('╱', 0), ('╳', 1)],
+                vec![(' ', 0), ('╱', 0), ('╳', 1), ('╲', 0)],
+            ];
+            TilePattern { cells: g, row_offset: 0, stagger_rhythm: 1 }
+        }
+        TileVariant::ShellStitch => {
+            // Crochet shell: scalloped arcs, 8x3, hex stagger
+            let g = vec![
+                vec![('╰', 0), ('─', 0), ('╮', 0), (' ', 0), (' ', 0), ('╭', 1), ('─', 1), ('╯', 1)],
+                vec![(' ', 0), (' ', 0), ('│', 0), ('◠', 0), ('◠', 1), ('│', 1), (' ', 1), (' ', 1)],
+                vec![('─', 0), ('╮', 0), ('╰', 0), ('─', 0), ('─', 1), ('╯', 1), ('╭', 1), ('─', 1)],
+            ];
+            TilePattern { cells: g, row_offset: 4, stagger_rhythm: 1 }
+        }
+        TileVariant::GrannySquare => {
+            // Crochet granny square: concentric frames, 6x6
+            let g = vec![
+                vec![('┌', 0), ('─', 0), ('┬', 1), ('┬', 1), ('─', 0), ('┐', 0)],
+                vec![('│', 0), ('╭', 1), ('─', 1), ('─', 1), ('╮', 1), ('│', 0)],
+                vec![('├', 0), ('│', 1), ('·', 0), ('·', 0), ('│', 1), ('┤', 0)],
+                vec![('├', 0), ('│', 1), ('·', 0), ('·', 0), ('│', 1), ('┤', 0)],
+                vec![('│', 0), ('╰', 1), ('─', 1), ('─', 1), ('╯', 1), ('│', 0)],
+                vec![('└', 0), ('─', 0), ('┴', 1), ('┴', 1), ('─', 0), ('┘', 0)],
+            ];
+            TilePattern { cells: g, row_offset: 0, stagger_rhythm: 1 }
+        }
+        TileVariant::CrocodileScale => {
+            // Overlapping scales: 6x4, hex stagger
+            let g = vec![
+                vec![('╲', 0), (' ', 0), (' ', 0), (' ', 0), (' ', 0), ('╱', 0)],
+                vec![(' ', 0), ('╲', 0), ('▁', 1), ('▁', 1), ('╱', 0), (' ', 0)],
+                vec![(' ', 0), ('▕', 1), ('▓', 1), ('▓', 1), ('▏', 1), (' ', 0)],
+                vec![('─', 0), ('╯', 0), (' ', 0), (' ', 0), ('╰', 0), ('─', 0)],
+            ];
+            TilePattern { cells: g, row_offset: 3, stagger_rhythm: 1 }
+        }
+    }
+}
+
+/// Fill a rect with a tile pattern, pure deterministic baseline.
+/// No phase shift, no jitter, no density dropout. What-you-define-is-what-you-get.
+fn fill_tile_pure(
+    grid: &mut Grid,
+    rect: &Rect,
+    variant: TileVariant,
+    color: Color,
+    color2: Color,
+) {
+    let tile = make_tile(variant);
+    for y in rect.y..rect.y + rect.h {
+        for x in rect.x..rect.x + rect.w {
+            if y >= grid.len() || x >= grid[0].len() { continue; }
+            let (ch, ci) = tile.at(x - rect.x, y - rect.y);
+            if ch == ' ' { continue; }
+            let bg = grid[y][x].bg;
+            let fg = if ci == 0 { color } else { color2 };
+            grid[y][x] = Cell::with_bg(ch, fg, bg);
+        }
+    }
+}
+
+/// Fill a rect with a tile pattern, full control.
+///
+/// Stagger/rhythm overrides in `params` modify the tile's default layout:
+/// - `stagger_override >= 0` replaces the tile's `row_offset`
+/// - `rhythm_override > 0` replaces the tile's `stagger_rhythm`
+///
+/// This means the same asanoha pattern can tile as a tight grid (stagger=0),
+/// a hex offset (stagger=period/2), or a wide drift (stagger=1, rhythm=3).
+fn fill_tile_ex(
+    grid: &mut Grid,
+    rect: &Rect,
+    params: &TileParams,
+    color: Color,
+    color2: Color,
+    jitter: f32,
+    rng: &mut StdRng,
+) {
+    let mut tile = make_tile(params.variant);
+    // apply stagger/rhythm overrides
+    if params.stagger_override >= 0 {
+        tile.row_offset = params.stagger_override as usize;
+    }
+    if params.rhythm_override > 0 {
+        tile.stagger_rhythm = params.rhythm_override as usize;
+    }
+    // random phase shift so pattern origin varies per-instance
+    let phase_x = rng.random_range(0..tile.period_x());
+    let phase_y = rng.random_range(0..tile.period_y());
+    let jitter_glyphs = ['╱', '╲', '╳', '·', '─', '│'];
+    for y in rect.y..rect.y + rect.h {
+        for x in rect.x..rect.x + rect.w {
+            if y >= grid.len() || x >= grid[0].len() { continue; }
+            if params.density < 1.0 && rng.random::<f32>() > params.density { continue; }
+            let (mut ch, ci) = tile.at(x - rect.x + phase_x, y - rect.y + phase_y);
+            if ch == ' ' { continue; }
+            if jitter > 0.0 && rng.random::<f32>() < jitter {
+                ch = jitter_glyphs[rng.random_range(0..jitter_glyphs.len())];
+            }
+            let bg = grid[y][x].bg;
+            let mut fg = if ci == 0 { color } else { color2 };
+            if jitter > 0.0 {
+                let drift = rng.random_range(0..=20) as u8;
+                if drift > 10 { fg = lighten(fg, drift - 10); } else { fg = darken(fg, 10 - drift); }
+            }
+            grid[y][x] = Cell::with_bg(ch, fg, bg);
+        }
+    }
+}
+
+// ── Noise fills (per-cell random, no periodic structure) ────────────
+
+/// Weighted glyph entry: (char, color_index 0 or 1, cumulative weight).
+/// Weights don't need to sum to 1.0 -- they're normalized at fill time.
+struct NoiseGlyph {
+    ch: char,
+    ci: u8,       // 0 = primary color, 1 = secondary
+    weight: f32,  // relative probability
+}
+
+/// Predefined noise palettes.
+///
+/// Each variant has a `coherence` value (0.0-1.0) controlling run length.
+/// At each cell, there's a `coherence` probability of repeating the previous
+/// glyph instead of sampling fresh. High coherence = long uninterrupted runs
+/// that occasionally break. 0.0 = fully independent (classic random).
+#[derive(Clone, Copy)]
+enum NoiseVariant {
+    Truchet,       // classic ╱╲ 50/50, coherence 0.0
+    Higaki,        // ╱╲╳ with gaps, coherence 0.7 (long runs, rare breaks)
+    HigakiStatic,  // ╱╲╳ with gaps, coherence 0.0 (per-cell random, the original)
+    Grass,         // ╱╲│ with spaces, coherence 0.5
+    Static,        // ╱╲─│╳·░, coherence 0.0 (pure random)
+    Dot,           // ·∙°, coherence 0.6
+}
+
+fn noise_coherence(variant: NoiseVariant) -> f32 {
+    match variant {
+        NoiseVariant::Truchet => 0.0,
+        NoiseVariant::Higaki => 0.7,
+        NoiseVariant::HigakiStatic => 0.0,
+        NoiseVariant::Grass => 0.5,
+        NoiseVariant::Static => 0.0,
+        NoiseVariant::Dot => 0.6,
+    }
+}
+
+fn noise_glyphs(variant: NoiseVariant) -> Vec<NoiseGlyph> {
+    match variant {
+        NoiseVariant::Truchet => vec![
+            NoiseGlyph { ch: '╱', ci: 0, weight: 1.0 },
+            NoiseGlyph { ch: '╲', ci: 0, weight: 1.0 },
+        ],
+        NoiseVariant::Higaki | NoiseVariant::HigakiStatic => vec![
+            NoiseGlyph { ch: '╱', ci: 0, weight: 3.0 },
+            NoiseGlyph { ch: '╲', ci: 0, weight: 3.0 },
+            NoiseGlyph { ch: '╳', ci: 1, weight: 2.0 },
+            NoiseGlyph { ch: ' ', ci: 0, weight: 1.0 },
+        ],
+        NoiseVariant::Grass => vec![
+            NoiseGlyph { ch: '╱', ci: 0, weight: 2.0 },
+            NoiseGlyph { ch: '╲', ci: 0, weight: 2.0 },
+            NoiseGlyph { ch: '│', ci: 1, weight: 1.5 },
+            NoiseGlyph { ch: ' ', ci: 0, weight: 3.0 },
+        ],
+        NoiseVariant::Static => vec![
+            NoiseGlyph { ch: '╱', ci: 0, weight: 2.0 },
+            NoiseGlyph { ch: '╲', ci: 0, weight: 2.0 },
+            NoiseGlyph { ch: '─', ci: 1, weight: 1.0 },
+            NoiseGlyph { ch: '│', ci: 1, weight: 1.0 },
+            NoiseGlyph { ch: '╳', ci: 1, weight: 0.5 },
+            NoiseGlyph { ch: '·', ci: 0, weight: 1.0 },
+            NoiseGlyph { ch: '░', ci: 0, weight: 0.5 },
+        ],
+        NoiseVariant::Dot => vec![
+            NoiseGlyph { ch: '·', ci: 0, weight: 3.0 },
+            NoiseGlyph { ch: '∙', ci: 1, weight: 1.0 },
+            NoiseGlyph { ch: '°', ci: 1, weight: 0.5 },
+            NoiseGlyph { ch: ' ', ci: 0, weight: 5.0 },
+        ],
+    }
+}
+
+const NOISE_VARIANT_COUNT: usize = 6;
+
+fn noise_variant_from_index(i: usize) -> NoiseVariant {
+    match i % NOISE_VARIANT_COUNT {
+        0 => NoiseVariant::Truchet,
+        1 => NoiseVariant::Higaki,
+        2 => NoiseVariant::HigakiStatic,
+        3 => NoiseVariant::Grass,
+        4 => NoiseVariant::Static,
+        _ => NoiseVariant::Dot,
+    }
+}
+
+/// Sample a glyph index from the CDF.
+fn sample_glyph(cdf: &[f32], rng: &mut StdRng) -> usize {
+    let r = rng.random::<f32>();
+    cdf.iter().position(|&c| r < c).unwrap_or(cdf.len() - 1)
+}
+
+/// Fill a rect with noise. Coherence controls run length:
+/// each cell has `coherence` probability of repeating the previous glyph
+/// instead of sampling fresh. Scans left-to-right, top-to-bottom, with
+/// row starts seeded from the previous row's last glyph.
+fn fill_noise(
+    grid: &mut Grid,
+    rect: &Rect,
+    variant: NoiseVariant,
+    color: Color,
+    color2: Color,
+    rng: &mut StdRng,
+) {
+    let glyphs = noise_glyphs(variant);
+    let coherence = noise_coherence(variant);
+    let total: f32 = glyphs.iter().map(|g| g.weight).sum();
+    let mut cdf: Vec<f32> = Vec::with_capacity(glyphs.len());
+    let mut acc = 0.0;
+    for g in &glyphs {
+        acc += g.weight / total;
+        cdf.push(acc);
+    }
+    // current glyph index (the "momentum" state)
+    let mut cur = sample_glyph(&cdf, rng);
+    for y in rect.y..rect.y + rect.h {
+        for x in rect.x..rect.x + rect.w {
+            if y >= grid.len() || x >= grid[0].len() { continue; }
+            // coherence check: continue run or break?
+            if coherence <= 0.0 || rng.random::<f32>() >= coherence {
+                cur = sample_glyph(&cdf, rng);
+            }
+            let g = &glyphs[cur];
+            if g.ch == ' ' { continue; }
+            let bg = grid[y][x].bg;
+            let fg = if g.ci == 0 { color } else { color2 };
+            grid[y][x] = Cell::with_bg(g.ch, fg, bg);
+        }
+    }
+}
+
+/// Fill entire grid with Truchet noise. Replaces the duplicated inline loops.
+fn fill_truchet(grid: &mut Grid, width: usize, height: usize, color: Color, rng: &mut StdRng) {
+    let rect = Rect { x: 0, y: 0, w: width, h: height };
+    fill_noise(grid, &rect, NoiseVariant::Truchet, color, color, rng);
+}
+
+// ── Line art fills ──────────────────────────────────────────────────
+
+/// Crosshatch: deterministic diagonal tiling. Denser than random Truchet.
+fn draw_crosshatch(grid: &mut Grid, rect: &Rect, color: Color, color2: Color) {
+    for y in rect.y..rect.y + rect.h {
+        for x in rect.x..rect.x + rect.w {
+            if y >= grid.len() || x >= grid[0].len() { continue; }
+            let bg = grid[y][x].bg;
+            let (ch, c) = if (x + y) % 2 == 0 { ('╱', color) } else { ('╲', color2) };
+            grid[y][x] = Cell::with_bg(ch, c, bg);
+        }
+    }
+}
+
+/// Guilloche: interlocking wave curves from rounded box-drawing chars.
+fn draw_guilloche(grid: &mut Grid, rect: &Rect, color: Color, color2: Color) {
+    for y in rect.y..rect.y + rect.h {
+        for x in rect.x..rect.x + rect.w {
+            if y >= grid.len() || x >= grid[0].len() { continue; }
+            let bg = grid[y][x].bg;
+            let ry = (y - rect.y) % 4;
+            let rx = (x - rect.x) % 6;
+            let (ch, c) = match (ry, rx) {
+                (0, 0) => ('╭', color),
+                (0, 1) | (0, 2) => ('─', color),
+                (0, 3) => ('╮', color),
+                (1, 0) => ('│', color),
+                (1, 3) => ('│', color),
+                (2, 0) => ('╰', color),
+                (2, 1) | (2, 2) => ('─', color),
+                (2, 3) => ('╯', color),
+                (2, 4) => ('╭', color2),
+                (2, 5) => ('─', color2),
+                (3, 4) => ('│', color2),
+                (3, 5) => ('│', color2),
+                (0, 4) => ('╰', color2),
+                (0, 5) => ('─', color2),
+                (1, 4) => ('╭', color2),
+                (1, 5) => ('─', color2),
+                (3, 0) => ('─', color2),
+                (3, 3) => ('─', color2),
+                (1, 1) => ('╰', color2),
+                (1, 2) => ('╯', color2),
+                (3, 1) => ('╭', color2),
+                (3, 2) => ('╮', color2),
+                _ => continue,
+            };
+            grid[y][x] = Cell::with_bg(ch, c, bg);
+        }
+    }
+}
+
+/// Basket weave: interlocking horizontal/vertical line segments.
+fn draw_weave(grid: &mut Grid, rect: &Rect, color: Color, color2: Color) {
+    for y in rect.y..rect.y + rect.h {
+        for x in rect.x..rect.x + rect.w {
+            if y >= grid.len() || x >= grid[0].len() { continue; }
+            let bg = grid[y][x].bg;
+            let ry = (y - rect.y) % 6;
+            let rx = (x - rect.x) % 6;
+            let (ch, c) = match (ry, rx) {
+                // horizontal strand A (rows 0-1)
+                (0, 0..=1) => ('─', color),
+                (0, 2) => ('┐', color),
+                (1, 2) => ('┘', color),
+                (1, 0..=1) => ('─', color),
+                // vertical strand (cols 3-4)
+                (0, 3) => ('┌', color2),
+                (1, 3) => ('│', color2),
+                (2, 3) => ('│', color2),
+                (0, 4) => ('┐', color2),
+                (1, 4) => ('│', color2),
+                (2, 4) => ('│', color2),
+                // horizontal strand B (rows 3-4)
+                (3, 3..=4) => ('─', color),
+                (3, 5) => ('┐', color),
+                (4, 5) => ('┘', color),
+                (4, 3..=4) => ('─', color),
+                // vertical strand (cols 0-1)
+                (3, 0) => ('┌', color2),
+                (4, 0) => ('│', color2),
+                (5, 0) => ('│', color2),
+                (3, 1) => ('┐', color2),
+                (4, 1) => ('│', color2),
+                (5, 1) => ('│', color2),
+                // connecting
+                (2, 2) => ('┌', color),
+                (2, 0..=1) => ('─', color),
+                (5, 5) => ('┌', color),
+                (5, 3..=4) => ('─', color),
+                _ => continue,
+            };
+            grid[y][x] = Cell::with_bg(ch, c, bg);
+        }
+    }
+}
+
+/// Zigzag: horizontal zigzag bands using diagonal chars.
+fn draw_zigzag(grid: &mut Grid, rect: &Rect, color: Color, color2: Color) {
+    for y in rect.y..rect.y + rect.h {
+        for x in rect.x..rect.x + rect.w {
+            if y >= grid.len() || x >= grid[0].len() { continue; }
+            let bg = grid[y][x].bg;
+            let ry = (y - rect.y) % 4;
+            let rx = (x - rect.x) % 4;
+            let (ch, c) = match (ry, rx) {
+                (0, 0) | (0, 1) => ('╱', color),
+                (0, 2) | (0, 3) => ('╲', color),
+                (1, 0) | (1, 1) => ('╲', color2),
+                (1, 2) | (1, 3) => ('╱', color2),
+                (2, 0) | (2, 1) => ('╱', color),
+                (2, 2) | (2, 3) => ('╲', color),
+                (3, 0) | (3, 1) => ('╲', color2),
+                (3, 2) | (3, 3) => ('╱', color2),
+                _ => continue,
+            };
+            grid[y][x] = Cell::with_bg(ch, c, bg);
+        }
+    }
+}
+
+/// Diamond lattice: interlocking diamond shapes from box-drawing diagonals.
+fn draw_diamond_lattice(grid: &mut Grid, rect: &Rect, color: Color, color2: Color) {
+    for y in rect.y..rect.y + rect.h {
+        for x in rect.x..rect.x + rect.w {
+            if y >= grid.len() || x >= grid[0].len() { continue; }
+            let bg = grid[y][x].bg;
+            let ry = (y - rect.y) % 4;
+            let rx = (x - rect.x) % 4;
+            let (ch, c) = match (ry, rx) {
+                (0, 1) => ('╱', color),
+                (0, 2) => ('╲', color),
+                (1, 0) => ('╲', color2),
+                (1, 3) => ('╱', color2),
+                (2, 1) => ('╲', color),
+                (2, 2) => ('╱', color),
+                (3, 0) => ('╱', color2),
+                (3, 3) => ('╲', color2),
+                (1, 1) | (1, 2) | (3, 1) | (3, 2) => ('·', darken(color, 40)),
+                _ => continue,
+            };
+            grid[y][x] = Cell::with_bg(ch, c, bg);
+        }
+    }
+}
+
+fn pick_border_style(rng: &mut StdRng, w: usize, h: usize) -> BorderStyle {
+    let area = w * h;
+    if area < 100 {
+        if rng.random_range(0..2) == 0 { BorderStyle::Light } else { BorderStyle::Rounded }
+    } else {
+        match rng.random_range(0..5) {
+            0 => BorderStyle::Light,
+            1 => BorderStyle::Heavy,
+            2 => BorderStyle::Double,
+            3 => BorderStyle::Rounded,
+            _ => if w >= 8 && h >= 6 { BorderStyle::Fret } else { BorderStyle::Light },
+        }
+    }
+}
+
+fn border_inset(style: &BorderStyle) -> usize {
+    match style {
+        BorderStyle::Fret => 3,
+        _ => 1,
+    }
+}
+
 /// Aztec diamond domino tiling via domino shuffling.
 /// Correct implementation: DELETE (on old grid) → SLIDE (into new grid) → CREATE (fill empty 2x2s).
 /// Reference: Elkies-Kuperberg-Larsen-Propp (1992), pywonderland implementation.
@@ -1188,6 +2517,28 @@ fn draw_flower(grid: &mut Grid, cx: usize, cy: usize, style: usize, color: Color
 
 /// Print the grid with ANSI color escape sequences.
 /// Run-length optimized: only emits color codes when the color changes.
+/// Render grid to plain text (no ANSI escapes). Each row is one line.
+/// Fullwidth chars consume 2 columns; the placeholder cell is skipped.
+fn grid_to_plain(grid: &Grid) -> Vec<String> {
+    let mut lines = Vec::with_capacity(grid.len());
+    for row in grid {
+        let mut line = String::with_capacity(row.len());
+        let mut skip_next = false;
+        for cell in row {
+            if skip_next {
+                skip_next = false;
+                continue;
+            }
+            line.push(cell.ch);
+            if char_width(cell.ch) == 2 {
+                skip_next = true;
+            }
+        }
+        lines.push(line);
+    }
+    lines
+}
+
 fn render_grid(grid: &Grid) {
     let stdout = io::stdout();
     let mut out = io::BufWriter::new(stdout.lock());
@@ -1196,7 +2547,12 @@ fn render_grid(grid: &Grid) {
     let mut cur_bg = Color::Reset;
 
     for row in grid {
+        let mut skip_next = false;
         for cell in row {
+            if skip_next {
+                skip_next = false;
+                continue;
+            }
             if cell.fg != cur_fg {
                 write!(out, "{}", crossterm::style::SetForegroundColor(cell.fg)).unwrap();
                 cur_fg = cell.fg;
@@ -1206,6 +2562,11 @@ fn render_grid(grid: &Grid) {
                 cur_bg = cell.bg;
             }
             write!(out, "{}", cell.ch).unwrap();
+            // fullwidth char advances terminal cursor 2 columns,
+            // so skip the next grid cell (it's a placeholder)
+            if char_width(cell.ch) == 2 {
+                skip_next = true;
+            }
         }
         // reset at end of each line to avoid bg bleeding
         if cur_bg != Color::Reset {
@@ -1242,6 +2603,10 @@ fn main() {
         eprintln!("  layout    Two-column layout engine demo");
         eprintln!("  md        Render markdown from stdin");
         eprintln!("  bsp       BSP randomized layout demo");
+        eprintln!("  mondrian  Mondrian-style colored grid layout");
+        eprintln!("  tiles     Showcase all 10 tile patterns (pure deterministic)");
+        eprintln!("  tiles-rand  Same patterns with randomized params");
+        eprintln!("  noise     Showcase all 5 noise variants (truchet, higaki, etc.)");
         eprintln!("  swatch    Color swatches for all named themes");
         eprintln!();
         eprintln!("THEMES:");
@@ -1261,6 +2626,7 @@ fn main() {
         eprintln!("  echo '# Hello' | ascii-renderer 42 md nerv");
         eprintln!("  cat notes.md | ascii-renderer 42 md moss");
         eprintln!("  ascii-renderer 42 bsp nerv");
+        eprintln!("  ascii-renderer 42 mondrian");
         eprintln!("  ascii-renderer 42 swatch");
         std::process::exit(0);
     }
@@ -1272,8 +2638,9 @@ fn main() {
     let mode = args.get(2).map(|s| s.as_str()).unwrap_or("");
     let theme_name = args.get(3).map(|s| s.as_str()).unwrap_or("");
 
-    let width = 80;
-    let height = 45;
+    let (term_w, term_h) = crossterm::terminal::size().unwrap_or((80, 45));
+    let width = term_w as usize;
+    let height = term_h as usize;
     let mut grid = vec![vec![Cell::blank(); width]; height];
     let mut rng = StdRng::seed_from_u64(seed);
 
@@ -1568,60 +2935,16 @@ fn main() {
             )
         };
 
-        // decorate empty leaf rects with primitives
+        // borders around content rects
         let content_count = blocks.len().min(rects.len());
-        for rect in rects.iter().skip(content_count) {
-            let cx = rect.x + rect.w / 2;
-            let cy = rect.y + rect.h / 2;
-            let area = rect.w * rect.h;
-
-            if area > 300 && rect.h > 15 && rect.w > 20 {
-                // large region: tree
-                let tree_type = rng.random_range(0..4);
-                // clear region for the tree
-                for y in rect.y..rect.y + rect.h {
-                    for x in rect.x..rect.x + rect.w {
-                        if y < grid.len() && x < grid[0].len() {
-                            grid[y][x] = Cell::blank();
-                        }
-                    }
-                }
-                let root_y = rect.y + rect.h - 2;
-                let canopy_y = rect.y + 2;
-                match tree_type {
-                    0 => grow_tree(&mut grid, cx, root_y, canopy_y, rect.w / 4, palette[1], &mut rng),
-                    1 => draw_pine(&mut grid, cx, root_y, 3, (rect.w / 2).min(12), palette[2]),
-                    2 => draw_willow(&mut grid, cx, root_y, canopy_y, rect.w / 4, palette[1]),
-                    _ => draw_palm(&mut grid, cx, root_y, rect.h.saturating_sub(4), palette[3], &mut rng),
-                }
-                // scatter some fruits/flowers near the tree
-                for _ in 0..rng.random_range(1..=3) {
-                    let fx = rect.x + rng.random_range(2..rect.w.saturating_sub(2).max(3));
-                    let fy = rect.y + rng.random_range(2..rect.h.saturating_sub(2).max(3));
-                    if rng.random_range(0..2) == 0 {
-                        draw_fruit(&mut grid, fx, fy, rng.random_range(0..5), palette[3]);
-                    } else {
-                        draw_flower(&mut grid, fx, fy, rng.random_range(0..5), palette[3]);
-                    }
-                }
-            } else if area > 80 && rect.h > 6 && rect.w > 10 {
-                // medium region: fret spiral or small aztec diamond
-                if rng.random_range(0..2) == 0 {
-                    let steps = (rect.w.min(rect.h) / 3).max(2).min(5);
-                    draw_stepped_fret(&mut grid, rect.x as i32 + 2, rect.y as i32 + 1, steps, Dir::Right, palette[2]);
-                } else {
-                    let order = (rect.h / 2).min(rect.w / 4).max(2).min(6);
-                    draw_aztec_diamond(&mut grid, cx, cy, order, &palette, &mut rng);
-                }
-            } else if area > 20 && rect.w >= 5 && rect.h >= 3 {
-                // small region: flower or fruit stamp
-                if rng.random_range(0..2) == 0 {
-                    draw_flower(&mut grid, cx, cy, rng.random_range(0..5), palette[3]);
-                } else {
-                    draw_fruit(&mut grid, cx, cy, rng.random_range(0..5), palette[3]);
-                }
-            }
+        for i in 0..content_count {
+            let style = pick_border_style(&mut rng, rects[i].w, rects[i].h);
+            draw_box_border(&mut grid, &rects[i], &style, palette[4]);
         }
+
+        // fill empty leaves with walker-driven primitives
+        let empty_leaves: Vec<Rect> = rects.into_iter().skip(content_count).collect();
+        walk_and_fill_leaves(&mut grid, &empty_leaves, &palette, &mut rng);
 
         // fret border along edges if canvas is big enough
         if width > 40 && height > 20 {
@@ -1711,18 +3034,212 @@ fn main() {
             }
         }
 
-    } else {
-        // full demo: truchet bg + trees + content + flowers
-        let truchet_color = darken(palette[1], 80);
-        let tiles = ['╱', '╲'];
-        for y in 0..height {
-            for x in 0..width {
-                grid[y][x] = Cell::new(
-                    tiles[rng.random_range(0..2)],
-                    truchet_color,
-                );
+    } else if mode == "mondrian" {
+        let line_w = 2;
+
+        // try reading markdown from stdin, fall back to generated content
+        let mut stdin_buf = String::new();
+        let has_stdin = !std::io::stdin().is_terminal();
+        if has_stdin {
+            io::stdin().read_to_string(&mut stdin_buf).unwrap_or_default();
+        }
+
+        let blocks = if !stdin_buf.is_empty() {
+            parse_markdown(&stdin_buf)
+        } else {
+            // seed-varied procedural content
+            let status_msgs = [
+                "All systems nominal.", "Drift detected. Compensating.",
+                "Awaiting signal.", "Calibrating.", "Standing by.",
+                "Online.", "Synchronizing.", "Lattice stable.",
+            ];
+            let task_sets: [&[&str]; 4] = [
+                &["▪ layout engine", "▪ masonry fills", "▫ fret connect"],
+                &["▪ wave collapse", "▪ L-systems", "▫ snapshot tests"],
+                &["▪ signal graph", "▪ render pass", "▫ cache layer"],
+                &["▪ parse phase", "▪ emit codegen", "▫ type resolve"],
+            ];
+            let stat = status_msgs[rng.random_range(0..status_msgs.len())];
+            let tasks = task_sets[rng.random_range(0..task_sets.len())];
+
+            let cpu_v = rng.random_range(20..95) as f64;
+            let mem_v = rng.random_range(10..80) as f64 / 10.0;
+            let disk_v = rng.random_range(30..450) as f64;
+            let net_v = rng.random_range(50..900) as f64;
+
+            let mut b = vec![
+                ContentBlock {
+                    items: vec![
+                        ContentItem::Text("「 STATUS 」".into()),
+                        ContentItem::Rule,
+                        ContentItem::Text(stat.into()),
+                    ],
+                    padding: 1,
+                },
+                ContentBlock {
+                    items: vec![
+                        ContentItem::Text("METRICS".into()),
+                        ContentItem::Rule,
+                        ContentItem::Bar { label: "cpu".into(), value: cpu_v, max: 100.0 },
+                        ContentItem::Bar { label: "mem".into(), value: mem_v, max: 8.0 },
+                        ContentItem::Bar { label: "disk".into(), value: disk_v, max: 500.0 },
+                        ContentItem::Bar { label: "net".into(), value: net_v, max: 1000.0 },
+                    ],
+                    padding: 1,
+                },
+            ];
+            let mut task_items = vec![
+                ContentItem::Text("TASKS".into()),
+                ContentItem::Rule,
+            ];
+            for t in tasks { task_items.push(ContentItem::Text((*t).into())); }
+            b.push(ContentBlock { items: task_items, padding: 1 });
+
+            // sometimes add a 4th block
+            if rng.random_range(0..3) == 0 {
+                let notes = [
+                    "The map is not the territory.",
+                    "Form follows function, but function follows context.",
+                    "Every system is perfectly designed to produce the results it gets.",
+                    "Constraints breed creativity.",
+                ];
+                b.push(ContentBlock {
+                    items: vec![
+                        ContentItem::Text("NOTES".into()),
+                        ContentItem::Rule,
+                        ContentItem::Text(notes[rng.random_range(0..notes.len())].into()),
+                    ],
+                    padding: 1,
+                });
+            }
+            b
+        };
+
+        // theme-aware colors: derive mondrian fills from the palette
+        let fill_colors = if theme_name.is_empty() {
+            // classic mondrian
+            let (fills, _) = mondrian_colors();
+            fills
+        } else {
+            // use the theme: bg slot as the dominant fill, other palette colors as accents
+            [
+                lighten(palette[0], 40),  // lightened bg as dominant
+                palette[1],               // primary
+                palette[2],               // secondary
+                palette[3],               // accent
+                lighten(palette[0], 40),  // bg again for weight
+            ]
+        };
+        let line_color = if theme_name.is_empty() {
+            rgb(20, 20, 20)
+        } else {
+            darken(palette[0], 60)
+        };
+        let text_fg = if theme_name.is_empty() {
+            rgb(20, 20, 20)
+        } else {
+            palette[4] // theme text color
+        };
+
+        let rects = layout_mondrian(
+            &mut grid, &blocks,
+            0, line_w, 12, 5,
+            text_fg, text_fg,
+            &fill_colors, line_color,
+            &mut rng,
+        );
+
+        // fill empty leaves with walker-driven primitives
+        let content_count = blocks.len().min(rects.len());
+        let empty_leaves: Vec<Rect> = rects.into_iter().skip(content_count).collect();
+        walk_and_fill_leaves(&mut grid, &empty_leaves, &palette, &mut rng);
+
+    } else if mode == "tiles" {
+        // showcase all tile patterns: pure deterministic baseline
+        let names = [
+            "asanoha", "seigaiha", "shippo", "bishamon", "yabane",
+            "nowaki", "higaki", "shell", "granny", "crocodile",
+        ];
+        let cols = 5.min(TILE_VARIANT_COUNT);
+        let rows = (TILE_VARIANT_COUNT + cols - 1) / cols;
+        let cell_w = width / cols;
+        let cell_h = height / rows;
+        for i in 0..TILE_VARIANT_COUNT {
+            let col = i % cols;
+            let row = i / cols;
+            let x0 = col * cell_w;
+            let y0 = row * cell_h;
+            let r = Rect { x: x0, y: y0 + 1, w: cell_w, h: cell_h.saturating_sub(1) };
+            let variant = tile_variant_from_index(i);
+            let c1 = palette[(i % 3) + 1];
+            let c2 = darken(c1, 30);
+            fill_tile_pure(&mut grid, &r, variant, c1, c2);
+            // label
+            for (j, ch) in names[i].chars().enumerate() {
+                if x0 + j < width && y0 < height {
+                    grid[y0][x0 + j] = Cell::new(ch, palette[4]);
+                }
             }
         }
+
+    } else if mode == "tiles-rand" {
+        // showcase tile patterns with randomized params (phase, stagger, jitter)
+        let names = [
+            "asanoha", "seigaiha", "shippo", "bishamon", "yabane",
+            "nowaki", "higaki", "shell", "granny", "crocodile",
+        ];
+        let cols = 5.min(TILE_VARIANT_COUNT);
+        let rows = (TILE_VARIANT_COUNT + cols - 1) / cols;
+        let cell_w = width / cols;
+        let cell_h = height / rows;
+        for i in 0..TILE_VARIANT_COUNT {
+            let col = i % cols;
+            let row = i / cols;
+            let x0 = col * cell_w;
+            let y0 = row * cell_h;
+            let r = Rect { x: x0, y: y0 + 1, w: cell_w, h: cell_h.saturating_sub(1) };
+            let mut params = TileParams::randomized(&mut rng);
+            params.variant = tile_variant_from_index(i);
+            let c1 = palette[(i % 3) + 1];
+            let c2 = darken(c1, 30);
+            let jitter = rng.random_range(0..15) as f32 / 100.0;
+            fill_tile_ex(&mut grid, &r, &params, c1, c2, jitter, &mut rng);
+            // label with params
+            let label = format!("{} d{:.0} s{} r{}",
+                names[i],
+                params.density * 100.0,
+                params.stagger_override,
+                params.rhythm_override,
+            );
+            for (j, ch) in label.chars().enumerate() {
+                if x0 + j < width && y0 < height {
+                    grid[y0][x0 + j] = Cell::new(ch, palette[4]);
+                }
+            }
+        }
+
+    } else if mode == "noise" {
+        // showcase all noise variants
+        let names = ["truchet", "higaki", "higaki-s", "grass", "static", "dot"];
+        let cols = NOISE_VARIANT_COUNT;
+        let cell_w = width / cols;
+        for i in 0..NOISE_VARIANT_COUNT {
+            let x0 = i * cell_w;
+            let r = Rect { x: x0, y: 1, w: cell_w, h: height - 1 };
+            let variant = noise_variant_from_index(i);
+            let c1 = palette[(i % 3) + 1];
+            let c2 = darken(c1, 30);
+            fill_noise(&mut grid, &r, variant, c1, c2, &mut rng);
+            for (j, ch) in names[i].chars().enumerate() {
+                if x0 + j < width {
+                    grid[0][x0 + j] = Cell::new(ch, palette[4]);
+                }
+            }
+        }
+
+    } else {
+        // full demo: truchet bg + trees + content + flowers
+        fill_truchet(&mut grid, width, height, darken(palette[1], 80), &mut rng);
 
         // carve content region
         let cx = width / 2;
@@ -1781,4 +3298,255 @@ fn main() {
     }
 
     render_grid(&grid);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use unicode_width::UnicodeWidthStr;
+
+    /// Every row in the plain-text output must have exactly `width` display columns.
+    fn assert_uniform_display_width(grid: &Grid, expected: usize) {
+        let lines = grid_to_plain(grid);
+        for (i, line) in lines.iter().enumerate() {
+            let w = UnicodeWidthStr::width(line.as_str());
+            assert_eq!(
+                w, expected,
+                "row {} has display width {} (expected {}): {:?}",
+                i, w, expected, line,
+            );
+        }
+    }
+
+    fn make_grid(width: usize, height: usize, seed: u64) -> (Grid, StdRng, [Color; 5]) {
+        let grid = vec![vec![Cell::blank(); width]; height];
+        let rng = StdRng::seed_from_u64(seed);
+        let palette = make_palette(seed);
+        (grid, rng, palette)
+    }
+
+    // ── display width tests ────────────────────────────────────────
+
+    #[test]
+    fn mondrian_display_width() {
+        let (mut grid, mut rng, _) = make_grid(80, 45, 42);
+        let blocks = vec![
+            ContentBlock {
+                items: vec![
+                    ContentItem::Text("「 STATUS 」".into()),
+                    ContentItem::Rule,
+                    ContentItem::Text("All systems operational.".into()),
+                ],
+                padding: 1,
+            },
+            ContentBlock {
+                items: vec![
+                    ContentItem::Text("METRICS".into()),
+                    ContentItem::Rule,
+                    ContentItem::Bar { label: "cpu".into(), value: 72.0, max: 100.0 },
+                    ContentItem::Bar { label: "mem".into(), value: 4.8, max: 8.0 },
+                ],
+                padding: 1,
+            },
+            ContentBlock {
+                items: vec![
+                    ContentItem::Text("「 SKILLS 」".into()),
+                    ContentItem::Rule,
+                    ContentItem::Text("typespec ···· 12".into()),
+                    ContentItem::Text("ast-grep ···· 5".into()),
+                    ContentItem::Text("tree-sit ···· 3".into()),
+                ],
+                padding: 1,
+            },
+        ];
+        let (_, line_color) = mondrian_colors();
+        let text_fg = rgb(20, 20, 20);
+        let (fills, _) = mondrian_colors();
+        layout_mondrian(
+            &mut grid, &blocks, 0, 2, 10, 5,
+            text_fg, line_color, &fills, line_color, &mut rng,
+        );
+        assert_uniform_display_width(&grid, 80);
+    }
+
+    #[test]
+    fn mondrian_different_seeds_display_width() {
+        for seed in [0, 1, 7, 42, 99, 1234] {
+            let (mut grid, mut rng, _) = make_grid(80, 45, seed);
+            let blocks = vec![
+                ContentBlock {
+                    items: vec![
+                        ContentItem::Text("「 STATUS 」".into()),
+                        ContentItem::Rule,
+                        ContentItem::Text("Online.".into()),
+                    ],
+                    padding: 1,
+                },
+            ];
+            let (fills, line_color) = mondrian_colors();
+            layout_mondrian(
+                &mut grid, &blocks, 0, 2, 10, 5,
+                rgb(20, 20, 20), line_color, &fills, line_color, &mut rng,
+            );
+            assert_uniform_display_width(&grid, 80);
+        }
+    }
+
+    #[test]
+    fn default_mode_display_width() {
+        let (mut grid, mut rng, palette) = make_grid(80, 45, 42);
+        // truchet bg
+        let truchet_color = darken(palette[1], 80);
+        let tiles = ['╱', '╲'];
+        for y in 0..45 {
+            for x in 0..80 {
+                grid[y][x] = Cell::new(tiles[rng.random_range(0..2)], truchet_color);
+            }
+        }
+        // content with fullwidth chars
+        let cx = 40; let cy = 22;
+        let lines = ["「 技 」 S K I L L S", "", "  typespec ···· 12"];
+        for (i, line) in lines.iter().enumerate() {
+            let mut col = 0usize;
+            for ch in line.chars() {
+                let cw = char_width(ch);
+                let gx = cx - 15 + col;
+                if gx < 80 {
+                    grid[cy - 5 + 1 + i][gx] = Cell::new(ch, palette[4]);
+                    if cw == 2 && gx + 1 < 80 {
+                        grid[cy - 5 + 1 + i][gx + 1] = Cell::blank();
+                    }
+                }
+                col += cw;
+            }
+        }
+        assert_uniform_display_width(&grid, 80);
+    }
+
+    #[test]
+    fn bsp_display_width() {
+        let (mut grid, mut rng, palette) = make_grid(80, 45, 42);
+        let truchet_color = darken(palette[1], 90);
+        let tiles = ['╱', '╲'];
+        for y in 0..45 {
+            for x in 0..80 {
+                grid[y][x] = Cell::new(tiles[rng.random_range(0..2)], truchet_color);
+            }
+        }
+        let blocks = vec![
+            ContentBlock {
+                items: vec![
+                    ContentItem::Text("「 STATUS 」".into()),
+                    ContentItem::Rule,
+                    ContentItem::Text("All systems operational.".into()),
+                ],
+                padding: 1,
+            },
+            ContentBlock {
+                items: vec![
+                    ContentItem::Text("TASKS".into()),
+                    ContentItem::Rule,
+                    ContentItem::Text("▪ layout engine".into()),
+                ],
+                padding: 1,
+            },
+        ];
+        layout_bsp(
+            &mut grid, &blocks, 1, 12, 5,
+            palette[4], palette[3], &mut rng,
+        );
+        assert_uniform_display_width(&grid, 80);
+    }
+
+    // ── wrap_text tests ────────────────────────────────────────────
+
+    #[test]
+    fn wrap_text_fullwidth_chars() {
+        // 「」 are 2 display columns each, so "「 X 」" = 2+1+1+1+2 = 7 cols
+        let lines = wrap_text("「 X 」", 7);
+        assert_eq!(lines, vec!["「 X 」"]);
+
+        // should wrap when too narrow
+        let lines = wrap_text("「 X 」 extra", 7);
+        assert_eq!(lines, vec!["「 X 」", "extra"]);
+    }
+
+    #[test]
+    fn wrap_text_ascii_basic() {
+        let lines = wrap_text("hello world foo", 11);
+        assert_eq!(lines, vec!["hello world", "foo"]);
+    }
+
+    // ── min_block_width tests ──────────────────────────────────────
+
+    #[test]
+    fn min_block_width_accounts_for_fullwidth() {
+        let block = ContentBlock {
+            items: vec![ContentItem::Text("「 SKILLS 」".into())],
+            padding: 1,
+        };
+        // 「(2) + space(1) + S(1)+K(1)+I(1)+L(1)+L(1)+S(1) + space(1) + 」(2) = 12
+        // + padding*2 = 14
+        assert_eq!(min_block_width(&block), 14);
+    }
+
+    // ── BSP split_with_gap tests ───────────────────────────────────
+
+    #[test]
+    fn bsp_split_gap_leaves_cover_canvas() {
+        // leaves + gaps should account for the full parent rect
+        let mut rng = StdRng::seed_from_u64(42);
+        let mut root = BspNode::new(0, 0, 80, 45);
+        root.split_with_gap(10, 5, 4, 2, &mut rng);
+        let leaves = root.leaves();
+        assert!(leaves.len() >= 2, "should produce multiple leaves");
+        for leaf in &leaves {
+            assert!(leaf.x + leaf.w <= 80, "leaf x overflow");
+            assert!(leaf.y + leaf.h <= 45, "leaf y overflow");
+            assert!(leaf.w >= 10, "leaf too narrow");
+            assert!(leaf.h >= 5, "leaf too short");
+        }
+    }
+
+    #[test]
+    fn bsp_split_gap1_backward_compat() {
+        // split() should behave identically to split_with_gap(..., 1, ...)
+        let mut rng1 = StdRng::seed_from_u64(99);
+        let mut rng2 = StdRng::seed_from_u64(99);
+        let mut a = BspNode::new(0, 0, 80, 45);
+        let mut b = BspNode::new(0, 0, 80, 45);
+        a.split(10, 5, 4, &mut rng1);
+        b.split_with_gap(10, 5, 4, 1, &mut rng2);
+        let la: Vec<_> = a.leaves().iter().map(|r| (r.x, r.y, r.w, r.h)).collect();
+        let lb: Vec<_> = b.leaves().iter().map(|r| (r.x, r.y, r.w, r.h)).collect();
+        assert_eq!(la, lb);
+    }
+
+    // ── best-fit assignment test ───────────────────────────────────
+
+    #[test]
+    fn mondrian_content_not_wrapped() {
+        // content with fullwidth chars should land in a cell wide enough
+        // to render without wrapping
+        let (mut grid, mut rng, _) = make_grid(80, 45, 42);
+        let blocks = vec![
+            ContentBlock {
+                items: vec![ContentItem::Text("「 SKILLS 」".into())],
+                padding: 1,
+            },
+        ];
+        let (fills, line_color) = mondrian_colors();
+        layout_mondrian(
+            &mut grid, &blocks, 0, 2, 10, 5,
+            rgb(20, 20, 20), line_color, &fills, line_color, &mut rng,
+        );
+        // find the row containing "SKILLS" and check it's on one line
+        let lines = grid_to_plain(&grid);
+        let skill_rows: Vec<_> = lines.iter()
+            .filter(|l| l.contains("SKILLS"))
+            .collect();
+        assert_eq!(skill_rows.len(), 1, "「 SKILLS 」 should appear on exactly one row");
+        assert!(skill_rows[0].contains("「 SKILLS 」"),
+            "full title should be on one line, got: {:?}", skill_rows[0]);
+    }
 }
