@@ -421,21 +421,48 @@ pub fn random_flow(rect: &Rect, palette: &[Color; 5], rng: &mut StdRng) -> Vec<F
 // A contour is a 1D heightmap: one y-value per column. Fills render
 // below (or above) the contour, giving organic non-rectangular boundaries.
 
-/// Midpoint displacement: generates a jagged ridgeline.
-/// Returns vec of y-values, one per column in `width`.
-/// `base` is the center y, `amplitude` is max deviation, `roughness` 0.0-1.0.
+/// Midpoint displacement with multiple anchor points for varied ridgelines.
+/// Seeds 3-6 anchors across the width before running displacement, preventing
+/// the single-peak pyramid shape that 2-endpoint displacement always produces.
 pub fn gen_contour(width: usize, base: usize, amplitude: usize, roughness: f32, rng: &mut StdRng) -> Vec<usize> {
     if width == 0 { return vec![]; }
     if width == 1 { return vec![base]; }
 
-    // start with endpoints
     let mut heights = vec![0.0f32; width];
-    heights[0] = base as f32 + rng.random_range(-(amplitude as i32 / 2)..=(amplitude as i32 / 2)) as f32;
-    heights[width - 1] = base as f32 + rng.random_range(-(amplitude as i32 / 2)..=(amplitude as i32 / 2)) as f32;
+    let amp = amplitude as i32;
+    let base_f = base as f32;
 
-    // iterative midpoint displacement
-    let mut step = width - 1;
-    let mut scale = amplitude as f32;
+    // seed multiple anchors: endpoints + 2-4 interior points
+    let anchor_count = rng.random_range(3..=6).min(width);
+    let spacing = width / anchor_count;
+    for a in 0..anchor_count {
+        let idx = (a * spacing).min(width - 1);
+        heights[idx] = base_f + rng.random_range(-amp..=amp) as f32;
+    }
+    heights[0] = base_f + rng.random_range(-amp / 2..=amp / 2) as f32;
+    heights[width - 1] = base_f + rng.random_range(-amp / 2..=amp / 2) as f32;
+
+    // linear interpolation between anchors to fill gaps
+    let mut anchors: Vec<usize> = (0..anchor_count)
+        .map(|a| (a * spacing).min(width - 1))
+        .collect();
+    anchors.push(width - 1);
+    anchors.sort();
+    anchors.dedup();
+    for w in anchors.windows(2) {
+        let (i0, i1) = (w[0], w[1]);
+        if i1 <= i0 { continue; }
+        let h0 = heights[i0];
+        let h1 = heights[i1];
+        for i in i0 + 1..i1 {
+            let t = (i - i0) as f32 / (i1 - i0) as f32;
+            heights[i] = h0 + (h1 - h0) * t;
+        }
+    }
+
+    // midpoint displacement on top of the interpolated baseline
+    let mut step = width.next_power_of_two() / 2;
+    let mut scale = amplitude as f32 * 0.5; // reduced since anchors already provide structure
     while step > 1 {
         let half = step / 2;
         let mut i = half;
@@ -490,29 +517,122 @@ pub fn draw_contour_ridge(
     }
 }
 
-/// Terrain biome: layered contour fills creating a landscape.
-/// Sky → mountains → foothills → ground, each with its own fill and contour boundary.
-/// Uses fill_masked with contour masks for organic non-rectangular boundaries.
-pub fn render_terrain(grid: &mut Grid, rect: &Rect, palette: &[Color; 5], rng: &mut StdRng) {
+/// Contour data + scene layers for a terrain. Separated so the post-pass
+/// can place sprites along the contour lines after the scene composites.
+pub struct TerrainContext {
+    pub scene: Scene,
+    pub mountain_contour: Vec<usize>,
+    pub foothill_contour: Vec<usize>,
+    pub ground_contour: Vec<usize>,
+}
+
+/// Pick a random fill from a pool, weighted toward variety.
+fn rand_mountain_fill(rng: &mut StdRng) -> FillGen {
+    match rng.random_range(0..6) {
+        0 => FillGen::Zigzag,
+        1 => FillGen::DiamondLattice,
+        2 => FillGen::Crosshatch,
+        3 => FillGen::Weave,
+        4 => FillGen::Noise(NoiseVariant::Truchet),
+        _ => FillGen::Guilloche,
+    }
+}
+
+fn rand_hill_fill(rng: &mut StdRng) -> FillGen {
+    match rng.random_range(0..5) {
+        0 => FillGen::TilePure(tile_variant_from_index(rng.random_range(0..TILE_VARIANT_COUNT))),
+        1 => FillGen::Crosshatch,
+        2 => FillGen::Noise(NoiseVariant::Higaki),
+        3 => FillGen::Weave,
+        _ => FillGen::TilePure(tile_variant_from_index(rng.random_range(0..TILE_VARIANT_COUNT))),
+    }
+}
+
+fn rand_ground_fill(rng: &mut StdRng) -> FillGen {
+    match rng.random_range(0..4) {
+        0 => FillGen::Noise(NoiseVariant::Grass),
+        1 => FillGen::Noise(NoiseVariant::Dot),
+        2 => FillGen::TilePure(tile_variant_from_index(rng.random_range(0..TILE_VARIANT_COUNT))),
+        _ => FillGen::Noise(NoiseVariant::Grass),
+    }
+}
+
+/// Rotate a palette: shift slots 1-3 by `n` positions for visual variety.
+fn rotate_palette(palette: &[Color; 5], n: usize) -> [Color; 5] {
+    let inner = [palette[1], palette[2], palette[3]];
+    [
+        palette[0],
+        inner[n % 3],
+        inner[(n + 1) % 3],
+        inner[(n + 2) % 3],
+        palette[4],
+    ]
+}
+
+/// Generate overlay patch layers within a contour band.
+/// Each patch is an ellipse intersected with the band's contour mask,
+/// filled with a different pattern and palette rotation.
+fn terrain_patches(
+    rect: &Rect,
+    contour: &[usize],
+    x_offset: usize,
+    contour_dissolve: f32,
+    below: bool,
+    base_palette: &[Color; 5],
+    fill_picker: fn(&mut StdRng) -> FillGen,
+    darken_amount: u8,
+    patch_count: usize,
+    rng: &mut StdRng,
+) -> Vec<Layer> {
+    let w = rect.w;
+    let h = rect.h;
+    let mut patches = Vec::with_capacity(patch_count);
+
+    for i in 0..patch_count {
+        let cx = rect.x as f32 + rng.random_range(w / 6..w * 5 / 6) as f32;
+        let cy = rect.y as f32 + rng.random_range(h / 4..h * 3 / 4) as f32;
+        let rx = rng.random_range((w / 6).max(5)..(w / 3).max(6)) as f32;
+        let ry = rng.random_range((h / 6).max(3)..(h / 3).max(4)) as f32;
+
+        let contour_clone = contour.to_vec();
+        let contour_mask: MaskFn = if below {
+            Box::new(mask_below_contour(contour_clone, x_offset, contour_dissolve))
+        } else {
+            Box::new(mask_above_contour(contour_clone, x_offset, contour_dissolve))
+        };
+        let ellipse = mask_ellipse(cx, cy, rx, ry, 3.0);
+        let combined = mask_intersect(contour_mask, ellipse);
+
+        let mut patch_palette = rotate_palette(base_palette, i + 1);
+        if darken_amount > 0 {
+            patch_palette[1] = darken(patch_palette[1], darken_amount);
+            patch_palette[2] = darken(patch_palette[2], darken_amount);
+            patch_palette[3] = darken(patch_palette[3], darken_amount);
+        }
+
+        patches.push(Layer {
+            fill: fill_picker(rng),
+            mask: Some(combined),
+            palette: patch_palette,
+        });
+    }
+    patches
+}
+
+/// Build terrain as compositable layers with patchy variation within each band.
+/// Base layers (sky, mountains, foothills, ground) + overlay patches per band.
+pub fn terrain_scene(rect: &Rect, palette: &[Color; 5], rng: &mut StdRng) -> TerrainContext {
     let w = rect.w;
     let h = rect.h;
 
-    // spread the layers apart: sky gets top 40%, mountains 20%, foothills 20%, ground 20%
     let mountain_base = rect.y + h / 2;
     let foothill_base = rect.y + h * 7 / 10;
     let ground_base = rect.y + h * 17 / 20;
 
-    // high roughness + big amplitude = dramatic peaks with lots of sky showing
     let mountain_contour = gen_contour(w, mountain_base, h / 3, 0.6, rng);
     let foothill_contour = gen_contour(w, foothill_base, h / 5, 0.5, rng);
     let ground_contour = gen_contour(w, ground_base, h / 8, 0.4, rng);
 
-    // sky: sparse dots above mountains
-    let sky_mask = mask_above_contour(mountain_contour.clone(), rect.x, 5.0);
-    fill_masked(grid, rect, FillGen::Noise(NoiseVariant::Dot), &sky_mask, palette, rng);
-
-    // mountains: dim, sparse geometric fill -- distinct from foothills
-    // use a muted palette so mountains read as background silhouettes
     let mtn_palette = [
         palette[0],
         darken(palette[1], 50),
@@ -520,37 +640,92 @@ pub fn render_terrain(grid: &mut Grid, rect: &Rect, palette: &[Color; 5], rng: &
         darken(palette[3], 50),
         palette[4],
     ];
-    let mountain_fill = if rng.random_range(0..2) == 0 { FillGen::Zigzag } else { FillGen::DiamondLattice };
-    let mtn_mask = mask_below_contour(mountain_contour.clone(), rect.x, 4.0);
-    fill_masked(grid, rect, mountain_fill, &mtn_mask, &mtn_palette, rng);
-
-    draw_contour_ridge(grid, rect, &mountain_contour, lighten(palette[1], 30));
-
-    // foothills: tile pattern, brighter than mountains
-    let hill_fill = FillGen::TilePure(tile_variant_from_index(rng.random_range(0..TILE_VARIANT_COUNT)));
     let hill_palette = [palette[0], palette[2], palette[3], palette[1], palette[4]];
-    let hill_mask = mask_below_contour(foothill_contour.clone(), rect.x, 4.0);
-    fill_masked(grid, rect, hill_fill, &hill_mask, &hill_palette, rng);
-
-    draw_contour_ridge(grid, rect, &foothill_contour, palette[2]);
-
-    // ground: grass noise, brightest layer
     let gnd_palette = [palette[0], palette[3], palette[1], palette[2], palette[4]];
-    let ground_mask = mask_below_contour(ground_contour.clone(), rect.x, 3.0);
-    fill_masked(grid, rect, FillGen::Noise(NoiseVariant::Grass), &ground_mask, &gnd_palette, rng);
 
-    draw_contour_ridge(grid, rect, &ground_contour, lighten(palette[3], 20));
+    let mut layers = vec![
+        // sky base
+        Layer {
+            fill: FillGen::Noise(NoiseVariant::Dot),
+            mask: Some(Box::new(mask_above_contour(mountain_contour.clone(), rect.x, 5.0))),
+            palette: *palette,
+        },
+        // mountain base
+        Layer {
+            fill: rand_mountain_fill(rng),
+            mask: Some(Box::new(mask_below_contour(mountain_contour.clone(), rect.x, 4.0))),
+            palette: mtn_palette,
+        },
+    ];
+
+    // mountain overlay patches
+    let mtn_patches = rng.random_range(2..=3);
+    layers.extend(terrain_patches(
+        rect, &mountain_contour, rect.x, 4.0, true,
+        &mtn_palette, rand_mountain_fill, 20, mtn_patches, rng,
+    ));
+
+    // foothill base
+    layers.push(Layer {
+        fill: rand_hill_fill(rng),
+        mask: Some(Box::new(mask_below_contour(foothill_contour.clone(), rect.x, 4.0))),
+        palette: hill_palette,
+    });
+
+    // foothill overlay patches
+    let hill_patches = rng.random_range(1..=3);
+    layers.extend(terrain_patches(
+        rect, &foothill_contour, rect.x, 4.0, true,
+        &hill_palette, rand_hill_fill, 0, hill_patches, rng,
+    ));
+
+    // ground base
+    layers.push(Layer {
+        fill: rand_ground_fill(rng),
+        mask: Some(Box::new(mask_below_contour(ground_contour.clone(), rect.x, 3.0))),
+        palette: gnd_palette,
+    });
+
+    // ground overlay patches
+    let gnd_patches = rng.random_range(1..=2);
+    layers.extend(terrain_patches(
+        rect, &ground_contour, rect.x, 3.0, true,
+        &gnd_palette, rand_ground_fill, 0, gnd_patches, rng,
+    ));
+
+    TerrainContext {
+        scene: Scene { layers },
+        mountain_contour,
+        foothill_contour,
+        ground_contour,
+    }
+}
+
+/// Procedural post-pass: contour ridges, trees, flowers, moon.
+/// These are imperative sprite placements that don't fit the fill+mask model.
+pub fn terrain_post_pass(
+    grid: &mut Grid,
+    rect: &Rect,
+    ctx: &TerrainContext,
+    palette: &[Color; 5],
+    rng: &mut StdRng,
+) {
+    let w = rect.w;
+    let h = rect.h;
+
+    draw_contour_ridge(grid, rect, &ctx.mountain_contour, lighten(palette[1], 30));
+    draw_contour_ridge(grid, rect, &ctx.foothill_contour, palette[2]);
+    draw_contour_ridge(grid, rect, &ctx.ground_contour, lighten(palette[3], 20));
 
     // scatter trees along the ground contour
     let tree_count = (w / 15).max(1).min(6);
     let tree_spacing = w / (tree_count + 1);
     for i in 0..tree_count {
         let col = tree_spacing * (i + 1);
-        if col >= w || col >= ground_contour.len() { continue; }
+        if col >= w || col >= ctx.ground_contour.len() { continue; }
         let tx = rect.x + col;
-        let ty = ground_contour[col].saturating_sub(1);
-        // canopy tops out at the foothill contour or 5 rows above ground
-        let canopy = foothill_contour.get(col).copied()
+        let ty = ctx.ground_contour[col].saturating_sub(1);
+        let canopy = ctx.foothill_contour.get(col).copied()
             .unwrap_or(ty.saturating_sub(5))
             .min(ty.saturating_sub(3));
         let spread = (tree_spacing / 3).max(2).min(6);
@@ -565,15 +740,15 @@ pub fn render_terrain(grid: &mut Grid, rect: &Rect, palette: &[Color; 5], rng: &
     // scatter flowers along ground
     for _ in 0..(w / 20).max(1) {
         let col = rng.random_range(0..w);
-        if col >= ground_contour.len() { continue; }
+        if col >= ctx.ground_contour.len() { continue; }
         let fx = rect.x + col;
-        let fy = ground_contour[col] + rng.random_range(1..4);
+        let fy = ctx.ground_contour[col] + rng.random_range(1..4);
         if fy < rect.y + h {
             draw_flower(grid, fx, fy, rng.random_range(0..5), palette[3]);
         }
     }
 
-    // optional: moon in the sky
+    // optional moon
     if w > 30 && h > 20 && rng.random_range(0..3) == 0 {
         let moon_x = rect.x + rng.random_range(w / 4..w * 3 / 4);
         let moon_y = rect.y + rng.random_range(2..h / 5);
@@ -586,6 +761,14 @@ pub fn render_terrain(grid: &mut Grid, rect: &Rect, palette: &[Color; 5], rng: &
         };
         fill_masked(grid, &moon_rect, FillGen::TilePure(TileVariant::Shippo), &moon_mask, palette, rng);
     }
+}
+
+/// Terrain biome: layered contour fills creating a landscape.
+/// Builds a 4-layer scene, composites it, then runs procedural post-pass.
+pub fn render_terrain(grid: &mut Grid, rect: &Rect, palette: &[Color; 5], rng: &mut StdRng) {
+    let ctx = terrain_scene(rect, palette, rng);
+    render_scene(grid, rect, &ctx.scene, rng);
+    terrain_post_pass(grid, rect, &ctx, palette, rng);
 }
 
 // ── Strip allocator ─────────────────────────────────────────────────
