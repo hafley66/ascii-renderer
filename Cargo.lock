@@ -16,6 +16,7 @@ dependencies = [
  "crossterm",
  "pulldown-cmark",
  "rand",
+ "unicode-width 0.2.2",
 ]
 
 [[package]]
