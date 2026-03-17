@@ -1,3 +1,4 @@
+mod automata;
 mod biomes;
 mod borders;
 mod color;
@@ -17,6 +18,7 @@ use rand::SeedableRng;
 use rand::rngs::StdRng;
 use std::io::{self, IsTerminal, Read as _};
 
+use automata::*;
 use biomes::*;
 use color::*;
 use content::*;
@@ -58,6 +60,8 @@ fn main() {
         eprintln!("  terrain   Layered landscape: mountains, foothills, ground with contour boundaries");
         eprintln!("  flow      Vertical flow: fills morph through tapered zones");
         eprintln!("  masks     All 4 mask/firework sprite styles");
+        eprintln!("  ca        Cellular automata: life|cave|maze|coral [style] [primitives]");
+        eprintln!("  ca-layout CA as organic layout engine (text in largest regions)");
         eprintln!("  world     Vertical biome strips: forest, garden, temple, noise, geometric");
         eprintln!("  swatch    Color swatches for all named themes");
         eprintln!();
@@ -772,6 +776,92 @@ fn main() {
                 let ly = cy + size + 4;
                 if lx < width && ly < height {
                     grid[ly][lx] = Cell::new(ch, palette[4]);
+                }
+            }
+        }
+    } else if mode == "ca" || (mode.starts_with("ca-") && mode != "ca-layout") {
+        // ca, ca-life, ca-cave, ca-maze, ca-coral, ca-B3/S23
+        let rule_name = if mode == "ca" { "life" } else { &mode[3..] };
+
+        // Derive style from seed for variety
+        let style = match seed % 4 {
+            0 => GlyphStyle::Box,
+            1 => GlyphStyle::Round,
+            2 => GlyphStyle::Diagonal,
+            _ => GlyphStyle::Heavy,
+        };
+
+        let (density, gens) = match rule_name {
+            "cave"  => (0.50, 5),
+            "maze"  => (0.38, 12),
+            "coral" => (0.50, 8),
+            _       => (0.30, 8),
+        };
+
+        let rect = Rect { x: 0, y: 0, w: width, h: height };
+        render_automata(
+            &mut grid, &rect, rule_name, density, gens,
+            style, &palette, true, &mut rng,
+        );
+    } else if mode == "ca-layout" {
+        let rect = Rect { x: 0, y: 0, w: width, h: height };
+
+        // Content blocks to place in the largest CA regions
+        let blocks = vec![
+            ContentBlock {
+                items: vec![
+                    ContentItem::Text("「 STATUS 」".into()),
+                    ContentItem::Rule,
+                    ContentItem::Text("All systems operational.".into()),
+                ],
+                padding: 1,
+            },
+            ContentBlock {
+                items: vec![
+                    ContentItem::Text("METRICS".into()),
+                    ContentItem::Rule,
+                    ContentItem::Bar { label: "cpu".into(), value: 72.0, max: 100.0 },
+                    ContentItem::Bar { label: "mem".into(), value: 4.8, max: 8.0 },
+                ],
+                padding: 1,
+            },
+            ContentBlock {
+                items: vec![
+                    ContentItem::Text("「 SKILLS 」".into()),
+                    ContentItem::Rule,
+                    ContentItem::Text("typespec ···· 12".into()),
+                    ContentItem::Text("ast-grep ···· 5".into()),
+                ],
+                padding: 1,
+            },
+        ];
+
+        let text_rects = ca_layout(
+            &mut grid, &rect, "life", 0.35, 6, &palette, &mut rng,
+        );
+
+        // Render text content into the largest CA regions
+        let mut placed = 0;
+        for block in &blocks {
+            // Find next region large enough for this block
+            let (min_w, min_h) = measure_block(block, 40);
+            let min_w = min_w.max(12);
+            while placed < text_rects.len() {
+                let r = &text_rects[placed];
+                placed += 1;
+                if r.w >= min_w && r.h >= min_h + 2 {
+                    // Clear and render
+                    for y in r.y..r.y + r.h {
+                        for x in r.x..r.x + r.w {
+                            if y < height && x < width {
+                                grid[y][x] = Cell::blank();
+                            }
+                        }
+                    }
+                    render_block(&mut grid, block, r, palette[4], palette[3]);
+                    let style = borders::pick_border_style(&mut rng, r.w, r.h);
+                    borders::draw_box_border(&mut grid, r, &style, palette[4]);
+                    break;
                 }
             }
         }
