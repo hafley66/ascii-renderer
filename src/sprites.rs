@@ -162,7 +162,7 @@ pub fn draw_willow(grid: &mut Grid, root_x: usize, root_y: usize, canopy_y: usiz
 
     let height = root_y.saturating_sub(canopy_y);
     if height < 4 { return; }
-    let first_split = root_y - (height / 3).max(2);
+    let first_split = root_y.saturating_sub((height / 3).max(2));
 
     for y in first_split..root_y {
         set(grid, root_x, y, '│', darken(color, 40));
@@ -315,7 +315,7 @@ pub fn grow_tree(grid: &mut Grid, root_x: usize, root_y: usize, canopy_y: usize,
 
     if canopy_y >= root_y { return; }
     let height = root_y - canopy_y;
-    let first_split = root_y - (height / 3).max(2);
+    let first_split = root_y.saturating_sub((height / 3).max(2));
 
     for y in first_split..root_y {
         set(grid, root_x, y, '│', color);

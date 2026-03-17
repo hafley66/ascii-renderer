@@ -1,12 +1,14 @@
 use crossterm::style::Color;
 use rand::rngs::StdRng;
+use rand::RngExt;
 use crate::types::*;
 use crate::color::*;
 use crate::fills::*;
 use crate::sprites::*;
 
+// ── Types ───────────────────────────────────────────────────────────
+
 /// Unified fill type. Covers rect-filling patterns and positioned sprites.
-/// Replaces the separate LeafFill (walker) and FlowFill (biomes) enums.
 #[derive(Clone, Copy)]
 pub enum FillGen {
     // Rect fills -- cover entire rect with pattern
@@ -28,6 +30,26 @@ pub enum FillGen {
     // No-op
     Nothing,
 }
+
+/// Mask function: (x, y) -> 0.0 (outside) to 1.0 (inside), with dissolve in between.
+pub type MaskFn = Box<dyn Fn(usize, usize) -> f32>;
+
+/// A single compositing layer: fill + optional mask + palette.
+pub struct Layer {
+    pub fill: FillGen,
+    pub mask: Option<MaskFn>,
+    pub palette: [Color; 5],
+}
+
+/// Composable scene: ordered stack of layers rendered bottom-to-top.
+pub struct Scene {
+    pub layers: Vec<Layer>,
+}
+
+/// Dissolve glyphs ordered from dense to sparse.
+pub const DISSOLVE: &[char] = &['╳', '╱', '╲', '·', '∙', '°', ' '];
+
+// ── Fill dispatch ───────────────────────────────────────────────────
 
 /// Render a fill into a rect. Universal dispatch for all fill types.
 ///
@@ -88,4 +110,145 @@ pub fn render_fill(
         }
         FillGen::Nothing => {}
     }
+}
+
+// ── Mask composition ────────────────────────────────────────────────
+
+/// Render a fill into `rect`, then mask every cell through `mask_fn`.
+pub fn fill_masked(
+    grid: &mut Grid,
+    rect: &Rect,
+    fill: FillGen,
+    mask_fn: &dyn Fn(usize, usize) -> f32,
+    palette: &[Color; 5],
+    rng: &mut StdRng,
+) {
+    let c1 = palette[1];
+    let c2 = darken(c1, 30);
+    render_fill(grid, rect, fill, c1, c2, palette, rng);
+
+    let dissolve_color = darken(palette[1], 40);
+    for y in rect.y..rect.y + rect.h {
+        if y >= grid.len() { break; }
+        for x in rect.x..rect.x + rect.w {
+            if x >= grid[0].len() { break; }
+            let v = mask_fn(x, y);
+            if v >= 1.0 {
+                // fully inside, keep
+            } else if v <= 0.0 {
+                grid[y][x] = Cell::blank();
+            } else {
+                // dissolve zone
+                let r: f32 = rng.random::<f32>();
+                if r > v {
+                    if r < v + 0.15 {
+                        let ch = DISSOLVE[rng.random_range(3..6)];
+                        grid[y][x] = Cell::new(ch, dissolve_color);
+                    } else {
+                        grid[y][x] = Cell::blank();
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// Render a scene: iterate layers bottom-to-top, compositing each.
+pub fn render_scene(
+    grid: &mut Grid,
+    rect: &Rect,
+    scene: &Scene,
+    rng: &mut StdRng,
+) {
+    for layer in &scene.layers {
+        match &layer.mask {
+            Some(mask) => fill_masked(grid, rect, layer.fill, mask.as_ref(), &layer.palette, rng),
+            None => {
+                let c1 = layer.palette[1];
+                let c2 = darken(c1, 30);
+                render_fill(grid, rect, layer.fill, c1, c2, &layer.palette, rng);
+            }
+        }
+    }
+}
+
+// ── Mask constructors ───────────────────────────────────────────────
+
+/// Circle/ellipse mask centered at (cx, cy).
+pub fn mask_ellipse(cx: f32, cy: f32, rx: f32, ry: f32, dissolve: f32) -> impl Fn(usize, usize) -> f32 {
+    move |x, y| {
+        let dx = (x as f32 - cx) / rx;
+        let dy = (y as f32 - cy) / ry;
+        let d = (dx * dx + dy * dy).sqrt();
+        if d <= 1.0 {
+            1.0
+        } else if d <= 1.0 + dissolve {
+            1.0 - (d - 1.0) / dissolve
+        } else {
+            0.0
+        }
+    }
+}
+
+/// Contour mask: inside below the contour line.
+/// `contour[x - x_offset]` gives the y-threshold.
+pub fn mask_below_contour(contour: Vec<usize>, x_offset: usize, dissolve: f32) -> impl Fn(usize, usize) -> f32 {
+    move |x, y| {
+        let col = x.saturating_sub(x_offset);
+        let threshold = contour.get(col).copied().unwrap_or(usize::MAX);
+        if y >= threshold {
+            1.0
+        } else if y as f32 >= threshold as f32 - dissolve {
+            let dist = threshold as f32 - y as f32;
+            1.0 - dist / dissolve
+        } else {
+            0.0
+        }
+    }
+}
+
+/// Contour mask: inside above the contour line.
+pub fn mask_above_contour(contour: Vec<usize>, x_offset: usize, dissolve: f32) -> impl Fn(usize, usize) -> f32 {
+    move |x, y| {
+        let col = x.saturating_sub(x_offset);
+        let threshold = contour.get(col).copied().unwrap_or(0);
+        if y <= threshold {
+            1.0
+        } else if (y as f32) <= threshold as f32 + dissolve {
+            let dist = y as f32 - threshold as f32;
+            1.0 - dist / dissolve
+        } else {
+            0.0
+        }
+    }
+}
+
+/// Horizontal band mask with dissolve at top and bottom.
+pub fn mask_band(y_top: usize, y_bot: usize, dissolve: f32) -> impl Fn(usize, usize) -> f32 {
+    move |_x, y| {
+        if y >= y_top && y <= y_bot {
+            let from_top = (y - y_top) as f32;
+            let from_bot = (y_bot - y) as f32;
+            let edge_dist = from_top.min(from_bot);
+            if edge_dist >= dissolve { 1.0 } else { edge_dist / dissolve }
+        } else {
+            0.0
+        }
+    }
+}
+
+/// Combine two masks: intersection (min of both values).
+pub fn mask_intersect(
+    a: impl Fn(usize, usize) -> f32 + 'static,
+    b: impl Fn(usize, usize) -> f32 + 'static,
+) -> MaskFn {
+    Box::new(move |x, y| a(x, y).min(b(x, y)))
+}
+
+/// Combine two masks: union (max of both values).
+pub fn mask_union(
+    a: impl Fn(usize, usize) -> f32 + 'static,
+    b: impl Fn(usize, usize) -> f32 + 'static,
+) -> MaskFn {
+    Box::new(move |x, y| a(x, y).max(b(x, y)))
 }
