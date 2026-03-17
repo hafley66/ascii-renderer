@@ -15,6 +15,7 @@ pub enum LeafFill {
     AztecDiamond(usize),
     Flower(usize),
     Fruit(usize),
+    Mask(usize, usize),  // (size, style)
     Crosshatch,
     Guilloche,
     Weave,
@@ -49,15 +50,23 @@ impl LeafWalker {
             WalkerMood::Empty => LeafFill::Nothing,
             WalkerMood::Organic => {
                 if area > 300 && rect.h > 15 && rect.w > 20 {
-                    match rng.random_range(0..5) {
+                    match rng.random_range(0..7) {
                         0..=2 => LeafFill::Tree(rng.random_range(0..4)),
                         3 => LeafFill::Noise(NoiseVariant::Grass),
-                        _ => LeafFill::Noise(NoiseVariant::Dot),
+                        4 => LeafFill::Noise(NoiseVariant::Dot),
+                        _ => {
+                            let s = (rect.w.min(rect.h) / 6).max(2).min(4);
+                            LeafFill::Mask(s, rng.random_range(0..MASK_STYLE_COUNT))
+                        }
                     }
                 } else if area > 80 && rect.h > 6 && rect.w > 10 {
-                    match rng.random_range(0..5) {
+                    match rng.random_range(0..7) {
                         0 => LeafFill::Fruit(rng.random_range(0..5)),
                         1 => LeafFill::Noise(NoiseVariant::Grass),
+                        2 => {
+                            let s = (rect.w.min(rect.h) / 4).max(1).min(3);
+                            LeafFill::Mask(s, rng.random_range(0..MASK_STYLE_COUNT))
+                        }
                         _ => LeafFill::Flower(rng.random_range(0..5)),
                     }
                 } else if area > 20 && rect.w >= 5 && rect.h >= 3 {
@@ -197,6 +206,9 @@ pub fn walk_and_fill_leaves(
             }
             LeafFill::Fruit(style) => {
                 draw_fruit(grid, cx, cy, style, prim_color);
+            }
+            LeafFill::Mask(size, style) => {
+                draw_mask(grid, cx, cy, size, style, prim_color);
             }
             LeafFill::Crosshatch => {
                 let r = Rect { x: rect.x, y: rect.y, w: rect.w, h: rect.h };

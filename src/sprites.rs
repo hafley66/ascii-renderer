@@ -313,6 +313,7 @@ pub fn grow_tree(grid: &mut Grid, root_x: usize, root_y: usize, canopy_y: usize,
         }
     };
 
+    if canopy_y >= root_y { return; }
     let height = root_y - canopy_y;
     let first_split = root_y - (height / 3).max(2);
 
@@ -406,6 +407,75 @@ pub fn draw_flower(grid: &mut Grid, cx: usize, cy: usize, style: usize, color: C
         }
     }
 }
+
+/// Mask/firework sprite: two eyes on a vertical stem with radiating diagonals.
+/// Emergent pattern captured from flower + tree + diamond lattice overlap.
+/// `size` controls the radius of the radiating lines (1 = compact, 2-4 = larger).
+pub fn draw_mask(grid: &mut Grid, cx: usize, cy: usize, size: usize, style: usize, color: Color) {
+    let bright = lighten(color, 40);
+    let dim = darken(color, 30);
+
+    let set = |grid: &mut Grid, dx: i32, dy: i32, ch: char, c: Color| {
+        let x = cx as i32 + dx;
+        let y = cy as i32 + dy;
+        if x >= 0 && y >= 0 && (y as usize) < grid.len() && (x as usize) < grid[0].len() {
+            grid[y as usize][x as usize] = Cell::new(ch, c);
+        }
+    };
+
+    // eyes: two dots flanking center
+    let eye_ch = match style % 4 {
+        0 => '●',
+        1 => '◉',
+        2 => '◆',
+        _ => '⬤',
+    };
+    set(grid, -1, 0, eye_ch, bright);
+    set(grid, 1, 0, eye_ch, bright);
+
+    // nose/mouth below eyes
+    let nose_ch = match style % 4 {
+        0 => '●',
+        1 => '◡',
+        2 => '◆',
+        _ => '▪',
+    };
+    set(grid, 0, 1, nose_ch, bright);
+
+    // horizontal brow dashes
+    for i in 2..=(size as i32 + 1) {
+        set(grid, -i, 0, '─', dim);
+        set(grid, i, 0, '─', dim);
+    }
+
+    // vertical stem above and below
+    for i in 1..=(size as i32) {
+        set(grid, 0, -(i as i32), '│', dim);
+    }
+    for i in 2..=(size as i32 + 2) {
+        set(grid, 0, i as i32, '│', dim);
+    }
+
+    // radiating diagonals
+    for i in 1..=(size as i32) {
+        set(grid, -i, -i, '╲', color);
+        set(grid, i, -i, '╱', color);
+        set(grid, -i, i, '╱', color);
+        set(grid, i, i, '╲', color);
+    }
+
+    // secondary diagonals (wider spread, dimmer)
+    if size >= 2 {
+        for i in 1..=(size as i32) {
+            set(grid, -i - 1, -i, '╲', dim);
+            set(grid, i + 1, -i, '╱', dim);
+            set(grid, -i - 1, i, '╱', dim);
+            set(grid, i + 1, i, '╲', dim);
+        }
+    }
+}
+
+pub const MASK_STYLE_COUNT: usize = 4;
 
 /// Aztec diamond domino tiling via domino shuffling.
 pub fn draw_aztec_diamond(grid: &mut Grid, center_x: usize, center_y: usize, order: usize, palette: &[Color; 5], rng: &mut StdRng) {

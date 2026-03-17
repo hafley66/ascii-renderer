@@ -1,3 +1,4 @@
+mod biomes;
 mod borders;
 mod color;
 mod content;
@@ -16,6 +17,7 @@ use rand::SeedableRng;
 use rand::rngs::StdRng;
 use std::io::{self, IsTerminal, Read as _};
 
+use biomes::*;
 use color::*;
 use content::*;
 use fills::*;
@@ -53,6 +55,10 @@ fn main() {
         eprintln!("  tiles     Showcase all 10 tile patterns (pure deterministic)");
         eprintln!("  tiles-rand  Same patterns with randomized params");
         eprintln!("  noise     Showcase all 5 noise variants (truchet, higaki, etc.)");
+        eprintln!("  terrain   Layered landscape: mountains, foothills, ground with contour boundaries");
+        eprintln!("  flow      Vertical flow: fills morph through tapered zones");
+        eprintln!("  masks     All 4 mask/firework sprite styles");
+        eprintln!("  world     Vertical biome strips: forest, garden, temple, noise, geometric");
         eprintln!("  swatch    Color swatches for all named themes");
         eprintln!();
         eprintln!("THEMES:");
@@ -744,6 +750,33 @@ fn main() {
                 }
             }
         }
+    } else if mode == "terrain" {
+        let rect = Rect { x: 0, y: 0, w: width, h: height };
+        render_terrain(&mut grid, &rect, &palette, &mut rng);
+    } else if mode == "flow" {
+        let rect = Rect { x: 0, y: 0, w: width, h: height };
+        let zones = random_flow(&rect, &palette, &mut rng);
+        render_flow(&mut grid, &rect, &zones, &palette, &mut rng);
+    } else if mode == "masks" {
+        // background: diamond lattice to recreate the emergent effect
+        let bg_rect = Rect { x: 0, y: 0, w: width, h: height };
+        draw_diamond_lattice(&mut grid, &bg_rect, darken(palette[1], 60), darken(palette[1], 80));
+        let labels = ["circle", "eye", "diamond", "square"];
+        for i in 0..MASK_STYLE_COUNT {
+            let cx = (width / (MASK_STYLE_COUNT + 1)) * (i + 1);
+            let cy = height / 2;
+            let size = (height / 6).max(2).min(4);
+            draw_mask(&mut grid, cx, cy, size, i, palette[(i % 3) + 1]);
+            for (j, ch) in labels[i].chars().enumerate() {
+                let lx = cx.saturating_sub(labels[i].len() / 2) + j;
+                let ly = cy + size + 4;
+                if lx < width && ly < height {
+                    grid[ly][lx] = Cell::new(ch, palette[4]);
+                }
+            }
+        }
+    } else if mode == "world" {
+        render_world(&mut grid, width, height, &palette, &mut rng);
     } else if mode == "noise" {
         let names = ["truchet", "higaki", "higaki-s", "grass", "static", "dot"];
         let cols = NOISE_VARIANT_COUNT;

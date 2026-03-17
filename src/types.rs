@@ -42,6 +42,7 @@ pub fn char_width(c: char) -> usize {
     c.width().unwrap_or(0)
 }
 
+#[derive(Clone, Copy)]
 pub struct Rect {
     pub x: usize,
     pub y: usize,
