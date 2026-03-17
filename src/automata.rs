@@ -288,8 +288,8 @@ pub fn render_ca(
                     }
                 }
                 CellRole::Junction => {
-                    // Only grow upward from junctions that have a north connection
-                    if card & 1 != 0 && rng.random_range(0u32..8) == 0 && y > 6 {
+                    // Grow tree upward from junctions -- any junction with vertical room
+                    if rng.random_range(0u32..4) == 0 && y > 5 {
                         tree_sites.push((gx, gy));
                     }
                 }
@@ -310,10 +310,33 @@ pub fn render_ca(
     }
 
     for (gx, gy) in tree_sites {
-        let tree_h = rng.random_range(4..8).min(gy.saturating_sub(rect.y));
-        if tree_h >= 4 {
-            let spread = rng.random_range(3..6);
-            grow_tree(grid, gx, gy, gy.saturating_sub(tree_h), spread, palette[1], rng);
+        let avail_h = gy.saturating_sub(rect.y);
+        if avail_h < 4 { continue; }
+        let tree_h = rng.random_range(4..avail_h.min(12).max(5));
+        let canopy = gy.saturating_sub(tree_h);
+        match rng.random_range(0u32..5) {
+            0 | 1 => {
+                // GRIS tree -- the star
+                let spread = rng.random_range(3..8).min(tree_h);
+                grow_tree(grid, gx, gy, canopy, spread, palette[1], rng);
+            }
+            2 => {
+                let spread = rng.random_range(3..7).min(tree_h);
+                draw_willow(grid, gx, gy, canopy, spread, palette[1]);
+            }
+            3 => {
+                let tiers = rng.random_range(2..4);
+                let base_w = rng.random_range(5..9);
+                draw_pine(grid, gx, gy, tiers, base_w, palette[2]);
+            }
+            _ => {
+                if tree_h >= 6 {
+                    draw_palm(grid, gx, gy, tree_h.min(10), palette[3], rng);
+                } else {
+                    let spread = rng.random_range(3..6);
+                    grow_tree(grid, gx, gy, canopy, spread, palette[1], rng);
+                }
+            }
         }
     }
 }
@@ -553,26 +576,43 @@ pub fn ca_layout(
             // Tiny: stamp a flower or fruit at center
             small_sites.push((b.x + b.w / 2, b.y + b.h / 2, region.area));
         } else if region.area <= 5 {
-            // Small: individual primitive (tree, small fret)
+            // Small: individual primitive -- trees, frets, willows
             let cx = b.x + b.w / 2;
-            let cy = b.y + b.h / 2;
-            match rng.random_range(0u32..3) {
-                0 => {
-                    if b.h >= 6 {
-                        let tree_top = b.y + 1;
-                        let tree_root = b.y + b.h - 1;
+            let root_y = b.y + b.h - 1;
+            let canopy_y = b.y + 1;
+            let avail_h = b.h.saturating_sub(2);
+            match rng.random_range(0u32..6) {
+                0 | 1 => {
+                    // GRIS tree
+                    if avail_h >= 4 {
                         let spread = (b.w / 3).max(2).min(8);
-                        grow_tree(grid, cx, tree_root, tree_top, spread, palette[1], rng);
+                        grow_tree(grid, cx, root_y, canopy_y, spread, palette[1], rng);
                     }
                 }
-                1 => {
-                    let steps = (b.w / 4).max(2).min(5);
-                    draw_stepped_fret(grid, cx as i32, cy as i32, steps, Dir::Right, palette[2]);
+                2 => {
+                    // Willow
+                    if avail_h >= 5 {
+                        let spread = (b.w / 4).max(2).min(6);
+                        draw_willow(grid, cx, root_y, canopy_y, spread, palette[1]);
+                    }
+                }
+                3 => {
+                    // Pine
+                    if avail_h >= 4 {
+                        let tiers = if avail_h >= 8 { 3 } else { 2 };
+                        draw_pine(grid, cx, root_y, tiers, (b.w / 2).max(3), palette[2]);
+                    }
+                }
+                4 => {
+                    // Palm
+                    if avail_h >= 6 {
+                        draw_palm(grid, cx, root_y, avail_h.min(10), palette[3], rng);
+                    }
                 }
                 _ => {
-                    if b.h >= 4 {
-                        draw_pine(grid, cx, b.y + b.h - 1, 2, (b.w / 2).max(3), palette[1]);
-                    }
+                    // Fret spiral
+                    let steps = (b.w / 4).max(2).min(5);
+                    draw_stepped_fret(grid, cx as i32, (b.y + b.h / 2) as i32, steps, Dir::Right, palette[2]);
                 }
             }
         } else {
