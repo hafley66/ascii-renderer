@@ -5,6 +5,7 @@ use crate::types::*;
 use crate::color::*;
 use crate::fills::*;
 use crate::sprites::*;
+use crate::scene::*;
 use crate::walker::*;
 use crate::sprites::draw_fret_border;
 use crate::layout::*;
@@ -213,21 +214,10 @@ pub enum Taper {
     Diamond,        // narrow → wide → narrow
 }
 
-/// What fill to use in a flow zone.
-#[derive(Clone, Copy)]
-pub enum FlowFill {
-    Tile(TileVariant),
-    Noise(NoiseVariant),
-    LineArt(usize),   // 0=crosshatch, 1=guilloche, 2=weave, 3=zigzag, 4=diamond
-    Aztec,
-    Tree(usize),      // tree type 0-3
-    Dots,
-}
-
 /// A single zone in a flow sequence.
 #[derive(Clone, Copy)]
 pub struct FlowZone {
-    pub fill: FlowFill,
+    pub fill: FillGen,
     pub height_frac: f32,   // fraction of total strip height this zone occupies
     pub taper: Taper,
     pub width_start: f32,   // 0.0-1.0, fraction of strip width at zone top
@@ -248,12 +238,14 @@ const DISSOLVE: &[char] = &['╳', '╱', '╲', '·', '∙', '°', ' '];
 pub fn fill_masked(
     grid: &mut Grid,
     rect: &Rect,
-    fill: FlowFill,
+    fill: FillGen,
     mask_fn: &dyn Fn(usize, usize) -> f32,
     palette: &[Color; 5],
     rng: &mut StdRng,
 ) {
-    render_flow_fill(grid, rect, fill, palette, rng);
+    let c1 = palette[1];
+    let c2 = darken(c1, 30);
+    render_fill(grid, rect, fill, c1, c2, palette, rng);
 
     let dissolve_color = darken(palette[1], 40);
     for y in rect.y..rect.y + rect.h {
@@ -412,47 +404,6 @@ fn draw_dissolve_row(
     }
 }
 
-/// Render a fill into a sub-rect (clipped to grid). Dispatches FlowFill variants.
-fn render_flow_fill(
-    grid: &mut Grid, rect: &Rect, fill: FlowFill,
-    palette: &[Color; 5], rng: &mut StdRng,
-) {
-    let c1 = palette[1];
-    let c2 = darken(c1, 30);
-    match fill {
-        FlowFill::Tile(variant) => fill_tile_pure(grid, rect, variant, c1, c2),
-        FlowFill::Noise(variant) => fill_noise(grid, rect, variant, c1, c2, rng),
-        FlowFill::LineArt(kind) => match kind % 5 {
-            0 => draw_crosshatch(grid, rect, c1, c2),
-            1 => draw_guilloche(grid, rect, c1, c2),
-            2 => draw_weave(grid, rect, c1, lighten(c1, 30)),
-            3 => draw_zigzag(grid, rect, c1, c2),
-            _ => draw_diamond_lattice(grid, rect, c1, c2),
-        },
-        FlowFill::Aztec => {
-            let cx = rect.x + rect.w / 2;
-            let cy = rect.y + rect.h / 2;
-            let order = (rect.h / 2).min(rect.w / 4).max(2).min(8);
-            draw_aztec_diamond(grid, cx, cy, order, palette, rng);
-        }
-        FlowFill::Tree(kind) => {
-            let cx = rect.x + rect.w / 2;
-            let root_y = rect.y + rect.h.saturating_sub(2);
-            let canopy_y = rect.y + 2;
-            let spread = (rect.w / 4).max(3);
-            match kind % 4 {
-                0 => grow_tree(grid, cx, root_y, canopy_y, spread, c1, rng),
-                1 => draw_pine(grid, cx, root_y, 3, (rect.w / 2).min(12), c1),
-                2 => draw_willow(grid, cx, root_y, canopy_y, spread, c1),
-                _ => draw_palm(grid, cx, root_y, rect.h.saturating_sub(4), c1, rng),
-            }
-        }
-        FlowFill::Dots => {
-            fill_noise(grid, rect, NoiseVariant::Dot, c1, c2, rng);
-        }
-    }
-}
-
 /// Render a flow: a vertical sequence of zones within a strip rect.
 pub fn render_flow(
     grid: &mut Grid, rect: &Rect, zones: &[FlowZone],
@@ -478,7 +429,9 @@ pub fn render_flow(
             w: fill_x1.saturating_sub(fill_x0),
             h: zone_h,
         };
-        render_flow_fill(grid, &fill_rect, zone.fill, palette, rng);
+        let c1 = palette[1];
+        let c2 = darken(c1, 30);
+        render_fill(grid, &fill_rect, zone.fill, c1, c2, palette, rng);
 
         // mask: clear cells outside the taper envelope
         for row_i in 0..zone_h {
@@ -542,13 +495,20 @@ pub fn random_flow(rect: &Rect, palette: &[Color; 5], rng: &mut StdRng) -> Vec<F
     let mut zones = Vec::with_capacity(zone_count);
     let mut remaining = 1.0f32;
 
+    let line_art: FillGen = match rng.random_range(0..5) {
+        0 => FillGen::Crosshatch,
+        1 => FillGen::Guilloche,
+        2 => FillGen::Weave,
+        3 => FillGen::Zigzag,
+        _ => FillGen::DiamondLattice,
+    };
     let fills = [
-        FlowFill::Tile(tile_variant_from_index(rng.random_range(0..TILE_VARIANT_COUNT))),
-        FlowFill::Aztec,
-        FlowFill::Tree(rng.random_range(0..4)),
-        FlowFill::Noise(noise_variant_from_index(rng.random_range(0..NOISE_VARIANT_COUNT))),
-        FlowFill::LineArt(rng.random_range(0..5)),
-        FlowFill::Dots,
+        FillGen::TilePure(tile_variant_from_index(rng.random_range(0..TILE_VARIANT_COUNT))),
+        FillGen::AztecDiamond((rect.h / 2).min(rect.w / 4).max(2).min(8)),
+        FillGen::Tree(rng.random_range(0..4)),
+        FillGen::Noise(noise_variant_from_index(rng.random_range(0..NOISE_VARIANT_COUNT))),
+        line_art,
+        FillGen::Noise(NoiseVariant::Dot),
     ];
 
     let tapers = [Taper::Constant, Taper::Opening, Taper::Closing, Taper::Diamond];
@@ -682,7 +642,7 @@ pub fn render_terrain(grid: &mut Grid, rect: &Rect, palette: &[Color; 5], rng: &
 
     // sky: sparse dots above mountains
     let sky_mask = mask_above_contour(mountain_contour.clone(), rect.x, 5.0);
-    fill_masked(grid, rect, FlowFill::Dots, &sky_mask, palette, rng);
+    fill_masked(grid, rect, FillGen::Noise(NoiseVariant::Dot), &sky_mask, palette, rng);
 
     // mountains: dim, sparse geometric fill -- distinct from foothills
     // use a muted palette so mountains read as background silhouettes
@@ -693,14 +653,14 @@ pub fn render_terrain(grid: &mut Grid, rect: &Rect, palette: &[Color; 5], rng: &
         darken(palette[3], 50),
         palette[4],
     ];
-    let mountain_fill = FlowFill::LineArt(rng.random_range(3..5)); // zigzag or diamond lattice
+    let mountain_fill = if rng.random_range(0..2) == 0 { FillGen::Zigzag } else { FillGen::DiamondLattice };
     let mtn_mask = mask_below_contour(mountain_contour.clone(), rect.x, 4.0);
     fill_masked(grid, rect, mountain_fill, &mtn_mask, &mtn_palette, rng);
 
     draw_contour_ridge(grid, rect, &mountain_contour, lighten(palette[1], 30));
 
     // foothills: tile pattern, brighter than mountains
-    let hill_fill = FlowFill::Tile(tile_variant_from_index(rng.random_range(0..TILE_VARIANT_COUNT)));
+    let hill_fill = FillGen::TilePure(tile_variant_from_index(rng.random_range(0..TILE_VARIANT_COUNT)));
     let hill_palette = [palette[0], palette[2], palette[3], palette[1], palette[4]];
     let hill_mask = mask_below_contour(foothill_contour.clone(), rect.x, 4.0);
     fill_masked(grid, rect, hill_fill, &hill_mask, &hill_palette, rng);
@@ -710,7 +670,7 @@ pub fn render_terrain(grid: &mut Grid, rect: &Rect, palette: &[Color; 5], rng: &
     // ground: grass noise, brightest layer
     let gnd_palette = [palette[0], palette[3], palette[1], palette[2], palette[4]];
     let ground_mask = mask_below_contour(ground_contour.clone(), rect.x, 3.0);
-    fill_masked(grid, rect, FlowFill::Noise(NoiseVariant::Grass), &ground_mask, &gnd_palette, rng);
+    fill_masked(grid, rect, FillGen::Noise(NoiseVariant::Grass), &ground_mask, &gnd_palette, rng);
 
     draw_contour_ridge(grid, rect, &ground_contour, lighten(palette[3], 20));
 
@@ -757,7 +717,7 @@ pub fn render_terrain(grid: &mut Grid, rect: &Rect, palette: &[Color; 5], rng: &
             w: 12,
             h: 8,
         };
-        fill_masked(grid, &moon_rect, FlowFill::Tile(TileVariant::Shippo), &moon_mask, palette, rng);
+        fill_masked(grid, &moon_rect, FillGen::TilePure(TileVariant::Shippo), &moon_mask, palette, rng);
     }
 }
 

@@ -170,11 +170,12 @@ pub struct TileParams {
     pub density: f32,           // 0.0-1.0, cell draw probability
     pub stagger_override: i8,   // -1 = use default, 0 = force no stagger, 1+ = override offset
     pub rhythm_override: u8,    // 0 = use default, 1+ = override stagger_rhythm
+    pub jitter: f32,            // 0.0-1.0, probability of replacing glyph with random line char
 }
 
 impl TileParams {
     pub fn new(variant: TileVariant) -> Self {
-        TileParams { variant, density: 1.0, stagger_override: -1, rhythm_override: 0 }
+        TileParams { variant, density: 1.0, stagger_override: -1, rhythm_override: 0, jitter: 0.0 }
     }
 
     pub fn randomized(rng: &mut StdRng) -> Self {
@@ -192,7 +193,7 @@ impl TileParams {
         } else {
             0  // default
         };
-        TileParams { variant, density, stagger_override, rhythm_override }
+        TileParams { variant, density, stagger_override, rhythm_override, jitter: 0.0 }
     }
 }
 
