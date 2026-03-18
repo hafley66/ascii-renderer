@@ -67,7 +67,9 @@ fn main() {
         eprintln!("  ca        Cellular automata: life|cave|maze|coral [style] [primitives]");
         eprintln!("  ca-layout CA as organic layout engine (text in largest regions)");
         eprintln!("  world     Vertical biome strips: forest, garden, temple, noise, geometric");
-        eprintln!("  party     Node islands along a path [gap] [nodes] [scale] [detail] (0=auto)");
+        eprintln!("  party     Node islands along a path [gap] [nodes] [scale] [detail] [weather] [path]");
+        eprintln!("            weather: rain|snow|fog|stars|none (default: random)");
+        eprintln!("            path:    line|dots|vine|river|double (default: random)");
         eprintln!("  soup      Dense overlapping node scenes along a path");
         eprintln!("  stem      Sinuous stalk with alternating shape-masked tile leaves");
         eprintln!("  swatch    Color swatches for all named themes");
@@ -1023,24 +1025,32 @@ fn main() {
         if hh < grid.len() { grid[hh][hw] = Cell::new('┼', darken(palette[2], 50)); }
 
     } else if mode == "party" {
-        // party [gap] [nodes] [scale] [detail]  -- all optional, 0 = auto
+        // party [gap] [nodes] [scale] [detail] [weather] [path]
         let pp = PartyParams {
             gap:    args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0),
             nodes:  args.get(5).and_then(|s| s.parse().ok()).unwrap_or(0),
             scale:  args.get(6).and_then(|s| s.parse().ok()).unwrap_or(50),
             detail: args.get(7).and_then(|s| s.parse().ok()).unwrap_or(50),
         };
+        let weather = args.get(8)
+            .and_then(|s| Weather::from_name(s))
+            .unwrap_or_else(|| Weather::pick(&mut rng));
+        let path_style = args.get(9)
+            .and_then(|s| PathStyle::from_name(s))
+            .unwrap_or_else(|| PathStyle::pick(&mut rng));
         let rect = Rect { x: 0, y: 0, w: width, h: height };
         let (layers, stops, boxes) = party_walk(width, height, &palette, &pp, &mut rng);
         let scene = Scene { layers };
         render_scene(&mut grid, &rect, &scene, &mut rng);
         // Draw connecting path between node centers
-        draw_walk_path(&mut grid, &stops, darken(palette[2], 30));
+        draw_styled_path(&mut grid, &stops, path_style, darken(palette[2], 30), &mut rng);
         // Draw box borders around each node
         let border_color = palette[4];
         for &(bx, by, bw, bh) in &boxes {
             draw_box_border(&mut grid, bx, by, bw, bh, border_color);
         }
+        // Weather overlay
+        apply_atmosphere(&mut grid, weather, 50, &palette, &mut rng);
     } else if mode == "soup" {
         let rect = Rect { x: 0, y: 0, w: width, h: height };
         let (layers, stops) = soup_walk(width, height, &palette, &mut rng);
