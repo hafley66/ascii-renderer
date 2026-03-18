@@ -1176,15 +1176,16 @@ pub fn draw_stalk(
 // ── Node scene generators ──────────────────────────────────────────
 
 /// Generate a multi-layer scene for one node of a party walk.
-/// `rect` is the bounding box, `t` is normalized walk position (0..1).
+/// `rect` is the bounding box, `detail` is 0-100 controlling density.
 pub fn make_node_scene(
     rect: &Rect,
     mode: NodeMode,
     palette: &[Color; 5],
+    detail: u32,
     rng: &mut StdRng,
 ) -> Vec<Layer> {
     match mode {
-        NodeMode::Landscape => make_landscape(rect, palette, rng),
+        NodeMode::Landscape => make_landscape(rect, palette, detail, rng),
         NodeMode::CenterpieceWithSurround => make_centerpiece(rect, palette, rng),
         NodeMode::Cluster(arr, n) => make_cluster(rect, arr, n, palette, rng),
     }
@@ -1197,6 +1198,7 @@ pub fn make_node_scene(
 fn make_landscape(
     rect: &Rect,
     palette: &[Color; 5],
+    detail: u32,
     rng: &mut StdRng,
 ) -> Vec<Layer> {
     let mut layers = Vec::new();
@@ -1241,7 +1243,7 @@ fn make_landscape(
     });
 
     // ── Pass 3: Foreground elements ──
-    let fg_count = rng.random_range(2..6u32);
+    let fg_count = 1 + (detail as f32 / 20.0) as u32 + rng.random_range(0..3u32);
     for _ in 0..fg_count {
         let mut pal = *palette;
         pal[1] = palette[rng.random_range(1..4)];
@@ -1522,10 +1524,28 @@ pub fn soup_walk(
         let mut node_pal = *palette;
         node_pal[1] = shift_hue(palette[1], arc_shift);
         node_pal[2] = shift_hue(palette[2], arc_shift);
-        layers.extend(make_node_scene(&node_rect, mode, &node_pal, rng));
+        layers.extend(make_node_scene(&node_rect, mode, &node_pal, 50, rng));
     }
 
     (layers, stops)
+}
+
+/// Tuning knobs for party_walk, exposed as CLI args.
+pub struct PartyParams {
+    /// Gap between nodes in cells. 0 = auto (scales with terminal).
+    pub gap: usize,
+    /// Target node count. 0 = auto (5-11 random).
+    pub nodes: usize,
+    /// Box size factor 0-100. 50 = default. Higher = bigger nodes.
+    pub scale: u32,
+    /// Detail level 0-100. Controls foreground elements per landscape node.
+    pub detail: u32,
+}
+
+impl PartyParams {
+    pub fn default() -> Self {
+        PartyParams { gap: 0, nodes: 0, scale: 50, detail: 50 }
+    }
 }
 
 /// Party walk: non-overlapping node islands along a path.
@@ -1534,31 +1554,40 @@ pub fn party_walk(
     w: usize,
     h: usize,
     palette: &[Color; 5],
+    params: &PartyParams,
     rng: &mut StdRng,
 ) -> (Vec<Layer>, Vec<(usize, usize)>) {
     let character = PlantCharacter::random(rng);
     let mut layers = Vec::new();
     let margin = 2usize;
-    // Gap scales with canvas so wide terminals don't get wall-to-wall mush
-    let gap = (w.min(h) / 15).max(3);
+    let gap = if params.gap > 0 { params.gap } else { (w.min(h) / 15).max(3) };
 
     // ── Place non-overlapping boxes via rejection sampling ──
-    let target_count = rng.random_range(5..12u32) as usize;
+    let target_count = if params.nodes > 0 {
+        params.nodes
+    } else {
+        rng.random_range(5..12u32) as usize
+    };
     let mut boxes: Vec<(usize, usize, usize, usize)> = Vec::new(); // (x, y, w, h)
     let mut stops: Vec<(usize, usize)> = Vec::new();
     let mut total_area = 0usize;
     let canvas_area = w * h;
 
+    // Scale factor: 0=tiny, 50=default, 100=huge
+    let size_mult = params.scale as f32 / 50.0; // 0.0 to 2.0
+
     for i in 0..target_count {
         let t = if target_count > 1 { i as f32 / (target_count - 1) as f32 } else { 0.5 };
         let sf = character.size_factor(t);
 
-        let max_bw = (w as u32 * 2 / 5).max(24).min(55);
-        let max_bh = (h as u32 * 2 / 5).max(14).min(28);
-        let min_bw = (max_bw / 2).max(14);
-        let min_bh = (max_bh / 2).max(8);
-        let bw = ((rng.random_range(min_bw..max_bw) as f32) * sf).max(10.0) as usize;
-        let bh = ((rng.random_range(min_bh..max_bh) as f32) * sf).max(6.0) as usize;
+        let base_max_bw = (w as u32 * 2 / 5).max(24).min(55);
+        let base_max_bh = (h as u32 * 2 / 5).max(14).min(28);
+        let max_bw = ((base_max_bw as f32 * size_mult).max(16.0)) as u32;
+        let max_bh = ((base_max_bh as f32 * size_mult).max(10.0)) as u32;
+        let min_bw = (max_bw / 2).max(10);
+        let min_bh = (max_bh / 2).max(6);
+        let bw = ((rng.random_range(min_bw..max_bw.max(min_bw + 1)) as f32) * sf).max(8.0) as usize;
+        let bh = ((rng.random_range(min_bh..max_bh.max(min_bh + 1)) as f32) * sf).max(5.0) as usize;
 
         let mut placed = false;
         for _ in 0..60 {
@@ -1620,7 +1649,7 @@ pub fn party_walk(
         };
 
         // Generate the node's internal layers
-        let inner_layers = make_node_scene(&node_rect, mode, &node_pal, rng);
+        let inner_layers = make_node_scene(&node_rect, mode, &node_pal, params.detail, rng);
 
         // Wrap each inner layer's mask with the node boundary
         for layer in inner_layers {

@@ -67,7 +67,7 @@ fn main() {
         eprintln!("  ca        Cellular automata: life|cave|maze|coral [style] [primitives]");
         eprintln!("  ca-layout CA as organic layout engine (text in largest regions)");
         eprintln!("  world     Vertical biome strips: forest, garden, temple, noise, geometric");
-        eprintln!("  party     Node islands along a path: landscape/composition/cluster scenes");
+        eprintln!("  party     Node islands along a path [gap] [nodes] [scale] [detail] (0=auto)");
         eprintln!("  soup      Dense overlapping node scenes along a path");
         eprintln!("  stem      Sinuous stalk with alternating shape-masked tile leaves");
         eprintln!("  swatch    Color swatches for all named themes");
@@ -1023,8 +1023,15 @@ fn main() {
         if hh < grid.len() { grid[hh][hw] = Cell::new('┼', darken(palette[2], 50)); }
 
     } else if mode == "party" {
+        // party [gap] [nodes] [scale] [detail]  -- all optional, 0 = auto
+        let pp = PartyParams {
+            gap:    args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0),
+            nodes:  args.get(5).and_then(|s| s.parse().ok()).unwrap_or(0),
+            scale:  args.get(6).and_then(|s| s.parse().ok()).unwrap_or(50),
+            detail: args.get(7).and_then(|s| s.parse().ok()).unwrap_or(50),
+        };
         let rect = Rect { x: 0, y: 0, w: width, h: height };
-        let (layers, stops) = party_walk(width, height, &palette, &mut rng);
+        let (layers, stops) = party_walk(width, height, &palette, &pp, &mut rng);
         let scene = Scene { layers };
         render_scene(&mut grid, &rect, &scene, &mut rng);
         draw_path_trail(&mut grid, &stops, palette[2], &mut rng);
