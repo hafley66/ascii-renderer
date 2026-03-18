@@ -1,3 +1,5 @@
+#![allow(unused_imports, unused_variables, dead_code)]
+
 mod automata;
 mod biomes;
 mod borders;
@@ -756,6 +758,41 @@ fn main() {
                 }
             }
         }
+    } else if mode == "tiles-skew" {
+        let names = [
+            "asanoha", "seigaiha", "shippo", "bishamon", "yabane",
+            "nowaki", "higaki", "shell", "granny", "crocodile",
+        ];
+        let cols = 5.min(TILE_VARIANT_COUNT);
+        let rows = (TILE_VARIANT_COUNT + cols - 1) / cols;
+        let cell_w = width / cols;
+        let cell_h = height / rows;
+        let inset = 4; // shrink rect so bleed has room to show
+        for i in 0..TILE_VARIANT_COUNT {
+            let col = i % cols;
+            let row = i / cols;
+            let x0 = col * cell_w + inset;
+            let y0 = row * cell_h + 2;
+            let r = Rect {
+                x: x0,
+                y: y0,
+                w: cell_w.saturating_sub(inset * 2),
+                h: cell_h.saturating_sub(4),
+            };
+            let mut params = TileParams::new(tile_variant_from_index(i));
+            params.skew = 80;
+            let c1 = palette[(i % 3) + 1];
+            let c2 = darken(c1, 30);
+            fill_tile_ex(&mut grid, &r, &params, c1, c2, 0.0, &mut rng);
+            let label = format!("{} skew=80", names[i]);
+            let lx = col * cell_w;
+            let ly = row * cell_h;
+            for (j, ch) in label.chars().enumerate() {
+                if lx + j < width && ly < height {
+                    grid[ly][lx + j] = Cell::new(ch, palette[4]);
+                }
+            }
+        }
     } else if mode == "terrain" {
         let rect = Rect { x: 0, y: 0, w: width, h: height };
         render_terrain(&mut grid, &rect, &palette, &mut rng);
@@ -867,6 +904,24 @@ fn main() {
                 }
             }
         }
+    } else if mode == "scene-walk" {
+        let rect = Rect { x: 0, y: 0, w: width, h: height };
+        let layers = path_walk_layers(width, height, &palette, &mut rng);
+        let scene = Scene { layers };
+        render_scene(&mut grid, &rect, &scene, &mut rng);
+    } else if mode == "scene-walk-2" {
+        let rect = Rect { x: 0, y: 0, w: width, h: height };
+        let (layers, stops) = path_walk_layers_2(width, height, &palette, &mut rng);
+        let scene = Scene { layers };
+        render_scene(&mut grid, &rect, &scene, &mut rng);
+        draw_path_trail(&mut grid, &stops, palette[2], &mut rng);
+    } else if mode == "scene-walk-3" {
+        let rect = Rect { x: 0, y: 0, w: width, h: height };
+        let density = 50u32;
+        let (layers, stops, _boxes) = path_walk_layers_3(width, height, &palette, density, &mut rng);
+        let scene = Scene { layers };
+        render_scene(&mut grid, &rect, &scene, &mut rng);
+        draw_path_trail(&mut grid, &stops, palette[2], &mut rng);
     } else if mode == "world" {
         render_world(&mut grid, width, height, &palette, &mut rng);
     } else if mode == "noise" {
@@ -1206,5 +1261,54 @@ mod tests {
             "full title should be on one line, got: {:?}",
             skill_rows[0]
         );
+    }
+
+    #[test]
+    fn scene_walk_produces_layers() {
+        let mut rng = StdRng::seed_from_u64(42);
+        let palette = make_palette(42);
+        let mut root = layout::BspNode::new(0, 0, 80, 45);
+        root.split_with_gap(12, 6, 4, 2, &mut rng);
+        let leaves: Vec<Rect> = root.leaves().into_iter().copied().collect();
+        let layers = walk_to_layers(&leaves, (40, 22), &palette, &mut rng);
+        assert!(layers.len() > 0, "walker should produce at least one layer");
+        assert!(layers.len() <= leaves.len() * 4, "layers bounded by leaves + scatter");
+        for layer in &layers {
+            assert!(layer.mask.is_some(), "every scene-walk layer should be masked");
+        }
+    }
+
+    #[test]
+    fn scene_walk_renders_without_panic() {
+        for seed in [0, 1, 7, 42, 99, 1234] {
+            let (mut grid, mut rng, palette) = make_grid(80, 45, seed);
+            let mut root = layout::BspNode::new(0, 0, 80, 45);
+            root.split_with_gap(12, 6, 4, 2, &mut rng);
+            let leaves: Vec<Rect> = root.leaves().into_iter().copied().collect();
+            let layers = walk_to_layers(&leaves, (40, 22), &palette, &mut rng);
+            let scene = Scene { layers };
+            let rect = Rect { x: 0, y: 0, w: 80, h: 45 };
+            render_scene(&mut grid, &rect, &scene, &mut rng);
+            assert_uniform_display_width(&grid, 80);
+        }
+    }
+
+    #[test]
+    fn scene_walk_deterministic() {
+        let run = |seed: u64| {
+            let mut rng = StdRng::seed_from_u64(seed);
+            let palette = make_palette(seed);
+            let mut root = layout::BspNode::new(0, 0, 60, 30);
+            root.split_with_gap(10, 5, 4, 2, &mut rng);
+            let leaves: Vec<Rect> = root.leaves().into_iter().copied().collect();
+            let layers = walk_to_layers(&leaves, (30, 15), &palette, &mut rng);
+            let mut grid = vec![vec![Cell::blank(); 60]; 30];
+            let rect = Rect { x: 0, y: 0, w: 60, h: 30 };
+            let scene = Scene { layers };
+            render_scene(&mut grid, &rect, &scene, &mut rng);
+            grid_to_plain(&grid)
+        };
+        assert_eq!(run(42), run(42));
+        assert_ne!(run(42), run(99));
     }
 }

@@ -123,20 +123,26 @@ pub fn fill_masked(
     palette: &[Color; 5],
     rng: &mut StdRng,
 ) {
+    // Save existing cells so we can restore where mask says "outside"
+    let y_end = (rect.y + rect.h).min(grid.len());
+    let x_end = (rect.x + rect.w).min(if grid.is_empty() { 0 } else { grid[0].len() });
+    let saved: Vec<Vec<Cell>> = (rect.y..y_end)
+        .map(|y| grid[y][rect.x..x_end].to_vec())
+        .collect();
+
     let c1 = palette[1];
     let c2 = darken(c1, 30);
     render_fill(grid, rect, fill, c1, c2, palette, rng);
 
     let dissolve_color = darken(palette[1], 40);
-    for y in rect.y..rect.y + rect.h {
-        if y >= grid.len() { break; }
-        for x in rect.x..rect.x + rect.w {
-            if x >= grid[0].len() { break; }
+    for y in rect.y..y_end {
+        for x in rect.x..x_end {
             let v = mask_fn(x, y);
             if v >= 1.0 {
-                // fully inside, keep
+                // fully inside, keep new fill
             } else if v <= 0.0 {
-                grid[y][x] = Cell::blank();
+                // fully outside, restore what was there before
+                grid[y][x] = saved[y - rect.y][x - rect.x];
             } else {
                 // dissolve zone
                 let r: f32 = rng.random::<f32>();
@@ -145,7 +151,7 @@ pub fn fill_masked(
                         let ch = DISSOLVE[rng.random_range(3..6)];
                         grid[y][x] = Cell::new(ch, dissolve_color);
                     } else {
-                        grid[y][x] = Cell::blank();
+                        grid[y][x] = saved[y - rect.y][x - rect.x];
                     }
                 }
             }
@@ -233,6 +239,28 @@ pub fn mask_band(y_top: usize, y_bot: usize, dissolve: f32) -> impl Fn(usize, us
             if edge_dist >= dissolve { 1.0 } else { edge_dist / dissolve }
         } else {
             0.0
+        }
+    }
+}
+
+/// Rectangle mask: 1.0 inside rect, dissolve at edges, 0.0 outside.
+pub fn mask_rect(rect: &Rect, dissolve: f32) -> impl Fn(usize, usize) -> f32 + use<> {
+    let x0 = rect.x;
+    let y0 = rect.y;
+    let x1 = rect.x + rect.w;
+    let y1 = rect.y + rect.h;
+    move |x, y| {
+        if x < x0 || x >= x1 || y < y0 || y >= y1 {
+            0.0
+        } else if dissolve <= 0.0 {
+            1.0
+        } else {
+            let from_left = (x - x0) as f32;
+            let from_right = (x1 - 1 - x) as f32;
+            let from_top = (y - y0) as f32;
+            let from_bot = (y1 - 1 - y) as f32;
+            let edge = from_left.min(from_right).min(from_top).min(from_bot);
+            if edge >= dissolve { 1.0 } else { edge / dissolve }
         }
     }
 }

@@ -171,11 +171,12 @@ pub struct TileParams {
     pub stagger_override: i8,   // -1 = use default, 0 = force no stagger, 1+ = override offset
     pub rhythm_override: u8,    // 0 = use default, 1+ = override stagger_rhythm
     pub jitter: f32,            // 0.0-1.0, probability of replacing glyph with random line char
+    pub skew: u32,              // 0-100, how much pattern bleeds past rect boundary
 }
 
 impl TileParams {
     pub fn new(variant: TileVariant) -> Self {
-        TileParams { variant, density: 1.0, stagger_override: -1, rhythm_override: 0, jitter: 0.0 }
+        TileParams { variant, density: 1.0, stagger_override: -1, rhythm_override: 0, jitter: 0.0, skew: 0 }
     }
 
     pub fn randomized(rng: &mut StdRng) -> Self {
@@ -193,7 +194,13 @@ impl TileParams {
         } else {
             0  // default
         };
-        TileParams { variant, density, stagger_override, rhythm_override, jitter: 0.0 }
+        // 30% chance of skew (pattern bleeds past rect edges)
+        let skew = if rng.random_range(0..10u32) < 3 {
+            rng.random_range(15..60)
+        } else {
+            0
+        };
+        TileParams { variant, density, stagger_override, rhythm_override, jitter: 0.0, skew }
     }
 }
 
@@ -241,11 +248,64 @@ pub fn fill_tile_ex(
     let phase_x = rng.random_range(0..tile.period_x());
     let phase_y = rng.random_range(0..tile.period_y());
     let jitter_glyphs = ['╱', '╲', '╳', '·', '─', '│'];
-    for y in rect.y..rect.y + rect.h {
-        for x in rect.x..rect.x + rect.w {
-            if y >= grid.len() || x >= grid[0].len() { continue; }
+
+    // skew: extend render bounds past the rect, dropout increases with distance
+    let extend = (params.skew as f32 / 100.0 * 12.0) as usize;
+    let grid_h = grid.len();
+    let grid_w = if grid_h > 0 { grid[0].len() } else { 0 };
+    let y0 = rect.y.saturating_sub(extend);
+    let y1 = (rect.y + rect.h + extend).min(grid_h);
+    let x0 = rect.x.saturating_sub(extend);
+    let x1 = (rect.x + rect.w + extend).min(grid_w);
+
+    for y in y0..y1 {
+        for x in x0..x1 {
+            // distance past rect boundary (0 if inside)
+            let dx = if x < rect.x { rect.x - x }
+                     else if x >= rect.x + rect.w { x - (rect.x + rect.w) + 1 }
+                     else { 0 };
+            let dy = if y < rect.y { rect.y - y }
+                     else if y >= rect.y + rect.h { y - (rect.y + rect.h) + 1 }
+                     else { 0 };
+            let dist = dx.max(dy) as f32;
+
+            // outside rect: probabilistic dropout
+            if dist > 0.0 {
+                if extend == 0 { continue; }
+                let survive = 1.0 - (dist / extend as f32).powf(0.7);
+                if survive <= 0.0 || rng.random::<f32>() > survive { continue; }
+            }
+
             if params.density < 1.0 && rng.random::<f32>() > params.density { continue; }
-            let (mut ch, ci) = tile.at(x - rect.x + phase_x, y - rect.y + phase_y);
+
+            // sample tile using rect-relative coords so pattern is continuous
+            // use i32 to handle coords before rect origin without overflow
+            let px = tile.period_x();
+            let py = tile.period_y();
+            let raw_tx = (x as i32 - rect.x as i32 + phase_x as i32).rem_euclid(px as i32) as usize;
+            let raw_ty = (y as i32 - rect.y as i32 + phase_y as i32).rem_euclid(py as i32) as usize;
+            let mut tx = raw_tx;
+            let mut ty = raw_ty;
+
+            // boundary mirroring: near rect edges, reflect tile coords so
+            // open shapes (arches, waves) fold back into closed loops
+            if params.skew > 0 {
+                // distance from bottom/right edges of the rect
+                let ry_bot = if y < rect.y + rect.h { (rect.y + rect.h - 1) - y } else { 0 };
+                let rx_right = if x < rect.x + rect.w { (rect.x + rect.w - 1) - x } else { 0 };
+                let from_top = if y >= rect.y { y - rect.y } else { 0 };
+                let from_left = if x >= rect.x { x - rect.x } else { 0 };
+
+                // mirror within one tile period of the bottom/right edge
+                if ry_bot < py && from_top >= py {
+                    ty = py - 1 - ty;
+                }
+                if rx_right < px && from_left >= px {
+                    tx = px - 1 - tx;
+                }
+            }
+
+            let (mut ch, ci) = tile.at(tx, ty);
             if ch == ' ' { continue; }
             if jitter > 0.0 && rng.random::<f32>() < jitter {
                 ch = jitter_glyphs[rng.random_range(0..jitter_glyphs.len())];
