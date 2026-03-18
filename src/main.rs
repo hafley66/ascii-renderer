@@ -1,4 +1,4 @@
-#![allow(unused_imports, unused_variables, dead_code)]
+#![allow(warnings)]
 
 mod automata;
 mod biomes;
@@ -67,6 +67,8 @@ fn main() {
         eprintln!("  ca        Cellular automata: life|cave|maze|coral [style] [primitives]");
         eprintln!("  ca-layout CA as organic layout engine (text in largest regions)");
         eprintln!("  world     Vertical biome strips: forest, garden, temple, noise, geometric");
+        eprintln!("  party     Node islands along a path: landscape/composition/cluster scenes");
+        eprintln!("  soup      Dense overlapping node scenes along a path");
         eprintln!("  stem      Sinuous stalk with alternating shape-masked tile leaves");
         eprintln!("  swatch    Color swatches for all named themes");
         eprintln!();
@@ -1020,6 +1022,18 @@ fn main() {
         for x in 0..width { if hh < grid.len() { grid[hh][x] = Cell::new('─', darken(palette[2], 50)); } }
         if hh < grid.len() { grid[hh][hw] = Cell::new('┼', darken(palette[2], 50)); }
 
+    } else if mode == "party" {
+        let rect = Rect { x: 0, y: 0, w: width, h: height };
+        let (layers, stops) = party_walk(width, height, &palette, &mut rng);
+        let scene = Scene { layers };
+        render_scene(&mut grid, &rect, &scene, &mut rng);
+        draw_path_trail(&mut grid, &stops, palette[2], &mut rng);
+    } else if mode == "soup" {
+        let rect = Rect { x: 0, y: 0, w: width, h: height };
+        let (layers, stops) = soup_walk(width, height, &palette, &mut rng);
+        let scene = Scene { layers };
+        render_scene(&mut grid, &rect, &scene, &mut rng);
+        draw_path_trail(&mut grid, &stops, palette[2], &mut rng);
     } else if mode == "stem" {
         let rect = Rect { x: 0, y: 0, w: width, h: height };
         let (layers, spine) = path_walk_stem(width, height, &palette, &mut rng);

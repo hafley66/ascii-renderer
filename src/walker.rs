@@ -8,6 +8,92 @@ use crate::fills::*;
 use crate::sprites::*;
 use crate::scene::*;
 
+// ── Plant character + node modes ────────────────────────────────────
+
+/// Which direction a walk tapers (nodes shrink toward this end).
+#[derive(Clone, Copy)]
+pub enum TaperDir { Up, Down, Left, Right, None }
+
+/// Global personality governing a walk's layout and flavor.
+pub struct PlantCharacter {
+    /// How many children branch from each node (range).
+    pub branch_factor: (usize, usize),
+    /// Direction nodes shrink toward.
+    pub taper_dir: TaperDir,
+    /// 0.0 = no taper, 1.0 = aggressive shrink.
+    pub taper_strength: f32,
+    /// 0.0 = all Composition, 1.0 = all Landscape.
+    pub landscape_bias: f32,
+    /// Walk angle jitter range in radians.
+    pub angle_jitter: f32,
+}
+
+impl PlantCharacter {
+    pub fn random(rng: &mut StdRng) -> Self {
+        let taper_dir = match rng.random_range(0..5u32) {
+            0 => TaperDir::Up,
+            1 => TaperDir::Down,
+            2 => TaperDir::Left,
+            3 => TaperDir::Right,
+            _ => TaperDir::None,
+        };
+        PlantCharacter {
+            branch_factor: (rng.random_range(1..3), rng.random_range(3..6)),
+            taper_dir,
+            taper_strength: rng.random_range(20..80) as f32 / 100.0,
+            landscape_bias: rng.random_range(30..80) as f32 / 100.0,
+            angle_jitter: rng.random_range(20..80) as f32 / 100.0,
+        }
+    }
+
+    /// Size multiplier for a node at normalized walk position t (0..1).
+    pub fn size_factor(&self, t: f32) -> f32 {
+        let raw = match self.taper_dir {
+            TaperDir::Up | TaperDir::Right => 1.0 - t * self.taper_strength,
+            TaperDir::Down | TaperDir::Left => t * self.taper_strength + (1.0 - self.taper_strength),
+            TaperDir::None => 1.0,
+        };
+        raw.clamp(0.3, 1.0)
+    }
+}
+
+/// What kind of scene a node renders.
+#[derive(Clone, Copy)]
+pub enum NodeMode {
+    /// 3-pass: background (sky/rain/stars) + ground band + foreground elements.
+    Landscape,
+    /// Single centerpiece with surrounding pattern fill.
+    CenterpieceWithSurround,
+    /// N related patterns in a spatial arrangement.
+    Cluster(ClusterArrangement, usize),
+}
+
+#[derive(Clone, Copy)]
+pub enum ClusterArrangement { Hex, Ring, Loose, Grid }
+
+impl NodeMode {
+    pub fn pick(landscape_bias: f32, rng: &mut StdRng) -> Self {
+        if rng.random::<f32>() < landscape_bias {
+            NodeMode::Landscape
+        } else {
+            match rng.random_range(0..3u32) {
+                0 => NodeMode::CenterpieceWithSurround,
+                _ => {
+                    let arr = match rng.random_range(0..4u32) {
+                        0 => ClusterArrangement::Hex,
+                        1 => ClusterArrangement::Ring,
+                        2 => ClusterArrangement::Loose,
+                        _ => ClusterArrangement::Grid,
+                    };
+                    NodeMode::Cluster(arr, rng.random_range(3..7) as usize)
+                }
+            }
+        }
+    }
+}
+
+// ── Walker mood ────────────────────────────────────────────────────
+
 #[derive(Clone, Copy)]
 pub enum WalkerMood { Organic, Geometric, Empty }
 
@@ -1084,6 +1170,524 @@ pub fn draw_stalk(
             };
             grid[y][x] = Cell::new(ch, color);
         }
+    }
+}
+
+// ── Node scene generators ──────────────────────────────────────────
+
+/// Generate a multi-layer scene for one node of a party walk.
+/// `rect` is the bounding box, `t` is normalized walk position (0..1).
+pub fn make_node_scene(
+    rect: &Rect,
+    mode: NodeMode,
+    palette: &[Color; 5],
+    rng: &mut StdRng,
+) -> Vec<Layer> {
+    match mode {
+        NodeMode::Landscape => make_landscape(rect, palette, rng),
+        NodeMode::CenterpieceWithSurround => make_centerpiece(rect, palette, rng),
+        NodeMode::Cluster(arr, n) => make_cluster(rect, arr, n, palette, rng),
+    }
+}
+
+/// Landscape: 3-pass rendering.
+/// Pass 1: sky background (sparse drift chars or rain).
+/// Pass 2: ground band (grass/cement noise).
+/// Pass 3: foreground sprites (trees, mountains, flowers, floaties).
+fn make_landscape(
+    rect: &Rect,
+    palette: &[Color; 5],
+    rng: &mut StdRng,
+) -> Vec<Layer> {
+    let mut layers = Vec::new();
+
+    // Horizon line: splits rect into sky (top 40-60%) and ground (rest)
+    let horizon_frac = rng.random_range(35..60) as f32 / 100.0;
+    let horizon_y = rect.y + (rect.h as f32 * horizon_frac) as usize;
+
+    // ── Pass 1: Sky ──
+    let sky_pal = {
+        let mut p = *palette;
+        p[1] = darken(palette[rng.random_range(1..4)], 60);
+        p
+    };
+    let sky_fill = match rng.random_range(0..4u32) {
+        0 => FillGen::Noise(NoiseVariant::Dot),       // starfield
+        1 | 2 => FillGen::Noise(NoiseVariant::Static), // rain-ish
+        _ => FillGen::Noise(NoiseVariant::Dot),        // clear sky dots
+    };
+    layers.push(Layer {
+        fill: sky_fill,
+        mask: Some(Box::new(mask_band(rect.y, horizon_y, 3.0))),
+        palette: sky_pal,
+    });
+
+    // ── Pass 2: Ground band ──
+    let ground_pal = {
+        let mut p = *palette;
+        p[1] = palette[rng.random_range(1..4)];
+        p
+    };
+    let ground_fill = match rng.random_range(0..4u32) {
+        0 => FillGen::Noise(NoiseVariant::Grass),
+        1 => FillGen::Noise(NoiseVariant::Higaki),
+        2 => FillGen::Tile(TileParams::randomized(rng)),
+        _ => FillGen::Crosshatch,
+    };
+    layers.push(Layer {
+        fill: ground_fill,
+        mask: Some(Box::new(mask_band(horizon_y, rect.y + rect.h, 2.0))),
+        palette: ground_pal,
+    });
+
+    // ── Pass 3: Foreground elements ──
+    let fg_count = rng.random_range(2..6u32);
+    for _ in 0..fg_count {
+        let mut pal = *palette;
+        pal[1] = palette[rng.random_range(1..4)];
+
+        // Place element near ground line
+        let ex = rect.x + rng.random_range(2..rect.w.saturating_sub(4).max(3));
+        let ey = horizon_y.saturating_sub(rng.random_range(0..4));
+
+        let (fill, ew, eh) = match rng.random_range(0..8u32) {
+            0..=2 => {
+                let tw = rng.random_range(12..rect.w.min(24).max(13));
+                let th = rng.random_range(8..rect.h.min(18).max(9));
+                (FillGen::Tree(rng.random_range(0..12)), tw, th)
+            }
+            3..=4 => {
+                // Flower cluster
+                (FillGen::Flower(rng.random_range(0..5)), 5, 5)
+            }
+            5 => {
+                let s = rng.random_range(2..5);
+                (FillGen::Mask(s, rng.random_range(0..MASK_STYLE_COUNT)), s * 4 + 4, s * 4 + 4)
+            }
+            6 => {
+                // Tile island (small)
+                let tw = rng.random_range(10..20);
+                let th = rng.random_range(6..12);
+                (FillGen::Tile(TileParams::randomized(rng)), tw, th)
+            }
+            _ => {
+                (FillGen::Fruit(rng.random_range(0..5)), 5, 5)
+            }
+        };
+
+        let elx = ex.saturating_sub(ew / 2).min(rect.x + rect.w - ew.min(rect.w));
+        let ely = ey.saturating_sub(eh / 2).min(rect.y + rect.h - eh.min(rect.h));
+        let el_rect = Rect { x: elx, y: ely, w: ew.min(rect.w), h: eh.min(rect.h) };
+
+        let mask: MaskFn = if fill_breaks_out(&fill) {
+            Box::new(mask_rect(&el_rect, 0.0))
+        } else {
+            let cx = elx as f32 + ew as f32 * 0.5;
+            let cy = ely as f32 + eh as f32 * 0.5;
+            Box::new(mask_ellipse(cx, cy, ew as f32 * 0.5, eh as f32 * 0.5, 2.0))
+        };
+
+        layers.push(Layer { fill, mask: Some(mask), palette: pal });
+    }
+
+    layers
+}
+
+/// Centerpiece with surround: one big element in a patterned field.
+fn make_centerpiece(
+    rect: &Rect,
+    palette: &[Color; 5],
+    rng: &mut StdRng,
+) -> Vec<Layer> {
+    let mut layers = Vec::new();
+    let cx = rect.x as f32 + rect.w as f32 * 0.5;
+    let cy = rect.y as f32 + rect.h as f32 * 0.5;
+    let rx = rect.w as f32 * 0.5;
+    let ry = rect.h as f32 * 0.5;
+
+    // Background surround pattern (tile or noise)
+    let mut bg_pal = *palette;
+    bg_pal[1] = darken(palette[rng.random_range(1..4)], 40);
+    let bg_fill = match rng.random_range(0..5u32) {
+        0 => FillGen::Tile(TileParams::randomized(rng)),
+        1 => FillGen::Crosshatch,
+        2 => FillGen::Guilloche,
+        3 => FillGen::Zigzag,
+        _ => FillGen::DiamondLattice,
+    };
+    // Use a shape mask for the whole node
+    let node_mask: MaskFn = match rng.random_range(0..4u32) {
+        0 => Box::new(mask_ellipse(cx, cy, rx, ry, 2.5)),
+        1 => Box::new(mask_diamond(cx, cy, rx, ry, 2.0)),
+        2 => Box::new(mask_rect(rect, 2.0)),
+        _ => {
+            let (wt, wb) = if rng.random_range(0..2u32) == 0 {
+                (rect.w as f32 * 0.4, rect.w as f32 * 0.9)
+            } else {
+                (rect.w as f32 * 0.9, rect.w as f32 * 0.4)
+            };
+            Box::new(mask_trapezoid(cx, cy, wt, wb, rect.h as f32 * 0.9, 2.0))
+        }
+    };
+    layers.push(Layer { fill: bg_fill, mask: Some(node_mask), palette: bg_pal });
+
+    // Centerpiece: big sprite
+    let mut cp_pal = *palette;
+    cp_pal[1] = palette[rng.random_range(1..4)];
+    let (cp_fill, cw, ch) = match rng.random_range(0..6u32) {
+        0..=1 => {
+            let s = rng.random_range(3..6);
+            (FillGen::Mask(s, rng.random_range(0..MASK_STYLE_COUNT)), s * 4 + 4, s * 4 + 4)
+        }
+        2 => {
+            let order = rng.random_range(3..7);
+            (FillGen::AztecDiamond(order), order * 4 + 4, order * 2 + 4)
+        }
+        3 => {
+            let steps = rng.random_range(3..6);
+            (FillGen::Fret(steps), steps * 4 + 2, steps * 4 + 2)
+        }
+        _ => {
+            let tw = rng.random_range(14..rect.w.min(28).max(15));
+            let th = rng.random_range(10..rect.h.min(20).max(11));
+            (FillGen::Tree(rng.random_range(0..12)), tw, th)
+        }
+    };
+    let elx = (cx as usize).saturating_sub(cw / 2).min(rect.x + rect.w - cw.min(rect.w));
+    let ely = (cy as usize).saturating_sub(ch / 2).min(rect.y + rect.h - ch.min(rect.h));
+    let el_rect = Rect { x: elx, y: ely, w: cw.min(rect.w), h: ch.min(rect.h) };
+    layers.push(Layer {
+        fill: cp_fill,
+        mask: Some(Box::new(mask_rect(&el_rect, 0.0))),
+        palette: cp_pal,
+    });
+
+    layers
+}
+
+/// Cluster: N related patterns in a spatial arrangement.
+fn make_cluster(
+    rect: &Rect,
+    arrangement: ClusterArrangement,
+    n: usize,
+    palette: &[Color; 5],
+    rng: &mut StdRng,
+) -> Vec<Layer> {
+    let mut layers = Vec::new();
+    let cx = rect.x as f32 + rect.w as f32 * 0.5;
+    let cy = rect.y as f32 + rect.h as f32 * 0.5;
+
+    // Cell size depends on node size and count
+    let cell_w = (rect.w as f32 / (n as f32).sqrt().ceil().max(2.0)) as usize;
+    let cell_h = (rect.h as f32 / (n as f32).sqrt().ceil().max(2.0)) as usize;
+
+    for i in 0..n {
+        let (ox, oy) = cluster_offset(arrangement, i, n, rect.w, rect.h);
+        let ex = (cx as i32 + ox).clamp(rect.x as i32, (rect.x + rect.w) as i32 - 1) as usize;
+        let ey = (cy as i32 + oy).clamp(rect.y as i32, (rect.y + rect.h) as i32 - 1) as usize;
+
+        let mut pal = *palette;
+        pal[1] = palette[rng.random_range(1..4)];
+
+        let (fill, ew, eh) = match rng.random_range(0..8u32) {
+            0..=2 => {
+                let mut tp = TileParams::randomized(rng);
+                tp.skew = rng.random_range(15..50);
+                (FillGen::Tile(tp), cell_w, cell_h)
+            }
+            3 => (FillGen::Flower(rng.random_range(0..5)), 5, 5),
+            4 => (FillGen::Fruit(rng.random_range(0..5)), 5, 5),
+            5 => {
+                let s = rng.random_range(2..4);
+                (FillGen::Mask(s, rng.random_range(0..MASK_STYLE_COUNT)), s * 4 + 4, s * 4 + 4)
+            }
+            _ => (FillGen::Noise(noise_variant_from_index(rng.random_range(0..NOISE_VARIANT_COUNT))), cell_w, cell_h),
+        };
+
+        let elx = ex.saturating_sub(ew / 2).min(rect.x + rect.w - ew.min(rect.w));
+        let ely = ey.saturating_sub(eh / 2).min(rect.y + rect.h - eh.min(rect.h));
+
+        let ecx = elx as f32 + ew as f32 * 0.5;
+        let ecy = ely as f32 + eh as f32 * 0.5;
+        let mask: MaskFn = if fill_breaks_out(&fill) {
+            let el_rect = Rect { x: elx, y: ely, w: ew.min(rect.w), h: eh.min(rect.h) };
+            Box::new(mask_rect(&el_rect, 0.0))
+        } else {
+            pick_element_mask(ecx, ecy, ew as f32, eh as f32, rng)
+        };
+
+        layers.push(Layer { fill, mask: Some(mask), palette: pal });
+    }
+
+    layers
+}
+
+/// Position offset for cluster element i of n within a bounding box of (w, h).
+fn cluster_offset(
+    arrangement: ClusterArrangement,
+    i: usize,
+    n: usize,
+    w: usize,
+    h: usize,
+) -> (i32, i32) {
+    match arrangement {
+        ClusterArrangement::Ring => {
+            let angle = (i as f32 / n as f32) * std::f32::consts::TAU;
+            let rx = w as f32 * 0.3;
+            let ry = h as f32 * 0.3;
+            ((angle.cos() * rx) as i32, (angle.sin() * ry) as i32)
+        }
+        ClusterArrangement::Hex => {
+            // Hex grid: offset every other row
+            let cols = (n as f32).sqrt().ceil() as usize;
+            let col = i % cols;
+            let row = i / cols;
+            let spacing_x = w as i32 / (cols as i32 + 1);
+            let spacing_y = h as i32 / ((n / cols + 1) as i32 + 1);
+            let offset = if row % 2 == 1 { spacing_x / 2 } else { 0 };
+            let ox = (col as i32 + 1) * spacing_x - w as i32 / 2 + offset;
+            let oy = (row as i32 + 1) * spacing_y - h as i32 / 2;
+            (ox, oy)
+        }
+        ClusterArrangement::Grid => {
+            let cols = (n as f32).sqrt().ceil() as usize;
+            let col = i % cols;
+            let row = i / cols;
+            let spacing_x = w as i32 / (cols as i32 + 1);
+            let spacing_y = h as i32 / ((n / cols + 1) as i32 + 1);
+            let ox = (col as i32 + 1) * spacing_x - w as i32 / 2;
+            let oy = (row as i32 + 1) * spacing_y - h as i32 / 2;
+            (ox, oy)
+        }
+        ClusterArrangement::Loose => {
+            // Spiral-ish scatter
+            let angle = i as f32 * 2.4; // golden angle
+            let r = (i as f32 + 1.0).sqrt() * (w.min(h) as f32 * 0.15);
+            ((angle.cos() * r * 1.8) as i32, (angle.sin() * r) as i32)
+        }
+    }
+}
+
+/// Soup walk: overlapping node scenes along a wandering path.
+/// Visually dense, nodes blend together -- no gap enforcement.
+pub fn soup_walk(
+    w: usize,
+    h: usize,
+    palette: &[Color; 5],
+    rng: &mut StdRng,
+) -> (Vec<Layer>, Vec<(usize, usize)>) {
+    let character = PlantCharacter::random(rng);
+    let mut layers = Vec::new();
+
+    let node_count = rng.random_range(character.branch_factor.0 as u32..=character.branch_factor.1 as u32 + 2) as usize;
+    let margin = 6usize;
+
+    let mut stops = Vec::with_capacity(node_count);
+    let mut px = rng.random_range(w / 5..w * 4 / 5);
+    let mut py = rng.random_range(h / 5..h * 4 / 5);
+    stops.push((px, py));
+
+    for _ in 1..node_count {
+        let base_angle: f32 = match character.taper_dir {
+            TaperDir::Up => -std::f32::consts::FRAC_PI_2,
+            TaperDir::Down => std::f32::consts::FRAC_PI_2,
+            TaperDir::Left => std::f32::consts::PI,
+            TaperDir::Right => 0.0,
+            TaperDir::None => rng.random::<f32>() * std::f32::consts::TAU,
+        };
+        let jitter = (rng.random::<f32>() - 0.5) * character.angle_jitter * std::f32::consts::TAU;
+        let angle = base_angle + jitter;
+        let min_step = (w.min(h) / 5).max(10);
+        let max_step = (w.min(h) / 3).max(min_step + 5);
+        let dist = rng.random_range(min_step..max_step) as f32;
+        px = (px as f32 + angle.cos() * dist * 1.8)
+            .clamp(margin as f32, (w - margin) as f32) as usize;
+        py = (py as f32 + angle.sin() * dist)
+            .clamp(margin as f32, (h - margin) as f32) as usize;
+        stops.push((px, py));
+    }
+
+    for (i, &(sx, sy)) in stops.iter().enumerate() {
+        let t = if node_count > 1 { i as f32 / (node_count - 1) as f32 } else { 0.5 };
+        let sf = character.size_factor(t);
+        let base_w = rng.random_range((w / 5).max(16)..(w / 3).max(20));
+        let base_h = rng.random_range((h / 5).max(10)..(h / 3).max(14));
+        let nw = (base_w as f32 * sf) as usize;
+        let nh = (base_h as f32 * sf) as usize;
+        let nx = sx.saturating_sub(nw / 2).min(w.saturating_sub(nw + margin));
+        let ny = sy.saturating_sub(nh / 2).min(h.saturating_sub(nh + margin));
+        let node_rect = Rect { x: nx, y: ny, w: nw.min(w - nx), h: nh.min(h - ny) };
+        let mode = NodeMode::pick(character.landscape_bias, rng);
+        let arc_shift = (i as f32 / node_count as f32 * 60.0) as u8;
+        let mut node_pal = *palette;
+        node_pal[1] = shift_hue(palette[1], arc_shift);
+        node_pal[2] = shift_hue(palette[2], arc_shift);
+        layers.extend(make_node_scene(&node_rect, mode, &node_pal, rng));
+    }
+
+    (layers, stops)
+}
+
+/// Party walk: non-overlapping node islands along a path.
+/// Each node is a distinct scene clipped to a shape, with breathing room between.
+pub fn party_walk(
+    w: usize,
+    h: usize,
+    palette: &[Color; 5],
+    rng: &mut StdRng,
+) -> (Vec<Layer>, Vec<(usize, usize)>) {
+    let character = PlantCharacter::random(rng);
+    let mut layers = Vec::new();
+    let margin = 2usize;
+    // Gap scales with canvas so wide terminals don't get wall-to-wall mush
+    let gap = (w.min(h) / 15).max(3);
+
+    // ── Place non-overlapping boxes via rejection sampling ──
+    let target_count = rng.random_range(5..12u32) as usize;
+    let mut boxes: Vec<(usize, usize, usize, usize)> = Vec::new(); // (x, y, w, h)
+    let mut stops: Vec<(usize, usize)> = Vec::new();
+    let mut total_area = 0usize;
+    let canvas_area = w * h;
+
+    for i in 0..target_count {
+        let t = if target_count > 1 { i as f32 / (target_count - 1) as f32 } else { 0.5 };
+        let sf = character.size_factor(t);
+
+        let max_bw = (w as u32 * 2 / 5).max(24).min(55);
+        let max_bh = (h as u32 * 2 / 5).max(14).min(28);
+        let min_bw = (max_bw / 2).max(14);
+        let min_bh = (max_bh / 2).max(8);
+        let bw = ((rng.random_range(min_bw..max_bw) as f32) * sf).max(10.0) as usize;
+        let bh = ((rng.random_range(min_bh..max_bh) as f32) * sf).max(6.0) as usize;
+
+        let mut placed = false;
+        for _ in 0..60 {
+            let bx = rng.random_range(margin..w.saturating_sub(bw + margin).max(margin + 1));
+            let by = rng.random_range(margin..h.saturating_sub(bh + margin).max(margin + 1));
+
+            let overlaps = boxes.iter().any(|&(px, py, pw, ph)| {
+                bx < px + pw + gap && bx + bw + gap > px &&
+                by < py + ph + gap && by + bh + gap > py
+            });
+
+            if !overlaps {
+                boxes.push((bx, by, bw, bh));
+                stops.push((bx + bw / 2, by + bh / 2));
+                total_area += bw * bh;
+                placed = true;
+                break;
+            }
+        }
+        if !placed { continue; }
+    }
+
+    // Sort left-to-right for readable path
+    let mut order: Vec<usize> = (0..stops.len()).collect();
+    order.sort_by_key(|&i| stops[i].0);
+    let stops: Vec<(usize, usize)> = order.iter().map(|&i| stops[i]).collect();
+    let boxes: Vec<(usize, usize, usize, usize)> = order.iter().map(|&i| boxes[i]).collect();
+
+    // ── Build each node ──
+    let node_count = boxes.len();
+    for (i, &(bx, by, bw, bh)) in boxes.iter().enumerate() {
+        let node_rect = Rect { x: bx, y: by, w: bw, h: bh };
+        let cx = bx as f32 + bw as f32 * 0.5;
+        let cy = by as f32 + bh as f32 * 0.5;
+        let rx = bw as f32 * 0.5;
+        let ry = bh as f32 * 0.5;
+
+        let mode = NodeMode::pick(character.landscape_bias, rng);
+
+        // Color arc
+        let arc_shift = if node_count > 1 { (i as f32 / (node_count - 1) as f32 * 60.0) as u8 } else { 0 };
+        let mut node_pal = *palette;
+        node_pal[1] = shift_hue(palette[1], arc_shift);
+        node_pal[2] = shift_hue(palette[2], arc_shift);
+
+        // Node boundary shape -- clips everything inside
+        let node_dissolve = 2.5;
+        let node_shape: NodeShape = match rng.random_range(0..4u32) {
+            0 => NodeShape::Ellipse,
+            1 => NodeShape::Diamond,
+            2 => NodeShape::Rect,
+            _ => NodeShape::Trapezoid(
+                if rng.random_range(0..2u32) == 0 {
+                    (bw as f32 * 0.4, bw as f32 * 0.9)
+                } else {
+                    (bw as f32 * 0.9, bw as f32 * 0.4)
+                }
+            ),
+        };
+
+        // Generate the node's internal layers
+        let inner_layers = make_node_scene(&node_rect, mode, &node_pal, rng);
+
+        // Wrap each inner layer's mask with the node boundary
+        for layer in inner_layers {
+            let clipped_mask: MaskFn = match node_shape {
+                NodeShape::Ellipse => {
+                    let boundary = mask_ellipse(cx, cy, rx, ry, node_dissolve);
+                    match layer.mask {
+                        Some(inner) => mask_intersect(boundary, move |x, y| inner(x, y)),
+                        None => Box::new(boundary),
+                    }
+                }
+                NodeShape::Diamond => {
+                    let boundary = mask_diamond(cx, cy, rx, ry, node_dissolve);
+                    match layer.mask {
+                        Some(inner) => mask_intersect(boundary, move |x, y| inner(x, y)),
+                        None => Box::new(boundary),
+                    }
+                }
+                NodeShape::Rect => {
+                    let boundary = mask_rect(&node_rect, node_dissolve);
+                    match layer.mask {
+                        Some(inner) => mask_intersect(boundary, move |x, y| inner(x, y)),
+                        None => Box::new(boundary),
+                    }
+                }
+                NodeShape::Trapezoid((wt, wb)) => {
+                    let boundary = mask_trapezoid(cx, cy, wt, wb, bh as f32 * 0.9, node_dissolve);
+                    match layer.mask {
+                        Some(inner) => mask_intersect(boundary, move |x, y| inner(x, y)),
+                        None => Box::new(boundary),
+                    }
+                }
+            };
+
+            layers.push(Layer {
+                fill: layer.fill,
+                mask: Some(clipped_mask),
+                palette: layer.palette,
+            });
+        }
+    }
+
+    (layers, stops)
+}
+
+#[derive(Clone, Copy)]
+enum NodeShape {
+    Ellipse,
+    Diamond,
+    Rect,
+    Trapezoid((f32, f32)), // (w_top, w_bot)
+}
+
+/// Shift a color's hue by `degrees` (approximate, works on RGB).
+fn shift_hue(color: Color, degrees: u8) -> Color {
+    match color {
+        Color::Rgb { r, g, b } => {
+            // Rotate through simple channel cycling
+            let d = degrees as f32 / 60.0;
+            let phase = d as usize % 3;
+            match phase {
+                0 => Color::Rgb { r, g: g.saturating_add(degrees / 3), b: b.saturating_sub(degrees / 4) },
+                1 => Color::Rgb { r: r.saturating_sub(degrees / 4), g, b: b.saturating_add(degrees / 3) },
+                _ => Color::Rgb { r: r.saturating_add(degrees / 3), g: g.saturating_sub(degrees / 4), b },
+            }
+        }
+        other => other,
     }
 }
 
