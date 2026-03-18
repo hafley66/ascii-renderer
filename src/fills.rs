@@ -825,3 +825,127 @@ pub fn draw_diamond_lattice(grid: &mut Grid, rect: &Rect, color: Color, color2: 
         }
     }
 }
+
+/// Spiral: Archimedean spiral from center using box-drawing curves.
+pub fn draw_spiral(grid: &mut Grid, rect: &Rect, color: Color, color2: Color) {
+    let cx = rect.x as f32 + rect.w as f32 * 0.5;
+    let cy = rect.y as f32 + rect.h as f32 * 0.5;
+    let max_r = (rect.w.min(rect.h * 2)) as f32 * 0.45;
+    let turns = 4.0;
+    let steps = (max_r * turns * 8.0) as usize;
+
+    let mut prev_x = cx as usize;
+    let mut prev_y = cy as usize;
+
+    for i in 0..steps {
+        let t = i as f32 / steps as f32;
+        let angle = t * turns * std::f32::consts::TAU;
+        let r = t * max_r;
+        let px = (cx + angle.cos() * r * 2.0) as usize; // *2 for terminal aspect ratio
+        let py = (cy + angle.sin() * r) as usize;
+
+        if py >= grid.len() || px >= grid[0].len() { continue; }
+        if py < rect.y || py >= rect.y + rect.h || px < rect.x || px >= rect.x + rect.w { continue; }
+
+        let dx = px as i32 - prev_x as i32;
+        let dy = py as i32 - prev_y as i32;
+        let ch = if dx == 0 && dy == 0 { '·' }
+                 else if dx.abs() > dy.abs() { '─' }
+                 else if dy > 0 {
+                     if dx > 0 { '╲' } else { '╱' }
+                 } else {
+                     if dx > 0 { '╱' } else { '╲' }
+                 };
+        let c = if i % 2 == 0 { color } else { color2 };
+        let bg = grid[py][px].bg;
+        grid[py][px] = Cell::with_bg(ch, c, bg);
+        prev_x = px;
+        prev_y = py;
+    }
+}
+
+/// Concentric: nested rectangles from center outward, alternating colors.
+pub fn draw_concentric(grid: &mut Grid, rect: &Rect, color: Color, color2: Color) {
+    let cx = rect.x + rect.w / 2;
+    let cy = rect.y + rect.h / 2;
+    let max_rings = (rect.w.min(rect.h * 2) / 4).max(1);
+
+    for ring in 0..max_rings {
+        let hw = (ring + 1) * 2;
+        let hh = ring + 1;
+        let c = if ring % 2 == 0 { color } else { color2 };
+        let dim_c = darken(c, 20);
+
+        for dx in 0..=hw * 2 {
+            let x = cx + dx - hw;
+            let y_top = cy.saturating_sub(hh);
+            let y_bot = cy + hh;
+            if x < rect.x || x >= rect.x + rect.w { continue; }
+
+            if y_top >= rect.y && y_top < rect.y + rect.h && y_top < grid.len() && x < grid[0].len() {
+                let bg = grid[y_top][x].bg;
+                let ch = if dx == 0 { '╭' } else if dx == hw * 2 { '╮' } else { '─' };
+                grid[y_top][x] = Cell::with_bg(ch, c, bg);
+            }
+            if y_bot >= rect.y && y_bot < rect.y + rect.h && y_bot < grid.len() && x < grid[0].len() {
+                let bg = grid[y_bot][x].bg;
+                let ch = if dx == 0 { '╰' } else if dx == hw * 2 { '╯' } else { '─' };
+                grid[y_bot][x] = Cell::with_bg(ch, dim_c, bg);
+            }
+        }
+        for dy in 1..hh {
+            let y = cy.saturating_sub(hh) + dy;
+            let x_left = cx.saturating_sub(hw);
+            let x_right = cx + hw;
+            if y < rect.y || y >= rect.y + rect.h || y >= grid.len() { continue; }
+            if x_left >= rect.x && x_left < rect.x + rect.w && x_left < grid[0].len() {
+                let bg = grid[y][x_left].bg;
+                grid[y][x_left] = Cell::with_bg('│', c, bg);
+            }
+            if x_right >= rect.x && x_right < rect.x + rect.w && x_right < grid[0].len() {
+                let bg = grid[y][x_right].bg;
+                grid[y][x_right] = Cell::with_bg('│', dim_c, bg);
+            }
+        }
+    }
+}
+
+/// Labyrinth: deterministic maze-like pattern using line segments.
+pub fn draw_labyrinth(grid: &mut Grid, rect: &Rect, color: Color, color2: Color) {
+    for y in rect.y..rect.y + rect.h {
+        for x in rect.x..rect.x + rect.w {
+            if y >= grid.len() || x >= grid[0].len() { continue; }
+            let bg = grid[y][x].bg;
+            let rx = x - rect.x;
+            let ry = y - rect.y;
+
+            let cell_w = 4;
+            let cell_h = 2;
+            let cell_row = ry / cell_h;
+            let offset = if cell_row % 2 == 1 { cell_w / 2 } else { 0 };
+            let adj_cx = (rx + offset) % cell_w;
+            let cy = ry % cell_h;
+            let cell_col = rx / cell_w;
+
+            let (ch, c) = match (cy, adj_cx) {
+                (0, 0) => ('┌', color),
+                (0, 1) | (0, 2) => ('─', color),
+                (0, 3) => ('┐', color2),
+                (1, 0) => {
+                    if cell_row % 3 == 0 { ('├', color) }
+                    else { ('│', color) }
+                }
+                (1, 3) => {
+                    if (cell_col + cell_row) % 2 == 0 { ('┤', color2) }
+                    else { ('│', color2) }
+                }
+                (1, 1) => {
+                    if cell_row % 2 == 0 { ('·', darken(color, 40)) }
+                    else { continue }
+                }
+                _ => continue,
+            };
+            grid[y][x] = Cell::with_bg(ch, c, bg);
+        }
+    }
+}

@@ -20,6 +20,9 @@ pub enum FillGen {
     Weave,
     Zigzag,
     DiamondLattice,
+    Spiral,
+    Concentric,
+    Labyrinth,
     // Sprites -- positioned within rect
     Tree(usize),           // tree type 0-3
     AztecDiamond(usize),   // order
@@ -76,6 +79,9 @@ pub fn render_fill(
         FillGen::Weave => draw_weave(grid, rect, color, lighten(color, 30)),
         FillGen::Zigzag => draw_zigzag(grid, rect, color, color2),
         FillGen::DiamondLattice => draw_diamond_lattice(grid, rect, color, color2),
+        FillGen::Spiral => draw_spiral(grid, rect, color, color2),
+        FillGen::Concentric => draw_concentric(grid, rect, color, color2),
+        FillGen::Labyrinth => draw_labyrinth(grid, rect, color, color2),
         FillGen::Tree(kind) => {
             let cx = rect.x + rect.w / 2;
             let root_y = rect.y + rect.h.saturating_sub(2);

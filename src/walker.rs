@@ -152,13 +152,16 @@ impl LeafWalker {
             }
             WalkerMood::Geometric => {
                 if area > 300 && rect.h > 15 && rect.w > 20 {
-                    match rng.random_range(0..10) {
+                    match rng.random_range(0..13) {
                         0 => { let order = (rect.h / 2).min(rect.w / 4).max(2).min(6); FillGen::AztecDiamond(order) }
                         1 => FillGen::Guilloche,
                         2 => FillGen::Weave,
                         3 => FillGen::DiamondLattice,
                         4 => FillGen::Crosshatch,
                         5 => FillGen::Noise(noise_variant_from_index(rng.random_range(0..NOISE_VARIANT_COUNT))),
+                        6 => FillGen::Spiral,
+                        7 => FillGen::Concentric,
+                        8 => FillGen::Labyrinth,
                         _ => FillGen::Tile(TileParams::randomized(rng)),
                     }
                 } else if area > 80 && rect.h > 6 && rect.w > 10 {
@@ -869,7 +872,10 @@ fn fill_disc(f: &FillGen) -> u8 {
         FillGen::Fruit(_) => 11,
         FillGen::Mask(_, _) => 12,
         FillGen::Fret(_) => 13,
-        FillGen::Nothing => 14,
+        FillGen::Spiral => 14,
+        FillGen::Concentric => 15,
+        FillGen::Labyrinth => 16,
+        FillGen::Nothing => 17,
     }
 }
 
@@ -932,7 +938,7 @@ fn pick_unique_element(
     rng: &mut StdRng,
 ) -> (FillGen, usize) {
     for _ in 0..10 {
-        let fill = match rng.random_range(0..12u32) {
+        let fill = match rng.random_range(0..16u32) {
             0..=3 => FillGen::Tree(rng.random_range(0..12)),
             4..=5 => {
                 let s = rng.random_range(2..5);
@@ -942,6 +948,9 @@ fn pick_unique_element(
             7 => FillGen::Fret(rng.random_range(2..5)),
             8..=9 => FillGen::Flower(rng.random_range(0..5)),
             10 => FillGen::Fruit(rng.random_range(0..5)),
+            11 => FillGen::Spiral,
+            12 => FillGen::Concentric,
+            13 => FillGen::Labyrinth,
             _ => FillGen::Tile(TileParams::randomized(rng)),
         };
         let ci = rng.random_range(1..4);
@@ -962,6 +971,7 @@ fn element_size(fill: &FillGen, rng: &mut StdRng) -> (usize, usize) {
         FillGen::AztecDiamond(o) => (o * 4 + 4, o * 2 + 4),
         FillGen::Fret(s) => (s * 4 + 2, s * 4 + 2),
         FillGen::Flower(_) | FillGen::Fruit(_) => (5, 5),
+        FillGen::Spiral | FillGen::Concentric | FillGen::Labyrinth => (20, 12),
         _ => (20, 12),
     }
 }
@@ -1336,12 +1346,15 @@ fn make_centerpiece(
     // Background surround pattern (tile or noise)
     let mut bg_pal = *palette;
     bg_pal[1] = darken(palette[rng.random_range(1..4)], 40);
-    let bg_fill = match rng.random_range(0..5u32) {
+    let bg_fill = match rng.random_range(0..8u32) {
         0 => FillGen::Tile(TileParams::randomized(rng)),
         1 => FillGen::Crosshatch,
         2 => FillGen::Guilloche,
         3 => FillGen::Zigzag,
-        _ => FillGen::DiamondLattice,
+        4 => FillGen::DiamondLattice,
+        5 => FillGen::Spiral,
+        6 => FillGen::Concentric,
+        _ => FillGen::Labyrinth,
     };
     // Use a shape mask for the whole node
     let node_mask: MaskFn = match rng.random_range(0..4u32) {
