@@ -5,6 +5,7 @@ use crate::types::*;
 use crate::color::*;
 use crate::fills::*;
 use crate::sprites::*;
+use crate::automata::*;
 
 // ── Types ───────────────────────────────────────────────────────────
 
@@ -30,6 +31,10 @@ pub enum FillGen {
     Fruit(usize),          // style 0-4
     Mask(usize, usize),    // (size, style)
     Fret(usize),           // steps
+    // Floaty / free-form fills
+    CaSnapshot(u8),    // rule index: 0=life, 1=cave, 2=maze, 3=coral
+    Explosion,         // radial burst from center
+    Rule1D(u8),        // Wolfram 1D rule number (30, 90, 110, etc.)
     // No-op
     Nothing,
 }
@@ -111,6 +116,15 @@ pub fn render_fill(
         }
         FillGen::Fret(steps) => {
             draw_stepped_fret(grid, rect.x as i32 + 2, rect.y as i32 + 1, steps, Dir::Right, color);
+        }
+        FillGen::CaSnapshot(rule_idx) => {
+            draw_ca_snapshot(grid, rect, rule_idx, color, color2, rng);
+        }
+        FillGen::Explosion => {
+            draw_explosion(grid, rect, color, color2);
+        }
+        FillGen::Rule1D(rule) => {
+            draw_rule_1d(grid, rect, rule, color, color2);
         }
         FillGen::Nothing => {}
     }
@@ -407,5 +421,155 @@ pub fn mask_trapezoid(cx: f32, cy: f32, w_top: f32, w_bot: f32, h: f32, dissolve
         if edge <= 0.0 { 0.0 }
         else if dissolve <= 0.0 || edge >= dissolve { 1.0 }
         else { edge / dissolve }
+    }
+}
+
+// ── Floaty fill renderers ────────────────────────────────────────────
+
+/// CA snapshot: run a 2D cellular automata for a few generations, render the
+/// frozen state as box-drawing chars inside the rect.
+fn draw_ca_snapshot(
+    grid: &mut Grid,
+    rect: &Rect,
+    rule_idx: u8,
+    color: Color,
+    color2: Color,
+    rng: &mut StdRng,
+) {
+    let rule = match rule_idx % 4 {
+        0 => CaRule::life(),
+        1 => CaRule::cave(),
+        2 => CaRule::maze(),
+        _ => CaRule::coral(),
+    };
+    let density = match rule_idx % 4 {
+        1 => 0.50,
+        2 => 0.38,
+        3 => 0.50,
+        _ => 0.30,
+    };
+    let gens = match rule_idx % 4 {
+        2 => 12,
+        _ => 6,
+    };
+
+    let mut ca = CaGrid::new(rect.w, rect.h);
+    ca.seed_random(density, rng);
+    ca.evolve(&rule, gens);
+
+    let style = match rng.random_range(0..4u32) {
+        0 => GlyphStyle::Box,
+        1 => GlyphStyle::Round,
+        2 => GlyphStyle::Diagonal,
+        _ => GlyphStyle::Heavy,
+    };
+
+    for y in 0..rect.h {
+        for x in 0..rect.w {
+            if !ca.cells[y][x] { continue; }
+            let gx = rect.x + x;
+            let gy = rect.y + y;
+            if gy >= grid.len() || gx >= grid[0].len() { continue; }
+            let card = ca.cardinal(x, y);
+            let diag = ca.diagonal(x, y);
+            let ch = cardinal_glyph(card, diag, style);
+            let c = if card.count_ones() > 2 { color } else { color2 };
+            let bg = grid[gy][gx].bg;
+            grid[gy][gx] = Cell::with_bg(ch, c, bg);
+        }
+    }
+}
+
+/// Explosion: radial burst from center. Dense core, rays thinning outward.
+fn draw_explosion(
+    grid: &mut Grid,
+    rect: &Rect,
+    color: Color,
+    color2: Color,
+) {
+    let cx = rect.w as f32 * 0.5;
+    let cy = rect.h as f32 * 0.5;
+    let max_r = cx.min(cy * 2.0);
+
+    let ray_count = 14;
+    let ray_chars: &[char] = &['╱', '╲', '│', '─', '·', '∙', '°'];
+
+    for y in 0..rect.h {
+        for x in 0..rect.w {
+            let gx = rect.x + x;
+            let gy = rect.y + y;
+            if gy >= grid.len() || gx >= grid[0].len() { continue; }
+
+            let dx = x as f32 - cx;
+            let dy = (y as f32 - cy) * 2.0; // aspect ratio correction
+            let dist = (dx * dx + dy * dy).sqrt();
+            let angle = dy.atan2(dx);
+
+            let nd = (dist / max_r).min(1.0);
+
+            // Dense core
+            if nd < 0.15 {
+                let bg = grid[gy][gx].bg;
+                grid[gy][gx] = Cell::with_bg('█', color, bg);
+                continue;
+            }
+
+            // Ray proximity test
+            let ray_angle = std::f32::consts::TAU / ray_count as f32;
+            let nearest_ray = (angle / ray_angle).round() * ray_angle;
+            let angle_off = (angle - nearest_ray).abs();
+
+            let ray_width = 0.3 * (1.0 - nd * 0.7);
+            if angle_off > ray_width { continue; }
+            if nd > 0.85 { continue; }
+
+            let ch_idx = ((nd * (ray_chars.len() - 1) as f32) as usize).min(ray_chars.len() - 1);
+            let ch = ray_chars[ch_idx];
+            let c = if nd < 0.5 { color } else { color2 };
+            let bg = grid[gy][gx].bg;
+            grid[gy][gx] = Cell::with_bg(ch, c, bg);
+        }
+    }
+}
+
+/// 1D elementary cellular automaton (Wolfram rules). Renders top-to-bottom,
+/// each row is the next generation. Popular rules: 30, 90, 110, 150, 184.
+fn draw_rule_1d(
+    grid: &mut Grid,
+    rect: &Rect,
+    rule: u8,
+    color: Color,
+    color2: Color,
+) {
+    if rect.w == 0 || rect.h == 0 { return; }
+
+    let mut row = vec![false; rect.w];
+    row[rect.w / 2] = true;
+
+    let chars_on: &[char] = &['█', '▓', '▒', '░'];
+
+    for y in 0..rect.h {
+        let gy = rect.y + y;
+        if gy >= grid.len() { break; }
+
+        for x in 0..rect.w {
+            if !row[x] { continue; }
+            let gx = rect.x + x;
+            if gx >= grid[0].len() { continue; }
+            let ch = chars_on[(y / 2) % chars_on.len()];
+            let c = if (x + y) % 3 == 0 { color2 } else { color };
+            let bg = grid[gy][gx].bg;
+            grid[gy][gx] = Cell::with_bg(ch, c, bg);
+        }
+
+        let mut next = vec![false; rect.w];
+        for x in 0..rect.w {
+            let left = if x > 0 { row[x - 1] } else { false };
+            let center = row[x];
+            let right = if x + 1 < rect.w { row[x + 1] } else { false };
+            let pattern = (left as u8) << 2 | (center as u8) << 1 | right as u8;
+            next[x] = (rule >> pattern) & 1 == 1;
+        }
+        row = next;
     }
 }

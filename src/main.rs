@@ -1482,7 +1482,7 @@ mod tests {
                 density: 1.0, stagger_override: -1, rhythm_override: 0,
                 jitter: 0.0, skew: 60,
             };
-            fill_tile_ex(&mut grid, &rect, &params, palette[1], palette[2], 0.0, &mut rng);
+            fill_tile_ex(&mut grid, &rect, &params, palette[1], palette[2], 0.0, None, &mut rng);
             grid_to_plain(&grid)
         };
         assert_eq!(run(42), run(42));
@@ -1499,7 +1499,7 @@ mod tests {
             density: 1.0, stagger_override: -1, rhythm_override: 0,
             jitter: 0.0, skew: 80,
         };
-        fill_tile_ex(&mut grid, &rect, &params, palette[1], palette[2], 0.0, &mut rng);
+        fill_tile_ex(&mut grid, &rect, &params, palette[1], palette[2], 0.0, None, &mut rng);
 
         // Check that at least some cells outside the rect got drawn
         let mut outside_drawn = 0;

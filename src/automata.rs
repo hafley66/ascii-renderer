@@ -140,7 +140,7 @@ pub enum GlyphStyle {
 }
 
 /// Cardinal bitmask (N=1 E=2 S=4 W=8) → box-drawing char
-fn cardinal_glyph(mask: u8, diag: u8, style: GlyphStyle) -> char {
+pub fn cardinal_glyph(mask: u8, diag: u8, style: GlyphStyle) -> char {
     match style {
         GlyphStyle::Box => match mask {
             0  => '·',

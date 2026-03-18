@@ -152,7 +152,7 @@ impl LeafWalker {
             }
             WalkerMood::Geometric => {
                 if area > 300 && rect.h > 15 && rect.w > 20 {
-                    match rng.random_range(0..13) {
+                    match rng.random_range(0..16) {
                         0 => { let order = (rect.h / 2).min(rect.w / 4).max(2).min(6); FillGen::AztecDiamond(order) }
                         1 => FillGen::Guilloche,
                         2 => FillGen::Weave,
@@ -162,10 +162,13 @@ impl LeafWalker {
                         6 => FillGen::Spiral,
                         7 => FillGen::Concentric,
                         8 => FillGen::Labyrinth,
+                        9 => FillGen::CaSnapshot(rng.random_range(0..4) as u8),
+                        10 => FillGen::Explosion,
+                        11 => FillGen::Rule1D([30, 90, 110, 150][rng.random_range(0..4)]),
                         _ => FillGen::Tile(TileParams::randomized(rng)),
                     }
                 } else if area > 80 && rect.h > 6 && rect.w > 10 {
-                    match rng.random_range(0..12) {
+                    match rng.random_range(0..15) {
                         0 => { let steps = (rect.w.min(rect.h) / 3).max(2).min(5); FillGen::Fret(steps) }
                         1 => { let order = (rect.h / 2).min(rect.w / 4).max(2).min(6); FillGen::AztecDiamond(order) }
                         2 => FillGen::Crosshatch,
@@ -174,6 +177,9 @@ impl LeafWalker {
                         5 => FillGen::Zigzag,
                         6 => FillGen::DiamondLattice,
                         7 => FillGen::Noise(noise_variant_from_index(rng.random_range(0..NOISE_VARIANT_COUNT))),
+                        8 => FillGen::CaSnapshot(rng.random_range(0..4) as u8),
+                        9 => FillGen::Explosion,
+                        10 => FillGen::Rule1D([30, 90, 110][rng.random_range(0..3)]),
                         _ => FillGen::Tile(TileParams::randomized(rng)),
                     }
                 } else if area > 20 && rect.w >= 5 && rect.h >= 3 {
@@ -875,7 +881,10 @@ fn fill_disc(f: &FillGen) -> u8 {
         FillGen::Spiral => 14,
         FillGen::Concentric => 15,
         FillGen::Labyrinth => 16,
-        FillGen::Nothing => 17,
+        FillGen::CaSnapshot(_) => 17,
+        FillGen::Explosion => 18,
+        FillGen::Rule1D(_) => 19,
+        FillGen::Nothing => 20,
     }
 }
 
@@ -937,8 +946,9 @@ fn pick_unique_element(
     palette: &[Color; 5],
     rng: &mut StdRng,
 ) -> (FillGen, usize) {
+    let wolfram_rules: &[u8] = &[30, 90, 110, 150, 184, 60, 73];
     for _ in 0..10 {
-        let fill = match rng.random_range(0..16u32) {
+        let fill = match rng.random_range(0..19u32) {
             0..=3 => FillGen::Tree(rng.random_range(0..12)),
             4..=5 => {
                 let s = rng.random_range(2..5);
@@ -951,6 +961,9 @@ fn pick_unique_element(
             11 => FillGen::Spiral,
             12 => FillGen::Concentric,
             13 => FillGen::Labyrinth,
+            14 => FillGen::CaSnapshot(rng.random_range(0..4) as u8),
+            15 => FillGen::Explosion,
+            16 => FillGen::Rule1D(wolfram_rules[rng.random_range(0..wolfram_rules.len())]),
             _ => FillGen::Tile(TileParams::randomized(rng)),
         };
         let ci = rng.random_range(1..4);
@@ -972,6 +985,9 @@ fn element_size(fill: &FillGen, rng: &mut StdRng) -> (usize, usize) {
         FillGen::Fret(s) => (s * 4 + 2, s * 4 + 2),
         FillGen::Flower(_) | FillGen::Fruit(_) => (5, 5),
         FillGen::Spiral | FillGen::Concentric | FillGen::Labyrinth => (20, 12),
+        FillGen::CaSnapshot(_) => (rng.random_range(16..28), rng.random_range(10..18)),
+        FillGen::Explosion => (rng.random_range(14..24), rng.random_range(8..14)),
+        FillGen::Rule1D(_) => (rng.random_range(16..30), rng.random_range(10..20)),
         _ => (20, 12),
     }
 }
