@@ -383,6 +383,583 @@ pub fn grow_tree(grid: &mut Grid, root_x: usize, root_y: usize, canopy_y: usize,
     }
 }
 
+// ── GRIS-style tree family ───────────────────────────────────────────
+//
+// All variants: thin trunk, bare branches, no foliage.
+// Junction vocabulary: ├ ┤ ┼ ┬ for splits, ╭ ╮ ╰ ╯ for curves, ╷ for tips.
+
+/// Shared cell setter used by all tree functions.
+fn tset(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
+    if x >= 0 && y >= 0 && (y as usize) < grid.len() && (x as usize) < grid[0].len() {
+        let cell = &mut grid[y as usize][x as usize];
+        if cell.ch == ' ' { *cell = Cell::new(ch, fg); }
+    }
+}
+
+fn tset_over(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
+    if x >= 0 && y >= 0 && (y as usize) < grid.len() && (x as usize) < grid[0].len() {
+        grid[y as usize][x as usize] = Cell::new(ch, fg);
+    }
+}
+
+/// Spiral / Fibonacci tree.
+/// Main trunk runs the full height. Branches peel off alternating sides,
+/// each shorter than the last. Secondary twigs curl upward off the tips.
+pub fn grow_spiral_tree(
+    grid: &mut Grid,
+    root_x: usize, root_y: usize, canopy_y: usize,
+    spread: usize, color: Color, rng: &mut StdRng,
+) {
+    if canopy_y >= root_y { return; }
+    let height = root_y - canopy_y;
+    let rx = root_x as i32;
+
+    // Trunk
+    for y in canopy_y..root_y {
+        tset_over(grid, rx, y as i32, '│', color);
+    }
+    tset_over(grid, rx, canopy_y as i32, '╷', lighten(color, 50));
+
+    let interval = (height / 5).max(2);
+    let mut left = rng.random_range(0..2u32) == 0;
+    let mut level = 0usize;
+    let mut y = (canopy_y + interval) as i32;
+
+    while y < root_y as i32 - 1 {
+        let arm = (spread.saturating_sub(level * 2)).max(2) as i32;
+        let c = lighten(color, (60 - level * 15) as u8);
+
+        if left {
+            tset_over(grid, rx, y, '┤', c);
+            for i in 1..arm { tset(grid, rx - i, y, '─', c); }
+            tset(grid, rx - arm, y, '╴', c);
+            if level < 3 {
+                tset(grid, rx - arm, y - 1, '╮', c);
+                tset(grid, rx - arm - 1, y - 1, '╷', lighten(c, 25));
+            }
+        } else {
+            tset_over(grid, rx, y, '├', c);
+            for i in 1..arm { tset(grid, rx + i, y, '─', c); }
+            tset(grid, rx + arm, y, '╶', c);
+            if level < 3 {
+                tset(grid, rx + arm, y - 1, '╭', c);
+                tset(grid, rx + arm + 1, y - 1, '╷', lighten(c, 25));
+            }
+        }
+
+        left = !left;
+        y += interval as i32;
+        level += 1;
+    }
+}
+
+/// Candelabra tree.
+/// Short thick trunk splits into 3-5 near-vertical arms that each branch once at the top.
+pub fn grow_candelabra(
+    grid: &mut Grid,
+    root_x: usize, root_y: usize, canopy_y: usize,
+    spread: usize, color: Color, rng: &mut StdRng,
+) {
+    if canopy_y >= root_y { return; }
+    let height = root_y - canopy_y;
+    let rx = root_x as i32;
+    let arm_count = rng.random_range(3..6usize);
+    let split_y = (root_y - height / 3) as i32;
+
+    // Main trunk to split point
+    for y in split_y..root_y as i32 {
+        tset_over(grid, rx, y, '│', color);
+    }
+
+    // Arm x-positions spread evenly
+    let total_spread = spread as i32 * 2;
+    let step = total_spread / (arm_count as i32 - 1).max(1);
+    let start_x = rx - total_spread / 2;
+
+    // Horizontal connector at split
+    for x in start_x..=start_x + total_spread {
+        tset_over(grid, x, split_y, '─', darken(color, 10));
+    }
+    tset_over(grid, rx, split_y, '┬', color);
+
+    for i in 0..arm_count {
+        let ax = start_x + i as i32 * step;
+        let jc = if i == 0 { '└' } else if i == arm_count - 1 { '┘' } else { '┴' };
+        tset_over(grid, ax, split_y, jc, color);
+
+        // Each arm goes straight up with a small tilt
+        let lean: i32 = if ax < rx { -1 } else if ax > rx { 1 } else { 0 };
+        let arm_top = canopy_y as i32 + rng.random_range(0..3u32) as i32;
+        let arm_color = lighten(color, 20);
+
+        let mut cx = ax;
+        for y in (arm_top..split_y).rev() {
+            tset(grid, cx, y, '│', arm_color);
+            // Lean once near the middle
+            if y == (arm_top + split_y) / 2 && lean != 0 {
+                tset_over(grid, cx, y, if lean < 0 { '╲' } else { '╱' }, arm_color);
+                cx += lean;
+            }
+        }
+
+        // Two-way tip split
+        let tip_c = lighten(arm_color, 30);
+        tset_over(grid, cx, arm_top, '┤', tip_c);
+        tset(grid, cx - 1, arm_top, '─', tip_c);
+        tset(grid, cx - 2, arm_top, '╷', tip_c);
+        tset_over(grid, cx, arm_top, '├', tip_c);
+        tset(grid, cx + 1, arm_top, '─', tip_c);
+        tset(grid, cx + 2, arm_top, '╷', tip_c);
+    }
+}
+
+/// Birch tree.
+/// Tall, thin trunk. Very short branches peeling off frequently. Spray tips.
+pub fn grow_birch(
+    grid: &mut Grid,
+    root_x: usize, root_y: usize, canopy_y: usize,
+    spread: usize, color: Color, rng: &mut StdRng,
+) {
+    if canopy_y >= root_y { return; }
+    let height = root_y - canopy_y;
+    let rx = root_x as i32;
+
+    for y in canopy_y..root_y {
+        tset_over(grid, rx, y as i32, '│', color);
+    }
+
+    let interval = 2i32;
+    let mut left = true;
+    let mut y = canopy_y as i32 + 1;
+
+    while y < root_y as i32 - 1 {
+        // Skip some for density variation
+        if rng.random_range(0..4u32) == 0 { y += interval; left = !left; continue; }
+
+        let arm = (rng.random_range(2..=spread.min(6)) as i32).max(1);
+        let c = lighten(color, rng.random_range(10..50) as u8);
+
+        if left {
+            tset_over(grid, rx, y, '┤', c);
+            for i in 1..arm { tset(grid, rx - i, y, '─', c); }
+            // spray tip: two short diagonals
+            tset(grid, rx - arm, y, '╮', c);
+            tset(grid, rx - arm - 1, y - 1, '╷', lighten(c, 20));
+            if arm > 2 { tset(grid, rx - arm + 1, y - 1, '╷', lighten(c, 10)); }
+        } else {
+            tset_over(grid, rx, y, '├', c);
+            for i in 1..arm { tset(grid, rx + i, y, '─', c); }
+            tset(grid, rx + arm, y, '╭', c);
+            tset(grid, rx + arm + 1, y - 1, '╷', lighten(c, 20));
+            if arm > 2 { tset(grid, rx + arm - 1, y - 1, '╷', lighten(c, 10)); }
+        }
+
+        left = !left;
+        y += interval;
+    }
+
+    tset_over(grid, rx, canopy_y as i32, '╷', lighten(color, 60));
+}
+
+/// Storm-leaning tree.
+/// Trunk drawn with diagonal chars, leaning to one side. Branches on windward side.
+pub fn grow_storm_tree(
+    grid: &mut Grid,
+    root_x: usize, root_y: usize, canopy_y: usize,
+    spread: usize, color: Color, rng: &mut StdRng,
+) {
+    if canopy_y >= root_y { return; }
+    let height = root_y - canopy_y;
+    let lean: i32 = if rng.random_range(0..2u32) == 0 { 1 } else { -1 };
+    let lean_every = (height / (spread.min(8))).max(2) as i32;
+
+    // Draw leaning trunk
+    let mut cx = root_x as i32;
+    let mut shifts = 0i32;
+    for y in (canopy_y..root_y).rev() {
+        let iy = y as i32;
+        let rows_from_root = root_y as i32 - iy;
+        let new_shifts = rows_from_root / lean_every;
+        let ch = if new_shifts > shifts {
+            shifts = new_shifts;
+            cx += lean;
+            if lean > 0 { '╱' } else { '╲' }
+        } else {
+            '│'
+        };
+        tset_over(grid, cx, iy, ch, color);
+    }
+
+    // Branches peel off the windward side (opposite to lean)
+    let branch_side = -lean;
+    let interval = (height / 4).max(2) as i32;
+    let tip_x = cx; // where trunk ended up at canopy
+
+    let mut bx = root_x as i32;
+    let mut bshifts = 0i32;
+    let mut by = root_y as i32 - 2;
+    let mut level = 0;
+
+    while by > canopy_y as i32 + 2 {
+        let arm = (spread.saturating_sub(level * 2)).max(2) as i32;
+        let c = lighten(color, (level * 20) as u8);
+
+        // Find trunk x at this y
+        let rows_from_root = root_y as i32 - by;
+        let tx = root_x as i32 + lean * (rows_from_root / lean_every);
+
+        let jc = if branch_side < 0 { '┤' } else { '├' };
+        tset_over(grid, tx, by, jc, c);
+
+        for i in 1..=arm {
+            tset(grid, tx + branch_side * i, by, '─', c);
+        }
+        // Tip curls up
+        let tip = tx + branch_side * arm;
+        let curl = if branch_side < 0 { '╮' } else { '╭' };
+        tset(grid, tip, by, curl, c);
+        tset(grid, tip + branch_side, by - 1, '╷', lighten(c, 25));
+
+        by -= interval;
+        level += 1;
+    }
+
+    tset_over(grid, tip_x, canopy_y as i32, '╷', lighten(color, 55));
+}
+
+/// Wide spreading tree.
+/// Lower splits are very wide, upper ones narrow. Broad silhouette.
+pub fn grow_wide_tree(
+    grid: &mut Grid,
+    root_x: usize, root_y: usize, canopy_y: usize,
+    spread: usize, color: Color, _rng: &mut StdRng,
+) {
+    if canopy_y >= root_y { return; }
+    let height = root_y - canopy_y;
+    let rx = root_x as i32;
+    let first_split = (root_y - height / 4) as i32;
+
+    for y in first_split..root_y as i32 {
+        tset_over(grid, rx, y, '│', color);
+    }
+
+    // 3 levels: base (very wide), mid, top (narrow)
+    let levels: &[(i32, usize)] = &[
+        (first_split, spread * 2),
+        (canopy_y as i32 + height as i32 * 2 / 3, spread),
+        (canopy_y as i32 + height as i32 / 3, spread / 2),
+    ];
+
+    let mut queue: Vec<(i32, i32, usize, usize)> = Vec::new();
+
+    for (li, &(sy, arm)) in levels.iter().enumerate() {
+        let c = lighten(color, (li * 20) as u8);
+        let arm = arm as i32;
+        let lx = rx - arm;
+        let rx2 = rx + arm;
+
+        tset_over(grid, rx, sy, '┼', c);
+        for x in lx..rx { tset(grid, x, sy, '─', c); }
+        for x in rx+1..=rx2 { tset(grid, x, sy, '─', c); }
+        tset(grid, lx, sy, '╭', c);
+        tset(grid, rx2, sy, '╮', c);
+
+        let next_sy = if li + 1 < levels.len() { levels[li + 1].0 } else { canopy_y as i32 };
+
+        // left and right sub-trunks
+        for y in next_sy..sy { tset(grid, lx, y, '│', c); }
+        for y in next_sy..sy { tset(grid, rx2, y, '│', c); }
+
+        if li + 1 >= levels.len() {
+            tset(grid, lx, canopy_y as i32, '╷', lighten(c, 30));
+            tset(grid, rx2, canopy_y as i32, '╷', lighten(c, 30));
+        }
+    }
+}
+
+/// Asymmetric tree.
+/// Left and right arms are deliberately different lengths. Wind-blown feel.
+pub fn grow_asymmetric_tree(
+    grid: &mut Grid,
+    root_x: usize, root_y: usize, canopy_y: usize,
+    spread: usize, color: Color, rng: &mut StdRng,
+) {
+    if canopy_y >= root_y { return; }
+    let height = root_y - canopy_y;
+    let rx = root_x as i32;
+    let first_split = root_y.saturating_sub((height / 3).max(2));
+
+    for y in first_split..root_y {
+        tset_over(grid, rx, y as i32, '│', color);
+    }
+
+    // One side is 40-70% longer than the other
+    let heavy_left = rng.random_range(0..2u32) == 0;
+    let base_spread = spread as i32;
+    let (left_spread, right_spread) = if heavy_left {
+        (base_spread * 5 / 3, base_spread * 2 / 3)
+    } else {
+        (base_spread * 2 / 3, base_spread * 5 / 3)
+    };
+
+    // Recursive asymmetric split -- left side, right side have different max depths
+    let left_depth = if heavy_left { 4 } else { 2 };
+    let right_depth = if heavy_left { 2 } else { 4 };
+
+    let mut queue: Vec<(i32, i32, i32, usize, usize)> = vec![
+        (rx - left_spread, canopy_y as i32, first_split as i32, 0, left_depth),
+        (rx + right_spread, canopy_y as i32, first_split as i32, 0, right_depth),
+    ];
+
+    // junction at first split
+    let c0 = color;
+    tset_over(grid, rx, first_split as i32, '┼', c0);
+    for x in rx - left_spread..rx { tset(grid, x, first_split as i32, '─', c0); }
+    for x in rx + 1..=rx + right_spread { tset(grid, x, first_split as i32, '─', c0); }
+    tset(grid, rx - left_spread, first_split as i32, '╭', c0);
+    tset(grid, rx + right_spread, first_split as i32, '╮', c0);
+
+    while let Some((x, top, bottom, depth, max_d)) = queue.pop() {
+        let c = lighten(color, (depth * 18) as u8);
+
+        for y in top + 1..bottom {
+            tset(grid, x, y, '│', c);
+        }
+
+        if depth >= max_d || bottom - top <= 2 {
+            tset(grid, x, top, '╷', lighten(c, 30));
+            continue;
+        }
+
+        let split_y = top + (bottom - top) * 2 / 5; // off-center split
+        let arm = ((base_spread >> (depth + 1)) as i32).max(1);
+
+        tset_over(grid, x, split_y, '┼', c);
+        for ax in x - arm..x { tset(grid, ax, split_y, '─', c); }
+        for ax in x + 1..=x + arm { tset(grid, ax, split_y, '─', c); }
+        tset(grid, x - arm, split_y, '╭', c);
+        tset(grid, x + arm, split_y, '╮', c);
+
+        queue.push((x - arm, top, split_y, depth + 1, max_d));
+        queue.push((x + arm, top, split_y, depth + 1, max_d));
+    }
+}
+
+/// Tall narrow tree.
+/// Very little horizontal spread. Many levels of short branches. Columnar.
+pub fn grow_tall_narrow(
+    grid: &mut Grid,
+    root_x: usize, root_y: usize, canopy_y: usize,
+    _spread: usize, color: Color, _rng: &mut StdRng,
+) {
+    if canopy_y >= root_y { return; }
+    let height = root_y - canopy_y;
+    let rx = root_x as i32;
+
+    for y in canopy_y..root_y {
+        tset_over(grid, rx, y as i32, '│', color);
+    }
+
+    let mut queue: Vec<(i32, i32, i32, usize)> = vec![(rx, canopy_y as i32, root_y as i32, 0)];
+    let max_depth = 5;
+
+    while let Some((x, top, bottom, depth)) = queue.pop() {
+        if depth >= max_depth || bottom - top < 2 {
+            tset(grid, x, top, '╷', lighten(color, 60));
+            continue;
+        }
+        let c = lighten(color, (depth * 15) as u8);
+        let arm = (3i32 - depth as i32).max(1); // 3, 2, 1, 1, 1
+        let split_y = top + (bottom - top) / 2;
+
+        tset_over(grid, x, split_y, '┤', c);
+        tset(grid, x - 1, split_y, '─', c);
+        tset(grid, x - arm, split_y, '╭', c);
+        for ax in x - arm + 1..x - 1 { tset(grid, ax, split_y, '─', c); }
+        tset_over(grid, x, split_y, '├', c);
+        tset(grid, x + 1, split_y, '─', c);
+        tset(grid, x + arm, split_y, '╮', c);
+        for ax in x + 2..x + arm { tset(grid, ax, split_y, '─', c); }
+
+        queue.push((x - arm, top, split_y, depth + 1));
+        queue.push((x + arm, top, split_y, depth + 1));
+        // Continue center upward
+        for y in top + 1..split_y { tset(grid, x, y, '│', c); }
+    }
+}
+
+/// Dead / skeletal tree.
+/// Sparse angular branches. Uses diagonal chars and sharp tips. Eerie.
+pub fn grow_dead_tree(
+    grid: &mut Grid,
+    root_x: usize, root_y: usize, canopy_y: usize,
+    spread: usize, color: Color, rng: &mut StdRng,
+) {
+    if canopy_y >= root_y { return; }
+    let height = root_y - canopy_y;
+    let rx = root_x as i32;
+
+    // Gnarled trunk: mostly vertical but with occasional diagonal offsets
+    let mut cx = rx;
+    for y in (canopy_y..root_y).rev() {
+        let iy = y as i32;
+        let from_root = root_y as i32 - iy;
+        let ch = if from_root > 2 && from_root % 7 == 0 && rng.random_range(0..3u32) == 0 {
+            let lean = if rng.random_range(0..2u32) == 0 { -1i32 } else { 1 };
+            cx += lean;
+            if lean > 0 { '╱' } else { '╲' }
+        } else {
+            '│'
+        };
+        tset_over(grid, cx, iy, ch, darken(color, 10));
+    }
+
+    // Sparse angular branches radiating outward
+    let branch_count = rng.random_range(4..8usize);
+    let interval = (height / branch_count).max(2) as i32;
+    let mut by = canopy_y as i32 + interval;
+    let tip_chars = ['╴', '╶', '·', '╷'];
+
+    let mut trunk_cx = cx;
+    for b in 0..branch_count {
+        if by >= root_y as i32 - 1 { break; }
+        let c = lighten(color, (b * 12) as u8);
+        let arm = rng.random_range(2..=(spread.min(8))) as i32;
+
+        // Recompute trunk x at this y
+        let from_root = root_y as i32 - by;
+        // approximate: walk forward
+        let tx = rx; // simplified
+
+        let go_left = b % 2 == 0;
+        let diag_ch = if go_left { '╲' } else { '╱' };
+        let horiz_ch = '─';
+
+        // Diagonal first, then horizontal
+        let diag_len = (arm / 3).max(1);
+        let horiz_len = arm - diag_len;
+        let dir: i32 = if go_left { -1 } else { 1 };
+
+        let mut bx = tx;
+        let mut yy = by;
+        tset_over(grid, bx, yy, if go_left { '┐' } else { '┌' }, c);
+        for _ in 0..diag_len {
+            bx += dir;
+            yy -= 1;
+            tset(grid, bx, yy, diag_ch, c);
+        }
+        for _ in 0..horiz_len {
+            bx += dir;
+            tset(grid, bx, yy, horiz_ch, c);
+        }
+        let tip = tip_chars[b % tip_chars.len()];
+        tset(grid, bx + dir, yy, tip, lighten(c, 20));
+        // occasional sub-twig
+        if arm > 3 {
+            tset(grid, bx, yy - 1, '╷', lighten(c, 30));
+        }
+
+        by += interval;
+    }
+
+    tset_over(grid, cx, canopy_y as i32, '╷', lighten(color, 70));
+}
+
+/// Drooping tree.
+/// Branches arc outward and curve downward with rounded corners. Elegant droop.
+pub fn grow_drooping_tree(
+    grid: &mut Grid,
+    root_x: usize, root_y: usize, canopy_y: usize,
+    spread: usize, color: Color, rng: &mut StdRng,
+) {
+    if canopy_y >= root_y { return; }
+    let height = root_y - canopy_y;
+    let rx = root_x as i32;
+    let first_split = (root_y - height / 3) as i32;
+
+    for y in first_split..root_y as i32 {
+        tset_over(grid, rx, y, '│', color);
+    }
+
+    let arm_count = rng.random_range(3..6usize);
+    let c0 = lighten(color, 10);
+
+    // Fan of branches arcing upward then drooping
+    for i in 0..arm_count {
+        let t = i as f32 / (arm_count - 1) as f32; // 0..1
+        let arm_x_offset = ((t * 2.0 - 1.0) * spread as f32) as i32;
+        let arm_top_y = canopy_y as i32 + rng.random_range(0..4u32) as i32;
+        let c = lighten(color, (i * 15) as u8);
+
+        let bx = rx + arm_x_offset;
+
+        // Curved arc from (rx, first_split) to (bx, arm_top_y)
+        // Draw a simple L-shaped arc: horizontal then vertical
+        let mid_y = first_split - (height / 4) as i32;
+
+        // Horizontal segment from trunk to arm x
+        if arm_x_offset != 0 {
+            let (x0, x1) = if arm_x_offset < 0 { (bx, rx) } else { (rx, bx) };
+            for x in x0..=x1 { tset(grid, x, first_split, '─', c0); }
+            let corner = if arm_x_offset < 0 { '╭' } else { '╮' };
+            tset(grid, bx, first_split, corner, c0);
+            tset_over(grid, rx, first_split, '┼', c0);
+        } else {
+            tset_over(grid, rx, first_split, '│', c0);
+        }
+
+        // Vertical rise from mid to top
+        for y in arm_top_y..first_split {
+            tset(grid, bx, y, '│', c);
+        }
+
+        // Droop: horizontal arms hanging off the top segment
+        let droop_arm = (spread / 3).max(1) as i32;
+        if arm_top_y + 2 < first_split {
+            let droop_y = arm_top_y + 1;
+            let dc = lighten(c, 20);
+            for dx in 1..=droop_arm {
+                tset(grid, bx - dx, droop_y, '─', dc);
+                tset(grid, bx + dx, droop_y, '─', dc);
+            }
+            tset(grid, bx - droop_arm, droop_y, '╮', dc);
+            tset(grid, bx + droop_arm, droop_y, '╭', dc);
+            tset_over(grid, bx, droop_y, '┬', dc);
+            // Hanging drips
+            for d in 1..=3 {
+                let dc2 = lighten(dc, (d * 15) as u8);
+                tset(grid, bx - droop_arm, droop_y + d, '╎', dc2);
+                tset(grid, bx + droop_arm, droop_y + d, '╎', dc2);
+            }
+        }
+
+        tset(grid, bx, arm_top_y, '╷', lighten(c, 40));
+    }
+}
+
+/// Dispatch all tree variants by kind index (0..12).
+/// Expands the original 4 kinds with 8 new GRIS-style variants.
+pub fn draw_tree(
+    grid: &mut Grid,
+    root_x: usize, root_y: usize, canopy_y: usize,
+    spread: usize, kind: usize, color: Color, rng: &mut StdRng,
+) {
+    match kind % 12 {
+        0  => grow_tree(grid, root_x, root_y, canopy_y, spread, color, rng),
+        1  => draw_pine(grid, root_x, root_y, 3, (spread * 2).min(12), color),
+        2  => draw_willow(grid, root_x, root_y, canopy_y, spread, color),
+        3  => draw_palm(grid, root_x, root_y, root_y.saturating_sub(canopy_y).saturating_sub(4), color, rng),
+        4  => grow_spiral_tree(grid, root_x, root_y, canopy_y, spread, color, rng),
+        5  => grow_candelabra(grid, root_x, root_y, canopy_y, spread, color, rng),
+        6  => grow_birch(grid, root_x, root_y, canopy_y, spread, color, rng),
+        7  => grow_storm_tree(grid, root_x, root_y, canopy_y, spread, color, rng),
+        8  => grow_wide_tree(grid, root_x, root_y, canopy_y, spread, color, rng),
+        9  => grow_asymmetric_tree(grid, root_x, root_y, canopy_y, spread, color, rng),
+        10 => grow_tall_narrow(grid, root_x, root_y, canopy_y, spread, color, rng),
+        _  => grow_drooping_tree(grid, root_x, root_y, canopy_y, spread, color, rng),
+    }
+}
+
 /// Draw a small flower/rosette at (cx, cy)
 pub fn draw_flower(grid: &mut Grid, cx: usize, cy: usize, style: usize, color: Color) {
     let patterns: &[&[(i32, i32, char)]] = &[

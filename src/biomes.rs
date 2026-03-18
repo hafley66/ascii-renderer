@@ -372,7 +372,7 @@ pub fn random_flow(rect: &Rect, palette: &[Color; 5], rng: &mut StdRng) -> Vec<F
     let fills = [
         FillGen::TilePure(tile_variant_from_index(rng.random_range(0..TILE_VARIANT_COUNT))),
         FillGen::AztecDiamond((rect.h / 2).min(rect.w / 4).max(2).min(8)),
-        FillGen::Tree(rng.random_range(0..4)),
+        FillGen::Tree(rng.random_range(0..12)),
         FillGen::Noise(noise_variant_from_index(rng.random_range(0..NOISE_VARIANT_COUNT))),
         line_art,
         FillGen::Noise(NoiseVariant::Dot),

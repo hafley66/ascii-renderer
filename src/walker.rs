@@ -36,7 +36,7 @@ impl LeafWalker {
             WalkerMood::Organic => {
                 if area > 300 && rect.h > 15 && rect.w > 20 {
                     match rng.random_range(0..7) {
-                        0..=2 => FillGen::Tree(rng.random_range(0..4)),
+                        0..=2 => FillGen::Tree(rng.random_range(0..12)),
                         3 => FillGen::Noise(NoiseVariant::Grass),
                         4 => FillGen::Noise(NoiseVariant::Dot),
                         _ => {
@@ -312,7 +312,7 @@ pub fn path_walk_layers(
                 let ty = sy.saturating_sub(th / 2).min(h.saturating_sub(th));
                 let rect = Rect { x: tx, y: ty, w: tw, h: th };
                 layers.push(Layer {
-                    fill: FillGen::Tree(rng.random_range(0..4)),
+                    fill: FillGen::Tree(rng.random_range(0..12)),
                     mask: Some(Box::new(mask_rect(&rect, 0.0))),
                     palette: pal,
                 });
@@ -456,7 +456,7 @@ fn waypoint_scene(
         let ey = (sy as i32 + oy).clamp(2, h as i32 - 4) as usize;
 
         let fill = match rng.random_range(0..12u32) {
-            0..=3 => FillGen::Tree(rng.random_range(0..4)),
+            0..=3 => FillGen::Tree(rng.random_range(0..12)),
             4..=5 => {
                 let s = rng.random_range(2..5);
                 FillGen::Mask(s, rng.random_range(0..MASK_STYLE_COUNT))
@@ -710,21 +710,9 @@ pub fn path_walk_layers_3(
             let mask: MaskFn = if fill_breaks_out(&fill) {
                 Box::new(mask_rect(&el_rect, 0.0))
             } else {
-                // Tiles with skew need a wider mask so the bleed isn't clipped
-                let skew_extend = match &fill {
-                    FillGen::Tile(p) if p.skew > 0 => (p.skew as f32 / 100.0 * 12.0) as usize,
-                    _ => 0,
-                };
-                if skew_extend > 0 {
-                    let sx = bx.saturating_sub(skew_extend);
-                    let sy = by.saturating_sub(skew_extend);
-                    let sw = (bw + skew_extend * 2).min(w - sx);
-                    let sh = (bh + skew_extend * 2).min(h - sy);
-                    let wide = Rect { x: sx, y: sy, w: sw, h: sh };
-                    Box::new(mask_rect(&wide, 0.0))
-                } else {
-                    Box::new(mask_rect(&box_rect, 0.0))
-                }
+                let ecx = elx as f32 + ew as f32 * 0.5;
+                let ecy = ely as f32 + eh as f32 * 0.5;
+                pick_element_mask(ecx, ecy, ew as f32, eh as f32, rng)
             };
 
             layers.push(Layer { fill, mask: Some(mask), palette: pal });
@@ -734,6 +722,47 @@ pub fn path_walk_layers_3(
     }
 
     (layers, stops, boxes)
+}
+
+/// Pick a random container mask for a bounded fill element.
+/// cx/cy are the element center, ew/eh are its char dimensions.
+/// Returns a MaskFn shaped to the element, picked from the full shape vocabulary.
+/// Breakout fills (trees, sprites) always get plain rects -- don't call this for them.
+fn pick_element_mask(
+    cx: f32, cy: f32, ew: f32, eh: f32,
+    rng: &mut StdRng,
+) -> MaskFn {
+    // Terminal cells are ~2:1 (h:w), so rx = 2*ry for visually balanced shapes.
+    let ry = eh * 0.5;
+    let rx = ew * 0.5;
+
+    match rng.random_range(0..6u32) {
+        0 => Box::new(mask_rect(
+            &Rect { x: (cx - rx) as usize, y: (cy - ry) as usize, w: ew as usize, h: eh as usize },
+            0.0,
+        )),
+        1 => Box::new(mask_ellipse(cx, cy, rx, ry, 1.5)),
+        2 => Box::new(mask_diamond(cx, cy, rx, ry, 0.0)),
+        3 => {
+            let shear = rng.random_range(3..9) as f32 * if rng.random_range(0..2u32) == 0 { 1.0 } else { -1.0 };
+            Box::new(mask_parallelogram(cx, cy, ew * 0.85, eh * 0.85, shear, 0.0))
+        }
+        4 => {
+            let dir = match rng.random_range(0..2u32) {
+                0 => TriDir::Up,
+                _ => TriDir::Down,
+            };
+            Box::new(mask_triangle(cx, cy, rx, ry, dir, 0.0))
+        }
+        _ => {
+            let (w_top, w_bot) = if rng.random_range(0..2u32) == 0 {
+                (ew * 0.25, ew * 0.85) // wide bottom
+            } else {
+                (ew * 0.85, ew * 0.25) // wide top
+            };
+            Box::new(mask_trapezoid(cx, cy, w_top, w_bot, eh * 0.85, 0.0))
+        }
+    }
 }
 
 /// Discriminant byte for a FillGen variant, used for overlap dedup.
@@ -817,7 +846,7 @@ fn pick_unique_element(
 ) -> (FillGen, usize) {
     for _ in 0..10 {
         let fill = match rng.random_range(0..12u32) {
-            0..=3 => FillGen::Tree(rng.random_range(0..4)),
+            0..=3 => FillGen::Tree(rng.random_range(0..12)),
             4..=5 => {
                 let s = rng.random_range(2..5);
                 FillGen::Mask(s, rng.random_range(0..MASK_STYLE_COUNT))
@@ -870,7 +899,7 @@ pub fn scatter_layers(
                 // Trees -- big, tall, unmistakable
                 let tree_h = rng.random_range(14..h.min(30).max(15));
                 let tree_w = rng.random_range(16..w.min(36).max(17));
-                (FillGen::Tree(rng.random_range(0..4)), tree_w, tree_h)
+                (FillGen::Tree(rng.random_range(0..12)), tree_w, tree_h)
             }
             5..=7 => {
                 // Faces -- big masks

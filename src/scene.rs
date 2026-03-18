@@ -78,12 +78,7 @@ pub fn render_fill(
             let root_y = rect.y + rect.h.saturating_sub(2);
             let canopy_y = rect.y + 2;
             let spread = (rect.w / 4).max(3);
-            match kind % 4 {
-                0 => grow_tree(grid, cx, root_y, canopy_y, spread, color, rng),
-                1 => draw_pine(grid, cx, root_y, 3, (rect.w / 2).min(12), color),
-                2 => draw_willow(grid, cx, root_y, canopy_y, spread, color),
-                _ => draw_palm(grid, cx, root_y, rect.h.saturating_sub(4), color, rng),
-            }
+            draw_tree(grid, cx, root_y, canopy_y, spread, kind, color, rng);
         }
         FillGen::AztecDiamond(order) => {
             let cx = rect.x + rect.w / 2;
@@ -279,4 +274,103 @@ pub fn mask_union(
     b: impl Fn(usize, usize) -> f32 + 'static,
 ) -> MaskFn {
     Box::new(move |x, y| a(x, y).max(b(x, y)))
+}
+
+// ── Extended shape masks ─────────────────────────────────────────────
+
+/// Diamond (rhombus) mask: L1 norm with soft dissolve at edges.
+/// rx/ry are half-widths along each axis. In terminal cells x:y ≈ 2:1,
+/// so pass rx ≈ 2*ry for a visually balanced diamond.
+pub fn mask_diamond(cx: f32, cy: f32, rx: f32, ry: f32, dissolve: f32) -> impl Fn(usize, usize) -> f32 {
+    move |x, y| {
+        let dx = (x as f32 - cx) / rx;
+        let dy = (y as f32 - cy) / ry;
+        let d = dx.abs() + dy.abs();
+        if d <= 1.0 {
+            1.0
+        } else if dissolve > 0.0 && d <= 1.0 + dissolve {
+            1.0 - (d - 1.0) / dissolve
+        } else {
+            0.0
+        }
+    }
+}
+
+/// Parallelogram mask: a rectangle sheared along x by `shear` cells per
+/// unit of normalized dy from center. Positive shear leans right going down.
+/// w/h are full width and height, centered at (cx, cy).
+pub fn mask_parallelogram(cx: f32, cy: f32, w: f32, h: f32, shear: f32, dissolve: f32) -> impl Fn(usize, usize) -> f32 {
+    move |x, y| {
+        let dy = y as f32 - cy;
+        let sx = x as f32 - cx - shear * (dy / (h * 0.5));
+        let from_left  = sx + w * 0.5;
+        let from_right = w * 0.5 - sx;
+        let from_top   = dy + h * 0.5;
+        let from_bot   = h * 0.5 - dy;
+        let edge = from_left.min(from_right).min(from_top).min(from_bot);
+        if edge <= 0.0 { 0.0 }
+        else if dissolve <= 0.0 || edge >= dissolve { 1.0 }
+        else { edge / dissolve }
+    }
+}
+
+/// Which direction the apex of a triangle points.
+#[derive(Clone, Copy)]
+pub enum TriDir { Up, Down, Left, Right }
+
+/// Triangle mask. Apex points in `dir`, base is opposite.
+/// rx/ry are half-extents from center to the widest cross-section.
+pub fn mask_triangle(cx: f32, cy: f32, rx: f32, ry: f32, dir: TriDir, dissolve: f32) -> impl Fn(usize, usize) -> f32 {
+    move |x, y| {
+        let fx = x as f32;
+        let fy = y as f32;
+        // t: 0.0 at apex, 1.0 at base. x_off: 1.0 means on the slanted edge.
+        // base_dist: pixel distance from the base edge (opposite the apex).
+        let (t, x_off, base_dist) = match dir {
+            TriDir::Up => {
+                let t = (fy - (cy - ry)) / (2.0 * ry);
+                (t, (fx - cx).abs() / (t * rx + 0.01), (cy + ry) - fy)
+            }
+            TriDir::Down => {
+                let t = ((cy + ry) - fy) / (2.0 * ry);
+                (t, (fx - cx).abs() / (t * rx + 0.01), fy - (cy - ry))
+            }
+            TriDir::Left => {
+                let t = ((cx + rx) - fx) / (2.0 * rx);
+                (t, (fy - cy).abs() / (t * ry + 0.01), fx - (cx - rx))
+            }
+            TriDir::Right => {
+                let t = (fx - (cx - rx)) / (2.0 * rx);
+                (t, (fy - cy).abs() / (t * ry + 0.01), (cx + rx) - fx)
+            }
+        };
+
+        if t < 0.0 || t > 1.0 || x_off > 1.0 { return 0.0; }
+
+        // Approximate pixel distance from slanted edge, capped by base distance.
+        let slant_dist = (1.0 - x_off) * (t * rx.min(ry));
+        let edge = slant_dist.min(base_dist);
+
+        if edge <= 0.0 { 0.0 }
+        else if dissolve <= 0.0 || edge >= dissolve { 1.0 }
+        else { edge / dissolve }
+    }
+}
+
+/// Trapezoid mask. Top edge width `w_top`, bottom edge width `w_bot`,
+/// total height `h`, centered at (cx, cy). Sides taper linearly.
+pub fn mask_trapezoid(cx: f32, cy: f32, w_top: f32, w_bot: f32, h: f32, dissolve: f32) -> impl Fn(usize, usize) -> f32 {
+    move |x, y| {
+        let dy = y as f32 - cy;
+        let from_top = dy + h * 0.5;
+        let from_bot = h * 0.5 - dy;
+        if from_top < 0.0 || from_bot < 0.0 { return 0.0; }
+        let t = from_top / h; // 0.0 at top edge, 1.0 at bottom edge
+        let half_w = w_top * 0.5 * (1.0 - t) + w_bot * 0.5 * t;
+        let from_side = half_w - (x as f32 - cx).abs();
+        let edge = from_side.min(from_top).min(from_bot);
+        if edge <= 0.0 { 0.0 }
+        else if dissolve <= 0.0 || edge >= dissolve { 1.0 }
+        else { edge / dissolve }
+    }
 }

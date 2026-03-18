@@ -185,6 +185,32 @@ fn main() {
         draw_flower(&mut grid, 38, 38, 2, palette[3]);
         draw_flower(&mut grid, 45, 20, 3, palette[1]);
         draw_flower(&mut grid, 5, 10, 4, palette[2]);
+    } else if mode == "trees" {
+        // Grid of all 12 tree variants. 4 columns x 3 rows.
+        let cols = 4usize;
+        let rows = 3usize;
+        let cell_w = width / cols;
+        let cell_h = height / rows;
+        for row in 0..rows {
+            for col in 0..cols {
+                let kind = row * cols + col;
+                let cx = col * cell_w + cell_w / 2;
+                let root_y = (row + 1) * cell_h - 2;
+                let canopy_y = row * cell_h + 2;
+                let spread = (cell_w / 4).max(3);
+                let color = palette[(kind % 3) + 1];
+                draw_tree(&mut grid, cx, root_y, canopy_y, spread, kind, color, &mut rng);
+                // kind label
+                let label = format!("{}", kind);
+                let lx = col * cell_w + 1;
+                let ly = row * cell_h + 1;
+                for (j, ch) in label.chars().enumerate() {
+                    if lx + j < width && ly < height {
+                        grid[ly][lx + j] = Cell::new(ch, darken(palette[4], 20));
+                    }
+                }
+            }
+        }
     } else if mode == "aztec" {
         draw_aztec_diamond(
             &mut grid,
@@ -904,6 +930,95 @@ fn main() {
                 }
             }
         }
+    } else if mode == "shapes" {
+        // 2x2 grid, shapes sized to ~30% of each quadrant, hard edges (dissolve=0).
+        // rx = 2*ry throughout to correct for 2:1 terminal cell aspect ratio.
+        let hw = width / 2;
+        let hh = height / 2;
+        let cxs = [hw / 2, hw + hw / 2];
+        let cys = [hh / 2, hh + hh / 2];
+
+        // label just above the shape
+        let write_label = |grid: &mut Grid, lx: usize, ly: usize, text: &str, color: Color| {
+            for (j, ch) in text.chars().enumerate() {
+                if lx + j < width && ly < grid.len() { grid[ly][lx + j] = Cell::new(ch, color); }
+            }
+        };
+
+        // 1 -- Diamond (top-left)
+        {
+            let cx = cxs[0] as f32; let cy = cys[0] as f32;
+            let ry = hh as f32 * 0.30;
+            let rx = ry * 2.0;
+            let r = Rect { x: 1, y: 1, w: hw - 2, h: hh - 2 };
+            let scene = Scene { layers: vec![Layer {
+                fill: FillGen::Tile(TileParams::new(TileVariant::BishamonKikko)),
+                mask: Some(Box::new(mask_diamond(cx, cy, rx, ry, 0.0))),
+                palette,
+            }]};
+            render_scene(&mut grid, &r, &scene, &mut rng);
+            let lx = cxs[0].saturating_sub(3);
+            let ly = (cy - ry - 2.0).max(1.0) as usize;
+            write_label(&mut grid, lx, ly, "diamond", palette[4]);
+        }
+
+        // 2 -- Parallelogram (top-right)
+        {
+            let cx = cxs[1] as f32; let cy = cys[0] as f32;
+            let w = hw as f32 * 0.50;
+            let h = hh as f32 * 0.55;
+            let r = Rect { x: hw + 1, y: 1, w: hw - 2, h: hh - 2 };
+            let scene = Scene { layers: vec![Layer {
+                fill: FillGen::Tile(TileParams::new(TileVariant::Asanoha)),
+                mask: Some(Box::new(mask_parallelogram(cx, cy, w, h, 8.0, 0.0))),
+                palette,
+            }]};
+            render_scene(&mut grid, &r, &scene, &mut rng);
+            let lx = cxs[1].saturating_sub(6);
+            let ly = (cy - h * 0.5 - 2.0).max(1.0) as usize;
+            write_label(&mut grid, lx, ly, "parallelogram", palette[4]);
+        }
+
+        // 3 -- Triangle apex-up (bottom-left)
+        {
+            let cx = cxs[0] as f32; let cy = cys[1] as f32;
+            let ry = hh as f32 * 0.35;
+            let rx = ry * 2.0;
+            let r = Rect { x: 1, y: hh + 1, w: hw - 2, h: hh - 2 };
+            let scene = Scene { layers: vec![Layer {
+                fill: FillGen::Tile(TileParams::new(TileVariant::Yabane)),
+                mask: Some(Box::new(mask_triangle(cx, cy, rx, ry, TriDir::Up, 0.0))),
+                palette,
+            }]};
+            render_scene(&mut grid, &r, &scene, &mut rng);
+            let lx = cxs[0].saturating_sub(3);
+            let ly = (cy - ry - 2.0).max((hh + 1) as f32) as usize;
+            write_label(&mut grid, lx, ly, "triangle", palette[4]);
+        }
+
+        // 4 -- Trapezoid wide-at-bottom (bottom-right)
+        {
+            let cx = cxs[1] as f32; let cy = cys[1] as f32;
+            let h = hh as f32 * 0.55;
+            let w_top = hw as f32 * 0.12;
+            let w_bot = hw as f32 * 0.55;
+            let r = Rect { x: hw + 1, y: hh + 1, w: hw - 2, h: hh - 2 };
+            let scene = Scene { layers: vec![Layer {
+                fill: FillGen::Tile(TileParams::new(TileVariant::Higaki)),
+                mask: Some(Box::new(mask_trapezoid(cx, cy, w_top, w_bot, h, 0.0))),
+                palette,
+            }]};
+            render_scene(&mut grid, &r, &scene, &mut rng);
+            let lx = cxs[1].saturating_sub(4);
+            let ly = (cy - h * 0.5 - 2.0).max((hh + 1) as f32) as usize;
+            write_label(&mut grid, lx, ly, "trapezoid", palette[4]);
+        }
+
+        // grid dividers
+        for y in 0..height { if y < grid.len() { grid[y][hw] = Cell::new('│', darken(palette[2], 50)); } }
+        for x in 0..width { if hh < grid.len() { grid[hh][x] = Cell::new('─', darken(palette[2], 50)); } }
+        if hh < grid.len() { grid[hh][hw] = Cell::new('┼', darken(palette[2], 50)); }
+
     } else if mode == "scene-walk" {
         let rect = Rect { x: 0, y: 0, w: width, h: height };
         let layers = path_walk_layers(width, height, &palette, &mut rng);
