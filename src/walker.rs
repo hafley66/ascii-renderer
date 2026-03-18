@@ -932,6 +932,161 @@ pub fn scatter_layers(
     layers
 }
 
+/// Sinuous stalk walk: generates leaf layers along a vertical spine.
+/// Leaf shape varies by stalk position: trapezoid at base, parallelogram in mid, triangle at tip.
+/// Leaves alternate sides and shrink toward the apex.
+/// Returns (layers, spine) where spine is the integer stalk path for draw_stalk.
+pub fn path_walk_stem(
+    w: usize,
+    h: usize,
+    palette: &[Color; 5],
+    rng: &mut StdRng,
+) -> (Vec<Layer>, Vec<(usize, usize)>) {
+    let mut layers = Vec::new();
+    let margin_x = (w / 6).max(4);
+
+    // Sinuous spine: 6 control points trending from bottom to top
+    let n_ctrl = 6usize;
+    let mut spine: Vec<(f32, f32)> = Vec::with_capacity(n_ctrl);
+    let x0 = (w / 2) as f32 + rng.random_range(-4i32..5) as f32;
+    spine.push((x0, (h - 3) as f32));
+    for i in 1..n_ctrl {
+        let t = i as f32 / (n_ctrl - 1) as f32;
+        let base_y = (h as f32 - 3.0) - t * (h as f32 - 7.0);
+        let wander = rng.random_range(-5i32..6) as f32;
+        let x = (spine.last().unwrap().0 + wander)
+            .clamp(margin_x as f32, (w - margin_x) as f32);
+        spine.push((x, base_y));
+    }
+
+    // Cumulative arc length for even resampling
+    let arc: Vec<f32> = std::iter::once(0.0f32)
+        .chain(spine.windows(2).map(|s| {
+            let dx = s[1].0 - s[0].0;
+            let dy = s[1].1 - s[0].1;
+            (dx * dx + dy * dy).sqrt()
+        }))
+        .scan(0.0f32, |acc, v| { *acc += v; Some(*acc) })
+        .collect();
+    let total_len = *arc.last().unwrap_or(&1.0);
+
+    let leaf_count = rng.random_range(5..9) as usize;
+
+    // Sample leaf positions at regular arc-length intervals
+    let mut leaf_pts: Vec<(f32, f32)> = Vec::with_capacity(leaf_count);
+    for i in 0..leaf_count {
+        let target = ((i as f32 + 0.5) / leaf_count as f32) * total_len;
+        let seg = arc.windows(2).enumerate()
+            .find(|(_, w)| w[1] >= target)
+            .map(|(i, _)| i)
+            .unwrap_or(spine.len() - 2);
+        let seg_len = arc[seg + 1] - arc[seg];
+        let local_t = if seg_len > 0.0 { (target - arc[seg]) / seg_len } else { 0.0 };
+        let px = spine[seg].0 + local_t * (spine[seg + 1].0 - spine[seg].0);
+        let py = spine[seg].1 + local_t * (spine[seg + 1].1 - spine[seg].1);
+        leaf_pts.push((px, py));
+    }
+
+    // Build one leaf layer per sampled point
+    for (i, &(lx, ly)) in leaf_pts.iter().enumerate() {
+        // t: 0.0 = base (bottom of screen), 1.0 = apex (top)
+        let t = (1.0 - (ly - 3.0) / (h as f32 - 7.0).max(1.0)).clamp(0.0, 1.0);
+
+        // Leaf dims shrink toward tip
+        let leaf_w = ((22.0 - t * 12.0) as usize).max(8);
+        let leaf_h = ((11.0 - t * 5.0) as usize).max(4);
+
+        // Alternating sides
+        let side = if i % 2 == 0 { 1f32 } else { -1f32 };
+        let leaf_cx = lx + side * (leaf_w as f32 * 0.5 + 1.0);
+        let leaf_cy = ly;
+
+        let lrx = (leaf_cx - leaf_w as f32 * 0.5).max(1.0) as usize;
+        let lrx = lrx.min(w.saturating_sub(leaf_w + 1));
+        let lry = (leaf_cy - leaf_h as f32 * 0.5).max(1.0) as usize;
+        let lry = lry.min(h.saturating_sub(leaf_h + 1));
+        let leaf_rect = Rect {
+            x: lrx, y: lry,
+            w: leaf_w.min(w - lrx),
+            h: leaf_h.min(h - lry),
+        };
+
+        // Stalk tangent at this point (for parallelogram shear)
+        let prev = if i > 0 { leaf_pts[i - 1] } else { (lx, ly + 3.0) };
+        let next = if i + 1 < leaf_count { leaf_pts[i + 1] } else { (lx, ly - 3.0) };
+        let tan_x = next.0 - prev.0;
+        let tan_y = (prev.1 - next.1).max(0.01); // upward: prev_y > next_y
+        let shear = (tan_x / tan_y * 5.0 * side).clamp(-10.0, 10.0);
+
+        let mut pal = *palette;
+        pal[1] = palette[rng.random_range(1..4)];
+
+        let mut tile_params = TileParams::randomized(rng);
+        tile_params.skew = rng.random_range(30..70);
+
+        let mask: MaskFn = if t < 0.3 {
+            // base: wide-bottom trapezoid
+            let w_top = leaf_w as f32 * 0.3;
+            let w_bot = leaf_w as f32 * 0.9;
+            Box::new(mask_trapezoid(leaf_cx, leaf_cy, w_top, w_bot, leaf_h as f32 * 0.85, 0.0))
+        } else if t > 0.7 {
+            // apex: upward-pointing triangle
+            let rx = leaf_w as f32 * 0.5;
+            let ry = leaf_h as f32 * 0.5;
+            Box::new(mask_triangle(leaf_cx, leaf_cy, rx, ry, TriDir::Up, 0.0))
+        } else {
+            // mid: parallelogram leans with stalk tangent direction
+            Box::new(mask_parallelogram(leaf_cx, leaf_cy, leaf_w as f32 * 0.85, leaf_h as f32 * 0.85, shear, 0.0))
+        };
+
+        layers.push(Layer { fill: FillGen::Tile(tile_params), mask: Some(mask), palette: pal });
+    }
+
+    let spine_pts: Vec<(usize, usize)> = spine.iter()
+        .map(|&(x, y)| (x.round() as usize, y.round() as usize))
+        .collect();
+
+    (layers, spine_pts)
+}
+
+/// Draw a plant stalk on the grid using line-art chars.
+/// Unlike draw_path_trail, this overwrites existing cells -- the stalk is structural.
+pub fn draw_stalk(
+    grid: &mut Grid,
+    spine: &[(usize, usize)],
+    color: Color,
+) {
+    let h = grid.len();
+    if h == 0 { return; }
+    let w = grid[0].len();
+
+    for seg in spine.windows(2) {
+        let (x0, y0) = seg[0];
+        let (x1, y1) = seg[1];
+        let dx = x1 as f32 - x0 as f32;
+        let dy = y1 as f32 - y0 as f32;
+        let steps = dx.abs().max(dy.abs()) as usize;
+        if steps == 0 { continue; }
+
+        for i in 0..=steps {
+            let t = i as f32 / steps as f32;
+            let x = (x0 as f32 + dx * t).round() as usize;
+            let y = (y0 as f32 + dy * t).round() as usize;
+            if x >= w || y >= h { continue; }
+
+            // Going upward (dy < 0): classify by horizontal lean
+            let ch = if dx.abs() < dy.abs() * 0.35 {
+                '│'
+            } else if dx > 0.0 {
+                '╱'
+            } else {
+                '╲'
+            };
+            grid[y][x] = Cell::new(ch, color);
+        }
+    }
+}
+
 /// Walk through leaf rects in nearest-neighbor order, filling each based on
 /// walker mood/energy state.
 pub fn walk_and_fill_leaves(
