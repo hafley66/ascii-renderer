@@ -1311,4 +1311,65 @@ mod tests {
         assert_eq!(run(42), run(42));
         assert_ne!(run(42), run(99));
     }
+
+    #[test]
+    fn tile_edge_seigaiha_skew_deterministic() {
+        // Seigaiha with skew should produce identical output for same seed
+        let run = |seed: u64| {
+            let (mut grid, mut rng, palette) = make_grid(40, 20, seed);
+            let rect = Rect { x: 5, y: 3, w: 25, h: 12 };
+            let params = TileParams {
+                variant: TileVariant::Seigaiha,
+                density: 1.0, stagger_override: -1, rhythm_override: 0,
+                jitter: 0.0, skew: 60,
+            };
+            fill_tile_ex(&mut grid, &rect, &params, palette[1], palette[2], 0.0, &mut rng);
+            grid_to_plain(&grid)
+        };
+        assert_eq!(run(42), run(42));
+        assert_ne!(run(42), run(99));
+    }
+
+    #[test]
+    fn tile_edge_skew_bleeds_past_rect() {
+        // With skew>0, cells outside the rect should get drawn
+        let (mut grid, mut rng, palette) = make_grid(40, 20, 42);
+        let rect = Rect { x: 10, y: 5, w: 15, h: 8 };
+        let params = TileParams {
+            variant: TileVariant::Seigaiha,
+            density: 1.0, stagger_override: -1, rhythm_override: 0,
+            jitter: 0.0, skew: 80,
+        };
+        fill_tile_ex(&mut grid, &rect, &params, palette[1], palette[2], 0.0, &mut rng);
+
+        // Check that at least some cells outside the rect got drawn
+        let mut outside_drawn = 0;
+        for y in 0..20 {
+            for x in 0..40 {
+                let inside = x >= rect.x && x < rect.x + rect.w
+                          && y >= rect.y && y < rect.y + rect.h;
+                if !inside && grid[y][x].ch != ' ' {
+                    outside_drawn += 1;
+                }
+            }
+        }
+        assert!(outside_drawn > 0, "skew=80 should bleed chars outside the rect");
+    }
+
+    #[test]
+    fn tile_edge_all_variants_no_panic() {
+        // Every variant with skew should render without panic
+        for vi in 0..TILE_VARIANT_COUNT {
+            let variant = tile_variant_from_index(vi);
+            for skew in [0, 30, 60, 100] {
+                let (mut grid, mut rng, palette) = make_grid(30, 15, 42);
+                let rect = Rect { x: 3, y: 2, w: 20, h: 10 };
+                let params = TileParams {
+                    variant, density: 1.0, stagger_override: -1,
+                    rhythm_override: 0, jitter: 0.0, skew,
+                };
+                fill_tile_ex(&mut grid, &rect, &params, palette[1], palette[2], 0.0, &mut rng);
+            }
+        }
+    }
 }

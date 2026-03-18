@@ -226,6 +226,182 @@ pub fn fill_tile_pure(
     }
 }
 
+// ── Tile edge behavior ───────────────────────────────────────────────
+
+/// Per-cell context passed to edge_behavior so each variant can make
+/// bespoke decisions about what happens at/beyond rect boundaries.
+pub struct TileEdgeContext {
+    pub tx: usize,                   // tile-local x (0..px, phase-shifted)
+    pub ty: usize,                   // tile-local y (0..py, phase-shifted)
+    pub px: usize,                   // tile period x
+    pub py: usize,                   // tile period y
+    pub normal_char: char,           // what normal tile sampling returns here
+    pub normal_ci: u8,               // color index from normal sampling
+    pub dist_left: i32,              // positive = outside left edge by N cells
+    pub dist_right: i32,             // positive = outside right edge
+    pub dist_top: i32,               // positive = outside top edge
+    pub dist_bottom: i32,            // positive = outside bottom edge
+    pub outside: bool,               // true when cell is outside the rect
+    pub extend: usize,               // max bleed distance in cells
+}
+
+/// Per-variant edge strategy. Returns Some((char, color_index)) to draw,
+/// None to skip the cell entirely.
+///
+/// Variants that don't need bespoke behavior fall through to default_edge,
+/// which is the generic distance-based dropout.
+fn edge_behavior(
+    variant: TileVariant,
+    ctx: &TileEdgeContext,
+    rng: &mut StdRng,
+) -> Option<(char, u8)> {
+    match variant {
+        // Arch-based patterns: mirror ty near bottom to close arches
+        TileVariant::Seigaiha | TileVariant::ShellStitch => {
+            mirror_edge(ctx, true, false, rng)
+        }
+        // Circles: mirror both axes to close
+        TileVariant::Shippo => {
+            mirror_edge(ctx, true, true, rng)
+        }
+        // Hexagons: mirror ty to close hex tops/bottoms
+        TileVariant::BishamonKikko => {
+            mirror_edge(ctx, true, false, rng)
+        }
+        // Scales: mirror ty near bottom, tx near right
+        TileVariant::CrocodileScale => {
+            mirror_edge(ctx, true, true, rng)
+        }
+        // Boxes: close with └─┘ at bottom edge
+        TileVariant::GrannySquare => {
+            granny_edge(ctx, rng)
+        }
+        // Strokes: extend individual lines with decay
+        TileVariant::Nowaki => {
+            nowaki_edge(ctx, rng)
+        }
+        // Self-similar: pure dropout
+        TileVariant::Asanoha | TileVariant::Yabane | TileVariant::Higaki => {
+            default_edge(ctx, rng)
+        }
+    }
+}
+
+/// Default: distance-based probabilistic dropout.
+fn default_edge(ctx: &TileEdgeContext, rng: &mut StdRng) -> Option<(char, u8)> {
+    if !ctx.outside { return Some((ctx.normal_char, ctx.normal_ci)); }
+    if ctx.extend == 0 { return None; }
+    let dist = ctx.dist_left.max(ctx.dist_right).max(ctx.dist_top).max(ctx.dist_bottom).max(0) as f32;
+    let survive = 1.0 - (dist / ctx.extend as f32).powf(0.7);
+    if survive <= 0.0 || rng.random::<f32>() > survive { return None; }
+    Some((ctx.normal_char, ctx.normal_ci))
+}
+
+/// Mirror tile coords near edges, then apply dropout for cells past the boundary.
+/// `mirror_y`: fold ty near bottom/top edges.
+/// `mirror_x`: fold tx near left/right edges.
+fn mirror_edge(
+    ctx: &TileEdgeContext,
+    mirror_y: bool,
+    mirror_x: bool,
+    rng: &mut StdRng,
+) -> Option<(char, u8)> {
+    // Outside the rect: dropout with distance
+    if ctx.outside {
+        if ctx.extend == 0 { return None; }
+        let dist = ctx.dist_left.max(ctx.dist_right).max(ctx.dist_top).max(ctx.dist_bottom).max(0) as f32;
+        let survive = 1.0 - (dist / ctx.extend as f32).powf(0.7);
+        if survive <= 0.0 || rng.random::<f32>() > survive { return None; }
+    }
+
+    // Near-edge mirroring: reflect tile coords within one period of the edge
+    // so open shapes (arches, circles, waves) fold back into closed forms.
+    // dist_bottom < 0 means "inside, N cells from bottom edge"
+    let near_bottom = ctx.dist_bottom <= 0 && (-ctx.dist_bottom as usize) < ctx.py;
+    let near_top = ctx.dist_top <= 0 && (-ctx.dist_top as usize) < ctx.py;
+    let near_right = ctx.dist_right <= 0 && (-ctx.dist_right as usize) < ctx.px;
+    let near_left = ctx.dist_left <= 0 && (-ctx.dist_left as usize) < ctx.px;
+
+    // Only mirror if we're far enough from the opposite edge to avoid double-mirror
+    let far_from_top = ctx.dist_top <= 0 && (-ctx.dist_top as usize) >= ctx.py;
+    let far_from_left = ctx.dist_left <= 0 && (-ctx.dist_left as usize) >= ctx.px;
+
+    let mut ty = ctx.ty;
+    let mut tx = ctx.tx;
+
+    if mirror_y && near_bottom && far_from_top {
+        ty = ctx.py - 1 - ty;
+    }
+    if mirror_x && near_right && far_from_left {
+        tx = ctx.px - 1 - tx;
+    }
+
+    // If we mirrored, the char might differ from normal_char
+    if ty != ctx.ty || tx != ctx.tx {
+        // We can't re-sample the tile from here (no TilePattern ref), so
+        // the caller handles this by passing already-mirrored coords.
+        // For now, signal "use mirrored coords" by returning the mirrored ty/tx
+        // encoded... Actually, let's just return normal_char since the caller
+        // will handle mirroring before calling us.
+        //
+        // The real mirroring happens in fill_tile_ex before tile.at().
+        // What this function controls is: should this cell draw or not?
+        return Some((ctx.normal_char, ctx.normal_ci));
+    }
+
+    Some((ctx.normal_char, ctx.normal_ci))
+}
+
+/// GrannySquare: at bottom edge, emit box-closing characters.
+fn granny_edge(ctx: &TileEdgeContext, rng: &mut StdRng) -> Option<(char, u8)> {
+    if ctx.outside {
+        return default_edge(ctx, rng);
+    }
+
+    // Near bottom edge (within one tile period), in the lower half of the tile:
+    // replace with closing box chars
+    let near_bottom = ctx.dist_bottom <= 0 && (-ctx.dist_bottom as usize) < ctx.py;
+    let far_from_top = ctx.dist_top <= 0 && (-ctx.dist_top as usize) >= ctx.py;
+
+    if near_bottom && far_from_top {
+        // GrannySquare period is 6x6. Bottom row of tile is └─┴┴─┘
+        // Mirror ty so the box closes
+        let mirrored_ty = ctx.py - 1 - ctx.ty;
+        // When mirrored ty maps to top row (row 0), emit closing chars
+        if mirrored_ty == 0 {
+            let ch = match ctx.tx {
+                0 => '└',
+                5 => '┘',
+                1 | 4 => '─',
+                2 | 3 => '┴',
+                _ => ctx.normal_char,
+            };
+            return Some((ch, ctx.normal_ci));
+        }
+    }
+
+    Some((ctx.normal_char, ctx.normal_ci))
+}
+
+/// Nowaki: extend stroke characters (│ and ╱) past the boundary with
+/// length-based decay instead of random dropout. Non-stroke chars get
+/// normal dropout.
+fn nowaki_edge(ctx: &TileEdgeContext, rng: &mut StdRng) -> Option<(char, u8)> {
+    if !ctx.outside {
+        return Some((ctx.normal_char, ctx.normal_ci));
+    }
+    if ctx.extend == 0 { return None; }
+
+    let dist = ctx.dist_left.max(ctx.dist_right).max(ctx.dist_top).max(ctx.dist_bottom).max(0) as f32;
+
+    // Strokes get gentler decay (they "reach" further)
+    let is_stroke = matches!(ctx.normal_char, '│' | '╱');
+    let power = if is_stroke { 1.5 } else { 0.7 };
+    let survive = 1.0 - (dist / ctx.extend as f32).powf(power);
+    if survive <= 0.0 || rng.random::<f32>() > survive { return None; }
+    Some((ctx.normal_char, ctx.normal_ci))
+}
+
 /// Fill a rect with a tile pattern, full control.
 pub fn fill_tile_ex(
     grid: &mut Grid,
@@ -258,65 +434,96 @@ pub fn fill_tile_ex(
     let x0 = rect.x.saturating_sub(extend);
     let x1 = (rect.x + rect.w + extend).min(grid_w);
 
+    let px = tile.period_x();
+    let py = tile.period_y();
+
     for y in y0..y1 {
         for x in x0..x1 {
-            // distance past rect boundary (0 if inside)
-            let dx = if x < rect.x { rect.x - x }
-                     else if x >= rect.x + rect.w { x - (rect.x + rect.w) + 1 }
-                     else { 0 };
-            let dy = if y < rect.y { rect.y - y }
-                     else if y >= rect.y + rect.h { y - (rect.y + rect.h) + 1 }
-                     else { 0 };
-            let dist = dx.max(dy) as f32;
-
-            // outside rect: probabilistic dropout
-            if dist > 0.0 {
-                if extend == 0 { continue; }
-                let survive = 1.0 - (dist / extend as f32).powf(0.7);
-                if survive <= 0.0 || rng.random::<f32>() > survive { continue; }
-            }
+            // signed distances from each edge: positive = outside, negative = inside
+            let dist_left = if x < rect.x { (rect.x - x) as i32 } else { -((x - rect.x) as i32) };
+            let dist_right = if x >= rect.x + rect.w { (x - (rect.x + rect.w) + 1) as i32 } else { -(((rect.x + rect.w - 1) - x) as i32) };
+            let dist_top = if y < rect.y { (rect.y - y) as i32 } else { -((y - rect.y) as i32) };
+            let dist_bottom = if y >= rect.y + rect.h { (y - (rect.y + rect.h) + 1) as i32 } else { -(((rect.y + rect.h - 1) - y) as i32) };
+            let outside = dist_left > 0 || dist_right > 0 || dist_top > 0 || dist_bottom > 0;
 
             if params.density < 1.0 && rng.random::<f32>() > params.density { continue; }
 
-            // sample tile using rect-relative coords so pattern is continuous
-            // use i32 to handle coords before rect origin without overflow
-            let px = tile.period_x();
-            let py = tile.period_y();
-            let raw_tx = (x as i32 - rect.x as i32 + phase_x as i32).rem_euclid(px as i32) as usize;
-            let raw_ty = (y as i32 - rect.y as i32 + phase_y as i32).rem_euclid(py as i32) as usize;
-            let mut tx = raw_tx;
-            let mut ty = raw_ty;
+            // sample tile using rect-relative coords (phase-shifted)
+            let tx = (x as i32 - rect.x as i32 + phase_x as i32).rem_euclid(px as i32) as usize;
+            let ty = (y as i32 - rect.y as i32 + phase_y as i32).rem_euclid(py as i32) as usize;
 
-            // boundary mirroring: near rect edges, reflect tile coords so
-            // open shapes (arches, waves) fold back into closed loops
+            // Mirror tile coords near edges for variants that close shapes.
+            // This happens before sampling so the tile.at() call gets mirrored coords.
+            let mut mtx = tx;
+            let mut mty = ty;
             if params.skew > 0 {
-                // distance from bottom/right edges of the rect
-                let ry_bot = if y < rect.y + rect.h { (rect.y + rect.h - 1) - y } else { 0 };
-                let rx_right = if x < rect.x + rect.w { (rect.x + rect.w - 1) - x } else { 0 };
-                let from_top = if y >= rect.y { y - rect.y } else { 0 };
-                let from_left = if x >= rect.x { x - rect.x } else { 0 };
+                let near_bottom = dist_bottom <= 0 && (-dist_bottom as usize) < py;
+                let far_from_top = dist_top <= 0 && (-dist_top as usize) >= py;
+                let near_right = dist_right <= 0 && (-dist_right as usize) < px;
+                let far_from_left = dist_left <= 0 && (-dist_left as usize) >= px;
 
-                // mirror within one tile period of the bottom/right edge
-                if ry_bot < py && from_top >= py {
-                    ty = py - 1 - ty;
+                let do_mirror_y = matches!(params.variant,
+                    TileVariant::Seigaiha | TileVariant::ShellStitch |
+                    TileVariant::Shippo | TileVariant::BishamonKikko |
+                    TileVariant::CrocodileScale);
+                let do_mirror_x = matches!(params.variant,
+                    TileVariant::Shippo | TileVariant::CrocodileScale);
+
+                if do_mirror_y && near_bottom && far_from_top {
+                    mty = py - 1 - ty;
                 }
-                if rx_right < px && from_left >= px {
-                    tx = px - 1 - tx;
+                if do_mirror_x && near_right && far_from_left {
+                    mtx = px - 1 - tx;
                 }
             }
 
-            let (mut ch, ci) = tile.at(tx, ty);
-            if ch == ' ' { continue; }
-            if jitter > 0.0 && rng.random::<f32>() < jitter {
-                ch = jitter_glyphs[rng.random_range(0..jitter_glyphs.len())];
+            let (normal_char, normal_ci) = tile.at(mtx, mty);
+
+            // edge behavior decides draw vs skip for cells near/past boundaries
+            let near_edge = params.skew > 0 && (
+                (dist_bottom <= 0 && (-dist_bottom as usize) < py) ||
+                (dist_right <= 0 && (-dist_right as usize) < px)
+            );
+
+            if outside || near_edge {
+                let ctx = TileEdgeContext {
+                    tx, ty, px, py,
+                    normal_char, normal_ci,
+                    dist_left, dist_right, dist_top, dist_bottom,
+                    outside, extend,
+                };
+                match edge_behavior(params.variant, &ctx, rng) {
+                    Some((ch, ci)) => {
+                        if ch == ' ' { continue; }
+                        let mut ch = ch;
+                        if jitter > 0.0 && rng.random::<f32>() < jitter {
+                            ch = jitter_glyphs[rng.random_range(0..jitter_glyphs.len())];
+                        }
+                        let bg = grid[y][x].bg;
+                        let mut fg = if ci == 0 { color } else { color2 };
+                        if jitter > 0.0 {
+                            let drift = rng.random_range(0..=20) as u8;
+                            if drift > 10 { fg = lighten(fg, drift - 10); } else { fg = darken(fg, 10 - drift); }
+                        }
+                        grid[y][x] = Cell::with_bg(ch, fg, bg);
+                    }
+                    None => continue,
+                }
+            } else {
+                // Fast path: inside rect, far from edges
+                if normal_char == ' ' { continue; }
+                let mut ch = normal_char;
+                if jitter > 0.0 && rng.random::<f32>() < jitter {
+                    ch = jitter_glyphs[rng.random_range(0..jitter_glyphs.len())];
+                }
+                let bg = grid[y][x].bg;
+                let mut fg = if normal_ci == 0 { color } else { color2 };
+                if jitter > 0.0 {
+                    let drift = rng.random_range(0..=20) as u8;
+                    if drift > 10 { fg = lighten(fg, drift - 10); } else { fg = darken(fg, 10 - drift); }
+                }
+                grid[y][x] = Cell::with_bg(ch, fg, bg);
             }
-            let bg = grid[y][x].bg;
-            let mut fg = if ci == 0 { color } else { color2 };
-            if jitter > 0.0 {
-                let drift = rng.random_range(0..=20) as u8;
-                if drift > 10 { fg = lighten(fg, drift - 10); } else { fg = darken(fg, 10 - drift); }
-            }
-            grid[y][x] = Cell::with_bg(ch, fg, bg);
         }
     }
 }
