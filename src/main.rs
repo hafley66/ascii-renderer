@@ -1031,10 +1031,16 @@ fn main() {
             detail: args.get(7).and_then(|s| s.parse().ok()).unwrap_or(50),
         };
         let rect = Rect { x: 0, y: 0, w: width, h: height };
-        let (layers, stops) = party_walk(width, height, &palette, &pp, &mut rng);
+        let (layers, stops, boxes) = party_walk(width, height, &palette, &pp, &mut rng);
         let scene = Scene { layers };
         render_scene(&mut grid, &rect, &scene, &mut rng);
-        draw_path_trail(&mut grid, &stops, palette[2], &mut rng);
+        // Draw connecting path between node centers
+        draw_walk_path(&mut grid, &stops, darken(palette[2], 30));
+        // Draw box borders around each node
+        let border_color = palette[4];
+        for &(bx, by, bw, bh) in &boxes {
+            draw_box_border(&mut grid, bx, by, bw, bh, border_color);
+        }
     } else if mode == "soup" {
         let rect = Rect { x: 0, y: 0, w: width, h: height };
         let (layers, stops) = soup_walk(width, height, &palette, &mut rng);

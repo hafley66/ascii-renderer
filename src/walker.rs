@@ -822,18 +822,19 @@ fn pick_element_mask(
     let ry = eh * 0.5;
     let rx = ew * 0.5;
 
-    match rng.random_range(0..6u32) {
+    match rng.random_range(0..7u32) {
         0 => Box::new(mask_rect(
             &Rect { x: (cx - rx) as usize, y: (cy - ry) as usize, w: ew as usize, h: eh as usize },
             0.0,
         )),
         1 => Box::new(mask_ellipse(cx, cy, rx, ry, 1.5)),
         2 => Box::new(mask_diamond(cx, cy, rx, ry, 0.0)),
-        3 => {
+        3 => Box::new(mask_hexagon(cx, cy, rx, ry, 1.0)),
+        4 => {
             let shear = rng.random_range(3..9) as f32 * if rng.random_range(0..2u32) == 0 { 1.0 } else { -1.0 };
             Box::new(mask_parallelogram(cx, cy, ew * 0.85, eh * 0.85, shear, 0.0))
         }
-        4 => {
+        5 => {
             let dir = match rng.random_range(0..2u32) {
                 0 => TriDir::Up,
                 _ => TriDir::Down,
@@ -1191,10 +1192,28 @@ pub fn make_node_scene(
     }
 }
 
+/// Generate a wavy contour line across a rect width.
+/// Returns a Vec of y-values (one per column from rect.x to rect.x+rect.w).
+/// `base_y`: average y of the contour.
+/// `amplitude`: max deviation from base.
+/// `freq`: wave frequency (higher = more peaks).
+fn gen_contour(rect: &Rect, base_y: usize, amplitude: f32, freq: f32, rng: &mut StdRng) -> Vec<usize> {
+    let phase = rng.random::<f32>() * std::f32::consts::TAU;
+    let phase2 = rng.random::<f32>() * std::f32::consts::TAU;
+    (0..rect.w).map(|col| {
+        let t = col as f32 / rect.w.max(1) as f32;
+        // Two sine waves at different frequencies for organic feel
+        let wave = (t * freq * std::f32::consts::TAU + phase).sin() * amplitude
+                 + (t * freq * 2.3 * std::f32::consts::TAU + phase2).sin() * amplitude * 0.4;
+        let y = base_y as f32 + wave;
+        y.clamp(rect.y as f32 + 2.0, (rect.y + rect.h - 2) as f32) as usize
+    }).collect()
+}
+
 /// Landscape: 3-pass rendering.
-/// Pass 1: sky background (sparse drift chars or rain).
-/// Pass 2: ground band (grass/cement noise).
-/// Pass 3: foreground sprites (trees, mountains, flowers, floaties).
+/// Pass 1: sky background (sparse dots or nothing -- mostly empty).
+/// Pass 2: ground below a wavy contour line (grass/tile/crosshatch).
+/// Pass 3: foreground sprites rooted ON the ground line.
 fn make_landscape(
     rect: &Rect,
     palette: &[Color; 5],
@@ -1203,82 +1222,89 @@ fn make_landscape(
 ) -> Vec<Layer> {
     let mut layers = Vec::new();
 
-    // Horizon line: splits rect into sky (top 40-60%) and ground (rest)
+    // Horizon: wavy contour line at 40-60% from top
     let horizon_frac = rng.random_range(35..60) as f32 / 100.0;
-    let horizon_y = rect.y + (rect.h as f32 * horizon_frac) as usize;
+    let base_horizon = rect.y + (rect.h as f32 * horizon_frac) as usize;
+    let amplitude = (rect.h as f32 * 0.08).max(1.0);
+    let freq = rng.random_range(8..20) as f32 / 10.0;
+    let contour = gen_contour(rect, base_horizon, amplitude, freq, rng);
 
-    // ── Pass 1: Sky ──
+    // ── Pass 1: Sky (sparse dots, mostly empty) ──
     let sky_pal = {
         let mut p = *palette;
-        p[1] = darken(palette[rng.random_range(1..4)], 60);
+        p[1] = darken(palette[rng.random_range(1..4)], 70);
         p
     };
-    let sky_fill = match rng.random_range(0..4u32) {
-        0 => FillGen::Noise(NoiseVariant::Dot),       // starfield
-        1 | 2 => FillGen::Noise(NoiseVariant::Static), // rain-ish
-        _ => FillGen::Noise(NoiseVariant::Dot),        // clear sky dots
-    };
+    // Sky is above the contour -- use mask_above_contour
     layers.push(Layer {
-        fill: sky_fill,
-        mask: Some(Box::new(mask_band(rect.y, horizon_y, 3.0))),
+        fill: FillGen::Noise(NoiseVariant::Dot),
+        mask: Some(Box::new(mask_above_contour(contour.clone(), rect.x, 2.0))),
         palette: sky_pal,
     });
 
-    // ── Pass 2: Ground band ──
+    // ── Pass 2: Ground below the contour ──
     let ground_pal = {
         let mut p = *palette;
         p[1] = palette[rng.random_range(1..4)];
         p
     };
-    let ground_fill = match rng.random_range(0..4u32) {
+    let ground_fill = match rng.random_range(0..5u32) {
         0 => FillGen::Noise(NoiseVariant::Grass),
         1 => FillGen::Noise(NoiseVariant::Higaki),
         2 => FillGen::Tile(TileParams::randomized(rng)),
-        _ => FillGen::Crosshatch,
+        3 => FillGen::Crosshatch,
+        _ => FillGen::Noise(NoiseVariant::Truchet),
     };
     layers.push(Layer {
         fill: ground_fill,
-        mask: Some(Box::new(mask_band(horizon_y, rect.y + rect.h, 2.0))),
+        mask: Some(Box::new(mask_below_contour(contour.clone(), rect.x, 3.0))),
         palette: ground_pal,
     });
 
-    // ── Pass 3: Foreground elements ──
+    // ── Pass 3: Foreground elements rooted on the contour ──
     let fg_count = 1 + (detail as f32 / 20.0) as u32 + rng.random_range(0..3u32);
-    for _ in 0..fg_count {
+    for fi in 0..fg_count {
         let mut pal = *palette;
         pal[1] = palette[rng.random_range(1..4)];
 
-        // Place element near ground line
-        let ex = rect.x + rng.random_range(2..rect.w.saturating_sub(4).max(3));
-        let ey = horizon_y.saturating_sub(rng.random_range(0..4));
+        // Pick a column along the contour, spread elements across the width
+        let col_frac = (fi as f32 + 0.5) / fg_count as f32;
+        let col = (rect.w as f32 * col_frac) as usize;
+        let ground_y = contour.get(col).copied().unwrap_or(base_horizon);
+        let ex = rect.x + col;
 
-        let (fill, ew, eh) = match rng.random_range(0..8u32) {
-            0..=2 => {
+        let (fill, ew, eh) = match rng.random_range(0..10u32) {
+            0..=3 => {
+                // Trees rooted on the ground line
                 let tw = rng.random_range(12..rect.w.min(24).max(13));
                 let th = rng.random_range(8..rect.h.min(18).max(9));
                 (FillGen::Tree(rng.random_range(0..12)), tw, th)
             }
-            3..=4 => {
-                // Flower cluster
+            4..=5 => {
                 (FillGen::Flower(rng.random_range(0..5)), 5, 5)
             }
-            5 => {
+            6 => {
                 let s = rng.random_range(2..5);
                 (FillGen::Mask(s, rng.random_range(0..MASK_STYLE_COUNT)), s * 4 + 4, s * 4 + 4)
             }
-            6 => {
-                // Tile island (small)
+            7 => {
                 let tw = rng.random_range(10..20);
                 let th = rng.random_range(6..12);
                 (FillGen::Tile(TileParams::randomized(rng)), tw, th)
             }
-            _ => {
+            8 => {
                 (FillGen::Fruit(rng.random_range(0..5)), 5, 5)
+            }
+            _ => {
+                // Aztec diamond accent
+                let order = rng.random_range(2..5);
+                (FillGen::AztecDiamond(order), order * 4 + 4, order * 2 + 4)
             }
         };
 
+        // Root the element so its bottom sits on the ground line
         let elx = ex.saturating_sub(ew / 2).min(rect.x + rect.w - ew.min(rect.w));
-        let ely = ey.saturating_sub(eh / 2).min(rect.y + rect.h - eh.min(rect.h));
+        let ely = ground_y.saturating_sub(eh).max(rect.y).min(rect.y + rect.h - eh.min(rect.h));
         let el_rect = Rect { x: elx, y: ely, w: ew.min(rect.w), h: eh.min(rect.h) };
 
         let mask: MaskFn = if fill_breaks_out(&fill) {
@@ -1556,7 +1582,7 @@ pub fn party_walk(
     palette: &[Color; 5],
     params: &PartyParams,
     rng: &mut StdRng,
-) -> (Vec<Layer>, Vec<(usize, usize)>) {
+) -> (Vec<Layer>, Vec<(usize, usize)>, Vec<(usize, usize, usize, usize)>) {
     let character = PlantCharacter::random(rng);
     let mut layers = Vec::new();
     let margin = 2usize;
@@ -1635,10 +1661,11 @@ pub fn party_walk(
 
         // Node boundary shape -- clips everything inside
         let node_dissolve = 2.5;
-        let node_shape: NodeShape = match rng.random_range(0..4u32) {
+        let node_shape: NodeShape = match rng.random_range(0..5u32) {
             0 => NodeShape::Ellipse,
             1 => NodeShape::Diamond,
             2 => NodeShape::Rect,
+            3 => NodeShape::Hexagon,
             _ => NodeShape::Trapezoid(
                 if rng.random_range(0..2u32) == 0 {
                     (bw as f32 * 0.4, bw as f32 * 0.9)
@@ -1682,6 +1709,13 @@ pub fn party_walk(
                         None => Box::new(boundary),
                     }
                 }
+                NodeShape::Hexagon => {
+                    let boundary = mask_hexagon(cx, cy, rx, ry, node_dissolve);
+                    match layer.mask {
+                        Some(inner) => mask_intersect(boundary, move |x, y| inner(x, y)),
+                        None => Box::new(boundary),
+                    }
+                }
             };
 
             layers.push(Layer {
@@ -1692,7 +1726,91 @@ pub fn party_walk(
         }
     }
 
-    (layers, stops)
+    (layers, stops, boxes)
+}
+
+/// Draw a box-drawing border around a rect on the grid.
+/// Overwrites whatever is there -- this is structural.
+pub fn draw_box_border(
+    grid: &mut Grid,
+    bx: usize, by: usize, bw: usize, bh: usize,
+    color: Color,
+) {
+    let gh = grid.len();
+    if gh == 0 { return; }
+    let gw = grid[0].len();
+    // Clamp to grid
+    let x0 = bx.min(gw.saturating_sub(1));
+    let y0 = by.min(gh.saturating_sub(1));
+    let x1 = (bx + bw).min(gw.saturating_sub(1));
+    let y1 = (by + bh).min(gh.saturating_sub(1));
+    if x1 <= x0 || y1 <= y0 { return; }
+
+    // Top edge
+    for x in (x0 + 1)..x1 {
+        grid[y0][x] = Cell::new('─', color);
+    }
+    // Bottom edge
+    for x in (x0 + 1)..x1 {
+        grid[y1][x] = Cell::new('─', color);
+    }
+    // Left edge
+    for y in (y0 + 1)..y1 {
+        grid[y][x0] = Cell::new('│', color);
+    }
+    // Right edge
+    for y in (y0 + 1)..y1 {
+        grid[y][x1] = Cell::new('│', color);
+    }
+    // Corners
+    grid[y0][x0] = Cell::new('┌', color);
+    grid[y0][x1] = Cell::new('┐', color);
+    grid[y1][x0] = Cell::new('└', color);
+    grid[y1][x1] = Cell::new('┘', color);
+}
+
+/// Draw a solid connecting path between waypoints.
+/// Uses box-drawing line chars, overwrites existing cells.
+/// Much more visible than draw_path_trail.
+pub fn draw_walk_path(
+    grid: &mut Grid,
+    stops: &[(usize, usize)],
+    color: Color,
+) {
+    let h = grid.len();
+    if h == 0 { return; }
+    let w = grid[0].len();
+
+    for pair in stops.windows(2) {
+        let (x0, y0) = pair[0];
+        let (x1, y1) = pair[1];
+        let dx = x1 as f32 - x0 as f32;
+        let dy = y1 as f32 - y0 as f32;
+        let steps = (dx.abs().max(dy.abs())) as usize;
+        if steps == 0 { continue; }
+
+        for i in 0..=steps {
+            let t = i as f32 / steps as f32;
+            let x = (x0 as f32 + dx * t) as usize;
+            let y = (y0 as f32 + dy * t) as usize;
+            if x >= w || y >= h { continue; }
+
+            let ch = if dx.abs() < 1.0 {
+                '│'
+            } else {
+                let ratio = dy / dx;
+                if ratio.abs() < 0.3 {
+                    '─'
+                } else if ratio > 0.0 {
+                    '╲'
+                } else {
+                    '╱'
+                }
+            };
+
+            grid[y][x] = Cell::new(ch, color);
+        }
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -1701,6 +1819,7 @@ enum NodeShape {
     Diamond,
     Rect,
     Trapezoid((f32, f32)), // (w_top, w_bot)
+    Hexagon,
 }
 
 /// Shift a color's hue by `degrees` (approximate, works on RGB).

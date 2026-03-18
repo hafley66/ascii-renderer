@@ -362,6 +362,30 @@ pub fn mask_triangle(cx: f32, cy: f32, rx: f32, ry: f32, dir: TriDir, dissolve: 
     }
 }
 
+/// Hexagon mask. Regular hexagon with flat top/bottom.
+/// rx is half-width (horizontal), ry is half-height (vertical).
+/// Hex shape: top/bottom edges are flat (w = rx), sides are angled.
+pub fn mask_hexagon(cx: f32, cy: f32, rx: f32, ry: f32, dissolve: f32) -> impl Fn(usize, usize) -> f32 {
+    move |x, y| {
+        let dx = (x as f32 - cx).abs();
+        let dy = (y as f32 - cy).abs();
+        // Hex: flat top means the constraint is:
+        //   dy <= ry  AND  dx + dy * (rx / ry) * 0.5 <= rx
+        // Normalized: test against the hex boundary
+        let ny = dy / ry;
+        let nx = dx / rx;
+        // Hex distance: max of vertical and combined
+        let d = ny.max(nx + ny * 0.5);
+        if d <= 1.0 {
+            1.0
+        } else if dissolve > 0.0 && d <= 1.0 + dissolve / rx.min(ry) {
+            1.0 - (d - 1.0) / (dissolve / rx.min(ry))
+        } else {
+            0.0
+        }
+    }
+}
+
 /// Trapezoid mask. Top edge width `w_top`, bottom edge width `w_bot`,
 /// total height `h`, centered at (cx, cy). Sides taper linearly.
 pub fn mask_trapezoid(cx: f32, cy: f32, w_top: f32, w_bot: f32, h: f32, dissolve: f32) -> impl Fn(usize, usize) -> f32 {
