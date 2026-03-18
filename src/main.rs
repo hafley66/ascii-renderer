@@ -770,7 +770,7 @@ fn main() {
             let c1 = palette[(i % 3) + 1];
             let c2 = darken(c1, 30);
             let jitter = rng.random_range(0..15) as f32 / 100.0;
-            fill_tile_ex(&mut grid, &r, &params, c1, c2, jitter, &mut rng);
+            fill_tile_ex(&mut grid, &r, &params, c1, c2, jitter, None, &mut rng);
             let label = format!(
                 "{} d{:.0} s{} r{}",
                 names[i],
@@ -809,7 +809,7 @@ fn main() {
             params.skew = 80;
             let c1 = palette[(i % 3) + 1];
             let c2 = darken(c1, 30);
-            fill_tile_ex(&mut grid, &r, &params, c1, c2, 0.0, &mut rng);
+            fill_tile_ex(&mut grid, &r, &params, c1, c2, 0.0, None, &mut rng);
             let label = format!("{} skew=80", names[i]);
             let lx = col * cell_w;
             let ly = row * cell_h;
@@ -1483,7 +1483,7 @@ mod tests {
                     variant, density: 1.0, stagger_override: -1,
                     rhythm_override: 0, jitter: 0.0, skew,
                 };
-                fill_tile_ex(&mut grid, &rect, &params, palette[1], palette[2], 0.0, &mut rng);
+                fill_tile_ex(&mut grid, &rect, &params, palette[1], palette[2], 0.0, None, &mut rng);
             }
         }
     }

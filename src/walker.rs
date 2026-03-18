@@ -969,7 +969,7 @@ pub fn walk_and_fill_leaves(
         // Tree gets scatter on top; everything else goes through render_fill
         match fill {
             FillGen::Tree(_) => {
-                render_fill(grid, rect, fill, prim_color, color2, palette, rng);
+                render_fill(grid, rect, fill, prim_color, color2, palette, None, rng);
                 for _ in 0..rng.random_range(1..=3) {
                     let fx = rect.x + rng.random_range(2..rect.w.saturating_sub(2).max(3));
                     let fy = rect.y + rng.random_range(2..rect.h.saturating_sub(2).max(3));
@@ -982,9 +982,9 @@ pub fn walk_and_fill_leaves(
             }
             FillGen::Tile(params) => {
                 let jittered = TileParams { jitter: (1.0 - walker.energy).max(0.0) * 0.15, ..params };
-                render_fill(grid, rect, FillGen::Tile(jittered), prim_color, color2, palette, rng);
+                render_fill(grid, rect, FillGen::Tile(jittered), prim_color, color2, palette, None, rng);
             }
-            _ => render_fill(grid, rect, fill, prim_color, color2, palette, rng),
+            _ => render_fill(grid, rect, fill, prim_color, color2, palette, None, rng),
         }
 
         walker.step(rect, rng);

@@ -298,7 +298,7 @@ pub fn render_flow(
         };
         let c1 = palette[1];
         let c2 = darken(c1, 30);
-        render_fill(grid, &fill_rect, zone.fill, c1, c2, palette, rng);
+        render_fill(grid, &fill_rect, zone.fill, c1, c2, palette, None, rng);
 
         // mask: clear cells outside the taper envelope
         for row_i in 0..zone_h {

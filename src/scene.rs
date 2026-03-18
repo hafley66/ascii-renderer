@@ -55,6 +55,8 @@ pub const DISSOLVE: &[char] = &['╳', '╱', '╲', '·', '∙', '°', ' '];
 ///
 /// `color`/`color2` are the caller's chosen primary/secondary colors.
 /// `palette` is passed through for fills that need the full set (aztec diamond).
+/// `skew_boundary`: optional shape boundary fn forwarded to tile fills for
+/// shape-aware edge dissolution. Pass `None` for default rect-edge behavior.
 pub fn render_fill(
     grid: &mut Grid,
     rect: &Rect,
@@ -62,11 +64,12 @@ pub fn render_fill(
     color: Color,
     color2: Color,
     palette: &[Color; 5],
+    skew_boundary: Option<&dyn Fn(usize, usize) -> f32>,
     rng: &mut StdRng,
 ) {
     match fill {
         FillGen::TilePure(v) => fill_tile_pure(grid, rect, v, color, color2),
-        FillGen::Tile(params) => fill_tile_ex(grid, rect, &params, color, color2, params.jitter, rng),
+        FillGen::Tile(params) => fill_tile_ex(grid, rect, &params, color, color2, params.jitter, skew_boundary, rng),
         FillGen::Noise(v) => fill_noise(grid, rect, v, color, color2, rng),
         FillGen::Crosshatch => draw_crosshatch(grid, rect, color, color2),
         FillGen::Guilloche => draw_guilloche(grid, rect, color, color2),
@@ -127,7 +130,9 @@ pub fn fill_masked(
 
     let c1 = palette[1];
     let c2 = darken(c1, 30);
-    render_fill(grid, rect, fill, c1, c2, palette, rng);
+    // Pass mask_fn as skew_boundary so tile fills dissolve along the container's
+    // shape contour rather than uniformly from rect edges.
+    render_fill(grid, rect, fill, c1, c2, palette, Some(mask_fn), rng);
 
     let dissolve_color = darken(palette[1], 40);
     for y in rect.y..y_end {
@@ -167,7 +172,7 @@ pub fn render_scene(
             None => {
                 let c1 = layer.palette[1];
                 let c2 = darken(c1, 30);
-                render_fill(grid, rect, layer.fill, c1, c2, &layer.palette, rng);
+                render_fill(grid, rect, layer.fill, c1, c2, &layer.palette, None, rng);
             }
         }
     }

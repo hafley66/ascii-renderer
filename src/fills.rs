@@ -243,6 +243,9 @@ pub struct TileEdgeContext {
     pub dist_bottom: i32,            // positive = outside bottom edge
     pub outside: bool,               // true when cell is outside the rect
     pub extend: usize,               // max bleed distance in cells
+    /// Shape-aware: 0.0 = at container boundary, 1.0 = deep inside.
+    /// When Some, edge functions use this instead of rect-distance dropout.
+    pub boundary_value: Option<f32>,
 }
 
 /// Per-variant edge strategy. Returns Some((char, color_index)) to draw,
@@ -288,11 +291,17 @@ fn edge_behavior(
 }
 
 /// Default: distance-based probabilistic dropout.
+/// When boundary_value is set, uses it directly as survival probability
+/// instead of rect-edge distance, so dropout follows the container's contour.
 fn default_edge(ctx: &TileEdgeContext, rng: &mut StdRng) -> Option<(char, u8)> {
     if !ctx.outside { return Some((ctx.normal_char, ctx.normal_ci)); }
     if ctx.extend == 0 { return None; }
-    let dist = ctx.dist_left.max(ctx.dist_right).max(ctx.dist_top).max(ctx.dist_bottom).max(0) as f32;
-    let survive = 1.0 - (dist / ctx.extend as f32).powf(0.7);
+    let survive = if let Some(bv) = ctx.boundary_value {
+        bv.max(0.0)
+    } else {
+        let dist = ctx.dist_left.max(ctx.dist_right).max(ctx.dist_top).max(ctx.dist_bottom).max(0) as f32;
+        1.0 - (dist / ctx.extend as f32).powf(0.7)
+    };
     if survive <= 0.0 || rng.random::<f32>() > survive { return None; }
     Some((ctx.normal_char, ctx.normal_ci))
 }
@@ -392,17 +401,26 @@ fn nowaki_edge(ctx: &TileEdgeContext, rng: &mut StdRng) -> Option<(char, u8)> {
     }
     if ctx.extend == 0 { return None; }
 
-    let dist = ctx.dist_left.max(ctx.dist_right).max(ctx.dist_top).max(ctx.dist_bottom).max(0) as f32;
-
-    // Strokes get gentler decay (they "reach" further)
     let is_stroke = matches!(ctx.normal_char, '│' | '╱');
-    let power = if is_stroke { 1.5 } else { 0.7 };
-    let survive = 1.0 - (dist / ctx.extend as f32).powf(power);
+    let survive = if let Some(bv) = ctx.boundary_value {
+        // Strokes survive a bit further past the shape boundary
+        let boost = if is_stroke { 0.3 } else { 0.0 };
+        (bv + boost).min(1.0).max(0.0)
+    } else {
+        let dist = ctx.dist_left.max(ctx.dist_right).max(ctx.dist_top).max(ctx.dist_bottom).max(0) as f32;
+        let power = if is_stroke { 1.5 } else { 0.7 };
+        1.0 - (dist / ctx.extend as f32).powf(power)
+    };
     if survive <= 0.0 || rng.random::<f32>() > survive { return None; }
     Some((ctx.normal_char, ctx.normal_ci))
 }
 
 /// Fill a rect with a tile pattern, full control.
+///
+/// `skew_boundary`: optional shape boundary fn (same type as a mask fn: 0.0 = at
+/// shape edge, 1.0 = deep inside). When provided, dropout at/past the rect edges
+/// follows the container's contour instead of uniform rect-distance falloff.
+/// Pass `None` for default rect-edge skew behavior.
 pub fn fill_tile_ex(
     grid: &mut Grid,
     rect: &Rect,
@@ -410,6 +428,7 @@ pub fn fill_tile_ex(
     color: Color,
     color2: Color,
     jitter: f32,
+    skew_boundary: Option<&dyn Fn(usize, usize) -> f32>,
     rng: &mut StdRng,
 ) {
     let mut tile = make_tile(params.variant);
@@ -479,6 +498,9 @@ pub fn fill_tile_ex(
 
             let (normal_char, normal_ci) = tile.at(mtx, mty);
 
+            // boundary_value: shape-aware survival weight, or None for rect-edge falloff.
+            let boundary_value = skew_boundary.map(|f| f(x, y));
+
             // edge behavior decides draw vs skip for cells near/past boundaries
             let near_edge = params.skew > 0 && (
                 (dist_bottom <= 0 && (-dist_bottom as usize) < py) ||
@@ -491,6 +513,7 @@ pub fn fill_tile_ex(
                     normal_char, normal_ci,
                     dist_left, dist_right, dist_top, dist_bottom,
                     outside, extend,
+                    boundary_value,
                 };
                 match edge_behavior(params.variant, &ctx, rng) {
                     Some((ch, ci)) => {
