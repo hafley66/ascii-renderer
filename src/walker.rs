@@ -79,8 +79,8 @@ impl NodeMode {
             NodeMode::Landscape
         } else {
             match rng.random_range(0..5u32) {
-                0 => NodeMode::CenterpieceWithSurround,
-                1 => NodeMode::NegativeSpace,
+                0..=1 => NodeMode::NegativeSpace,
+                2 => NodeMode::CenterpieceWithSurround,
                 _ => {
                     let arr = match rng.random_range(0..4u32) {
                         0 => ClusterArrangement::Hex,
@@ -1484,9 +1484,8 @@ fn make_cluster(
     layers
 }
 
-/// Negative space: mostly empty node with a single large glyph or text label.
-/// The aesthetic is inverted from dense fills -- breathing room, a focal character,
-/// and optional sparse corner dots or a thin border accent.
+/// Negative space: mostly empty box with one recognizable organic sprite.
+/// No pattern fills. Just a tree, flower, or fruit sitting in open space.
 fn make_negative_space(
     rect: &Rect,
     palette: &[Color; 5],
@@ -1495,116 +1494,55 @@ fn make_negative_space(
     let mut layers = Vec::new();
     let cx = rect.x as f32 + rect.w as f32 * 0.5;
     let cy = rect.y as f32 + rect.h as f32 * 0.5;
-    let rx = rect.w as f32 * 0.5;
-    let ry = rect.h as f32 * 0.5;
 
-    // Sparse background: very faint dot noise at low density
-    let mut bg_pal = *palette;
-    bg_pal[1] = darken(palette[rng.random_range(1..4)], 70);
-    let bg_mask: MaskFn = match rng.random_range(0..3u32) {
-        0 => Box::new(mask_ellipse(cx, cy, rx, ry, 2.5)),
-        1 => Box::new(mask_rect(rect, 2.0)),
-        _ => Box::new(mask_diamond(cx, cy, rx, ry, 2.0)),
-    };
-    layers.push(Layer {
-        fill: FillGen::Noise(NoiseVariant::Dot),
-        mask: Some(bg_mask),
-        palette: bg_pal,
-    });
+    let mut pal = *palette;
+    pal[1] = palette[rng.random_range(1..4)];
 
-    // Central glyph: pick one large sprite or a text label
-    let glyph_choice = rng.random_range(0..7u32);
-    let mut glyph_pal = *palette;
-    glyph_pal[1] = palette[rng.random_range(1..4)];
-
-    match glyph_choice {
-        0..=1 => {
-            // Large mask sprite centered
-            let s = rng.random_range(2..5).min(rect.w / 6).max(2);
-            let gw = s * 4 + 4;
-            let gh = s * 4 + 4;
-            let gx = (cx as usize).saturating_sub(gw / 2).min(rect.x + rect.w - gw.min(rect.w));
-            let gy = (cy as usize).saturating_sub(gh / 2).min(rect.y + rect.h - gh.min(rect.h));
-            let el_rect = Rect { x: gx, y: gy, w: gw.min(rect.w), h: gh.min(rect.h) };
+    // One organic sprite, sized to fit comfortably inside the box
+    match rng.random_range(0..5u32) {
+        0..=2 => {
+            // Tree -- the most readable thing we have
+            let tw = rect.w.min(24).max(8);
+            let th = rect.h.min(18).max(6);
+            let gx = (cx as usize).saturating_sub(tw / 2).min(rect.x + rect.w - tw.min(rect.w));
+            let gy = (cy as usize).saturating_sub(th / 2).min(rect.y + rect.h - th.min(rect.h));
+            let el_rect = Rect { x: gx, y: gy, w: tw.min(rect.w), h: th.min(rect.h) };
             layers.push(Layer {
-                fill: FillGen::Mask(s, rng.random_range(0..MASK_STYLE_COUNT)),
+                fill: FillGen::Tree(rng.random_range(0..12)),
                 mask: Some(Box::new(mask_rect(&el_rect, 0.0))),
-                palette: glyph_pal,
-            });
-        }
-        2 => {
-            // Single flower
-            let gx = (cx as usize).saturating_sub(2).min(rect.x + rect.w - 5);
-            let gy = (cy as usize).saturating_sub(2).min(rect.y + rect.h - 5);
-            let el_rect = Rect { x: gx, y: gy, w: 5.min(rect.w), h: 5.min(rect.h) };
-            layers.push(Layer {
-                fill: FillGen::Flower(rng.random_range(0..5)),
-                mask: Some(Box::new(mask_rect(&el_rect, 0.0))),
-                palette: glyph_pal,
+                palette: pal,
             });
         }
         3 => {
-            // Single fruit
-            let gx = (cx as usize).saturating_sub(2).min(rect.x + rect.w - 5);
-            let gy = (cy as usize).saturating_sub(2).min(rect.y + rect.h - 5);
-            let el_rect = Rect { x: gx, y: gy, w: 5.min(rect.w), h: 5.min(rect.h) };
-            layers.push(Layer {
-                fill: FillGen::Fruit(rng.random_range(0..5)),
-                mask: Some(Box::new(mask_rect(&el_rect, 0.0))),
-                palette: glyph_pal,
-            });
-        }
-        4 => {
-            // Aztec diamond, small order
-            let order = rng.random_range(2..4);
-            let gw = order * 4 + 4;
-            let gh = order * 2 + 4;
-            let gx = (cx as usize).saturating_sub(gw / 2).min(rect.x + rect.w - gw.min(rect.w));
-            let gy = (cy as usize).saturating_sub(gh / 2).min(rect.y + rect.h - gh.min(rect.h));
-            let el_rect = Rect { x: gx, y: gy, w: gw.min(rect.w), h: gh.min(rect.h) };
-            layers.push(Layer {
-                fill: FillGen::AztecDiamond(order),
-                mask: Some(Box::new(mask_rect(&el_rect, 0.0))),
-                palette: glyph_pal,
-            });
-        }
-        5 => {
-            // Stepped fret, small
-            let steps = rng.random_range(2..4);
-            let gw = steps * 4 + 2;
-            let gh = steps * 4 + 2;
-            let gx = (cx as usize).saturating_sub(gw / 2).min(rect.x + rect.w - gw.min(rect.w));
-            let gy = (cy as usize).saturating_sub(gh / 2).min(rect.y + rect.h - gh.min(rect.h));
-            let el_rect = Rect { x: gx, y: gy, w: gw.min(rect.w), h: gh.min(rect.h) };
-            layers.push(Layer {
-                fill: FillGen::Fret(steps),
-                mask: Some(Box::new(mask_rect(&el_rect, 0.0))),
-                palette: glyph_pal,
-            });
+            // Flower cluster -- 2-3 flowers spaced apart
+            let count = rng.random_range(2..4u32).min(rect.w as u32 / 6).max(1);
+            for i in 0..count {
+                let fx = rect.x + (rect.w as f32 * (i as f32 + 1.0) / (count as f32 + 1.0)) as usize;
+                let fy = rect.y + rect.h / 2 + rng.random_range(0..3) as usize;
+                let fy = fy.min(rect.y + rect.h - 5);
+                let fx = fx.min(rect.x + rect.w - 5);
+                let el_rect = Rect { x: fx, y: fy, w: 5.min(rect.w), h: 5.min(rect.h) };
+                layers.push(Layer {
+                    fill: FillGen::Flower(rng.random_range(0..5)),
+                    mask: Some(Box::new(mask_rect(&el_rect, 0.0))),
+                    palette: pal,
+                });
+            }
         }
         _ => {
-            // Big unicode glyph text -- write a few large characters from curated set
-            let glyphs: &[&str] = &[
-                "◈", "◆", "◇", "⬡", "⬢", "☼", "✦", "✧", "⊕", "⊗",
-                "⌘", "⏣", "⎔", "⟐", "⟡", "◬", "⬟", "⬠", "⏢", "⏥",
-            ];
-            // Place 1-3 large glyphs scattered across the node
-            let glyph_count = rng.random_range(1..4u32).min(rect.w as u32 / 4).max(1);
-            for g in 0..glyph_count {
-                let glyph = glyphs[rng.random_range(0..glyphs.len() as u32) as usize];
-                let gx = rect.x + (rect.w as f32 * (g as f32 + 1.0) / (glyph_count as f32 + 1.0)) as usize;
-                let gy = rect.y + rect.h / 2 + rng.random_range(0..3u32) as usize - 1;
-                if gx < rect.x + rect.w && gy < rect.y + rect.h {
-                    // Single-cell glyph as a tiny rect fill
-                    let el_rect = Rect { x: gx, y: gy, w: 1, h: 1 };
-                    // Use Noise(Dot) as a carrier -- the mask restricts to 1 cell,
-                    // and we'll override the glyph via a dedicated FillGen
-                    layers.push(Layer {
-                        fill: FillGen::Glyph(glyph.chars().next().unwrap()),
-                        mask: Some(Box::new(mask_rect(&el_rect, 0.0))),
-                        palette: glyph_pal,
-                    });
-                }
+            // Fruit cluster
+            let count = rng.random_range(2..4u32).min(rect.w as u32 / 6).max(1);
+            for i in 0..count {
+                let fx = rect.x + (rect.w as f32 * (i as f32 + 1.0) / (count as f32 + 1.0)) as usize;
+                let fy = rect.y + rect.h / 2 + rng.random_range(0..3) as usize;
+                let fy = fy.min(rect.y + rect.h - 5);
+                let fx = fx.min(rect.x + rect.w - 5);
+                let el_rect = Rect { x: fx, y: fy, w: 5.min(rect.w), h: 5.min(rect.h) };
+                layers.push(Layer {
+                    fill: FillGen::Fruit(rng.random_range(0..5)),
+                    mask: Some(Box::new(mask_rect(&el_rect, 0.0))),
+                    palette: pal,
+                });
             }
         }
     }
