@@ -1025,7 +1025,7 @@ fn main() {
         if hh < grid.len() { grid[hh][hw] = Cell::new('┼', darken(palette[2], 50)); }
 
     } else if mode == "party" {
-        // party [gap] [nodes] [scale] [detail] [weather] [path]
+        // party [gap] [nodes] [scale] [detail] [weather] [path] [atmo]
         let pp = PartyParams {
             gap:    args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0),
             nodes:  args.get(5).and_then(|s| s.parse().ok()).unwrap_or(0),
@@ -1038,6 +1038,7 @@ fn main() {
         let path_style = args.get(9)
             .and_then(|s| PathStyle::from_name(s))
             .unwrap_or_else(|| PathStyle::pick(&mut rng));
+        let atmo_intensity: u32 = args.get(10).and_then(|s| s.parse().ok()).unwrap_or(50);
         let rect = Rect { x: 0, y: 0, w: width, h: height };
         let (layers, stops, boxes) = party_walk(width, height, &palette, &pp, &mut rng);
         let scene = Scene { layers };
@@ -1050,7 +1051,7 @@ fn main() {
             draw_box_border(&mut grid, bx, by, bw, bh, border_color);
         }
         // Weather overlay
-        apply_atmosphere(&mut grid, weather, 50, &palette, &mut rng);
+        apply_atmosphere(&mut grid, weather, atmo_intensity, &palette, &mut rng);
     } else if mode == "soup" {
         let rect = Rect { x: 0, y: 0, w: width, h: height };
         let (layers, stops) = soup_walk(width, height, &palette, &mut rng);

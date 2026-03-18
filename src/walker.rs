@@ -66,6 +66,8 @@ pub enum NodeMode {
     CenterpieceWithSurround,
     /// N related patterns in a spatial arrangement.
     Cluster(ClusterArrangement, usize),
+    /// Mostly empty space with a single large glyph or text label.
+    NegativeSpace,
 }
 
 #[derive(Clone, Copy)]
@@ -76,8 +78,9 @@ impl NodeMode {
         if rng.random::<f32>() < landscape_bias {
             NodeMode::Landscape
         } else {
-            match rng.random_range(0..3u32) {
+            match rng.random_range(0..5u32) {
                 0 => NodeMode::CenterpieceWithSurround,
+                1 => NodeMode::NegativeSpace,
                 _ => {
                     let arr = match rng.random_range(0..4u32) {
                         0 => ClusterArrangement::Hex,
@@ -884,7 +887,8 @@ fn fill_disc(f: &FillGen) -> u8 {
         FillGen::CaSnapshot(_) => 17,
         FillGen::Explosion => 18,
         FillGen::Rule1D(_) => 19,
-        FillGen::Nothing => 20,
+        FillGen::Glyph(_) => 20,
+        FillGen::Nothing => 21,
     }
 }
 
@@ -1215,6 +1219,7 @@ pub fn make_node_scene(
         NodeMode::Landscape => make_landscape(rect, palette, detail, rng),
         NodeMode::CenterpieceWithSurround => make_centerpiece(rect, palette, rng),
         NodeMode::Cluster(arr, n) => make_cluster(rect, arr, n, palette, rng),
+        NodeMode::NegativeSpace => make_negative_space(rect, palette, rng),
     }
 }
 
@@ -1474,6 +1479,134 @@ fn make_cluster(
         };
 
         layers.push(Layer { fill, mask: Some(mask), palette: pal });
+    }
+
+    layers
+}
+
+/// Negative space: mostly empty node with a single large glyph or text label.
+/// The aesthetic is inverted from dense fills -- breathing room, a focal character,
+/// and optional sparse corner dots or a thin border accent.
+fn make_negative_space(
+    rect: &Rect,
+    palette: &[Color; 5],
+    rng: &mut StdRng,
+) -> Vec<Layer> {
+    let mut layers = Vec::new();
+    let cx = rect.x as f32 + rect.w as f32 * 0.5;
+    let cy = rect.y as f32 + rect.h as f32 * 0.5;
+    let rx = rect.w as f32 * 0.5;
+    let ry = rect.h as f32 * 0.5;
+
+    // Sparse background: very faint dot noise at low density
+    let mut bg_pal = *palette;
+    bg_pal[1] = darken(palette[rng.random_range(1..4)], 70);
+    let bg_mask: MaskFn = match rng.random_range(0..3u32) {
+        0 => Box::new(mask_ellipse(cx, cy, rx, ry, 2.5)),
+        1 => Box::new(mask_rect(rect, 2.0)),
+        _ => Box::new(mask_diamond(cx, cy, rx, ry, 2.0)),
+    };
+    layers.push(Layer {
+        fill: FillGen::Noise(NoiseVariant::Dot),
+        mask: Some(bg_mask),
+        palette: bg_pal,
+    });
+
+    // Central glyph: pick one large sprite or a text label
+    let glyph_choice = rng.random_range(0..7u32);
+    let mut glyph_pal = *palette;
+    glyph_pal[1] = palette[rng.random_range(1..4)];
+
+    match glyph_choice {
+        0..=1 => {
+            // Large mask sprite centered
+            let s = rng.random_range(2..5).min(rect.w / 6).max(2);
+            let gw = s * 4 + 4;
+            let gh = s * 4 + 4;
+            let gx = (cx as usize).saturating_sub(gw / 2).min(rect.x + rect.w - gw.min(rect.w));
+            let gy = (cy as usize).saturating_sub(gh / 2).min(rect.y + rect.h - gh.min(rect.h));
+            let el_rect = Rect { x: gx, y: gy, w: gw.min(rect.w), h: gh.min(rect.h) };
+            layers.push(Layer {
+                fill: FillGen::Mask(s, rng.random_range(0..MASK_STYLE_COUNT)),
+                mask: Some(Box::new(mask_rect(&el_rect, 0.0))),
+                palette: glyph_pal,
+            });
+        }
+        2 => {
+            // Single flower
+            let gx = (cx as usize).saturating_sub(2).min(rect.x + rect.w - 5);
+            let gy = (cy as usize).saturating_sub(2).min(rect.y + rect.h - 5);
+            let el_rect = Rect { x: gx, y: gy, w: 5.min(rect.w), h: 5.min(rect.h) };
+            layers.push(Layer {
+                fill: FillGen::Flower(rng.random_range(0..5)),
+                mask: Some(Box::new(mask_rect(&el_rect, 0.0))),
+                palette: glyph_pal,
+            });
+        }
+        3 => {
+            // Single fruit
+            let gx = (cx as usize).saturating_sub(2).min(rect.x + rect.w - 5);
+            let gy = (cy as usize).saturating_sub(2).min(rect.y + rect.h - 5);
+            let el_rect = Rect { x: gx, y: gy, w: 5.min(rect.w), h: 5.min(rect.h) };
+            layers.push(Layer {
+                fill: FillGen::Fruit(rng.random_range(0..5)),
+                mask: Some(Box::new(mask_rect(&el_rect, 0.0))),
+                palette: glyph_pal,
+            });
+        }
+        4 => {
+            // Aztec diamond, small order
+            let order = rng.random_range(2..4);
+            let gw = order * 4 + 4;
+            let gh = order * 2 + 4;
+            let gx = (cx as usize).saturating_sub(gw / 2).min(rect.x + rect.w - gw.min(rect.w));
+            let gy = (cy as usize).saturating_sub(gh / 2).min(rect.y + rect.h - gh.min(rect.h));
+            let el_rect = Rect { x: gx, y: gy, w: gw.min(rect.w), h: gh.min(rect.h) };
+            layers.push(Layer {
+                fill: FillGen::AztecDiamond(order),
+                mask: Some(Box::new(mask_rect(&el_rect, 0.0))),
+                palette: glyph_pal,
+            });
+        }
+        5 => {
+            // Stepped fret, small
+            let steps = rng.random_range(2..4);
+            let gw = steps * 4 + 2;
+            let gh = steps * 4 + 2;
+            let gx = (cx as usize).saturating_sub(gw / 2).min(rect.x + rect.w - gw.min(rect.w));
+            let gy = (cy as usize).saturating_sub(gh / 2).min(rect.y + rect.h - gh.min(rect.h));
+            let el_rect = Rect { x: gx, y: gy, w: gw.min(rect.w), h: gh.min(rect.h) };
+            layers.push(Layer {
+                fill: FillGen::Fret(steps),
+                mask: Some(Box::new(mask_rect(&el_rect, 0.0))),
+                palette: glyph_pal,
+            });
+        }
+        _ => {
+            // Big unicode glyph text -- write a few large characters from curated set
+            let glyphs: &[&str] = &[
+                "◈", "◆", "◇", "⬡", "⬢", "☼", "✦", "✧", "⊕", "⊗",
+                "⌘", "⏣", "⎔", "⟐", "⟡", "◬", "⬟", "⬠", "⏢", "⏥",
+            ];
+            // Place 1-3 large glyphs scattered across the node
+            let glyph_count = rng.random_range(1..4u32).min(rect.w as u32 / 4).max(1);
+            for g in 0..glyph_count {
+                let glyph = glyphs[rng.random_range(0..glyphs.len() as u32) as usize];
+                let gx = rect.x + (rect.w as f32 * (g as f32 + 1.0) / (glyph_count as f32 + 1.0)) as usize;
+                let gy = rect.y + rect.h / 2 + rng.random_range(0..3u32) as usize - 1;
+                if gx < rect.x + rect.w && gy < rect.y + rect.h {
+                    // Single-cell glyph as a tiny rect fill
+                    let el_rect = Rect { x: gx, y: gy, w: 1, h: 1 };
+                    // Use Noise(Dot) as a carrier -- the mask restricts to 1 cell,
+                    // and we'll override the glyph via a dedicated FillGen
+                    layers.push(Layer {
+                        fill: FillGen::Glyph(glyph.chars().next().unwrap()),
+                        mask: Some(Box::new(mask_rect(&el_rect, 0.0))),
+                        palette: glyph_pal,
+                    });
+                }
+            }
+        }
     }
 
     layers

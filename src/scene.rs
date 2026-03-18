@@ -35,6 +35,8 @@ pub enum FillGen {
     CaSnapshot(u8),    // rule index: 0=life, 1=cave, 2=maze, 3=coral
     Explosion,         // radial burst from center
     Rule1D(u8),        // Wolfram 1D rule number (30, 90, 110, etc.)
+    // Single character placed at fill position
+    Glyph(char),
     // No-op
     Nothing,
 }
@@ -125,6 +127,12 @@ pub fn render_fill(
         }
         FillGen::Rule1D(rule) => {
             draw_rule_1d(grid, rect, rule, color, color2);
+        }
+        FillGen::Glyph(ch) => {
+            // Place the single character at the rect origin
+            if rect.h > 0 && rect.w > 0 && rect.y < grid.len() && rect.x < grid[0].len() {
+                grid[rect.y][rect.x] = Cell::new(ch, color);
+            }
         }
         FillGen::Nothing => {}
     }
