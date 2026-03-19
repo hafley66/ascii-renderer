@@ -1877,7 +1877,7 @@ fn main() {
 
     } else if mode == "boles1" {
         // boles1: bole styles at 3 energy levels (low/mid/high)
-        let styles = ["Crescent", "Braille", "Frame", "Diamond", "Chevron"];
+        let styles = ["Crescent", "Braille", "Frame", "Diamond", "Chevron", "Frame2"];
         let energies: [f32; 3] = [0.3, 0.6, 1.0];
         let energy_labels = ["Low", "Mid", "High"];
         let col_w = width / styles.len();

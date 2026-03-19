@@ -378,7 +378,7 @@ impl BoleStyle for Bole {
         let bark = darken(color, 15);
         let dim = darken(color, 30);
 
-        match self.style % 5 {
+        match self.style % 6 {
             // Style 0: Crescent -- connected via │ at inner edge positions
             0 => {
                 // Ground row: wide crescent
@@ -396,59 +396,62 @@ impl BoleStyle for Bole {
                 // Inner crescent with │ connectors down to ground row
                 let ilw = (lw * 2 / 3).max(1);
                 let irw = (rw * 2 / 3).max(1);
-                set(grid, root_x - 1, root_y - 1, '◟', bark);
-                set(grid, root_x + 1, root_y - 1, '◞', bark);
+                set(grid, root_x - 1, root_y - 1, '◟', color);
+                set(grid, root_x + 1, root_y - 1, '◞', color);
                 for dx in 2..=ilw {
-                    set(grid, root_x - dx, root_y - 1, '◡', dim);
+                    set(grid, root_x - dx, root_y - 1, '◡', bark);
                 }
                 for dx in 2..=irw {
-                    set(grid, root_x + dx, root_y - 1, '◡', dim);
+                    set(grid, root_x + dx, root_y - 1, '◡', bark);
                 }
-                set(grid, root_x - ilw - 1, root_y - 1, '◜', dim);
-                set(grid, root_x + irw + 1, root_y - 1, '◝', dim);
+                set(grid, root_x - ilw - 1, root_y - 1, '◜', bark);
+                set(grid, root_x + irw + 1, root_y - 1, '◝', bark);
                 // Vertical connectors: │ at inner crescent edges link to outer crescent
-                set(grid, root_x - ilw - 1, root_y, '│', dim);
-                set(grid, root_x + irw + 1, root_y, '│', dim);
+                set(grid, root_x - ilw - 1, root_y, '│', bark);
+                set(grid, root_x + irw + 1, root_y, '│', bark);
                 // Horizontal bar connecting crescents at mid-width
                 let bar_l = (ilw + lw) / 2;
                 let bar_r = (irw + rw) / 2;
-                if bar_l > ilw + 1 { set(grid, root_x - bar_l, root_y - 1, '─', dim); }
-                if bar_r > irw + 1 { set(grid, root_x + bar_r, root_y - 1, '─', dim); }
+                if bar_l > ilw + 1 { set(grid, root_x - bar_l, root_y - 1, '─', bark); }
+                if bar_r > irw + 1 { set(grid, root_x + bar_r, root_y - 1, '─', bark); }
                 set(grid, root_x, root_y - 1, '│', color);
                 (root_x, root_y - 1)
             }
-            // Style 1: Braille cluster -- keep as-is, good
+            // Style 1: Braille cluster -- energy-scaled height
             1 => {
+                let energy = params.energy.clamp(0.2, 1.0);
                 let dense = ['⣿', '⣾', '⣷', '⣤', '⣶'];
                 let mid   = ['⡇', '⢸', '⠿', '⠶', '⠛'];
                 let thin  = ['⡀', '⢀', '⠁', '⠈', '⠂'];
-                set(grid, root_x, root_y, '⣿', color);
-                for dx in 1..=lw {
-                    set(grid, root_x - dx, root_y, dense[rng.random_range(0..dense.len() as u32) as usize], bark);
+                // Row count: 2 at low energy, up to 5 at high
+                let rows = ((energy * 4.0).ceil() as i32 + 1).clamp(2, 5);
+                let mut cy = root_y;
+
+                for row in 0..rows {
+                    let frac = row as f32 / rows as f32;
+                    let hw = if row == 0 {
+                        lw.max(rw)
+                    } else {
+                        ((lw.max(rw) as f32) * (1.0 - frac * 0.6)).max(1.0) as i32
+                    };
+                    let chars = if frac < 0.33 { &dense } else if frac < 0.66 { &mid } else { &thin };
+                    let row_col = if row == 0 { color } else { darken(color, (row as u8 * 5).min(20)) };
+
+                    set(grid, root_x, cy, chars[0], row_col);
+                    for dx in 1..=hw {
+                        let ch = chars[rng.random_range(0..chars.len() as u32) as usize];
+                        set(grid, root_x - dx, cy, ch, darken(row_col, ((dx as u8) * 3).min(15)));
+                    }
+                    for dx in 1..=hw {
+                        let ch = chars[rng.random_range(0..chars.len() as u32) as usize];
+                        set(grid, root_x + dx, cy, ch, darken(row_col, ((dx as u8) * 3).min(15)));
+                    }
+
+                    cy -= 1;
                 }
-                for dx in 1..=rw {
-                    set(grid, root_x + dx, root_y, dense[rng.random_range(0..dense.len() as u32) as usize], bark);
-                }
-                let mlw = (lw * 3 / 4).max(1);
-                let mrw = (rw * 3 / 4).max(1);
-                set(grid, root_x, root_y - 1, '⣿', color);
-                for dx in 1..=mlw {
-                    set(grid, root_x - dx, root_y - 1, mid[rng.random_range(0..mid.len() as u32) as usize], bark);
-                }
-                for dx in 1..=mrw {
-                    set(grid, root_x + dx, root_y - 1, mid[rng.random_range(0..mid.len() as u32) as usize], bark);
-                }
-                let tlw = (lw / 2).max(1);
-                let trw = (rw / 2).max(1);
-                set(grid, root_x, root_y - 2, '⡇', color);
-                for dx in 1..=tlw {
-                    set(grid, root_x - dx, root_y - 2, thin[rng.random_range(0..thin.len() as u32) as usize], dim);
-                }
-                for dx in 1..=trw {
-                    set(grid, root_x + dx, root_y - 2, thin[rng.random_range(0..thin.len() as u32) as usize], dim);
-                }
-                set(grid, root_x, root_y - 3, '│', color);
-                (root_x, root_y - 3)
+
+                set(grid, root_x, cy + 1, '│', color);
+                (root_x, cy + 1)
             }
             // Style 2: Frame -- energy-scaled nested box frames
             2 => {
@@ -496,93 +499,223 @@ impl BoleStyle for Bole {
                 set(grid, root_x, cy + 1, '│', color);
                 (root_x, cy + 1)
             }
-            // Style 3: Diamond -- wider, random gaps in top row only where bottom exists
+            // Style 3: Diamond -- inverted diamond shape, wide at ground narrowing upward
             3 => {
-                // Ground row: full wide diamond chain
-                set(grid, root_x, root_y, '✦', color);
-                set(grid, root_x - 1, root_y, '◇', bark);
-                set(grid, root_x + 1, root_y, '◇', bark);
-                for dx in 2..=lw {
-                    let ch = if dx % 2 == 0 { '◆' } else { '◇' };
-                    set(grid, root_x - dx, root_y, ch, lighten(bark, ((dx - 2) as u8 * 6).min(40)));
-                }
-                for dx in 2..=rw {
-                    let ch = if dx % 2 == 0 { '◆' } else { '◇' };
-                    set(grid, root_x + dx, root_y, ch, lighten(bark, ((dx - 2) as u8 * 6).min(40)));
-                }
-                set(grid, root_x - lw - 1, root_y, '∙', lighten(bark, 30));
-                set(grid, root_x + rw + 1, root_y, '∙', lighten(bark, 30));
-                // Row -1: wider than before, random gaps (only skip if bottom row has neighbor)
-                let ilw = (lw * 3 / 4).max(1);
-                let irw = (rw * 3 / 4).max(1);
-                set(grid, root_x, root_y - 1, '◆', color);
-                for dx in 1..=ilw {
-                    if rng.random_range(0..4u32) > 0 { // 75% chance to place
-                        let ch = if dx % 2 == 0 { '◆' } else { '✧' };
-                        set(grid, root_x - dx, root_y - 1, ch, dim);
+                let energy = params.energy.clamp(0.2, 1.0);
+                // Total height scales with energy: 3-7 rows
+                let total_h = ((energy * 5.0).ceil() as i32 + 2).clamp(3, 7);
+                let half_h = total_h / 2;
+                let max_half_w = lw.max(rw).max(2);
+                let mut cy = root_y;
+
+                // Bottom half: expanding upward (inverted V)
+                for row in 0..half_h {
+                    let hw = ((row + 1) as f32 / half_h as f32 * max_half_w as f32).ceil() as i32;
+                    let row_col = lighten(bark, ((half_h - row) as u8 * 5).min(30));
+                    set(grid, root_x, cy, if row == 0 { '╨' } else { '│' }, color);
+                    for dx in 1..=hw {
+                        let ch = if dx == hw { '◇' } else if dx % 2 == 0 { '─' } else { '◆' };
+                        set(grid, root_x - dx, cy, ch, row_col);
+                        set(grid, root_x + dx, cy, ch, row_col);
                     }
+                    cy -= 1;
                 }
-                for dx in 1..=irw {
-                    if rng.random_range(0..4u32) > 0 {
-                        let ch = if dx % 2 == 0 { '◆' } else { '✧' };
-                        set(grid, root_x + dx, root_y - 1, ch, dim);
+
+                // Middle row: widest point
+                set(grid, root_x, cy, '◆', color);
+                for dx in 1..=max_half_w {
+                    let ch = if dx == max_half_w { '◇' } else { '═' };
+                    let c = lighten(color, ((dx as u8) * 4).min(25));
+                    set(grid, root_x - dx, cy, ch, c);
+                    set(grid, root_x + dx, cy, ch, c);
+                }
+                set(grid, root_x - max_half_w - 1, cy, '◁', dim);
+                set(grid, root_x + max_half_w + 1, cy, '▷', dim);
+                cy -= 1;
+
+                // Top half: contracting upward (V shape)
+                let top_rows = total_h - half_h - 1;
+                for row in 0..top_rows {
+                    let hw = ((top_rows - row) as f32 / top_rows as f32 * max_half_w as f32).ceil() as i32;
+                    let row_col = lighten(bark, ((row + 1) as u8 * 6).min(35));
+                    set(grid, root_x, cy, '│', row_col);
+                    for dx in 1..=hw {
+                        let ch = if dx == hw { '◇' } else if dx % 2 == 0 { '─' } else { '◆' };
+                        set(grid, root_x - dx, cy, ch, row_col);
+                        set(grid, root_x + dx, cy, ch, row_col);
                     }
+                    cy -= 1;
                 }
-                // Horizontal connector bar at ground+1 beyond inner row
-                set(grid, root_x - ilw - 1, root_y - 1, '◇', lighten(dim, 10));
-                set(grid, root_x + irw + 1, root_y - 1, '◇', lighten(dim, 10));
-                // Row -2: sparse scatter, only where row -1 has something
-                for dx in [-2, -1, 0, 1, 2] {
-                    if rng.random_range(0..3u32) > 0 {
-                        let ch = ['∙', '◇', '✧'][rng.random_range(0..3u32) as usize];
-                        set(grid, root_x + dx, root_y - 2, ch, lighten(dim, 15));
-                    }
-                }
-                set(grid, root_x, root_y - 2, '◆', color);
-                set(grid, root_x, root_y - 3, '│', color);
-                (root_x, root_y - 3)
+
+                set(grid, root_x, cy + 1, '│', color);
+                (root_x, cy + 1)
             }
-            // Style 4: Chevron -- wider fanout, horizontal bars between legs
-            _ => {
-                set(grid, root_x, root_y, '┴', color);
+            // Style 4: Chevron -- energy-scaled layered V-shapes with variable center
+            4 => {
+                let energy = params.energy.clamp(0.2, 1.0);
+                // Number of chevron layers: 1 at low, up to 4 at high
+                let layers = ((energy * 3.5).ceil() as i32).clamp(1, 4);
+                let mut cy = root_y;
+
+                // Ground row: base chevron V
+                set(grid, root_x, cy, '┴', color);
                 let ll = lw.max(2);
                 let rl = rw.max(2);
-                // Left: diagonal legs fanning out, each pair wider than the last
-                for layer in 0..ll {
-                    let dx = layer + 1;
-                    let c = lighten(bark, (layer as u8 * 6).min(40));
-                    set(grid, root_x - dx, root_y - 1, '╲', c);
-                    set(grid, root_x - dx, root_y, '╱', c);
+                for dx in 1..=ll {
+                    let c = lighten(bark, ((dx as u8) * 5).min(35));
+                    set(grid, root_x - dx, cy, '╱', c);
                 }
-                // Right
-                for layer in 0..rl {
-                    let dx = layer + 1;
-                    let c = lighten(bark, (layer as u8 * 6).min(40));
-                    set(grid, root_x + dx, root_y - 1, '╱', c);
-                    set(grid, root_x + dx, root_y, '╲', c);
+                for dx in 1..=rl {
+                    let c = lighten(bark, ((dx as u8) * 5).min(35));
+                    set(grid, root_x + dx, cy, '╲', c);
                 }
-                // Horizontal bars connecting outer leg tips at ground
-                set(grid, root_x - ll - 1, root_y, '─', lighten(bark, 30));
-                set(grid, root_x + rl + 1, root_y, '─', lighten(bark, 30));
-                set(grid, root_x - ll - 2, root_y, '╴', lighten(bark, 35));
-                set(grid, root_x + rl + 2, root_y, '╶', lighten(bark, 35));
-                set(grid, root_x, root_y - 1, '∨', color);
-                // Inner chevron
-                set(grid, root_x, root_y - 2, '∧', color);
-                let il = (ll / 2).max(1);
-                let ir = (rl / 2).max(1);
-                for dx in 1..=il {
-                    set(grid, root_x - dx, root_y - 2, '╱', dim);
+                set(grid, root_x - ll - 1, cy, '─', dim);
+                set(grid, root_x + rl + 1, cy, '─', dim);
+                cy -= 1;
+
+                // Stacked chevron layers, each narrower
+                for layer in 0..layers {
+                    let shrink = (layer + 1) as f32 * 0.22;
+                    let cl = ((ll as f32) * (1.0 - shrink)).max(1.0) as i32;
+                    let cr = ((rl as f32) * (1.0 - shrink)).max(1.0) as i32;
+                    let lc = if layer == 0 { bark } else { lighten(bark, (layer as u8 * 8).min(30)) };
+
+                    // Inverted V (∧ shape)
+                    let center_ch = match rng.random_range(0..3u32) {
+                        0 => '∧',
+                        1 => '△',
+                        _ => '▵',
+                    };
+                    set(grid, root_x, cy, center_ch, color);
+                    for dx in 1..=cl {
+                        set(grid, root_x - dx, cy, '╱', lc);
+                    }
+                    for dx in 1..=cr {
+                        set(grid, root_x + dx, cy, '╲', lc);
+                    }
+                    // Horizontal stubs at tips
+                    if cl > 1 {
+                        set(grid, root_x - cl - 1, cy, '─', lighten(lc, 15));
+                    }
+                    if cr > 1 {
+                        set(grid, root_x + cr + 1, cy, '─', lighten(lc, 15));
+                    }
+
+                    cy -= 1;
+
+                    // Only add V shape between layers if not last
+                    if layer < layers - 1 {
+                        let vcl = ((cl as f32) * 0.7).max(1.0) as i32;
+                        let vcr = ((cr as f32) * 0.7).max(1.0) as i32;
+                        let vc = match rng.random_range(0..3u32) {
+                            0 => '∨',
+                            1 => '▽',
+                            _ => '▿',
+                        };
+                        set(grid, root_x, cy, vc, lc);
+                        for dx in 1..=vcl {
+                            set(grid, root_x - dx, cy, '╲', lighten(lc, 10));
+                        }
+                        for dx in 1..=vcr {
+                            set(grid, root_x + dx, cy, '╱', lighten(lc, 10));
+                        }
+                        cy -= 1;
+                    }
                 }
-                for dx in 1..=ir {
-                    set(grid, root_x + dx, root_y - 2, '╲', dim);
-                }
-                // Outermost inner chevron tips get horizontal stubs
-                set(grid, root_x - il - 1, root_y - 2, '─', lighten(dim, 15));
-                set(grid, root_x + ir + 1, root_y - 2, '─', lighten(dim, 15));
-                set(grid, root_x, root_y - 3, '│', color);
-                (root_x, root_y - 3)
+
+                set(grid, root_x, cy + 1, '│', color);
+                (root_x, cy + 1)
             }
+            // Style 5: Frame2 -- connected/overlapping stacked frames, shared borders
+            5 => {
+                let energy = params.energy.clamp(0.2, 1.0);
+                // Layer count: 1-3, varies with energy but not always max
+                let max_layers = ((energy * 3.0).ceil() as i32).clamp(1, 3);
+                let layers = if max_layers > 1 {
+                    rng.random_range(1..(max_layers + 1) as u32) as i32
+                } else {
+                    1
+                };
+                let mut cy = root_y;
+                let mut cur_lw = lw.max(2);
+                let mut cur_rw = rw.max(2);
+
+                for layer in 0..layers {
+                    let layer_col = if layer == 0 { color } else { bark };
+                    let fill_col = if layer == 0 { bark } else { dim };
+                    // Variable height per layer: 1-3 interior rows
+                    let interior_h = if energy > 0.7 {
+                        rng.random_range(1..4u32) as i32
+                    } else if energy > 0.4 {
+                        rng.random_range(1..3u32) as i32
+                    } else {
+                        1
+                    };
+
+                    // Bottom border (shared with previous layer's top if not first)
+                    if layer == 0 {
+                        set(grid, root_x - cur_lw, cy, '╚', layer_col);
+                        set(grid, root_x + cur_rw, cy, '╝', layer_col);
+                        for dx in (-cur_lw + 1)..cur_rw {
+                            set(grid, root_x + dx, cy, '═', layer_col);
+                        }
+                        set(grid, root_x, cy, '╩', color);
+                        // Buttress legs at base
+                        if energy > 0.5 {
+                            set(grid, root_x - cur_lw - 1, cy, '╱', fill_col);
+                            set(grid, root_x + cur_rw + 1, cy, '╲', fill_col);
+                        }
+                    }
+
+                    // Interior fill rows
+                    for row in 0..interior_h {
+                        cy -= 1;
+                        set(grid, root_x - cur_lw, cy, '║', color);
+                        set(grid, root_x + cur_rw, cy, '║', color);
+                        let fills = if row == 0 {
+                            ['░', '▒', '░', '·']
+                        } else {
+                            ['▒', '▓', '█', '▒']
+                        };
+                        for dx in (-cur_lw + 1)..cur_rw {
+                            let ch = fills[rng.random_range(0..4u32) as usize];
+                            set(grid, root_x + dx, cy, ch, layer_col);
+                        }
+                        set(grid, root_x, cy, '│', color);
+                    }
+
+                    // Top border / shared border with next layer
+                    cy -= 1;
+                    if layer < layers - 1 {
+                        // Shared border: next layer is narrower, so draw T-junctions
+                        let next_lw = ((cur_lw as f32) * (0.55 + rng.random::<f32>() * 0.25)).max(1.0) as i32;
+                        let next_rw = ((cur_rw as f32) * (0.55 + rng.random::<f32>() * 0.25)).max(1.0) as i32;
+                        // Full width top of current layer
+                        set(grid, root_x - cur_lw, cy, '╔', layer_col);
+                        set(grid, root_x + cur_rw, cy, '╗', layer_col);
+                        for dx in (-cur_lw + 1)..cur_rw {
+                            set(grid, root_x + dx, cy, '═', layer_col);
+                        }
+                        // Overwrite with junction chars where next layer's walls will be
+                        set(grid, root_x - next_lw, cy, '╠', layer_col);
+                        set(grid, root_x + next_rw, cy, '╣', layer_col);
+                        set(grid, root_x, cy, '╬', color);
+                        cur_lw = next_lw;
+                        cur_rw = next_rw;
+                    } else {
+                        // Final top border
+                        set(grid, root_x - cur_lw, cy, '╔', layer_col);
+                        set(grid, root_x + cur_rw, cy, '╗', layer_col);
+                        for dx in (-cur_lw + 1)..cur_rw {
+                            set(grid, root_x + dx, cy, '═', layer_col);
+                        }
+                        set(grid, root_x, cy, '╦', color);
+                    }
+                }
+
+                (root_x, cy)
+            }
+            _ => params.root(),
         }
     }
 }
@@ -650,7 +783,10 @@ pub trait TreeDrawer {
             params.root()
         };
         let mut pen = TreePen::new(rx, ry, params.trunk_color);
-        set(grid, rx, ry, '│', params.trunk_color);
+        if params.bole.is_none() {
+            set(grid, rx, ry, '│', params.trunk_color);
+        }
+        pen.last_dir = Some(MoveDir::Up);
 
         let trunk = self.draw_trunk(grid, &mut pen, params, rng);
         if trunk.is_empty() { return; }
