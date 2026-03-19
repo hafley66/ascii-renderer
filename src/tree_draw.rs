@@ -372,8 +372,18 @@ impl TreeDrawer for SplitTree {
         // Wobble trunk: mostly │ with occasional ╱╲ lateral shifts
         for i in 0..trunk_h {
             if i > 0 && i % freq == 0 && rng.random_range(0..3u32) == 0 {
-                let dir = if rng.random::<bool>() { MoveDir::UpLeft } else { MoveDir::UpRight };
-                pen.step(grid, dir);
+                // 2-column curve: corner out, step sideways, corner back up
+                let lean: i32 = if rng.random::<bool>() { -1 } else { 1 };
+                let (corner_out, corner_in) = if lean > 0 {
+                    ('╰', '╭')
+                } else {
+                    ('╯', '╮')
+                };
+                set(grid, pen.x, pen.y, corner_out, pen.color);
+                pen.x += lean;
+                set(grid, pen.x, pen.y, corner_in, pen.color);
+                pen.last_dir = Some(MoveDir::Up);
+                pen.step(grid, MoveDir::Up);
             } else {
                 pen.step(grid, MoveDir::Up);
             }
@@ -614,8 +624,21 @@ impl TreeDrawer for StormTree {
 
             if new_shifts > shifts {
                 shifts = new_shifts;
-                let dir = if lean > 0 { MoveDir::UpRight } else { MoveDir::UpLeft };
-                pen.step(grid, dir);
+                // 2-column curve transition instead of single-cell diagonal:
+                // Draw corner at current pos turning horizontal, step sideways, then corner turning back up
+                let (corner_out, corner_in) = if lean > 0 {
+                    ('╰', '╭')  // turn right then back up
+                } else {
+                    ('╯', '╮')  // turn left then back up
+                };
+                let h_dir = if lean > 0 { MoveDir::Right } else { MoveDir::Left };
+                // Corner out: current cell turns from vertical to horizontal
+                set(grid, pen.x, pen.y, corner_out, pen.color);
+                pen.x += h_dir.dx();
+                set(grid, pen.x, pen.y, corner_in, pen.color);
+                pen.last_dir = Some(MoveDir::Up);
+                // Continue upward from new x
+                pen.step(grid, MoveDir::Up);
             } else {
                 pen.step(grid, MoveDir::Up);
             }
@@ -714,8 +737,18 @@ impl TreeDrawer for DeadTree {
             // Every 7 rows with 33% chance: random diagonal offset
             if from_root > 2 && from_root % 7 == 0 && rng.random_range(0..3u32) == 0 {
                 let lean = if rng.random::<bool>() { -1 } else { 1 };
-                let dir = if lean < 0 { MoveDir::UpLeft } else { MoveDir::UpRight };
-                pen.step(grid, dir);
+                // 2-column curve: corner out, step sideways, corner back up
+                let (corner_out, corner_in) = if lean > 0 {
+                    ('╰', '╭')
+                } else {
+                    ('╯', '╮')
+                };
+                let h_dir = if lean > 0 { MoveDir::Right } else { MoveDir::Left };
+                set(grid, pen.x, pen.y, corner_out, pen.color);
+                pen.x += h_dir.dx();
+                set(grid, pen.x, pen.y, corner_in, pen.color);
+                pen.last_dir = Some(MoveDir::Up);
+                pen.step(grid, MoveDir::Up);
             } else {
                 pen.step(grid, MoveDir::Up);
             }
