@@ -1,0 +1,14 @@
+---
+source: tests/snapshot_modes.rs
+expression: "render(&[\"42\", \"fruits\", \"ember\"])"
+---
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+        ╿╌            ╱┬╲             ╷              •              ╿╌          
+        ●             ● ●             ◉             •●•             ◆           
+                                                     •              ●           
+                                                                                
+                                                                                
+      apple          cherry         citrus         berry          pear

@@ -1,0 +1,5 @@
+---
+source: tests/snapshot_modes.rs
+expression: "render(&[\"42\", \"aztec\", \"ember\"])"
+---
+
