@@ -449,19 +449,20 @@ fn connect_glyph(from: MoveDir, to: MoveDir) -> char {
         (UpRight, UpRight) | (DownLeft, DownLeft) => '╱',
         (UpLeft, UpLeft) | (DownRight, DownRight) => '╲',
 
-        // Cardinal turns (arriving FROM, departing TO)
-        // Coming up, turning right/left
-        (Up, Right) => '╰',
-        (Up, Left)  => '╯',
-        // Coming down, turning right/left
-        (Down, Right) => '╭',
-        (Down, Left)  => '╮',
-        // Coming right, turning up/down
-        (Right, Up)   => '╮',
-        (Right, Down) => '╯',
-        // Coming left, turning up/down
-        (Left, Up)    => '╭',
-        (Left, Down)  => '╰',
+        // Cardinal turns: (prev_travel_dir, next_travel_dir)
+        // Char needs exit toward opposite(from) to connect back + exit toward `to`.
+        // Was going up (prev cell below), turning right
+        (Up, Right) => '╭',    // exits: Down, Right
+        (Up, Left)  => '╮',    // exits: Down, Left
+        // Was going down (prev cell above), turning right/left
+        (Down, Right) => '╰',  // exits: Up, Right
+        (Down, Left)  => '╯',  // exits: Up, Left
+        // Was going right (prev cell left), turning up/down
+        (Right, Up)   => '╯',  // exits: Up, Left
+        (Right, Down) => '╮',  // exits: Down, Left
+        // Was going left (prev cell right), turning up/down
+        (Left, Up)    => '╰',  // exits: Up, Right
+        (Left, Down)  => '╭',  // exits: Down, Right
 
         // T-junctions (straight + branch)
         (Up, _) | (Down, _) if to.dx() != 0 => '├',
@@ -1707,6 +1708,330 @@ pub fn grow_connected_tree(
         _ => TreeRecipe::gnarled(),
     };
     grow_pen_tree(grid, root_x, root_y, canopy_y, spread, color, &recipe, rng);
+}
+
+// ── Bespoke pen trees ────────────────────────────────────────────────
+// Each is a fully self-contained TreePen drawer with its own:
+//   - overwrite rules (what chars this tree type can draw over)
+//   - trunk character vocabulary and drawing logic
+//   - branching pattern and recursion
+//   - tip/endpoint style
+// No shared draw_trunk, no recipes, no TreeRecipe.
+
+/// Split-pen overwrite: trunk overwrites everything, branches overwrite
+/// blanks + grass + lighter branches but not other tree trunks.
+fn split_set(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
+    if x >= 0 && y >= 0 && (y as usize) < grid.len() && (x as usize) < grid[0].len() {
+        let cell = &mut grid[y as usize][x as usize];
+        let ok = matches!(cell.ch, ' ' | '·' | '∙' | '∿' | '~' | '░' | '▒' | '▓' | '╱' | '╲' | '╷');
+        if ok { *cell = Cell::new(ch, fg); }
+    }
+}
+fn split_set_over(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
+    if x >= 0 && y >= 0 && (y as usize) < grid.len() && (x as usize) < grid[0].len() {
+        grid[y as usize][x as usize] = Cell::new(ch, fg);
+    }
+}
+
+/// Pen rewrite of grow_tree: binary recursive split.
+/// Thick wobbling trunk rises from a wide base flare. At each split level,
+/// horizontal arms fork left and right with independent lengths. Recursive
+/// subdivision fills the canopy densely. Tips marked with ╷.
+pub fn grow_split_pen(
+    grid: &mut Grid,
+    root_x: usize, root_y: usize, canopy_y: usize,
+    spread: usize, color: Color, rng: &mut StdRng,
+) {
+    use MoveDir::*;
+    if canopy_y + 3 >= root_y { return; }
+    let height = root_y - canopy_y;
+    let first_split = root_y.saturating_sub((height / 3).max(2));
+    let rx = root_x as i32;
+    let bark = darken(color, 15);
+
+    // ── Trunk: thick, widening base, wobble ──
+    // Split-tree trunk is its own thing: ┃ center with ╱╲ flare at base,
+    // occasional knots (┼) and bark nubs (╴╶), narrows as it rises.
+    // Base flare: 2 rows of widening
+    for dy in 0..2i32 {
+        let y = root_y as i32 - dy;
+        let fw = 2 - dy;
+        split_set_over(grid, rx, y, '┃', color);
+        split_set_over(grid, rx - fw, y, '╱', bark);
+        split_set_over(grid, rx + fw, y, '╲', bark);
+        // Fill between flare and center
+        for fx in (rx - fw + 1)..rx {
+            split_set(grid, fx, y, '│', bark);
+        }
+        for fx in (rx + 1)..=(rx + fw - 1) {
+            split_set(grid, fx, y, '│', bark);
+        }
+    }
+
+    // Trunk body: wobble upward from below first_split
+    let mut cx = rx;
+    let wobble_freq = rng.random_range(3..6u32) as i32;
+    for y in (first_split as i32..root_y as i32 - 2).rev() {
+        let rows_up = root_y as i32 - 2 - y;
+        let ch = if rows_up > 1 && rows_up % wobble_freq == 0 && rng.random_range(0..3u32) == 0 {
+            let dir = rng.random_range(0..2u32) as i32 * 2 - 1;
+            cx += dir;
+            if dir > 0 { '╱' } else { '╲' }
+        } else {
+            '│'
+        };
+        split_set_over(grid, cx, y, ch, color);
+
+        // Bark nubs for texture
+        if rng.random_range(0..5u32) == 0 {
+            let side = if rng.random_range(0..2u32) == 0 { -1i32 } else { 1 };
+            split_set(grid, cx + side, y, if side > 0 { '╶' } else { '╴' }, bark);
+        }
+    }
+
+    // ── Canopy: recursive binary split via pen forks ──
+    // Each level: vertical segment + horizontal arms + recurse on endpoints
+    struct Split {
+        x: i32, y: i32,
+        top_y: i32,
+        depth: usize,
+    }
+
+    let max_depth = 4usize;
+    let mut queue: Vec<Split> = vec![Split {
+        x: cx, y: first_split as i32,
+        top_y: canopy_y as i32,
+        depth: 0,
+    }];
+
+    while let Some(seg) = queue.pop() {
+        let seg_height = (seg.y - seg.top_y).max(0);
+        let bc = match seg.depth {
+            0 => color,
+            1 => lighten(color, 20),
+            2 => lighten(color, 40),
+            _ => lighten(color, 60),
+        };
+
+        // Leaf: short vertical stub + tip
+        if seg.depth >= max_depth || seg_height <= 2 {
+            for dy in 1..=seg_height.max(1) {
+                split_set(grid, seg.x, seg.y - dy, '│', bc);
+            }
+            split_set(grid, seg.x, seg.y - seg_height.max(1), '╷', lighten(bc, 30));
+            continue;
+        }
+
+        // Off-center split point: 30-70%
+        let frac = 30 + rng.random_range(0..41u32);
+        let sy = seg.top_y + (seg_height as u32 * frac / 100) as i32;
+        let sy = sy.max(seg.top_y + 1).min(seg.y - 1);
+
+        // Vertical segment from seg.y up to split
+        for dy in 1..=(seg.y - sy).max(0) {
+            split_set(grid, seg.x, seg.y - dy, '│', bc);
+        }
+
+        // Horizontal arms with independent lengths
+        let base_arm = (spread >> seg.depth).max(2) as i32;
+        let left_arm = (base_arm as u32 * rng.random_range(60..150u32) / 100).max(1) as i32;
+        let right_arm = (base_arm as u32 * rng.random_range(60..150u32) / 100).max(1) as i32;
+
+        // Junction at split point
+        split_set_over(grid, seg.x, sy, '┼', bc);
+
+        // Left arm: ╭───...
+        let lx = seg.x - left_arm;
+        split_set(grid, lx, sy, '╭', bc);
+        for ax in (lx + 1)..seg.x {
+            split_set(grid, ax, sy, '─', bc);
+        }
+
+        // Right arm: ...───╮
+        let rrx = seg.x + right_arm;
+        split_set(grid, rrx, sy, '╮', bc);
+        for ax in (seg.x + 1)..rrx {
+            split_set(grid, ax, sy, '─', bc);
+        }
+
+        queue.push(Split { x: lx, y: sy, top_y: seg.top_y, depth: seg.depth + 1 });
+        queue.push(Split { x: rrx, y: sy, top_y: seg.top_y, depth: seg.depth + 1 });
+    }
+}
+
+/// Spiral-pen overwrite: trunk always wins, branches yield to trunk chars
+/// but overwrite grass and blanks.
+fn spiral_set(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
+    if x >= 0 && y >= 0 && (y as usize) < grid.len() && (x as usize) < grid[0].len() {
+        let cell = &mut grid[y as usize][x as usize];
+        let ok = matches!(cell.ch, ' ' | '·' | '∙' | '∿' | '~' | '░' | '▒' | '▓' | '╱' | '╲');
+        if ok { *cell = Cell::new(ch, fg); }
+    }
+}
+
+/// Pen rewrite of grow_spiral_tree: single tall trunk, alternating branches.
+/// Trunk is ruler-straight with this tree type. Branches peel off at regular
+/// intervals, each shorter than the last. Tips curl upward with a secondary
+/// twig sprouting from the curl.
+pub fn grow_spiral_pen(
+    grid: &mut Grid,
+    root_x: usize, root_y: usize, canopy_y: usize,
+    spread: usize, color: Color, rng: &mut StdRng,
+) {
+    use MoveDir::*;
+    if canopy_y + 3 >= root_y { return; }
+    let height = root_y - canopy_y;
+    let rx = root_x as i32;
+
+    // ── Trunk: perfectly straight, full height ──
+    // Spiral trees stand tall and vertical. No wobble. That IS their character.
+    for y in canopy_y as i32..root_y as i32 {
+        tset_over(grid, rx, y, '│', color);
+    }
+    tset_over(grid, rx, canopy_y as i32, '╷', lighten(color, 50));
+
+    // ── Alternating branches ──
+    let interval = (height / 5).max(2);
+    let mut left = rng.random_range(0..2u32) == 0;
+    let mut level = 0usize;
+    let mut y = (canopy_y + interval) as i32;
+
+    while y < root_y as i32 - 1 {
+        let arm = (spread.saturating_sub(level * 2)).max(2) as i32;
+        let c = lighten(color, 60u8.saturating_sub((level * 15) as u8));
+
+        if left {
+            // Junction + horizontal arm leftward
+            tset_over(grid, rx, y, '┤', c);
+            for i in 1..arm { spiral_set(grid, rx - i, y, '─', c); }
+            spiral_set(grid, rx - arm, y, '╴', c);
+            // Curl-up tip with secondary twig
+            if level < 3 {
+                spiral_set(grid, rx - arm, y - 1, '╮', c);
+                spiral_set(grid, rx - arm - 1, y - 1, '╷', lighten(c, 25));
+                // Secondary twig off curl
+                if arm > 3 {
+                    spiral_set(grid, rx - arm + 1, y - 1, '─', lighten(c, 15));
+                    spiral_set(grid, rx - arm + 2, y - 1, '╷', lighten(c, 35));
+                }
+            }
+        } else {
+            // Junction + horizontal arm rightward
+            tset_over(grid, rx, y, '├', c);
+            for i in 1..arm { spiral_set(grid, rx + i, y, '─', c); }
+            spiral_set(grid, rx + arm, y, '╶', c);
+            if level < 3 {
+                spiral_set(grid, rx + arm, y - 1, '╭', c);
+                spiral_set(grid, rx + arm + 1, y - 1, '╷', lighten(c, 25));
+                if arm > 3 {
+                    spiral_set(grid, rx + arm - 1, y - 1, '─', lighten(c, 15));
+                    spiral_set(grid, rx + arm - 2, y - 1, '╷', lighten(c, 35));
+                }
+            }
+        }
+
+        left = !left;
+        y += interval as i32;
+        level += 1;
+    }
+}
+
+/// Candelabra-pen overwrite: trunk and bar overwrite everything.
+/// Arms overwrite blanks + grass but respect trunk/bar chars.
+fn cand_set(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
+    if x >= 0 && y >= 0 && (y as usize) < grid.len() && (x as usize) < grid[0].len() {
+        let cell = &mut grid[y as usize][x as usize];
+        let ok = matches!(cell.ch,
+            ' ' | '·' | '∙' | '∿' | '~' | '░' | '▒' | '▓' | '╱' | '╲' | '╷'
+        );
+        if ok { *cell = Cell::new(ch, fg); }
+    }
+}
+
+/// Pen rewrite of grow_candelabra: short thick trunk, horizontal bar at 1/3
+/// height, 3-5 arms rising from the bar. Each arm leans outward, has mid-branch
+/// bark texture, and tips with a two-way fork. The bar uses ┬ at trunk, └/┘ at
+/// ends, ┴ at arm attachments.
+pub fn grow_candelabra_pen(
+    grid: &mut Grid,
+    root_x: usize, root_y: usize, canopy_y: usize,
+    spread: usize, color: Color, rng: &mut StdRng,
+) {
+    if canopy_y + 4 >= root_y { return; }
+    let height = root_y - canopy_y;
+    let rx = root_x as i32;
+    let arm_count = rng.random_range(3..6usize);
+    let split_y = (root_y - height / 3) as i32;
+    let bark = darken(color, 15);
+
+    // ── Trunk: short, thick ──
+    // Candelabra trunk is wide: 3 columns. Center ┃, flanks │.
+    // No wobble. Solid pedestal.
+    for y in split_y..root_y as i32 {
+        tset_over(grid, rx, y, '┃', color);
+        tset_over(grid, rx - 1, y, '│', bark);
+        tset_over(grid, rx + 1, y, '│', bark);
+    }
+    // Base flare
+    tset_over(grid, rx - 2, root_y as i32 - 1, '╱', bark);
+    tset_over(grid, rx + 2, root_y as i32 - 1, '╲', bark);
+
+    // ── Horizontal bar ──
+    let total_spread = spread as i32 * 2;
+    let start_x = rx - total_spread / 2;
+    let end_x = rx + total_spread / 2;
+
+    for x in start_x..=end_x {
+        tset_over(grid, x, split_y, '─', darken(color, 10));
+    }
+    tset_over(grid, rx, split_y, '┬', color);
+
+    // ── Arms ──
+    let arm_step = total_spread / (arm_count as i32 - 1).max(1);
+
+    for i in 0..arm_count {
+        let ax = start_x + i as i32 * arm_step;
+        let arm_color = lighten(color, 20);
+        let arm_top = canopy_y as i32 + rng.random_range(0..3u32) as i32;
+
+        // Attachment junction on bar
+        let jc = if i == 0 { '└' } else if i == arm_count - 1 { '┘' } else { '┴' };
+        tset_over(grid, ax, split_y, jc, color);
+
+        // Each arm goes straight up with a lean near midpoint
+        let lean: i32 = if ax < rx { -1 } else if ax > rx { 1 } else { 0 };
+        let arm_height = (split_y - arm_top).max(1);
+        let mid_y = arm_top + arm_height / 2;
+
+        let mut cx = ax;
+        for y in (arm_top..split_y).rev() {
+            // Lean once near the middle
+            if y == mid_y && lean != 0 {
+                let ch = if lean < 0 { '╲' } else { '╱' };
+                cand_set(grid, cx, y, ch, arm_color);
+                cx += lean;
+            } else {
+                cand_set(grid, cx, y, '│', arm_color);
+            }
+            // Bark nub texture
+            if rng.random_range(0..4u32) == 0 {
+                let side = if rng.random_range(0..2u32) == 0 { -1i32 } else { 1 };
+                cand_set(grid, cx + side, y, if side > 0 { '╶' } else { '╴' }, bark);
+            }
+        }
+
+        // Tip: two-way fork with short horizontal + vertical stubs
+        let tip_c = lighten(arm_color, 30);
+        tset_over(grid, cx, arm_top, '┼', tip_c);
+        // Left fork
+        cand_set(grid, cx - 1, arm_top, '─', tip_c);
+        cand_set(grid, cx - 2, arm_top, '╮', tip_c);
+        cand_set(grid, cx - 2, arm_top - 1, '╷', lighten(tip_c, 20));
+        // Right fork
+        cand_set(grid, cx + 1, arm_top, '─', tip_c);
+        cand_set(grid, cx + 2, arm_top, '╭', tip_c);
+        cand_set(grid, cx + 2, arm_top - 1, '╷', lighten(tip_c, 20));
+    }
 }
 
 pub fn grow_tendril_tree(

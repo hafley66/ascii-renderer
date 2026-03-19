@@ -12,6 +12,7 @@ mod mondrian;
 mod render;
 mod scene;
 mod sprites;
+mod tree_draw;
 mod types;
 mod walker;
 
@@ -32,6 +33,7 @@ use mondrian::*;
 use render::*;
 use scene::*;
 use sprites::*;
+use tree_draw::*;
 use types::*;
 use walker::*;
 
@@ -1613,6 +1615,134 @@ fn main() {
         let leaf_hue = rng.random_range(60..180u32) as f64;
         let leaf_color = hsl_to_rgb(leaf_hue, 0.5, 0.3);
         sprout_leaves(&mut grid, leaf_color, 35, &mut rng);
+
+    } else if mode == "forest6" {
+        // Forest6: bespoke pen trees drawn next to their old equivalents for comparison.
+        // Reuses forest5 sky/grass/ground layout.
+
+        let horizon = height * 3 / 5 + rng.random_range(0..(height / 5).max(1) as u32) as usize;
+        let sky_color = darken(palette[0], 95);
+        let ground_color = darken(palette[1], 80);
+
+        // Sky: sparse dots
+        for y in 0..horizon {
+            for x in 0..width {
+                if rng.random_range(0..15u32) == 0 {
+                    grid[y][x] = Cell::new('·', sky_color);
+                }
+            }
+        }
+        // Clouds
+        let cloud_count = rng.random_range(1..5u32);
+        let cloud_color = lighten(palette[0], 15);
+        for _ in 0..cloud_count {
+            let cx = rng.random_range(5..(width - 5) as u32) as usize;
+            let cy = rng.random_range(2..(horizon / 2).max(3) as u32) as usize;
+            let cw = rng.random_range(8..20u32) as usize;
+            draw_cloud(&mut grid, cx, cy, cw, cloud_color, &mut rng);
+        }
+
+        // Per-column ground height via random walk
+        let jitter_range = rng.random_range(2..6u32) as i32;
+        let mut ground_heights: Vec<usize> = Vec::with_capacity(width);
+        let mut gh = horizon as i32;
+        for _ in 0..width {
+            gh += rng.random_range(0..3u32) as i32 - 1;
+            gh = gh.clamp(horizon as i32 - jitter_range, horizon as i32 + jitter_range);
+            ground_heights.push(gh.max(1) as usize);
+        }
+
+        // Ground fill with hue gradient (same as forest5)
+        let ground_chars = ['╱', '╲', '·', '∿', '~'];
+        let ground_depth = (height - horizon).max(1);
+        let grad_dir = rng.random_range(0..6u32);
+        let ground_base_hue: f64 = if let Color::Rgb { r, g, .. } = ground_color {
+            (r as f64 * 1.4 + g as f64 * 0.7) % 360.0
+        } else { 120.0 };
+        let hue_sweep = rng.random_range(30..80u32) as f64;
+
+        for x in 0..width {
+            let col_horizon = ground_heights[x];
+            for y in col_horizon..height {
+                let depth = y - col_horizon;
+                let ch = ground_chars[rng.random_range(0..ground_chars.len() as u32) as usize];
+                let t = match grad_dir {
+                    0 => x as f64 / width as f64,
+                    1 => 1.0 - x as f64 / width as f64,
+                    2 => depth as f64 / ground_depth as f64,
+                    3 => (x as f64 / width as f64 + depth as f64 / ground_depth as f64) / 2.0,
+                    4 => ((1.0 - x as f64 / width as f64) + depth as f64 / ground_depth as f64) / 2.0,
+                    _ => {
+                        let cx = width as f64 / 2.0;
+                        let cy = ground_depth as f64 / 2.0;
+                        let dx = (x as f64 - cx) / cx;
+                        let dy = (depth as f64 - cy) / cy.max(1.0);
+                        (dx * dx + dy * dy).sqrt().min(1.0)
+                    }
+                };
+                let h = (ground_base_hue + t * hue_sweep).rem_euclid(360.0);
+                let l = (0.25 - depth as f64 * 0.006).max(0.10);
+                let s = 0.4 + t * 0.2;
+                let c = hsl_to_rgb(h, s.min(0.8), l);
+                grid[y][x] = Cell::new(ch, c);
+            }
+        }
+
+        // --- Comparison layout: old algo on left, pen rewrite on right ---
+        // 3 pairs, evenly spaced across the width.
+        let pair_count = 3usize;
+        let zone_w = width / pair_count.max(1);
+        let pair_gap = 8i32; // horizontal gap between old and pen version
+
+        // The 3 pairs: (old_kind, pen_fn_index)
+        // 0 = grow_tree / grow_split_pen
+        // 1 = grow_spiral_tree / grow_spiral_pen
+        // 2 = grow_candelabra / grow_candelabra_pen
+        let old_kinds: [usize; 3] = [0, 4, 5];
+
+        for pi in 0..pair_count {
+            let zone_start = zone_w * pi;
+            let center_x = zone_start + zone_w / 2;
+
+            // Tree dimensions (same for both so comparison is fair)
+            let grass_y = ground_heights[center_x.min(width - 1)];
+            let root_y = (grass_y + rng.random_range(2..6u32) as usize).min(height - 2);
+            let tree_h = rng.random_range(8..14u32) as usize;
+            let canopy_y = root_y.saturating_sub(tree_h).max(1);
+            let spread = rng.random_range(5..10u32) as usize;
+            let hue = (pi as f64 * 120.0 + rng.random_range(0..30u32) as f64) % 360.0;
+            let color = hsl_to_rgb(hue, 0.55, 0.35);
+
+            // Old algo on the left
+            let old_x = (center_x as i32 - pair_gap).max(3) as usize;
+            draw_tree(&mut grid, old_x, root_y, canopy_y, spread, old_kinds[pi], color, &mut rng);
+
+            // Trait-based rewrite on the right
+            let pen_x = (center_x as i32 + pair_gap).min(width as i32 - 3) as usize;
+            let plot_w = spread * 2 + 4;
+            let plot = Rect {
+                x: pen_x.saturating_sub(plot_w / 2),
+                y: canopy_y,
+                w: plot_w,
+                h: root_y - canopy_y + 2,
+            };
+            let tp = TreeParams {
+                plot,
+                energy: 0.8,
+                trunk_color: color,
+                bark_color: darken(color, 15),
+                branch_color: color,
+                tip_color: lighten(color, 30),
+                fruit_color: shift_hue(color, 60.0),
+                fruit_factor: 0.2,
+                branch_factor: 0.7,
+                direction: GrowDir::Up,
+            };
+            match pi {
+                // All 3 slots use SpiralTree for now (only impl we have)
+                _ => SpiralTree.grow(&mut grid, &tp, &mut rng),
+            }
+        }
 
     } else if mode == "mondrian2" {
         let line_w = 2;
