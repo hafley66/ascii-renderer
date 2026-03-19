@@ -306,7 +306,7 @@ pub fn draw_fruit(grid: &mut Grid, cx: usize, cy: usize, style: usize, color: Co
 }
 
 /// Grow a GRIS-style tree upward from (root_x, root_y).
-pub fn grow_tree(grid: &mut Grid, root_x: usize, root_y: usize, canopy_y: usize, spread: usize, color: Color, _rng: &mut StdRng) {
+pub fn grow_tree(grid: &mut Grid, root_x: usize, root_y: usize, canopy_y: usize, spread: usize, color: Color, rng: &mut StdRng) {
     let set = |grid: &mut Grid, x: usize, y: usize, ch: char, fg: Color| {
         if y < grid.len() && x < grid[0].len() {
             grid[y][x] = Cell::new(ch, fg);
@@ -344,16 +344,22 @@ pub fn grow_tree(grid: &mut Grid, root_x: usize, root_y: usize, canopy_y: usize,
             continue;
         }
 
-        let split_y = top + (bottom - top) / 2;
+        // Off-center split point: 30-70% of the segment, not always 50%
+        let split_frac = 30 + rng.random_range(0..41u32); // 30..70
+        let split_y = top + ((bottom - top) as u32 * split_frac / 100) as usize;
+        let split_y = split_y.max(top + 1).min(bottom - 1);
         for y in split_y + 1..bottom {
             if y < grid.len() && x < grid[0].len() && grid[y][x].ch == ' ' {
                 set(grid, x, y, '│', branch_color);
             }
         }
 
-        let arm_len = (spread >> depth).max(2);
-        let left_x = x.saturating_sub(arm_len);
-        let right_x = (x + arm_len).min(grid[0].len() - 1);
+        // Independent left/right arm lengths
+        let base_arm = (spread >> depth).max(2);
+        let left_arm = (base_arm as u32 * rng.random_range(50..150u32) / 100).max(1) as usize;
+        let right_arm = (base_arm as u32 * rng.random_range(50..150u32) / 100).max(1) as usize;
+        let left_x = x.saturating_sub(left_arm);
+        let right_x = (x + right_arm).min(grid[0].len() - 1);
 
         if split_y < grid.len() && x < grid[0].len() {
             set(grid, x, split_y, '┤', branch_color);
@@ -389,10 +395,12 @@ pub fn grow_tree(grid: &mut Grid, root_x: usize, root_y: usize, canopy_y: usize,
 // Junction vocabulary: ├ ┤ ┼ ┬ for splits, ╭ ╮ ╰ ╯ for curves, ╷ for tips.
 
 /// Shared cell setter used by all tree functions.
+/// Overwrites blank cells and ground fill chars (grass, dots) but not other tree structure.
 fn tset(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
     if x >= 0 && y >= 0 && (y as usize) < grid.len() && (x as usize) < grid[0].len() {
         let cell = &mut grid[y as usize][x as usize];
-        if cell.ch == ' ' { *cell = Cell::new(ch, fg); }
+        let overwritable = matches!(cell.ch, ' ' | '·' | '∙' | '∿' | '~' | '░' | '▒' | '▓');
+        if overwritable { *cell = Cell::new(ch, fg); }
     }
 }
 
