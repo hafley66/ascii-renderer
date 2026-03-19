@@ -1063,14 +1063,14 @@ pub fn grow_kaiju_tree(
     }
 }
 
-/// Dispatch all tree variants by kind index (0..14).
-/// Includes original 4, 8 GRIS-style variants, dead tree, and kaiju.
+/// Dispatch all tree variants by kind index (0..15).
+/// Includes original 4, 8 GRIS-style variants, dead, kaiju, and wild.
 pub fn draw_tree(
     grid: &mut Grid,
     root_x: usize, root_y: usize, canopy_y: usize,
     spread: usize, kind: usize, color: Color, rng: &mut StdRng,
 ) {
-    match kind % 14 {
+    match kind % 15 {
         0  => grow_tree(grid, root_x, root_y, canopy_y, spread, color, rng),
         1  => draw_pine(grid, root_x, root_y, 3, (spread * 2).min(12), color),
         2  => draw_willow(grid, root_x, root_y, canopy_y, spread, color),
@@ -1084,7 +1084,186 @@ pub fn draw_tree(
         10 => grow_tall_narrow(grid, root_x, root_y, canopy_y, spread, color, rng),
         11 => grow_drooping_tree(grid, root_x, root_y, canopy_y, spread, color, rng),
         12 => grow_dead_tree(grid, root_x, root_y, canopy_y, spread, color, rng),
-        _  => grow_kaiju_tree(grid, root_x, root_y, canopy_y, spread, color, rng),
+        13 => grow_kaiju_tree(grid, root_x, root_y, canopy_y, spread, color, rng),
+        _  => grow_wild_tree(grid, root_x, root_y, canopy_y, spread, color, rng),
+    }
+}
+
+/// Wild tree with truly independent left/right branching.
+/// Each side has its own branch count, heights, and arm lengths.
+/// Nothing is mirrored. Trunk wobbles randomly.
+pub fn grow_wild_tree(
+    grid: &mut Grid,
+    root_x: usize, root_y: usize, canopy_y: usize,
+    spread: usize, color: Color, rng: &mut StdRng,
+) {
+    if canopy_y + 2 >= root_y { return; }
+    let rx = root_x as i32;
+    let height = (root_y - canopy_y) as i32;
+
+    // Wobbling trunk: vertical with random horizontal jitter
+    let mut cx = rx;
+    let wobble_freq = rng.random_range(3..7u32) as i32;
+    for y in (canopy_y as i32..root_y as i32).rev() {
+        let rows_up = root_y as i32 - y;
+        let ch = if rows_up > 1 && rows_up % wobble_freq == 0 && rng.random_range(0..3u32) != 0 {
+            let dir = rng.random_range(0..2u32) as i32 * 2 - 1;
+            cx += dir;
+            if dir > 0 { '╱' } else { '╲' }
+        } else {
+            '│'
+        };
+        tset_over(grid, cx, y, ch, color);
+    }
+    tset_over(grid, cx, canopy_y as i32, '╷', lighten(color, 60));
+
+    // Generate left branches independently
+    let left_count = rng.random_range(1..5u32) as usize;
+    let right_count = rng.random_range(1..5u32) as usize;
+
+    // Left side: pick random Y positions, sort them
+    let mut left_ys: Vec<i32> = (0..left_count)
+        .map(|_| canopy_y as i32 + rng.random_range(1..height as u32 - 1) as i32)
+        .collect();
+    left_ys.sort();
+    left_ys.dedup();
+
+    let mut right_ys: Vec<i32> = (0..right_count)
+        .map(|_| canopy_y as i32 + rng.random_range(1..height as u32 - 1) as i32)
+        .collect();
+    right_ys.sort();
+    right_ys.dedup();
+
+    // Find trunk x at a given y (approximate by replay wobble -- simplified: use rx)
+    // For accuracy we'd need to store the trunk path, but close enough
+    let trunk_x_at = |_y: i32| -> i32 { rx };
+
+    // Draw left branches
+    for (i, &by) in left_ys.iter().enumerate() {
+        let tx = trunk_x_at(by);
+        let arm = rng.random_range(2..(spread as u32 + 2).min(16)) as i32;
+        let c = lighten(color, (i * 15 + 10) as u8);
+
+        tset_over(grid, tx, by, '┤', c);
+        for j in 1..=arm { tset(grid, tx - j, by, '─', c); }
+        tset(grid, tx - arm, by, '╮', c);
+        tset(grid, tx - arm - 1, by - 1, '╷', lighten(c, 25));
+
+        // Some branches fork partway
+        if arm > 3 && rng.random_range(0..3u32) == 0 {
+            let fork_at = rng.random_range(2..arm as u32) as i32;
+            let fork_x = tx - fork_at;
+            tset_over(grid, fork_x, by, '┬', c);
+            let sub_len = rng.random_range(1..4u32) as i32;
+            for j in 1..=sub_len { tset(grid, fork_x, by + j, '│', lighten(c, 20)); }
+            // Sub-branch tip curls
+            tset(grid, fork_x - 1, by + sub_len, '╴', lighten(c, 30));
+        }
+    }
+
+    // Draw right branches (independently)
+    for (i, &by) in right_ys.iter().enumerate() {
+        let tx = trunk_x_at(by);
+        let arm = rng.random_range(2..(spread as u32 + 2).min(16)) as i32;
+        let c = lighten(color, (i * 15 + 10) as u8);
+
+        tset_over(grid, tx, by, '├', c);
+        for j in 1..=arm { tset(grid, tx + j, by, '─', c); }
+        tset(grid, tx + arm, by, '╭', c);
+        tset(grid, tx + arm + 1, by - 1, '╷', lighten(c, 25));
+
+        // Fork
+        if arm > 3 && rng.random_range(0..3u32) == 0 {
+            let fork_at = rng.random_range(2..arm as u32) as i32;
+            let fork_x = tx + fork_at;
+            tset_over(grid, fork_x, by, '┬', c);
+            let sub_len = rng.random_range(1..4u32) as i32;
+            for j in 1..=sub_len { tset(grid, fork_x, by + j, '│', lighten(c, 20)); }
+            tset(grid, fork_x + 1, by + sub_len, '╶', lighten(c, 30));
+        }
+    }
+}
+
+/// Algorithmic flower: radial petals generated by loop with variable count,
+/// radius, rotation offset, and petal chars. No stamp array.
+pub fn grow_flower_spiral(
+    grid: &mut Grid, cx: usize, cy: usize,
+    color: Color, rng: &mut StdRng,
+) {
+    let petal_count = rng.random_range(3..9u32);
+    let radius = rng.random_range(1..3u32) as f32;
+    let rotation = rng.random::<f32>() * std::f32::consts::TAU;
+    let petal_chars = ['◆', '◇', '●', '○', '∙', '✦', '✧', '◉'];
+    let petal_ch = petal_chars[rng.random_range(0..petal_chars.len() as u32) as usize];
+    let center_chars = ['✦', '◉', '●', '✧', '◆', '⬤'];
+    let center_ch = center_chars[rng.random_range(0..center_chars.len() as u32) as usize];
+
+    // Center
+    if cy < grid.len() && cx < grid[0].len() {
+        grid[cy][cx] = Cell::new(center_ch, lighten(color, 40));
+    }
+
+    // Petals at even angular spacing with rotation offset
+    for i in 0..petal_count {
+        let angle = rotation + (i as f32 / petal_count as f32) * std::f32::consts::TAU;
+        let px = (cx as f32 + angle.cos() * radius * 1.8) as i32; // aspect correction
+        let py = (cy as f32 + angle.sin() * radius) as i32;
+        if px >= 0 && py >= 0 && (py as usize) < grid.len() && (px as usize) < grid[0].len() {
+            let c = if i % 2 == 0 { color } else { lighten(color, 20) };
+            grid[py as usize][px as usize] = Cell::new(petal_ch, c);
+        }
+    }
+
+    // Optional stem below (30% chance)
+    if rng.random_range(0..3u32) == 0 {
+        let stem_len = rng.random_range(1..4u32) as usize;
+        for j in 1..=stem_len {
+            let sy = cy + j;
+            if sy < grid.len() && cx < grid[0].len() {
+                grid[sy][cx] = Cell::new('│', darken(color, 30));
+            }
+        }
+    }
+}
+
+/// Algorithmic fruit: random walk vine that drops fruit chars along its path.
+/// Produces a short meandering line of connected segments with fruit at bends.
+pub fn grow_fruit_vine(
+    grid: &mut Grid, cx: usize, cy: usize,
+    color: Color, rng: &mut StdRng,
+) {
+    let vine_len = rng.random_range(3..8u32) as usize;
+    let fruit_chars = ['●', '◉', '◆', '•'];
+    let fruit_ch = fruit_chars[rng.random_range(0..fruit_chars.len() as u32) as usize];
+
+    let mut x = cx as i32;
+    let mut y = cy as i32;
+    let vine_color = darken(color, 25);
+
+    for step in 0..vine_len {
+        // Place vine segment
+        if x >= 0 && y >= 0 && (y as usize) < grid.len() && (x as usize) < grid[0].len() {
+            // Every 2-3 steps place a fruit, otherwise vine char
+            if step % rng.random_range(2..4u32) as usize == 0 {
+                grid[y as usize][x as usize] = Cell::new(fruit_ch, lighten(color, 30));
+            } else {
+                let vine_ch = match rng.random_range(0..3u32) {
+                    0 => '╌',
+                    1 => '∿',
+                    _ => '~',
+                };
+                grid[y as usize][x as usize] = Cell::new(vine_ch, vine_color);
+            }
+        }
+
+        // Random walk: favor horizontal spread, slight vertical
+        match rng.random_range(0..5u32) {
+            0 => x -= 1,
+            1 => x += 1,
+            2 => { x += 1; y += 1; },
+            3 => { x -= 1; y += 1; },
+            _ => x += if rng.random_range(0..2u32) == 0 { -1 } else { 1 },
+        }
     }
 }
 

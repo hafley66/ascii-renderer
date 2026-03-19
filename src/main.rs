@@ -1261,6 +1261,87 @@ fn main() {
             }
         }
 
+    } else if mode == "forest4" {
+        // Like forest3 but with wild/unbalanced trees and algorithmic sprites.
+        // More trees planted lower, more ground coverage.
+        let horizon = height / 2 + rng.random_range(0..(height / 6).max(1) as u32) as usize;
+        let sky_color = darken(palette[0], 95);
+        let ground_color = darken(palette[1], 80);
+
+        // Sky: sparse
+        for y in 0..horizon {
+            for x in 0..width {
+                if rng.random_range(0..15u32) == 0 {
+                    grid[y][x] = Cell::new('·', sky_color);
+                }
+            }
+        }
+        // Ground: varied density getting denser with depth
+        let ground_chars = ['╱', '╲', '·', '∿', '~'];
+        for y in horizon..height {
+            for x in 0..width {
+                let depth = y - horizon;
+                let ch = ground_chars[rng.random_range(0..ground_chars.len() as u32) as usize];
+                let c = darken(ground_color, (depth * 2).min(50) as u8);
+                grid[y][x] = Cell::new(ch, c);
+            }
+        }
+
+        // Tree placement: more trees, wider root stagger
+        let tree_count = rng.random_range(7..14u32) as usize;
+        struct TreeSlot { x: usize, root_y: usize, kind: usize, spread: usize, canopy_y: usize }
+        let mut slots: Vec<TreeSlot> = Vec::new();
+
+        // One kaiju tree
+        let kaiju_x = rng.random_range((width / 8) as u32..(width * 7 / 8) as u32) as usize;
+        let kaiju_root = horizon + rng.random_range(1..6u32) as usize;
+        let kaiju_root = kaiju_root.min(height - 2);
+        slots.push(TreeSlot {
+            x: kaiju_x, root_y: kaiju_root, kind: 13,
+            spread: rng.random_range(14..22u32) as usize,
+            canopy_y: rng.random_range(1..4u32) as usize,
+        });
+
+        // Remaining trees: favor wild (14), asymmetric (9), storm (7), dead (12)
+        let unbalanced_kinds = [14, 14, 14, 9, 9, 7, 7, 12, 13, 4, 5, 6, 11];
+        for _ in 0..tree_count - 1 {
+            let tx = rng.random_range(3..(width - 3) as u32) as usize;
+            let root_offset = rng.random_range(0..8u32) as usize; // wider stagger
+            let root_y = (horizon + root_offset).min(height - 2);
+            let spread = rng.random_range(2..12u32) as usize;
+            let tree_height = rng.random_range(6..(root_y.saturating_sub(1).max(7)) as u32) as usize;
+            let canopy_y = root_y.saturating_sub(tree_height).max(1);
+            let kind = unbalanced_kinds[rng.random_range(0..unbalanced_kinds.len() as u32) as usize];
+            slots.push(TreeSlot { x: tx, root_y, kind, spread, canopy_y });
+        }
+
+        // Back-to-front
+        slots.sort_by(|a, b| a.root_y.cmp(&b.root_y).then(a.x.cmp(&b.x)));
+
+        for slot in &slots {
+            let color = palette[rng.random_range(1..5)];
+            draw_tree(&mut grid, slot.x, slot.root_y, slot.canopy_y, slot.spread, slot.kind, color, &mut rng);
+        }
+
+        // Algorithmic flowers and fruit vines scattered near tree bases
+        for slot in &slots {
+            let burst = rng.random_range(2..6u32);
+            for _ in 0..burst {
+                let angle = rng.random::<f32>() * std::f32::consts::TAU;
+                let radius = rng.random_range(2..12u32) as f32;
+                let fx = (slot.x as f32 + angle.cos() * radius * 1.5) as i32;
+                let fy = (slot.root_y as f32 + angle.sin() * radius * 0.4 + 1.0) as i32;
+                if fx >= 1 && fy >= 1 && (fx as usize) < width - 1 && (fy as usize) < height - 1 {
+                    let c = palette[rng.random_range(2..5)];
+                    match rng.random_range(0..3u32) {
+                        0 => grow_flower_spiral(&mut grid, fx as usize, fy as usize, c, &mut rng),
+                        1 => grow_fruit_vine(&mut grid, fx as usize, fy as usize, c, &mut rng),
+                        _ => draw_flower(&mut grid, fx as usize, fy as usize, rng.random_range(0..5), c),
+                    }
+                }
+            }
+        }
+
     } else if mode == "mondrian2" {
         let line_w = 2;
 
