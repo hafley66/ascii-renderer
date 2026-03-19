@@ -1524,47 +1524,41 @@ fn main() {
         let cluster_count = rng.random_range(2..5u32) as usize;
         let zone_width = width / cluster_count.max(1);
 
-        // Tree kind families -- only kinds that produce readable tree silhouettes.
-        // Excluded: wide(8)=rectangles, candelabra(5)=menorah, braille(16)=dots
-        let families: &[&[usize]] = &[
-            &[0, 9, 18],       // branchy: grow_tree, asymmetric, connected
-            &[4, 6, 10],       // columnar: spiral, birch, tall_narrow
-            &[7, 12, 18],      // gnarly: storm, dead, connected
-            &[13, 15, 18],     // bold: kaiju, zigzag, connected
-        ];
+        // Mix old tree algos (visual personality) with pen trees (connectivity).
+        // Dominant trees use the interesting old kinds, companions use pen trees.
+        let dominant_kinds = [0, 7, 9, 13, 14, 15, 17]; // grow_tree, storm, asymmetric, kaiju, wild, zigzag, tendril
         let family_decos = [
-            TipDeco::Fruit, TipDeco::Flower, TipDeco::Drip, TipDeco::Fruit,
+            TipDeco::Fruit, TipDeco::Drip, TipDeco::Flower, TipDeco::Fruit,
+            TipDeco::Fruit, TipDeco::Drip, TipDeco::Flower,
         ];
 
-        struct PlacedTree { x: usize, root_y: usize, canopy_y: usize, spread: usize, kind: usize, is_dominant: bool }
+        struct PlacedTree { x: usize, root_y: usize, canopy_y: usize, spread: usize, kind: usize, use_pen: bool, is_dominant: bool }
         let mut all_trees: Vec<(PlacedTree, f64, usize)> = Vec::new();
 
         for ci in 0..cluster_count {
-            let family_idx = rng.random_range(0..families.len() as u32) as usize;
-            let family = families[family_idx];
+            let dom_kind_idx = rng.random_range(0..dominant_kinds.len() as u32) as usize;
+            let dom_kind = dominant_kinds[dom_kind_idx];
             let base_hue = (ci as f64 * 360.0 / cluster_count as f64
                 + rng.random_range(0..30u32) as f64) % 360.0;
 
-            // Dominant tree: placed in the center of its zone
+            // Dominant tree: old algo with visual personality
             let zone_start = zone_width * ci;
             let dom_x = zone_start + zone_width / 2 + rng.random_range(0..(zone_width / 4).max(1) as u32) as usize;
             let dom_x = dom_x.clamp(5, width - 5);
             let grass_y = ground_heights[dom_x.min(width - 1)];
-            // Plant root well below grass line -- trunk pushes through the ground
-            let dom_root = (grass_y + rng.random_range(3..10u32) as usize).min(height - 2);
+            let dom_root = (grass_y + rng.random_range(2..8u32) as usize).min(height - 2);
             let max_h = dom_root.saturating_sub(3).max(6);
             let dom_h = rng.random_range((max_h as u32 / 2).max(8).min(max_h as u32)..max_h as u32 + 1) as usize;
             let dom_canopy = dom_root.saturating_sub(dom_h).max(1);
             let dom_spread = rng.random_range(8..16u32) as usize;
-            let dom_kind = family[rng.random_range(0..family.len() as u32) as usize];
 
             all_trees.push((
-                PlacedTree { x: dom_x, root_y: dom_root, canopy_y: dom_canopy, spread: dom_spread, kind: dom_kind, is_dominant: true },
+                PlacedTree { x: dom_x, root_y: dom_root, canopy_y: dom_canopy, spread: dom_spread, kind: dom_kind, use_pen: false, is_dominant: true },
                 base_hue,
-                family_idx,
+                dom_kind_idx,
             ));
 
-            // 0-2 small companion trees nearby
+            // 0-2 small companion trees: pen trees (connected, small)
             let companion_count = rng.random_range(0..3u32);
             for _ in 0..companion_count {
                 let offset = rng.random_range(12..25u32) as i32 * if rng.random_range(0..2u32) == 0 { -1 } else { 1 };
@@ -1577,14 +1571,12 @@ fn main() {
                 let ch = rng.random_range(lo..hi) as usize;
                 let ccanopy = croot.saturating_sub(ch).max(1);
                 let cspread = rng.random_range(2..7u32) as usize;
-                // Companions use simpler kinds from same family
-                let ckind = family[rng.random_range(0..family.len() as u32) as usize];
                 let hue_jitter = rng.random_range(0..20u32) as f64 - 10.0;
 
                 all_trees.push((
-                    PlacedTree { x: cx, root_y: croot, canopy_y: ccanopy, spread: cspread, kind: ckind, is_dominant: false },
+                    PlacedTree { x: cx, root_y: croot, canopy_y: ccanopy, spread: cspread, kind: 0, use_pen: true, is_dominant: false },
                     base_hue + hue_jitter,
-                    family_idx,
+                    dom_kind_idx,
                 ));
             }
         }
@@ -1599,7 +1591,14 @@ fn main() {
             let saturation = 0.40 + depth_t * 0.25;
             let color = hsl_to_rgb(*hue, saturation, lightness);
 
-            draw_tree(&mut grid, tree.x, tree.root_y, tree.canopy_y, tree.spread, tree.kind, color, &mut rng);
+            if tree.use_pen {
+                // Companion: pen tree (connected, small)
+                let recipe = if rng.random_range(0..2u32) == 0 { TreeRecipe::dead() } else { TreeRecipe::columnar() };
+                grow_pen_tree(&mut grid, tree.x, tree.root_y, tree.canopy_y, tree.spread, color, &recipe, &mut rng);
+            } else {
+                // Dominant: old algo with visual personality
+                draw_tree(&mut grid, tree.x, tree.root_y, tree.canopy_y, tree.spread, tree.kind, color, &mut rng);
+            }
 
             // Collect and decorate tips
             let x0 = tree.x.saturating_sub(tree.spread + 5);
