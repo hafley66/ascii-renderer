@@ -74,6 +74,8 @@ fn main() {
         eprintln!("            path:    line|dots|vine|river|double (default: random)");
         eprintln!("  soup      Dense overlapping node scenes along a path");
         eprintln!("  stem      Sinuous stalk with alternating shape-masked tile leaves");
+        eprintln!("  boles1    Bole styles at 3 energy levels (low/mid/high)");
+        eprintln!("  trunks1   Horizontal trunk algorithms + direction-aware branching");
         eprintln!("  swatch    Color swatches for all named themes");
         eprintln!();
         eprintln!("THEMES:");
@@ -1873,24 +1875,88 @@ fn main() {
             }
         }
 
-    } else if mode == "trunk1" {
-        // trunk1: bole styles (trunk base flare) + short trunk on top for visual comparison
-        let labels = ["None", "Crescent", "Braille", "Frame", "Diamond", "Chevron"];
+    } else if mode == "boles1" {
+        // boles1: bole styles at 3 energy levels (low/mid/high)
+        let styles = ["Crescent", "Braille", "Frame", "Diamond", "Chevron"];
+        let energies: [f32; 3] = [0.3, 0.6, 1.0];
+        let energy_labels = ["Low", "Mid", "High"];
+        let col_w = width / styles.len();
+        let row_h = (height - 2) / energies.len(); // 2 rows for labels
+
+        for (si, style_name) in styles.iter().enumerate() {
+            let cx = (si * col_w + col_w / 2) as i32;
+            let color = palette[si % palette.len()];
+
+            // Column label at bottom
+            let lx = (cx - style_name.len() as i32 / 2).max(0) as usize;
+            for (j, ch) in style_name.chars().enumerate() {
+                if lx + j < width {
+                    grid[height - 1][lx + j] = Cell::new(ch, lighten(color, 40));
+                }
+            }
+
+            for (ei, &energy) in energies.iter().enumerate() {
+                let ground_y = ((ei + 1) * row_h - 2) as i32;
+                if ground_y < 2 || ground_y as usize >= height - 2 { continue; }
+
+                let plot_w = (col_w as i32 - 2).max(6);
+                let tp = TreeParams {
+                    plot: Rect { x: (cx - plot_w / 2).max(0) as usize, y: 0, w: plot_w as usize, h: (ground_y + 1) as usize },
+                    energy,
+                    trunk_color: color,
+                    bark_color: darken(color, 15),
+                    branch_color: color,
+                    tip_color: color,
+                    fruit_color: color,
+                    fruit_factor: 0.0,
+                    branch_factor: 0.5,
+                    direction: GrowDir::Up,
+                    bole: None,
+                };
+
+                let bole = Bole { style: si };
+                let (tx, ty) = bole.draw(&mut grid, &tp, &mut rng);
+
+                // Short trunk stub above bole
+                for y in (ground_y - (row_h as i32 / 2))..ty {
+                    if y >= 0 && (y as usize) < height && (tx as usize) < width {
+                        grid[y as usize][tx as usize] = Cell::new('│', color);
+                    }
+                }
+
+                // Energy label to the left of each row (only in first column)
+                if si == 0 {
+                    let elabel = energy_labels[ei];
+                    let ly = ground_y as usize;
+                    if ly < height {
+                        for (j, ch) in elabel.chars().enumerate() {
+                            if j < cx as usize - 1 {
+                                grid[ly][j] = Cell::new(ch, rgb(120, 120, 120));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+    } else if mode == "trunks1" {
+        // trunks1: horizontal trunk algorithms + direction-aware branching
+        let labels = ["Straight", "Wobble", "Organic", "Sine(2)", "Sine(4)", "Gnarled"];
         let col_w = width / labels.len();
-        let ground_y = (height as i32) - 3; // sit right above label row
+        let ground_y = (height as i32) - 3;
 
         for (i, label) in labels.iter().enumerate() {
             let cx = (i * col_w + col_w / 2) as i32;
             let color = palette[i % palette.len()];
 
-            // Draw bole at ground level, get trunk start point
-            let tp = TreeParams {
-                plot: Rect { x: (cx - 10) as usize, y: 0, w: 20, h: ground_y as usize + 1 },
-                energy: 0.8,
+            let plot = Rect { x: (i * col_w).max(1), y: 2, w: col_w.min(20), h: (ground_y as usize).saturating_sub(2) };
+            let params = TreeParams {
+                plot,
+                energy: 0.7,
                 trunk_color: color,
                 bark_color: darken(color, 15),
-                branch_color: color,
-                tip_color: color,
+                branch_color: lighten(color, 20),
+                tip_color: lighten(color, 40),
                 fruit_color: color,
                 fruit_factor: 0.0,
                 branch_factor: 0.5,
@@ -1898,21 +1964,21 @@ fn main() {
                 bole: None,
             };
 
-            let (tx, ty) = if i == 0 {
-                NoBole.draw(&mut grid, &tp, &mut rng)
-            } else {
-                Bole { style: i - 1 }.draw(&mut grid, &tp, &mut rng)
-            };
+            // Select trunk algo for this column
+            use tree_draw::{StraightTrunk, WobbleTrunk, OrganicTrunk, SineTrunk, GnarledTrunk, TreeWithTrunk};
 
-            // Trunk rising from bole -- starts at ty which already has │
-            let trunk_top = 2i32;
-            for y in trunk_top..ty {
-                if y >= 0 && (y as usize) < height && (tx as usize) < width {
-                    grid[y as usize][tx as usize] = Cell::new('│', color);
-                }
+            let tree = SpiralTree;
+            match i {
+                0 => TreeWithTrunk { tree, trunk: Box::new(StraightTrunk { height_fraction: 0.5 }) }.grow(&mut grid, &params, &mut rng),
+                1 => TreeWithTrunk { tree, trunk: Box::new(WobbleTrunk { height_fraction: 0.5 }) }.grow(&mut grid, &params, &mut rng),
+                2 => TreeWithTrunk { tree, trunk: Box::new(OrganicTrunk { height_fraction: 0.5 }) }.grow(&mut grid, &params, &mut rng),
+                3 => TreeWithTrunk { tree, trunk: Box::new(SineTrunk { height_fraction: 0.5, amplitude: 2 }) }.grow(&mut grid, &params, &mut rng),
+                4 => TreeWithTrunk { tree, trunk: Box::new(SineTrunk { height_fraction: 0.5, amplitude: 4 }) }.grow(&mut grid, &params, &mut rng),
+                5 => TreeWithTrunk { tree, trunk: Box::new(GnarledTrunk) }.grow(&mut grid, &params, &mut rng),
+                _ => {}
             }
 
-            // Label centered under each bole
+            // Label
             let lx = (cx - label.len() as i32 / 2).max(0) as usize;
             for (j, ch) in label.chars().enumerate() {
                 if lx + j < width {

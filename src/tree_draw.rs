@@ -253,6 +253,94 @@ impl TrunkAlgo for GnarledTrunk {
     }
 }
 
+/// Trunk that wanders laterally with organic S-curves using diagonal directions.
+/// Nodes record actual travel direction so branches sprout naturally.
+pub struct OrganicTrunk {
+    pub height_fraction: f32,
+}
+
+impl TrunkAlgo for OrganicTrunk {
+    fn draw(&self, grid: &mut Grid, pen: &mut TreePen,
+            params: &TreeParams, rng: &mut StdRng) -> Vec<TrunkNode> {
+        let top_y = params.canopy_top();
+        let ry = params.root().1;
+        let rx = params.root().0;
+        let full_height = (ry - top_y).max(3);
+        let trunk_h = (full_height as f32 * self.height_fraction).max(3.0) as i32;
+        let max_drift = (params.spread() / 3).max(2);
+        let mut path = Vec::with_capacity(trunk_h as usize);
+        let mut drift: i32 = 0;
+        // Pick a wander bias that flips every few steps
+        let mut bias: i32 = if rng.random::<bool>() { 1 } else { -1 };
+        let flip_every = rng.random_range(3..7u32) as i32;
+
+        for i in 0..trunk_h {
+            // Flip bias periodically for S-curve
+            if i > 0 && i % flip_every == 0 {
+                bias = -bias;
+            }
+            // Decide direction: mostly up, sometimes diagonal
+            let dir = if i < 2 {
+                // First 2 steps always straight up for clean base
+                MoveDir::Up
+            } else if rng.random_range(0..3u32) == 0 && drift.abs() < max_drift {
+                if bias > 0 { MoveDir::UpRight } else { MoveDir::UpLeft }
+            } else if drift.abs() >= max_drift {
+                // Correct back toward center
+                if drift > 0 { MoveDir::UpLeft } else { MoveDir::UpRight }
+            } else {
+                MoveDir::Up
+            };
+
+            pen.step(grid, dir);
+            drift += dir.dx();
+            path.push(TrunkNode { x: pen.x, y: pen.y, dir });
+        }
+
+        path
+    }
+}
+
+/// Trunk that follows a sine wave, creating regular undulation.
+/// Uses diagonal steps at wave peaks for smooth curves.
+pub struct SineTrunk {
+    pub height_fraction: f32,
+    pub amplitude: i32,
+}
+
+impl TrunkAlgo for SineTrunk {
+    fn draw(&self, grid: &mut Grid, pen: &mut TreePen,
+            params: &TreeParams, rng: &mut StdRng) -> Vec<TrunkNode> {
+        let top_y = params.canopy_top();
+        let ry = params.root().1;
+        let full_height = (ry - top_y).max(3);
+        let trunk_h = (full_height as f32 * self.height_fraction).max(3.0) as i32;
+        let amp = self.amplitude.max(1).min(params.spread() / 2);
+        let period = rng.random_range(4..9u32) as f32;
+        let phase = rng.random_range(0..628u32) as f32 / 100.0; // 0..2π
+        let mut path = Vec::with_capacity(trunk_h as usize);
+        let mut prev_target_x = 0i32;
+
+        for i in 0..trunk_h {
+            let t = i as f32 / period;
+            let target_x = ((t + phase).sin() * amp as f32).round() as i32;
+            let dx = (target_x - prev_target_x).clamp(-1, 1);
+            prev_target_x = target_x;
+
+            let dir = match dx {
+                -1 => MoveDir::UpLeft,
+                1 => MoveDir::UpRight,
+                _ => MoveDir::Up,
+            };
+
+            pen.step(grid, dir);
+            path.push(TrunkNode { x: pen.x, y: pen.y, dir });
+        }
+
+        path
+    }
+}
+
 // ── Bole styles (trunk base/flare at ground level) ──────────────────
 // Each bole is a walk-based algorithm that grows outward from trunk center.
 // Returns (x, y) where the vertical trunk should connect above.
@@ -575,7 +663,7 @@ pub trait TreeDrawer {
             if let Some(intent) = self.should_branch(i, trunk_len, params, rng) {
                 // Pen at the trunk node -- draw_branch owns the junction and everything outward
                 let mut bp = TreePen::new(node.x, node.y, params.trunk_color);
-                bp.last_dir = Some(MoveDir::Up);
+                bp.last_dir = Some(node.dir);
 
                 let result = self.draw_branch(grid, &mut bp, &intent, 0, params, rng);
                 all_tips.extend(result.tips);
