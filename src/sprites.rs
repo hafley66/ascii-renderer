@@ -1090,9 +1090,8 @@ pub fn draw_tree(
     }
 }
 
-/// Zigzag tree: trunk and branches made entirely of diagonal chars.
-/// Creates a jagged, angular silhouette unlike the box-drawing trees.
-/// Branches radiate as diagonal rays from trunk split points.
+/// Zigzag tree: diagonal-only trunk and branches with recursive splitting.
+/// Thick trunk (double-wide diagonals), branches fork recursively off rays.
 pub fn grow_zigzag_tree(
     grid: &mut Grid,
     root_x: usize, root_y: usize, canopy_y: usize,
@@ -1101,54 +1100,76 @@ pub fn grow_zigzag_tree(
     if canopy_y + 3 >= root_y { return; }
     let height = (root_y - canopy_y) as i32;
 
-    // Zigzag trunk: alternates ╱ and ╲ going upward
+    // Thick zigzag trunk: two parallel diagonal lines
     let mut cx = root_x as i32;
-    let zig_width = rng.random_range(1..3u32) as i32;
+    let zig_width = rng.random_range(2..4u32) as i32;
     let mut going_right = rng.random_range(0..2u32) == 0;
+    let mut trunk_path: Vec<(i32, i32)> = Vec::new();
 
     for y in (canopy_y as i32..root_y as i32).rev() {
         let ch = if going_right { '╱' } else { '╲' };
+        // Main trunk line
         tset_over(grid, cx, y, ch, color);
+        // Thick: parallel line offset by 1
+        tset(grid, cx + 1, y, ch, darken(color, 15));
+        trunk_path.push((cx, y));
         cx += if going_right { 1 } else { -1 };
 
-        // Reverse direction periodically
         let rows_up = root_y as i32 - y;
         if rows_up % (zig_width * 2 + 1) == 0 {
             going_right = !going_right;
         }
     }
 
-    // Diagonal ray branches at random heights
-    let branch_count = rng.random_range(3..8u32);
-    for _ in 0..branch_count {
-        let by = canopy_y as i32 + rng.random_range(1..height as u32 - 1) as i32;
-        // Approximate trunk x at this y
-        let trunk_progress = (root_y as i32 - by) as f32 / height as f32;
-        let tx = root_x as i32; // simplified
+    // Recursive diagonal ray helper
+    fn draw_ray(
+        grid: &mut Grid, x: i32, y: i32,
+        dx: i32, dy: i32, len: i32,
+        color: Color, depth: usize, max_depth: usize,
+        rng: &mut StdRng,
+    ) {
+        let ch = match (dx < 0, dy < 0) {
+            (true, true) => '╲',
+            (false, true) => '╱',
+            (true, false) => '╱',
+            (false, false) => '╲',
+        };
+        let c = lighten(color, (depth * 18) as u8);
 
-        let ray_len = rng.random_range(2..(spread as u32 + 2).min(12)) as i32;
+        for step in 1..=len {
+            let rx = x + dx * step;
+            let ry = y + dy * step;
+            tset(grid, rx, ry, ch, c);
+
+            // Random sub-branch: probability decreases with depth
+            if depth < max_depth && step > 1 && step < len && rng.random_range(0..(3 + depth as u32)) == 0 {
+                let sub_dx = if rng.random_range(0..2u32) == 0 { -dx } else { dx };
+                let sub_dy = -dy; // flip vertical direction for variety
+                let sub_len = rng.random_range(1..(len / 2 + 1).max(2) as u32) as i32;
+                draw_ray(grid, rx, ry, sub_dx, sub_dy, sub_len, color, depth + 1, max_depth, rng);
+            }
+        }
+        // Tip
+        let tip_x = x + dx * (len + 1);
+        let tip_y = y + dy * (len + 1);
+        tset(grid, tip_x, tip_y, '·', lighten(c, 30));
+    }
+
+    // Primary branches off the trunk at random positions
+    let branch_count = rng.random_range(4..9u32);
+    let max_depth = rng.random_range(2..4u32) as usize;
+    for _ in 0..branch_count {
+        let idx = rng.random_range(0..trunk_path.len() as u32) as usize;
+        let (tx, ty) = trunk_path[idx];
+
+        let ray_len = rng.random_range(3..(spread as u32 + 3).min(14)) as i32;
         let go_left = rng.random_range(0..2u32) == 0;
-        let go_up = rng.random_range(0..3u32) != 0; // mostly upward
+        let go_up = rng.random_range(0..3u32) != 0;
 
         let dx: i32 = if go_left { -1 } else { 1 };
         let dy: i32 = if go_up { -1 } else { 1 };
-        let ch = match (go_left, go_up) {
-            (true, true) => '╲',   // going up-left
-            (false, true) => '╱',  // going up-right
-            (true, false) => '╱',  // going down-left
-            (false, false) => '╲', // going down-right
-        };
 
-        let c = lighten(color, rng.random_range(10..40) as u8);
-        for step in 1..=ray_len {
-            let rx = tx + dx * step;
-            let ry = by + dy * step;
-            tset(grid, rx, ry, ch, c);
-        }
-        // Tip dot
-        let tip_x = tx + dx * (ray_len + 1);
-        let tip_y = by + dy * (ray_len + 1);
-        tset(grid, tip_x, tip_y, '·', lighten(c, 30));
+        draw_ray(grid, tx, ty, dx, dy, ray_len, color, 0, max_depth, rng);
     }
 }
 
@@ -1228,52 +1249,63 @@ pub fn grow_braille_tree(
     }
 }
 
-/// Draw a soft cloud shape at (cx, cy) using shaded block chars.
-/// Cloud is a cluster of overlapping ellipses with brightness falloff.
+/// Draw a cloud as a horizontal streak with per-column height variation,
+/// ragged edges, and trailing wisps. Not a uniform ellipse.
 pub fn draw_cloud(
     grid: &mut Grid, cx: usize, cy: usize,
     cloud_w: usize, color: Color, rng: &mut StdRng,
 ) {
-    let cloud_chars = ['░', '▒', '▓', '·', '∙'];
-    // 2-4 overlapping lobes
-    let lobe_count = rng.random_range(2..5u32);
-    let base_radius = (cloud_w as f32 / lobe_count as f32).max(2.0);
+    let dense_chars = ['▓', '▒', '░'];
+    let wisp_chars = ['░', '·', '∙', '~', '⠂', '⠄'];
 
-    for _ in 0..lobe_count {
-        let lobe_cx = cx as f32 + (rng.random_range(0..cloud_w as u32) as f32 - cloud_w as f32 / 2.0);
-        let lobe_cy = cy as f32 + (rng.random_range(0..3u32) as f32 - 1.0);
-        let rx = base_radius * (0.8 + rng.random::<f32>() * 0.6); // horizontal radius
-        let ry = (rx * 0.4).max(1.0); // squashed vertically
+    let half_w = (cloud_w / 2) as i32;
+    // Generate per-column height profile with random walk
+    let mut heights: Vec<i32> = Vec::new();
+    let mut h = rng.random_range(1..3u32) as i32;
+    for col in 0..cloud_w {
+        // Random walk the height: more variation = less blobby
+        h += rng.random_range(0..3u32) as i32 - 1;
+        h = h.clamp(0, 4);
+        // Taper at edges
+        let edge_dist = ((col as f32 / cloud_w as f32) - 0.5).abs() * 2.0;
+        let taper = ((1.0 - edge_dist * edge_dist) * 3.0) as i32;
+        heights.push(h.min(taper).max(0));
+    }
 
-        let x0 = (lobe_cx - rx * 1.8) as i32;
-        let x1 = (lobe_cx + rx * 1.8) as i32;
-        let y0 = (lobe_cy - ry) as i32;
-        let y1 = (lobe_cy + ry) as i32;
+    let x0 = cx as i32 - half_w;
+    for (col, &col_h) in heights.iter().enumerate() {
+        let gx = x0 + col as i32;
+        if gx < 0 || gx as usize >= grid[0].len() { continue; }
 
-        for y in y0..=y1 {
-            for x in x0..=x1 {
-                if x < 0 || y < 0 || y as usize >= grid.len() || x as usize >= grid[0].len() { continue; }
-                let dx = (x as f32 - lobe_cx) / (rx * 1.8);
-                let dy = (y as f32 - lobe_cy) / ry;
-                let dist = (dx * dx + dy * dy).sqrt();
-                if dist > 1.0 { continue; }
+        // Dense core: fill from cy - col_h/2 to cy + col_h/2
+        let top = cy as i32 - col_h / 2;
+        let bot = cy as i32 + (col_h + 1) / 2;
+        for gy in top..=bot {
+            if gy < 0 || gy as usize >= grid.len() { continue; }
+            let vert_dist = ((gy - cy as i32) as f32 / (col_h as f32 + 1.0).max(1.0)).abs();
+            let ch = if vert_dist < 0.3 {
+                dense_chars[0]
+            } else if vert_dist < 0.7 {
+                dense_chars[rng.random_range(0..2u32) as usize]
+            } else {
+                dense_chars[rng.random_range(1..3u32) as usize]
+            };
+            let brightness = ((1.0 - vert_dist) * 40.0) as u8;
+            let c = lighten(color, brightness);
+            let cell = &grid[gy as usize][gx as usize];
+            if cell.ch == ' ' || cell.ch == '·' {
+                grid[gy as usize][gx as usize] = Cell::new(ch, c);
+            }
+        }
 
-                // Brightness: bright center, dim edges
-                let ch = if dist < 0.3 {
-                    cloud_chars[2] // ▓
-                } else if dist < 0.6 {
-                    cloud_chars[1] // ▒
-                } else if dist < 0.85 {
-                    cloud_chars[0] // ░
-                } else {
-                    cloud_chars[rng.random_range(3..5u32) as usize] // · or ∙
-                };
-
-                let brightness = ((1.0 - dist) * 50.0) as u8;
-                let c = lighten(color, brightness);
-                // Only overwrite blank/sky cells, don't clobber trees
-                if grid[y as usize][x as usize].ch == ' ' || grid[y as usize][x as usize].ch == '·' {
-                    grid[y as usize][x as usize] = Cell::new(ch, c);
+        // Trailing wisps below (30% of columns, 1-2 chars below)
+        if rng.random_range(0..3u32) == 0 {
+            let wisp_y = bot + 1;
+            if wisp_y >= 0 && (wisp_y as usize) < grid.len() {
+                let wch = wisp_chars[rng.random_range(0..wisp_chars.len() as u32) as usize];
+                let cell = &grid[wisp_y as usize][gx as usize];
+                if cell.ch == ' ' || cell.ch == '·' {
+                    grid[wisp_y as usize][gx as usize] = Cell::new(wch, darken(color, 20));
                 }
             }
         }

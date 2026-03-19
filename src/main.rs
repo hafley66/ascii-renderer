@@ -1285,13 +1285,42 @@ fn main() {
             let cw = rng.random_range(8..20u32) as usize;
             draw_cloud(&mut grid, cx, cy, cw, cloud_color, &mut rng);
         }
-        // Ground: varied density getting denser with depth
+        // Ground: hue gradient with random direction sweeping across
         let ground_chars = ['╱', '╲', '·', '∿', '~'];
+        let ground_depth = (height - horizon).max(1);
+        // Random gradient direction
+        let grad_dir = rng.random_range(0..6u32);
+        // Base hue from palette
+        let ground_base_hue: f64 = if let Color::Rgb { r, g, .. } = ground_color {
+            (r as f64 * 1.4 + g as f64 * 0.7) % 360.0
+        } else { 120.0 };
+        let hue_sweep = rng.random_range(30..80u32) as f64;
+
         for y in horizon..height {
             for x in 0..width {
                 let depth = y - horizon;
                 let ch = ground_chars[rng.random_range(0..ground_chars.len() as u32) as usize];
-                let c = darken(ground_color, (depth * 2).min(50) as u8);
+
+                // Gradient parameter t: 0.0 to 1.0, direction varies per seed
+                let t = match grad_dir {
+                    0 => x as f64 / width as f64,                    // left to right
+                    1 => 1.0 - x as f64 / width as f64,              // right to left
+                    2 => depth as f64 / ground_depth as f64,         // top to bottom
+                    3 => (x as f64 / width as f64 + depth as f64 / ground_depth as f64) / 2.0, // diagonal ↘
+                    4 => ((1.0 - x as f64 / width as f64) + depth as f64 / ground_depth as f64) / 2.0, // diagonal ↙
+                    _ => {
+                        // Radial from center of ground
+                        let cx = width as f64 / 2.0;
+                        let cy = ground_depth as f64 / 2.0;
+                        let dx = (x as f64 - cx) / cx;
+                        let dy = (depth as f64 - cy) / cy.max(1.0);
+                        (dx * dx + dy * dy).sqrt().min(1.0)
+                    }
+                };
+                let h = (ground_base_hue + t * hue_sweep).rem_euclid(360.0);
+                let l = (0.25 - depth as f64 * 0.006).max(0.10);
+                let s = 0.4 + t * 0.2;
+                let c = hsl_to_rgb(h, s.min(0.8), l);
                 grid[y][x] = Cell::new(ch, c);
             }
         }
