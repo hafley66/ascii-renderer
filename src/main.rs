@@ -1268,13 +1268,22 @@ fn main() {
         let sky_color = darken(palette[0], 95);
         let ground_color = darken(palette[1], 80);
 
-        // Sky: sparse
+        // Sky: sparse dots
         for y in 0..horizon {
             for x in 0..width {
                 if rng.random_range(0..15u32) == 0 {
                     grid[y][x] = Cell::new('·', sky_color);
                 }
             }
+        }
+        // Clouds: 1-4 in the upper sky
+        let cloud_count = rng.random_range(1..5u32);
+        let cloud_color = lighten(palette[0], 15);
+        for _ in 0..cloud_count {
+            let cx = rng.random_range(5..(width - 5) as u32) as usize;
+            let cy = rng.random_range(2..(horizon / 2).max(3) as u32) as usize;
+            let cw = rng.random_range(8..20u32) as usize;
+            draw_cloud(&mut grid, cx, cy, cw, cloud_color, &mut rng);
         }
         // Ground: varied density getting denser with depth
         let ground_chars = ['╱', '╲', '·', '∿', '~'];
@@ -1366,6 +1375,20 @@ fn main() {
                     }
                 }
             }
+        }
+
+        // Foreground trees: 1-3 trees planted deep in the ground, drawn last (in front)
+        let fg_count = rng.random_range(1..4u32);
+        for _ in 0..fg_count {
+            let tx = rng.random_range(3..(width - 3) as u32) as usize;
+            let root_y = horizon + rng.random_range(4..((height - horizon).max(5)) as u32) as usize;
+            let root_y = root_y.min(height - 2);
+            let tree_height = rng.random_range(4..12u32) as usize;
+            let canopy_y = root_y.saturating_sub(tree_height).max(1);
+            let spread = rng.random_range(3..10u32) as usize;
+            let kind = rng.random_range(0..17u32) as usize;
+            let color = palette[rng.random_range(1..5)];
+            draw_tree(&mut grid, tx, root_y, canopy_y, spread, kind, color, &mut rng);
         }
 
     } else if mode == "mondrian2" {

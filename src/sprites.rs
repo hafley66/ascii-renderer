@@ -1154,7 +1154,7 @@ pub fn grow_zigzag_tree(
 
 /// Braille canopy tree: trunk of box-drawing, but canopy is a filled region
 /// drawn with braille block characters for an organic, dense look.
-/// The canopy shape is an irregular ellipse with randomized edge.
+/// Vertical color gradient through canopy. Occasional cuttlefish hue shift.
 pub fn grow_braille_tree(
     grid: &mut Grid,
     root_x: usize, root_y: usize, canopy_y: usize,
@@ -1176,36 +1176,106 @@ pub fn grow_braille_tree(
     let center_y = canopy_y as f32 + canopy_h / 2.0;
     let center_x = rx as f32;
 
+    // Cuttlefish mode: ~15% chance of wild hue shifts
+    let cuttlefish = rng.random_range(0..7u32) == 0;
+    // Base hue for gradient (extract from color or randomize)
+    let base_hue: f64 = if let Color::Rgb { r, g, .. } = color {
+        (r as f64 * 1.4 + g as f64 * 0.7) % 360.0
+    } else { 180.0 };
+
     let braille_dense = ['⣿', '⣾', '⣷', '⣯', '⣻', '⣽', '⣖', '⣶'];
     let braille_sparse = ['⡇', '⢸', '⣤', '⣀', '⠛', '⠶'];
 
     for y in canopy_y as i32..=trunk_top {
         let fy = y as f32;
         let dy = (fy - center_y) / (canopy_h / 2.0);
-        // Ellipse width at this y, with per-row noise
+        // Vertical progress: 0.0 at top, 1.0 at bottom
+        let vert_t = ((y - canopy_y as i32) as f32 / canopy_h).clamp(0.0, 1.0);
+
         let noise = (rng.random_range(0..4u32) as f32 - 1.5) * 0.15;
         let row_width = ((1.0 - dy * dy).max(0.0).sqrt() + noise) * canopy_w;
-        let half_w = (row_width * 1.5) as i32; // aspect correction
+        let half_w = (row_width * 1.5) as i32;
 
         for x in (center_x as i32 - half_w)..=(center_x as i32 + half_w) {
             let fx = x as f32;
             let dx_norm = (fx - center_x) / (half_w as f32).max(1.0);
             let dist = dx_norm.abs();
 
-            // Edge falloff: dense center, sparse edges
             let ch = if dist < 0.6 {
                 braille_dense[rng.random_range(0..braille_dense.len() as u32) as usize]
             } else if dist < 0.85 {
                 braille_sparse[rng.random_range(0..braille_sparse.len() as u32) as usize]
             } else {
-                // Ragged edge: sometimes skip
                 if rng.random_range(0..3u32) == 0 { continue; }
                 braille_sparse[rng.random_range(0..braille_sparse.len() as u32) as usize]
             };
 
-            let brightness = ((1.0 - dist) * 30.0) as u8;
-            let c = lighten(color, brightness);
+            // Gradient color: hue shifts vertically, lightness fades at edges
+            let hue_shift = if cuttlefish {
+                // Wild per-cell hue jitter
+                rng.random_range(0..180u32) as f64 - 90.0
+            } else {
+                // Gentle vertical gradient: 40 degree sweep top to bottom
+                vert_t as f64 * 40.0 - 20.0
+            };
+            let h = (base_hue + hue_shift).rem_euclid(360.0);
+            let s = if cuttlefish { 0.8 } else { 0.5 + (1.0 - dist) as f64 * 0.3 };
+            let l = 0.2 + (1.0 - dist) as f64 * 0.3 + vert_t as f64 * 0.15;
+            let c = crate::color::hsl_to_rgb(h, s, l.min(0.65));
+
             tset(grid, x, y, ch, c);
+        }
+    }
+}
+
+/// Draw a soft cloud shape at (cx, cy) using shaded block chars.
+/// Cloud is a cluster of overlapping ellipses with brightness falloff.
+pub fn draw_cloud(
+    grid: &mut Grid, cx: usize, cy: usize,
+    cloud_w: usize, color: Color, rng: &mut StdRng,
+) {
+    let cloud_chars = ['░', '▒', '▓', '·', '∙'];
+    // 2-4 overlapping lobes
+    let lobe_count = rng.random_range(2..5u32);
+    let base_radius = (cloud_w as f32 / lobe_count as f32).max(2.0);
+
+    for _ in 0..lobe_count {
+        let lobe_cx = cx as f32 + (rng.random_range(0..cloud_w as u32) as f32 - cloud_w as f32 / 2.0);
+        let lobe_cy = cy as f32 + (rng.random_range(0..3u32) as f32 - 1.0);
+        let rx = base_radius * (0.8 + rng.random::<f32>() * 0.6); // horizontal radius
+        let ry = (rx * 0.4).max(1.0); // squashed vertically
+
+        let x0 = (lobe_cx - rx * 1.8) as i32;
+        let x1 = (lobe_cx + rx * 1.8) as i32;
+        let y0 = (lobe_cy - ry) as i32;
+        let y1 = (lobe_cy + ry) as i32;
+
+        for y in y0..=y1 {
+            for x in x0..=x1 {
+                if x < 0 || y < 0 || y as usize >= grid.len() || x as usize >= grid[0].len() { continue; }
+                let dx = (x as f32 - lobe_cx) / (rx * 1.8);
+                let dy = (y as f32 - lobe_cy) / ry;
+                let dist = (dx * dx + dy * dy).sqrt();
+                if dist > 1.0 { continue; }
+
+                // Brightness: bright center, dim edges
+                let ch = if dist < 0.3 {
+                    cloud_chars[2] // ▓
+                } else if dist < 0.6 {
+                    cloud_chars[1] // ▒
+                } else if dist < 0.85 {
+                    cloud_chars[0] // ░
+                } else {
+                    cloud_chars[rng.random_range(3..5u32) as usize] // · or ∙
+                };
+
+                let brightness = ((1.0 - dist) * 50.0) as u8;
+                let c = lighten(color, brightness);
+                // Only overwrite blank/sky cells, don't clobber trees
+                if grid[y as usize][x as usize].ch == ' ' || grid[y as usize][x as usize].ch == '·' {
+                    grid[y as usize][x as usize] = Cell::new(ch, c);
+                }
+            }
         }
     }
 }
