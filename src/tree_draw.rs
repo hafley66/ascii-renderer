@@ -22,6 +22,7 @@ pub struct TreeParams {
     pub fruit_factor: f32,
     pub branch_factor: f32,
     pub direction: GrowDir,
+    pub bole: Option<Bole>,
 }
 
 impl TreeParams {
@@ -257,16 +258,15 @@ impl TrunkAlgo for GnarledTrunk {
 // Returns (x, y) where the vertical trunk should connect above.
 
 pub trait BoleStyle {
-    fn draw(&self, grid: &mut Grid, root_x: i32, root_y: i32,
-            color: Color, rng: &mut StdRng) -> (i32, i32);
+    fn draw(&self, grid: &mut Grid, params: &TreeParams, rng: &mut StdRng) -> (i32, i32);
 }
 
 /// No bole
 pub struct NoBole;
 impl BoleStyle for NoBole {
-    fn draw(&self, _grid: &mut Grid, root_x: i32, root_y: i32,
-            _color: Color, _rng: &mut StdRng) -> (i32, i32) {
-        (root_x, root_y)
+    fn draw(&self, _grid: &mut Grid, params: &TreeParams,
+            _rng: &mut StdRng) -> (i32, i32) {
+        params.root()
     }
 }
 
@@ -275,18 +275,18 @@ impl BoleStyle for NoBole {
 /// Each style is a coherent glyph vocabulary like the flower sprites.
 pub struct Bole {
     pub style: usize,
-    pub width: i32,
 }
 
 /// Bole pattern: array of (dx, dy, char) offsets from center, like draw_flower.
 /// Generated procedurally based on width + style + rng.
 impl BoleStyle for Bole {
-    fn draw(&self, grid: &mut Grid, root_x: i32, root_y: i32,
-            color: Color, rng: &mut StdRng) -> (i32, i32) {
-        let w = self.width.max(2);
-        // Asymmetric: left and right sides get independent widths
-        let lw = (w / 2 + rng.random_range(0..(w / 2 + 1).max(1) as u32) as i32).max(1);
-        let rw = (w - lw + rng.random_range(0..(w / 3 + 1).max(1) as u32) as i32).max(1);
+    fn draw(&self, grid: &mut Grid, params: &TreeParams, rng: &mut StdRng) -> (i32, i32) {
+        let (root_x, root_y) = params.root();
+        let color = params.trunk_color;
+        let max_w = (params.spread() as i32).max(2);
+        let w = ((max_w as f32 * params.energy.clamp(0.3, 1.0)) as i32).max(2);
+        let lw = (w / 2 + rng.random_range(0..(w / 2 + 1).max(1) as u32) as i32).max(1).min(max_w);
+        let rw = (w - lw + rng.random_range(0..(w / 3 + 1).max(1) as u32) as i32).max(1).min(max_w);
         let bark = darken(color, 15);
         let dim = darken(color, 30);
 
@@ -362,47 +362,51 @@ impl BoleStyle for Bole {
                 set(grid, root_x, root_y - 3, '│', color);
                 (root_x, root_y - 3)
             }
-            // Style 2: Box frame -- wide squat landscape rectangle, behind frame offset
+            // Style 2: Frame -- energy-scaled nested box frames
             2 => {
-                let hlw = lw.max(3);
-                let hrw = rw.max(3);
-                // "Behind" frame: offset +1 right, drawn first (dimmer), same 2-row height
-                let bg = darken(bark, 15);
-                let blw = (hlw * 2 / 3).max(2);
-                let brw = (hrw * 2 / 3).max(2);
-                set(grid, root_x - blw + 1, root_y - 1, '┌', bg);
-                set(grid, root_x + brw + 1, root_y - 1, '┐', bg);
-                for dx in 1..(blw + brw) {
-                    set(grid, root_x - blw + 1 + dx, root_y - 1, '─', bg);
-                }
-                set(grid, root_x - blw + 1, root_y, '└', bg);
-                set(grid, root_x + brw + 1, root_y, '┘', bg);
-                for dx in 1..(blw + brw) {
-                    set(grid, root_x - blw + 1 + dx, root_y, '─', bg);
-                }
-                // Main frame: 2 rows (ground + row-1), wide
-                set(grid, root_x - hlw, root_y, '╚', bark);
-                set(grid, root_x + hrw, root_y, '╝', bark);
-                for dx in 1..hlw { set(grid, root_x - dx, root_y, '═', bark); }
-                for dx in 1..hrw { set(grid, root_x + dx, root_y, '═', bark); }
-                set(grid, root_x, root_y, '╩', color);
-                // Interior fill in ground row
-                let fills = ['░', '▒', '░', '·'];
-                for dx in (-hlw + 1)..hrw {
-                    if dx != 0 {
-                        let ch = fills[rng.random_range(0..fills.len() as u32) as usize];
-                        set(grid, root_x + dx, root_y, ch, dim);
+                let energy = params.energy.clamp(0.2, 1.0);
+                let hlw = lw.max(2);
+                let hrw = rw.max(2);
+                let layers = ((energy * 3.0).ceil() as i32).clamp(1, 3);
+                let mut cy = root_y;
+
+                for layer in 0..layers {
+                    let shrink = layer as f32 * 0.3;
+                    let ll = ((hlw as f32) * (1.0 - shrink)).max(1.0) as i32;
+                    let lr = ((hrw as f32) * (1.0 - shrink)).max(1.0) as i32;
+                    let layer_dim = darken(bark, (layer as u8) * 12);
+                    let layer_col = if layer == 0 { bark } else { layer_dim };
+
+                    set(grid, root_x - ll, cy, '╚', layer_col);
+                    set(grid, root_x + lr, cy, '╝', layer_col);
+                    for dx in (-ll + 1)..lr {
+                        let ch = if layer == 0 {
+                            ['░', '▒', '░', '·'][rng.random_range(0..4u32) as usize]
+                        } else {
+                            ['▒', '▓', '█', '▒'][rng.random_range(0..4u32) as usize]
+                        };
+                        set(grid, root_x + dx, cy, ch, dim);
                     }
+                    set(grid, root_x, cy, '╩', if layer == 0 { color } else { layer_col });
+
+                    cy -= 1;
+                    set(grid, root_x - ll, cy, '╔', layer_col);
+                    set(grid, root_x + lr, cy, '╗', layer_col);
+                    for dx in (-ll + 1)..lr {
+                        set(grid, root_x + dx, cy, '═', layer_col);
+                    }
+                    set(grid, root_x, cy, '╦', if layer == 0 { color } else { layer_col });
+
+                    if layer == 0 && energy > 0.6 {
+                        set(grid, root_x - ll - 1, root_y, '╱', dim);
+                        set(grid, root_x + lr + 1, root_y, '╲', dim);
+                    }
+
+                    cy -= 1;
                 }
-                set(grid, root_x, root_y, '╩', color);
-                // Top bar
-                set(grid, root_x - hlw, root_y - 1, '╔', bark);
-                set(grid, root_x + hrw, root_y - 1, '╗', bark);
-                for dx in 1..hlw { set(grid, root_x - dx, root_y - 1, '═', bark); }
-                for dx in 1..hrw { set(grid, root_x + dx, root_y - 1, '═', bark); }
-                set(grid, root_x, root_y - 1, '╦', color);
-                set(grid, root_x, root_y - 2, '│', color);
-                (root_x, root_y - 2)
+
+                set(grid, root_x, cy + 1, '│', color);
+                (root_x, cy + 1)
             }
             // Style 3: Diamond -- wider, random gaps in top row only where bottom exists
             3 => {
@@ -552,7 +556,11 @@ pub trait TreeDrawer {
 
     /// Default growth loop: trunk → branches at intervals → tips → fruit.
     fn grow(&self, grid: &mut Grid, params: &TreeParams, rng: &mut StdRng) {
-        let (rx, ry) = params.root();
+        let (rx, ry) = if let Some(ref bole) = params.bole {
+            bole.draw(grid, params, rng)
+        } else {
+            params.root()
+        };
         let mut pen = TreePen::new(rx, ry, params.trunk_color);
         set(grid, rx, ry, '│', params.trunk_color);
 
@@ -1304,6 +1312,7 @@ mod tests {
             fruit_factor: 0.0,
             branch_factor: 0.7,
             direction: GrowDir::Up,
+            bole: None,
         }
     }
 

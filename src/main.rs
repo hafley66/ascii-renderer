@@ -1790,6 +1790,7 @@ fn main() {
                 fruit_factor: 0.3,
                 branch_factor: 0.8,
                 direction: GrowDir::Up,
+                bole: None,
             };
             match slot.kind {
                 0 => SplitTree.grow(&mut grid, &tp, &mut rng),
@@ -1858,6 +1859,7 @@ fn main() {
                 fruit_factor: 0.2,
                 branch_factor: 0.7,
                 direction: GrowDir::Up,
+                bole: None,
             };
             match kind {
                 0 => SplitTree.grow(&mut grid, &tp, &mut rng),
@@ -1882,11 +1884,24 @@ fn main() {
             let color = palette[i % palette.len()];
 
             // Draw bole at ground level, get trunk start point
-            let bw = rng.random_range(4..10u32) as i32;
+            let tp = TreeParams {
+                plot: Rect { x: (cx - 10) as usize, y: 0, w: 20, h: ground_y as usize + 1 },
+                energy: 0.8,
+                trunk_color: color,
+                bark_color: darken(color, 15),
+                branch_color: color,
+                tip_color: color,
+                fruit_color: color,
+                fruit_factor: 0.0,
+                branch_factor: 0.5,
+                direction: GrowDir::Up,
+                bole: None,
+            };
+
             let (tx, ty) = if i == 0 {
-                NoBole.draw(&mut grid, cx, ground_y, color, &mut rng)
+                NoBole.draw(&mut grid, &tp, &mut rng)
             } else {
-                Bole { style: i - 1, width: bw }.draw(&mut grid, cx, ground_y, color, &mut rng)
+                Bole { style: i - 1 }.draw(&mut grid, &tp, &mut rng)
             };
 
             // Trunk rising from bole -- starts at ty which already has │
