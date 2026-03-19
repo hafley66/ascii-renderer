@@ -1871,6 +1871,41 @@ fn main() {
             }
         }
 
+    } else if mode == "trunk1" {
+        // trunk1: bole styles (trunk base flare) + short trunk on top for visual comparison
+        let labels = ["None", "Crescent", "Braille", "Frame", "Diamond", "Chevron"];
+        let col_w = width / labels.len();
+        let ground_y = (height as i32) - 3; // sit right above label row
+
+        for (i, label) in labels.iter().enumerate() {
+            let cx = (i * col_w + col_w / 2) as i32;
+            let color = palette[i % palette.len()];
+
+            // Draw bole at ground level, get trunk start point
+            let bw = rng.random_range(4..10u32) as i32;
+            let (tx, ty) = if i == 0 {
+                NoBole.draw(&mut grid, cx, ground_y, color, &mut rng)
+            } else {
+                Bole { style: i - 1, width: bw }.draw(&mut grid, cx, ground_y, color, &mut rng)
+            };
+
+            // Trunk rising from bole -- starts at ty which already has │
+            let trunk_top = 2i32;
+            for y in trunk_top..ty {
+                if y >= 0 && (y as usize) < height && (tx as usize) < width {
+                    grid[y as usize][tx as usize] = Cell::new('│', color);
+                }
+            }
+
+            // Label centered under each bole
+            let lx = (cx - label.len() as i32 / 2).max(0) as usize;
+            for (j, ch) in label.chars().enumerate() {
+                if lx + j < width {
+                    grid[height - 1][lx + j] = Cell::new(ch, lighten(color, 40));
+                }
+            }
+        }
+
     } else if mode == "mondrian2" {
         let line_w = 2;
 
