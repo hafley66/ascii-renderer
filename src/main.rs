@@ -1264,7 +1264,8 @@ fn main() {
     } else if mode == "forest4" {
         // Like forest3 but with wild/unbalanced trees and algorithmic sprites.
         // More trees planted lower, more ground coverage.
-        let horizon = height / 2 + rng.random_range(0..(height / 6).max(1) as u32) as usize;
+        // Horizon at 60-80% down the screen (more sky, less grass domination)
+        let horizon = height * 3 / 5 + rng.random_range(0..(height / 5).max(1) as u32) as usize;
         let sky_color = darken(palette[0], 95);
         let ground_color = darken(palette[1], 80);
 
@@ -1337,7 +1338,7 @@ fn main() {
         }
 
         // Tree placement: more trees, wider root stagger
-        let tree_count = rng.random_range(7..14u32) as usize;
+        let tree_count = rng.random_range(5..10u32) as usize;
         struct TreeSlot { x: usize, root_y: usize, kind: usize, spread: usize, canopy_y: usize }
         let mut slots: Vec<TreeSlot> = Vec::new();
 
@@ -1354,7 +1355,7 @@ fn main() {
         // Remaining trees: favor wild (14), asymmetric (9), storm (7), dead (12)
         // Enforce minimum spacing so trees don't pile on top of each other
         let unbalanced_kinds = [14, 14, 9, 9, 7, 7, 12, 13, 15, 15, 16, 17, 17, 4, 5, 6, 11];
-        let min_spacing = (width / (tree_count + 1)).max(8);
+        let min_spacing = (width / (tree_count + 1)).max(14);
         for _ in 0..tree_count - 1 {
             let mut tx = 0usize;
             let mut placed = false;
@@ -1393,10 +1394,16 @@ fn main() {
         // Back-to-front
         slots.sort_by(|a, b| a.root_y.cmp(&b.root_y).then(a.x.cmp(&b.x)));
 
-        // Give each tree a distinct hue-shifted color so they're distinguishable
+        // Give each tree a distinct hue + depth-based brightness
+        // Slots are sorted back-to-front (ascending root_y), so earlier = farther = dimmer
+        let slot_count = slots.len();
         for (i, slot) in slots.iter().enumerate() {
-            let base_hue = (i as f64 * 360.0 / slots.len() as f64 + rng.random_range(0..30u32) as f64) % 360.0;
-            let color = hsl_to_rgb(base_hue, 0.5 + rng.random::<f64>() * 0.3, 0.35 + rng.random::<f64>() * 0.2);
+            let base_hue = (i as f64 * 360.0 / slot_count as f64 + rng.random_range(0..30u32) as f64) % 360.0;
+            // Depth factor: 0.0 = farthest (dim), 1.0 = closest (bright)
+            let depth_t = i as f64 / (slot_count - 1).max(1) as f64;
+            let lightness = 0.2 + depth_t * 0.3; // 0.2 (far) to 0.5 (near)
+            let saturation = 0.4 + depth_t * 0.3;
+            let color = hsl_to_rgb(base_hue, saturation, lightness);
             draw_tree(&mut grid, slot.x, slot.root_y, slot.canopy_y, slot.spread, slot.kind, color, &mut rng);
         }
 
