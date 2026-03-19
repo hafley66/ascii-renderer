@@ -1447,6 +1447,174 @@ fn main() {
             draw_tree(&mut grid, tx, root_y, canopy_y, spread, kind, color, &mut rng);
         }
 
+    } else if mode == "forest5" {
+        // Clustered forest: groups of same-family trees with slight color variation.
+        // Center tree tallest in each cluster, edges taper. Per-tree tip decoration.
+        // Root systems at trunk bases.
+        let horizon = height * 3 / 5 + rng.random_range(0..(height / 5).max(1) as u32) as usize;
+        let sky_color = darken(palette[0], 95);
+        let ground_color = darken(palette[1], 80);
+
+        // Sky: sparse dots
+        for y in 0..horizon {
+            for x in 0..width {
+                if rng.random_range(0..15u32) == 0 {
+                    grid[y][x] = Cell::new('·', sky_color);
+                }
+            }
+        }
+        // Clouds
+        let cloud_count = rng.random_range(1..5u32);
+        let cloud_color = lighten(palette[0], 15);
+        for _ in 0..cloud_count {
+            let cx = rng.random_range(5..(width - 5) as u32) as usize;
+            let cy = rng.random_range(2..(horizon / 2).max(3) as u32) as usize;
+            let cw = rng.random_range(8..20u32) as usize;
+            draw_cloud(&mut grid, cx, cy, cw, cloud_color, &mut rng);
+        }
+
+        // Per-column ground height via random walk
+        let jitter_range = rng.random_range(2..6u32) as i32;
+        let mut ground_heights: Vec<usize> = Vec::with_capacity(width);
+        let mut gh = horizon as i32;
+        for _ in 0..width {
+            gh += rng.random_range(0..3u32) as i32 - 1;
+            gh = gh.clamp(horizon as i32 - jitter_range, horizon as i32 + jitter_range);
+            ground_heights.push(gh.max(1) as usize);
+        }
+
+        // Ground fill with hue gradient
+        let ground_chars = ['╱', '╲', '·', '∿', '~'];
+        let ground_depth = (height - horizon).max(1);
+        let grad_dir = rng.random_range(0..6u32);
+        let ground_base_hue: f64 = if let Color::Rgb { r, g, .. } = ground_color {
+            (r as f64 * 1.4 + g as f64 * 0.7) % 360.0
+        } else { 120.0 };
+        let hue_sweep = rng.random_range(30..80u32) as f64;
+
+        for x in 0..width {
+            let col_horizon = ground_heights[x];
+            for y in col_horizon..height {
+                let depth = y - col_horizon;
+                let ch = ground_chars[rng.random_range(0..ground_chars.len() as u32) as usize];
+                let t = match grad_dir {
+                    0 => x as f64 / width as f64,
+                    1 => 1.0 - x as f64 / width as f64,
+                    2 => depth as f64 / ground_depth as f64,
+                    3 => (x as f64 / width as f64 + depth as f64 / ground_depth as f64) / 2.0,
+                    4 => ((1.0 - x as f64 / width as f64) + depth as f64 / ground_depth as f64) / 2.0,
+                    _ => {
+                        let cx = width as f64 / 2.0;
+                        let cy = ground_depth as f64 / 2.0;
+                        let dx = (x as f64 - cx) / cx;
+                        let dy = (depth as f64 - cy) / cy.max(1.0);
+                        (dx * dx + dy * dy).sqrt().min(1.0)
+                    }
+                };
+                let h = (ground_base_hue + t * hue_sweep).rem_euclid(360.0);
+                let l = (0.25 - depth as f64 * 0.006).max(0.10);
+                let s = 0.4 + t * 0.2;
+                let c = hsl_to_rgb(h, s.min(0.8), l);
+                grid[y][x] = Cell::new(ch, c);
+            }
+        }
+
+        // --- Cluster placement: 1 dominant tree + 0-2 small companions ---
+        // Fewer trees, more breathing room. Each cluster owns a wide horizontal zone.
+        let cluster_count = rng.random_range(2..5u32) as usize;
+        let zone_width = width / cluster_count.max(1);
+
+        // Tree kind families -- only kinds that produce readable tree silhouettes.
+        // Excluded: wide(8)=rectangles, candelabra(5)=menorah, braille(16)=dots
+        let families: &[&[usize]] = &[
+            &[0, 9, 18],       // branchy: grow_tree, asymmetric, connected
+            &[4, 6, 10],       // columnar: spiral, birch, tall_narrow
+            &[7, 12, 18],      // gnarly: storm, dead, connected
+            &[13, 15, 18],     // bold: kaiju, zigzag, connected
+        ];
+        let family_decos = [
+            TipDeco::Fruit, TipDeco::Flower, TipDeco::Drip, TipDeco::Fruit,
+        ];
+
+        struct PlacedTree { x: usize, root_y: usize, canopy_y: usize, spread: usize, kind: usize, is_dominant: bool }
+        let mut all_trees: Vec<(PlacedTree, f64, usize)> = Vec::new();
+
+        for ci in 0..cluster_count {
+            let family_idx = rng.random_range(0..families.len() as u32) as usize;
+            let family = families[family_idx];
+            let base_hue = (ci as f64 * 360.0 / cluster_count as f64
+                + rng.random_range(0..30u32) as f64) % 360.0;
+
+            // Dominant tree: placed in the center of its zone
+            let zone_start = zone_width * ci;
+            let dom_x = zone_start + zone_width / 2 + rng.random_range(0..(zone_width / 4).max(1) as u32) as usize;
+            let dom_x = dom_x.clamp(5, width - 5);
+            let grass_y = ground_heights[dom_x.min(width - 1)];
+            // Plant root well below grass line -- trunk pushes through the ground
+            let dom_root = (grass_y + rng.random_range(3..10u32) as usize).min(height - 2);
+            let max_h = dom_root.saturating_sub(3).max(6);
+            let dom_h = rng.random_range((max_h as u32 / 2).max(8).min(max_h as u32)..max_h as u32 + 1) as usize;
+            let dom_canopy = dom_root.saturating_sub(dom_h).max(1);
+            let dom_spread = rng.random_range(8..16u32) as usize;
+            let dom_kind = family[rng.random_range(0..family.len() as u32) as usize];
+
+            all_trees.push((
+                PlacedTree { x: dom_x, root_y: dom_root, canopy_y: dom_canopy, spread: dom_spread, kind: dom_kind, is_dominant: true },
+                base_hue,
+                family_idx,
+            ));
+
+            // 0-2 small companion trees nearby
+            let companion_count = rng.random_range(0..3u32);
+            for _ in 0..companion_count {
+                let offset = rng.random_range(12..25u32) as i32 * if rng.random_range(0..2u32) == 0 { -1 } else { 1 };
+                let cx = (dom_x as i32 + offset).clamp(3, width as i32 - 3) as usize;
+                let cgrass = ground_heights[cx.min(width - 1)];
+                let croot = (cgrass + rng.random_range(1..6u32) as usize).min(height - 2);
+                let cmax = croot.saturating_sub(2).max(3);
+                let lo = 3u32.min(cmax as u32);
+                let hi = (cmax as u32 / 2 + 4).max(lo + 1);
+                let ch = rng.random_range(lo..hi) as usize;
+                let ccanopy = croot.saturating_sub(ch).max(1);
+                let cspread = rng.random_range(2..7u32) as usize;
+                // Companions use simpler kinds from same family
+                let ckind = family[rng.random_range(0..family.len() as u32) as usize];
+                let hue_jitter = rng.random_range(0..20u32) as f64 - 10.0;
+
+                all_trees.push((
+                    PlacedTree { x: cx, root_y: croot, canopy_y: ccanopy, spread: cspread, kind: ckind, is_dominant: false },
+                    base_hue + hue_jitter,
+                    family_idx,
+                ));
+            }
+        }
+
+        // Sort back-to-front
+        all_trees.sort_by(|a, b| a.0.root_y.cmp(&b.0.root_y).then(a.0.x.cmp(&b.0.x)));
+
+        let total = all_trees.len();
+        for (i, (tree, hue, family_idx)) in all_trees.iter().enumerate() {
+            let depth_t = i as f64 / total.max(1) as f64;
+            let lightness = 0.22 + depth_t * 0.28;
+            let saturation = 0.40 + depth_t * 0.25;
+            let color = hsl_to_rgb(*hue, saturation, lightness);
+
+            draw_tree(&mut grid, tree.x, tree.root_y, tree.canopy_y, tree.spread, tree.kind, color, &mut rng);
+
+            // Collect and decorate tips
+            let x0 = tree.x.saturating_sub(tree.spread + 5);
+            let x1 = (tree.x + tree.spread + 5).min(width);
+            let tips = collect_tips_in_rect(&grid, x0, tree.canopy_y, x1, tree.root_y + 1);
+            let deco = family_decos[*family_idx];
+            let fruit_color = shift_hue(color, 60.0 + rng.random_range(0..40u32) as f64);
+            decorate_tips(&mut grid, &tips, deco, fruit_color, 15, &mut rng);
+        }
+
+        // Sprout braille leaf clusters
+        let leaf_hue = rng.random_range(60..180u32) as f64;
+        let leaf_color = hsl_to_rgb(leaf_hue, 0.5, 0.3);
+        sprout_leaves(&mut grid, leaf_color, 35, &mut rng);
+
     } else if mode == "mondrian2" {
         let line_w = 2;
 

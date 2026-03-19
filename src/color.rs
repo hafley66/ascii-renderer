@@ -128,6 +128,32 @@ pub fn make_palette(seed: u64) -> [Color; 5] {
     ]
 }
 
+/// Shift hue by extracting approximate HSL, rotating, converting back.
+pub fn shift_hue(color: Color, degrees: f64) -> Color {
+    match color {
+        Color::Rgb { r, g, b } => {
+            let (rf, gf, bf) = (r as f64 / 255.0, g as f64 / 255.0, b as f64 / 255.0);
+            let max = rf.max(gf).max(bf);
+            let min = rf.min(gf).min(bf);
+            let l = (max + min) / 2.0;
+            if (max - min).abs() < 0.001 {
+                return color; // achromatic
+            }
+            let d = max - min;
+            let s = if l > 0.5 { d / (2.0 - max - min) } else { d / (max + min) };
+            let h = if (max - rf).abs() < 0.001 {
+                ((gf - bf) / d + if gf < bf { 6.0 } else { 0.0 }) * 60.0
+            } else if (max - gf).abs() < 0.001 {
+                ((bf - rf) / d + 2.0) * 60.0
+            } else {
+                ((rf - gf) / d + 4.0) * 60.0
+            };
+            hsl_to_rgb((h + degrees).rem_euclid(360.0), s, l)
+        }
+        other => other,
+    }
+}
+
 pub fn lighten(color: Color, amount: u8) -> Color {
     match color {
         Color::Rgb { r, g, b } => Color::Rgb {

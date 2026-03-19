@@ -66,6 +66,11 @@ fn forest2_seed_77() {
 }
 
 #[test]
+fn forest5_seed_42() {
+    insta::assert_snapshot!(render(&["42", "forest5", "moss"]));
+}
+
+#[test]
 fn mondrian_seed_42() {
     insta::assert_snapshot!(render(&["42", "mondrian", "ember"]));
 }
