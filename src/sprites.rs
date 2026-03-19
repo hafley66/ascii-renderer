@@ -937,14 +937,140 @@ pub fn grow_drooping_tree(
     }
 }
 
-/// Dispatch all tree variants by kind index (0..12).
-/// Expands the original 4 kinds with 8 new GRIS-style variants.
+/// Kaiju tree: massive multi-trunk ancient tree with unbalanced branching.
+/// 2-3 trunks diverge from a thick base, each leaning at different angles.
+/// Branches at irregular intervals with unequal arm lengths. Dominates the scene.
+pub fn grow_kaiju_tree(
+    grid: &mut Grid,
+    root_x: usize, root_y: usize, canopy_y: usize,
+    spread: usize, color: Color, rng: &mut StdRng,
+) {
+    if canopy_y + 4 >= root_y { return; }
+    let height = root_y - canopy_y;
+    let rx = root_x as i32;
+
+    // Thick base: 3-wide trunk for bottom third
+    let base_top = root_y.saturating_sub(height / 3) as i32;
+    for y in base_top..root_y as i32 {
+        tset_over(grid, rx, y, '┃', color);
+        tset_over(grid, rx - 1, y, '│', darken(color, 15));
+        tset_over(grid, rx + 1, y, '│', darken(color, 15));
+    }
+
+    // 2-3 trunks diverge from base_top
+    let trunk_count = rng.random_range(2..4u32) as usize;
+    let total_spread = spread as i32 * 2;
+
+    struct Trunk { x: i32, lean: i32, branch_side: i32, depth: usize }
+    let mut trunks: Vec<Trunk> = Vec::new();
+
+    for i in 0..trunk_count {
+        let frac = i as f32 / (trunk_count - 1).max(1) as f32;
+        let target_x = rx - total_spread / 2 + (frac * total_spread as f32) as i32;
+        let lean = if target_x < rx { -1 } else if target_x > rx { 1 } else { 0 };
+        let branch_side = if rng.random_range(0..2u32) == 0 { -1 } else { 1 };
+        let depth = rng.random_range(3..6u32) as usize;
+        trunks.push(Trunk { x: target_x, lean, branch_side, depth });
+    }
+
+    // Fork connector at base_top
+    let c0 = lighten(color, 10);
+    let leftmost = trunks.iter().map(|t| t.x).min().unwrap_or(rx);
+    let rightmost = trunks.iter().map(|t| t.x).max().unwrap_or(rx);
+    for x in leftmost..=rightmost {
+        tset_over(grid, x, base_top, '─', c0);
+    }
+    tset_over(grid, rx, base_top, '┬', c0);
+
+    // Draw each trunk with its own lean and branches
+    for trunk in &trunks {
+        let lean_every = (height as i32 / 5).max(3);
+        let mut cx = trunk.x;
+        let trunk_top = canopy_y as i32 + rng.random_range(0..4u32) as i32;
+
+        // Draw the leaning trunk
+        for y in (trunk_top..base_top).rev() {
+            let rows_up = base_top - y;
+            let should_lean = trunk.lean != 0 && rows_up > 0 && rows_up % lean_every == 0;
+            let ch = if should_lean {
+                cx += trunk.lean;
+                if trunk.lean > 0 { '╱' } else { '╲' }
+            } else {
+                '│'
+            };
+            let c = lighten(color, ((base_top - y) as u8).min(40));
+            tset_over(grid, cx, y, ch, c);
+        }
+        tset_over(grid, cx, trunk_top, '╷', lighten(color, 60));
+
+        // Branches at irregular intervals, unequal arm lengths
+        let branch_count = rng.random_range(3..7u32) as usize;
+        let trunk_height = (base_top - trunk_top) as usize;
+        let base_interval = (trunk_height / (branch_count + 1)).max(2);
+
+        for b in 0..branch_count {
+            let jitter = rng.random_range(0..3u32) as i32 - 1;
+            let by = trunk_top + (base_interval * (b + 1)) as i32 + jitter;
+            if by >= base_top || by <= trunk_top { continue; }
+
+            // Find trunk x at this y
+            let rows_up = base_top - by;
+            let tx = trunk.x + trunk.lean * (rows_up / lean_every);
+
+            // Unequal arms: one side 1.5-3x the other
+            let base_arm = (spread / 3).max(2) as i32 - (b as i32 / 2);
+            let base_arm = base_arm.max(1);
+            let long_factor = rng.random_range(15..30u32) as i32;
+            let short_factor = rng.random_range(5..12u32) as i32;
+
+            let (left_arm, right_arm) = if trunk.branch_side < 0 {
+                (base_arm * long_factor / 10, base_arm * short_factor / 10)
+            } else {
+                (base_arm * short_factor / 10, base_arm * long_factor / 10)
+            };
+
+            let c = lighten(color, (b * 12 + 15) as u8);
+
+            // Left arm
+            if left_arm > 0 {
+                for i in 1..=left_arm { tset(grid, tx - i, by, '─', c); }
+                tset(grid, tx - left_arm, by, '╮', c);
+                tset(grid, tx - left_arm - 1, by - 1, '╷', lighten(c, 25));
+                // Sub-twig on longer arms
+                if left_arm > 3 && rng.random_range(0..3u32) != 0 {
+                    let sub_x = tx - left_arm * 2 / 3;
+                    tset(grid, sub_x, by - 1, '╷', lighten(c, 20));
+                    tset(grid, sub_x, by - 2, '╷', lighten(c, 35));
+                }
+            }
+            // Right arm
+            if right_arm > 0 {
+                for i in 1..=right_arm { tset(grid, tx + i, by, '─', c); }
+                tset(grid, tx + right_arm, by, '╭', c);
+                tset(grid, tx + right_arm + 1, by - 1, '╷', lighten(c, 25));
+                if right_arm > 3 && rng.random_range(0..3u32) != 0 {
+                    let sub_x = tx + right_arm * 2 / 3;
+                    tset(grid, sub_x, by - 1, '╷', lighten(c, 20));
+                    tset(grid, sub_x, by - 2, '╷', lighten(c, 35));
+                }
+            }
+
+            let jc = if left_arm > 0 && right_arm > 0 { '┼' }
+                     else if left_arm > 0 { '┤' }
+                     else { '├' };
+            tset_over(grid, tx, by, jc, c);
+        }
+    }
+}
+
+/// Dispatch all tree variants by kind index (0..14).
+/// Includes original 4, 8 GRIS-style variants, dead tree, and kaiju.
 pub fn draw_tree(
     grid: &mut Grid,
     root_x: usize, root_y: usize, canopy_y: usize,
     spread: usize, kind: usize, color: Color, rng: &mut StdRng,
 ) {
-    match kind % 12 {
+    match kind % 14 {
         0  => grow_tree(grid, root_x, root_y, canopy_y, spread, color, rng),
         1  => draw_pine(grid, root_x, root_y, 3, (spread * 2).min(12), color),
         2  => draw_willow(grid, root_x, root_y, canopy_y, spread, color),
@@ -956,7 +1082,9 @@ pub fn draw_tree(
         8  => grow_wide_tree(grid, root_x, root_y, canopy_y, spread, color, rng),
         9  => grow_asymmetric_tree(grid, root_x, root_y, canopy_y, spread, color, rng),
         10 => grow_tall_narrow(grid, root_x, root_y, canopy_y, spread, color, rng),
-        _  => grow_drooping_tree(grid, root_x, root_y, canopy_y, spread, color, rng),
+        11 => grow_drooping_tree(grid, root_x, root_y, canopy_y, spread, color, rng),
+        12 => grow_dead_tree(grid, root_x, root_y, canopy_y, spread, color, rng),
+        _  => grow_kaiju_tree(grid, root_x, root_y, canopy_y, spread, color, rng),
     }
 }
 

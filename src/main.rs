@@ -1170,6 +1170,97 @@ fn main() {
             }
         }
 
+    } else if mode == "forest3" {
+        // Background: sky (sparse dots) above horizon, ground (truchet) below
+        let horizon = height * 2 / 3 + rng.random_range(0..(height / 8).max(1) as u32) as usize;
+        let sky_color = darken(palette[0], 95);
+        let ground_color = darken(palette[1], 85);
+        let ground_tiles = ['╱', '╲', '·', '·'];
+
+        // Sky: sparse scattered dots
+        for y in 0..horizon {
+            for x in 0..width {
+                if rng.random_range(0..12u32) == 0 {
+                    grid[y][x] = Cell::new('·', sky_color);
+                }
+            }
+        }
+        // Ground: truchet with some grass chars mixed in
+        let grass_chars = ['╌', '╌', '∿', '~', '·'];
+        for y in horizon..height {
+            for x in 0..width {
+                let depth = y - horizon;
+                if depth < 2 {
+                    // Grass transition line
+                    grid[y][x] = Cell::new(
+                        grass_chars[rng.random_range(0..grass_chars.len() as u32) as usize],
+                        lighten(ground_color, 20),
+                    );
+                } else {
+                    grid[y][x] = Cell::new(
+                        ground_tiles[rng.random_range(0..ground_tiles.len() as u32) as usize],
+                        darken(ground_color, (depth * 3) as u8),
+                    );
+                }
+            }
+        }
+
+        // Tree placement: staggered roots, varied sizes
+        let tree_count = rng.random_range(5..10u32) as usize;
+        struct TreeSlot { x: usize, root_y: usize, kind: usize, spread: usize, canopy_y: usize }
+        let mut slots: Vec<TreeSlot> = Vec::new();
+
+        // One kaiju tree (kind 13 = grow_kaiju_tree in the dispatch)
+        let kaiju_x = rng.random_range((width / 6) as u32..(width * 5 / 6) as u32) as usize;
+        let kaiju_root = horizon + rng.random_range(0..3u32) as usize;
+        let kaiju_spread = rng.random_range(12..20u32) as usize;
+        let kaiju_canopy = rng.random_range(2..5u32) as usize;
+        slots.push(TreeSlot {
+            x: kaiju_x, root_y: kaiju_root, kind: 13, spread: kaiju_spread, canopy_y: kaiju_canopy,
+        });
+
+        // Remaining trees: staggered roots along horizon zone
+        for _ in 0..tree_count - 1 {
+            let tx = rng.random_range(4..(width - 4) as u32) as usize;
+            let root_offset = rng.random_range(0..5u32) as usize; // roots at different depths
+            let root_y = horizon + root_offset;
+            if root_y >= height - 1 { continue; }
+            let spread = rng.random_range(3..10u32) as usize;
+            let tree_height = rng.random_range(8..(root_y.saturating_sub(2).max(9)) as u32) as usize;
+            let canopy_y = root_y.saturating_sub(tree_height).max(1);
+            // Favor asymmetric/storm/dead kinds (9, 7, 12) alongside others
+            let kind = rng.random_range(0..14u32) as usize;
+            slots.push(TreeSlot { x: tx, root_y, kind, spread, canopy_y });
+        }
+
+        // Sort by root_y descending so farther trees draw first (back to front)
+        slots.sort_by(|a, b| a.root_y.cmp(&b.root_y).then(a.x.cmp(&b.x)));
+
+        // Draw trees directly on background -- no clearing rectangles
+        for slot in &slots {
+            let color = palette[rng.random_range(1..5)];
+            draw_tree(&mut grid, slot.x, slot.root_y, slot.canopy_y, slot.spread, slot.kind, color, &mut rng);
+        }
+
+        // Scatter flowers/fruit along the ground, clustering near tree bases
+        for slot in &slots {
+            let burst_count = rng.random_range(1..5u32);
+            for _ in 0..burst_count {
+                let angle = rng.random::<f32>() * std::f32::consts::TAU;
+                let radius = rng.random_range(2..10u32) as f32;
+                let fx = (slot.x as f32 + angle.cos() * radius * 1.5) as i32;
+                let fy = (slot.root_y as f32 + angle.sin() * radius * 0.4 + 1.0) as i32;
+                if fx >= 1 && fy >= 1 && (fx as usize) < width - 1 && (fy as usize) < height - 1 {
+                    let c = palette[rng.random_range(2..5)];
+                    if rng.random_range(0..3u32) == 0 {
+                        draw_fruit(&mut grid, fx as usize, fy as usize, rng.random_range(0..5), c);
+                    } else {
+                        draw_flower(&mut grid, fx as usize, fy as usize, rng.random_range(0..5), c);
+                    }
+                }
+            }
+        }
+
     } else if mode == "mondrian2" {
         let line_w = 2;
 
