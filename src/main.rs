@@ -1285,6 +1285,16 @@ fn main() {
             let cw = rng.random_range(8..20u32) as usize;
             draw_cloud(&mut grid, cx, cy, cw, cloud_color, &mut rng);
         }
+        // Per-column ground height: random walk so the grass edge is ragged
+        let jitter_range = rng.random_range(2..6u32) as i32; // how wild the edge gets
+        let mut ground_heights: Vec<usize> = Vec::with_capacity(width);
+        let mut gh = horizon as i32;
+        for _ in 0..width {
+            gh += rng.random_range(0..3u32) as i32 - 1; // random walk: -1, 0, or +1
+            gh = gh.clamp(horizon as i32 - jitter_range, horizon as i32 + jitter_range);
+            ground_heights.push(gh.max(1) as usize);
+        }
+
         // Ground: hue gradient with random direction sweeping across
         let ground_chars = ['╱', '╲', '·', '∿', '~'];
         let ground_depth = (height - horizon).max(1);
@@ -1296,9 +1306,10 @@ fn main() {
         } else { 120.0 };
         let hue_sweep = rng.random_range(30..80u32) as f64;
 
-        for y in horizon..height {
-            for x in 0..width {
-                let depth = y - horizon;
+        for x in 0..width {
+            let col_horizon = ground_heights[x];
+            for y in col_horizon..height {
+                let depth = y - col_horizon;
                 let ch = ground_chars[rng.random_range(0..ground_chars.len() as u32) as usize];
 
                 // Gradient parameter t: 0.0 to 1.0, direction varies per seed
