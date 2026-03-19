@@ -427,7 +427,7 @@ pub fn grow_spiral_tree(
 
     while y < root_y as i32 - 1 {
         let arm = (spread.saturating_sub(level * 2)).max(2) as i32;
-        let c = lighten(color, (60 - level * 15) as u8);
+        let c = lighten(color, 60u8.saturating_sub((level * 15) as u8));
 
         if left {
             tset_over(grid, rx, y, '┤', c);
@@ -536,7 +536,7 @@ pub fn grow_birch(
         // Skip some for density variation
         if rng.random_range(0..4u32) == 0 { y += interval; left = !left; continue; }
 
-        let arm = (rng.random_range(2..=spread.min(6)) as i32).max(1);
+        let arm = (rng.random_range(2..=spread.max(2).min(6)) as i32).max(1);
         let c = lighten(color, rng.random_range(10..50) as u8);
 
         if left {
@@ -824,7 +824,7 @@ pub fn grow_dead_tree(
     for b in 0..branch_count {
         if by >= root_y as i32 - 1 { break; }
         let c = lighten(color, (b * 12) as u8);
-        let arm = rng.random_range(2..=(spread.min(8))) as i32;
+        let arm = rng.random_range(2..=(spread.max(2).min(8))) as i32;
 
         // Recompute trunk x at this y
         let from_root = root_y as i32 - by;
