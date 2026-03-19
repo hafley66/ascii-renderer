@@ -473,3 +473,556 @@ impl TreeDrawer for SplitTree {
 
     fn draw_fruit(&self, _grid: &mut Grid, _x: i32, _y: i32, _params: &TreeParams, _rng: &mut StdRng) {}
 }
+
+// ── BirchTree ───────────────────────────────────────────────────
+// Tall straight trunk. Branches alternate left/right at interval=2.
+// 25% chance to skip a branch. Short arms (2-6 cells) with corner caps
+// and diagonal spray tips.
+
+pub struct BirchTree;
+
+impl TreeDrawer for BirchTree {
+    fn draw_trunk(
+        &self, grid: &mut Grid, pen: &mut TreePen,
+        params: &TreeParams, _rng: &mut StdRng,
+    ) -> Vec<TrunkNode> {
+        let top_y = params.canopy_top();
+        let ry = params.root().1;
+        let height = (ry - top_y).max(1);
+        let mut path = Vec::with_capacity(height as usize);
+
+        for _ in 0..height {
+            pen.step(grid, MoveDir::Up);
+            path.push(TrunkNode { x: pen.x, y: pen.y, dir: MoveDir::Up });
+        }
+
+        path
+    }
+
+    fn should_branch(
+        &self, idx: usize, count: usize,
+        params: &TreeParams, rng: &mut StdRng,
+    ) -> Option<BranchIntent> {
+        let interval = 2;
+
+        // Skip first and last node
+        if idx == 0 || idx >= count - 1 { return None; }
+
+        // Branch at interval=2, alternating left/right
+        if idx % interval != 0 { return None; }
+
+        // 25% chance to skip this branch
+        if rng.random_range(0..4u32) == 0 { return None; }
+
+        let level = idx / interval - 1;
+        let go_left = level % 2 == 0;
+        let max_arm = params.spread().max(2).min(6);
+        let length = rng.random_range(2..=max_arm);
+
+        Some(BranchIntent { go_left, length, level })
+    }
+
+    fn draw_branch(
+        &self, grid: &mut Grid, pen: &mut TreePen,
+        intent: &BranchIntent, _depth: usize,
+        params: &TreeParams, rng: &mut StdRng,
+    ) -> BranchResult {
+        use MoveDir::*;
+        let h_dir = if intent.go_left { Left } else { Right };
+        let mut tips = Vec::new();
+
+        // Random lighten per branch: 10-50
+        let c = lighten(params.branch_color, rng.random_range(10..50u8) as u8);
+        pen.color = c;
+
+        // Junction at trunk attachment
+        let jc = if intent.go_left { '┤' } else { '├' };
+        set(grid, pen.x, pen.y, jc, c);
+
+        // Horizontal arm
+        for i in 1..intent.length {
+            pen.x += h_dir.dx();
+            pen.last_dir = Some(h_dir);
+            set(grid, pen.x, pen.y, '─', c);
+        }
+
+        // Corner cap at arm end
+        let corner = if intent.go_left { '╮' } else { '╭' };
+        pen.x += h_dir.dx();
+        set(grid, pen.x, pen.y, corner, c);
+
+        // Spray tips: one cell diagonally up from corner
+        let spray_y = pen.y - 1;
+        let spray_light = lighten(c, 20);
+        set(grid, pen.x, spray_y, '╷', spray_light);
+        tips.push((pen.x, spray_y));
+
+        // Second spray tip if arm > 2
+        if intent.length > 2 {
+            let second_x = pen.x - h_dir.dx();
+            let second_light = lighten(c, 10);
+            set(grid, second_x, spray_y, '╷', second_light);
+            tips.push((second_x, spray_y));
+        }
+
+        BranchResult { tips }
+    }
+
+    fn draw_tip(&self, grid: &mut Grid, x: i32, y: i32, params: &TreeParams) {
+        set(grid, x, y, '╷', lighten(params.tip_color, 60));
+    }
+
+    fn draw_fruit(&self, _grid: &mut Grid, _x: i32, _y: i32, _params: &TreeParams, _rng: &mut StdRng) {}
+}
+
+// ── StormTree ───────────────────────────────────────────────────
+// Leaning trunk (diagonal shifts at regular intervals). Branches
+// peel off windward side with progressive lighten. Compact, windy look.
+
+use std::cell::Cell as StdCell;
+
+pub struct StormTree {
+    /// Lean direction picked during draw_trunk, consumed by draw_branch.
+    /// +1 = lean right (branches go left), -1 = lean left (branches go right).
+    lean: StdCell<i32>,
+}
+
+impl StormTree {
+    pub fn new() -> Self {
+        StormTree { lean: StdCell::new(0) }
+    }
+}
+
+impl TreeDrawer for StormTree {
+    fn draw_trunk(
+        &self, grid: &mut Grid, pen: &mut TreePen,
+        params: &TreeParams, rng: &mut StdRng,
+    ) -> Vec<TrunkNode> {
+        let top_y = params.canopy_top();
+        let ry = params.root().1;
+        let height = (ry - top_y).max(1);
+        let spread = params.spread().max(2);
+        let lean: i32 = if rng.random_range(0..2u32) == 0 { 1 } else { -1 };
+        self.lean.set(lean);
+        let lean_every = (height / (spread.min(8))).max(2);
+        let mut path = Vec::with_capacity(height as usize);
+
+        let mut shifts = 0i32;
+        for y in (top_y..=ry).rev() {
+            let rows_from_root = ry - y;
+            let new_shifts = rows_from_root / lean_every;
+
+            if new_shifts > shifts {
+                shifts = new_shifts;
+                let dir = if lean > 0 { MoveDir::UpRight } else { MoveDir::UpLeft };
+                pen.step(grid, dir);
+            } else {
+                pen.step(grid, MoveDir::Up);
+            }
+
+            path.push(TrunkNode { x: pen.x, y: pen.y, dir: MoveDir::Up });
+        }
+
+        path
+    }
+
+    fn should_branch(
+        &self, idx: usize, count: usize,
+        params: &TreeParams, _rng: &mut StdRng,
+    ) -> Option<BranchIntent> {
+        if count < 4 { return None; }
+
+        let height = params.root().1 - params.canopy_top();
+        let interval = (height / 4).max(2);
+
+        // idx 0 = nearest root, idx count-1 = apex
+        let distance_from_root = count as i32 - 1 - idx as i32;
+
+        if distance_from_root < 2 { return None; }
+        if (distance_from_root - 2) % interval != 0 { return None; }
+
+        let level = ((distance_from_root - 2) / interval) as usize;
+        let max_spread = params.spread();
+        let arm = (max_spread - level as i32 * 2).max(2);
+
+        // go_left encodes windward side (opposite lean)
+        let go_left = self.lean.get() > 0;
+
+        Some(BranchIntent { go_left, length: arm, level })
+    }
+
+    fn draw_branch(
+        &self, grid: &mut Grid, pen: &mut TreePen,
+        intent: &BranchIntent, _depth: usize,
+        params: &TreeParams, _rng: &mut StdRng,
+    ) -> BranchResult {
+        use MoveDir::*;
+
+        let c = lighten(params.trunk_color, (intent.level * 20) as u8);
+        let h_dir = if intent.go_left { Left } else { Right };
+
+        let mut tips = Vec::new();
+        let jc = if intent.go_left { '┤' } else { '├' };
+        set(grid, pen.x, pen.y, jc, c);
+
+        // Horizontal run
+        let arm = intent.length;
+        for i in 1..=arm {
+            let nx = pen.x + h_dir.dx() * i;
+            set(grid, nx, pen.y, '─', c);
+        }
+
+        // Corner curl at arm tip
+        let tip_x = pen.x + h_dir.dx() * arm;
+        let curl = if intent.go_left { '╮' } else { '╭' };
+        set(grid, tip_x, pen.y, curl, c);
+        set(grid, tip_x + h_dir.dx(), pen.y - 1, '╷', lighten(c, 25));
+        tips.push((tip_x + h_dir.dx(), pen.y - 1));
+
+        BranchResult { tips }
+    }
+
+    fn draw_tip(&self, grid: &mut Grid, x: i32, y: i32, params: &TreeParams) {
+        set(grid, x, y, '╷', lighten(params.trunk_color, 55));
+    }
+
+    fn draw_fruit(&self, _grid: &mut Grid, _x: i32, _y: i32, _params: &TreeParams, _rng: &mut StdRng) {}
+}
+
+// ── DeadTree ────────────────────────────────────────────────────────
+// Skeletal, eerie tree with gnarled trunk and sparse angular branches.
+// Gnarled trunk: mostly │ with random diagonal offsets (╱/╲) every 7 rows.
+// Sparse branches: diagonal then horizontal, alternating left/right.
+// Leans progressively lighter; tips use a cycling char set.
+
+pub struct DeadTree;
+
+impl TreeDrawer for DeadTree {
+    fn draw_trunk(
+        &self, grid: &mut Grid, pen: &mut TreePen,
+        params: &TreeParams, rng: &mut StdRng,
+    ) -> Vec<TrunkNode> {
+        let top_y = params.canopy_top();
+        let ry = params.root().1;
+        let height = (ry - top_y).max(1);
+        let trunk_color = darken(params.trunk_color, 10);
+        let mut path = Vec::with_capacity(height as usize);
+
+        pen.color = trunk_color;
+        for i in 0..height {
+            let from_root = height - i;
+            // Every 7 rows with 33% chance: random diagonal offset
+            if from_root > 2 && from_root % 7 == 0 && rng.random_range(0..3u32) == 0 {
+                let lean = if rng.random::<bool>() { -1 } else { 1 };
+                let dir = if lean < 0 { MoveDir::UpLeft } else { MoveDir::UpRight };
+                pen.step(grid, dir);
+            } else {
+                pen.step(grid, MoveDir::Up);
+            }
+            path.push(TrunkNode { x: pen.x, y: pen.y, dir: MoveDir::Up });
+        }
+
+        path
+    }
+
+    fn should_branch(
+        &self, idx: usize, count: usize,
+        params: &TreeParams, rng: &mut StdRng,
+    ) -> Option<BranchIntent> {
+        // Sparse branches: ~5-6 branches evenly spaced
+        let interval = (count / 6).max(2);
+        if idx < interval || idx >= count - 1 { return None; }
+        if idx % interval != 0 { return None; }
+
+        let level = idx / interval;
+        let go_left = level % 2 == 0;
+        let max_arm = params.spread().max(2).min(8);
+        let length = rng.random_range(2..=max_arm);
+
+        Some(BranchIntent { go_left, length, level })
+    }
+
+    fn draw_branch(
+        &self, grid: &mut Grid, _pen: &mut TreePen,
+        intent: &BranchIntent, _depth: usize,
+        params: &TreeParams, _rng: &mut StdRng,
+    ) -> BranchResult {
+        use MoveDir::*;
+        let tip_chars = ['╴', '╶', '·', '╷'];
+        let mut tips = Vec::new();
+
+        // Branch color lightens with level
+        let c = lighten(params.branch_color, (intent.level as u8 * 12).min(60));
+        let h_dir = if intent.go_left { Left } else { Right };
+
+        // Start at pen position (trunk attachment)
+        let mut bx = _pen.x;
+        let mut yy = _pen.y;
+
+        // Junction char at trunk
+        let jc = if intent.go_left { '┐' } else { '┌' };
+        set(grid, bx, yy, jc, c);
+
+        // Diagonal segment (up at an angle)
+        let arm = intent.length;
+        let diag_len = (arm / 3).max(1);
+        let horiz_len = arm - diag_len;
+        let diag_ch = if intent.go_left { '╲' } else { '╱' };
+
+        for _ in 0..diag_len {
+            bx += h_dir.dx();
+            yy -= 1;
+            set(grid, bx, yy, diag_ch, c);
+        }
+
+        // Horizontal segment
+        for _ in 0..horiz_len {
+            bx += h_dir.dx();
+            set(grid, bx, yy, '─', c);
+        }
+
+        // Tip char (cycle through set)
+        let tip = tip_chars[intent.level % tip_chars.len()];
+        set(grid, bx + h_dir.dx(), yy, tip, lighten(c, 20));
+        tips.push((bx + h_dir.dx(), yy));
+
+        // Sub-twig for longer arms
+        if arm > 3 {
+            set(grid, bx, yy - 1, '╷', lighten(c, 30));
+        }
+
+        BranchResult { tips }
+    }
+
+    fn draw_tip(&self, grid: &mut Grid, x: i32, y: i32, params: &TreeParams) {
+        set(grid, x, y, '╷', lighten(params.tip_color, 30));
+    }
+
+    fn draw_fruit(&self, _grid: &mut Grid, _x: i32, _y: i32, _params: &TreeParams, _rng: &mut StdRng) {}
+}
+
+// ── DroopingTree ────────────────────────────────────────────────
+// Short straight trunk (bottom 2/3). should_branch fires once at trunk top.
+// draw_branch handles the entire crown: fan of 3-6 arms spread across width.
+// Each arm has a horizontal bar from center, vertical rise, then drooping
+// horizontal arms with hanging drips (╎) extending downward.
+
+pub struct DroopingTree;
+
+impl TreeDrawer for DroopingTree {
+    fn draw_trunk(
+        &self, grid: &mut Grid, pen: &mut TreePen,
+        params: &TreeParams, _rng: &mut StdRng,
+    ) -> Vec<TrunkNode> {
+        let top_y = params.canopy_top();
+        let ry = params.root().1;
+        let height = (ry - top_y).max(3);
+        let trunk_h = (height * 2) / 3;
+        let mut path = Vec::with_capacity(trunk_h as usize);
+
+        // Straight trunk: bottom 2/3
+        for _ in 0..trunk_h {
+            pen.step(grid, MoveDir::Up);
+            path.push(TrunkNode { x: pen.x, y: pen.y, dir: MoveDir::Up });
+        }
+
+        path
+    }
+
+    fn should_branch(
+        &self, idx: usize, count: usize,
+        _params: &TreeParams, _rng: &mut StdRng,
+    ) -> Option<BranchIntent> {
+        // Fire once at the trunk top -- draw_branch builds the whole crown
+        if idx == count - 1 {
+            Some(BranchIntent { go_left: false, length: 0, level: 0 })
+        } else {
+            None
+        }
+    }
+
+    fn draw_branch(
+        &self, grid: &mut Grid, _pen: &mut TreePen,
+        _intent: &BranchIntent, _depth: usize,
+        params: &TreeParams, rng: &mut StdRng,
+    ) -> BranchResult {
+        let (rx, ry) = params.root();
+        let top_y = params.canopy_top();
+        let height = (ry - top_y).max(3);
+        let first_split = ry - (height / 3);
+        let spread = params.spread();
+        let arm_count = rng.random_range(3..6usize);
+        let bar_color = lighten(params.trunk_color, 10);
+        let mut tips = Vec::new();
+
+        // Fan of arms: evenly distributed across width
+        for i in 0..arm_count {
+            let t = if arm_count > 1 {
+                i as f32 / (arm_count - 1) as f32
+            } else {
+                0.5
+            };
+            let arm_x_offset = ((t * 2.0 - 1.0) * spread as f32) as i32;
+            let bx = rx + arm_x_offset;
+            let arm_top_y = top_y + rng.random_range(0..4u32) as i32;
+            let c = lighten(params.trunk_color, (i * 15) as u8);
+
+            // Horizontal segment from trunk center to arm x at first_split
+            if arm_x_offset != 0 {
+                let (x0, x1) = if arm_x_offset < 0 {
+                    (bx, rx)
+                } else {
+                    (rx, bx)
+                };
+                for x in x0..=x1 {
+                    set(grid, x, first_split, '─', bar_color);
+                }
+                let corner = if arm_x_offset < 0 { '╭' } else { '╮' };
+                set(grid, bx, first_split, corner, bar_color);
+                set(grid, rx, first_split, '┼', bar_color);
+            } else {
+                set(grid, rx, first_split, '│', bar_color);
+            }
+
+            // Vertical rise from first_split to arm_top_y
+            for y in arm_top_y..first_split {
+                set(grid, bx, y, '│', c);
+            }
+
+            // Drooping feature: horizontal arms hanging at arm_top_y + 1
+            let droop_arm = (spread / 3).max(1);
+            if arm_top_y + 2 < first_split {
+                let droop_y = arm_top_y + 1;
+                let dc = lighten(c, 20);
+
+                // Hanging arms to left and right
+                for dx in 1..=droop_arm {
+                    set(grid, bx - dx, droop_y, '─', dc);
+                    set(grid, bx + dx, droop_y, '─', dc);
+                }
+
+                // Corner caps at droop endpoints
+                set(grid, bx - droop_arm, droop_y, '╮', dc);
+                set(grid, bx + droop_arm, droop_y, '╭', dc);
+                set(grid, bx, droop_y, '┬', dc);
+
+                // Hanging drips (╎) extending 3 cells down from endpoints
+                for d in 1..=3 {
+                    let dc2 = lighten(dc, (d * 15) as u8);
+                    set(grid, bx - droop_arm, droop_y + d, '╎', dc2);
+                    set(grid, bx + droop_arm, droop_y + d, '╎', dc2);
+                }
+            }
+
+            // Tip at arm top
+            tips.push((bx, arm_top_y));
+        }
+
+        BranchResult { tips }
+    }
+
+    fn draw_tip(&self, grid: &mut Grid, x: i32, y: i32, params: &TreeParams) {
+        set(grid, x, y, '╷', lighten(params.tip_color, 40));
+    }
+
+    fn draw_fruit(&self, _grid: &mut Grid, _x: i32, _y: i32, _params: &TreeParams, _rng: &mut StdRng) {}
+}
+
+// ── Tests ────────────────────────────────────────────────────────────
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rand::SeedableRng;
+    use crossterm::style::Color;
+
+    fn make_grid(w: usize, h: usize) -> Grid {
+        vec![vec![Cell::new(' ', Color::Reset); w]; h]
+    }
+
+    fn grid_to_string(grid: &Grid) -> String {
+        grid.iter()
+            .map(|row| row.iter().map(|c| c.ch).collect::<String>())
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
+
+    fn test_params(plot_x: usize, plot_y: usize, plot_w: usize, plot_h: usize) -> TreeParams {
+        let green = Color::Rgb { r: 80, g: 140, b: 60 };
+        TreeParams {
+            plot: Rect { x: plot_x, y: plot_y, w: plot_w, h: plot_h },
+            energy: 0.9,
+            trunk_color: green,
+            bark_color: green,
+            branch_color: green,
+            tip_color: green,
+            fruit_color: green,
+            fruit_factor: 0.0,
+            branch_factor: 0.7,
+            direction: GrowDir::Up,
+        }
+    }
+
+    #[test]
+    fn snapshot_spiral_tree() {
+        let mut grid = make_grid(40, 20);
+        let tp = test_params(10, 1, 20, 18);
+        let mut rng = StdRng::seed_from_u64(42);
+        SpiralTree.grow(&mut grid, &tp, &mut rng);
+        insta::assert_snapshot!("spiral_tree_42", grid_to_string(&grid));
+    }
+
+    #[test]
+    fn snapshot_candelabra_tree() {
+        let mut grid = make_grid(40, 20);
+        let tp = test_params(10, 1, 20, 18);
+        let mut rng = StdRng::seed_from_u64(42);
+        CandelabraTree.grow(&mut grid, &tp, &mut rng);
+        insta::assert_snapshot!("candelabra_tree_42", grid_to_string(&grid));
+    }
+
+    #[test]
+    fn snapshot_split_tree() {
+        let mut grid = make_grid(40, 20);
+        let tp = test_params(10, 1, 20, 18);
+        let mut rng = StdRng::seed_from_u64(42);
+        SplitTree.grow(&mut grid, &tp, &mut rng);
+        insta::assert_snapshot!("split_tree_42", grid_to_string(&grid));
+    }
+
+    #[test]
+    fn snapshot_birch_tree() {
+        let mut grid = make_grid(40, 20);
+        let tp = test_params(10, 1, 20, 18);
+        let mut rng = StdRng::seed_from_u64(42);
+        BirchTree.grow(&mut grid, &tp, &mut rng);
+        insta::assert_snapshot!("birch_tree_42", grid_to_string(&grid));
+    }
+
+    #[test]
+    fn snapshot_storm_tree() {
+        let mut grid = make_grid(40, 20);
+        let tp = test_params(10, 1, 20, 18);
+        let mut rng = StdRng::seed_from_u64(42);
+        StormTree::new().grow(&mut grid, &tp, &mut rng);
+        insta::assert_snapshot!("storm_tree_42", grid_to_string(&grid));
+    }
+
+    #[test]
+    fn snapshot_dead_tree() {
+        let mut grid = make_grid(40, 20);
+        let tp = test_params(10, 1, 20, 18);
+        let mut rng = StdRng::seed_from_u64(42);
+        DeadTree.grow(&mut grid, &tp, &mut rng);
+        insta::assert_snapshot!("dead_tree_42", grid_to_string(&grid));
+    }
+
+    #[test]
+    fn snapshot_drooping_tree() {
+        let mut grid = make_grid(40, 20);
+        let tp = test_params(10, 1, 20, 18);
+        let mut rng = StdRng::seed_from_u64(42);
+        DroopingTree.grow(&mut grid, &tp, &mut rng);
+        insta::assert_snapshot!("drooping_tree_42", grid_to_string(&grid));
+    }
+}

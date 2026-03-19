@@ -1688,29 +1688,26 @@ fn main() {
             }
         }
 
-        // --- Comparison layout: old algo on left, pen rewrite on right ---
-        // 3 pairs, evenly spaced across the width.
-        let pair_count = 3usize;
+        // --- Comparison layout: old algo on left, trait rewrite on right ---
+        // 7 pairs, evenly spaced across the width.
+        let pair_count = 7usize;
         let zone_w = width / pair_count.max(1);
-        let pair_gap = 8i32; // horizontal gap between old and pen version
+        let pair_gap = 8i32;
 
-        // The 3 pairs: (old_kind, pen_fn_index)
-        // 0 = grow_tree / grow_split_pen
-        // 1 = grow_spiral_tree / grow_spiral_pen
-        // 2 = grow_candelabra / grow_candelabra_pen
-        let old_kinds: [usize; 3] = [0, 4, 5];
+        // (old draw_tree kind index, label)
+        // 0=grow_tree, 4=spiral, 5=candelabra, 6=birch, 7=storm, 11=drooping, 12=dead
+        let old_kinds: [usize; 7] = [0, 4, 5, 6, 7, 11, 12];
 
         for pi in 0..pair_count {
             let zone_start = zone_w * pi;
             let center_x = zone_start + zone_w / 2;
 
-            // Tree dimensions (same for both so comparison is fair)
             let grass_y = ground_heights[center_x.min(width - 1)];
             let root_y = (grass_y + rng.random_range(2..6u32) as usize).min(height - 2);
             let tree_h = rng.random_range(8..14u32) as usize;
             let canopy_y = root_y.saturating_sub(tree_h).max(1);
             let spread = rng.random_range(5..10u32) as usize;
-            let hue = (pi as f64 * 120.0 + rng.random_range(0..30u32) as f64) % 360.0;
+            let hue = (pi as f64 * 51.0 + rng.random_range(0..30u32) as f64) % 360.0;
             let color = hsl_to_rgb(hue, 0.55, 0.35);
 
             // Old algo on the left
@@ -1742,6 +1739,10 @@ fn main() {
                 0 => SplitTree.grow(&mut grid, &tp, &mut rng),
                 1 => SpiralTree.grow(&mut grid, &tp, &mut rng),
                 2 => CandelabraTree.grow(&mut grid, &tp, &mut rng),
+                3 => BirchTree.grow(&mut grid, &tp, &mut rng),
+                4 => StormTree::new().grow(&mut grid, &tp, &mut rng),
+                5 => DroopingTree.grow(&mut grid, &tp, &mut rng),
+                6 => DeadTree.grow(&mut grid, &tp, &mut rng),
                 _ => SpiralTree.grow(&mut grid, &tp, &mut rng),
             }
         }
