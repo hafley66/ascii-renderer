@@ -1082,6 +1082,227 @@ fn main() {
         let scene = Scene { layers };
         render_scene(&mut grid, &rect, &scene, &mut rng);
         draw_path_trail(&mut grid, &stops, palette[2], &mut rng);
+    } else if mode == "forest2" {
+        // Ground: truchet dirt
+        let ground_color = darken(palette[1], 90);
+        let tiles = ['╱', '╲'];
+        for y in 0..height {
+            for x in 0..width {
+                grid[y][x] = Cell::new(tiles[rng.random_range(0..2)], ground_color);
+            }
+        }
+
+        let ground_y = height.saturating_sub(4);
+
+        // Place trees with varied size, position, and type
+        let tree_count = rng.random_range(4..9u32) as usize;
+        struct TreeSlot { x: usize, kind: usize, spread: usize, canopy_y: usize }
+        let mut slots: Vec<TreeSlot> = Vec::new();
+
+        // One big centerpiece tree
+        let big_x = rng.random_range((width / 4) as u32..(width * 3 / 4) as u32) as usize;
+        let big_spread = rng.random_range(8..14u32) as usize;
+        let big_canopy = rng.random_range(3..6u32) as usize;
+        let big_kind = rng.random_range(0..12u32) as usize;
+        slots.push(TreeSlot { x: big_x, kind: big_kind, spread: big_spread, canopy_y: big_canopy });
+
+        // Remaining trees scattered, varied sizes
+        for _ in 0..tree_count - 1 {
+            let tx = rng.random_range(6..(width - 6) as u32) as usize;
+            let spread = rng.random_range(3..9u32) as usize;
+            let canopy = rng.random_range(4..ground_y.saturating_sub(6).max(5) as u32) as usize;
+            let kind = rng.random_range(0..12u32) as usize;
+            slots.push(TreeSlot { x: tx, kind: kind, spread: spread, canopy_y: canopy });
+        }
+
+        // Sort by x so they layer left to right
+        slots.sort_by_key(|s| s.x);
+
+        for slot in &slots {
+            // Clear space for this tree
+            let clear_left = slot.x.saturating_sub(slot.spread + 2);
+            let clear_right = (slot.x + slot.spread + 2).min(width);
+            for y in slot.canopy_y.saturating_sub(1)..ground_y + 2 {
+                for x in clear_left..clear_right {
+                    if y < height && x < width {
+                        grid[y][x] = Cell::blank();
+                    }
+                }
+            }
+            let color = palette[rng.random_range(1..4)];
+            draw_tree(&mut grid, slot.x, ground_y - 1, slot.canopy_y, slot.spread, slot.kind, color, &mut rng);
+        }
+
+        // Flower/fruit burst radiating from the biggest tree's base
+        let burst_cx = big_x;
+        let burst_cy = ground_y + 1;
+        let burst_count = rng.random_range(5..12u32);
+        // One big flower at center
+        draw_flower(&mut grid, burst_cx, burst_cy, rng.random_range(0..5), palette[3]);
+        // Radial scatter around it
+        for _ in 0..burst_count {
+            let angle = rng.random::<f32>() * std::f32::consts::TAU;
+            let radius = rng.random_range(3..16u32) as f32;
+            let fx = (burst_cx as f32 + angle.cos() * radius * 1.8) as i32; // aspect correction
+            let fy = (burst_cy as f32 + angle.sin() * radius * 0.6) as i32;
+            if fx >= 2 && fy >= 2 && (fx as usize) < width - 2 && (fy as usize) < height - 2 {
+                if rng.random_range(0..3u32) == 0 {
+                    draw_fruit(&mut grid, fx as usize, fy as usize, rng.random_range(0..5), palette[rng.random_range(2..4)]);
+                } else {
+                    draw_flower(&mut grid, fx as usize, fy as usize, rng.random_range(0..5), palette[rng.random_range(2..4)]);
+                }
+            }
+        }
+
+        // Scatter a few more flower clusters near other trees
+        for slot in &slots {
+            let count = rng.random_range(1..4u32);
+            for _ in 0..count {
+                let fx = (slot.x as i32 + rng.random_range(-6..7i32)) as usize;
+                let fy = ground_y + rng.random_range(0..2u32) as usize;
+                if fx >= 2 && fx < width - 2 && fy < height - 2 {
+                    if rng.random_range(0..2u32) == 0 {
+                        draw_flower(&mut grid, fx, fy, rng.random_range(0..5), palette[rng.random_range(2..4)]);
+                    } else {
+                        draw_fruit(&mut grid, fx, fy, rng.random_range(0..5), palette[rng.random_range(2..4)]);
+                    }
+                }
+            }
+        }
+
+    } else if mode == "mondrian2" {
+        let line_w = 2;
+
+        let fill_colors = if theme_name.is_empty() {
+            let (fills, _) = mondrian_colors();
+            fills
+        } else {
+            [
+                lighten(palette[0], 40),
+                palette[1],
+                palette[2],
+                palette[3],
+                lighten(palette[0], 40),
+            ]
+        };
+        let line_color = if theme_name.is_empty() {
+            rgb(20, 20, 20)
+        } else {
+            darken(palette[0], 60)
+        };
+
+        // Layout mondrian grid with no content blocks -- all leaves are empty
+        let rects = layout_mondrian(
+            &mut grid,
+            &[],
+            0,
+            line_w,
+            12,
+            5,
+            line_color,
+            line_color,
+            &fill_colors,
+            line_color,
+            &mut rng,
+        );
+
+        // Fill each leaf with something unexpected
+        for rect in &rects {
+            let inset = Rect {
+                x: rect.x + 1,
+                y: rect.y + 1,
+                w: rect.w.saturating_sub(2),
+                h: rect.h.saturating_sub(2),
+            };
+            if inset.w < 3 || inset.h < 3 { continue; }
+
+            match rng.random_range(0..7u32) {
+                0..=1 => {
+                    // Tree centered in the rect
+                    let tx = inset.x + inset.w / 2;
+                    let canopy = inset.y + 1;
+                    let root = inset.y + inset.h - 1;
+                    let spread = (inset.w / 3).max(2);
+                    let color = palette[rng.random_range(1..4)];
+                    // Clear to blank first
+                    for y in inset.y..inset.y + inset.h {
+                        for x in inset.x..inset.x + inset.w {
+                            if y < height && x < width { grid[y][x] = Cell::blank(); }
+                        }
+                    }
+                    draw_tree(&mut grid, tx, root, canopy, spread, rng.random_range(0..12), color, &mut rng);
+                }
+                2 => {
+                    // Flower garden -- clear + scatter flowers
+                    for y in inset.y..inset.y + inset.h {
+                        for x in inset.x..inset.x + inset.w {
+                            if y < height && x < width { grid[y][x] = Cell::blank(); }
+                        }
+                    }
+                    let cx = inset.x + inset.w / 2;
+                    let cy = inset.y + inset.h / 2;
+                    draw_flower(&mut grid, cx, cy, rng.random_range(0..5), palette[3]);
+                    let count = rng.random_range(2..6u32);
+                    for _ in 0..count {
+                        let angle = rng.random::<f32>() * std::f32::consts::TAU;
+                        let r = rng.random_range(2..((inset.w.min(inset.h) / 2).max(3)) as u32) as f32;
+                        let fx = (cx as f32 + angle.cos() * r * 1.5) as usize;
+                        let fy = (cy as f32 + angle.sin() * r * 0.7) as usize;
+                        if fx > inset.x && fx < inset.x + inset.w - 1 && fy > inset.y && fy < inset.y + inset.h - 1 {
+                            draw_flower(&mut grid, fx, fy, rng.random_range(0..5), palette[rng.random_range(2..4)]);
+                        }
+                    }
+                }
+                3 => {
+                    // Rain in this cell only
+                    let rain_color = darken(palette[2], 40);
+                    let rain_chars = ['│', '┊', '╎', '┆'];
+                    for y in inset.y..inset.y + inset.h {
+                        for x in inset.x..inset.x + inset.w {
+                            if y >= height || x >= width { continue; }
+                            if grid[y][x].ch != ' ' { continue; }
+                            if rng.random::<f32>() > 0.12 { continue; }
+                            let streak = ((x * 7 + 13) % 11) < 3;
+                            if !streak && rng.random::<f32>() > 0.3 { continue; }
+                            let ch = rain_chars[rng.random_range(0..rain_chars.len())];
+                            grid[y][x] = Cell::new(ch, darken(rain_color, rng.random_range(0..20)));
+                        }
+                    }
+                }
+                4 => {
+                    // Fruit still life
+                    for y in inset.y..inset.y + inset.h {
+                        for x in inset.x..inset.x + inset.w {
+                            if y < height && x < width { grid[y][x] = Cell::blank(); }
+                        }
+                    }
+                    let count = rng.random_range(2..5u32);
+                    for _ in 0..count {
+                        let fx = inset.x + rng.random_range(2..inset.w.saturating_sub(2).max(3) as u32) as usize;
+                        let fy = inset.y + rng.random_range(1..inset.h.saturating_sub(2).max(2) as u32) as usize;
+                        draw_fruit(&mut grid, fx, fy, rng.random_range(0..5), palette[rng.random_range(1..4)]);
+                    }
+                }
+                5 => {
+                    // Stars / night sky in this cell
+                    let star_color = lighten(palette[4], 20);
+                    let star_chars = ['·', '∙', '°', '*', '⋅', '✦'];
+                    for y in inset.y..inset.y + inset.h {
+                        for x in inset.x..inset.x + inset.w {
+                            if y >= height || x >= width { continue; }
+                            if grid[y][x].ch != ' ' { continue; }
+                            if rng.random::<f32>() > 0.06 { continue; }
+                            let ch = star_chars[rng.random_range(0..star_chars.len())];
+                            grid[y][x] = Cell::new(ch, darken(star_color, rng.random_range(0..40)));
+                        }
+                    }
+                }
+                _ => {
+                    // Leave as flat color fill (original mondrian behavior)
+                }
+            }
+        }
+
     } else if mode == "world" {
         render_world(&mut grid, width, height, &palette, &mut rng);
     } else if mode == "noise" {
