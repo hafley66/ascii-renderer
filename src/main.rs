@@ -1688,54 +1688,89 @@ fn main() {
             }
         }
 
-        // --- Comparison layout: old algo on left, trait rewrite on right ---
-        // 7 pairs, evenly spaced across the width.
-        let pair_count = 7usize;
-        let zone_w = width / pair_count.max(1);
-        let pair_gap = 8i32;
+        // --- Forest of trait trees ---
+        // Cluster layout: 3-5 clusters, each with a dominant + 0-2 companions.
+        // All trait-based TreeDrawer impls, high energy, big spread.
+        let cluster_count = rng.random_range(3..6u32) as usize;
+        let zone_w = width / cluster_count.max(1);
+        let tree_kinds: [usize; 7] = [0, 1, 2, 3, 4, 5, 6]; // all 7 trait trees
 
-        // (old draw_tree kind index, label)
-        // 0=grow_tree, 4=spiral, 5=candelabra, 6=birch, 7=storm, 11=drooping, 12=dead
-        let old_kinds: [usize; 7] = [0, 4, 5, 6, 7, 11, 12];
+        // Sort back-to-front for depth (collect positions first)
+        struct TreeSlot {
+            x: usize,
+            root_y: usize,
+            canopy_y: usize,
+            spread: usize,
+            kind: usize,
+            hue: f64,
+            energy: f32,
+        }
+        let mut slots: Vec<TreeSlot> = Vec::new();
 
-        for pi in 0..pair_count {
-            let zone_start = zone_w * pi;
-            let center_x = zone_start + zone_w / 2;
-
+        for ci in 0..cluster_count {
+            let zone_start = zone_w * ci;
+            let center_x = zone_start + zone_w / 2 + rng.random_range(0..zone_w.max(1) as u32 / 3) as usize;
+            let center_x = center_x.min(width - 4).max(4);
             let grass_y = ground_heights[center_x.min(width - 1)];
-            let root_y = (grass_y + rng.random_range(2..6u32) as usize).min(height - 2);
-            let tree_h = rng.random_range(8..14u32) as usize;
+
+            // Dominant tree: tall, wide, high energy
+            let root_y = (grass_y + rng.random_range(3..8u32) as usize).min(height - 2);
+            let tree_h = rng.random_range(14..22u32) as usize;
             let canopy_y = root_y.saturating_sub(tree_h).max(1);
-            let spread = rng.random_range(5..10u32) as usize;
-            let hue = (pi as f64 * 51.0 + rng.random_range(0..30u32) as f64) % 360.0;
-            let color = hsl_to_rgb(hue, 0.55, 0.35);
+            let spread = rng.random_range(10..18u32) as usize;
+            let kind = tree_kinds[rng.random_range(0..tree_kinds.len() as u32) as usize];
+            let hue = (ci as f64 * 50.0 + rng.random_range(0..40u32) as f64) % 360.0;
 
-            // Old algo on the left
-            let old_x = (center_x as i32 - pair_gap).max(3) as usize;
-            draw_tree(&mut grid, old_x, root_y, canopy_y, spread, old_kinds[pi], color, &mut rng);
+            slots.push(TreeSlot {
+                x: center_x, root_y, canopy_y, spread, kind, hue,
+                energy: rng.random_range(85..100u32) as f32 / 100.0,
+            });
 
-            // Trait-based rewrite on the right
-            let pen_x = (center_x as i32 + pair_gap).min(width as i32 - 3) as usize;
-            let plot_w = spread * 2 + 4;
+            // 0-2 companion trees: smaller, offset
+            let companion_count = rng.random_range(0..3u32);
+            for _ in 0..companion_count {
+                let offset = rng.random_range(8..20u32) as i32 * if rng.random::<bool>() { 1 } else { -1 };
+                let cx = (center_x as i32 + offset).clamp(4, width as i32 - 4) as usize;
+                let cgrass = ground_heights[cx.min(width - 1)];
+                let croot = (cgrass + rng.random_range(2..5u32) as usize).min(height - 2);
+                let ch = rng.random_range(8..14u32) as usize;
+                let ccanopy = croot.saturating_sub(ch).max(1);
+                let cspread = rng.random_range(5..10u32) as usize;
+                let ckind = tree_kinds[rng.random_range(0..tree_kinds.len() as u32) as usize];
+
+                slots.push(TreeSlot {
+                    x: cx, root_y: croot, canopy_y: ccanopy, spread: cspread, kind: ckind,
+                    hue: hue + rng.random_range(0..60u32) as f64,
+                    energy: rng.random_range(60..85u32) as f32 / 100.0,
+                });
+            }
+        }
+
+        // Sort back-to-front: trees with lower root_y (higher on screen) draw first
+        slots.sort_by_key(|s| s.root_y);
+
+        for slot in &slots {
+            let color = hsl_to_rgb(slot.hue % 360.0, 0.55, 0.35);
+            let plot_w = slot.spread * 2 + 6;
             let plot = Rect {
-                x: pen_x.saturating_sub(plot_w / 2),
-                y: canopy_y,
+                x: slot.x.saturating_sub(plot_w / 2),
+                y: slot.canopy_y,
                 w: plot_w,
-                h: root_y - canopy_y + 2,
+                h: slot.root_y - slot.canopy_y + 2,
             };
             let tp = TreeParams {
                 plot,
-                energy: 0.8,
+                energy: slot.energy,
                 trunk_color: color,
                 bark_color: darken(color, 15),
                 branch_color: color,
                 tip_color: lighten(color, 30),
                 fruit_color: shift_hue(color, 60.0),
-                fruit_factor: 0.2,
-                branch_factor: 0.7,
+                fruit_factor: 0.3,
+                branch_factor: 0.8,
                 direction: GrowDir::Up,
             };
-            match pi {
+            match slot.kind {
                 0 => SplitTree.grow(&mut grid, &tp, &mut rng),
                 1 => SpiralTree.grow(&mut grid, &tp, &mut rng),
                 2 => CandelabraTree.grow(&mut grid, &tp, &mut rng),
