@@ -65,6 +65,12 @@ Numbered-file convention per user prefs. Key modules:
 - `mondrian.rs` -- BSP layout + mondrian grid
 - `automata.rs` -- cellular automata
 
+## Skills & Agents
+
+- **add-mode** skill: Scaffold new rendering modes with snapshot tests
+- **add-sprite-algo** skill: Design algorithmic sprites (turtle walks, L-systems, fractals)
+- **session-digest** agent: Analyze chat_log/ for momentum, open threads, patterns
+
 ## Ground rules
 
 - Never remove or break existing modes. Only add.
