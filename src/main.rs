@@ -1688,14 +1688,10 @@ fn main() {
             }
         }
 
-        // --- Forest of trait trees ---
-        // Cluster layout: 3-5 clusters, each with a dominant + 0-2 companions.
-        // All trait-based TreeDrawer impls, high energy, big spread.
-        let cluster_count = rng.random_range(3..6u32) as usize;
-        let zone_w = width / cluster_count.max(1);
-        let tree_kinds: [usize; 7] = [0, 1, 2, 3, 4, 5, 6]; // all 7 trait trees
+        // --- Forest of trait trees (forest4-style composition) ---
+        let tree_count = rng.random_range(6..12u32) as usize;
+        let trait_kinds: [usize; 7] = [0, 1, 2, 3, 4, 5, 6];
 
-        // Sort back-to-front for depth (collect positions first)
         struct TreeSlot {
             x: usize,
             root_y: usize,
@@ -1707,50 +1703,75 @@ fn main() {
         }
         let mut slots: Vec<TreeSlot> = Vec::new();
 
-        for ci in 0..cluster_count {
-            let zone_start = zone_w * ci;
-            let center_x = zone_start + zone_w / 2 + rng.random_range(0..zone_w.max(1) as u32 / 3) as usize;
-            let center_x = center_x.min(width - 4).max(4);
-            let grass_y = ground_heights[center_x.min(width - 1)];
+        // One anchor tree -- tallest, widest, planted near center
+        let anchor_x = rng.random_range((width / 8) as u32..(width * 7 / 8) as u32) as usize;
+        let anchor_grass = ground_heights[anchor_x.min(width - 1)];
+        let anchor_root = (anchor_grass + rng.random_range(0..3u32) as usize).min(height - 2);
+        slots.push(TreeSlot {
+            x: anchor_x, root_y: anchor_root,
+            canopy_y: rng.random_range(1..4u32) as usize,
+            spread: rng.random_range(14..22u32) as usize,
+            kind: trait_kinds[rng.random_range(0..trait_kinds.len() as u32) as usize],
+            hue: rng.random_range(0..360u32) as f64,
+            energy: 0.95,
+        });
 
-            // Dominant tree: tall, wide, high energy
-            let root_y = (grass_y + rng.random_range(3..8u32) as usize).min(height - 2);
-            let tree_h = rng.random_range(14..22u32) as usize;
-            let canopy_y = root_y.saturating_sub(tree_h).max(1);
-            let spread = rng.random_range(10..18u32) as usize;
-            let kind = tree_kinds[rng.random_range(0..tree_kinds.len() as u32) as usize];
-            let hue = (ci as f64 * 50.0 + rng.random_range(0..40u32) as f64) % 360.0;
+        // Remaining trees with min spacing, height/spread tiers
+        let min_spacing = (width / (tree_count + 1)).max(12);
+        for _ in 0..tree_count - 1 {
+            let mut tx = 0usize;
+            let mut placed = false;
+            for _ in 0..10 {
+                tx = rng.random_range(3..(width - 3) as u32) as usize;
+                let too_close = slots.iter().any(|s| ((s.x as i32 - tx as i32).unsigned_abs() as usize) < min_spacing);
+                if !too_close { placed = true; break; }
+            }
+            if !placed { tx = rng.random_range(3..(width - 3) as u32) as usize; }
+
+            let grass_y = ground_heights[tx.min(width - 1)];
+            let root_y = (grass_y + rng.random_range(0..4u32) as usize).min(height - 2);
+
+            // Height tiers: scrubby / medium / towering
+            let max_possible = root_y.saturating_sub(1).max(4);
+            let tree_height = match rng.random_range(0..10u32) {
+                0..=2 => rng.random_range(3..8u32.min(max_possible as u32 + 1)) as usize,
+                3..=6 => rng.random_range(8..20u32.min(max_possible as u32 + 1)) as usize,
+                _ => rng.random_range(20u32.min(max_possible as u32)..max_possible as u32 + 1) as usize,
+            };
+            let canopy_y = root_y.saturating_sub(tree_height).max(1);
+
+            // Spread tiers: narrow / medium / wide
+            let spread = match rng.random_range(0..6u32) {
+                0..=1 => rng.random_range(2..6u32) as usize,
+                2..=4 => rng.random_range(5..12u32) as usize,
+                _ => rng.random_range(10..20u32) as usize,
+            };
+
+            let kind = trait_kinds[rng.random_range(0..trait_kinds.len() as u32) as usize];
+            let energy = match tree_height {
+                0..=7 => rng.random_range(40..65u32) as f32 / 100.0,
+                8..=19 => rng.random_range(65..85u32) as f32 / 100.0,
+                _ => rng.random_range(85..100u32) as f32 / 100.0,
+            };
 
             slots.push(TreeSlot {
-                x: center_x, root_y, canopy_y, spread, kind, hue,
-                energy: rng.random_range(85..100u32) as f32 / 100.0,
+                x: tx, root_y, canopy_y, spread, kind,
+                hue: rng.random_range(0..360u32) as f64,
+                energy,
             });
-
-            // 0-2 companion trees: smaller, offset
-            let companion_count = rng.random_range(0..3u32);
-            for _ in 0..companion_count {
-                let offset = rng.random_range(8..20u32) as i32 * if rng.random::<bool>() { 1 } else { -1 };
-                let cx = (center_x as i32 + offset).clamp(4, width as i32 - 4) as usize;
-                let cgrass = ground_heights[cx.min(width - 1)];
-                let croot = (cgrass + rng.random_range(2..5u32) as usize).min(height - 2);
-                let ch = rng.random_range(8..14u32) as usize;
-                let ccanopy = croot.saturating_sub(ch).max(1);
-                let cspread = rng.random_range(5..10u32) as usize;
-                let ckind = tree_kinds[rng.random_range(0..tree_kinds.len() as u32) as usize];
-
-                slots.push(TreeSlot {
-                    x: cx, root_y: croot, canopy_y: ccanopy, spread: cspread, kind: ckind,
-                    hue: hue + rng.random_range(0..60u32) as f64,
-                    energy: rng.random_range(60..85u32) as f32 / 100.0,
-                });
-            }
         }
 
-        // Sort back-to-front: trees with lower root_y (higher on screen) draw first
-        slots.sort_by_key(|s| s.root_y);
+        // Back-to-front depth sort
+        slots.sort_by(|a, b| a.root_y.cmp(&b.root_y).then(a.x.cmp(&b.x)));
 
-        for slot in &slots {
-            let color = hsl_to_rgb(slot.hue % 360.0, 0.55, 0.35);
+        // Depth-based brightness: farther (lower root_y) = dimmer
+        let slot_count = slots.len();
+        for (i, slot) in slots.iter().enumerate() {
+            let depth_t = i as f64 / (slot_count - 1).max(1) as f64;
+            let lightness = 0.2 + depth_t * 0.3;
+            let saturation = 0.4 + depth_t * 0.3;
+            let color = hsl_to_rgb(slot.hue, saturation, lightness);
+
             let plot_w = slot.spread * 2 + 6;
             let plot = Rect {
                 x: slot.x.saturating_sub(plot_w / 2),
@@ -1771,6 +1792,74 @@ fn main() {
                 direction: GrowDir::Up,
             };
             match slot.kind {
+                0 => SplitTree.grow(&mut grid, &tp, &mut rng),
+                1 => SpiralTree.grow(&mut grid, &tp, &mut rng),
+                2 => CandelabraTree.grow(&mut grid, &tp, &mut rng),
+                3 => BirchTree.grow(&mut grid, &tp, &mut rng),
+                4 => StormTree::new().grow(&mut grid, &tp, &mut rng),
+                5 => DroopingTree.grow(&mut grid, &tp, &mut rng),
+                6 => DeadTree.grow(&mut grid, &tp, &mut rng),
+                _ => SpiralTree.grow(&mut grid, &tp, &mut rng),
+            }
+        }
+
+        // Braille leaf clusters at branch tips
+        let leaf_hue = rng.random_range(60..180u32) as f64;
+        let leaf_color = hsl_to_rgb(leaf_hue, 0.5, 0.3);
+        sprout_leaves(&mut grid, leaf_color, 45, &mut rng);
+
+        // Flower/fruit scatter at ground level near tree bases
+        for slot in &slots {
+            let burst = rng.random_range(0..3u32);
+            for _ in 0..burst {
+                let angle = rng.random::<f32>() * std::f32::consts::TAU;
+                let radius = rng.random_range(1..6u32) as f32;
+                let fx = (slot.x as f32 + angle.cos() * radius * 1.5) as i32;
+                let fy = slot.root_y as i32 + rng.random_range(1..3u32) as i32;
+                if fx >= 1 && fy >= 1 && (fx as usize) < width - 1 && (fy as usize) < height - 1 {
+                    let c = palette[rng.random_range(2..5)];
+                    match rng.random_range(0..3u32) {
+                        0 => grow_flower_spiral(&mut grid, fx as usize, fy as usize, c, &mut rng),
+                        1 => grow_fruit_vine(&mut grid, fx as usize, fy as usize, c, &mut rng),
+                        _ => draw_flower(&mut grid, fx as usize, fy as usize, rng.random_range(0..5), c),
+                    }
+                }
+            }
+        }
+
+        // Foreground trees: 1-3 drawn last (in front of everything)
+        let fg_count = rng.random_range(1..4u32);
+        for _ in 0..fg_count {
+            let tx = rng.random_range(3..(width - 3) as u32) as usize;
+            let grass_y = ground_heights[tx.min(width - 1)];
+            let root_y = (grass_y + rng.random_range(2..6u32) as usize).min(height - 2);
+            let tree_height = rng.random_range(4..12u32) as usize;
+            let canopy_y = root_y.saturating_sub(tree_height).max(1);
+            let spread = rng.random_range(3..10u32) as usize;
+            let kind = trait_kinds[rng.random_range(0..trait_kinds.len() as u32) as usize];
+            let fg_hue = rng.random_range(0..360u32) as f64;
+            let color = hsl_to_rgb(fg_hue, 0.6, 0.4);
+
+            let plot_w = spread * 2 + 6;
+            let plot = Rect {
+                x: tx.saturating_sub(plot_w / 2),
+                y: canopy_y,
+                w: plot_w,
+                h: root_y - canopy_y + 2,
+            };
+            let tp = TreeParams {
+                plot,
+                energy: 0.75,
+                trunk_color: color,
+                bark_color: darken(color, 15),
+                branch_color: color,
+                tip_color: lighten(color, 30),
+                fruit_color: shift_hue(color, 60.0),
+                fruit_factor: 0.2,
+                branch_factor: 0.7,
+                direction: GrowDir::Up,
+            };
+            match kind {
                 0 => SplitTree.grow(&mut grid, &tp, &mut rng),
                 1 => SpiralTree.grow(&mut grid, &tp, &mut rng),
                 2 => CandelabraTree.grow(&mut grid, &tp, &mut rng),
