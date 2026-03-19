@@ -1063,13 +1063,13 @@ pub fn grow_kaiju_tree(
     }
 }
 
-/// Dispatch all tree variants by kind index (0..17).
+/// Dispatch all tree variants by kind index (0..18).
 pub fn draw_tree(
     grid: &mut Grid,
     root_x: usize, root_y: usize, canopy_y: usize,
     spread: usize, kind: usize, color: Color, rng: &mut StdRng,
 ) {
-    match kind % 17 {
+    match kind % 18 {
         0  => grow_tree(grid, root_x, root_y, canopy_y, spread, color, rng),
         1  => draw_pine(grid, root_x, root_y, 3, (spread * 2).min(12), color),
         2  => draw_willow(grid, root_x, root_y, canopy_y, spread, color),
@@ -1086,7 +1086,93 @@ pub fn draw_tree(
         13 => grow_kaiju_tree(grid, root_x, root_y, canopy_y, spread, color, rng),
         14 => grow_wild_tree(grid, root_x, root_y, canopy_y, spread, color, rng),
         15 => grow_zigzag_tree(grid, root_x, root_y, canopy_y, spread, color, rng),
-        _  => grow_braille_tree(grid, root_x, root_y, canopy_y, spread, color, rng),
+        16 => grow_braille_tree(grid, root_x, root_y, canopy_y, spread, color, rng),
+        _  => grow_tendril_tree(grid, root_x, root_y, canopy_y, spread, color, rng),
+    }
+}
+
+/// Tendril/firework tree: lines radiate from a center point, each ray
+/// recursively spawns sub-rays at half length with angle jitter.
+/// Looks like a burst or coral from above.
+pub fn grow_tendril_tree(
+    grid: &mut Grid,
+    root_x: usize, root_y: usize, canopy_y: usize,
+    spread: usize, color: Color, rng: &mut StdRng,
+) {
+    if canopy_y + 2 >= root_y { return; }
+    let height = (root_y - canopy_y) as i32;
+
+    // Short trunk up to the burst center
+    let center_y = root_y as i32 - height / 3;
+    for y in center_y..root_y as i32 {
+        tset_over(grid, root_x as i32, y, '│', color);
+    }
+
+    let cx = root_x as f32;
+    let cy = center_y as f32;
+
+    // Draw a ray from (x,y) at angle, length, recursing with halved length
+    fn draw_tendril(
+        grid: &mut Grid, x: f32, y: f32,
+        angle: f32, length: f32, min_len: f32,
+        color: Color, depth: usize, rng: &mut StdRng,
+    ) {
+        if length < min_len || depth > 5 { return; }
+
+        let c = lighten(color, (depth * 15) as u8);
+        let steps = length as i32;
+        let dx = angle.cos();
+        let dy = angle.sin();
+
+        // Aspect ratio correction: horizontal movement needs ~2x
+        for step in 1..=steps {
+            let px = (x + dx * step as f32 * 1.8) as i32;
+            let py = (y + dy * step as f32) as i32;
+
+            // Pick char based on angle
+            let abs_dx = dx.abs();
+            let abs_dy = dy.abs();
+            let ch = if abs_dx > abs_dy * 1.5 {
+                '─'
+            } else if abs_dy > abs_dx * 1.5 {
+                '│'
+            } else if (dx > 0.0) == (dy > 0.0) {
+                '╲'
+            } else {
+                '╱'
+            };
+
+            tset(grid, px, py, ch, c);
+        }
+
+        // Tip position
+        let tip_x = x + dx * steps as f32 * 1.8;
+        let tip_y = y + dy * steps as f32;
+
+        // Tip dot
+        tset(grid, tip_x as i32, tip_y as i32, '·', lighten(c, 30));
+
+        // Spawn 1-3 sub-tendrils at the tip
+        let sub_count = rng.random_range(1..4u32);
+        for _ in 0..sub_count {
+            let angle_jitter = (rng.random::<f32>() - 0.5) * 1.2; // +-0.6 radians
+            let sub_angle = angle + angle_jitter;
+            let sub_len = length * (0.4 + rng.random::<f32>() * 0.2); // 40-60% of parent
+            draw_tendril(grid, tip_x, tip_y, sub_angle, sub_len, min_len, color, depth + 1, rng);
+        }
+    }
+
+    // Initial burst: 3-6 rays radiating mostly upward from center
+    let ray_count = rng.random_range(3..7u32);
+    let base_len = (spread as f32).max(3.0).min(15.0);
+    let min_len = 1.5f32;
+
+    for i in 0..ray_count {
+        // Spread rays in upper semicircle with some randomness
+        let base_angle = -std::f32::consts::PI + (i as f32 / ray_count as f32) * std::f32::consts::PI;
+        let angle = base_angle + (rng.random::<f32>() - 0.5) * 0.5;
+        let len = base_len * (0.6 + rng.random::<f32>() * 0.4);
+        draw_tendril(grid, cx, cy, angle, len, min_len, color, 0, rng);
     }
 }
 
@@ -1251,6 +1337,66 @@ pub fn grow_braille_tree(
 
 /// Draw a cloud as a horizontal streak with per-column height variation,
 /// ragged edges, and trailing wisps. Not a uniform ellipse.
+/// Sprout braille leaf clusters at branch tips on the grid.
+/// Scans for tip chars (╷ ╮ ╭ · ╴ ╶) and places small braille clusters
+/// around them. Only overwrites blank cells so branches show through.
+pub fn sprout_leaves(
+    grid: &mut Grid, leaf_color: Color, density: u32, rng: &mut StdRng,
+) {
+    let tip_chars = ['╷', '╮', '╭', '╴', '╶'];
+    let leaf_chars = ['⣿', '⣾', '⣷', '⡇', '⢸', '⣤', '⣀', '⠛'];
+    let sparse_leaf = ['⠂', '⠄', '⡀', '⠈', '⠁'];
+    let h = grid.len();
+    let w = if h > 0 { grid[0].len() } else { return };
+
+    // Collect tip positions first (avoid borrow conflict)
+    let mut tips: Vec<(usize, usize, Color)> = Vec::new();
+    for y in 0..h {
+        for x in 0..w {
+            if tip_chars.contains(&grid[y][x].ch) {
+                tips.push((x, y, grid[y][x].fg));
+            }
+        }
+    }
+
+    for (tx, ty, branch_color) in tips {
+        // Skip some tips based on density (0=none, 100=all)
+        if rng.random_range(0..100u32) >= density { continue; }
+
+        // Cluster radius: 1-3 cells
+        let radius = rng.random_range(1..4u32) as i32;
+        // Mix leaf color with branch color for variety
+        let lc = if rng.random_range(0..3u32) == 0 { leaf_color } else { branch_color };
+
+        for dy in -radius..=radius {
+            for dx in (-radius * 2)..=(radius * 2) { // aspect correction
+                let gx = tx as i32 + dx;
+                let gy = ty as i32 + dy;
+                if gx < 0 || gy < 0 || gy as usize >= h || gx as usize >= w { continue; }
+
+                let dist = ((dx as f32 / 2.0).powi(2) + (dy as f32).powi(2)).sqrt();
+                if dist > radius as f32 { continue; }
+
+                let cell = &grid[gy as usize][gx as usize];
+                // Only fill blank cells
+                if cell.ch != ' ' { continue; }
+
+                let ch = if dist < radius as f32 * 0.5 {
+                    leaf_chars[rng.random_range(0..leaf_chars.len() as u32) as usize]
+                } else {
+                    // Ragged edge: sometimes skip
+                    if rng.random_range(0..3u32) == 0 { continue; }
+                    sparse_leaf[rng.random_range(0..sparse_leaf.len() as u32) as usize]
+                };
+
+                let brightness = ((1.0 - dist / radius as f32) * 35.0) as u8;
+                let c = lighten(lc, brightness);
+                grid[gy as usize][gx as usize] = Cell::new(ch, c);
+            }
+        }
+    }
+}
+
 pub fn draw_cloud(
     grid: &mut Grid, cx: usize, cy: usize,
     cloud_w: usize, color: Color, rng: &mut StdRng,

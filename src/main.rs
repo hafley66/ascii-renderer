@@ -1341,9 +1341,9 @@ fn main() {
         struct TreeSlot { x: usize, root_y: usize, kind: usize, spread: usize, canopy_y: usize }
         let mut slots: Vec<TreeSlot> = Vec::new();
 
-        // One kaiju tree
+        // One kaiju tree -- root at the grass line
         let kaiju_x = rng.random_range((width / 8) as u32..(width * 7 / 8) as u32) as usize;
-        let kaiju_root = horizon + rng.random_range(1..6u32) as usize;
+        let kaiju_root = ground_heights[kaiju_x.min(width - 1)] + rng.random_range(0..3u32) as usize;
         let kaiju_root = kaiju_root.min(height - 2);
         slots.push(TreeSlot {
             x: kaiju_x, root_y: kaiju_root, kind: 13,
@@ -1353,10 +1353,9 @@ fn main() {
 
         // Remaining trees: favor wild (14), asymmetric (9), storm (7), dead (12)
         // Enforce minimum spacing so trees don't pile on top of each other
-        let unbalanced_kinds = [14, 14, 14, 9, 9, 7, 7, 12, 13, 15, 15, 16, 16, 4, 5, 6, 11];
+        let unbalanced_kinds = [14, 14, 9, 9, 7, 7, 12, 13, 15, 15, 16, 17, 17, 4, 5, 6, 11];
         let min_spacing = (width / (tree_count + 1)).max(8);
         for _ in 0..tree_count - 1 {
-            // Try up to 10 times to find a position far enough from existing trees
             let mut tx = 0usize;
             let mut placed = false;
             for _ in 0..10 {
@@ -1366,8 +1365,10 @@ fn main() {
             }
             if !placed { tx = rng.random_range(3..(width - 3) as u32) as usize; }
 
-            let root_offset = rng.random_range(0..8u32) as usize;
-            let root_y = (horizon + root_offset).min(height - 2);
+            // Root at grass line + small offset so trunk meets the ground
+            let grass_y = ground_heights[tx.min(width - 1)];
+            let root_offset = rng.random_range(0..4u32) as usize;
+            let root_y = (grass_y + root_offset).min(height - 2);
 
             // Height tiers: some scrubby (3-8), some medium (8-20), some towering (20-root_y)
             let max_possible = root_y.saturating_sub(1).max(4);
@@ -1392,10 +1393,17 @@ fn main() {
         // Back-to-front
         slots.sort_by(|a, b| a.root_y.cmp(&b.root_y).then(a.x.cmp(&b.x)));
 
-        for slot in &slots {
-            let color = palette[rng.random_range(1..5)];
+        // Give each tree a distinct hue-shifted color so they're distinguishable
+        for (i, slot) in slots.iter().enumerate() {
+            let base_hue = (i as f64 * 360.0 / slots.len() as f64 + rng.random_range(0..30u32) as f64) % 360.0;
+            let color = hsl_to_rgb(base_hue, 0.5 + rng.random::<f64>() * 0.3, 0.35 + rng.random::<f64>() * 0.2);
             draw_tree(&mut grid, slot.x, slot.root_y, slot.canopy_y, slot.spread, slot.kind, color, &mut rng);
         }
+
+        // Sprout braille leaf clusters at branch tips (~50% of tips)
+        let leaf_hue = rng.random_range(60..180u32) as f64; // green-ish range
+        let leaf_color = hsl_to_rgb(leaf_hue, 0.5, 0.3);
+        sprout_leaves(&mut grid, leaf_color, 50, &mut rng);
 
         // Tighter flower/fruit scatter: fewer per tree, smaller radius, only at ground level
         for slot in &slots {
@@ -1421,13 +1429,14 @@ fn main() {
         let fg_count = rng.random_range(1..4u32);
         for _ in 0..fg_count {
             let tx = rng.random_range(3..(width - 3) as u32) as usize;
-            let root_y = horizon + rng.random_range(4..((height - horizon).max(5)) as u32) as usize;
-            let root_y = root_y.min(height - 2);
+            let grass_y = ground_heights[tx.min(width - 1)];
+            let root_y = (grass_y + rng.random_range(2..6u32) as usize).min(height - 2);
             let tree_height = rng.random_range(4..12u32) as usize;
             let canopy_y = root_y.saturating_sub(tree_height).max(1);
             let spread = rng.random_range(3..10u32) as usize;
-            let kind = rng.random_range(0..17u32) as usize;
-            let color = palette[rng.random_range(1..5)];
+            let kind = rng.random_range(0..18u32) as usize;
+            let fg_hue = rng.random_range(0..360u32) as f64;
+            let color = hsl_to_rgb(fg_hue, 0.6, 0.4);
             draw_tree(&mut grid, tx, root_y, canopy_y, spread, kind, color, &mut rng);
         }
 
