@@ -1739,7 +1739,9 @@ fn main() {
                 direction: GrowDir::Up,
             };
             match pi {
-                // All 3 slots use SpiralTree for now (only impl we have)
+                0 => SplitTree.grow(&mut grid, &tp, &mut rng),
+                1 => SpiralTree.grow(&mut grid, &tp, &mut rng),
+                2 => CandelabraTree.grow(&mut grid, &tp, &mut rng),
                 _ => SpiralTree.grow(&mut grid, &tp, &mut rng),
             }
         }

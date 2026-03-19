@@ -66,6 +66,7 @@ pub struct BranchResult {
 pub struct BranchIntent {
     pub go_left: bool,
     pub length: i32,
+    pub level: usize,
 }
 
 // ── Trait ────────────────────────────────────────────────────────────
@@ -93,7 +94,6 @@ pub trait TreeDrawer {
     fn draw_fruit(&self, grid: &mut Grid, x: i32, y: i32, params: &TreeParams, rng: &mut StdRng);
 
     /// Default growth loop: trunk → branches at intervals → tips → fruit.
-    /// Trees with exotic structure override this.
     fn grow(&self, grid: &mut Grid, params: &TreeParams, rng: &mut StdRng) {
         let (rx, ry) = params.root();
         let mut pen = TreePen::new(rx, ry, params.trunk_color);
@@ -104,30 +104,26 @@ pub trait TreeDrawer {
 
         let trunk_len = trunk.len();
         let mut all_tips: Vec<(i32, i32)> = Vec::new();
+        let mut apex_branched = false;
 
         for (i, node) in trunk.iter().enumerate() {
             if let Some(intent) = self.should_branch(i, trunk_len, params, rng) {
-                let frac = i as f32 / trunk_len as f32;
-                let bc = params.color_at_depth(frac);
-
-                // Junction at trunk attachment
-                let jc = if intent.go_left { '┤' } else { '├' };
-                set(grid, node.x, node.y, jc, bc);
-
-                // Branch pen starts one cell out from trunk
-                let h_dir = if intent.go_left { MoveDir::Left } else { MoveDir::Right };
-                let mut bp = TreePen::new(node.x + h_dir.dx(), node.y, bc);
-                bp.last_dir = Some(h_dir);
-                set(grid, bp.x, bp.y, '─', bc);
+                // Pen at the trunk node -- draw_branch owns the junction and everything outward
+                let mut bp = TreePen::new(node.x, node.y, params.trunk_color);
+                bp.last_dir = Some(MoveDir::Up);
 
                 let result = self.draw_branch(grid, &mut bp, &intent, 0, params, rng);
                 all_tips.extend(result.tips);
+
+                if i == trunk_len - 1 { apex_branched = true; }
             }
         }
 
-        // Tip at trunk apex
-        if let Some(last) = trunk.last() {
-            self.draw_tip(grid, last.x, last.y, params);
+        // Tip at trunk apex only if no branch was placed there
+        if !apex_branched {
+            if let Some(last) = trunk.last() {
+                self.draw_tip(grid, last.x, last.y, params);
+            }
         }
 
         // Tips and fruit
@@ -142,7 +138,7 @@ pub trait TreeDrawer {
 
 // ── SpiralTree ──────────────────────────────────────────────────────
 // Tall straight trunk. Alternating branches at regular intervals.
-// Curl-up tips with secondary twigs. Uses default growth loop.
+// Stub-capped arms with hooks on lower branches.
 
 pub struct SpiralTree;
 
@@ -151,7 +147,6 @@ impl TreeDrawer for SpiralTree {
         &self, grid: &mut Grid, pen: &mut TreePen,
         params: &TreeParams, _rng: &mut StdRng,
     ) -> Vec<TrunkNode> {
-        // Ruler-straight vertical. That IS this tree's personality.
         let top_y = params.canopy_top();
         let ry = params.root().1;
         let height = (ry - top_y).max(1);
@@ -167,24 +162,19 @@ impl TreeDrawer for SpiralTree {
 
     fn should_branch(
         &self, idx: usize, count: usize,
-        params: &TreeParams, rng: &mut StdRng,
+        params: &TreeParams, _rng: &mut StdRng,
     ) -> Option<BranchIntent> {
-        // Branch every `interval` trunk nodes, starting one interval in.
-        // Same logic as old grow_spiral_tree: (height / 5).max(2)
         let interval = (count / 5).max(2);
-
-        // Skip first interval (near root) and last node (apex)
         if idx < interval || idx >= count - 1 { return None; }
         if idx % interval != 0 { return None; }
 
-        let level = idx / interval - 1; // 0-indexed branch level
+        let level = idx / interval - 1;
         let go_left = level % 2 == 0;
 
-        // Arms shrink higher up, just like old algo
         let max_arm = params.spread();
         let arm = (max_arm - level as i32 * 2).max(2);
 
-        Some(BranchIntent { go_left, length: arm })
+        Some(BranchIntent { go_left, length: arm, level })
     }
 
     fn draw_branch(
@@ -196,45 +186,290 @@ impl TreeDrawer for SpiralTree {
         let h_dir = if intent.go_left { Left } else { Right };
         let mut tips = Vec::new();
 
+        // Color: lighten more near top (level 0 = lightest), matching old algo
+        let c = lighten(params.trunk_color, 60u8.saturating_sub((intent.level * 15) as u8));
+        pen.color = c;
+
+        // Junction at trunk attachment point
+        let jc = if intent.go_left { '┤' } else { '├' };
+        set(grid, pen.x, pen.y, jc, c);
+
+        // First horizontal cell
+        pen.x += h_dir.dx();
+        pen.last_dir = Some(h_dir);
+        set(grid, pen.x, pen.y, '─', c);
+
         // Horizontal run
-        for _ in 1..intent.length {
+        for _ in 0..intent.length.saturating_sub(2) {
             pen.step(grid, h_dir);
         }
 
-        // Curl-up: diagonal outward then vertical
-        let energy_steps = (params.energy * 3.0).max(1.0) as usize;
-        if energy_steps >= 2 {
-            let curl_dir = if intent.go_left { UpLeft } else { UpRight };
-            pen.step(grid, curl_dir);
-            for _ in 0..energy_steps.saturating_sub(1) {
-                pen.step(grid, Up);
-            }
-            tips.push((pen.x, pen.y));
+        // Stub cap at arm end
+        let stub_x = pen.x + h_dir.dx();
+        let stub_y = pen.y;
+        let stub = if intent.go_left { '╴' } else { '╶' };
+        set(grid, stub_x, stub_y, stub, c);
 
-            // Secondary twig from the curl elbow
-            if intent.length > 3 && params.energy > 0.4 {
-                let elbow_x = pen.x - curl_dir.dx();
-                let elbow_y = pen.y + 1;
-                let tc = lighten(pen.color, 15);
-                let mut twig = TreePen::new(elbow_x, elbow_y, tc);
-                twig.last_dir = Some(h_dir);
-                twig.step(grid, h_dir);
-                tips.push((twig.x, twig.y));
-            }
-        } else {
-            tips.push((pen.x, pen.y));
+        // Hook for lower branches: corner turning up + tip one cell further out
+        if intent.level < 3 {
+            let corner = if intent.go_left { '╮' } else { '╭' };
+            set(grid, stub_x, stub_y - 1, corner, c);
+            let tip_x = stub_x + h_dir.dx();
+            set(grid, tip_x, stub_y - 1, '╷', lighten(c, 25));
+            tips.push((tip_x, stub_y - 1));
         }
 
         BranchResult { tips }
     }
 
     fn draw_tip(&self, grid: &mut Grid, x: i32, y: i32, params: &TreeParams) {
-        set(grid, x, y, '╷', lighten(params.tip_color, 25));
+        set(grid, x, y, '╷', lighten(params.trunk_color, 50));
     }
 
-    fn draw_fruit(&self, grid: &mut Grid, x: i32, y: i32, params: &TreeParams, rng: &mut StdRng) {
-        let fruits = ['●', '◆', '◈', '✦'];
-        let ch = fruits[rng.random_range(0..fruits.len() as u32) as usize];
-        set(grid, x, y + 1, ch, params.fruit_color);
+    fn draw_fruit(&self, _grid: &mut Grid, _x: i32, _y: i32, _params: &TreeParams, _rng: &mut StdRng) {}
+}
+
+// ── CandelabraTree ──────────────────────────────────────────────────
+// Short thick trunk (bottom 1/3). should_branch fires once at trunk top.
+// draw_branch handles the entire crown: horizontal bar, vertical arms
+// with corner-pair leans, two-way tip splits.
+
+pub struct CandelabraTree;
+
+impl TreeDrawer for CandelabraTree {
+    fn draw_trunk(
+        &self, grid: &mut Grid, pen: &mut TreePen,
+        params: &TreeParams, _rng: &mut StdRng,
+    ) -> Vec<TrunkNode> {
+        let top_y = params.canopy_top();
+        let ry = params.root().1;
+        let height = (ry - top_y).max(3);
+        let trunk_h = height / 3;
+        let bark = darken(params.trunk_color, 15);
+        let mut path = Vec::with_capacity(trunk_h as usize);
+
+        // Thick trunk: ┃ center flanked by │
+        for _ in 0..trunk_h {
+            pen.step(grid, MoveDir::Up);
+            set(grid, pen.x, pen.y, '┃', params.trunk_color);
+            set(grid, pen.x - 1, pen.y, '│', bark);
+            set(grid, pen.x + 1, pen.y, '│', bark);
+            path.push(TrunkNode { x: pen.x, y: pen.y, dir: MoveDir::Up });
+        }
+
+        path
     }
+
+    fn should_branch(
+        &self, idx: usize, count: usize,
+        _params: &TreeParams, _rng: &mut StdRng,
+    ) -> Option<BranchIntent> {
+        // Fire once at the trunk top -- draw_branch builds the whole crown
+        if idx == count - 1 {
+            Some(BranchIntent { go_left: false, length: 0, level: 0 })
+        } else {
+            None
+        }
+    }
+
+    fn draw_branch(
+        &self, grid: &mut Grid, _pen: &mut TreePen,
+        _intent: &BranchIntent, _depth: usize,
+        params: &TreeParams, rng: &mut StdRng,
+    ) -> BranchResult {
+        let (rx, _) = params.root();
+        let top_y = params.canopy_top();
+        let ry = params.root().1;
+        let height = (ry - top_y).max(3);
+        let split_y = ry - height / 3;
+        let arm_count = rng.random_range(3..6usize);
+        let total_spread = params.spread();
+        let bar_color = darken(params.trunk_color, 10);
+        let arm_color = lighten(params.trunk_color, 20);
+        let tip_c = lighten(arm_color, 30);
+        let mut tips = Vec::new();
+
+        // Horizontal connector bar at split
+        let start_x = rx - total_spread;
+        let end_x = rx + total_spread;
+        for x in start_x..=end_x {
+            set(grid, x, split_y, '─', bar_color);
+        }
+        set(grid, rx, split_y, '┬', params.trunk_color);
+
+        // Arms: evenly spaced along bar
+        let step = (total_spread * 2) / (arm_count as i32 - 1).max(1);
+
+        for i in 0..arm_count {
+            let ax = start_x + i as i32 * step;
+
+            // Junction char at bar
+            let jc = if i == 0 { '└' } else if i == arm_count - 1 { '┘' } else { '┴' };
+            set(grid, ax, split_y, jc, params.trunk_color);
+
+            // Lean direction: arms left of center lean left, right lean right
+            let lean: i32 = if ax < rx { -1 } else if ax > rx { 1 } else { 0 };
+            let arm_top = top_y + rng.random_range(0..3u32) as i32;
+
+            // Vertical arm with corner-pair lean at midpoint
+            let mut cx = ax;
+            let mid_y = (arm_top + split_y) / 2;
+            for y in (arm_top..split_y).rev() {
+                set(grid, cx, y, '│', arm_color);
+                if y == mid_y && lean != 0 {
+                    if lean < 0 {
+                        set(grid, cx, y, '╮', arm_color);
+                        set(grid, cx - 1, y, '╰', arm_color);
+                    } else {
+                        set(grid, cx, y, '╭', arm_color);
+                        set(grid, cx + 1, y, '╯', arm_color);
+                    }
+                    cx += lean;
+                }
+            }
+
+            // Two-way tip split at arm top
+            set(grid, cx, arm_top, '┤', tip_c);
+            set(grid, cx - 1, arm_top, '─', tip_c);
+            set(grid, cx - 2, arm_top, '╷', tip_c);
+            set(grid, cx, arm_top, '├', tip_c);
+            set(grid, cx + 1, arm_top, '─', tip_c);
+            set(grid, cx + 2, arm_top, '╷', tip_c);
+
+            tips.push((cx - 2, arm_top));
+            tips.push((cx + 2, arm_top));
+        }
+
+        BranchResult { tips }
+    }
+
+    fn draw_tip(&self, grid: &mut Grid, x: i32, y: i32, params: &TreeParams) {
+        set(grid, x, y, '╷', lighten(params.tip_color, 30));
+    }
+
+    fn draw_fruit(&self, _grid: &mut Grid, _x: i32, _y: i32, _params: &TreeParams, _rng: &mut StdRng) {}
+}
+
+// ── SplitTree ───────────────────────────────────────────────────────
+// Short wobble trunk (bottom 1/3). should_branch fires once at trunk top.
+// draw_branch does recursive binary subdivision: each segment picks
+// an off-center split point and forks left/right. Max depth 4.
+
+pub struct SplitTree;
+
+impl TreeDrawer for SplitTree {
+    fn draw_trunk(
+        &self, grid: &mut Grid, pen: &mut TreePen,
+        params: &TreeParams, rng: &mut StdRng,
+    ) -> Vec<TrunkNode> {
+        let top_y = params.canopy_top();
+        let ry = params.root().1;
+        let height = (ry - top_y).max(3);
+        let trunk_h = (height / 3).max(2);
+        let freq = rng.random_range(3..6u32) as i32;
+        let mut path = Vec::with_capacity(trunk_h as usize);
+
+        // Wobble trunk: mostly │ with occasional ╱╲ lateral shifts
+        for i in 0..trunk_h {
+            if i > 0 && i % freq == 0 && rng.random_range(0..3u32) == 0 {
+                let dir = if rng.random::<bool>() { MoveDir::UpLeft } else { MoveDir::UpRight };
+                pen.step(grid, dir);
+            } else {
+                pen.step(grid, MoveDir::Up);
+            }
+            path.push(TrunkNode { x: pen.x, y: pen.y, dir: MoveDir::Up });
+        }
+
+        path
+    }
+
+    fn should_branch(
+        &self, idx: usize, count: usize,
+        _params: &TreeParams, _rng: &mut StdRng,
+    ) -> Option<BranchIntent> {
+        // Fire once at the trunk top -- draw_branch does recursive forking
+        if idx == count - 1 {
+            Some(BranchIntent { go_left: false, length: 0, level: 0 })
+        } else {
+            None
+        }
+    }
+
+    fn draw_branch(
+        &self, grid: &mut Grid, _pen: &mut TreePen,
+        _intent: &BranchIntent, _depth: usize,
+        params: &TreeParams, rng: &mut StdRng,
+    ) -> BranchResult {
+        let (rx, ry) = params.root();
+        let top_y = params.canopy_top();
+        let height = (ry - top_y).max(3);
+        let first_split = ry - (height / 3).max(2);
+        let spread = params.spread();
+        let mut tips = Vec::new();
+
+        // BFS queue: (x, top_y, bottom_y, depth)
+        let mut queue: Vec<(i32, i32, i32, usize)> = vec![(rx, top_y, first_split, 0)];
+        let max_depth = 4usize;
+
+        while let Some((x, top, bottom, depth)) = queue.pop() {
+            let branch_color = match depth {
+                0 => params.trunk_color,
+                1 => lighten(params.trunk_color, 20),
+                2 => lighten(params.trunk_color, 40),
+                _ => lighten(params.trunk_color, 60),
+            };
+
+            // Terminal: too deep or segment too short
+            if depth >= max_depth || bottom <= top + 1 {
+                for y in top..bottom {
+                    set(grid, x, y, '│', branch_color);
+                }
+                tips.push((x, top));
+                continue;
+            }
+
+            // Off-center split: 30-70% of segment height
+            let split_frac = 30 + rng.random_range(0..41u32) as i32;
+            let split_y = (top + (bottom - top) * split_frac / 100).max(top + 1).min(bottom - 1);
+
+            // Vertical segment below split
+            for y in (split_y + 1)..bottom {
+                set(grid, x, y, '│', branch_color);
+            }
+
+            // Independent left/right arm lengths, halving with depth
+            let base_arm = (spread >> depth as u32).max(2);
+            let left_arm = (base_arm * rng.random_range(50..150u32) as i32 / 100).max(1);
+            let right_arm = (base_arm * rng.random_range(50..150u32) as i32 / 100).max(1);
+            let left_x = x - left_arm;
+            let right_x = x + right_arm;
+
+            // Horizontal bar: ╭───┼───╮
+            set(grid, x, split_y, '┤', branch_color);
+
+            // Left arm
+            set(grid, left_x, split_y, '╭', branch_color);
+            for ax in (left_x + 1)..x {
+                set(grid, ax, split_y, '─', branch_color);
+            }
+
+            // Right arm (overwrites junction to ┼)
+            set(grid, x, split_y, '┼', branch_color);
+            for ax in (x + 1)..right_x {
+                set(grid, ax, split_y, '─', branch_color);
+            }
+            set(grid, right_x, split_y, '╮', branch_color);
+
+            queue.push((left_x, top, split_y, depth + 1));
+            queue.push((right_x, top, split_y, depth + 1));
+        }
+
+        BranchResult { tips }
+    }
+
+    fn draw_tip(&self, grid: &mut Grid, x: i32, y: i32, params: &TreeParams) {
+        set(grid, x, y, '╷', lighten(params.tip_color, 30));
+    }
+
+    fn draw_fruit(&self, _grid: &mut Grid, _x: i32, _y: i32, _params: &TreeParams, _rng: &mut StdRng) {}
 }
