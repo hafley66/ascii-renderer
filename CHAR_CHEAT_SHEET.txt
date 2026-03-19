@@ -1,0 +1,204 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║            ASCII TREE CHARACTER CONNECTION CHEAT SHEET                         ║
+║           For organic/natural ASCII tree rendering in ascii-renderer           ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+VERTICAL CONTINUATIONS
+━━━━━━━━━━━━━━━━━━━━━━
+  │  → continues Up/Down
+      followers: │ ┃ ├ ┤ ┼ ╷ ·
+
+  ╷  → terminates (up endpoint)
+      followers: · • ●
+
+  ┃  → thick vertical
+      followers: │ ┃ ├ ┤ ┼ ╷
+
+HORIZONTAL CONTINUATIONS
+━━━━━━━━━━━━━━━━━━━━━━━━
+  ─  → continues Left/Right
+      followers: ─ ━ ├ ┤ ┼ ╴
+
+  ╴  → terminates (right endpoint)
+      followers: · • ●
+
+DIAGONALS
+━━━━━━━━━
+  ╱  → UpRight or DownLeft
+      followers: ╱ ╲ │ ─ · (standard)
+
+  ╲  → UpLeft or DownRight
+      followers: ╱ ╲ │ ─ · (standard)
+
+  ⌿  → UpRight or DownLeft
+      followers: ⌿ ╱ · ◇ (ROOTS)
+
+  ⍀  → UpLeft or DownRight
+      followers: ⍀ ╲ · ◇ (ROOTS)
+
+JUNCTIONS (splits)
+━━━━━━━━━━━━━━━━━
+  ├  → continues Up/Down, exits Right
+       Use: main split toward right
+
+  ┤  → continues Up/Down, exits Left
+       Use: main split toward left
+
+  ┬  → continues Left/Right, exits Down
+       Use: horizontal branch point
+
+  ┼  → all 4 directions
+       Use: full cross, burst center
+
+CORNERS (turns 90°)
+━━━━━━━━━━━━━━━━━━
+  ╭  (Down+Right)   ╮  (Down+Left)
+  ╰  (Up+Right)     ╯  (Up+Left)
+
+TERMINATORS (no further drawing)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ·  tiny endpoint (leaf)
+  •  medium fruit
+  ●  large fruit
+  ◆  star-shaped fruit
+  ◇  delicate fruit
+
+ORGANIC/WAVE
+━━━━━━━━━━━━
+  ∿  multi-dir sine wave (vine)
+  ~  horizontal wave (droop)
+  ≈  thick wave
+  ⌠∫⌡  integral family (complex clusters)
+
+THICK/HEAVY
+━━━━━━━━━━━
+  ┃  double-line vertical
+  ━  double-line horizontal
+  █  full block (knot)
+  ▓  dark shade (aged)
+
+═══════════════════════════════════════════════════════════════════════════════
+
+QUICK PATTERNS
+━━━━━━━━━━━━━
+
+Simple stem with fruit:
+  │ → │ → ╷ → •
+
+Fork (main splits):
+  ├ → LEFT: ─ → · (left branch)
+    → RIGHT: ─ → · (right branch)
+
+Drooping vine:
+  │ → ╯ → ─ → ~ → •
+
+Root system at base:
+  ├ → LEFT: ⌿ → ·
+    → RIGHT: ⍀ → ·
+
+Organic tendril:
+  │ → ├ → ∿ → ∿ → •
+
+═══════════════════════════════════════════════════════════════════════════════
+
+CONNECTION RULE
+━━━━━━━━━━━━━━━
+
+From CHAR at (x,y), moving in DIRECTION to next cell:
+
+  [1] Does CHAR have exit in DIRECTION?
+      No  → Invalid, can't move
+      Yes → Continue to step 2
+
+  [2] Does NEXT_CHAR accept entry from OPPOSITE(DIRECTION)?
+      (Check if it has an exit back toward source)
+      No (and not a terminator) → Invalid
+      Yes → Valid connection ✓
+      Is terminator (· • ●)  → Valid ✓
+
+  [3] Drawing stops at terminators.
+      Never draw FROM a terminator.
+
+═══════════════════════════════════════════════════════════════════════════════
+
+EXAMPLE VALIDATION
+━━━━━━━━━━━━━━━━━
+
+Can │ at (5,10) connect DOWN to ├ at (5,11)?
+
+  [1] │ has exits: Up, Down    → Has Down ✓
+  [2] ├ has exits: Up, Down, Right
+      Opposite of Down is Up    → ├ has Up ✓
+  [3] Not a terminator
+
+  Result: VALID ✓
+
+Can │ at (5,10) connect LEFT to ─ at (4,10)?
+
+  [1] │ has exits: Up, Down    → No Left ✗
+
+  Result: INVALID ✗
+  Fix: Use ├ at (5,10), then ─ at (4,10)
+
+═══════════════════════════════════════════════════════════════════════════════
+
+CHARACTER FAMILIES
+━━━━━━━━━━━━━━━━━
+
+VERTICAL:      │ ┃ ╷ ╵
+HORIZONTAL:    ─ ━ ╴ ╶
+DIAGONAL:      ╱ ╲ ⌿ ⍀
+JUNCTION:      ├ ┤ ┬ ┴ ┼ ╋
+CORNER:        ╭ ╮ ╰ ╯
+TERMINAL:      · • ● ◆ ◇
+WAVE/ORGANIC:  ∿ ∽ ~ ≈ ⌠ ∫ ⌡
+THICK/BLOCK:   ┃ ━ █ ▓ ▌ ▐ ▀ ▄
+
+═══════════════════════════════════════════════════════════════════════════════
+
+WHEN TO USE EACH
+━━━━━━━━━━━━━━━
+
+│  Thin trunk, standard vertical
+┃  Heavy trunk, thick base
+─  Branch runs, light horizontal
+┬  Branch splits down from main
+├┤ Main trunk splits L/R
+╭╮╰╯  Turn corners, curved paths
+·•●  Leaves, fruits (END HERE)
+⌿⍀  Roots (use at base only!)
+∿~  Vines, organic curves
+╱╲  Diagonal branches (sharp)
+
+═══════════════════════════════════════════════════════════════════════════════
+
+DON'T
+━━━━
+
+✗ Jump from │ directly to · (looks disconnected)
+  → Use stub: │ → ╷ → ·
+
+✗ Mix ╱ (branches) with ⌿ (roots) in same tree
+  → Use ⌿ only at base for roots
+
+✗ Overuse junctions (├┤┬┴)
+  → Limit to actual splits
+
+✗ End without a terminator (·•●)
+  → Always finish paths at edge
+
+✗ Chain contradictory exits
+  → │ has exits Up/Down, can't exit Left
+
+═══════════════════════════════════════════════════════════════════════════════
+
+FILES FOR DETAILS
+━━━━━━━━━━━━━━━━
+
+CHAR_CONNECTIONS_README.md     ← START HERE (overview)
+ORGANIC_CHAR_CONNECTIONS.md    ← Full reference (exits, followers, uses)
+QUICK_CHAR_MATRIX.md           ← Lookup tables (what follows what?)
+TREE_PATTERN_EXAMPLES.md       ← Working patterns (11 complete trees)
+ORGANIC_CHAR_BUILDER.rs        ← Code to integrate
+
+═══════════════════════════════════════════════════════════════════════════════
