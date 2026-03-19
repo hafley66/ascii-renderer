@@ -1303,14 +1303,39 @@ fn main() {
         });
 
         // Remaining trees: favor wild (14), asymmetric (9), storm (7), dead (12)
-        let unbalanced_kinds = [14, 14, 14, 9, 9, 7, 7, 12, 13, 4, 5, 6, 11];
+        // Enforce minimum spacing so trees don't pile on top of each other
+        let unbalanced_kinds = [14, 14, 14, 9, 9, 7, 7, 12, 13, 15, 15, 16, 16, 4, 5, 6, 11];
+        let min_spacing = (width / (tree_count + 1)).max(8);
         for _ in 0..tree_count - 1 {
-            let tx = rng.random_range(3..(width - 3) as u32) as usize;
-            let root_offset = rng.random_range(0..8u32) as usize; // wider stagger
+            // Try up to 10 times to find a position far enough from existing trees
+            let mut tx = 0usize;
+            let mut placed = false;
+            for _ in 0..10 {
+                tx = rng.random_range(3..(width - 3) as u32) as usize;
+                let too_close = slots.iter().any(|s| ((s.x as i32 - tx as i32).unsigned_abs() as usize) < min_spacing);
+                if !too_close { placed = true; break; }
+            }
+            if !placed { tx = rng.random_range(3..(width - 3) as u32) as usize; }
+
+            let root_offset = rng.random_range(0..8u32) as usize;
             let root_y = (horizon + root_offset).min(height - 2);
-            let spread = rng.random_range(2..12u32) as usize;
-            let tree_height = rng.random_range(6..(root_y.saturating_sub(1).max(7)) as u32) as usize;
+
+            // Height tiers: some scrubby (3-8), some medium (8-20), some towering (20-root_y)
+            let max_possible = root_y.saturating_sub(1).max(4);
+            let tree_height = match rng.random_range(0..10u32) {
+                0..=2 => rng.random_range(3..8u32.min(max_possible as u32 + 1)) as usize,  // scrubby
+                3..=6 => rng.random_range(8..20u32.min(max_possible as u32 + 1)) as usize, // medium
+                _ => rng.random_range(20u32.min(max_possible as u32)..max_possible as u32 + 1) as usize, // towering
+            };
             let canopy_y = root_y.saturating_sub(tree_height).max(1);
+
+            // Spread also tiered: narrow (1-4), medium (4-10), wide (10-20)
+            let spread = match rng.random_range(0..6u32) {
+                0..=1 => rng.random_range(1..5u32) as usize,
+                2..=4 => rng.random_range(4..11u32) as usize,
+                _ => rng.random_range(10..21u32) as usize,
+            };
+
             let kind = unbalanced_kinds[rng.random_range(0..unbalanced_kinds.len() as u32) as usize];
             slots.push(TreeSlot { x: tx, root_y, kind, spread, canopy_y });
         }
@@ -1323,14 +1348,15 @@ fn main() {
             draw_tree(&mut grid, slot.x, slot.root_y, slot.canopy_y, slot.spread, slot.kind, color, &mut rng);
         }
 
-        // Algorithmic flowers and fruit vines scattered near tree bases
+        // Tighter flower/fruit scatter: fewer per tree, smaller radius, only at ground level
         for slot in &slots {
-            let burst = rng.random_range(2..6u32);
+            let burst = rng.random_range(0..3u32); // 0-2 instead of 2-5
             for _ in 0..burst {
                 let angle = rng.random::<f32>() * std::f32::consts::TAU;
-                let radius = rng.random_range(2..12u32) as f32;
+                let radius = rng.random_range(1..6u32) as f32; // tighter radius
                 let fx = (slot.x as f32 + angle.cos() * radius * 1.5) as i32;
-                let fy = (slot.root_y as f32 + angle.sin() * radius * 0.4 + 1.0) as i32;
+                // Keep at or just below root, not floating in the sky
+                let fy = slot.root_y as i32 + rng.random_range(1..3u32) as i32;
                 if fx >= 1 && fy >= 1 && (fx as usize) < width - 1 && (fy as usize) < height - 1 {
                     let c = palette[rng.random_range(2..5)];
                     match rng.random_range(0..3u32) {

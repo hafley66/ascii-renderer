@@ -1063,14 +1063,13 @@ pub fn grow_kaiju_tree(
     }
 }
 
-/// Dispatch all tree variants by kind index (0..15).
-/// Includes original 4, 8 GRIS-style variants, dead, kaiju, and wild.
+/// Dispatch all tree variants by kind index (0..17).
 pub fn draw_tree(
     grid: &mut Grid,
     root_x: usize, root_y: usize, canopy_y: usize,
     spread: usize, kind: usize, color: Color, rng: &mut StdRng,
 ) {
-    match kind % 15 {
+    match kind % 17 {
         0  => grow_tree(grid, root_x, root_y, canopy_y, spread, color, rng),
         1  => draw_pine(grid, root_x, root_y, 3, (spread * 2).min(12), color),
         2  => draw_willow(grid, root_x, root_y, canopy_y, spread, color),
@@ -1085,14 +1084,78 @@ pub fn draw_tree(
         11 => grow_drooping_tree(grid, root_x, root_y, canopy_y, spread, color, rng),
         12 => grow_dead_tree(grid, root_x, root_y, canopy_y, spread, color, rng),
         13 => grow_kaiju_tree(grid, root_x, root_y, canopy_y, spread, color, rng),
-        _  => grow_wild_tree(grid, root_x, root_y, canopy_y, spread, color, rng),
+        14 => grow_wild_tree(grid, root_x, root_y, canopy_y, spread, color, rng),
+        15 => grow_zigzag_tree(grid, root_x, root_y, canopy_y, spread, color, rng),
+        _  => grow_braille_tree(grid, root_x, root_y, canopy_y, spread, color, rng),
     }
 }
 
-/// Wild tree with truly independent left/right branching.
-/// Each side has its own branch count, heights, and arm lengths.
-/// Nothing is mirrored. Trunk wobbles randomly.
-pub fn grow_wild_tree(
+/// Zigzag tree: trunk and branches made entirely of diagonal chars.
+/// Creates a jagged, angular silhouette unlike the box-drawing trees.
+/// Branches radiate as diagonal rays from trunk split points.
+pub fn grow_zigzag_tree(
+    grid: &mut Grid,
+    root_x: usize, root_y: usize, canopy_y: usize,
+    spread: usize, color: Color, rng: &mut StdRng,
+) {
+    if canopy_y + 3 >= root_y { return; }
+    let height = (root_y - canopy_y) as i32;
+
+    // Zigzag trunk: alternates ╱ and ╲ going upward
+    let mut cx = root_x as i32;
+    let zig_width = rng.random_range(1..3u32) as i32;
+    let mut going_right = rng.random_range(0..2u32) == 0;
+
+    for y in (canopy_y as i32..root_y as i32).rev() {
+        let ch = if going_right { '╱' } else { '╲' };
+        tset_over(grid, cx, y, ch, color);
+        cx += if going_right { 1 } else { -1 };
+
+        // Reverse direction periodically
+        let rows_up = root_y as i32 - y;
+        if rows_up % (zig_width * 2 + 1) == 0 {
+            going_right = !going_right;
+        }
+    }
+
+    // Diagonal ray branches at random heights
+    let branch_count = rng.random_range(3..8u32);
+    for _ in 0..branch_count {
+        let by = canopy_y as i32 + rng.random_range(1..height as u32 - 1) as i32;
+        // Approximate trunk x at this y
+        let trunk_progress = (root_y as i32 - by) as f32 / height as f32;
+        let tx = root_x as i32; // simplified
+
+        let ray_len = rng.random_range(2..(spread as u32 + 2).min(12)) as i32;
+        let go_left = rng.random_range(0..2u32) == 0;
+        let go_up = rng.random_range(0..3u32) != 0; // mostly upward
+
+        let dx: i32 = if go_left { -1 } else { 1 };
+        let dy: i32 = if go_up { -1 } else { 1 };
+        let ch = match (go_left, go_up) {
+            (true, true) => '╲',   // going up-left
+            (false, true) => '╱',  // going up-right
+            (true, false) => '╱',  // going down-left
+            (false, false) => '╲', // going down-right
+        };
+
+        let c = lighten(color, rng.random_range(10..40) as u8);
+        for step in 1..=ray_len {
+            let rx = tx + dx * step;
+            let ry = by + dy * step;
+            tset(grid, rx, ry, ch, c);
+        }
+        // Tip dot
+        let tip_x = tx + dx * (ray_len + 1);
+        let tip_y = by + dy * (ray_len + 1);
+        tset(grid, tip_x, tip_y, '·', lighten(c, 30));
+    }
+}
+
+/// Braille canopy tree: trunk of box-drawing, but canopy is a filled region
+/// drawn with braille block characters for an organic, dense look.
+/// The canopy shape is an irregular ellipse with randomized edge.
+pub fn grow_braille_tree(
     grid: &mut Grid,
     root_x: usize, root_y: usize, canopy_y: usize,
     spread: usize, color: Color, rng: &mut StdRng,
@@ -1101,12 +1164,76 @@ pub fn grow_wild_tree(
     let rx = root_x as i32;
     let height = (root_y - canopy_y) as i32;
 
-    // Wobbling trunk: vertical with random horizontal jitter
+    // Trunk: simple vertical, bottom third
+    let trunk_top = root_y as i32 - height / 3;
+    for y in trunk_top..root_y as i32 {
+        tset_over(grid, rx, y, '│', darken(color, 20));
+    }
+
+    // Canopy: irregular ellipse from canopy_y to trunk_top
+    let canopy_h = (trunk_top - canopy_y as i32).max(2) as f32;
+    let canopy_w = spread as f32;
+    let center_y = canopy_y as f32 + canopy_h / 2.0;
+    let center_x = rx as f32;
+
+    let braille_dense = ['⣿', '⣾', '⣷', '⣯', '⣻', '⣽', '⣖', '⣶'];
+    let braille_sparse = ['⡇', '⢸', '⣤', '⣀', '⠛', '⠶'];
+
+    for y in canopy_y as i32..=trunk_top {
+        let fy = y as f32;
+        let dy = (fy - center_y) / (canopy_h / 2.0);
+        // Ellipse width at this y, with per-row noise
+        let noise = (rng.random_range(0..4u32) as f32 - 1.5) * 0.15;
+        let row_width = ((1.0 - dy * dy).max(0.0).sqrt() + noise) * canopy_w;
+        let half_w = (row_width * 1.5) as i32; // aspect correction
+
+        for x in (center_x as i32 - half_w)..=(center_x as i32 + half_w) {
+            let fx = x as f32;
+            let dx_norm = (fx - center_x) / (half_w as f32).max(1.0);
+            let dist = dx_norm.abs();
+
+            // Edge falloff: dense center, sparse edges
+            let ch = if dist < 0.6 {
+                braille_dense[rng.random_range(0..braille_dense.len() as u32) as usize]
+            } else if dist < 0.85 {
+                braille_sparse[rng.random_range(0..braille_sparse.len() as u32) as usize]
+            } else {
+                // Ragged edge: sometimes skip
+                if rng.random_range(0..3u32) == 0 { continue; }
+                braille_sparse[rng.random_range(0..braille_sparse.len() as u32) as usize]
+            };
+
+            let brightness = ((1.0 - dist) * 30.0) as u8;
+            let c = lighten(color, brightness);
+            tset(grid, x, y, ch, c);
+        }
+    }
+}
+
+/// Wild tree with truly independent left/right branching.
+/// Each side has its own branch count, heights, and arm lengths.
+/// Nothing is mirrored. Trunk wobbles randomly.
+/// Branch zone biased: some trees branch only near top, others near bottom.
+pub fn grow_wild_tree(
+    grid: &mut Grid,
+    root_x: usize, root_y: usize, canopy_y: usize,
+    spread: usize, color: Color, rng: &mut StdRng,
+) {
+    if canopy_y + 2 >= root_y { return; }
+    let rx = root_x as i32;
+    let height = (root_y - canopy_y) as i32;
+    if height < 3 { return; }
+
+    // Wobbling trunk: variable wobble intensity
     let mut cx = rx;
-    let wobble_freq = rng.random_range(3..7u32) as i32;
+    let wobble_freq = rng.random_range(2..8u32) as i32;
+    let wobble_prob = rng.random_range(1..4u32); // 1=aggressive, 3=mild
+    // Store trunk x positions for accurate branch attachment
+    let mut trunk_xs: Vec<(i32, i32)> = Vec::new(); // (y, x)
+
     for y in (canopy_y as i32..root_y as i32).rev() {
         let rows_up = root_y as i32 - y;
-        let ch = if rows_up > 1 && rows_up % wobble_freq == 0 && rng.random_range(0..3u32) != 0 {
+        let ch = if rows_up > 1 && rows_up % wobble_freq == 0 && rng.random_range(0..wobble_prob) == 0 {
             let dir = rng.random_range(0..2u32) as i32 * 2 - 1;
             cx += dir;
             if dir > 0 { '╱' } else { '╲' }
@@ -1114,72 +1241,112 @@ pub fn grow_wild_tree(
             '│'
         };
         tset_over(grid, cx, y, ch, color);
+        trunk_xs.push((y, cx));
     }
     tset_over(grid, cx, canopy_y as i32, '╷', lighten(color, 60));
 
-    // Generate left branches independently
-    let left_count = rng.random_range(1..5u32) as usize;
-    let right_count = rng.random_range(1..5u32) as usize;
+    // Trunk x lookup
+    let trunk_x_at = |target_y: i32| -> i32 {
+        trunk_xs.iter()
+            .min_by_key(|&&(y, _)| (y - target_y).abs())
+            .map(|&(_, x)| x)
+            .unwrap_or(rx)
+    };
 
-    // Left side: pick random Y positions, sort them
-    let mut left_ys: Vec<i32> = (0..left_count)
-        .map(|_| canopy_y as i32 + rng.random_range(1..height as u32 - 1) as i32)
-        .collect();
+    // Branch zone bias: where branches concentrate along the trunk
+    // 0=top-heavy, 1=bottom-heavy, 2=uniform, 3=mid-band
+    let zone_style = rng.random_range(0..4u32);
+
+    let biased_y = |rng: &mut StdRng| -> i32 {
+        let t = match zone_style {
+            0 => {
+                // Top-heavy: branches cluster in upper 40%
+                let t = rng.random::<f32>();
+                t * t // quadratic bias toward 0 (top)
+            }
+            1 => {
+                // Bottom-heavy: branches cluster in lower 40%
+                let t = rng.random::<f32>();
+                1.0 - (1.0 - t) * (1.0 - t)
+            }
+            3 => {
+                // Mid-band: cluster around 30-70%
+                0.3 + rng.random::<f32>() * 0.4
+            }
+            _ => rng.random::<f32>(), // uniform
+        };
+        canopy_y as i32 + 1 + (t * (height - 2) as f32) as i32
+    };
+
+    // Asymmetric branch counts: 0-8 per side independently
+    let left_count = rng.random_range(0..9u32) as usize;
+    let right_count = rng.random_range(0..9u32) as usize;
+
+    let mut left_ys: Vec<i32> = (0..left_count).map(|_| biased_y(&mut *rng)).collect();
     left_ys.sort();
     left_ys.dedup();
 
-    let mut right_ys: Vec<i32> = (0..right_count)
-        .map(|_| canopy_y as i32 + rng.random_range(1..height as u32 - 1) as i32)
-        .collect();
+    let mut right_ys: Vec<i32> = (0..right_count).map(|_| biased_y(&mut *rng)).collect();
     right_ys.sort();
     right_ys.dedup();
-
-    // Find trunk x at a given y (approximate by replay wobble -- simplified: use rx)
-    // For accuracy we'd need to store the trunk path, but close enough
-    let trunk_x_at = |_y: i32| -> i32 { rx };
 
     // Draw left branches
     for (i, &by) in left_ys.iter().enumerate() {
         let tx = trunk_x_at(by);
-        let arm = rng.random_range(2..(spread as u32 + 2).min(16)) as i32;
-        let c = lighten(color, (i * 15 + 10) as u8);
+        // Arm length varies more: short twigs to long reaching branches
+        let arm = rng.random_range(1..(spread as u32 + 3).min(20)) as i32;
+        let c = lighten(color, (i * 12 + 10) as u8);
 
         tset_over(grid, tx, by, '┤', c);
         for j in 1..=arm { tset(grid, tx - j, by, '─', c); }
-        tset(grid, tx - arm, by, '╮', c);
-        tset(grid, tx - arm - 1, by - 1, '╷', lighten(c, 25));
+        // Tip style varies
+        match rng.random_range(0..4u32) {
+            0 => { tset(grid, tx - arm, by, '╮', c); tset(grid, tx - arm - 1, by - 1, '╷', lighten(c, 25)); }
+            1 => { tset(grid, tx - arm, by, '╴', lighten(c, 20)); }
+            2 => { tset(grid, tx - arm, by, '·', lighten(c, 35)); }
+            _ => { tset(grid, tx - arm, by, '╮', c);
+                   // Upward sub-branch
+                   let sub = rng.random_range(1..4u32) as i32;
+                   for j in 1..=sub { tset(grid, tx - arm, by - j, '│', lighten(c, 20)); }
+                   tset(grid, tx - arm, by - sub - 1, '╷', lighten(c, 35)); }
+        }
 
-        // Some branches fork partway
-        if arm > 3 && rng.random_range(0..3u32) == 0 {
-            let fork_at = rng.random_range(2..arm as u32) as i32;
+        // Fork with higher probability, variable direction
+        if arm > 2 && rng.random_range(0..2u32) == 0 {
+            let fork_at = rng.random_range(1..arm as u32) as i32;
             let fork_x = tx - fork_at;
+            let fork_dir = if rng.random_range(0..2u32) == 0 { 1i32 } else { -1 }; // up or down
             tset_over(grid, fork_x, by, '┬', c);
-            let sub_len = rng.random_range(1..4u32) as i32;
-            for j in 1..=sub_len { tset(grid, fork_x, by + j, '│', lighten(c, 20)); }
-            // Sub-branch tip curls
-            tset(grid, fork_x - 1, by + sub_len, '╴', lighten(c, 30));
+            let sub_len = rng.random_range(1..5u32) as i32;
+            for j in 1..=sub_len { tset(grid, fork_x, by + j * fork_dir, '│', lighten(c, 20)); }
         }
     }
 
     // Draw right branches (independently)
     for (i, &by) in right_ys.iter().enumerate() {
         let tx = trunk_x_at(by);
-        let arm = rng.random_range(2..(spread as u32 + 2).min(16)) as i32;
-        let c = lighten(color, (i * 15 + 10) as u8);
+        let arm = rng.random_range(1..(spread as u32 + 3).min(20)) as i32;
+        let c = lighten(color, (i * 12 + 10) as u8);
 
         tset_over(grid, tx, by, '├', c);
         for j in 1..=arm { tset(grid, tx + j, by, '─', c); }
-        tset(grid, tx + arm, by, '╭', c);
-        tset(grid, tx + arm + 1, by - 1, '╷', lighten(c, 25));
+        match rng.random_range(0..4u32) {
+            0 => { tset(grid, tx + arm, by, '╭', c); tset(grid, tx + arm + 1, by - 1, '╷', lighten(c, 25)); }
+            1 => { tset(grid, tx + arm, by, '╶', lighten(c, 20)); }
+            2 => { tset(grid, tx + arm, by, '·', lighten(c, 35)); }
+            _ => { tset(grid, tx + arm, by, '╭', c);
+                   let sub = rng.random_range(1..4u32) as i32;
+                   for j in 1..=sub { tset(grid, tx + arm, by - j, '│', lighten(c, 20)); }
+                   tset(grid, tx + arm, by - sub - 1, '╷', lighten(c, 35)); }
+        }
 
-        // Fork
-        if arm > 3 && rng.random_range(0..3u32) == 0 {
-            let fork_at = rng.random_range(2..arm as u32) as i32;
+        if arm > 2 && rng.random_range(0..2u32) == 0 {
+            let fork_at = rng.random_range(1..arm as u32) as i32;
             let fork_x = tx + fork_at;
+            let fork_dir = if rng.random_range(0..2u32) == 0 { 1i32 } else { -1 };
             tset_over(grid, fork_x, by, '┬', c);
-            let sub_len = rng.random_range(1..4u32) as i32;
-            for j in 1..=sub_len { tset(grid, fork_x, by + j, '│', lighten(c, 20)); }
-            tset(grid, fork_x + 1, by + sub_len, '╶', lighten(c, 30));
+            let sub_len = rng.random_range(1..5u32) as i32;
+            for j in 1..=sub_len { tset(grid, fork_x, by + j * fork_dir, '│', lighten(c, 20)); }
         }
     }
 }
