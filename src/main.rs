@@ -75,6 +75,7 @@ fn main() {
         eprintln!("  soup      Dense overlapping node scenes along a path");
         eprintln!("  stem      Sinuous stalk with alternating shape-masked tile leaves");
         eprintln!("  boles1    Bole styles at 3 energy levels (low/mid/high)");
+        eprintln!("  boles2    Experimental bole styles v2");
         eprintln!("  trunks1   Horizontal trunk algorithms + direction-aware branching");
         eprintln!("  swatch    Color swatches for all named themes");
         eprintln!();
@@ -1885,7 +1886,7 @@ fn main() {
 
         for (si, style_name) in styles.iter().enumerate() {
             let cx = (si * col_w + col_w / 2) as i32;
-            let color = palette[si % palette.len()];
+            let color = lighten(palette[si % palette.len()], 40);
 
             // Column label at bottom
             let lx = (cx - style_name.len() as i32 / 2).max(0) as usize;
@@ -1925,6 +1926,67 @@ fn main() {
                 }
 
                 // Energy label to the left of each row (only in first column)
+                if si == 0 {
+                    let elabel = energy_labels[ei];
+                    let ly = ground_y as usize;
+                    if ly < height {
+                        for (j, ch) in elabel.chars().enumerate() {
+                            if j < cx as usize - 1 {
+                                grid[ly][j] = Cell::new(ch, rgb(120, 120, 120));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+    } else if mode == "boles2" {
+        // boles2: experimental bole styles v2
+        let styles = ["Crescent2", "Braille2", "Frame3", "Diamond2", "Chevron2", "Frame4"];
+        let energies: [f32; 3] = [0.3, 0.6, 1.0];
+        let energy_labels = ["Low", "Mid", "High"];
+        let col_w = width / styles.len();
+        let row_h = (height - 2) / energies.len();
+
+        for (si, style_name) in styles.iter().enumerate() {
+            let cx = (si * col_w + col_w / 2) as i32;
+            let color = lighten(palette[si % palette.len()], 40);
+
+            let lx = (cx - style_name.len() as i32 / 2).max(0) as usize;
+            for (j, ch) in style_name.chars().enumerate() {
+                if lx + j < width {
+                    grid[height - 1][lx + j] = Cell::new(ch, lighten(color, 40));
+                }
+            }
+
+            for (ei, &energy) in energies.iter().enumerate() {
+                let ground_y = ((ei + 1) * row_h - 2) as i32;
+                if ground_y < 2 || ground_y as usize >= height - 2 { continue; }
+
+                let plot_w = (col_w as i32 - 2).max(6);
+                let tp = TreeParams {
+                    plot: Rect { x: (cx - plot_w / 2).max(0) as usize, y: 0, w: plot_w as usize, h: (ground_y + 1) as usize },
+                    energy,
+                    trunk_color: color,
+                    bark_color: darken(color, 15),
+                    branch_color: color,
+                    tip_color: color,
+                    fruit_color: color,
+                    fruit_factor: 0.0,
+                    branch_factor: 0.5,
+                    direction: GrowDir::Up,
+                    bole: None,
+                };
+
+                let bole = Bole { style: si + 6 };
+                let (tx, ty) = bole.draw(&mut grid, &tp, &mut rng);
+
+                for y in (ground_y - (row_h as i32 / 2))..ty {
+                    if y >= 0 && (y as usize) < height && (tx as usize) < width {
+                        grid[y as usize][tx as usize] = Cell::new('│', color);
+                    }
+                }
+
                 if si == 0 {
                     let elabel = energy_labels[ei];
                     let ly = ground_y as usize;
