@@ -189,3 +189,13 @@ fn trees1_seed_42() {
 fn trees2_seed_42() {
     insta::assert_snapshot!(render(&["42", "trees2", "ember"]));
 }
+
+#[test]
+fn forest6_seed_42() {
+    insta::assert_snapshot!(render(&["42", "forest6", "ember"]));
+}
+
+#[test]
+fn forest7_seed_42() {
+    insta::assert_snapshot!(render(&["42", "forest7", "ember"]));
+}
