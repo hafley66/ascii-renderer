@@ -1806,6 +1806,7 @@ fn main() {
                 4 => StormTree::new().grow(&mut grid, &tp, &mut rng),
                 5 => DroopingTree.grow(&mut grid, &tp, &mut rng),
                 6 => DeadTree.grow(&mut grid, &tp, &mut rng),
+                7 => WavyBirch.grow(&mut grid, &tp, &mut rng),
                 _ => SpiralTree.grow(&mut grid, &tp, &mut rng),
             }
         }
@@ -1875,6 +1876,7 @@ fn main() {
                 4 => StormTree::new().grow(&mut grid, &tp, &mut rng),
                 5 => DroopingTree.grow(&mut grid, &tp, &mut rng),
                 6 => DeadTree.grow(&mut grid, &tp, &mut rng),
+                7 => WavyBirch.grow(&mut grid, &tp, &mut rng),
                 _ => SpiralTree.grow(&mut grid, &tp, &mut rng),
             }
         }
@@ -2101,8 +2103,8 @@ fn main() {
                 0 => TreeWithTrunk { tree, trunk: Box::new(StraightTrunk { height_fraction: 0.5 }) }.grow(&mut grid, &params, &mut rng),
                 1 => TreeWithTrunk { tree, trunk: Box::new(WobbleTrunk { height_fraction: 0.5 }) }.grow(&mut grid, &params, &mut rng),
                 2 => TreeWithTrunk { tree, trunk: Box::new(OrganicTrunk { height_fraction: 0.5 }) }.grow(&mut grid, &params, &mut rng),
-                3 => TreeWithTrunk { tree, trunk: Box::new(SineTrunk { height_fraction: 0.5, amplitude: 2 }) }.grow(&mut grid, &params, &mut rng),
-                4 => TreeWithTrunk { tree, trunk: Box::new(SineTrunk { height_fraction: 0.5, amplitude: 4 }) }.grow(&mut grid, &params, &mut rng),
+                3 => TreeWithTrunk { tree, trunk: Box::new(SineTrunk { height_fraction: 0.3, amplitude: 2 }) }.grow(&mut grid, &params, &mut rng),
+                4 => TreeWithTrunk { tree, trunk: Box::new(SineTrunk { height_fraction: 0.3, amplitude: 3 }) }.grow(&mut grid, &params, &mut rng),
                 5 => TreeWithTrunk { tree, trunk: Box::new(GnarledTrunk) }.grow(&mut grid, &params, &mut rng),
                 _ => {}
             }
@@ -2132,11 +2134,11 @@ fn main() {
             ("Candelabra+Organic\n+Keel",
              Box::new(TreeWithTrunk { tree: CandelabraTree, trunk: Box::new(OrganicTrunk { height_fraction: 0.5 }) }), 15),
             ("Split+Sine\n+Buttress",
-             Box::new(TreeWithTrunk { tree: SplitTree, trunk: Box::new(SineTrunk { height_fraction: 0.5, amplitude: 2 }) }), 17),
+             Box::new(TreeWithTrunk { tree: SplitTree, trunk: Box::new(SineTrunk { height_fraction: 0.3, amplitude: 2 }) }), 17),
             ("Birch+Gnarled\n+Braille",
              Box::new(TreeWithTrunk { tree: BirchTree, trunk: Box::new(GnarledTrunk) }), 13),
             ("Drooping+Sine\n+Frame",
-             Box::new(TreeWithTrunk { tree: DroopingTree, trunk: Box::new(SineTrunk { height_fraction: 0.5, amplitude: 3 }) }), 14),
+             Box::new(TreeWithTrunk { tree: DroopingTree, trunk: Box::new(SineTrunk { height_fraction: 0.3, amplitude: 3 }) }), 14),
         ];
         let cols = combos.len();
         let col_w = width / cols;
@@ -2195,11 +2197,13 @@ fn main() {
             ("Candelabra\n+SqFrame",
              Box::new(CandelabraTree) as Box<dyn TreeDrawer>, 20),
             ("Split+Sine\n+SqDiamond",
-             Box::new(TreeWithTrunk { tree: SplitTree, trunk: Box::new(SineTrunk { height_fraction: 0.5, amplitude: 2 }) }), 21),
+             Box::new(TreeWithTrunk { tree: SplitTree, trunk: Box::new(SineTrunk { height_fraction: 0.3, amplitude: 2 }) }), 21),
             ("Birch\n+SqChevron",
              Box::new(BirchTree) as Box<dyn TreeDrawer>, 22),
             ("Drooping\n+SqButtress",
              Box::new(DroopingTree) as Box<dyn TreeDrawer>, 23),
+            ("WavyBirch\n+SqCrescent",
+             Box::new(WavyBirch) as Box<dyn TreeDrawer>, 18),
         ];
         let cols = combos.len();
         let col_w = width / cols;

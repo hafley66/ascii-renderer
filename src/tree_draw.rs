@@ -350,21 +350,28 @@ impl TrunkAlgo for SineTrunk {
         let phase = rng.random_range(0..628u32) as f32 / 100.0; // 0..2π
         let mut path = Vec::with_capacity(trunk_h as usize);
         let mut prev_target_x = 0i32;
+        let mut rows_drawn = 0i32;
 
-        for i in 0..trunk_h {
+        // Track actual y rows consumed, not loop iterations.
+        // Horizontal shifts cost an extra row, so budget accordingly.
+        let mut i = 0;
+        while rows_drawn < trunk_h {
             let t = i as f32 / period;
             let target_x = ((t + phase).sin() * amp as f32).round() as i32;
             let dx = (target_x - prev_target_x).clamp(-1, 1);
             prev_target_x = target_x;
+            i += 1;
 
-            let dir = match dx {
-                -1 => MoveDir::UpLeft,
-                1 => MoveDir::UpRight,
-                _ => MoveDir::Up,
-            };
-
-            pen.step(grid, dir);
-            path.push(TrunkNode { x: pen.x, y: pen.y, dir });
+            if dx != 0 {
+                let h_dir = if dx < 0 { MoveDir::Left } else { MoveDir::Right };
+                pen.step(grid, h_dir);
+                pen.step(grid, MoveDir::Up);
+                rows_drawn += 1;
+            } else {
+                pen.step(grid, MoveDir::Up);
+                rows_drawn += 1;
+            }
+            path.push(TrunkNode { x: pen.x, y: pen.y, dir: MoveDir::Up });
         }
 
         path
@@ -1583,26 +1590,44 @@ impl BoleStyle for Bole {
                 }
                 BoleExit { x: root_x, y: root_y - 1, left: sl, right: sr }
             }
-            // Squat Frame: single-row box border with flares at corners
+            // Squat Frame: 2-row nested frame with diamond accents and pillar legs
             20 => {
-                set(grid, root_x - lw, root_y, '╘', bark);
-                set(grid, root_x + rw, root_y, '╛', bark);
+                // Row 1 (ground): outer frame base with diamond endpoints
+                set(grid, root_x - lw, root_y, '◇', dim);
+                set(grid, root_x + rw, root_y, '◇', dim);
                 for dx in (-lw + 1)..rw {
-                    let ch = ['═', '═', '═', '─'][rng.random_range(0..4u32) as usize];
+                    let ch = if (root_x + dx) % 2 == 0 { '═' } else { '─' };
                     set(grid, root_x + dx, root_y, ch, bark);
                 }
                 set(grid, root_x, root_y, '╧', color);
-                // Corner flares
-                set(grid, root_x - lw, root_y - 1, '│', dim);
-                set(grid, root_x + rw, root_y - 1, '│', dim);
-                // Random internal flares
-                for _ in 0..rng.random_range(0..3u32) {
-                    let fx = root_x + rng.random_range(0..(lw + rw - 1) as u32) as i32 - lw + 1;
-                    if fx != root_x {
-                        set(grid, fx, root_y - 1, '╵', lighten(bark, 10));
-                    }
+                // Inner accent: ◆ markers at 1/3 and 2/3 across
+                let third_l = lw / 3;
+                let third_r = rw / 3;
+                if third_l > 0 { set(grid, root_x - third_l, root_y, '◆', lighten(bark, 10)); }
+                if third_r > 0 { set(grid, root_x + third_r, root_y, '◆', lighten(bark, 10)); }
+
+                // Row 2 (above): narrower inner shelf with box corners
+                let iw_l = (lw * 2 / 3).max(1);
+                let iw_r = (rw * 2 / 3).max(1);
+                set(grid, root_x - iw_l, root_y - 1, '╰', lighten(bark, 8));
+                set(grid, root_x + iw_r, root_y - 1, '╯', lighten(bark, 8));
+                for dx in (-iw_l + 1)..iw_r {
+                    set(grid, root_x + dx, root_y - 1, '─', lighten(bark, 12));
                 }
-                BoleExit::point(root_x, root_y)
+                set(grid, root_x, root_y - 1, '┼', color);
+                // Pillar legs: drop below at diamond endpoints
+                set(grid, root_x - lw, root_y + 1, '│', dim);
+                set(grid, root_x + rw, root_y + 1, '│', dim);
+                // Random inner flares above inner shelf
+                if rng.random_range(0..2u32) == 0 {
+                    let fx = root_x + rng.random_range(1..iw_r.max(2) as u32) as i32;
+                    set(grid, fx, root_y - 2, '╷', lighten(bark, 20));
+                }
+                if rng.random_range(0..2u32) == 0 {
+                    let fx = root_x - rng.random_range(1..iw_l.max(2) as u32) as i32;
+                    set(grid, fx, root_y - 2, '╷', lighten(bark, 20));
+                }
+                BoleExit { x: root_x, y: root_y - 1, left: iw_l, right: iw_r }
             }
             // Squat Diamond: 2-row flat diamond, single chevron + base
             21 => {
@@ -1628,17 +1653,21 @@ impl BoleStyle for Bole {
                 if rw > 2 { set(grid, root_x + rw, root_y + 1, '╵', dim); }
                 BoleExit { x: root_x, y: root_y - 1, left: hw, right: hw }
             }
-            // Squat Chevron: single wide V with sprawl arms, no stacking
+            // Squat Chevron: 2-row diamond chevron with inverted V counter-layer
             22 => {
-                set(grid, root_x, root_y, '∧', color);
+                // Row 1 (ground): wide V with diamond at apex
+                let center = ['∧', '△', '▵'][rng.random_range(0..3u32) as usize];
+                set(grid, root_x, root_y, center, color);
                 for dx in 1..=lw {
-                    set(grid, root_x - dx, root_y, '╱', lighten(bark, ((dx as u8) * 3).min(20)));
+                    let c = lighten(bark, ((dx as u8) * 4).min(25));
+                    set(grid, root_x - dx, root_y, '╱', c);
                 }
                 for dx in 1..=rw {
-                    set(grid, root_x + dx, root_y, '╲', lighten(bark, ((dx as u8) * 3).min(20)));
+                    let c = lighten(bark, ((dx as u8) * 4).min(25));
+                    set(grid, root_x + dx, root_y, '╲', c);
                 }
-                // Long sprawl arms
-                let sl = rng.random_range(2..5u32) as i32;
+                // Sprawl arms with stubs
+                let sl = rng.random_range(1..4u32) as i32;
                 let sr = rng.random_range(1..4u32) as i32;
                 for s in 1..=sl {
                     set(grid, root_x - lw - s, root_y, '─', lighten(bark, 12));
@@ -1646,17 +1675,28 @@ impl BoleStyle for Bole {
                 for s in 1..=sr {
                     set(grid, root_x + rw + s, root_y, '─', lighten(bark, 12));
                 }
-                set(grid, root_x - lw - sl - 1, root_y, '╴', dim);
-                set(grid, root_x + rw + sr + 1, root_y, '╶', dim);
-                // Flares from tips: single-column drops below at arm ends
+                set(grid, root_x - lw - sl - 1, root_y, '◁', dim);
+                set(grid, root_x + rw + sr + 1, root_y, '▷', dim);
+
+                // Row 2 (above): inverted mini-V counter-layer (creates diamond negative space)
+                let hw = (lw.max(rw) * 2 / 3).max(1);
+                let inv = ['∨', '▽', '▿'][rng.random_range(0..3u32) as usize];
+                set(grid, root_x, root_y - 1, inv, lighten(bark, 10));
+                for dx in 1..=hw {
+                    set(grid, root_x - dx, root_y - 1, '╲', lighten(bark, 15));
+                    set(grid, root_x + dx, root_y - 1, '╱', lighten(bark, 15));
+                }
+                // Horizontal stubs at inverted tips
+                if hw > 1 {
+                    set(grid, root_x - hw - 1, root_y - 1, '─', dim);
+                    set(grid, root_x + hw + 1, root_y - 1, '─', dim);
+                }
+
+                // Anchor drops below sprawl endpoints
                 set(grid, root_x - lw - sl, root_y + 1, '╵', dim);
                 set(grid, root_x + rw + sr, root_y + 1, '╵', dim);
-                // Occasional upward flare
-                if rng.random_range(0..3u32) == 0 {
-                    let fx = root_x + rng.random_range(0..(lw + rw) as u32) as i32 - lw;
-                    if fx != root_x { set(grid, fx, root_y - 1, '╷', lighten(bark, 20)); }
-                }
-                BoleExit::point(root_x, root_y)
+
+                BoleExit { x: root_x, y: root_y - 1, left: hw, right: hw }
             }
             // Squat Buttress: ground anchor with curved legs, max 2 rows
             23 => {
@@ -1913,31 +1953,68 @@ impl TreeDrawer for CandelabraTree {
         let top_y = params.canopy_top();
         let ry = params.root().1;
         let height = (ry - top_y).max(3);
-        let split_y = ry - height / 3;
         let arm_count = rng.random_range(3..6usize);
         let total_spread = params.spread();
-        let bar_color = darken(params.trunk_color, 10);
         let arm_color = lighten(params.trunk_color, 20);
         let tip_c = lighten(arm_color, 30);
         let mut tips = Vec::new();
 
-        // Horizontal connector bar at split
-        let start_x = rx - total_spread;
-        let end_x = rx + total_spread;
-        for x in start_x..=end_x {
-            set(grid, x, split_y, '─', bar_color);
-        }
-        set(grid, rx, split_y, '┬', params.trunk_color);
+        // Coin flip: uniform bar vs staggered forks
+        let staggered = rng.random_range(0..2u32) == 0;
 
-        // Arms: evenly spaced along bar
+        // Per-arm fork heights: uniform = all same, staggered = spread across zone
+        let uniform_split = ry - height / 3;
+        let fork_ys: Vec<i32> = if staggered {
+            let fork_lo = ry - height * 2 / 3;
+            let fork_hi = ry - height / 4;
+            let fork_range = (fork_hi - fork_lo).max(2);
+            let mut ys: Vec<i32> = (0..arm_count)
+                .map(|_| fork_lo + rng.random_range(0..fork_range as u32) as i32)
+                .collect();
+            ys.sort();
+            ys
+        } else {
+            vec![uniform_split; arm_count]
+        };
+
+        if staggered {
+            // Central trunk spine from root up to highest fork
+            let spine_top = *fork_ys.iter().min().unwrap_or(&uniform_split);
+            for y in spine_top..ry {
+                set(grid, rx, y, '│', params.trunk_color);
+            }
+        } else {
+            // Classic horizontal connector bar
+            let bar_color = darken(params.trunk_color, 10);
+            let start_x = rx - total_spread;
+            let end_x = rx + total_spread;
+            for x in start_x..=end_x {
+                set(grid, x, uniform_split, '─', bar_color);
+            }
+            set(grid, rx, uniform_split, '┬', params.trunk_color);
+        }
+
         let step = (total_spread * 2) / (arm_count as i32 - 1).max(1);
+        let start_x = rx - total_spread;
 
         for i in 0..arm_count {
             let ax = start_x + i as i32 * step;
+            let fork_y = fork_ys[i];
 
-            // Junction char at bar
-            let jc = if i == 0 { '└' } else if i == arm_count - 1 { '┘' } else { '┴' };
-            set(grid, ax, split_y, jc, params.trunk_color);
+            if staggered {
+                // Horizontal spur from trunk to arm at this fork_y
+                let (spur_lo, spur_hi) = if ax <= rx { (ax, rx) } else { (rx, ax) };
+                for x in spur_lo..=spur_hi {
+                    set(grid, x, fork_y, '─', params.trunk_color);
+                }
+                let jc = if ax < rx { '┘' } else if ax > rx { '└' } else { '┤' };
+                set(grid, ax, fork_y, jc, params.trunk_color);
+                set(grid, rx, fork_y, '┼', params.trunk_color);
+            } else {
+                // Classic: junction char on the shared bar
+                let jc = if i == 0 { '└' } else if i == arm_count - 1 { '┘' } else { '┴' };
+                set(grid, ax, fork_y, jc, params.trunk_color);
+            }
 
             // Lean direction: arms left of center lean left, right lean right
             let lean: i32 = if ax < rx { -1 } else if ax > rx { 1 } else { 0 };
@@ -1945,8 +2022,8 @@ impl TreeDrawer for CandelabraTree {
 
             // Vertical arm with corner-pair lean at midpoint
             let mut cx = ax;
-            let mid_y = (arm_top + split_y) / 2;
-            for y in (arm_top..split_y).rev() {
+            let mid_y = (arm_top + fork_y) / 2;
+            for y in (arm_top..fork_y).rev() {
                 set(grid, cx, y, '│', arm_color);
                 if y == mid_y && lean != 0 {
                     if lean < 0 {
@@ -2014,15 +2091,23 @@ impl TreeDrawer for SplitTree {
         _intent: &BranchIntent, _depth: usize,
         params: &TreeParams, rng: &mut StdRng,
     ) -> BranchResult {
-        let (rx, ry) = params.root();
+        // Start from where the trunk actually ended, not params.root()
+        let trunk_top_x = _pen.x;
+        let trunk_top_y = _pen.y;
         let top_y = params.canopy_top();
-        let height = (ry - top_y).max(3);
-        let first_split = ry - (height / 3).max(2);
+        let height = (trunk_top_y - top_y).max(3);
+        let first_split = trunk_top_y - (height / 3).max(2);
         let spread = params.spread();
         let mut tips = Vec::new();
 
+        // Stem from trunk top up to first_split (connects trunk to branching zone).
+        // Fill every cell from first_split to trunk_top_y inclusive -- no gaps.
+        for y in first_split..=trunk_top_y {
+            set(grid, trunk_top_x, y, '│', params.trunk_color);
+        }
+
         // BFS queue: (x, top_y, bottom_y, depth)
-        let mut queue: Vec<(i32, i32, i32, usize)> = vec![(rx, top_y, first_split, 0)];
+        let mut queue: Vec<(i32, i32, i32, usize)> = vec![(trunk_top_x, top_y, first_split, 0)];
         let max_depth = 4usize;
 
         while let Some((x, top, bottom, depth)) = queue.pop() {
@@ -2166,6 +2251,119 @@ impl TreeDrawer for BirchTree {
             let second_x = pen.x - h_dir.dx();
             let second_light = lighten(c, 10);
             set(grid, second_x, spray_y, '╷', second_light);
+            tips.push((second_x, spray_y));
+        }
+
+        BranchResult { tips }
+    }
+
+    fn draw_tip(&self, grid: &mut Grid, x: i32, y: i32, params: &TreeParams) {
+        set(grid, x, y, '╷', lighten(params.tip_color, 60));
+    }
+
+    fn draw_fruit(&self, _grid: &mut Grid, _x: i32, _y: i32, _params: &TreeParams, _rng: &mut StdRng) {}
+}
+
+// ── WavyBirch ──────────────────────────────────────────────────
+// Like BirchTree but branch endpoints trace a vertical waveform on each side.
+// Arms undulate up/down as they extend outward. Left and right sides run
+// independent waveforms with different phase/amplitude for asymmetry.
+
+pub struct WavyBirch;
+
+impl TreeDrawer for WavyBirch {
+    fn draw_trunk(
+        &self, grid: &mut Grid, pen: &mut TreePen,
+        params: &TreeParams, rng: &mut StdRng,
+    ) -> Vec<TrunkNode> {
+        StraightTrunk { height_fraction: 1.0 }.draw(grid, pen, params, rng)
+    }
+
+    fn should_branch(
+        &self, idx: usize, count: usize,
+        params: &TreeParams, rng: &mut StdRng,
+    ) -> Option<BranchIntent> {
+        let interval = 2;
+        if idx == 0 || idx >= count - 1 { return None; }
+        if idx % interval != 0 { return None; }
+        // 15% skip (less than birch's 25% -- wavy looks better dense)
+        if rng.random_range(0..7u32) == 0 { return None; }
+
+        let level = idx / interval - 1;
+        let go_left = level % 2 == 0;
+        let max_arm = params.spread().max(3).min(8);
+        let length = rng.random_range(3..=max_arm);
+
+        Some(BranchIntent { go_left, length, level })
+    }
+
+    fn draw_branch(
+        &self, grid: &mut Grid, pen: &mut TreePen,
+        intent: &BranchIntent, _depth: usize,
+        params: &TreeParams, rng: &mut StdRng,
+    ) -> BranchResult {
+        use MoveDir::*;
+        let h_dir = if intent.go_left { Left } else { Right };
+        let mut tips = Vec::new();
+
+        let c = lighten(params.branch_color, rng.random_range(10..50u8) as u8);
+        pen.color = c;
+
+        // Per-side waveform: use branch level to sample a sine wave
+        // Each side has its own phase so L/R are asymmetric
+        let side_phase: f32 = if intent.go_left { 0.0 } else { 1.8 };
+        let wave_amp: f32 = 1.0 + rng.random_range(0..3u32) as f32 * 0.5;
+        let wave_period: f32 = 2.5 + rng.random_range(0..3u32) as f32;
+
+        // Junction at trunk
+        let jc = if intent.go_left { '┤' } else { '├' };
+        set(grid, pen.x, pen.y, jc, c);
+
+        let start_y = pen.y;
+        let mut prev_y = pen.y;
+
+        // Wavy arm: horizontal with vertical displacement per cell
+        for i in 1..=intent.length {
+            pen.x += h_dir.dx();
+            let t = i as f32 / wave_period;
+            let wave_y = start_y + ((t + side_phase + intent.level as f32 * 0.7).sin() * wave_amp) as i32;
+            let dy = (wave_y - prev_y).clamp(-1, 1);
+            let cur_y = prev_y + dy;
+
+            // Connect vertical displacement
+            if dy < 0 {
+                // Going up: corner then horizontal
+                let corner = if intent.go_left { '╯' } else { '╰' };
+                set(grid, pen.x, prev_y, corner, c);
+                set(grid, pen.x, cur_y, '─', c);
+            } else if dy > 0 {
+                // Going down: corner then horizontal
+                let corner = if intent.go_left { '╮' } else { '╭' };
+                set(grid, pen.x, prev_y, corner, c);
+                pen.x += h_dir.dx();
+                set(grid, pen.x, cur_y, '─', c);
+            } else {
+                set(grid, pen.x, cur_y, '─', c);
+            }
+
+            pen.y = cur_y;
+            prev_y = cur_y;
+        }
+
+        // Cap at arm end
+        let cap = if intent.go_left { '╮' } else { '╭' };
+        set(grid, pen.x, pen.y, cap, c);
+
+        // Spray tip above cap
+        let spray_y = pen.y - 1;
+        let spray_c = lighten(c, 20);
+        set(grid, pen.x, spray_y, '╷', spray_c);
+        tips.push((pen.x, spray_y));
+
+        // Second tip if arm long enough
+        if intent.length > 3 {
+            let second_x = pen.x - h_dir.dx();
+            set(grid, second_x, spray_y, '╷', lighten(c, 10));
             tips.push((second_x, spray_y));
         }
 
