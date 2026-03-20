@@ -55,6 +55,19 @@ fn set(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
 
 // ── Outputs ─────────────────────────────────────────────────────────
 
+pub struct BoleExit {
+    pub x: i32,
+    pub y: i32,
+    pub left: i32,   // half-width extending left of x (0 = just center)
+    pub right: i32,  // half-width extending right of x (0 = just center)
+}
+
+impl BoleExit {
+    pub fn point(x: i32, y: i32) -> Self {
+        BoleExit { x, y, left: 0, right: 0 }
+    }
+}
+
 pub struct TrunkNode {
     pub x: i32,
     pub y: i32,
@@ -69,6 +82,48 @@ pub struct BranchIntent {
     pub go_left: bool,
     pub length: i32,
     pub level: usize,
+}
+
+/// Draw a taper zone narrowing from bole exit width to a single trunk column.
+/// Returns the (x, y) where the trunk should start drawing.
+fn draw_taper(grid: &mut Grid, exit: &BoleExit, color: Color) -> (i32, i32) {
+    let mut left = exit.left;
+    let mut right = exit.right;
+    let mut cy = exit.y;
+    let bark = darken(color, 15);
+
+    if left == 0 && right == 0 {
+        set(grid, exit.x, cy, '│', color);
+        return (exit.x, cy);
+    }
+
+    while left > 0 || right > 0 {
+        // Draw current row: diagonal edges with horizontal fill
+        if left > 0 {
+            set(grid, exit.x - left, cy, '╱', bark);
+            for dx in 1..left {
+                set(grid, exit.x - dx, cy, '─', bark);
+            }
+        }
+        if right > 0 {
+            set(grid, exit.x + right, cy, '╲', bark);
+            for dx in 1..right {
+                set(grid, exit.x + dx, cy, '─', bark);
+            }
+        }
+        set(grid, exit.x, cy, '│', color);
+
+        // Shrink: reduce each side, faster for wide boles
+        let dl = if left + right > 6 { (left + 1) / 2 } else { 1.min(left) };
+        let dr = if left + right > 6 { (right + 1) / 2 } else { 1.min(right) };
+        left -= dl;
+        right -= dr;
+
+        cy -= 1;
+    }
+
+    set(grid, exit.x, cy, '│', color);
+    (exit.x, cy)
 }
 
 // ── TrunkAlgo ───────────────────────────────────────────────────────────
@@ -144,16 +199,8 @@ impl TrunkAlgo for WobbleTrunk {
 
         for i in 0..trunk_h {
             if i > 0 && i % freq == 0 && rng.random_range(0..3u32) == 0 {
-                let lean: i32 = if rng.random::<bool>() { -1 } else { 1 };
-                let (corner_out, corner_in) = if lean > 0 {
-                    ('╰', '╭')
-                } else {
-                    ('╯', '╮')
-                };
-                set(grid, pen.x, pen.y, corner_out, pen.color);
-                pen.x += lean;
-                set(grid, pen.x, pen.y, corner_in, pen.color);
-                pen.last_dir = Some(MoveDir::Up);
+                let h_dir = if rng.random::<bool>() { MoveDir::Right } else { MoveDir::Left };
+                pen.step(grid, h_dir);
                 pen.step(grid, MoveDir::Up);
             } else {
                 pen.step(grid, MoveDir::Up);
@@ -194,16 +241,8 @@ impl TrunkAlgo for LeanTrunk {
 
             if new_shifts > shifts {
                 shifts = new_shifts;
-                let (corner_out, corner_in) = if lean > 0 {
-                    ('╰', '╭')
-                } else {
-                    ('╯', '╮')
-                };
                 let h_dir = if lean > 0 { MoveDir::Right } else { MoveDir::Left };
-                set(grid, pen.x, pen.y, corner_out, pen.color);
-                pen.x += h_dir.dx();
-                set(grid, pen.x, pen.y, corner_in, pen.color);
-                pen.last_dir = Some(MoveDir::Up);
+                pen.step(grid, h_dir);
                 pen.step(grid, MoveDir::Up);
             } else {
                 pen.step(grid, MoveDir::Up);
@@ -231,17 +270,8 @@ impl TrunkAlgo for GnarledTrunk {
         for i in 0..height {
             let from_root = height - i;
             if from_root > 2 && from_root % 7 == 0 && rng.random_range(0..3u32) == 0 {
-                let lean = if rng.random::<bool>() { -1 } else { 1 };
-                let (corner_out, corner_in) = if lean > 0 {
-                    ('╰', '╭')
-                } else {
-                    ('╯', '╮')
-                };
-                let h_dir = if lean > 0 { MoveDir::Right } else { MoveDir::Left };
-                set(grid, pen.x, pen.y, corner_out, pen.color);
-                pen.x += h_dir.dx();
-                set(grid, pen.x, pen.y, corner_in, pen.color);
-                pen.last_dir = Some(MoveDir::Up);
+                let h_dir = if rng.random::<bool>() { MoveDir::Right } else { MoveDir::Left };
+                pen.step(grid, h_dir);
                 pen.step(grid, MoveDir::Up);
             } else {
                 pen.step(grid, MoveDir::Up);
@@ -346,15 +376,16 @@ impl TrunkAlgo for SineTrunk {
 // Returns (x, y) where the vertical trunk should connect above.
 
 pub trait BoleStyle {
-    fn draw(&self, grid: &mut Grid, params: &TreeParams, rng: &mut StdRng) -> (i32, i32);
+    fn draw(&self, grid: &mut Grid, params: &TreeParams, rng: &mut StdRng) -> BoleExit;
 }
 
 /// No bole
 pub struct NoBole;
 impl BoleStyle for NoBole {
     fn draw(&self, _grid: &mut Grid, params: &TreeParams,
-            _rng: &mut StdRng) -> (i32, i32) {
-        params.root()
+            _rng: &mut StdRng) -> BoleExit {
+        let (x, y) = params.root();
+        BoleExit::point(x, y)
     }
 }
 
@@ -368,7 +399,7 @@ pub struct Bole {
 /// Bole pattern: array of (dx, dy, char) offsets from center, like draw_flower.
 /// Generated procedurally based on width + style + rng.
 impl BoleStyle for Bole {
-    fn draw(&self, grid: &mut Grid, params: &TreeParams, rng: &mut StdRng) -> (i32, i32) {
+    fn draw(&self, grid: &mut Grid, params: &TreeParams, rng: &mut StdRng) -> BoleExit {
         let (root_x, root_y) = params.root();
         let color = params.trunk_color;
         let max_w = (params.spread() as i32).max(2);
@@ -414,8 +445,7 @@ impl BoleStyle for Bole {
                 let bar_r = (irw + rw) / 2;
                 if bar_l > ilw + 1 { set(grid, root_x - bar_l, root_y - 1, '─', bark); }
                 if bar_r > irw + 1 { set(grid, root_x + bar_r, root_y - 1, '─', bark); }
-                set(grid, root_x, root_y - 1, '│', color);
-                (root_x, root_y - 1)
+                BoleExit { x: root_x, y: root_y - 1, left: ilw, right: irw }
             }
             // Style 1: Braille cluster -- energy-scaled height
             1 => {
@@ -450,8 +480,8 @@ impl BoleStyle for Bole {
                     cy -= 1;
                 }
 
-                set(grid, root_x, cy + 1, '│', color);
-                (root_x, cy + 1)
+                let exit_hw = ((lw.max(rw) as f32) * (1.0 - (rows - 1) as f32 / rows as f32 * 0.6)).max(1.0) as i32;
+                BoleExit { x: root_x, y: cy + 1, left: exit_hw, right: exit_hw }
             }
             // Style 2: Frame -- energy-scaled nested box frames
             2 => {
@@ -496,8 +526,10 @@ impl BoleStyle for Bole {
                     cy -= 1;
                 }
 
-                set(grid, root_x, cy + 1, '│', color);
-                (root_x, cy + 1)
+                let last_shrink = (layers - 1) as f32 * 0.3;
+                let exit_l = ((hlw as f32) * (1.0 - last_shrink)).max(1.0) as i32;
+                let exit_r = ((hrw as f32) * (1.0 - last_shrink)).max(1.0) as i32;
+                BoleExit { x: root_x, y: cy + 1, left: exit_l, right: exit_r }
             }
             // Style 3: Diamond -- inverted diamond shape, wide at ground narrowing upward
             3 => {
@@ -547,8 +579,8 @@ impl BoleStyle for Bole {
                     cy -= 1;
                 }
 
-                set(grid, root_x, cy + 1, '│', color);
-                (root_x, cy + 1)
+                let exit_hw = (1.0f32 / top_rows as f32 * max_half_w as f32).ceil() as i32;
+                BoleExit { x: root_x, y: cy + 1, left: exit_hw, right: exit_hw }
             }
             // Style 4: Chevron -- energy-scaled layered V-shapes with variable center
             4 => {
@@ -623,8 +655,7 @@ impl BoleStyle for Bole {
                     }
                 }
 
-                set(grid, root_x, cy + 1, '│', color);
-                (root_x, cy + 1)
+                BoleExit::point(root_x, cy + 1)
             }
             // Style 5: Frame2 -- connected/overlapping stacked frames, shared borders
             5 => {
@@ -713,7 +744,7 @@ impl BoleStyle for Bole {
                     }
                 }
 
-                (root_x, cy)
+                BoleExit { x: root_x, y: cy, left: cur_lw, right: cur_rw }
             }
             // Style 6: Crescent2 -- turbo crescent with hips, valid box-drawing connections
             6 => {
@@ -774,8 +805,10 @@ impl BoleStyle for Bole {
                     cy -= 1;
                 }
 
-                set(grid, root_x, cy + 1, '│', color);
-                (root_x, cy + 1)
+                let last_shrink = (layers - 1) as f32 * 0.2;
+                let exit_l = ((lw as f32) * (1.0 - last_shrink)).max(1.0) as i32;
+                let exit_r = ((rw as f32) * (1.0 - last_shrink)).max(1.0) as i32;
+                BoleExit { x: root_x, y: cy + 1, left: exit_l, right: exit_r }
             }
             // Style 7: Braille2 -- thick braille with tapered trunk exit
             7 => {
@@ -820,8 +853,8 @@ impl BoleStyle for Bole {
                     cy -= 1;
                 }
 
-                set(grid, root_x, cy + 1, '│', color);
-                (root_x, cy + 1)
+                let exit_hw = if base_w > 3 { 1 } else { 0 };
+                BoleExit { x: root_x, y: cy + 1, left: exit_hw, right: exit_hw }
             }
             // Style 8: Frame3 -- stacked boxes, heaviest at bottom, randomly off-center
             8 => {
@@ -905,8 +938,7 @@ impl BoleStyle for Bole {
                     set(grid, root_x, cy, if dir > 0 { '╮' } else { '╭' }, bark);
                     cy -= 1;
                 }
-                set(grid, root_x, cy + 1, '│', color);
-                (root_x, cy + 1)
+                BoleExit { x: root_x, y: cy + 1, left: cur_lw, right: cur_rw }
             }
             // Style 9: Diamond2 -- asymmetric diamond with cross-hatching
             9 => {
@@ -969,8 +1001,9 @@ impl BoleStyle for Bole {
                     cy -= 1;
                 }
 
-                set(grid, root_x, cy + 1, '│', color);
-                (root_x, cy + 1)
+                let exit_hw_l = (1.0f32 / top_h as f32 * max_lw as f32).ceil() as i32;
+                let exit_hw_r = (1.0f32 / top_h as f32 * max_rw as f32).ceil() as i32;
+                BoleExit { x: root_x, y: cy + 1, left: exit_hw_l, right: exit_hw_r }
             }
             // Style 10: Chevron2 -- chevron with horizontal sprawl near base
             10 => {
@@ -1056,8 +1089,7 @@ impl BoleStyle for Bole {
                     }
                 }
 
-                set(grid, root_x, cy + 1, '│', color);
-                (root_x, cy + 1)
+                BoleExit::point(root_x, cy + 1)
             }
             // Style 11: Frame4 -- same as Frame3 but different corner style
             11 => {
@@ -1134,8 +1166,7 @@ impl BoleStyle for Bole {
                     set(grid, root_x, cy, if dir > 0 { '╮' } else { '╭' }, bark);
                     cy -= 1;
                 }
-                set(grid, root_x, cy + 1, '│', color);
-                (root_x, cy + 1)
+                BoleExit { x: root_x, y: cy + 1, left: cur_lw, right: cur_rw }
             }
             // Style 15: Keel -- short fat asymmetric hull, 2-4 rows max
             15 => {
@@ -1182,8 +1213,10 @@ impl BoleStyle for Bole {
                     cy -= 1;
                 }
 
-                set(grid, root_x, cy + 1, '│', color);
-                (root_x, cy + 1)
+                let exit_frac = 1.0 - ((total_h - 1) as f32 / total_h as f32);
+                let exit_l = (max_lw as f32 * exit_frac).ceil() as i32;
+                let exit_r = (max_rw as f32 * exit_frac).ceil() as i32;
+                BoleExit { x: root_x, y: cy + 1, left: exit_l, right: exit_r }
             }
             // Style 17: Buttress -- bright bold curved grounding legs
             17 => {
@@ -1274,11 +1307,12 @@ impl BoleStyle for Bole {
                 }
 
                 cy -= 1;
-                set(grid, root_x, cy + 1, '│', color);
-                (root_x, cy + 1)
+                let sl = (left_reach / 3).max(1);
+                let sr = (right_reach / 3).max(1);
+                BoleExit { x: root_x, y: cy + 1, left: sl, right: sr }
             }
             12 => {
-                (root_x, root_y)
+                BoleExit::point(root_x, root_y)
             }
             // Style 13: Braille -- horizontal shelf bole, wide ground then sharp drop
             13 => {
@@ -1336,16 +1370,7 @@ impl BoleStyle for Bole {
                     cy -= 1;
                 }
 
-                // Taper to trunk
-                set(grid, root_x, cy, '⡇', bark);
-                if cur_l > 1 || cur_r > 1 {
-                    set(grid, root_x - 1, cy, '⡀', dim);
-                    set(grid, root_x + 1, cy, '⢀', dim);
-                    cy -= 1;
-                }
-
-                set(grid, root_x, cy, '│', color);
-                (root_x, cy)
+                BoleExit { x: root_x, y: cy, left: cur_l, right: cur_r }
             }
             // Style 14: Frame -- overlapping rects with foreground cross glyphs
             14 => {
@@ -1364,8 +1389,12 @@ impl BoleStyle for Bole {
 
                 let mut accumulated_drift = 0i32;
                 let mut prev_top_y: Option<i32> = None;
+                let mut last_lw = lw;
+                let mut last_rw = rw;
 
                 for (ri, &(drift, rlw, rrw, ih)) in specs.iter().enumerate() {
+                    last_lw = rlw;
+                    last_rw = rrw;
                     accumulated_drift += drift;
                     let cx = root_x + accumulated_drift;
                     let heavy = ri == 0;
@@ -1428,7 +1457,7 @@ impl BoleStyle for Bole {
                     prev_top_y = Some(cy);
                 }
 
-                (root_x, cy)
+                BoleExit { x: root_x, y: cy, left: last_lw, right: last_rw }
             }
             // Style 16: Chevron -- off-center layers that overlap into diamond patterns
             16 => {
@@ -1496,10 +1525,10 @@ impl BoleStyle for Bole {
                     }
                 }
 
-                set(grid, root_x, cy + 1, '│', color);
-                (root_x, cy + 1)
+                // Chevron's ∧ shape already tapers to a point -- no generic taper needed
+                BoleExit::point(root_x, cy + 1)
             }
-            _ => params.root(),
+            _ => BoleExit::point(root_x, root_y),
         }
     }
 }
@@ -1561,15 +1590,14 @@ pub trait TreeDrawer {
 
     /// Default growth loop: trunk → branches at intervals → tips → fruit.
     fn grow(&self, grid: &mut Grid, params: &TreeParams, rng: &mut StdRng) {
-        let (rx, ry) = if let Some(ref bole) = params.bole {
+        let exit = if let Some(ref bole) = params.bole {
             bole.draw(grid, params, rng)
         } else {
-            params.root()
+            let (rx, ry) = params.root();
+            BoleExit::point(rx, ry)
         };
+        let (rx, ry) = draw_taper(grid, &exit, params.trunk_color);
         let mut pen = TreePen::new(rx, ry, params.trunk_color);
-        if params.bole.is_none() {
-            set(grid, rx, ry, '│', params.trunk_color);
-        }
         pen.last_dir = Some(MoveDir::Up);
 
         let trunk = self.draw_trunk(grid, &mut pen, params, rng);

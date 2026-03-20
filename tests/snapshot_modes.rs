@@ -159,3 +159,28 @@ fn shapes_seed_42() {
 fn world_seed_42() {
     insta::assert_snapshot!(render(&["42", "world", "ember"]));
 }
+
+#[test]
+fn boles1_seed_42() {
+    insta::assert_snapshot!(render(&["42", "boles1", "ember"]));
+}
+
+#[test]
+fn boles2_seed_42() {
+    insta::assert_snapshot!(render(&["42", "boles2", "ember"]));
+}
+
+#[test]
+fn boles3_seed_42() {
+    insta::assert_snapshot!(render(&["42", "boles3", "ember"]));
+}
+
+#[test]
+fn trunks1_seed_42() {
+    insta::assert_snapshot!(render(&["42", "trunks1", "ember"]));
+}
+
+#[test]
+fn trees1_seed_42() {
+    insta::assert_snapshot!(render(&["42", "trees1", "ember"]));
+}

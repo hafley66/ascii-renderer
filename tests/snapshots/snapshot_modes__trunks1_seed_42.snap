@@ -1,0 +1,28 @@
+---
+source: tests/snapshot_modes.rs
+expression: "render(&[\"42\", \"trunks1\", \"ember\"])"
+---
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                       ╷        
+                                                                     ╴─┤        
+                                                                       │        
+                                                                       ├─╶      
+                                                                    ╷╮ │        
+                                                                     ╴─┤        
+       ╷ ╭╷        ╷ ╭╷          ╷ ╭╷          ╷╭╷          ╷╭╷        │ ╭╷     
+       ├─╶         ├─╶           ├─╶          ├─╶          ├─╶         ├─╶      
+  ╷╮   │      ╷╮   │       ╷╮    │      ╷╮    │       ╷╮   │      ╷╮   │        
+   ╴───┤       ╴───┤        ╴───┤        ╴───┤         ╴───┤       ╴───┤        
+       │           │            │            │            ├            │        
+       │           │            │           ·             │            │        
+       │           │            │            ├            │            │        
+                                                                                
+                                                                                
+  Straight      Wobble       Organic      Sine(2)      Sine(4)      Gnarled

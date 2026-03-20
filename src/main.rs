@@ -78,6 +78,7 @@ fn main() {
         eprintln!("  boles2    Experimental bole styles v2");
         eprintln!("  boles3    Refined bole styles with descriptive names");
         eprintln!("  trunks1   Horizontal trunk algorithms + direction-aware branching");
+        eprintln!("  trees1    Full pipeline: tree+trunk+bole combos [energy] [fruit] [branch] [bole]");
         eprintln!("  swatch    Color swatches for all named themes");
         eprintln!();
         eprintln!("THEMES:");
@@ -1917,7 +1918,8 @@ fn main() {
                 };
 
                 let bole = Bole { style: si };
-                let (tx, ty) = bole.draw(&mut grid, &tp, &mut rng);
+                let exit = bole.draw(&mut grid, &tp, &mut rng);
+                let (tx, ty) = (exit.x, exit.y);
 
                 // Short trunk stub above bole
                 for y in (ground_y - (row_h as i32 / 2))..ty {
@@ -1980,7 +1982,8 @@ fn main() {
                 };
 
                 let bole = Bole { style: si + 6 };
-                let (tx, ty) = bole.draw(&mut grid, &tp, &mut rng);
+                let exit = bole.draw(&mut grid, &tp, &mut rng);
+                let (tx, ty) = (exit.x, exit.y);
 
                 for y in (ground_y - (row_h as i32 / 2))..ty {
                     if y >= 0 && (y as usize) < height && (tx as usize) < width {
@@ -2041,7 +2044,8 @@ fn main() {
                 };
 
                 let bole = Bole { style: si + 12 };
-                let (tx, ty) = bole.draw(&mut grid, &tp, &mut rng);
+                let exit = bole.draw(&mut grid, &tp, &mut rng);
+                let (tx, ty) = (exit.x, exit.y);
 
                 for y in (ground_y - (row_h as i32 / 2))..ty {
                     if y >= 0 && (y as usize) < height && (tx as usize) < width {
@@ -2107,6 +2111,71 @@ fn main() {
             for (j, ch) in label.chars().enumerate() {
                 if lx + j < width {
                     grid[height - 1][lx + j] = Cell::new(ch, lighten(color, 40));
+                }
+            }
+        }
+
+    } else if mode == "trees1" {
+        // trees1: full pipeline demo -- tree + trunk algo + bole
+        // args: [energy] [fruit_factor] [branch_factor] [bole_override]
+        let energy: f32 = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0.8);
+        let fruit_factor: f32 = args.get(5).and_then(|s| s.parse().ok()).unwrap_or(0.3);
+        let branch_factor: f32 = args.get(6).and_then(|s| s.parse().ok()).unwrap_or(0.5);
+        let bole_override: Option<usize> = args.get(7).and_then(|s| s.parse().ok());
+
+        let combos: Vec<(&str, Box<dyn TreeDrawer>, usize)> = vec![
+            ("Spiral+Straight\n+Frame",
+             Box::new(SpiralTree) as Box<dyn TreeDrawer>, 14),
+            ("Spiral+Wobble\n+Chevron",
+             Box::new(TreeWithTrunk { tree: SpiralTree, trunk: Box::new(WobbleTrunk { height_fraction: 0.6 }) }), 16),
+            ("Candelabra+Organic\n+Keel",
+             Box::new(TreeWithTrunk { tree: CandelabraTree, trunk: Box::new(OrganicTrunk { height_fraction: 0.5 }) }), 15),
+            ("Split+Sine\n+Buttress",
+             Box::new(TreeWithTrunk { tree: SplitTree, trunk: Box::new(SineTrunk { height_fraction: 0.5, amplitude: 2 }) }), 17),
+            ("Birch+Gnarled\n+Braille",
+             Box::new(TreeWithTrunk { tree: BirchTree, trunk: Box::new(GnarledTrunk) }), 13),
+            ("Drooping+Sine\n+Frame",
+             Box::new(TreeWithTrunk { tree: DroopingTree, trunk: Box::new(SineTrunk { height_fraction: 0.5, amplitude: 3 }) }), 14),
+        ];
+        let cols = combos.len();
+        let col_w = width / cols;
+        let ground_y = (height as i32) - 4;
+
+        for (i, (label, drawer, default_bole)) in combos.iter().enumerate() {
+            let cx = (i * col_w + col_w / 2) as i32;
+            let color = palette[i % palette.len()];
+            let bole_idx = bole_override.unwrap_or(*default_bole);
+
+            let plot = Rect {
+                x: (i * col_w + 1).min(width - 2),
+                y: 2,
+                w: (col_w - 2).max(4),
+                h: (ground_y as usize).saturating_sub(2),
+            };
+            let params = TreeParams {
+                plot,
+                energy,
+                trunk_color: color,
+                bark_color: darken(color, 15),
+                branch_color: lighten(color, 20),
+                tip_color: lighten(color, 40),
+                fruit_color: palette[(i + 2) % palette.len()],
+                fruit_factor,
+                branch_factor,
+                direction: GrowDir::Up,
+                bole: Some(Bole { style: bole_idx }),
+            };
+
+            drawer.grow(&mut grid, &params, &mut rng);
+
+            // Multi-line label at bottom
+            for (li, line) in label.split('\n').enumerate() {
+                let lx = (cx - line.len() as i32 / 2).max(0) as usize;
+                let ly = height - 2 + li;
+                for (j, ch) in line.chars().enumerate() {
+                    if lx + j < width && ly < height {
+                        grid[ly][lx + j] = Cell::new(ch, lighten(color, 40));
+                    }
                 }
             }
         }
