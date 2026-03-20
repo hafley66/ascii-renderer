@@ -81,6 +81,8 @@ fn main() {
         eprintln!("  trees1    Full pipeline: tree+trunk+bole combos [energy] [fruit] [branch] [bole]");
         eprintln!("  trees2    Squat horizontal boles (1-2 rows) [energy] [fruit] [branch]");
         eprintln!("  trees3    Vertical catalog: all tree types, trunks, tapers, boles");
+        eprintln!("  trees4    All 17 TreeDrawer types with boles and fruit");
+        eprintln!("  bushes    Full-size bole patterns as standalone bush sprites");
         eprintln!("  forest7   Layered showcase forest with boles, tapers, fruit");
         eprintln!("  swatch    Color swatches for all named themes");
         eprintln!();
@@ -2430,6 +2432,125 @@ fn main() {
         render_grid(&pg);
         return;
 
+    } else if mode == "trees4" {
+        // trees4: showcase all TreeDrawer types including new ports
+        // One tree per slot, labeled, with boles and fruit
+        let energy: f32 = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0.8);
+
+        let all_trees: Vec<(&str, Box<dyn TreeDrawer>)> = vec![
+            ("Spiral",       Box::new(SpiralTree)),
+            ("Candelabra",   Box::new(CandelabraTree)),
+            ("Split",        Box::new(SplitTree)),
+            ("Birch",        Box::new(BirchTree)),
+            ("WavyBirch",    Box::new(WavyBirch)),
+            ("Storm",        Box::new(StormTree::new())),
+            ("Dead",         Box::new(DeadTree)),
+            ("Drooping",     Box::new(DroopingTree)),
+            ("Pine",         Box::new(PineTree)),
+            ("Willow",       Box::new(WillowTree)),
+            ("Palm",         Box::new(PalmTree)),
+            ("Wide",         Box::new(WideTree)),
+            ("Asymmetric",   Box::new(AsymmetricTree)),
+            ("Kaiju",        Box::new(KaijuTree)),
+            ("Zigzag",       Box::new(ZigzagTree)),
+            ("BrailleCanopy",Box::new(BrailleCanopyTree)),
+            ("Tendril",      Box::new(TendrilTree)),
+        ];
+
+        let count = all_trees.len();
+        let cols = 6usize;
+        let rows = (count + cols - 1) / cols;
+        let cell_w = width / cols;
+        let cell_h = 28usize;  // tall cells like trees3
+        let page_h = rows * cell_h + 2;
+        let mut grid = vec![vec![Cell::blank(); width]; page_h];
+
+        for (i, (label, drawer)) in all_trees.iter().enumerate() {
+            let col = i % cols;
+            let row = i / cols;
+            let px = col * cell_w;
+            let py = row * cell_h;
+            let color = palette[i % palette.len()];
+
+            let params = TreeParams {
+                plot: Rect { x: px + 1, y: py + 1, w: cell_w - 2, h: cell_h - 3 },
+                energy,
+                trunk_color: color,
+                bark_color: darken(color, 15),
+                branch_color: lighten(color, 20),
+                tip_color: lighten(color, 40),
+                fruit_color: palette[(i + 3) % palette.len()],
+                fruit_factor: 0.3,
+                branch_factor: 0.7,
+                direction: GrowDir::Up,
+                bole: Some(Bole { style: i }),
+                taper: TaperKind::Bracket,
+            };
+            drawer.grow(&mut grid, &params, &mut rng);
+
+            // Label
+            let lx = px + cell_w / 2 - label.len() / 2;
+            let ly = py + cell_h - 1;
+            for (j, ch) in label.chars().enumerate() {
+                if lx + j < width && ly < page_h {
+                    grid[ly][lx + j] = Cell::new(ch, darken(color, 20));
+                }
+            }
+        }
+
+        render_grid(&grid);
+        return;
+
+    } else if mode == "bushes" {
+        // bushes: showcase full-size bole patterns as standalone bush sprites
+        // args: [energy]
+        let energy: f32 = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0.8);
+
+        // 24 styles in a 6x4 grid
+        let cols = 6usize;
+        let rows = 4usize;
+        let cell_w = width / cols;
+        let cell_h = height / rows;
+
+        for style_idx in 0..24usize {
+            let col = style_idx % cols;
+            let row = style_idx / cols;
+            let cx = (col * cell_w + cell_w / 2) as i32;
+            let cy = (row * cell_h + cell_h * 3 / 4) as i32;
+            let bush_w = (cell_w as i32 / 3).max(3);
+            let color = palette[style_idx % palette.len()];
+
+            // Rotate through fade directions
+            let fade = match style_idx % 3 {
+                0 => FadeDir::Down,
+                1 => FadeDir::CenterOut,
+                _ => FadeDir::Up,
+            };
+            // Ground: dark version of the palette for contrast
+            let ground = darken(palette[(style_idx + 3) % palette.len()], 40);
+
+            let bush = BushSprite {
+                style: style_idx,
+                x: cx, y: cy,
+                width: bush_w,
+                color,
+                ground,
+                fade,
+                energy,
+            };
+            bush.draw(&mut grid, &mut rng);
+
+            // Label
+            let label = format!("{}", style_idx);
+            let lx = (cx - label.len() as i32 / 2).max(0) as usize;
+            let label_y = (row * cell_h + cell_h - 1).min(height - 1);
+            for (j, ch) in label.chars().enumerate() {
+                if lx + j < width {
+                    grid[label_y][lx + j] = Cell::new(ch, darken(color, 20));
+                }
+            }
+        }
+
     } else if mode == "forest7" {
         // forest7: production layered forest with boles, tapers, fruit
         let horizon = height * 3 / 5 + rng.random_range(0..(height / 5).max(1) as u32) as usize;
@@ -2499,7 +2620,7 @@ fn main() {
 
         // Depth layers: bg (far), mid, fg (near)
         let all_tapers = [TaperKind::Diagonal, TaperKind::Shelf, TaperKind::Bracket, TaperKind::Step, TaperKind::Melt];
-        let all_kinds: [usize; 11] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+        let all_kinds: [usize; 17] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
 
         struct F7Tree { x: usize, root_y: usize, canopy_y: usize, spread: usize,
                         kind: usize, hue: f64, energy: f32, bole_style: usize,
@@ -2597,7 +2718,7 @@ fn main() {
                 bole: Some(Bole { style: tree.bole_style }),
                 taper: tree.taper,
             };
-            match tree.kind {
+            match tree.kind % 17 {
                 0 => SpiralTree.grow(&mut grid, &tp, &mut rng),
                 1 => CandelabraTree.grow(&mut grid, &tp, &mut rng),
                 2 => SplitTree.grow(&mut grid, &tp, &mut rng),
@@ -2609,6 +2730,12 @@ fn main() {
                 8 => PineTree.grow(&mut grid, &tp, &mut rng),
                 9 => WillowTree.grow(&mut grid, &tp, &mut rng),
                 10 => PalmTree.grow(&mut grid, &tp, &mut rng),
+                11 => WideTree.grow(&mut grid, &tp, &mut rng),
+                12 => AsymmetricTree.grow(&mut grid, &tp, &mut rng),
+                13 => KaijuTree.grow(&mut grid, &tp, &mut rng),
+                14 => ZigzagTree.grow(&mut grid, &tp, &mut rng),
+                15 => BrailleCanopyTree.grow(&mut grid, &tp, &mut rng),
+                16 => TendrilTree.grow(&mut grid, &tp, &mut rng),
                 _ => SpiralTree.grow(&mut grid, &tp, &mut rng),
             }
         }

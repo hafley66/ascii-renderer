@@ -175,3 +175,16 @@ pub fn darken(color: Color, amount: u8) -> Color {
         other => other,
     }
 }
+
+/// Linear interpolation between two colors. t=0.0 returns `a`, t=1.0 returns `b`.
+pub fn lerp_color(a: Color, b: Color, t: f32) -> Color {
+    let t = t.clamp(0.0, 1.0);
+    match (a, b) {
+        (Color::Rgb { r: r1, g: g1, b: b1 }, Color::Rgb { r: r2, g: g2, b: b2 }) => Color::Rgb {
+            r: (r1 as f32 + (r2 as f32 - r1 as f32) * t) as u8,
+            g: (g1 as f32 + (g2 as f32 - g1 as f32) * t) as u8,
+            b: (b1 as f32 + (b2 as f32 - b1 as f32) * t) as u8,
+        },
+        _ => if t < 0.5 { a } else { b },
+    }
+}
