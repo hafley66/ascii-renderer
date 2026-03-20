@@ -378,7 +378,7 @@ impl BoleStyle for Bole {
         let bark = darken(color, 15);
         let dim = darken(color, 30);
 
-        match self.style % 12 {
+        match self.style % 18 {
             // Style 0: Crescent -- connected via │ at inner edge positions
             0 => {
                 // Ground row: wide crescent
@@ -1134,6 +1134,401 @@ impl BoleStyle for Bole {
                     set(grid, root_x, cy, if dir > 0 { '╮' } else { '╭' }, bark);
                     cy -= 1;
                 }
+                set(grid, root_x, cy + 1, '│', color);
+                (root_x, cy + 1)
+            }
+            // Style 15: Keel -- asymmetric inverted triangle hull, wide base to knife edge
+            15 => {
+                let energy = params.energy.clamp(0.2, 1.0);
+                let total_h = ((energy * 4.0).ceil() as i32 + 2).clamp(3, 6);
+                let mut cy = root_y;
+                // Asymmetric: left wider than right (or vice versa, randomly)
+                let bias = if rng.random::<bool>() { 1.3f32 } else { 0.7f32 };
+                let max_lw = ((lw as f32) * bias).max(2.0) as i32;
+                let max_rw = ((rw as f32) * (2.0 - bias)).max(2.0) as i32;
+
+                // Each row narrows from full width to 1
+                for row in 0..total_h {
+                    let frac = 1.0 - (row as f32 / total_h as f32);
+                    let hl = (max_lw as f32 * frac).ceil() as i32;
+                    let hr = (max_rw as f32 * frac).ceil() as i32;
+                    let rc = if row == 0 { color } else { lighten(bark, ((row as u8) * 5).min(30)) };
+
+                    if row == 0 {
+                        // Ground row: heaviest, full double-line
+                        set(grid, root_x, cy, '╨', color);
+                        for dx in 1..=hl {
+                            set(grid, root_x - dx, cy, '═', rc);
+                        }
+                        for dx in 1..=hr {
+                            set(grid, root_x + dx, cy, '═', rc);
+                        }
+                        set(grid, root_x - hl - 1, cy, '╘', dim);
+                        set(grid, root_x + hr + 1, cy, '╛', dim);
+                    } else {
+                        set(grid, root_x, cy, '│', rc);
+                        // Transition chars: use ─ for inner, ◆ at edges
+                        for dx in 1..=hl {
+                            let ch = if dx == hl { '◇' } else { '─' };
+                            set(grid, root_x - dx, cy, ch, rc);
+                        }
+                        for dx in 1..=hr {
+                            let ch = if dx == hr { '◇' } else { '─' };
+                            set(grid, root_x + dx, cy, ch, rc);
+                        }
+                        // Diagonal edge markers showing taper
+                        if hl > 0 { set(grid, root_x - hl, cy, '╲', rc); }
+                        if hr > 0 { set(grid, root_x + hr, cy, '╱', rc); }
+                    }
+                    cy -= 1;
+                }
+
+                set(grid, root_x, cy + 1, '│', color);
+                (root_x, cy + 1)
+            }
+            // Style 17: Buttress -- asymmetric diagonal grounding legs
+            17 => {
+                let energy = params.energy.clamp(0.2, 1.0);
+                let legs = ((energy * 3.0).ceil() as i32).clamp(1, 4);
+                let mut cy = root_y;
+                // Base connection
+                set(grid, root_x, cy, '┴', color);
+
+                // Main left leg: longer
+                let left_len = lw.max(2) + rng.random_range(0..3u32) as i32;
+                let right_len = rw.max(2) + rng.random_range(0..2u32) as i32;
+
+                // Draw primary legs as connected diagonal paths
+                for dx in 1..=left_len {
+                    let dy = (dx as f32 * 0.4).ceil() as i32; // shallow angle
+                    let ch = if dy > 0 && dx > 1 { '╱' } else { '─' };
+                    set(grid, root_x - dx, cy + dy.min(2), ch, lighten(bark, ((dx as u8) * 3).min(20)));
+                }
+                // Left leg foot
+                set(grid, root_x - left_len, cy + (left_len as f32 * 0.4).ceil() as i32, '╰', dim);
+
+                for dx in 1..=right_len {
+                    let dy = (dx as f32 * 0.5).ceil() as i32;
+                    let ch = if dy > 0 && dx > 1 { '╲' } else { '─' };
+                    set(grid, root_x + dx, cy + dy.min(2), ch, lighten(bark, ((dx as u8) * 3).min(20)));
+                }
+                set(grid, root_x + right_len, cy + (right_len as f32 * 0.5).ceil() as i32, '╯', dim);
+
+                // Secondary legs at higher energy: smaller, steeper
+                if legs > 1 {
+                    cy -= 1;
+                    let sl = (left_len * 2 / 3).max(1);
+                    let sr = (right_len * 2 / 3).max(1);
+                    set(grid, root_x, cy, '├', bark);
+                    for dx in 1..=sl {
+                        set(grid, root_x - dx, cy, '─', lighten(bark, ((dx as u8) * 5).min(30)));
+                    }
+                    set(grid, root_x - sl - 1, cy, '╴', dim);
+                    set(grid, root_x, cy, '┤', bark);
+                    for dx in 1..=sr {
+                        set(grid, root_x + dx, cy, '─', lighten(bark, ((dx as u8) * 5).min(30)));
+                    }
+                    set(grid, root_x + sr + 1, cy, '╶', dim);
+                }
+
+                if legs > 2 {
+                    cy -= 1;
+                    let tl = (left_len / 3).max(1);
+                    let tr = (right_len / 3).max(1);
+                    for dx in 1..=tl {
+                        set(grid, root_x - dx, cy, '╱', dim);
+                    }
+                    for dx in 1..=tr {
+                        set(grid, root_x + dx, cy, '╲', dim);
+                    }
+                    set(grid, root_x, cy, '│', bark);
+                }
+
+                if legs <= 2 { cy -= 1; }
+
+                set(grid, root_x, cy, '│', color);
+                (root_x, cy)
+            }
+            // Style 12: Croissant -- layered connected arcs with solar flare suckers
+            12 => {
+                let energy = params.energy.clamp(0.2, 1.0);
+                let layers = ((energy * 4.0).ceil() as i32).clamp(2, 5);
+                let mut cy = root_y;
+                // Asymmetric bias
+                let l_bias = 1.0 + (rng.random::<f32>() - 0.5) * 0.6; // 0.7 to 1.3
+                let r_bias = 2.0 - l_bias;
+
+                // Ground layer: widest arc
+                let gl = ((lw as f32) * l_bias).max(2.0) as i32;
+                let gr = ((rw as f32) * r_bias).max(2.0) as i32;
+                set(grid, root_x, cy, '┴', color);
+                // Left arc: connected curve
+                set(grid, root_x - 1, cy, '◟', bark);
+                for dx in 2..=gl {
+                    set(grid, root_x - dx, cy, '◠', lighten(bark, ((dx as u8) * 3).min(25)));
+                }
+                set(grid, root_x - gl - 1, cy, '◜', lighten(bark, 20));
+                // Right arc
+                set(grid, root_x + 1, cy, '◞', bark);
+                for dx in 2..=gr {
+                    set(grid, root_x + dx, cy, '◠', lighten(bark, ((dx as u8) * 3).min(25)));
+                }
+                set(grid, root_x + gr + 1, cy, '◝', lighten(bark, 20));
+                // Vertical connectors from arc tips down (grounding feet)
+                set(grid, root_x - gl - 1, cy + 1, '╵', dim);
+                set(grid, root_x + gr + 1, cy + 1, '╵', dim);
+                cy -= 1;
+
+                // Stacked arc layers, each narrower, connected by │ at endpoints
+                let mut prev_l = gl;
+                let mut prev_r = gr;
+                for layer in 1..layers {
+                    let shrink = layer as f32 * 0.18;
+                    let al = ((gl as f32) * (1.0 - shrink) + rng.random_range(0..2u32) as f32).max(1.0) as i32;
+                    let ar = ((gr as f32) * (1.0 - shrink) + rng.random_range(0..2u32) as f32).max(1.0) as i32;
+                    let lc = lighten(bark, (layer as u8 * 6).min(35));
+
+                    // Vertical connectors from previous layer tips to this row
+                    if prev_l > al {
+                        set(grid, root_x - al - 1, cy, '│', lc);
+                    }
+                    if prev_r > ar {
+                        set(grid, root_x + ar + 1, cy, '│', lc);
+                    }
+
+                    // Arc
+                    set(grid, root_x, cy, '│', color);
+                    set(grid, root_x - 1, cy, '◟', lc);
+                    for dx in 2..=al {
+                        set(grid, root_x - dx, cy, '◡', lc);
+                    }
+                    set(grid, root_x - al - 1, cy, '◜', lighten(lc, 10));
+                    set(grid, root_x + 1, cy, '◞', lc);
+                    for dx in 2..=ar {
+                        set(grid, root_x + dx, cy, '◡', lc);
+                    }
+                    set(grid, root_x + ar + 1, cy, '◝', lighten(lc, 10));
+
+                    prev_l = al;
+                    prev_r = ar;
+                    cy -= 1;
+                }
+
+                // Solar flare suckers at high energy: tiny vertical tendrils from top arc
+                if energy > 0.6 {
+                    let num_suckers = rng.random_range(2..5u32) as i32;
+                    for _ in 0..num_suckers {
+                        let sx = root_x + rng.random_range(0..(prev_l + prev_r + 1) as u32) as i32 - prev_l;
+                        if sx == root_x { continue; } // don't overlap trunk
+                        let sh = rng.random_range(1..3u32) as i32;
+                        for dy in 1..=sh {
+                            set(grid, sx, cy - dy + 1, '╵', lighten(bark, 25));
+                        }
+                    }
+                }
+
+                set(grid, root_x, cy, '│', color);
+                (root_x, cy)
+            }
+            // Style 13: Braille -- sine-contoured organic cluster, neighbor-affine chars
+            13 => {
+                let energy = params.energy.clamp(0.2, 1.0);
+                let rows = ((energy * 4.0).ceil() as i32 + 1).clamp(2, 6);
+                let base_w = lw.max(rw).max(2);
+                let mut cy = root_y;
+                let phase = rng.random::<f32>() * 3.14;
+
+                // Char palettes ordered by density for neighbor affinity
+                let full  = ['⣿', '⣾', '⣷', '⣶', '⣤'];
+                let half  = ['⡇', '⢸', '⠿', '⠶', '⠛'];
+                let light = ['⡀', '⢀', '⠂', '⠁', '⠈'];
+
+                for row in 0..rows {
+                    let frac = row as f32 / rows as f32;
+                    // Sine contour: width breathes in and out
+                    let sine_mod = (((frac * 3.14 + phase).sin()) * 0.4 + 0.8).max(0.4);
+                    let base = (base_w as f32 * (1.0 - frac * 0.3)).max(1.0);
+                    // Asymmetric jut
+                    let jut_l = rng.random_range(0..2u32) as f32;
+                    let jut_r = rng.random_range(0..2u32) as f32;
+                    let hw_l = (base * sine_mod + jut_l).max(1.0) as i32;
+                    let hw_r = (base * sine_mod + jut_r).max(1.0) as i32;
+
+                    // Pick density tier based on distance from base
+                    let chars = if frac < 0.25 { &full }
+                        else if frac < 0.55 { &full }
+                        else if frac < 0.8 { &half }
+                        else { &light };
+
+                    let rc = if row == 0 { color } else { darken(color, ((row as u8) * 3).min(12)) };
+
+                    // Center
+                    set(grid, root_x, cy, chars[0], rc);
+                    // Left: prefer chars with right-facing dots (⢸, ⣿, ⣾)
+                    let left_pref = ['⣿', '⣾', '⢸', '⣷', '⣶'];
+                    for dx in 1..=hw_l {
+                        let idx = (rng.random_range(0..left_pref.len() as u32) as usize).min(chars.len() - 1);
+                        let ch = if frac < 0.6 { left_pref[idx] } else { chars[idx] };
+                        set(grid, root_x - dx, cy, ch, darken(rc, ((dx as u8) * 2).min(8)));
+                    }
+                    // Right: prefer chars with left-facing dots (⡇, ⣿, ⣷)
+                    let right_pref = ['⣿', '⣷', '⡇', '⣾', '⣶'];
+                    for dx in 1..=hw_r {
+                        let idx = (rng.random_range(0..right_pref.len() as u32) as usize).min(chars.len() - 1);
+                        let ch = if frac < 0.6 { right_pref[idx] } else { chars[idx] };
+                        set(grid, root_x + dx, cy, ch, darken(rc, ((dx as u8) * 2).min(8)));
+                    }
+
+                    cy -= 1;
+                }
+
+                // Taper: 1 transition row
+                set(grid, root_x, cy, '⡇', bark);
+                if base_w > 3 {
+                    set(grid, root_x - 1, cy, '⡀', dim);
+                    set(grid, root_x + 1, cy, '⢀', dim);
+                }
+                cy -= 1;
+
+                set(grid, root_x, cy + 1, '│', color);
+                (root_x, cy + 1)
+            }
+            // Style 14: Frame -- overlapping squat rectangles, depth through overwrite
+            14 => {
+                let energy = params.energy.clamp(0.2, 1.0);
+                let rects = ((energy * 2.5).ceil() as i32).clamp(1, 3);
+                let mut cy = root_y;
+
+                // Generate rect specs: (center_offset, half_width_l, half_width_r, interior_rows, heavy)
+                let mut specs: Vec<(i32, i32, i32, i32, bool)> = Vec::new();
+                for r in 0..rects {
+                    let drift = rng.random_range(0..5u32) as i32 - 2;
+                    let hw_l = if r == 0 { lw.max(3) } else { (lw as f32 * (0.5 + rng.random::<f32>() * 0.4)).max(2.0) as i32 };
+                    let hw_r = if r == 0 { rw.max(3) } else { (rw as f32 * (0.5 + rng.random::<f32>() * 0.4)).max(2.0) as i32 };
+                    let ih = if r == 0 { ((energy * 2.0).ceil() as i32).clamp(1, 2) } else { 1 };
+                    specs.push((drift, hw_l, hw_r, ih, r == 0));
+                }
+
+                // Draw bottom-to-top so upper rects overwrite lower ones (depth)
+                for (ri, &(drift, hw_l, hw_r, ih, heavy)) in specs.iter().enumerate() {
+                    let cx = root_x + drift;
+                    let bc = if heavy { color } else { lighten(bark, (ri as u8 * 8).min(25)) };
+                    let fc = if heavy { bark } else { dim };
+                    let (bl, br, tl, tr, h, v, fill_top) = if heavy {
+                        ('╚', '╝', '╔', '╗', '═', '║', '╦')
+                    } else {
+                        ('└', '┘', '┌', '┐', '─', '│', '┬')
+                    };
+
+                    // Bottom edge
+                    set(grid, cx - hw_l, cy, bl, bc);
+                    set(grid, cx + hw_r, cy, br, bc);
+                    for dx in (-hw_l + 1)..hw_r {
+                        set(grid, cx + dx, cy, h, bc);
+                    }
+                    if heavy { set(grid, root_x, cy, '╩', color); }
+
+                    // Interior
+                    for row in 0..ih {
+                        cy -= 1;
+                        set(grid, cx - hw_l, cy, v, bc);
+                        set(grid, cx + hw_r, cy, v, bc);
+                        let fills = if row == 0 { ['░', '▒', '·', '░'] } else { ['▒', '▓', '░', '▒'] };
+                        for dx in (-hw_l + 1)..hw_r {
+                            set(grid, cx + dx, cy, fills[rng.random_range(0..4u32) as usize], fc);
+                        }
+                        set(grid, root_x, cy, v, bc);
+                    }
+
+                    // Top edge
+                    cy -= 1;
+                    set(grid, cx - hw_l, cy, tl, bc);
+                    set(grid, cx + hw_r, cy, tr, bc);
+                    for dx in (-hw_l + 1)..hw_r {
+                        set(grid, cx + dx, cy, h, bc);
+                    }
+                    set(grid, root_x, cy, fill_top, bc);
+
+                    // Overlap gap: sometimes 0, sometimes 1 row
+                    if ri < specs.len() - 1 {
+                        let gap = rng.random_range(0..2u32) as i32;
+                        if gap == 0 {
+                            // No gap: next rect starts on same row (overlapping top edge)
+                        } else {
+                            cy -= 1;
+                        }
+                    }
+                }
+
+                (root_x, cy)
+            }
+            // Style 16: Chevron -- off-center layers that overlap into diamond patterns
+            16 => {
+                let energy = params.energy.clamp(0.2, 1.0);
+                let layers = ((energy * 4.0).ceil() as i32).clamp(2, 5);
+                let mut cy = root_y;
+                let ll = lw.max(2);
+                let rl = rw.max(2);
+
+                // Ground sprawl
+                set(grid, root_x, cy, '┴', color);
+                let sprawl = ll + rl + rng.random_range(1..4u32) as i32;
+                let sprawl_l = sprawl / 2 + rng.random_range(0..3u32) as i32;
+                let sprawl_r = sprawl - sprawl_l;
+                for dx in 1..=sprawl_l {
+                    set(grid, root_x - dx, cy, if dx <= ll { '═' } else { '─' }, lighten(bark, ((dx as u8) * 2).min(20)));
+                }
+                for dx in 1..=sprawl_r {
+                    set(grid, root_x + dx, cy, if dx <= rl { '═' } else { '─' }, lighten(bark, ((dx as u8) * 2).min(20)));
+                }
+                set(grid, root_x - sprawl_l - 1, cy, '╴', dim);
+                set(grid, root_x + sprawl_r + 1, cy, '╶', dim);
+                cy -= 1;
+
+                // Chevron layers with random drift -- overlaps create diamonds
+                for layer in 0..layers {
+                    let shrink = (layer + 1) as f32 * 0.15;
+                    let cl = ((ll as f32) * (1.0 - shrink)).max(1.0) as i32;
+                    let cr = ((rl as f32) * (1.0 - shrink)).max(1.0) as i32;
+                    let lc = if layer == 0 { bark } else { lighten(bark, (layer as u8 * 6).min(30)) };
+                    // Random drift: each layer can be off-center
+                    let drift = rng.random_range(0..3u32) as i32 - 1;
+                    let lcx = root_x + drift;
+
+                    // ∧ row (upward V)
+                    set(grid, lcx, cy, '∧', color);
+                    for dx in 1..=cl {
+                        set(grid, lcx - dx, cy, '╱', lc);
+                    }
+                    for dx in 1..=cr {
+                        set(grid, lcx + dx, cy, '╲', lc);
+                    }
+                    // Horizontal stubs, sprawl decreases with height
+                    let h_sprawl = ((layers - layer) as f32 * 0.7).ceil() as i32;
+                    for s in 1..=h_sprawl {
+                        set(grid, lcx - cl - s, cy, '─', lighten(lc, 12));
+                        set(grid, lcx + cr + s, cy, '─', lighten(lc, 12));
+                    }
+                    cy -= 1;
+
+                    // ∨ row (downward V) -- slightly different drift for overlap
+                    if layer < layers - 1 {
+                        let drift2 = rng.random_range(0..3u32) as i32 - 1;
+                        let vcx = root_x + drift2;
+                        let vcl = ((cl as f32) * 0.75).max(1.0) as i32;
+                        let vcr = ((cr as f32) * 0.75).max(1.0) as i32;
+                        set(grid, vcx, cy, '∨', lighten(lc, 5));
+                        for dx in 1..=vcl {
+                            set(grid, vcx - dx, cy, '╲', lighten(lc, 8));
+                        }
+                        for dx in 1..=vcr {
+                            set(grid, vcx + dx, cy, '╱', lighten(lc, 8));
+                        }
+                        cy -= 1;
+                    }
+                }
+
+                // Trunk connector back to root_x
                 set(grid, root_x, cy + 1, '│', color);
                 (root_x, cy + 1)
             }
