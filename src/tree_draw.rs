@@ -1137,46 +1137,45 @@ impl BoleStyle for Bole {
                 set(grid, root_x, cy + 1, '│', color);
                 (root_x, cy + 1)
             }
-            // Style 15: Keel -- asymmetric inverted triangle hull, wide base to knife edge
+            // Style 15: Keel -- short fat asymmetric hull, 2-4 rows max
             15 => {
                 let energy = params.energy.clamp(0.2, 1.0);
-                let total_h = ((energy * 4.0).ceil() as i32 + 2).clamp(3, 6);
+                let total_h = ((energy * 2.0).ceil() as i32 + 1).clamp(2, 4);
                 let mut cy = root_y;
-                // Asymmetric: left wider than right (or vice versa, randomly)
-                let bias = if rng.random::<bool>() { 1.3f32 } else { 0.7f32 };
-                let max_lw = ((lw as f32) * bias).max(2.0) as i32;
-                let max_rw = ((rw as f32) * (2.0 - bias)).max(2.0) as i32;
+                let bias = if rng.random::<bool>() { 1.4f32 } else { 0.6f32 };
+                let max_lw = ((lw as f32) * bias * 1.3).max(3.0) as i32;
+                let max_rw = ((rw as f32) * (2.0 - bias) * 1.3).max(3.0) as i32;
 
-                // Each row narrows from full width to 1
                 for row in 0..total_h {
                     let frac = 1.0 - (row as f32 / total_h as f32);
                     let hl = (max_lw as f32 * frac).ceil() as i32;
                     let hr = (max_rw as f32 * frac).ceil() as i32;
-                    let rc = if row == 0 { color } else { lighten(bark, ((row as u8) * 5).min(30)) };
+                    let rc = if row == 0 { color } else { lighten(bark, ((row as u8) * 6).min(25)) };
 
                     if row == 0 {
-                        // Ground row: heaviest, full double-line
                         set(grid, root_x, cy, '╨', color);
-                        for dx in 1..=hl {
-                            set(grid, root_x - dx, cy, '═', rc);
+                        set(grid, root_x - 1, cy, '═', color);
+                        set(grid, root_x + 1, cy, '═', color);
+                        for dx in 2..=hl {
+                            let ch = if dx % 3 == 0 { '◆' } else { '═' };
+                            set(grid, root_x - dx, cy, ch, rc);
                         }
-                        for dx in 1..=hr {
-                            set(grid, root_x + dx, cy, '═', rc);
+                        for dx in 2..=hr {
+                            let ch = if dx % 3 == 0 { '◇' } else { '═' };
+                            set(grid, root_x + dx, cy, ch, rc);
                         }
                         set(grid, root_x - hl - 1, cy, '╘', dim);
                         set(grid, root_x + hr + 1, cy, '╛', dim);
                     } else {
                         set(grid, root_x, cy, '│', rc);
-                        // Transition chars: use ─ for inner, ◆ at edges
                         for dx in 1..=hl {
-                            let ch = if dx == hl { '◇' } else { '─' };
+                            let ch = ['─', '─', '◇', '─', '═'][rng.random_range(0..5u32) as usize];
                             set(grid, root_x - dx, cy, ch, rc);
                         }
                         for dx in 1..=hr {
-                            let ch = if dx == hr { '◇' } else { '─' };
+                            let ch = ['─', '─', '◇', '─', '═'][rng.random_range(0..5u32) as usize];
                             set(grid, root_x + dx, cy, ch, rc);
                         }
-                        // Diagonal edge markers showing taper
                         if hl > 0 { set(grid, root_x - hl, cy, '╲', rc); }
                         if hr > 0 { set(grid, root_x + hr, cy, '╱', rc); }
                     }
@@ -1186,278 +1185,332 @@ impl BoleStyle for Bole {
                 set(grid, root_x, cy + 1, '│', color);
                 (root_x, cy + 1)
             }
-            // Style 17: Buttress -- asymmetric diagonal grounding legs
+            // Style 17: Buttress -- bright bold curved grounding legs
             17 => {
                 let energy = params.energy.clamp(0.2, 1.0);
-                let legs = ((energy * 3.0).ceil() as i32).clamp(1, 4);
                 let mut cy = root_y;
-                // Base connection
-                set(grid, root_x, cy, '┴', color);
 
-                // Main left leg: longer
-                let left_len = lw.max(2) + rng.random_range(0..3u32) as i32;
-                let right_len = rw.max(2) + rng.random_range(0..2u32) as i32;
+                let left_reach = lw.max(2) + rng.random_range(1..4u32) as i32;
+                let right_reach = rw.max(2) + rng.random_range(0..3u32) as i32;
 
-                // Draw primary legs as connected diagonal paths
-                for dx in 1..=left_len {
-                    let dy = (dx as f32 * 0.4).ceil() as i32; // shallow angle
-                    let ch = if dy > 0 && dx > 1 { '╱' } else { '─' };
-                    set(grid, root_x - dx, cy + dy.min(2), ch, lighten(bark, ((dx as u8) * 3).min(20)));
+                // Ground anchor: bold and bright
+                set(grid, root_x, cy, '╨', color);
+                set(grid, root_x - 1, cy, '═', color);
+                set(grid, root_x + 1, cy, '═', color);
+
+                // Left leg: curved, BRIGHT
+                let mut lx = root_x - 2;
+                let mut ly = cy;
+                set(grid, lx, ly, '╮', color);
+                for step in 0..left_reach {
+                    if step < left_reach / 3 {
+                        lx -= 1;
+                        set(grid, lx, ly, '─', color);
+                    } else if step == left_reach / 3 {
+                        lx -= 1;
+                        set(grid, lx, ly, '╮', lighten(color, 10));
+                        ly += 1;
+                        if ly <= root_y + 2 { set(grid, lx, ly, '│', lighten(color, 10)); }
+                    } else {
+                        lx -= 1;
+                        ly += 1;
+                        if ly <= root_y + 2 { set(grid, lx, ly, '╲', lighten(bark, 15)); }
+                    }
                 }
-                // Left leg foot
-                set(grid, root_x - left_len, cy + (left_len as f32 * 0.4).ceil() as i32, '╰', dim);
+                if ly <= root_y + 2 { set(grid, lx, ly, '╰', lighten(bark, 20)); }
 
-                for dx in 1..=right_len {
-                    let dy = (dx as f32 * 0.5).ceil() as i32;
-                    let ch = if dy > 0 && dx > 1 { '╲' } else { '─' };
-                    set(grid, root_x + dx, cy + dy.min(2), ch, lighten(bark, ((dx as u8) * 3).min(20)));
+                // Right leg: different curve, BRIGHT
+                let mut rx = root_x + 2;
+                let mut ry = cy;
+                set(grid, rx, ry, '╭', color);
+                for step in 0..right_reach {
+                    if step < right_reach / 2 {
+                        rx += 1;
+                        set(grid, rx, ry, '─', color);
+                    } else if step == right_reach / 2 {
+                        rx += 1;
+                        set(grid, rx, ry, '╭', lighten(color, 10));
+                        ry += 1;
+                        if ry <= root_y + 2 { set(grid, rx, ry, '│', lighten(color, 10)); }
+                    } else {
+                        rx += 1;
+                        ry += 1;
+                        if ry <= root_y + 2 { set(grid, rx, ry, '╱', lighten(bark, 15)); }
+                    }
                 }
-                set(grid, root_x + right_len, cy + (right_len as f32 * 0.5).ceil() as i32, '╯', dim);
+                if ry <= root_y + 2 { set(grid, rx, ry, '╯', lighten(bark, 20)); }
 
-                // Secondary legs at higher energy: smaller, steeper
-                if legs > 1 {
+                // Cross-brace at high energy: BRIGHT
+                if energy > 0.5 {
+                    let brace_y = cy - 1;
+                    let bl = (left_reach / 3).max(1);
+                    let br = (right_reach / 3).max(1);
+                    for dx in 1..=bl {
+                        set(grid, root_x - dx, brace_y, '─', color);
+                    }
+                    set(grid, root_x - bl - 1, brace_y, '╴', bark);
+                    for dx in 1..=br {
+                        set(grid, root_x + dx, brace_y, '─', color);
+                    }
+                    set(grid, root_x + br + 1, brace_y, '╶', bark);
+                    set(grid, root_x, brace_y, '┼', color);
+                    cy = brace_y;
+                }
+
+                // Upper secondary hints
+                if energy > 0.4 {
                     cy -= 1;
-                    let sl = (left_len * 2 / 3).max(1);
-                    let sr = (right_len * 2 / 3).max(1);
-                    set(grid, root_x, cy, '├', bark);
+                    let sl = (left_reach / 3).max(1);
+                    let sr = (right_reach / 3).max(1);
                     for dx in 1..=sl {
-                        set(grid, root_x - dx, cy, '─', lighten(bark, ((dx as u8) * 5).min(30)));
+                        set(grid, root_x - dx, cy, '╱', color);
                     }
-                    set(grid, root_x - sl - 1, cy, '╴', dim);
-                    set(grid, root_x, cy, '┤', bark);
                     for dx in 1..=sr {
-                        set(grid, root_x + dx, cy, '─', lighten(bark, ((dx as u8) * 5).min(30)));
+                        set(grid, root_x + dx, cy, '╲', color);
                     }
-                    set(grid, root_x + sr + 1, cy, '╶', dim);
+                    set(grid, root_x, cy, '│', color);
                 }
 
-                if legs > 2 {
-                    cy -= 1;
-                    let tl = (left_len / 3).max(1);
-                    let tr = (right_len / 3).max(1);
-                    for dx in 1..=tl {
-                        set(grid, root_x - dx, cy, '╱', dim);
-                    }
-                    for dx in 1..=tr {
-                        set(grid, root_x + dx, cy, '╲', dim);
-                    }
-                    set(grid, root_x, cy, '│', bark);
-                }
-
-                if legs <= 2 { cy -= 1; }
-
-                set(grid, root_x, cy, '│', color);
-                (root_x, cy)
+                cy -= 1;
+                set(grid, root_x, cy + 1, '│', color);
+                (root_x, cy + 1)
             }
-            // Style 12: Croissant -- layered connected arcs with solar flare suckers
+            // Style 12: Croissant -- sweep walk with connected curves, asymmetry, suckers at high energy
             12 => {
                 let energy = params.energy.clamp(0.2, 1.0);
-                let layers = ((energy * 4.0).ceil() as i32).clamp(2, 5);
                 let mut cy = root_y;
-                // Asymmetric bias
-                let l_bias = 1.0 + (rng.random::<f32>() - 0.5) * 0.6; // 0.7 to 1.3
-                let r_bias = 2.0 - l_bias;
 
-                // Ground layer: widest arc
-                let gl = ((lw as f32) * l_bias).max(2.0) as i32;
-                let gr = ((rw as f32) * r_bias).max(2.0) as i32;
+                // Phase 1: Ground sweep
+                // Place anchor at root
                 set(grid, root_x, cy, '┴', color);
-                // Left arc: connected curve
-                set(grid, root_x - 1, cy, '◟', bark);
-                for dx in 2..=gl {
-                    set(grid, root_x - dx, cy, '◠', lighten(bark, ((dx as u8) * 3).min(25)));
+
+                // Pick biased widths: left wider when bias < 1.0, right wider when bias > 1.0
+                let l_bias = 0.7 + (rng.random::<f32>() * 0.7); // 0.7 to 1.4
+                let r_bias = 2.0 - l_bias;
+                let mut left_w = ((lw as f32) * l_bias).max(1.0) as i32;
+                let mut right_w = ((rw as f32) * r_bias).max(1.0) as i32;
+
+                // Walk LEFT from root_x
+                for dx in 1..=left_w {
+                    set(grid, root_x - dx, cy, '─', bark);
                 }
-                set(grid, root_x - gl - 1, cy, '◜', lighten(bark, 20));
-                // Right arc
-                set(grid, root_x + 1, cy, '◞', bark);
-                for dx in 2..=gr {
-                    set(grid, root_x + dx, cy, '◠', lighten(bark, ((dx as u8) * 3).min(25)));
+                if left_w > 0 {
+                    set(grid, root_x - left_w - 1, cy, '╭', bark);
+                    set(grid, root_x - left_w - 1, cy - 1, '│', bark);
                 }
-                set(grid, root_x + gr + 1, cy, '◝', lighten(bark, 20));
-                // Vertical connectors from arc tips down (grounding feet)
-                set(grid, root_x - gl - 1, cy + 1, '╵', dim);
-                set(grid, root_x + gr + 1, cy + 1, '╵', dim);
+
+                // Walk RIGHT from root_x
+                for dx in 1..=right_w {
+                    set(grid, root_x + dx, cy, '─', bark);
+                }
+                if right_w > 0 {
+                    set(grid, root_x + right_w + 1, cy, '╮', bark);
+                    set(grid, root_x + right_w + 1, cy - 1, '│', bark);
+                }
+
                 cy -= 1;
 
-                // Stacked arc layers, each narrower, connected by │ at endpoints
-                let mut prev_l = gl;
-                let mut prev_r = gr;
-                for layer in 1..layers {
-                    let shrink = layer as f32 * 0.18;
-                    let al = ((gl as f32) * (1.0 - shrink) + rng.random_range(0..2u32) as f32).max(1.0) as i32;
-                    let ar = ((gr as f32) * (1.0 - shrink) + rng.random_range(0..2u32) as f32).max(1.0) as i32;
-                    let lc = lighten(bark, (layer as u8 * 6).min(35));
+                // Phase 2: Arc layers (repeat 1-4 times based on energy)
+                let num_layers = ((energy * 3.5).ceil() as i32).clamp(1, 4);
+                let mut prev_left_x = if left_w > 0 { root_x - left_w - 1 } else { root_x };
+                let mut prev_right_x = if right_w > 0 { root_x + right_w + 1 } else { root_x };
 
-                    // Vertical connectors from previous layer tips to this row
-                    if prev_l > al {
-                        set(grid, root_x - al - 1, cy, '│', lc);
-                    }
-                    if prev_r > ar {
-                        set(grid, root_x + ar + 1, cy, '│', lc);
-                    }
-
-                    // Arc
-                    set(grid, root_x, cy, '│', color);
-                    set(grid, root_x - 1, cy, '◟', lc);
-                    for dx in 2..=al {
-                        set(grid, root_x - dx, cy, '◡', lc);
-                    }
-                    set(grid, root_x - al - 1, cy, '◜', lighten(lc, 10));
-                    set(grid, root_x + 1, cy, '◞', lc);
-                    for dx in 2..=ar {
-                        set(grid, root_x + dx, cy, '◡', lc);
-                    }
-                    set(grid, root_x + ar + 1, cy, '◝', lighten(lc, 10));
-
-                    prev_l = al;
-                    prev_r = ar;
+                for _layer in 0..num_layers {
+                    // Move up
                     cy -= 1;
+
+                    // Shrink widths by 15-25%
+                    let shrink = 0.75 + (rng.random::<f32>() * 0.1); // 0.75 to 0.85
+                    left_w = ((left_w as f32) * shrink).max(1.0) as i32;
+                    right_w = ((right_w as f32) * shrink).max(1.0) as i32;
+
+                    // Place center line
+                    set(grid, root_x, cy, '│', color);
+
+                    // Walk LEFT: place arc chars
+                    for dx in 1..=left_w {
+                        set(grid, root_x - dx, cy, '◠', lighten(bark, 10));
+                    }
+                    if left_w > 0 {
+                        set(grid, root_x - left_w - 1, cy, '◜', lighten(bark, 12));
+                        prev_left_x = root_x - left_w - 1;
+                    }
+
+                    // Walk RIGHT: place arc chars
+                    for dx in 1..=right_w {
+                        set(grid, root_x + dx, cy, '◠', lighten(bark, 10));
+                    }
+                    if right_w > 0 {
+                        set(grid, root_x + right_w + 1, cy, '◝', lighten(bark, 12));
+                        prev_right_x = root_x + right_w + 1;
+                    }
+
+                    // If previous layer's endpoint was wider, place vertical to connect
+                    if prev_left_x < root_x - left_w - 1 {
+                        set(grid, prev_left_x, cy, '│', lighten(bark, 8));
+                    }
+                    if prev_right_x > root_x + right_w + 1 {
+                        set(grid, prev_right_x, cy, '│', lighten(bark, 8));
+                    }
                 }
 
-                // Solar flare suckers at high energy: tiny vertical tendrils from top arc
+                // Phase 3: Suckers (energy > 0.6 only)
                 if energy > 0.6 {
-                    let num_suckers = rng.random_range(2..5u32) as i32;
+                    let num_suckers = rng.random_range(1..4u32) as i32;
+                    let top_arc_width = left_w + right_w;
+
                     for _ in 0..num_suckers {
-                        let sx = root_x + rng.random_range(0..(prev_l + prev_r + 1) as u32) as i32 - prev_l;
-                        if sx == root_x { continue; } // don't overlap trunk
-                        let sh = rng.random_range(1..3u32) as i32;
-                        for dy in 1..=sh {
-                            set(grid, sx, cy - dy + 1, '╵', lighten(bark, 25));
+                        // Pick random x on topmost arc
+                        let sx = if top_arc_width > 0 {
+                            root_x + rng.random_range(0..=(top_arc_width as u32)) as i32 - left_w
+                        } else {
+                            root_x
+                        };
+
+                        // Skip center
+                        if (sx - root_x).abs() < 1 {
+                            continue;
+                        }
+
+                        // Place vertical going UP for 1-2 cells
+                        let sucker_height = rng.random_range(1..3u32) as i32;
+                        for dy in 1..=sucker_height {
+                            set(grid, sx, cy - dy, '│', lighten(bark, 15));
                         }
                     }
                 }
 
+                // Phase 4: Exit
                 set(grid, root_x, cy, '│', color);
                 (root_x, cy)
             }
-            // Style 13: Braille -- sine-contoured organic cluster, neighbor-affine chars
+            // Style 13: Braille -- sturdy core with 1-cell edge diffusion
             13 => {
                 let energy = params.energy.clamp(0.2, 1.0);
-                let rows = ((energy * 4.0).ceil() as i32 + 1).clamp(2, 6);
+                let rows = ((energy * 3.5).ceil() as i32 + 1).clamp(2, 5);
                 let base_w = lw.max(rw).max(2);
                 let mut cy = root_y;
                 let phase = rng.random::<f32>() * 3.14;
 
-                // Char palettes ordered by density for neighbor affinity
-                let full  = ['⣿', '⣾', '⣷', '⣶', '⣤'];
-                let half  = ['⡇', '⢸', '⠿', '⠶', '⠛'];
-                let light = ['⡀', '⢀', '⠂', '⠁', '⠈'];
+                let core_chars = ['⣿', '⣾', '⣷', '⣶', '⣤', '⡇', '⢸', '⠿'];
+                let edge_chars = ['⡀', '⢀', '⠂', '⠁', '⠈'];
 
                 for row in 0..rows {
                     let frac = row as f32 / rows as f32;
-                    // Sine contour: width breathes in and out
-                    let sine_mod = (((frac * 3.14 + phase).sin()) * 0.4 + 0.8).max(0.4);
+                    let sine_mod = ((frac * 3.14 + phase).sin() * 0.3 + 0.85).max(0.5);
                     let base = (base_w as f32 * (1.0 - frac * 0.3)).max(1.0);
-                    // Asymmetric jut
-                    let jut_l = rng.random_range(0..2u32) as f32;
-                    let jut_r = rng.random_range(0..2u32) as f32;
-                    let hw_l = (base * sine_mod + jut_l).max(1.0) as i32;
-                    let hw_r = (base * sine_mod + jut_r).max(1.0) as i32;
+                    let core_w_l = (base * sine_mod).max(1.0) as i32;
+                    let core_w_r = (base * sine_mod + rng.random_range(0..2u32) as f32).max(1.0) as i32;
+                    let rc = if row == 0 { color } else { darken(color, ((row as u8) * 2).min(8)) };
 
-                    // Pick density tier based on distance from base
-                    let chars = if frac < 0.25 { &full }
-                        else if frac < 0.55 { &full }
-                        else if frac < 0.8 { &half }
-                        else { &light };
+                    // Center: always densest
+                    set(grid, root_x, cy, '⣿', rc);
 
-                    let rc = if row == 0 { color } else { darken(color, ((row as u8) * 3).min(12)) };
-
-                    // Center
-                    set(grid, root_x, cy, chars[0], rc);
-                    // Left: prefer chars with right-facing dots (⢸, ⣿, ⣾)
-                    let left_pref = ['⣿', '⣾', '⢸', '⣷', '⣶'];
-                    for dx in 1..=hw_l {
-                        let idx = (rng.random_range(0..left_pref.len() as u32) as usize).min(chars.len() - 1);
-                        let ch = if frac < 0.6 { left_pref[idx] } else { chars[idx] };
+                    // Core left: all dense chars
+                    for dx in 1..=core_w_l {
+                        let ch = core_chars[rng.random_range(0..core_chars.len() as u32) as usize];
                         set(grid, root_x - dx, cy, ch, darken(rc, ((dx as u8) * 2).min(8)));
                     }
-                    // Right: prefer chars with left-facing dots (⡇, ⣿, ⣷)
-                    let right_pref = ['⣿', '⣷', '⡇', '⣾', '⣶'];
-                    for dx in 1..=hw_r {
-                        let idx = (rng.random_range(0..right_pref.len() as u32) as usize).min(chars.len() - 1);
-                        let ch = if frac < 0.6 { right_pref[idx] } else { chars[idx] };
+                    // Edge left: exactly 1 diffusion char
+                    set(grid, root_x - core_w_l - 1, cy, edge_chars[rng.random_range(0..edge_chars.len() as u32) as usize], dim);
+
+                    // Core right: all dense chars
+                    for dx in 1..=core_w_r {
+                        let ch = core_chars[rng.random_range(0..core_chars.len() as u32) as usize];
                         set(grid, root_x + dx, cy, ch, darken(rc, ((dx as u8) * 2).min(8)));
                     }
+                    // Edge right: exactly 1 diffusion char
+                    set(grid, root_x + core_w_r + 1, cy, edge_chars[rng.random_range(0..edge_chars.len() as u32) as usize], dim);
 
                     cy -= 1;
                 }
 
-                // Taper: 1 transition row
+                // Taper: transition to trunk
                 set(grid, root_x, cy, '⡇', bark);
                 if base_w > 3 {
                     set(grid, root_x - 1, cy, '⡀', dim);
                     set(grid, root_x + 1, cy, '⢀', dim);
+                    cy -= 1;
                 }
-                cy -= 1;
 
-                set(grid, root_x, cy + 1, '│', color);
-                (root_x, cy + 1)
+                set(grid, root_x, cy, '│', color);
+                (root_x, cy)
             }
-            // Style 14: Frame -- overlapping squat rectangles, depth through overwrite
+            // Style 14: Frame -- overlapping rectangles with shared edges
             14 => {
                 let energy = params.energy.clamp(0.2, 1.0);
-                let rects = ((energy * 2.5).ceil() as i32).clamp(1, 3);
+                let rects = ((energy * 2.0).ceil() as i32).clamp(1, 3);
                 let mut cy = root_y;
 
-                // Generate rect specs: (center_offset, half_width_l, half_width_r, interior_rows, heavy)
-                let mut specs: Vec<(i32, i32, i32, i32, bool)> = Vec::new();
+                // Pre-plan rects: (drift, lw, rw, interior_rows)
+                let mut specs: Vec<(i32, i32, i32, i32)> = Vec::new();
+                let mut prev_lw = lw.max(3);
+                let mut prev_rw = rw.max(3);
                 for r in 0..rects {
-                    let drift = rng.random_range(0..5u32) as i32 - 2;
-                    let hw_l = if r == 0 { lw.max(3) } else { (lw as f32 * (0.5 + rng.random::<f32>() * 0.4)).max(2.0) as i32 };
-                    let hw_r = if r == 0 { rw.max(3) } else { (rw as f32 * (0.5 + rng.random::<f32>() * 0.4)).max(2.0) as i32 };
+                    let drift = if r == 0 { 0 } else { rng.random_range(0..3u32) as i32 - 1 };
+                    let rlw = if r == 0 { prev_lw } else {
+                        let overlap = (prev_lw as f32 * 0.4).max(1.0) as i32; // ensure overlap
+                        overlap + rng.random_range(0..3u32) as i32
+                    };
+                    let rrw = if r == 0 { prev_rw } else {
+                        let overlap = (prev_rw as f32 * 0.4).max(1.0) as i32;
+                        overlap + rng.random_range(0..3u32) as i32
+                    };
                     let ih = if r == 0 { ((energy * 2.0).ceil() as i32).clamp(1, 2) } else { 1 };
-                    specs.push((drift, hw_l, hw_r, ih, r == 0));
+                    specs.push((drift, rlw, rrw, ih));
+                    prev_lw = rlw;
+                    prev_rw = rrw;
                 }
 
-                // Draw bottom-to-top so upper rects overwrite lower ones (depth)
-                for (ri, &(drift, hw_l, hw_r, ih, heavy)) in specs.iter().enumerate() {
-                    let cx = root_x + drift;
-                    let bc = if heavy { color } else { lighten(bark, (ri as u8 * 8).min(25)) };
-                    let fc = if heavy { bark } else { dim };
-                    let (bl, br, tl, tr, h, v, fill_top) = if heavy {
-                        ('╚', '╝', '╔', '╗', '═', '║', '╦')
+                // Draw bottom-to-top
+                let mut accumulated_drift = 0i32;
+                for (ri, &(drift, rlw, rrw, ih)) in specs.iter().enumerate() {
+                    accumulated_drift += drift;
+                    let cx = root_x + accumulated_drift;
+                    let heavy = ri == 0;
+                    let bc = if heavy { color } else { lighten(bark, (ri as u8 * 10).min(25)) };
+                    let fc = if heavy { bark } else { lighten(dim, (ri as u8 * 6).min(20)) };
+
+                    let (bl, br, tl, tr, h, v) = if heavy {
+                        ('╚', '╝', '╔', '╗', '═', '║')
                     } else {
-                        ('└', '┘', '┌', '┐', '─', '│', '┬')
+                        ('└', '┘', '┌', '┐', '─', '│')
                     };
 
                     // Bottom edge
-                    set(grid, cx - hw_l, cy, bl, bc);
-                    set(grid, cx + hw_r, cy, br, bc);
-                    for dx in (-hw_l + 1)..hw_r {
+                    set(grid, cx - rlw, cy, bl, bc);
+                    set(grid, cx + rrw, cy, br, bc);
+                    for dx in (-rlw + 1)..rrw {
                         set(grid, cx + dx, cy, h, bc);
                     }
                     if heavy { set(grid, root_x, cy, '╩', color); }
+                    else { set(grid, root_x, cy, '┴', bc); }
 
                     // Interior
                     for row in 0..ih {
                         cy -= 1;
-                        set(grid, cx - hw_l, cy, v, bc);
-                        set(grid, cx + hw_r, cy, v, bc);
-                        let fills = if row == 0 { ['░', '▒', '·', '░'] } else { ['▒', '▓', '░', '▒'] };
-                        for dx in (-hw_l + 1)..hw_r {
+                        set(grid, cx - rlw, cy, v, bc);
+                        set(grid, cx + rrw, cy, v, bc);
+                        let fills = if row == 0 { ['░', '▒', '·', '░'] } else { ['▒', '▓', '░', '·'] };
+                        for dx in (-rlw + 1)..rrw {
                             set(grid, cx + dx, cy, fills[rng.random_range(0..4u32) as usize], fc);
                         }
+                        // Trunk line always visible
                         set(grid, root_x, cy, v, bc);
                     }
 
                     // Top edge
                     cy -= 1;
-                    set(grid, cx - hw_l, cy, tl, bc);
-                    set(grid, cx + hw_r, cy, tr, bc);
-                    for dx in (-hw_l + 1)..hw_r {
+                    set(grid, cx - rlw, cy, tl, bc);
+                    set(grid, cx + rrw, cy, tr, bc);
+                    for dx in (-rlw + 1)..rrw {
                         set(grid, cx + dx, cy, h, bc);
                     }
-                    set(grid, root_x, cy, fill_top, bc);
+                    if heavy { set(grid, root_x, cy, '╦', color); }
+                    else { set(grid, root_x, cy, '┬', bc); }
 
-                    // Overlap gap: sometimes 0, sometimes 1 row
-                    if ri < specs.len() - 1 {
-                        let gap = rng.random_range(0..2u32) as i32;
-                        if gap == 0 {
-                            // No gap: next rect starts on same row (overlapping top edge)
-                        } else {
-                            cy -= 1;
-                        }
-                    }
+                    // Next rect overlaps: NO gap row, start immediately
+                    // (cy stays where it is, next rect's bottom will overwrite this top)
                 }
 
                 (root_x, cy)
@@ -1528,7 +1581,6 @@ impl BoleStyle for Bole {
                     }
                 }
 
-                // Trunk connector back to root_x
                 set(grid, root_x, cy + 1, '│', color);
                 (root_x, cy + 1)
             }
