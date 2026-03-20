@@ -2289,7 +2289,11 @@ impl TreeDrawer for SplitTree {
         &self, grid: &mut Grid, pen: &mut TreePen,
         params: &TreeParams, rng: &mut StdRng,
     ) -> Vec<TrunkNode> {
-        WobbleTrunk { height_fraction: 1.0 / 8.0 }.draw(grid, pen, params, rng)
+        // Minimal stump -- splitting IS the tree
+        let mut nodes = Vec::new();
+        pen.step(grid, MoveDir::Up);
+        nodes.push(TrunkNode { x: pen.x, y: pen.y, dir: MoveDir::Up });
+        nodes
     }
 
     fn should_branch(
@@ -2314,7 +2318,7 @@ impl TreeDrawer for SplitTree {
         let trunk_top_y = _pen.y;
         let top_y = params.canopy_top();
         let height = (trunk_top_y - top_y).max(3);
-        let first_split = trunk_top_y - 2;  // split almost immediately
+        let first_split = trunk_top_y;  // split immediately from trunk top
         let spread = params.spread();
         let mut tips = Vec::new();
 
@@ -2998,12 +3002,12 @@ impl TreeDrawer for WillowTree {
         &self, idx: usize, count: usize,
         _params: &TreeParams, _rng: &mut StdRng,
     ) -> Option<BranchIntent> {
-        // Branch in the top half, every 2 rows
+        // Branch in the top half, every 2 rows, both sides
         let start = count / 2;
         if idx < start { return None; }
         if (idx - start) % 2 != 0 { return None; }
         let go_left = (idx - start) % 4 < 2;
-        let length = ((count - idx) as i32).max(3).min(10);
+        let length = ((count - idx) as i32).max(8).min(16);
         Some(BranchIntent { go_left, length, level: idx - start })
     }
 
@@ -3021,24 +3025,45 @@ impl TreeDrawer for WillowTree {
 
         // Horizontal arm
         for dx in 1..=arm_len {
-            let ax = bx + dx * dir;
-            set(grid, ax, by, '─', color);
+            set(grid, bx + dx * dir, by, '─', color);
         }
-        // Junction at trunk
         set(grid, bx, by, '┼', color);
-        // Corner
         let end_x = bx + arm_len * dir;
         set(grid, end_x, by, if intent.go_left { '╭' } else { '╮' }, color);
 
-        // Droop: hang downward from endpoint
-        let droop_len = rng.random_range(2..6u32) as i32;
+        // Droops at multiple points along the arm, no two on the same x
         let droop_chars = ['│', '┊', '╎', '┆'];
-        for dy in 1..=droop_len {
-            let ch = droop_chars[dy as usize % droop_chars.len()];
-            let dc = lighten(color, (dy * 8) as u8);
-            set(grid, end_x, by + dy, ch, dc);
+        let mut used_x: Vec<i32> = Vec::new();
+        // Every 2-3 cells along the arm gets a tendril
+        let mut dx = 2;
+        while dx <= arm_len {
+            let tx = bx + dx * dir;
+            // Offset by 0 or 1 so neighbors don't line up vertically
+            let offset = rng.random_range(0..2u32) as i32;
+            let droop_x = tx + offset * dir;
+            if !used_x.contains(&droop_x) {
+                used_x.push(droop_x);
+                let droop_len = rng.random_range(2..6u32) as i32;
+                for dy in 1..=droop_len {
+                    let ch = droop_chars[dy as usize % droop_chars.len()];
+                    let dc = lighten(color, (dy * 8) as u8);
+                    set(grid, droop_x, by + dy, ch, dc);
+                }
+                tips.push((droop_x, by + droop_len));
+            }
+            dx += rng.random_range(2..4u32) as i32;
         }
-        tips.push((end_x, by + droop_len));
+
+        // Always droop from the endpoint too
+        if !used_x.contains(&end_x) {
+            let droop_len = rng.random_range(2..6u32) as i32;
+            for dy in 1..=droop_len {
+                let ch = droop_chars[dy as usize % droop_chars.len()];
+                let dc = lighten(color, (dy * 8) as u8);
+                set(grid, end_x, by + dy, ch, dc);
+            }
+            tips.push((end_x, by + droop_len));
+        }
         BranchResult { tips }
     }
 
@@ -3159,7 +3184,7 @@ impl TreeDrawer for WideTree {
     fn draw_branch(
         &self, grid: &mut Grid, _pen: &mut TreePen,
         _intent: &BranchIntent, _depth: usize,
-        params: &TreeParams, _rng: &mut StdRng,
+        params: &TreeParams, rng: &mut StdRng,
     ) -> BranchResult {
         let rx = _pen.x;
         let trunk_top_y = _pen.y;
@@ -3168,17 +3193,24 @@ impl TreeDrawer for WideTree {
         let spread = params.spread();
         let mut tips = Vec::new();
 
-        // 3 tiers: base (widest), mid, top (narrowest)
-        let tiers: [(i32, i32); 3] = [
-            (trunk_top_y, spread * 2),
-            (top_y + height * 2 / 3, spread),
-            (top_y + height / 3, spread / 2),
-        ];
+        // 3 tiers with asymmetric arm lengths per side
+        let tier_ys = [trunk_top_y, top_y + height * 2 / 3, top_y + height / 3];
+        let base_arms = [spread * 2, spread, spread / 2];
 
-        for (ti, &(sy, arm)) in tiers.iter().enumerate() {
+        // Store (y, left_arm, right_arm) so sub-trunks connect properly
+        let mut tiers: Vec<(i32, i32, i32)> = Vec::new();
+        for ti in 0..3 {
+            let base = base_arms[ti];
+            // Each side gets 50-150% of the base arm, independently
+            let left_arm = (base * rng.random_range(50..151u32) as i32 / 100).max(1);
+            let right_arm = (base * rng.random_range(50..151u32) as i32 / 100).max(1);
+            tiers.push((tier_ys[ti], left_arm, right_arm));
+        }
+
+        for (ti, &(sy, left_arm, right_arm)) in tiers.iter().enumerate() {
             let c = lighten(params.branch_color, (ti as u8 * 20).min(40));
-            let lx = rx - arm;
-            let rx2 = rx + arm;
+            let lx = rx - left_arm;
+            let rx2 = rx + right_arm;
 
             // Horizontal bar
             set(grid, rx, sy, '┼', c);
@@ -3257,13 +3289,14 @@ impl TreeDrawer for AsymmetricTree {
 
         let heavy_left = rng.random_range(0..2u32) == 0;
         let base = spread as i32;
+        // Heavy side gets 2x spread, light side gets 1/2 -- 4:1 ratio
         let (left_spread, right_spread) = if heavy_left {
-            (base * 5 / 3, base * 2 / 3)
+            (base * 2, base / 2)
         } else {
-            (base * 2 / 3, base * 5 / 3)
+            (base / 2, base * 2)
         };
-        let left_max_d = if heavy_left { 4usize } else { 2 };
-        let right_max_d = if heavy_left { 2 } else { 4 };
+        let left_max_d = if heavy_left { 4usize } else { 1 };
+        let right_max_d = if heavy_left { 1 } else { 4 };
 
         // Initial junction
         set(grid, rx, split_y, '┼', params.trunk_color);
@@ -3287,16 +3320,21 @@ impl TreeDrawer for AsymmetricTree {
                 continue;
             }
 
-            let split_at = top + (bottom - top) * 2 / 5;
-            let arm = (base >> (depth + 1) as u32).max(1);
+            // Randomize split height (20-60% of segment)
+            let split_frac = 20 + rng.random_range(0..41u32) as i32;
+            let split_at = (top + (bottom - top) * split_frac / 100).max(top + 1).min(bottom - 1);
+            // Unequal arms: one side 50-150% of base arm
+            let base_arm = (base >> (depth + 1) as u32).max(1);
+            let left_arm = (base_arm * rng.random_range(30..120u32) as i32 / 100).max(1);
+            let right_arm = (base_arm * rng.random_range(50..170u32) as i32 / 100).max(1);
             set(grid, x, split_at, '┼', c);
-            for ax in x - arm..x { set(grid, ax, split_at, '─', c); }
-            for ax in x + 1..=x + arm { set(grid, ax, split_at, '─', c); }
-            set(grid, x - arm, split_at, '╭', c);
-            set(grid, x + arm, split_at, '╮', c);
+            for ax in x - left_arm..x { set(grid, ax, split_at, '─', c); }
+            for ax in x + 1..=x + right_arm { set(grid, ax, split_at, '─', c); }
+            set(grid, x - left_arm, split_at, '╭', c);
+            set(grid, x + right_arm, split_at, '╮', c);
 
-            queue.push((x - arm, top, split_at, depth + 1, max_d));
-            queue.push((x + arm, top, split_at, depth + 1, max_d));
+            queue.push((x - left_arm, top, split_at, depth + 1, max_d));
+            queue.push((x + right_arm, top, split_at, depth + 1, max_d));
         }
 
         BranchResult { tips }

@@ -2506,15 +2506,16 @@ fn main() {
         // args: [energy]
         let energy: f32 = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0.8);
 
-        // 24 styles in a 6x4 grid
+        // Styles 0-17 only (squat styles 18-23 are too minimal as standalone bushes)
+        let styles: Vec<usize> = (0..18).collect();
         let cols = 6usize;
-        let rows = 4usize;
+        let rows = 3usize;
         let cell_w = width / cols;
         let cell_h = height / rows;
 
-        for style_idx in 0..24usize {
-            let col = style_idx % cols;
-            let row = style_idx / cols;
+        for (i, &style_idx) in styles.iter().enumerate() {
+            let col = i % cols;
+            let row = i / cols;
             let cx = (col * cell_w + cell_w / 2) as i32;
             let cy = (row * cell_h + cell_h * 3 / 4) as i32;
             let bush_w = (cell_w as i32 / 3).max(3);
@@ -2618,148 +2619,217 @@ fn main() {
             }
         }
 
-        // Depth layers: bg (far), mid, fg (near)
+        // ── Scene walk placement ──────────────────────────────────────
+        // Walk across the terrain, placing elements at each stop.
+        // Element types: tree, bush, flower cluster, fruit vine, empty gap.
         let all_tapers = [TaperKind::Diagonal, TaperKind::Shelf, TaperKind::Bracket, TaperKind::Step, TaperKind::Melt];
-        let all_kinds: [usize; 17] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
 
-        struct F7Tree { x: usize, root_y: usize, canopy_y: usize, spread: usize,
-                        kind: usize, hue: f64, energy: f32, bole_style: usize,
-                        taper: TaperKind, layer: u8 }
+        #[derive(Clone, Copy)]
+        enum F7Element { Tree { kind: usize, spread: usize, tree_h: usize, bole_style: Option<usize>, taper: TaperKind },
+                         Bush { style: usize, bush_w: i32 },
+                         Flowers, FruitVine }
 
-        let mut trees: Vec<F7Tree> = Vec::new();
+        struct F7Stop { x: usize, root_y: usize, hue: f64, layer: u8, element: F7Element }
 
-        // Background: 4-8 small dim trees
-        let bg_count = rng.random_range(4..9u32);
-        for _ in 0..bg_count {
-            let tx = rng.random_range(3..(width - 3) as u32) as usize;
-            let grass_y = ground_heights[tx.min(width - 1)];
-            let root_y = (grass_y + rng.random_range(0..2u32) as usize).min(height - 2);
-            let tree_h = rng.random_range(3..10u32) as usize;
-            let canopy_y = root_y.saturating_sub(tree_h).max(1);
-            trees.push(F7Tree {
-                x: tx, root_y, canopy_y, spread: rng.random_range(2..6u32) as usize,
-                kind: all_kinds[rng.random_range(0..all_kinds.len() as u32) as usize],
+        let mut stops: Vec<F7Stop> = Vec::new();
+
+        // Walk: start at random x, hop 8-20 cells each step, wrap around
+        let stop_count = rng.random_range(12..22u32) as usize;
+        let min_spacing = (width / (stop_count + 1)).max(6);
+        let mut wx = rng.random_range(4..(width - 4) as u32) as usize;
+
+        for si in 0..stop_count {
+            // Hop forward with some jitter
+            if si > 0 {
+                let hop = rng.random_range(min_spacing as u32..(min_spacing as u32 * 3).min(width as u32 / 2));
+                wx = (wx + hop as usize) % width;
+                wx = wx.clamp(3, width - 4);
+            }
+
+            let grass_y = ground_heights[wx.min(width - 1)];
+            // Layer assignment: first third bg, middle third mid, last third fg
+            let layer = match si * 3 / stop_count {
+                0 => 0u8,
+                1 => 1,
+                _ => 2,
+            };
+            let root_offset = match layer {
+                0 => rng.random_range(0..2u32) as usize,
+                1 => rng.random_range(1..5u32) as usize,
+                _ => rng.random_range(2..7u32) as usize,
+            };
+            let root_y = (grass_y + root_offset).min(height - 2);
+
+            // Pick element type: trees most common, bushes and flowers fill gaps
+            let element = match rng.random_range(0..10u32) {
+                0..=5 => {
+                    let kind = rng.random_range(0..17u32) as usize;
+                    let spread = match layer {
+                        0 => rng.random_range(2..6u32) as usize,
+                        1 => rng.random_range(5..14u32) as usize,
+                        _ => rng.random_range(10..22u32) as usize,
+                    };
+                    let tree_h = match layer {
+                        0 => rng.random_range(3..10u32) as usize,
+                        1 => rng.random_range(10..25u32) as usize,
+                        _ => rng.random_range(20..40u32.min(root_y.max(21) as u32)) as usize,
+                    };
+                    // ~40% of trees get a bole, rest go straight trunk into ground
+                    let bole_style = if rng.random_range(0..10u32) < 4 {
+                        Some(rng.random_range(0..10u32) as usize)  // simpler styles only
+                    } else { None };
+                    F7Element::Tree {
+                        kind, spread, tree_h, bole_style,
+                        taper: all_tapers[rng.random_range(0..all_tapers.len() as u32) as usize],
+                    }
+                }
+                // 6..=7 => F7Element::Bush {
+                //     style: rng.random_range(0..18u32) as usize,
+                //     bush_w: rng.random_range(3..8u32) as i32,
+                // },
+                6..=7 => F7Element::Flowers,
+                8 => F7Element::Flowers,
+                _ => F7Element::FruitVine,
+            };
+
+            stops.push(F7Stop {
+                x: wx, root_y,
                 hue: rng.random_range(0..360u32) as f64,
-                energy: rng.random_range(30..55u32) as f32 / 100.0,
-                bole_style: rng.random_range(0..24u32) as usize,
-                taper: all_tapers[rng.random_range(0..all_tapers.len() as u32) as usize],
-                layer: 0,
+                layer, element,
             });
         }
 
-        // Midground: 3-6 medium trees
-        let mid_count = rng.random_range(3..7u32);
-        for _ in 0..mid_count {
-            let tx = rng.random_range(3..(width - 3) as u32) as usize;
-            let grass_y = ground_heights[tx.min(width - 1)];
-            let root_y = (grass_y + rng.random_range(1..5u32) as usize).min(height - 2);
-            let tree_h = rng.random_range(10..25u32) as usize;
-            let canopy_y = root_y.saturating_sub(tree_h).max(1);
-            trees.push(F7Tree {
-                x: tx, root_y, canopy_y, spread: rng.random_range(5..14u32) as usize,
-                kind: all_kinds[rng.random_range(0..all_kinds.len() as u32) as usize],
-                hue: rng.random_range(0..360u32) as f64,
-                energy: rng.random_range(60..85u32) as f32 / 100.0,
-                bole_style: rng.random_range(0..24u32) as usize,
-                taper: all_tapers[rng.random_range(0..all_tapers.len() as u32) as usize],
-                layer: 1,
-            });
-        }
+        // Sort back-to-front: bg (layer 0) first, then mid, then fg
+        stops.sort_by(|a, b| a.layer.cmp(&b.layer).then(a.root_y.cmp(&b.root_y)));
 
-        // Foreground: 1-3 large bright trees
-        let fg_count = rng.random_range(1..4u32);
-        for _ in 0..fg_count {
-            let tx = rng.random_range(5..(width - 5) as u32) as usize;
-            let grass_y = ground_heights[tx.min(width - 1)];
-            let root_y = (grass_y + rng.random_range(2..7u32) as usize).min(height - 2);
-            let tree_h = rng.random_range(20..40u32.min(root_y as u32)) as usize;
-            let canopy_y = root_y.saturating_sub(tree_h).max(1);
-            trees.push(F7Tree {
-                x: tx, root_y, canopy_y, spread: rng.random_range(10..22u32) as usize,
-                kind: all_kinds[rng.random_range(0..all_kinds.len() as u32) as usize],
-                hue: rng.random_range(0..360u32) as f64,
-                energy: rng.random_range(85..100u32) as f32 / 100.0,
-                bole_style: rng.random_range(0..24u32) as usize,
-                taper: all_tapers[rng.random_range(0..all_tapers.len() as u32) as usize],
-                layer: 2,
-            });
-        }
-
-        // Sort: bg first (layer 0), then mid (1), then fg (2). Within layer, by root_y.
-        trees.sort_by(|a, b| a.layer.cmp(&b.layer).then(a.root_y.cmp(&b.root_y)));
-
-        for tree in &trees {
-            let lightness = match tree.layer {
+        // ── Draw each stop ───────────────────────────────────────────
+        for stop in &stops {
+            let lightness = match stop.layer {
                 0 => 0.15 + rng.random::<f64>() * 0.10,
                 1 => 0.25 + rng.random::<f64>() * 0.10,
                 _ => 0.35 + rng.random::<f64>() * 0.10,
             };
-            let saturation = match tree.layer {
-                0 => 0.30,
-                1 => 0.45,
-                _ => 0.60,
+            let saturation = match stop.layer {
+                0 => 0.30, 1 => 0.45, _ => 0.60,
             };
-            let color = hsl_to_rgb(tree.hue, saturation, lightness);
+            let energy = match stop.layer {
+                0 => rng.random_range(30..55u32) as f32 / 100.0,
+                1 => rng.random_range(60..85u32) as f32 / 100.0,
+                _ => rng.random_range(85..100u32) as f32 / 100.0,
+            };
+            let color = hsl_to_rgb(stop.hue, saturation, lightness);
 
-            let plot_w = tree.spread * 2 + 6;
-            let plot = Rect {
-                x: tree.x.saturating_sub(plot_w / 2),
-                y: tree.canopy_y,
-                w: plot_w.min(width),
-                h: tree.root_y.saturating_sub(tree.canopy_y) + 2,
-            };
-            let tp = TreeParams {
-                plot, energy: tree.energy,
-                trunk_color: color, bark_color: darken(color, 15),
-                branch_color: color, tip_color: lighten(color, 30),
-                fruit_color: shift_hue(color, 60.0),
-                fruit_factor: 0.3, branch_factor: 0.8,
-                direction: GrowDir::Up,
-                bole: Some(Bole { style: tree.bole_style }),
-                taper: tree.taper,
-            };
-            match tree.kind % 17 {
-                0 => SpiralTree.grow(&mut grid, &tp, &mut rng),
-                1 => CandelabraTree.grow(&mut grid, &tp, &mut rng),
-                2 => SplitTree.grow(&mut grid, &tp, &mut rng),
-                3 => BirchTree.grow(&mut grid, &tp, &mut rng),
-                4 => WavyBirch.grow(&mut grid, &tp, &mut rng),
-                5 => StormTree::new().grow(&mut grid, &tp, &mut rng),
-                6 => DeadTree.grow(&mut grid, &tp, &mut rng),
-                7 => DroopingTree.grow(&mut grid, &tp, &mut rng),
-                8 => PineTree.grow(&mut grid, &tp, &mut rng),
-                9 => WillowTree.grow(&mut grid, &tp, &mut rng),
-                10 => PalmTree.grow(&mut grid, &tp, &mut rng),
-                11 => WideTree.grow(&mut grid, &tp, &mut rng),
-                12 => AsymmetricTree.grow(&mut grid, &tp, &mut rng),
-                13 => KaijuTree.grow(&mut grid, &tp, &mut rng),
-                14 => ZigzagTree.grow(&mut grid, &tp, &mut rng),
-                15 => BrailleCanopyTree.grow(&mut grid, &tp, &mut rng),
-                16 => TendrilTree.grow(&mut grid, &tp, &mut rng),
-                _ => SpiralTree.grow(&mut grid, &tp, &mut rng),
+            match stop.element {
+                F7Element::Tree { kind, spread, tree_h, bole_style, taper } => {
+                    let canopy_y = stop.root_y.saturating_sub(tree_h).max(1);
+                    let plot_w = spread * 2 + 6;
+                    let plot = Rect {
+                        x: stop.x.saturating_sub(plot_w / 2),
+                        y: canopy_y,
+                        w: plot_w.min(width),
+                        h: stop.root_y.saturating_sub(canopy_y) + 2,
+                    };
+                    let tp = TreeParams {
+                        plot, energy,
+                        trunk_color: color, bark_color: darken(color, 15),
+                        branch_color: color, tip_color: lighten(color, 30),
+                        fruit_color: shift_hue(color, 60.0),
+                        fruit_factor: 0.3, branch_factor: 0.8,
+                        direction: GrowDir::Up,
+                        bole: bole_style.map(|s| Bole { style: s }),
+                        taper,
+                    };
+                    match kind % 17 {
+                        0 => SpiralTree.grow(&mut grid, &tp, &mut rng),
+                        1 => CandelabraTree.grow(&mut grid, &tp, &mut rng),
+                        2 => SplitTree.grow(&mut grid, &tp, &mut rng),
+                        3 => BirchTree.grow(&mut grid, &tp, &mut rng),
+                        4 => WavyBirch.grow(&mut grid, &tp, &mut rng),
+                        5 => StormTree::new().grow(&mut grid, &tp, &mut rng),
+                        6 => DeadTree.grow(&mut grid, &tp, &mut rng),
+                        7 => DroopingTree.grow(&mut grid, &tp, &mut rng),
+                        8 => PineTree.grow(&mut grid, &tp, &mut rng),
+                        9 => WillowTree.grow(&mut grid, &tp, &mut rng),
+                        10 => PalmTree.grow(&mut grid, &tp, &mut rng),
+                        11 => WideTree.grow(&mut grid, &tp, &mut rng),
+                        12 => AsymmetricTree.grow(&mut grid, &tp, &mut rng),
+                        13 => KaijuTree.grow(&mut grid, &tp, &mut rng),
+                        14 => ZigzagTree.grow(&mut grid, &tp, &mut rng),
+                        15 => BrailleCanopyTree.grow(&mut grid, &tp, &mut rng),
+                        16 => TendrilTree.grow(&mut grid, &tp, &mut rng),
+                        _ => SpiralTree.grow(&mut grid, &tp, &mut rng),
+                    }
+                }
+                F7Element::Bush { style, bush_w } => {
+                    let fade = match rng.random_range(0..3u32) {
+                        0 => FadeDir::Down, 1 => FadeDir::CenterOut, _ => FadeDir::Up,
+                    };
+                    let bush = BushSprite {
+                        style, x: stop.x as i32, y: stop.root_y as i32,
+                        width: bush_w, color, ground: color,  // no fade -- preserve ground colors
+                        fade, energy,
+                    };
+                    bush.draw(&mut grid, &mut rng);
+                }
+                F7Element::Flowers => {
+                    let burst = rng.random_range(3..7u32);
+                    for _ in 0..burst {
+                        let angle = rng.random::<f32>() * std::f32::consts::TAU;
+                        let radius = rng.random_range(1..8u32) as f32;
+                        let fx = (stop.x as f32 + angle.cos() * radius * 1.5) as i32;
+                        let fy = stop.root_y as i32 + rng.random_range(0..3u32) as i32;
+                        if fx >= 1 && fy >= 1 && (fx as usize) < width - 1 && (fy as usize) < height - 1 {
+                            grow_flower_spiral(&mut grid, fx as usize, fy as usize, color, &mut rng);
+                        }
+                    }
+                }
+                F7Element::FruitVine => {
+                    let burst = rng.random_range(2..5u32);
+                    for _ in 0..burst {
+                        let angle = rng.random::<f32>() * std::f32::consts::TAU;
+                        let radius = rng.random_range(1..6u32) as f32;
+                        let fx = (stop.x as f32 + angle.cos() * radius * 1.5) as i32;
+                        let fy = stop.root_y as i32 + rng.random_range(0..2u32) as i32;
+                        if fx >= 1 && fy >= 1 && (fx as usize) < width - 1 && (fy as usize) < height - 1 {
+                            let c = shift_hue(color, rng.random_range(20..80u32) as f64);
+                            grow_fruit_vine(&mut grid, fx as usize, fy as usize, c, &mut rng);
+                        }
+                    }
+                    // Braille fruit dots near the vines
+                    for _ in 0..rng.random_range(1..4u32) {
+                        let fx = stop.x as i32 + rng.random_range(-4..5i32);
+                        let fy = stop.root_y as i32 + rng.random_range(-2..3i32);
+                        if fx >= 0 && fy >= 0 && (fx as usize) < width && (fy as usize) < height {
+                            let fruit_c = shift_hue(color, 60.0);
+                            draw_fruit(&mut grid, fx as usize, fy as usize, rng.random_range(0..5), fruit_c);
+                        }
+                    }
+                }
             }
         }
 
-        // Braille leaf clusters
+        // Braille leaf clusters on branch tips
         let leaf_hue = rng.random_range(60..180u32) as f64;
         let leaf_color = hsl_to_rgb(leaf_hue, 0.5, 0.3);
         sprout_leaves(&mut grid, leaf_color, 45, &mut rng);
 
-        // Ground-level scatter near tree bases
-        for tree in &trees {
-            if tree.layer == 0 { continue; }
-            let burst = rng.random_range(0..3u32);
-            for _ in 0..burst {
-                let angle = rng.random::<f32>() * std::f32::consts::TAU;
-                let radius = rng.random_range(1..6u32) as f32;
-                let fx = (tree.x as f32 + angle.cos() * radius * 1.5) as i32;
-                let fy = tree.root_y as i32 + rng.random_range(1..3u32) as i32;
-                if fx >= 1 && fy >= 1 && (fx as usize) < width - 1 && (fy as usize) < height - 1 {
-                    let c = palette[rng.random_range(2..5)];
-                    match rng.random_range(0..3u32) {
-                        0 => grow_flower_spiral(&mut grid, fx as usize, fy as usize, c, &mut rng),
-                        1 => grow_fruit_vine(&mut grid, fx as usize, fy as usize, c, &mut rng),
-                        _ => draw_flower(&mut grid, fx as usize, fy as usize, rng.random_range(0..5), c),
+        // Extra ground-level flower/fruit scatter near tree stops
+        for stop in &stops {
+            if stop.layer == 0 { continue; }
+            if let F7Element::Tree { .. } = stop.element {
+                let burst = rng.random_range(0..3u32);
+                for _ in 0..burst {
+                    let angle = rng.random::<f32>() * std::f32::consts::TAU;
+                    let radius = rng.random_range(1..6u32) as f32;
+                    let fx = (stop.x as f32 + angle.cos() * radius * 1.5) as i32;
+                    let fy = stop.root_y as i32 + rng.random_range(1..3u32) as i32;
+                    if fx >= 1 && fy >= 1 && (fx as usize) < width - 1 && (fy as usize) < height - 1 {
+                        let c = palette[rng.random_range(2..5)];
+                        match rng.random_range(0..3u32) {
+                            0 => grow_flower_spiral(&mut grid, fx as usize, fy as usize, c, &mut rng),
+                            1 => grow_fruit_vine(&mut grid, fx as usize, fy as usize, c, &mut rng),
+                            _ => draw_flower(&mut grid, fx as usize, fy as usize, rng.random_range(0..5), c),
+                        }
                     }
                 }
             }
