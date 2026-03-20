@@ -1280,89 +1280,67 @@ impl BoleStyle for Bole {
             12 => {
                 (root_x, root_y)
             }
-            // Style 13: Braille -- bell-curved mushroom bole, dense core fading to diffuse edges
+            // Style 13: Braille -- horizontal shelf bole, wide ground then sharp drop
             13 => {
-                let energy = params.energy.clamp(0.15, 1.0);
-                let rows = ((energy * 3.5).ceil() as i32 + 1).clamp(2, 5);
-                let base_w_l = lw.max(3);
-                let base_w_r = rw.max(3);
+                let energy = params.energy.clamp(0.2, 1.0);
+                let dense = ['⣿', '⣾', '⣷', '⣶', '⣤'];
+                let mid   = ['⡇', '⢸', '⠿', '⠶', '⠛'];
+                let edge  = ['⡀', '⢀', '⠂', '⠁', '⠈'];
+
+                // Shelf structure: 1-2 wide ground rows, then sharp narrow
+                let shelf_rows = if energy > 0.5 { 2 } else { 1 };
+                let upper_rows = ((energy * 2.0).ceil() as i32).clamp(0, 3);
+                let base_l = lw.max(3) + rng.random_range(0..3u32) as i32;
+                let base_r = rw.max(3) + rng.random_range(0..2u32) as i32;
                 let mut cy = root_y;
 
-                // Char palettes ordered dense-to-light
-                let dense_chars = ['⣿', '⣾', '⣷', '⣶'];
-                let mid_chars = ['⡇', '⢸', '⠿', '⠶', '⠛'];
-                let edge_chars = ['⡀', '⢀', '⠂', '⠁', '⠈'];
-
-                // Bell curve: row 0 (ground) is widest, each row above is narrower.
-                // t goes from 0.0 (ground) to 1.0 (top), width follows cos^2 envelope.
-                for row in 0..rows {
-                    let t = row as f32 / rows as f32;
-                    // cos^2 bell: 1.0 at ground, tapering toward 0 at top
-                    let bell = (1.0 - t).powi(2) * 0.7 + 0.3 * (1.0 - t);
-
-                    // Independent left/right widths with per-row jitter of 0-2 chars
-                    let jitter_l = rng.random_range(0..3u32) as i32 - 1; // -1, 0, or 1
-                    let jitter_r = rng.random_range(0..3u32) as i32 - 1;
-                    let w_l = ((base_w_l as f32 * bell) as i32 + jitter_l).max(1);
-                    let w_r = ((base_w_r as f32 * bell) as i32 + jitter_r).max(1);
-
-                    let row_color = darken(color, (row as u8 * 3).min(12));
-
-                    // Center column: always densest
-                    let center_ch = dense_chars[rng.random_range(0..2u32) as usize];
-                    set(grid, root_x, cy, center_ch, row_color);
-
-                    // Draw each side with a density gradient: dense near center, lighter at edge
-                    // Left side
-                    for dx in 1..=w_l {
-                        let frac = dx as f32 / (w_l + 1) as f32; // 0..1 from center to edge
-                        let (ch, ch_color) = if frac < 0.45 {
-                            // Inner core: dense chars with variety
-                            let ch = dense_chars[rng.random_range(0..dense_chars.len() as u32) as usize];
-                            (ch, darken(row_color, (dx as u8).min(5)))
-                        } else if frac < 0.8 {
-                            // Mid zone
-                            let ch = mid_chars[rng.random_range(0..mid_chars.len() as u32) as usize];
-                            (ch, bark)
-                        } else {
-                            // Near edge but not the edge char itself
-                            let ch = mid_chars[rng.random_range(0..3u32) as usize];
-                            (ch, dim)
-                        };
-                        set(grid, root_x - dx, cy, ch, ch_color);
+                // SHELF: wide dense ground rows (the horizontal emphasis)
+                for row in 0..shelf_rows {
+                    let sl = base_l - row;
+                    let sr = base_r - row;
+                    let rc = if row == 0 { color } else { darken(color, 4) };
+                    set(grid, root_x, cy, '⣿', rc);
+                    for dx in 1..=sl {
+                        let ch = dense[rng.random_range(0..dense.len() as u32) as usize];
+                        set(grid, root_x - dx, cy, ch, darken(rc, ((dx as u8) * 2).min(8)));
                     }
-                    // Left edge diffusion: 1 char
-                    let edge_ch = edge_chars[rng.random_range(0..edge_chars.len() as u32) as usize];
-                    set(grid, root_x - w_l - 1, cy, edge_ch, dim);
-
-                    // Right side
-                    for dx in 1..=w_r {
-                        let frac = dx as f32 / (w_r + 1) as f32;
-                        let (ch, ch_color) = if frac < 0.45 {
-                            let ch = dense_chars[rng.random_range(0..dense_chars.len() as u32) as usize];
-                            (ch, darken(row_color, (dx as u8).min(5)))
-                        } else if frac < 0.8 {
-                            let ch = mid_chars[rng.random_range(0..mid_chars.len() as u32) as usize];
-                            (ch, bark)
-                        } else {
-                            let ch = mid_chars[rng.random_range(0..3u32) as usize];
-                            (ch, dim)
-                        };
-                        set(grid, root_x + dx, cy, ch, ch_color);
+                    for dx in 1..=sr {
+                        let ch = dense[rng.random_range(0..dense.len() as u32) as usize];
+                        set(grid, root_x + dx, cy, ch, darken(rc, ((dx as u8) * 2).min(8)));
                     }
-                    // Right edge diffusion: 1 char
-                    let edge_ch = edge_chars[rng.random_range(0..edge_chars.len() as u32) as usize];
-                    set(grid, root_x + w_r + 1, cy, edge_ch, dim);
-
+                    set(grid, root_x - sl - 1, cy, edge[rng.random_range(0..edge.len() as u32) as usize], dim);
+                    set(grid, root_x + sr + 1, cy, edge[rng.random_range(0..edge.len() as u32) as usize], dim);
                     cy -= 1;
                 }
 
-                // Taper row: narrow transition to trunk above
-                let taper_ch = mid_chars[rng.random_range(0..2u32) as usize];
-                set(grid, root_x, cy, taper_ch, bark);
-                if base_w_l > 2 || base_w_r > 2 {
-                    set(grid, root_x - 1, cy, edge_chars[rng.random_range(0..3u32) as usize], dim);
-                    set(grid, root_x + 1, cy, edge_chars[rng.random_range(0..3u32) as usize], dim);
+                // SHARP DROP: immediately much narrower (40-60% of shelf width)
+                let drop_frac = 0.4 + rng.random::<f32>() * 0.2;
+                let mut cur_l = (base_l as f32 * drop_frac).max(1.0) as i32;
+                let mut cur_r = (base_r as f32 * drop_frac).max(1.0) as i32;
+
+                for row in 0..upper_rows {
+                    let rc = darken(color, ((shelf_rows + row) as u8 * 3).min(12));
+                    let chars = if row == 0 { &mid } else { &mid };
+                    set(grid, root_x, cy, dense[rng.random_range(0..2u32) as usize], rc);
+                    for dx in 1..=cur_l {
+                        set(grid, root_x - dx, cy, chars[rng.random_range(0..chars.len() as u32) as usize], darken(rc, ((dx as u8) * 2).min(8)));
+                    }
+                    for dx in 1..=cur_r {
+                        set(grid, root_x + dx, cy, chars[rng.random_range(0..chars.len() as u32) as usize], darken(rc, ((dx as u8) * 2).min(8)));
+                    }
+                    set(grid, root_x - cur_l - 1, cy, edge[rng.random_range(0..edge.len() as u32) as usize], dim);
+                    set(grid, root_x + cur_r + 1, cy, edge[rng.random_range(0..edge.len() as u32) as usize], dim);
+                    // Taper each upper row slightly
+                    cur_l = (cur_l - rng.random_range(0..2u32) as i32).max(1);
+                    cur_r = (cur_r - rng.random_range(0..2u32) as i32).max(1);
+                    cy -= 1;
+                }
+
+                // Taper to trunk
+                set(grid, root_x, cy, '⡇', bark);
+                if cur_l > 1 || cur_r > 1 {
+                    set(grid, root_x - 1, cy, '⡀', dim);
+                    set(grid, root_x + 1, cy, '⢀', dim);
                     cy -= 1;
                 }
 
