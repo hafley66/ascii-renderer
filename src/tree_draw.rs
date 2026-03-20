@@ -23,6 +23,7 @@ pub struct TreeParams {
     pub branch_factor: f32,
     pub direction: GrowDir,
     pub bole: Option<Bole>,
+    pub taper: TaperKind,
 }
 
 impl TreeParams {
@@ -84,44 +85,184 @@ pub struct BranchIntent {
     pub level: usize,
 }
 
-/// Draw a taper zone narrowing from bole exit width to a single trunk column.
-/// Returns the (x, y) where the trunk should start drawing.
-fn draw_taper(grid: &mut Grid, exit: &BoleExit, color: Color) -> (i32, i32) {
+// ── Taper styles ────────────────────────────────────────────────────
+// Connects wide bole exit to narrow trunk. Each variant has a different look.
+
+#[derive(Clone, Copy, Debug)]
+pub enum TaperKind {
+    Diagonal,  // classic ╱─│─╲ triangle
+    Shelf,     // └──┬──┘ horizontal ledges stepping inward
+    Bracket,   // ╭───╮ / ╰─┴─╯ curved cradle
+    Step,      // ├──┼──┤ rectangular frames shrinking per row
+    Melt,      // braille density fade
+}
+
+impl Default for TaperKind {
+    fn default() -> Self { TaperKind::Diagonal }
+}
+
+fn draw_taper(grid: &mut Grid, exit: &BoleExit, color: Color, kind: TaperKind) -> (i32, i32) {
+    if exit.left == 0 && exit.right == 0 {
+        set(grid, exit.x, exit.y, '│', color);
+        return (exit.x, exit.y);
+    }
+    match kind {
+        TaperKind::Diagonal => taper_diagonal(grid, exit, color),
+        TaperKind::Shelf    => taper_shelf(grid, exit, color),
+        TaperKind::Bracket  => taper_bracket(grid, exit, color),
+        TaperKind::Step     => taper_step(grid, exit, color),
+        TaperKind::Melt     => taper_melt(grid, exit, color),
+    }
+}
+
+fn taper_diagonal(grid: &mut Grid, exit: &BoleExit, color: Color) -> (i32, i32) {
     let mut left = exit.left;
     let mut right = exit.right;
     let mut cy = exit.y;
     let bark = darken(color, 15);
 
-    if left == 0 && right == 0 {
-        set(grid, exit.x, cy, '│', color);
-        return (exit.x, cy);
-    }
-
     while left > 0 || right > 0 {
-        // Draw current row: diagonal edges with horizontal fill
         if left > 0 {
             set(grid, exit.x - left, cy, '╱', bark);
-            for dx in 1..left {
-                set(grid, exit.x - dx, cy, '─', bark);
-            }
+            for dx in 1..left { set(grid, exit.x - dx, cy, '─', bark); }
         }
         if right > 0 {
             set(grid, exit.x + right, cy, '╲', bark);
-            for dx in 1..right {
-                set(grid, exit.x + dx, cy, '─', bark);
-            }
+            for dx in 1..right { set(grid, exit.x + dx, cy, '─', bark); }
         }
         set(grid, exit.x, cy, '│', color);
 
-        // Shrink: reduce each side, faster for wide boles
         let dl = if left + right > 6 { (left + 1) / 2 } else { 1.min(left) };
         let dr = if left + right > 6 { (right + 1) / 2 } else { 1.min(right) };
         left -= dl;
         right -= dr;
+        cy -= 1;
+    }
+    set(grid, exit.x, cy, '│', color);
+    (exit.x, cy)
+}
 
+fn taper_shelf(grid: &mut Grid, exit: &BoleExit, color: Color) -> (i32, i32) {
+    let mut left = exit.left;
+    let mut right = exit.right;
+    let mut cy = exit.y;
+    let bark = darken(color, 15);
+
+    while left > 0 || right > 0 {
+        // Horizontal shelf with corner brackets
+        set(grid, exit.x - left, cy, '└', bark);
+        set(grid, exit.x + right, cy, '┘', bark);
+        for dx in (-left + 1)..right {
+            set(grid, exit.x + dx, cy, '─', bark);
+        }
+        set(grid, exit.x, cy, '┬', color);
+
+        let dl = if left + right > 6 { (left + 1) / 2 } else { 1.min(left) };
+        let dr = if left + right > 6 { (right + 1) / 2 } else { 1.min(right) };
+        left -= dl;
+        right -= dr;
+        cy -= 1;
+    }
+    set(grid, exit.x, cy, '│', color);
+    (exit.x, cy)
+}
+
+fn taper_bracket(grid: &mut Grid, exit: &BoleExit, color: Color) -> (i32, i32) {
+    let mut left = exit.left;
+    let mut right = exit.right;
+    let mut cy = exit.y;
+    let bark = darken(color, 15);
+
+    // Bottom row: open bracket ╰───┴───╯
+    set(grid, exit.x - left, cy, '╰', bark);
+    set(grid, exit.x + right, cy, '╯', bark);
+    for dx in (-left + 1)..right {
+        set(grid, exit.x + dx, cy, '─', bark);
+    }
+    set(grid, exit.x, cy, '┴', color);
+    cy -= 1;
+
+    let dl = if left + right > 6 { (left + 1) / 2 } else { 1.min(left) };
+    let dr = if left + right > 6 { (right + 1) / 2 } else { 1.min(right) };
+    left -= dl;
+    right -= dr;
+
+    // Middle rows: vertical walls │   │
+    while left > 0 || right > 0 {
+        if left > 0 { set(grid, exit.x - left, cy, '│', bark); }
+        if right > 0 { set(grid, exit.x + right, cy, '│', bark); }
+        set(grid, exit.x, cy, '│', color);
+
+        let dl = if left + right > 4 { (left + 1) / 2 } else { 1.min(left) };
+        let dr = if left + right > 4 { (right + 1) / 2 } else { 1.min(right) };
+        left -= dl;
+        right -= dr;
         cy -= 1;
     }
 
+    // Top row: closing bracket ╭─╮
+    if exit.left > 0 || exit.right > 0 {
+        set(grid, exit.x, cy, '│', color);
+    }
+    (exit.x, cy)
+}
+
+fn taper_step(grid: &mut Grid, exit: &BoleExit, color: Color) -> (i32, i32) {
+    let mut left = exit.left;
+    let mut right = exit.right;
+    let mut cy = exit.y;
+    let bark = darken(color, 15);
+
+    while left > 0 || right > 0 {
+        // Rectangular step: ├──┼──┤
+        set(grid, exit.x - left, cy, '├', bark);
+        set(grid, exit.x + right, cy, '┤', bark);
+        for dx in (-left + 1)..right {
+            set(grid, exit.x + dx, cy, '═', lighten(bark, 5));
+        }
+        set(grid, exit.x, cy, '╪', color);
+
+        // Shrink by 1 each side per row (slower, more steps visible)
+        left = (left - 1).max(0);
+        right = (right - 1).max(0);
+        cy -= 1;
+    }
+    set(grid, exit.x, cy, '│', color);
+    (exit.x, cy)
+}
+
+fn taper_melt(grid: &mut Grid, exit: &BoleExit, color: Color) -> (i32, i32) {
+    let mut left = exit.left;
+    let mut right = exit.right;
+    let mut cy = exit.y;
+    let bark = darken(color, 15);
+    let dense = ['⣿', '⣾', '⣷', '⣶'];
+    let mid   = ['⡇', '⢸', '⠿', '⠶'];
+    let thin  = ['⠃', '⠆', '⠁', '⠈'];
+
+    let total_rows = (left.max(right) + 1) as usize;
+    let mut row = 0;
+    while left > 0 || right > 0 {
+        let frac = row as f32 / total_rows as f32;
+        let palette = if frac < 0.33 { &dense[..] } else if frac < 0.66 { &mid[..] } else { &thin[..] };
+
+        for dx in -left..=right {
+            if dx == 0 {
+                set(grid, exit.x, cy, '│', color);
+            } else {
+                let idx = ((dx.unsigned_abs() as usize + row) % palette.len()) as usize;
+                let c = if frac < 0.5 { bark } else { lighten(bark, (frac * 30.0) as u8) };
+                set(grid, exit.x + dx, cy, palette[idx], c);
+            }
+        }
+
+        let dl = if left + right > 6 { (left + 1) / 2 } else { 1.min(left) };
+        let dr = if left + right > 6 { (right + 1) / 2 } else { 1.min(right) };
+        left -= dl;
+        right -= dr;
+        cy -= 1;
+        row += 1;
+    }
     set(grid, exit.x, cy, '│', color);
     (exit.x, cy)
 }
@@ -1793,7 +1934,7 @@ pub trait TreeDrawer {
             let (rx, ry) = params.root();
             BoleExit::point(rx, ry)
         };
-        let (rx, ry) = draw_taper(grid, &exit, params.trunk_color);
+        let (rx, ry) = draw_taper(grid, &exit, params.trunk_color, params.taper);
         let mut pen = TreePen::new(rx, ry, params.trunk_color);
         pen.last_dir = Some(MoveDir::Up);
 

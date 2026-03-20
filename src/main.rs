@@ -1797,6 +1797,7 @@ fn main() {
                 branch_factor: 0.8,
                 direction: GrowDir::Up,
                 bole: None,
+                taper: TaperKind::default(),
             };
             match slot.kind {
                 0 => SplitTree.grow(&mut grid, &tp, &mut rng),
@@ -1867,6 +1868,7 @@ fn main() {
                 branch_factor: 0.7,
                 direction: GrowDir::Up,
                 bole: None,
+                taper: TaperKind::default(),
             };
             match kind {
                 0 => SplitTree.grow(&mut grid, &tp, &mut rng),
@@ -1918,6 +1920,7 @@ fn main() {
                     branch_factor: 0.5,
                     direction: GrowDir::Up,
                     bole: None,
+                taper: TaperKind::default(),
                 };
 
                 let bole = Bole { style: si };
@@ -1982,6 +1985,7 @@ fn main() {
                     branch_factor: 0.5,
                     direction: GrowDir::Up,
                     bole: None,
+                taper: TaperKind::default(),
                 };
 
                 let bole = Bole { style: si + 6 };
@@ -2044,6 +2048,7 @@ fn main() {
                     branch_factor: 0.5,
                     direction: GrowDir::Up,
                     bole: None,
+                taper: TaperKind::default(),
                 };
 
                 let bole = Bole { style: si + 12 };
@@ -2093,6 +2098,7 @@ fn main() {
                 branch_factor: 0.5,
                 direction: GrowDir::Up,
                 bole: None,
+                taper: TaperKind::default(),
             };
 
             // Select trunk algo for this column
@@ -2167,6 +2173,7 @@ fn main() {
                 branch_factor,
                 direction: GrowDir::Up,
                 bole: Some(Bole { style: bole_idx }),
+                taper: TaperKind::default(),
             };
 
             drawer.grow(&mut grid, &params, &mut rng);
@@ -2231,6 +2238,9 @@ fn main() {
                 branch_factor,
                 direction: GrowDir::Up,
                 bole: Some(Bole { style: *bole_idx }),
+                taper: [TaperKind::Diagonal, TaperKind::Shelf, TaperKind::Bracket,
+                        TaperKind::Step, TaperKind::Melt, TaperKind::Shelf,
+                        TaperKind::Bracket][i % 7],
             };
 
             drawer.grow(&mut grid, &params, &mut rng);
