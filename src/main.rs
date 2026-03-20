@@ -79,6 +79,7 @@ fn main() {
         eprintln!("  boles3    Refined bole styles with descriptive names");
         eprintln!("  trunks1   Horizontal trunk algorithms + direction-aware branching");
         eprintln!("  trees1    Full pipeline: tree+trunk+bole combos [energy] [fruit] [branch] [bole]");
+        eprintln!("  trees2    Squat horizontal boles (1-2 rows) [energy] [fruit] [branch]");
         eprintln!("  swatch    Color swatches for all named themes");
         eprintln!();
         eprintln!("THEMES:");
@@ -2169,6 +2170,67 @@ fn main() {
             drawer.grow(&mut grid, &params, &mut rng);
 
             // Multi-line label at bottom
+            for (li, line) in label.split('\n').enumerate() {
+                let lx = (cx - line.len() as i32 / 2).max(0) as usize;
+                let ly = height - 2 + li;
+                for (j, ch) in line.chars().enumerate() {
+                    if lx + j < width && ly < height {
+                        grid[ly][lx + j] = Cell::new(ch, lighten(color, 40));
+                    }
+                }
+            }
+        }
+
+    } else if mode == "trees2" {
+        // trees2: squat horizontal boles (styles 18-23) + tree combos
+        let energy: f32 = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0.8);
+        let fruit_factor: f32 = args.get(5).and_then(|s| s.parse().ok()).unwrap_or(0.2);
+        let branch_factor: f32 = args.get(6).and_then(|s| s.parse().ok()).unwrap_or(0.5);
+
+        let combos: Vec<(&str, Box<dyn TreeDrawer>, usize)> = vec![
+            ("Spiral\n+SqCrescent",
+             Box::new(SpiralTree) as Box<dyn TreeDrawer>, 18),
+            ("Spiral+Wobble\n+SqBraille",
+             Box::new(TreeWithTrunk { tree: SpiralTree, trunk: Box::new(WobbleTrunk { height_fraction: 0.6 }) }), 19),
+            ("Candelabra\n+SqFrame",
+             Box::new(CandelabraTree) as Box<dyn TreeDrawer>, 20),
+            ("Split+Sine\n+SqDiamond",
+             Box::new(TreeWithTrunk { tree: SplitTree, trunk: Box::new(SineTrunk { height_fraction: 0.5, amplitude: 2 }) }), 21),
+            ("Birch\n+SqChevron",
+             Box::new(BirchTree) as Box<dyn TreeDrawer>, 22),
+            ("Drooping\n+SqButtress",
+             Box::new(DroopingTree) as Box<dyn TreeDrawer>, 23),
+        ];
+        let cols = combos.len();
+        let col_w = width / cols;
+        let ground_y = (height as i32) - 4;
+
+        for (i, (label, drawer, bole_idx)) in combos.iter().enumerate() {
+            let cx = (i * col_w + col_w / 2) as i32;
+            let color = palette[i % palette.len()];
+
+            let plot = Rect {
+                x: (i * col_w + 1).min(width - 2),
+                y: 2,
+                w: (col_w - 2).max(4),
+                h: (ground_y as usize).saturating_sub(2),
+            };
+            let params = TreeParams {
+                plot,
+                energy,
+                trunk_color: color,
+                bark_color: darken(color, 15),
+                branch_color: lighten(color, 20),
+                tip_color: lighten(color, 40),
+                fruit_color: palette[(i + 2) % palette.len()],
+                fruit_factor,
+                branch_factor,
+                direction: GrowDir::Up,
+                bole: Some(Bole { style: *bole_idx }),
+            };
+
+            drawer.grow(&mut grid, &params, &mut rng);
+
             for (li, line) in label.split('\n').enumerate() {
                 let lx = (cx - line.len() as i32 / 2).max(0) as usize;
                 let ly = height - 2 + li;

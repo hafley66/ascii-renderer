@@ -409,7 +409,7 @@ impl BoleStyle for Bole {
         let bark = darken(color, 15);
         let dim = darken(color, 30);
 
-        match self.style % 18 {
+        match self.style % 24 {
             // Style 0: Crescent -- connected via │ at inner edge positions
             0 => {
                 // Ground row: wide crescent
@@ -1467,22 +1467,28 @@ impl BoleStyle for Bole {
                 let ll = lw.max(2);
                 let rl = rw.max(2);
 
-                // Ground sprawl
-                set(grid, root_x, cy, '┴', color);
-                let sprawl = ll + rl + rng.random_range(1..4u32) as i32;
-                let sprawl_l = sprawl / 2 + rng.random_range(0..3u32) as i32;
-                let sprawl_r = sprawl - sprawl_l;
-                for dx in 1..=sprawl_l {
-                    set(grid, root_x - dx, cy, if dx <= ll { '═' } else { '─' }, lighten(bark, ((dx as u8) * 2).min(20)));
+                // Ground row is also the first ∧ -- no gap between base and chevrons
+                set(grid, root_x, cy, '∧', color);
+                for dx in 1..=ll {
+                    set(grid, root_x - dx, cy, '╱', lighten(bark, ((dx as u8) * 2).min(20)));
                 }
-                for dx in 1..=sprawl_r {
-                    set(grid, root_x + dx, cy, if dx <= rl { '═' } else { '─' }, lighten(bark, ((dx as u8) * 2).min(20)));
+                for dx in 1..=rl {
+                    set(grid, root_x + dx, cy, '╲', lighten(bark, ((dx as u8) * 2).min(20)));
                 }
-                set(grid, root_x - sprawl_l - 1, cy, '╴', dim);
-                set(grid, root_x + sprawl_r + 1, cy, '╶', dim);
+                // Sprawl wings extending from chevron tips
+                let sprawl_l = rng.random_range(1..4u32) as i32;
+                let sprawl_r = rng.random_range(1..3u32) as i32;
+                for s in 1..=sprawl_l {
+                    set(grid, root_x - ll - s, cy, '─', lighten(bark, 12));
+                }
+                for s in 1..=sprawl_r {
+                    set(grid, root_x + rl + s, cy, '─', lighten(bark, 12));
+                }
+                set(grid, root_x - ll - sprawl_l - 1, cy, '╴', dim);
+                set(grid, root_x + rl + sprawl_r + 1, cy, '╶', dim);
                 cy -= 1;
 
-                // Chevron layers with random drift -- overlaps create diamonds
+                // Remaining chevron layers with random drift -- overlaps create diamonds
                 for layer in 0..layers {
                     let shrink = (layer + 1) as f32 * 0.15;
                     let cl = ((ll as f32) * (1.0 - shrink)).max(1.0) as i32;
@@ -1527,6 +1533,157 @@ impl BoleStyle for Bole {
 
                 // Chevron's ∧ shape already tapers to a point -- no generic taper needed
                 BoleExit::point(root_x, cy + 1)
+            }
+            // ── Squat boles: max 2 rows, horizontal emphasis, single-column flares ──
+
+            // Squat Crescent: wide single-row arc with flare pokes
+            18 => {
+                set(grid, root_x, root_y, '┴', color);
+                for dx in 1..=lw {
+                    set(grid, root_x - dx, root_y, '═', lighten(bark, ((dx as u8) * 3).min(20)));
+                }
+                for dx in 1..=rw {
+                    set(grid, root_x + dx, root_y, '═', lighten(bark, ((dx as u8) * 3).min(20)));
+                }
+                set(grid, root_x - lw - 1, root_y, '◜', dim);
+                set(grid, root_x + rw + 1, root_y, '◝', dim);
+                // Flares: single-column pokes above at random positions
+                for _ in 0..rng.random_range(1..4u32) {
+                    let fx = root_x + rng.random_range(0..(lw + rw + 1) as u32) as i32 - lw;
+                    if fx != root_x {
+                        set(grid, fx, root_y - 1, '╷', lighten(bark, 15));
+                    }
+                }
+                BoleExit::point(root_x, root_y)
+            }
+            // Squat Braille: 2-row dense shelf, no vertical growth
+            19 => {
+                let dense = ['⣿', '⣾', '⣷', '⣶', '⣤'];
+                let edge  = ['⡀', '⢀', '⠂', '⠁', '⠈'];
+                // Row 1: dense ground
+                set(grid, root_x, root_y, '⣿', color);
+                for dx in 1..=lw {
+                    set(grid, root_x - dx, root_y, dense[rng.random_range(0..dense.len() as u32) as usize], darken(color, ((dx as u8) * 2).min(10)));
+                }
+                for dx in 1..=rw {
+                    set(grid, root_x + dx, root_y, dense[rng.random_range(0..dense.len() as u32) as usize], darken(color, ((dx as u8) * 2).min(10)));
+                }
+                set(grid, root_x - lw - 1, root_y, edge[rng.random_range(0..edge.len() as u32) as usize], dim);
+                set(grid, root_x + rw + 1, root_y, edge[rng.random_range(0..edge.len() as u32) as usize], dim);
+                // Row 2: sparser, narrower
+                let sl = (lw as f32 * 0.5).max(1.0) as i32;
+                let sr = (rw as f32 * 0.5).max(1.0) as i32;
+                let mid = ['⡇', '⢸', '⠿', '⠶', '⠛'];
+                set(grid, root_x, root_y - 1, mid[rng.random_range(0..mid.len() as u32) as usize], bark);
+                for dx in 1..=sl {
+                    set(grid, root_x - dx, root_y - 1, mid[rng.random_range(0..mid.len() as u32) as usize], darken(bark, ((dx as u8) * 3).min(12)));
+                }
+                for dx in 1..=sr {
+                    set(grid, root_x + dx, root_y - 1, mid[rng.random_range(0..mid.len() as u32) as usize], darken(bark, ((dx as u8) * 3).min(12)));
+                }
+                BoleExit { x: root_x, y: root_y - 1, left: sl, right: sr }
+            }
+            // Squat Frame: single-row box border with flares at corners
+            20 => {
+                set(grid, root_x - lw, root_y, '╘', bark);
+                set(grid, root_x + rw, root_y, '╛', bark);
+                for dx in (-lw + 1)..rw {
+                    let ch = ['═', '═', '═', '─'][rng.random_range(0..4u32) as usize];
+                    set(grid, root_x + dx, root_y, ch, bark);
+                }
+                set(grid, root_x, root_y, '╧', color);
+                // Corner flares
+                set(grid, root_x - lw, root_y - 1, '│', dim);
+                set(grid, root_x + rw, root_y - 1, '│', dim);
+                // Random internal flares
+                for _ in 0..rng.random_range(0..3u32) {
+                    let fx = root_x + rng.random_range(0..(lw + rw - 1) as u32) as i32 - lw + 1;
+                    if fx != root_x {
+                        set(grid, fx, root_y - 1, '╵', lighten(bark, 10));
+                    }
+                }
+                BoleExit::point(root_x, root_y)
+            }
+            // Squat Diamond: 2-row flat diamond, single chevron + base
+            21 => {
+                // Ground: wide base
+                set(grid, root_x, root_y, '╨', color);
+                for dx in 1..=lw {
+                    let ch = if dx == lw { '◇' } else { '═' };
+                    set(grid, root_x - dx, root_y, ch, lighten(bark, ((dx as u8) * 3).min(20)));
+                }
+                for dx in 1..=rw {
+                    let ch = if dx == rw { '◇' } else { '═' };
+                    set(grid, root_x + dx, root_y, ch, lighten(bark, ((dx as u8) * 3).min(20)));
+                }
+                // Row 2: single V narrowing
+                let hw = (lw.max(rw) / 2).max(1);
+                set(grid, root_x, root_y - 1, '│', color);
+                for dx in 1..=hw {
+                    set(grid, root_x - dx, root_y - 1, '╱', bark);
+                    set(grid, root_x + dx, root_y - 1, '╲', bark);
+                }
+                // Tip flares at base ends
+                if lw > 2 { set(grid, root_x - lw, root_y + 1, '╵', dim); }
+                if rw > 2 { set(grid, root_x + rw, root_y + 1, '╵', dim); }
+                BoleExit { x: root_x, y: root_y - 1, left: hw, right: hw }
+            }
+            // Squat Chevron: single wide V with sprawl arms, no stacking
+            22 => {
+                set(grid, root_x, root_y, '∧', color);
+                for dx in 1..=lw {
+                    set(grid, root_x - dx, root_y, '╱', lighten(bark, ((dx as u8) * 3).min(20)));
+                }
+                for dx in 1..=rw {
+                    set(grid, root_x + dx, root_y, '╲', lighten(bark, ((dx as u8) * 3).min(20)));
+                }
+                // Long sprawl arms
+                let sl = rng.random_range(2..5u32) as i32;
+                let sr = rng.random_range(1..4u32) as i32;
+                for s in 1..=sl {
+                    set(grid, root_x - lw - s, root_y, '─', lighten(bark, 12));
+                }
+                for s in 1..=sr {
+                    set(grid, root_x + rw + s, root_y, '─', lighten(bark, 12));
+                }
+                set(grid, root_x - lw - sl - 1, root_y, '╴', dim);
+                set(grid, root_x + rw + sr + 1, root_y, '╶', dim);
+                // Flares from tips: single-column drops below at arm ends
+                set(grid, root_x - lw - sl, root_y + 1, '╵', dim);
+                set(grid, root_x + rw + sr, root_y + 1, '╵', dim);
+                // Occasional upward flare
+                if rng.random_range(0..3u32) == 0 {
+                    let fx = root_x + rng.random_range(0..(lw + rw) as u32) as i32 - lw;
+                    if fx != root_x { set(grid, fx, root_y - 1, '╷', lighten(bark, 20)); }
+                }
+                BoleExit::point(root_x, root_y)
+            }
+            // Squat Buttress: ground anchor with curved legs, max 2 rows
+            23 => {
+                set(grid, root_x, root_y, '╨', color);
+                set(grid, root_x - 1, root_y, '═', color);
+                set(grid, root_x + 1, root_y, '═', color);
+                // Left leg: horizontal then down-kick
+                let ll_reach = lw.max(2);
+                set(grid, root_x - 2, root_y, '╮', bark);
+                for dx in 3..=ll_reach {
+                    set(grid, root_x - dx, root_y, '─', lighten(bark, ((dx as u8) * 3).min(20)));
+                }
+                set(grid, root_x - ll_reach - 1, root_y, '╴', dim);
+                // Left leg flare down
+                set(grid, root_x - 2, root_y + 1, '│', dim);
+                set(grid, root_x - 2, root_y + 2, '╵', lighten(dim, 10));
+                // Right leg
+                let rr_reach = rw.max(2);
+                set(grid, root_x + 2, root_y, '╭', bark);
+                for dx in 3..=rr_reach {
+                    set(grid, root_x + dx, root_y, '─', lighten(bark, ((dx as u8) * 3).min(20)));
+                }
+                set(grid, root_x + rr_reach + 1, root_y, '╶', dim);
+                // Right leg flare down
+                set(grid, root_x + 2, root_y + 1, '│', dim);
+                set(grid, root_x + 2, root_y + 2, '╵', lighten(dim, 10));
+                BoleExit::point(root_x, root_y)
             }
             _ => BoleExit::point(root_x, root_y),
         }
