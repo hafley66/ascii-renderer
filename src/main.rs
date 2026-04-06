@@ -37,6 +37,107 @@ use tree_draw::*;
 use types::*;
 use walker::*;
 
+fn run_demo(initial_seed: u64) {
+    use crossterm::{
+        cursor,
+        event::{self, Event, KeyCode, KeyModifiers},
+        execute,
+        terminal::{self, ClearType},
+    };
+    use std::io::Write;
+    use std::process::Command;
+
+    let all_modes: &[&str] = &[
+        "party", "soup", "tree", "trees", "forest", "forest2", "forest3", "forest4",
+        "forest5", "forest6", "forest7", "aztec", "fret", "flowers", "fruits", "masks",
+        "shapes", "tiles", "tiles-rand", "tiles-skew", "mondrian", "mondrian2", "bsp",
+        "layout", "terrain", "flow", "noise", "ca", "stem", "scene-walk", "scene-walk-2",
+        "scene-walk-3", "world", "boles1", "boles2", "boles3", "trunks1", "trees1",
+        "trees2", "trees3", "trees4", "bushes",
+    ];
+    let all_themes: &[&str] = &[
+        "", "ember", "terracotta", "sakura", "arctic", "deep", "moss",
+        "bone", "silver", "neon", "nerv", "mitla",
+    ];
+
+    let mut seed = initial_seed;
+    let mut mode_idx: usize = 0;
+    let mut theme_idx: usize = 0;
+
+    let exe = std::env::current_exe().unwrap();
+
+    terminal::enable_raw_mode().unwrap();
+    execute!(io::stdout(), terminal::EnterAlternateScreen).unwrap();
+
+    loop {
+        // Disable raw mode so child process writes normal line endings
+        terminal::disable_raw_mode().unwrap();
+        execute!(
+            io::stdout(),
+            terminal::Clear(ClearType::All),
+            cursor::MoveTo(0, 0)
+        )
+        .unwrap();
+
+        let current_mode = all_modes[mode_idx];
+        let current_theme = all_themes[theme_idx];
+
+        let mut cmd = Command::new(&exe);
+        cmd.arg(seed.to_string()).arg(current_mode);
+        if !current_theme.is_empty() {
+            cmd.arg(current_theme);
+        }
+        let _ = cmd.status();
+
+        // Re-enable raw mode for keyboard input
+        terminal::enable_raw_mode().unwrap();
+
+        let (tw, _th) = terminal::size().unwrap_or((80, 45));
+        execute!(io::stdout(), cursor::MoveTo(0, _th.saturating_sub(1))).unwrap();
+        let theme_label = if current_theme.is_empty() {
+            "auto"
+        } else {
+            current_theme
+        };
+        let status = format!(
+            " {} | seed:{} | theme:{} | f/j=prev/next  \u{2191}\u{2193}=seed  \u{2190}\u{2192}=theme  enter=random  q=quit ",
+            current_mode, seed, theme_label
+        );
+        // Pad to terminal width, inverse video
+        let padded: String = if status.len() < tw as usize {
+            format!("{}{}", status, " ".repeat(tw as usize - status.len()))
+        } else {
+            status[..tw as usize].to_string()
+        };
+        print!("\x1b[7m{}\x1b[0m", padded);
+        io::stdout().flush().unwrap();
+
+        if let Ok(Event::Key(key)) = event::read() {
+            match key.code {
+                KeyCode::Char('q') => break,
+                KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => break,
+                KeyCode::Char('j') => mode_idx = (mode_idx + 1) % all_modes.len(),
+                KeyCode::Char('f') => {
+                    mode_idx = (mode_idx + all_modes.len() - 1) % all_modes.len()
+                }
+                KeyCode::Up => seed = seed.wrapping_add(1),
+                KeyCode::Down => seed = seed.wrapping_sub(1),
+                KeyCode::Right => theme_idx = (theme_idx + 1) % all_themes.len(),
+                KeyCode::Left => {
+                    theme_idx = (theme_idx + all_themes.len() - 1) % all_themes.len()
+                }
+                KeyCode::Enter => {
+                    seed = rand::rng().random_range(0..10000u64);
+                }
+                _ => {}
+            }
+        }
+    }
+
+    execute!(io::stdout(), terminal::LeaveAlternateScreen).unwrap();
+    terminal::disable_raw_mode().unwrap();
+}
+
 fn main() {
     let args: Vec<String> = std::env::args().collect();
 
@@ -49,6 +150,7 @@ fn main() {
         eprintln!("  theme    Named color theme (default: seed-derived palette)");
         eprintln!();
         eprintln!("MODES:");
+        eprintln!("  demo      Interactive browser: f/j=mode, arrows=seed/theme, enter=random, q=quit");
         eprintln!("  (none)    Full demo: Truchet bg, trees, content, flowers");
         eprintln!("  tree      GRIS-style binary trees with flowers");
         eprintln!("  forest    Mixed scene: pine, willow, palm, GRIS tree, fruits");
@@ -112,6 +214,11 @@ fn main() {
 
     let mode = args.get(2).map(|s| s.as_str()).unwrap_or("");
     let theme_name = args.get(3).map(|s| s.as_str()).unwrap_or("");
+
+    if mode == "demo" {
+        run_demo(seed);
+        return;
+    }
 
     let (term_w, term_h) = crossterm::terminal::size().unwrap_or((80, 45));
     let width = term_w as usize;
