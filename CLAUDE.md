@@ -51,7 +51,7 @@ fn grid_to_string(grid: &Grid) -> String {
 party, soup, tree, trees, forest, forest2, forest3, forest4, aztec, fret, flowers, fruits, masks, shapes,
 tiles, tiles-rand, tiles-skew, mondrian, mondrian2, bsp, layout, md, terrain, flow,
 noise, ca, ca-layout, stem, scene-walk, scene-walk-2, scene-walk-3, world,
-kintsugi, constellation, strata, circuit, quilt
+kintsugi, constellation, strata, circuit, quilt, trees8
 
 ## Architecture
 

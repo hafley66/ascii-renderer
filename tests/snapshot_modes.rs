@@ -211,6 +211,11 @@ fn forest7_seed_42() {
 }
 
 #[test]
+fn trees8_seed_42() {
+    insta::assert_snapshot!(render(&["42", "trees8", "moss"]));
+}
+
+#[test]
 fn kintsugi_seed_42() {
     insta::assert_snapshot!(render(&["42", "kintsugi", "ember"]));
 }

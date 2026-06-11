@@ -3803,6 +3803,284 @@ impl TreeDrawer for TendrilTree {
     }
 }
 
+// ── OakTree ──────────────────────────────────────────────────────────
+// Gnarled trunk, thick recursive zigzag limbs with elbow joints, braille
+// leaf clusters at the tips. Foliage grows on the skeleton, not as a blob.
+
+pub struct OakTree;
+
+fn oak_limb(
+    grid: &mut Grid, x: i32, y: i32, dx: i32, len: i32,
+    depth: usize, params: &TreeParams, tips: &mut Vec<(i32, i32)>, rng: &mut StdRng,
+) {
+    if len < 2 || depth > 2 { return; }
+    let c = params.color_at_depth(depth as f32 * 0.3);
+    let mut cx = x;
+    let mut cy = y;
+    let mut horiz = rng.random_range(0..2u32) == 0;
+    for step in 0..len {
+        if horiz {
+            cx += dx;
+            set(grid, cx, cy, '─', c);
+        } else {
+            cx += dx;
+            cy -= 1;
+            set(grid, cx, cy, if dx > 0 { '╱' } else { '╲' }, c);
+        }
+        if rng.random::<f32>() < 0.35 {
+            // elbow joint where the limb changes pitch
+            if horiz {
+                set(grid, cx, cy, if dx > 0 { '╮' } else { '╭' }, darken(c, 10));
+            }
+            horiz = !horiz;
+        }
+        if step > 1 && rng.random::<f32>() < 0.25 * params.branch_factor {
+            let sub_dx = if rng.random::<f32>() < 0.3 { -dx } else { dx };
+            oak_limb(grid, cx, cy, sub_dx, len / 2, depth + 1, params, tips, rng);
+        }
+    }
+    tips.push((cx + dx, cy));
+}
+
+impl TreeDrawer for OakTree {
+    fn draw_trunk(
+        &self, grid: &mut Grid, pen: &mut TreePen,
+        params: &TreeParams, rng: &mut StdRng,
+    ) -> Vec<TrunkNode> {
+        GnarledTrunk.draw(grid, pen, params, rng)
+    }
+
+    fn should_branch(
+        &self, idx: usize, count: usize,
+        params: &TreeParams, rng: &mut StdRng,
+    ) -> Option<BranchIntent> {
+        // limbs from the upper 2/3 of the trunk, denser near the top
+        if count < 4 || idx < count / 3 { return None; }
+        let top_frac = idx as f32 / count as f32;
+        if idx != count - 1 && rng.random::<f32>() > 0.25 + top_frac * 0.3 { return None; }
+        let go_left = rng.random_range(0..2u32) == 0;
+        let length = (params.spread() as f32 * (0.5 + rng.random::<f32>() * 0.5)) as i32;
+        let level = ((1.0 - top_frac) * 3.0) as usize;
+        Some(BranchIntent { go_left, length: length.max(2), level })
+    }
+
+    fn draw_branch(
+        &self, grid: &mut Grid, pen: &mut TreePen,
+        intent: &BranchIntent, _depth: usize,
+        params: &TreeParams, rng: &mut StdRng,
+    ) -> BranchResult {
+        let dx = if intent.go_left { -1 } else { 1 };
+        // knot where the limb leaves the trunk
+        let jc = if intent.go_left { '┤' } else { '├' };
+        set(grid, pen.x, pen.y, jc, darken(params.trunk_color, 10));
+        let mut tips = Vec::new();
+        oak_limb(grid, pen.x, pen.y, dx, intent.length, 0, params, &mut tips, rng);
+        BranchResult { tips }
+    }
+
+    fn draw_tip(&self, grid: &mut Grid, x: i32, y: i32, params: &TreeParams) {
+        // braille leaf cluster hugging the tip; shape varies by position parity
+        let leaf = params.tip_color;
+        let dim = darken(leaf, 25);
+        set(grid, x, y, '⣿', leaf);
+        if (x + y).rem_euclid(2) == 0 {
+            set(grid, x - 1, y, '⣶', dim);
+            set(grid, x + 1, y, '⣷', dim);
+            set(grid, x, y - 1, '⠿', dim);
+        } else {
+            set(grid, x + 1, y, '⣾', dim);
+            set(grid, x + 1, y - 1, '⠶', darken(leaf, 40));
+            set(grid, x - 1, y - 1, '⠛', darken(leaf, 40));
+        }
+    }
+
+    fn draw_fruit(&self, grid: &mut Grid, x: i32, y: i32, params: &TreeParams, rng: &mut StdRng) {
+        // acorns hang one cell below the leaf cluster
+        let ch = if rng.random_range(0..2u32) == 0 { '●' } else { '◍' };
+        set(grid, x, y + 1, ch, params.fruit_color);
+    }
+}
+
+// ── FountainTree ─────────────────────────────────────────────────────
+// Short trunk; jets launch from the apex and arc under gravity, rising
+// near-vertical then spilling outward and down like a fountain.
+
+pub struct FountainTree;
+
+impl TreeDrawer for FountainTree {
+    fn draw_trunk(
+        &self, grid: &mut Grid, pen: &mut TreePen,
+        params: &TreeParams, rng: &mut StdRng,
+    ) -> Vec<TrunkNode> {
+        StraightTrunk { height_fraction: 0.45 }.draw(grid, pen, params, rng)
+    }
+
+    fn should_branch(
+        &self, idx: usize, count: usize,
+        _params: &TreeParams, _rng: &mut StdRng,
+    ) -> Option<BranchIntent> {
+        if idx == count - 1 {
+            Some(BranchIntent { go_left: false, length: 0, level: 0 })
+        } else {
+            None
+        }
+    }
+
+    fn draw_branch(
+        &self, grid: &mut Grid, pen: &mut TreePen,
+        _intent: &BranchIntent, _depth: usize,
+        params: &TreeParams, rng: &mut StdRng,
+    ) -> BranchResult {
+        let apex_x = pen.x as f32;
+        let apex_y = pen.y as f32;
+        let floor_y = params.root().1 as f32;
+        let mut tips = Vec::new();
+
+        for side in [-1.0f32, 1.0] {
+            let jets = rng.random_range(2..5u32);
+            for j in 0..jets {
+                let mut vx = side * (0.15 + rng.random::<f32>() * 0.5);
+                let mut vy = -(0.9 + rng.random::<f32>() * 0.6);
+                let mut px = apex_x;
+                let mut py = apex_y;
+                let c = lighten(params.branch_color, (j as u8) * 15);
+                let steps = rng.random_range(6..13u32);
+                let mut last = (pen.x, pen.y);
+                for _ in 0..steps {
+                    px += vx * 1.8;
+                    py += vy;
+                    vy += 0.22; // gravity pulls the jet over
+                    vx *= 1.04; // slight outward fan as it falls
+                    if py >= floor_y { break; }
+                    let abs_vx = vx.abs();
+                    let abs_vy = vy.abs();
+                    let ch = if abs_vx > abs_vy * 1.5 { '─' }
+                        else if abs_vy > abs_vx * 1.5 { '│' }
+                        else if (vx > 0.0) == (vy > 0.0) { '╲' }
+                        else { '╱' };
+                    set(grid, px as i32, py as i32, ch, c);
+                    last = (px as i32, py as i32);
+                }
+                tips.push(last);
+            }
+        }
+        BranchResult { tips }
+    }
+
+    fn draw_tip(&self, grid: &mut Grid, x: i32, y: i32, params: &TreeParams) {
+        set(grid, x, y, '❋', lighten(params.tip_color, 20));
+    }
+
+    fn draw_fruit(&self, grid: &mut Grid, x: i32, y: i32, params: &TreeParams, _rng: &mut StdRng) {
+        // droplet falls one row below the spray tip
+        set(grid, x, y + 1, '∘', params.fruit_color);
+    }
+}
+
+// ── WindsweptTree ────────────────────────────────────────────────────
+// Trunk leans hard with the wind; every branch streams to the lee side
+// in long near-horizontal runs with small upward kicks at the ends.
+
+pub struct WindsweptTree {
+    pub lean_right: bool,
+}
+
+impl WindsweptTree {
+    pub fn new(rng: &mut StdRng) -> Self {
+        WindsweptTree { lean_right: rng.random_range(0..2u32) == 0 }
+    }
+}
+
+impl TreeDrawer for WindsweptTree {
+    fn draw_trunk(
+        &self, grid: &mut Grid, pen: &mut TreePen,
+        params: &TreeParams, rng: &mut StdRng,
+    ) -> Vec<TrunkNode> {
+        let height = (params.plot.h as f32 * params.energy.clamp(0.3, 1.0)) as i32;
+        let lean_dx: i32 = if self.lean_right { 1 } else { -1 };
+        let diag = if self.lean_right { '╱' } else { '╲' };
+        let bark = darken(params.trunk_color, 15);
+        let mut nodes = Vec::new();
+        for i in 0..height.max(3) {
+            // lean grows stronger with height: straight low, diagonal high
+            let lean_here = i > height / 4 && (i % 2 == 0 || i > height / 2);
+            if lean_here {
+                pen.x += lean_dx;
+                pen.y -= 1;
+                set(grid, pen.x, pen.y, diag, params.trunk_color);
+                // doubled cell low on the trunk for thickness
+                if i < height / 2 {
+                    set(grid, pen.x - lean_dx, pen.y, diag, bark);
+                }
+            } else {
+                pen.y -= 1;
+                set(grid, pen.x, pen.y, '│', params.trunk_color);
+            }
+            nodes.push(TrunkNode { x: pen.x, y: pen.y, dir: MoveDir::Up });
+        }
+        nodes
+    }
+
+    fn should_branch(
+        &self, idx: usize, count: usize,
+        params: &TreeParams, rng: &mut StdRng,
+    ) -> Option<BranchIntent> {
+        if count < 4 || idx < count / 4 { return None; }
+        if idx != count - 1 && rng.random::<f32>() > 0.55 * params.branch_factor.max(0.4) {
+            return None;
+        }
+        // every branch streams leeward
+        let go_left = !self.lean_right;
+        let top_frac = idx as f32 / count as f32;
+        let length = (params.spread() as f32 * (0.7 + top_frac * 0.8)) as i32;
+        Some(BranchIntent { go_left, length: length.max(3), level: 0 })
+    }
+
+    fn draw_branch(
+        &self, grid: &mut Grid, pen: &mut TreePen,
+        intent: &BranchIntent, _depth: usize,
+        params: &TreeParams, rng: &mut StdRng,
+    ) -> BranchResult {
+        let dx: i32 = if intent.go_left { -1 } else { 1 };
+        let jc = if intent.go_left { '┤' } else { '├' };
+        set(grid, pen.x, pen.y, jc, darken(params.trunk_color, 10));
+
+        let c = params.branch_color;
+        let mut cx = pen.x;
+        let mut cy = pen.y;
+        let mut tips = Vec::new();
+        for step in 0..intent.length {
+            cx += dx;
+            // streamers sag mid-run and kick up at the very end
+            if step == intent.length - 1 {
+                cy -= 1;
+                set(grid, cx, cy, if dx > 0 { '╱' } else { '╲' }, lighten(c, 25));
+            } else if step > 2 && rng.random::<f32>() < 0.15 {
+                cy += 1;
+                set(grid, cx, cy, if dx > 0 { '╲' } else { '╱' }, c);
+            } else {
+                set(grid, cx, cy, '─', c);
+            }
+            // wisps trailing off the streamer
+            if step > 1 && rng.random::<f32>() < 0.2 {
+                set(grid, cx, cy - 1, '╴', darken(c, 30));
+            }
+        }
+        tips.push((cx + dx, cy - 1));
+        BranchResult { tips }
+    }
+
+    fn draw_tip(&self, grid: &mut Grid, x: i32, y: i32, params: &TreeParams) {
+        set(grid, x, y, '╸', lighten(params.tip_color, 30));
+    }
+
+    fn draw_fruit(&self, grid: &mut Grid, x: i32, y: i32, params: &TreeParams, _rng: &mut StdRng) {
+        // wind carries the fruit one cell past the tip
+        let dx = if self.lean_right { 1 } else { -1 };
+        set(grid, x + dx, y, '◌', params.fruit_color);
+    }
+}
+
 // ── Tests ────────────────────────────────────────────────────────────
 
 #[cfg(test)]
@@ -3928,5 +4206,32 @@ mod tests {
         let mut rng = StdRng::seed_from_u64(42);
         PalmTree.grow(&mut grid, &tp, &mut rng);
         insta::assert_snapshot!("palm_tree_42", grid_to_string(&grid));
+    }
+
+    #[test]
+    fn snapshot_oak_tree() {
+        let mut grid = make_grid(40, 20);
+        let tp = test_params(10, 1, 20, 18);
+        let mut rng = StdRng::seed_from_u64(42);
+        OakTree.grow(&mut grid, &tp, &mut rng);
+        insta::assert_snapshot!("oak_tree_42", grid_to_string(&grid));
+    }
+
+    #[test]
+    fn snapshot_fountain_tree() {
+        let mut grid = make_grid(40, 20);
+        let tp = test_params(10, 1, 20, 18);
+        let mut rng = StdRng::seed_from_u64(42);
+        FountainTree.grow(&mut grid, &tp, &mut rng);
+        insta::assert_snapshot!("fountain_tree_42", grid_to_string(&grid));
+    }
+
+    #[test]
+    fn snapshot_windswept_tree() {
+        let mut grid = make_grid(40, 20);
+        let tp = test_params(10, 1, 20, 18);
+        let mut rng = StdRng::seed_from_u64(42);
+        WindsweptTree { lean_right: true }.grow(&mut grid, &tp, &mut rng);
+        insta::assert_snapshot!("windswept_tree_42", grid_to_string(&grid));
     }
 }

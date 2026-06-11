@@ -53,8 +53,8 @@ fn run_demo(initial_seed: u64) {
         "shapes", "tiles", "tiles-rand", "tiles-skew", "mondrian", "mondrian2", "bsp",
         "layout", "terrain", "flow", "noise", "ca", "stem", "scene-walk", "scene-walk-2",
         "scene-walk-3", "world", "boles1", "boles2", "boles3", "trunks1", "trees1",
-        "trees2", "trees3", "trees4", "bushes", "kintsugi", "constellation", "strata",
-        "circuit", "quilt",
+        "trees2", "trees3", "trees4", "trees8", "bushes", "kintsugi", "constellation",
+        "strata", "circuit", "quilt",
     ];
     let all_themes: &[&str] = &[
         "", "ember", "terracotta", "sakura", "arctic", "deep", "moss",
@@ -186,6 +186,7 @@ fn main() {
         eprintln!("  trees3    Vertical catalog: all tree types, trunks, tapers, boles");
         eprintln!("  trees4    All 17 TreeDrawer types with boles and fruit");
         eprintln!("  bushes    Full-size bole patterns as standalone bush sprites");
+        eprintln!("  trees8    Oak/Fountain/Windswept drawers at two energies [energy] [fruit] [branch]");
         eprintln!("  forest7   Layered showcase forest with boles, tapers, fruit");
         eprintln!("  kintsugi  Shattered tile shards repaired with gold seams [cracks]");
         eprintln!("  constellation  Night sky with named, line-connected star clusters [count]");
@@ -2612,6 +2613,65 @@ fn main() {
         }
 
         render_grid(&grid);
+        return;
+
+    } else if mode == "trees8" {
+        // trees8: [energy] [fruit] [branch]
+        // Three new TreeDrawers (Oak, Fountain, Windswept), each shown at
+        // full and low energy with cycling boles and tapers.
+        let energy: f32 = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0.85);
+        let fruit: f32 = args.get(5).and_then(|s| s.parse().ok()).unwrap_or(0.3);
+        let branch: f32 = args.get(6).and_then(|s| s.parse().ok()).unwrap_or(0.7);
+
+        let drawers: Vec<(&str, Box<dyn TreeDrawer>)> = vec![
+            ("Oak",       Box::new(OakTree)),
+            ("Fountain",  Box::new(FountainTree)),
+            ("Windswept", Box::new(WindsweptTree::new(&mut rng))),
+        ];
+        let tapers = [TaperKind::Bracket, TaperKind::Diagonal, TaperKind::Melt];
+
+        let cols = drawers.len();
+        let cell_w = width / cols;
+        let cell_h = 24usize;
+        let rows = 2usize;
+        let page_h = rows * cell_h + 2;
+        let mut pg = vec![vec![Cell::blank(); width]; page_h];
+
+        for row in 0..rows {
+            // top row full energy, bottom row scrub-sized
+            let row_energy = if row == 0 { energy } else { energy * 0.6 };
+            for (i, (label, drawer)) in drawers.iter().enumerate() {
+                let px = i * cell_w;
+                let py = row * cell_h;
+                let color = palette[(i + row * 3) % palette.len()];
+
+                let params = TreeParams {
+                    plot: Rect { x: px + 1, y: py + 1, w: cell_w - 2, h: cell_h - 3 },
+                    energy: row_energy,
+                    trunk_color: color,
+                    bark_color: darken(color, 15),
+                    branch_color: lighten(color, 20),
+                    tip_color: lighten(color, 40),
+                    fruit_color: palette[(i + 3) % palette.len()],
+                    fruit_factor: fruit,
+                    branch_factor: branch,
+                    direction: GrowDir::Up,
+                    bole: Some(Bole { style: i * 2 + row }),
+                    taper: tapers[(i + row) % tapers.len()],
+                };
+                drawer.grow(&mut pg, &params, &mut rng);
+
+                let lx = px + cell_w / 2 - label.len() / 2;
+                let ly = py + cell_h - 1;
+                for (j, ch) in label.chars().enumerate() {
+                    if lx + j < width && ly < page_h {
+                        pg[ly][lx + j] = Cell::new(ch, darken(color, 20));
+                    }
+                }
+            }
+        }
+
+        render_grid(&pg);
         return;
 
     } else if mode == "bushes" {
