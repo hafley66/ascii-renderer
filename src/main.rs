@@ -53,7 +53,8 @@ fn run_demo(initial_seed: u64) {
         "shapes", "tiles", "tiles-rand", "tiles-skew", "mondrian", "mondrian2", "bsp",
         "layout", "terrain", "flow", "noise", "ca", "stem", "scene-walk", "scene-walk-2",
         "scene-walk-3", "world", "boles1", "boles2", "boles3", "trunks1", "trees1",
-        "trees2", "trees3", "trees4", "bushes",
+        "trees2", "trees3", "trees4", "bushes", "kintsugi", "constellation", "strata",
+        "circuit", "quilt",
     ];
     let all_themes: &[&str] = &[
         "", "ember", "terracotta", "sakura", "arctic", "deep", "moss",
@@ -186,6 +187,11 @@ fn main() {
         eprintln!("  trees4    All 17 TreeDrawer types with boles and fruit");
         eprintln!("  bushes    Full-size bole patterns as standalone bush sprites");
         eprintln!("  forest7   Layered showcase forest with boles, tapers, fruit");
+        eprintln!("  kintsugi  Shattered tile shards repaired with gold seams [cracks]");
+        eprintln!("  constellation  Night sky with named, line-connected star clusters [count]");
+        eprintln!("  strata    Geological cross-section with fossils [layers]");
+        eprintln!("  circuit   PCB traces with pads, Manhattan routing [traces]");
+        eprintln!("  quilt     Stitched patchwork of tile patterns [min_patch] [max_patch]");
         eprintln!("  swatch    Color swatches for all named themes");
         eprintln!();
         eprintln!("THEMES:");
@@ -3075,6 +3081,329 @@ fn main() {
             }
         }
 
+    } else if mode == "kintsugi" {
+        // kintsugi [cracks] -- shattered tile shards repaired with gold seams
+        let crack_count: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(4);
+        let crack_count = crack_count.clamp(1, 12);
+
+        // Each crack is a top-to-bottom polyline: one x per row, drifting with momentum.
+        let mut cracks: Vec<Vec<i32>> = Vec::new();
+        for i in 0..crack_count {
+            let band = (width / (crack_count + 1)).max(2) as i32;
+            let mut x = (i as i32 + 1) * band + rng.random_range(-band / 3..=band / 3);
+            let mut drift: i32 = 0;
+            let mut path = Vec::with_capacity(height);
+            for _ in 0..height {
+                path.push(x);
+                if rng.random::<f32>() < 0.4 {
+                    drift = rng.random_range(-1..=1);
+                }
+                x = (x + drift).clamp(1, width as i32 - 2);
+            }
+            cracks.push(path);
+        }
+
+        // Region id per cell = number of cracks left of it. Each shard gets its
+        // own tile pattern and shade so the pieces read as separate pottery.
+        let mut shard_tiles: Vec<TilePattern> = Vec::new();
+        let mut shard_shade: Vec<u8> = Vec::new();
+        for _ in 0..=crack_count {
+            let v = tile_variant_from_index(rng.random_range(0..TILE_VARIANT_COUNT));
+            shard_tiles.push(make_tile(v));
+            shard_shade.push(rng.random_range(40..90));
+        }
+        for y in 0..height {
+            for x in 0..width {
+                let region = cracks.iter().filter(|c| c[y] < x as i32).count();
+                let (ch, ci) = shard_tiles[region].at(x, y);
+                if ch == ' ' { continue; }
+                let base = if ci == 0 { palette[1] } else { palette[2] };
+                grid[y][x] = Cell::new(ch, darken(base, shard_shade[region]));
+            }
+        }
+
+        // Gold seams over the top: slope-matched glyphs plus hairline branches.
+        let gold = lighten(palette[3], 25);
+        for path in &cracks {
+            for y in 0..height {
+                let x = path[y];
+                let next = if y + 1 < height { path[y + 1] } else { x };
+                let ch = if next > x { '╲' } else if next < x { '╱' } else { '│' };
+                if x >= 0 && (x as usize) < width {
+                    grid[y][x as usize] = Cell::new(ch, gold);
+                }
+                if rng.random::<f32>() < 0.08 {
+                    let dir: i32 = if rng.random::<f32>() < 0.5 { -1 } else { 1 };
+                    let len = rng.random_range(2..5i32);
+                    for k in 1..=len {
+                        let bx = x + dir * k;
+                        let by = y + k as usize;
+                        if bx >= 0 && (bx as usize) < width && by < height {
+                            let bch = if dir > 0 { '╲' } else { '╱' };
+                            grid[by][bx as usize] = Cell::new(bch, darken(gold, 20));
+                        }
+                    }
+                }
+            }
+        }
+    } else if mode == "constellation" {
+        // constellation [count] -- night sky with named, line-connected clusters
+        let count: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(4);
+        let count = count.clamp(1, 8);
+
+        let field = Rect { x: 0, y: 0, w: width, h: height };
+        fill_noise(&mut grid, &field, NoiseVariant::Dot, darken(palette[2], 90), darken(palette[2], 70), &mut rng);
+
+        let syllables = ["vel", "ara", "cyg", "lyr", "tau", "rho", "nix", "ori", "eka", "sol"];
+
+        for _ in 0..count {
+            let pad_x = (width / 8).max(1);
+            let pad_y = (height / 6).max(1);
+            let cx = rng.random_range(pad_x..(width - pad_x).max(pad_x + 1)) as i32;
+            let cy = rng.random_range(pad_y..(height - pad_y).max(pad_y + 1)) as i32;
+            let star_n = rng.random_range(4..8);
+            let rx = rng.random_range(6..14i32);
+            let ry = rng.random_range(2..5i32);
+
+            let mut stars: Vec<(i32, i32)> = Vec::new();
+            for _ in 0..star_n {
+                let sx = (cx + rng.random_range(-rx..=rx)).clamp(0, width as i32 - 1);
+                let sy = (cy + rng.random_range(-ry..=ry)).clamp(0, height as i32 - 2);
+                if !stars.contains(&(sx, sy)) { stars.push((sx, sy)); }
+            }
+            // chain left-to-right so the figure doesn't crisscross itself
+            stars.sort();
+
+            let line_color = darken(palette[1], 40);
+            for w in stars.windows(2) {
+                let (x0, y0) = w[0];
+                let (x1, y1) = w[1];
+                let dx = x1 - x0;
+                let dy = y1 - y0;
+                let steps = dx.abs().max(dy.abs());
+                for s in 1..steps {
+                    let t = s as f32 / steps as f32;
+                    let lx = (x0 as f32 + dx as f32 * t).round() as i32;
+                    let ly = (y0 as f32 + dy as f32 * t).round() as i32;
+                    if lx < 0 || ly < 0 || lx >= width as i32 || ly >= height as i32 { continue; }
+                    let ch = if dy == 0 { '─' }
+                        else if dx == 0 { '│' }
+                        else if (dx > 0) == (dy > 0) { '╲' }
+                        else { '╱' };
+                    grid[ly as usize][lx as usize] = Cell::new(ch, line_color);
+                }
+            }
+
+            let star_chars = ['✦', '✧', '*', '◆'];
+            for (si, &(sx, sy)) in stars.iter().enumerate() {
+                let ch = star_chars[si % star_chars.len()];
+                let c = if si == 0 { lighten(palette[4], 20) } else { palette[3] };
+                grid[sy as usize][sx as usize] = Cell::new(ch, c);
+            }
+
+            let name = format!(
+                "{}{}",
+                syllables[rng.random_range(0..syllables.len())],
+                syllables[rng.random_range(0..syllables.len())]
+            );
+            let ly = ((cy + ry + 1) as usize).min(height - 1);
+            let lx = (cx as usize).saturating_sub(name.len() / 2);
+            for (j, ch) in name.chars().enumerate() {
+                if lx + j < width {
+                    grid[ly][lx + j] = Cell::new(ch, darken(palette[4], 30));
+                }
+            }
+        }
+    } else if mode == "strata" {
+        // strata [layers] -- geological cross-section with fossils
+        let layer_count: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(6);
+        let layer_count = layer_count.clamp(2, 10);
+
+        // stacked contour boundaries, forced monotonic per column
+        let band_h = (height / (layer_count + 1)).max(2);
+        let mut bounds: Vec<Vec<usize>> = Vec::new();
+        for i in 0..layer_count {
+            let base = band_h * (i + 1);
+            let amp = (band_h / 2).max(1);
+            let mut c = gen_contour(width, base, amp, 0.55, &mut rng);
+            if let Some(prev) = bounds.last() {
+                for x in 0..width {
+                    if c[x] <= prev[x] { c[x] = prev[x] + 1; }
+                }
+            }
+            for x in 0..width { c[x] = c[x].min(height - 1); }
+            bounds.push(c);
+        }
+
+        // fill each band with its own sediment texture, darker with depth
+        let glyph_pools: [&[char]; 6] = [
+            &['·', '∙', ' ', ' ', ' '],
+            &['─', '─', '·', ' ', ' '],
+            &['╱', '╲', ' ', ' '],
+            &['░', '░', '·', ' ', ' '],
+            &['~', '─', ' ', ' '],
+            &['▪', '·', ' ', ' ', ' ', ' '],
+        ];
+        for li in 0..layer_count {
+            let pool = glyph_pools[rng.random_range(0..glyph_pools.len())];
+            let shade = (li * 90 / layer_count) as u8;
+            let c1 = darken(palette[1 + li % 3], shade);
+            for x in 0..width {
+                let top = bounds[li][x] + 1;
+                let bot = if li + 1 < layer_count { bounds[li + 1][x] } else { height };
+                for y in top..bot.min(height) {
+                    let ch = pool[rng.random_range(0..pool.len())];
+                    if ch == ' ' { continue; }
+                    grid[y][x] = Cell::new(ch, c1);
+                }
+            }
+        }
+
+        // boundary ridges on top of the fills
+        let full = Rect { x: 0, y: 0, w: width, h: height };
+        for (li, c) in bounds.iter().enumerate() {
+            let ridge = darken(lighten(palette[2], 20), (li * 60 / layer_count) as u8);
+            draw_contour_ridge(&mut grid, &full, c, ridge);
+        }
+
+        // fossils embedded in the deeper bands
+        let fossil_count = rng.random_range(2..5);
+        for _ in 0..fossil_count {
+            let fx = rng.random_range(4..width.saturating_sub(4).max(5));
+            let floor = bounds[(layer_count / 2).min(layer_count - 1)][fx];
+            if floor + 3 >= height { continue; }
+            let fy = rng.random_range(floor + 2..height.saturating_sub(1).max(floor + 3));
+            if rng.random::<f32>() < 0.5 {
+                draw_fruit(&mut grid, fx, fy, rng.random_range(0..5), lighten(palette[3], 10));
+            } else {
+                draw_mask(&mut grid, fx, fy, 2, rng.random_range(0..MASK_STYLE_COUNT), lighten(palette[3], 10));
+            }
+        }
+    } else if mode == "circuit" {
+        // circuit [traces] -- PCB traces with pads, Manhattan routing
+        let trace_count: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(14);
+        let trace_count = trace_count.clamp(1, 60);
+
+        // board: faint dot grid
+        for y in 0..height {
+            for x in 0..width {
+                if x % 4 == 0 && y % 2 == 0 {
+                    grid[y][x] = Cell::new('·', darken(palette[1], 90));
+                }
+            }
+        }
+
+        let free = |g: &Grid, x: i32, y: i32| -> bool {
+            let c = g[y as usize][x as usize].ch;
+            c == ' ' || c == '·'
+        };
+
+        let trace_colors = [palette[1], palette[2], palette[3]];
+        let mut placed = 0;
+        let mut attempts = 0;
+        while placed < trace_count && attempts < trace_count * 8 {
+            attempts += 1;
+            let mut x = rng.random_range(2..width as i32 - 2);
+            let mut y = rng.random_range(1..height as i32 - 1);
+            if !free(&grid, x, y) { continue; }
+
+            let mut pts: Vec<(i32, i32)> = vec![(x, y)];
+            let dirs = [(1i32, 0i32), (-1, 0), (0, 1), (0, -1)];
+            let mut dir = dirs[rng.random_range(0..4)];
+            let segs = rng.random_range(2..5);
+            'seg: for _ in 0..segs {
+                let len = rng.random_range(4..13);
+                for _ in 0..len {
+                    let nx = x + dir.0;
+                    let ny = y + dir.1;
+                    if nx < 1 || ny < 1 || nx >= width as i32 - 1 || ny >= height as i32 - 1 { break 'seg; }
+                    if !free(&grid, nx, ny) || pts.contains(&(nx, ny)) { break 'seg; }
+                    x = nx;
+                    y = ny;
+                    pts.push((x, y));
+                }
+                dir = if dir.0 != 0 {
+                    if rng.random::<f32>() < 0.5 { (0, 1) } else { (0, -1) }
+                } else {
+                    if rng.random::<f32>() < 0.5 { (1, 0) } else { (-1, 0) }
+                };
+            }
+            if pts.len() < 4 { continue; }
+
+            let color = trace_colors[placed % trace_colors.len()];
+            let pad_color = lighten(color, 30);
+            for i in 0..pts.len() {
+                let (px, py) = pts[i];
+                let ch = if i == 0 || i == pts.len() - 1 {
+                    '◉'
+                } else {
+                    let din = (pts[i].0 - pts[i - 1].0, pts[i].1 - pts[i - 1].1);
+                    let dout = (pts[i + 1].0 - pts[i].0, pts[i + 1].1 - pts[i].1);
+                    match (din, dout) {
+                        ((1, 0), (1, 0)) | ((-1, 0), (-1, 0)) => '─',
+                        ((0, 1), (0, 1)) | ((0, -1), (0, -1)) => '│',
+                        ((1, 0), (0, 1)) | ((0, -1), (-1, 0)) => '╮',
+                        ((1, 0), (0, -1)) | ((0, 1), (-1, 0)) => '╯',
+                        ((-1, 0), (0, 1)) | ((0, -1), (1, 0)) => '╭',
+                        ((-1, 0), (0, -1)) | ((0, 1), (1, 0)) => '╰',
+                        _ => '·',
+                    }
+                };
+                let c = if i == 0 || i == pts.len() - 1 { pad_color } else { color };
+                grid[py as usize][px as usize] = Cell::new(ch, c);
+            }
+            placed += 1;
+        }
+    } else if mode == "quilt" {
+        // quilt [min_patch] [max_patch] -- stitched patchwork of tile patterns
+        let min_p: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(10);
+        let max_p: usize = args.get(5).and_then(|s| s.parse().ok()).unwrap_or(22);
+        let min_p = min_p.clamp(4, 30);
+        let max_p = max_p.clamp(min_p + 1, 40);
+
+        let col_strips = allocate_strips(width, min_p, max_p, &mut rng);
+        let row_strips = allocate_strips(height, (min_p / 2).max(3), (max_p / 2).max(4), &mut rng);
+
+        let mut patch_rects: Vec<Rect> = Vec::new();
+        for &(ry, rh) in &row_strips {
+            for &(cx, cw) in &col_strips {
+                let r = Rect { x: cx, y: ry, w: cw, h: rh };
+                let variant = tile_variant_from_index(rng.random_range(0..TILE_VARIANT_COUNT));
+                let c1 = darken(palette[1 + rng.random_range(0..3)], rng.random_range(0..50));
+                let c2 = darken(palette[1 + rng.random_range(0..3)], rng.random_range(20..70));
+                fill_tile_pure(&mut grid, &r, variant, c1, c2);
+                patch_rects.push(r);
+            }
+        }
+
+        // stitched seams between patches
+        let thread = darken(palette[4], 40);
+        for &(cx, _) in col_strips.iter().skip(1) {
+            for y in 0..height {
+                grid[y][cx] = Cell::new('┆', thread);
+            }
+        }
+        for &(ry, _) in row_strips.iter().skip(1) {
+            for x in 0..width {
+                grid[ry][x] = Cell::new('┄', thread);
+            }
+        }
+        for &(ry, _) in row_strips.iter().skip(1) {
+            for &(cx, _) in col_strips.iter().skip(1) {
+                grid[ry][cx] = Cell::new('+', thread);
+            }
+        }
+
+        // applique: stamp flowers on a few of the larger patches
+        let mut candidates: Vec<&Rect> = patch_rects.iter().filter(|r| r.w >= 9 && r.h >= 7).collect();
+        for _ in 0..3 {
+            if candidates.is_empty() { break; }
+            let idx = rng.random_range(0..candidates.len());
+            let r = candidates.remove(idx);
+            let cx = r.x + r.w / 2;
+            let cy = r.y + r.h / 2;
+            draw_flower(&mut grid, cx, cy, rng.random_range(0..5), lighten(palette[3], 20));
+        }
     } else if mode == "world" {
         render_world(&mut grid, width, height, &palette, &mut rng);
     } else if mode == "noise" {

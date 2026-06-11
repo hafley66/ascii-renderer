@@ -209,3 +209,28 @@ fn bushes_seed_42() {
 fn forest7_seed_42() {
     insta::assert_snapshot!(render(&["42", "forest7", "ember"]));
 }
+
+#[test]
+fn kintsugi_seed_42() {
+    insta::assert_snapshot!(render(&["42", "kintsugi", "ember"]));
+}
+
+#[test]
+fn constellation_seed_42() {
+    insta::assert_snapshot!(render(&["42", "constellation", "deep"]));
+}
+
+#[test]
+fn strata_seed_42() {
+    insta::assert_snapshot!(render(&["42", "strata", "terracotta"]));
+}
+
+#[test]
+fn circuit_seed_42() {
+    insta::assert_snapshot!(render(&["42", "circuit", "neon"]));
+}
+
+#[test]
+fn quilt_seed_42() {
+    insta::assert_snapshot!(render(&["42", "quilt", "ember"]));
+}
