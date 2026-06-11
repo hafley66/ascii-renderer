@@ -1,8 +1,8 @@
-use crossterm::style::Color;
-use rand::rngs::StdRng;
-use rand::RngExt;
-use crate::types::*;
 use crate::content::*;
+use crate::types::*;
+use crossterm::style::Color;
+use rand::RngExt;
+use rand::rngs::StdRng;
 
 pub struct BspNode {
     pub rect: Rect,
@@ -12,7 +12,11 @@ pub struct BspNode {
 
 impl BspNode {
     pub fn new(x: usize, y: usize, w: usize, h: usize) -> Self {
-        BspNode { rect: Rect { x, y, w, h }, left: None, right: None }
+        BspNode {
+            rect: Rect { x, y, w, h },
+            left: None,
+            right: None,
+        }
     }
 
     pub fn is_leaf(&self) -> bool {
@@ -21,13 +25,24 @@ impl BspNode {
 
     /// Recursively split until we have enough leaves or hit min size.
     /// gap: number of cells reserved between children (for grid lines).
-    pub fn split_with_gap(&mut self, min_w: usize, min_h: usize, max_depth: usize, gap: usize, rng: &mut StdRng) {
-        if max_depth == 0 { return; }
+    pub fn split_with_gap(
+        &mut self,
+        min_w: usize,
+        min_h: usize,
+        max_depth: usize,
+        gap: usize,
+        rng: &mut StdRng,
+    ) {
+        if max_depth == 0 {
+            return;
+        }
 
         let can_split_h = self.rect.w >= min_w * 2 + gap;
         let can_split_v = self.rect.h >= min_h * 2 + gap;
 
-        if !can_split_h && !can_split_v { return; }
+        if !can_split_h && !can_split_v {
+            return;
+        }
 
         // bias split axis by aspect ratio: wide nodes split horizontally (left/right),
         // tall nodes split vertically (top/bottom)
@@ -38,24 +53,30 @@ impl BspNode {
         } else {
             let ratio = self.rect.w as f64 / self.rect.h as f64;
             // terminal cells are ~1:2 aspect, so adjust threshold
-            if ratio > 1.5 { true }
-            else if ratio < 0.75 { false }
-            else { rng.random_range(0..2) == 0 }
+            if ratio > 1.5 {
+                true
+            } else if ratio < 0.75 {
+                false
+            } else {
+                rng.random_range(0..2) == 0
+            }
         };
 
         if split_horizontal {
             // split along x axis (left/right children)
             let range_lo = min_w;
             let range_hi = self.rect.w.saturating_sub(min_w + gap);
-            if range_lo >= range_hi { return; }
+            if range_lo >= range_hi {
+                return;
+            }
             let split = rng.random_range(range_lo..range_hi);
 
-            let mut left = Box::new(BspNode::new(
-                self.rect.x, self.rect.y, split, self.rect.h,
-            ));
+            let mut left = Box::new(BspNode::new(self.rect.x, self.rect.y, split, self.rect.h));
             let mut right = Box::new(BspNode::new(
-                self.rect.x + split + gap, self.rect.y,
-                self.rect.w.saturating_sub(split + gap), self.rect.h,
+                self.rect.x + split + gap,
+                self.rect.y,
+                self.rect.w.saturating_sub(split + gap),
+                self.rect.h,
             ));
             left.split_with_gap(min_w, min_h, max_depth - 1, gap, rng);
             right.split_with_gap(min_w, min_h, max_depth - 1, gap, rng);
@@ -65,15 +86,17 @@ impl BspNode {
             // split along y axis (top/bottom children)
             let range_lo = min_h;
             let range_hi = self.rect.h.saturating_sub(min_h + gap);
-            if range_lo >= range_hi { return; }
+            if range_lo >= range_hi {
+                return;
+            }
             let split = rng.random_range(range_lo..range_hi);
 
-            let mut top = Box::new(BspNode::new(
-                self.rect.x, self.rect.y, self.rect.w, split,
-            ));
+            let mut top = Box::new(BspNode::new(self.rect.x, self.rect.y, self.rect.w, split));
             let mut bottom = Box::new(BspNode::new(
-                self.rect.x, self.rect.y + split + gap,
-                self.rect.w, self.rect.h.saturating_sub(split + gap),
+                self.rect.x,
+                self.rect.y + split + gap,
+                self.rect.w,
+                self.rect.h.saturating_sub(split + gap),
             ));
             top.split_with_gap(min_w, min_h, max_depth - 1, gap, rng);
             bottom.split_with_gap(min_w, min_h, max_depth - 1, gap, rng);
@@ -93,8 +116,12 @@ impl BspNode {
             return vec![&self.rect];
         }
         let mut out = Vec::new();
-        if let Some(ref l) = self.left { out.extend(l.leaves()); }
-        if let Some(ref r) = self.right { out.extend(r.leaves()); }
+        if let Some(ref l) = self.left {
+            out.extend(l.leaves());
+        }
+        if let Some(ref r) = self.right {
+            out.extend(r.leaves());
+        }
         out
     }
 }
@@ -123,8 +150,15 @@ pub fn layout_two_col(
     for block in left {
         let (_, h) = measure_block(block, col_w);
         let h = h.min(canvas_h.saturating_sub(cy));
-        if h == 0 { break; }
-        let rect = Rect { x: left_x, y: cy, w: col_w, h };
+        if h == 0 {
+            break;
+        }
+        let rect = Rect {
+            x: left_x,
+            y: cy,
+            w: col_w,
+            h,
+        };
         render_block(grid, block, &rect, fg, bar_fg);
         rects.push(rect);
         cy += h + 1; // 1 row gap between blocks
@@ -135,8 +169,15 @@ pub fn layout_two_col(
     for block in right {
         let (_, h) = measure_block(block, col_w);
         let h = h.min(canvas_h.saturating_sub(cy));
-        if h == 0 { break; }
-        let rect = Rect { x: right_x, y: cy, w: col_w, h };
+        if h == 0 {
+            break;
+        }
+        let rect = Rect {
+            x: right_x,
+            y: cy,
+            w: col_w,
+            h,
+        };
         render_block(grid, block, &rect, fg, bar_fg);
         rects.push(rect);
         cy += h + 1;
@@ -170,16 +211,24 @@ pub fn layout_bsp(
     let leaves = root.leaves();
 
     // assign blocks to leaves: largest-area leaves get content first
-    let mut leaf_rects: Vec<Rect> = leaves.iter().map(|r| {
-        Rect { x: r.x, y: r.y, w: r.w, h: r.h }
-    }).collect();
+    let mut leaf_rects: Vec<Rect> = leaves
+        .iter()
+        .map(|r| Rect {
+            x: r.x,
+            y: r.y,
+            w: r.w,
+            h: r.h,
+        })
+        .collect();
 
     // sort by area descending so content goes in the biggest regions
     leaf_rects.sort_by(|a, b| (b.w * b.h).cmp(&(a.w * a.h)));
 
     let mut all_rects = Vec::new();
     for (i, block) in blocks.iter().enumerate() {
-        if i >= leaf_rects.len() { break; }
+        if i >= leaf_rects.len() {
+            break;
+        }
         let leaf = &leaf_rects[i];
         let (_, h) = measure_block(block, leaf.w);
         let render_rect = Rect {
@@ -194,7 +243,12 @@ pub fn layout_bsp(
 
     // return all leaf rects (content ones first, then empty ones for pattern fill)
     for r in &leaf_rects[blocks.len().min(leaf_rects.len())..] {
-        all_rects.push(Rect { x: r.x, y: r.y, w: r.w, h: r.h });
+        all_rects.push(Rect {
+            x: r.x,
+            y: r.y,
+            w: r.w,
+            h: r.h,
+        });
     }
 
     all_rects

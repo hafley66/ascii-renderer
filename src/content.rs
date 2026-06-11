@@ -1,6 +1,6 @@
-use crossterm::style::Color;
-use crate::types::*;
 use crate::color::darken;
+use crate::types::*;
+use crossterm::style::Color;
 
 pub enum ContentItem {
     Text(String),
@@ -71,7 +71,10 @@ pub fn measure_block(block: &ContentBlock, available_width: usize) -> (usize, us
             }
         }
     }
-    (max_line_w + block.padding * 2, total_lines + block.padding * 2)
+    (
+        max_line_w + block.padding * 2,
+        total_lines + block.padding * 2,
+    )
 }
 
 /// Minimum width a block needs to avoid any text wrapping.
@@ -116,7 +119,9 @@ pub fn render_block(grid: &mut Grid, block: &ContentBlock, rect: &Rect, fg: Colo
                     for ch in line.chars() {
                         let cw = char_width(ch);
                         let gx = inner_x + col;
-                        if gx + cw > rect.x + rect.w { break; }
+                        if gx + cw > rect.x + rect.w {
+                            break;
+                        }
                         if cy < grid.len() && gx < grid[0].len() {
                             grid[cy][gx] = Cell::new(ch, fg);
                             if cw == 2 && gx + 1 < grid[0].len() {
@@ -134,7 +139,9 @@ pub fn render_block(grid: &mut Grid, block: &ContentBlock, rect: &Rect, fg: Colo
                     for ch in label.chars() {
                         let cw = char_width(ch);
                         let gx = inner_x + col;
-                        if gx + cw > rect.x + rect.w { break; }
+                        if gx + cw > rect.x + rect.w {
+                            break;
+                        }
                         if cy < grid.len() && gx < grid[0].len() {
                             grid[cy][gx] = Cell::new(ch, fg);
                             if cw == 2 && gx + 1 < grid[0].len() {
@@ -178,7 +185,13 @@ pub fn render_block(grid: &mut Grid, block: &ContentBlock, rect: &Rect, fg: Colo
 
 /// Like render_block but preserves existing bg color of each cell
 /// instead of clearing to blank. Used by Mondrian to keep color fills.
-pub fn render_block_preserve_bg(grid: &mut Grid, block: &ContentBlock, rect: &Rect, fg: Color, bar_fg: Color) {
+pub fn render_block_preserve_bg(
+    grid: &mut Grid,
+    block: &ContentBlock,
+    rect: &Rect,
+    fg: Color,
+    bar_fg: Color,
+) {
     let inner_x = rect.x + block.padding;
     let inner_y = rect.y + block.padding;
     let inner_w = rect.w.saturating_sub(block.padding * 2);
@@ -187,17 +200,23 @@ pub fn render_block_preserve_bg(grid: &mut Grid, block: &ContentBlock, rect: &Re
 
     let mut cy = inner_y;
     for item in &block.items {
-        if cy >= max_y { break; }
+        if cy >= max_y {
+            break;
+        }
         match item {
             ContentItem::Text(s) => {
                 let wrapped = wrap_text(s, inner_w);
                 for line in &wrapped {
-                    if cy >= max_y { break; }
+                    if cy >= max_y {
+                        break;
+                    }
                     let mut col = 0usize; // display column offset
                     for ch in line.chars() {
                         let cw = char_width(ch);
                         let x = inner_x + col;
-                        if x + cw > max_x { break; }
+                        if x + cw > max_x {
+                            break;
+                        }
                         if cy < grid.len() && x < grid[0].len() {
                             let existing_bg = grid[cy][x].bg;
                             grid[cy][x] = Cell::with_bg(ch, fg, existing_bg);
@@ -218,7 +237,9 @@ pub fn render_block_preserve_bg(grid: &mut Grid, block: &ContentBlock, rect: &Re
                     for ch in label.chars() {
                         let cw = char_width(ch);
                         let x = inner_x + col;
-                        if x + cw > max_x { break; }
+                        if x + cw > max_x {
+                            break;
+                        }
                         if cy < grid.len() && x < grid[0].len() {
                             let existing_bg = grid[cy][x].bg;
                             grid[cy][x] = Cell::with_bg(ch, fg, existing_bg);
@@ -230,12 +251,16 @@ pub fn render_block_preserve_bg(grid: &mut Grid, block: &ContentBlock, rect: &Re
                     }
                     cy += 1;
                 }
-                if cy >= max_y { continue; }
+                if cy >= max_y {
+                    continue;
+                }
                 let bar_w = inner_w.min(max_x.saturating_sub(inner_x));
                 let filled = ((value / max) * bar_w as f64) as usize;
                 for j in 0..bar_w {
                     let x = inner_x + j;
-                    if x >= max_x { break; }
+                    if x >= max_x {
+                        break;
+                    }
                     let ch = if j < filled { '█' } else { '░' };
                     let color = if j < filled { bar_fg } else { fg };
                     if cy < grid.len() && x < grid[0].len() {

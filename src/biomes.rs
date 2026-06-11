@@ -1,14 +1,14 @@
-use crossterm::style::Color;
-use rand::rngs::StdRng;
-use rand::RngExt;
-use crate::types::*;
 use crate::color::*;
 use crate::fills::*;
-use crate::sprites::*;
-use crate::scene::*;
-use crate::walker::*;
-use crate::sprites::draw_fret_border;
 use crate::layout::*;
+use crate::scene::*;
+use crate::sprites::draw_fret_border;
+use crate::sprites::*;
+use crate::types::*;
+use crate::walker::*;
+use crossterm::style::Color;
+use rand::RngExt;
+use rand::rngs::StdRng;
 
 /// Biome types that can fill a vertical strip or arbitrary rect.
 #[derive(Clone, Copy, Debug)]
@@ -81,12 +81,20 @@ pub fn render_forest(grid: &mut Grid, rect: &Rect, palette: &[Color; 5], rng: &m
     let decoration_count = (rect.w / 10).max(1);
     for _ in 0..decoration_count {
         let fx = rect.x + rng.random_range(2..rect.w.saturating_sub(2).max(3));
-        let fy = rect.y + rng.random_range(rect.h / 3..rect.h.saturating_sub(2).max(rect.h / 3 + 1));
+        let fy =
+            rect.y + rng.random_range(rect.h / 3..rect.h.saturating_sub(2).max(rect.h / 3 + 1));
         match rng.random_range(0..6) {
             0 => draw_fruit(grid, fx, fy, rng.random_range(0..5), palette[3]),
             1 => {
                 let s = (rect.w.min(rect.h) / 6).max(1).min(3);
-                draw_mask(grid, fx, fy, s, rng.random_range(0..MASK_STYLE_COUNT), palette[rng.random_range(1..4)]);
+                draw_mask(
+                    grid,
+                    fx,
+                    fy,
+                    s,
+                    rng.random_range(0..MASK_STYLE_COUNT),
+                    palette[rng.random_range(1..4)],
+                );
             }
             _ => draw_flower(grid, fx, fy, rng.random_range(0..5), palette[3]),
         }
@@ -106,7 +114,9 @@ pub fn render_garden(grid: &mut Grid, rect: &Rect, palette: &[Color; 5], rng: &m
     // scatter flowers
     let count = (rect.w * rect.h / 80).max(1).min(8);
     for _ in 0..count {
-        if rect.w < 5 || rect.h < 3 { break; }
+        if rect.w < 5 || rect.h < 3 {
+            break;
+        }
         let fx = rect.x + rng.random_range(2..rect.w.saturating_sub(2).max(3));
         let fy = rect.y + rng.random_range(2..rect.h.saturating_sub(2).max(3));
         let style = rng.random_range(0..5);
@@ -134,7 +144,16 @@ pub fn render_temple(grid: &mut Grid, rect: &Rect, palette: &[Color; 5], rng: &m
         let band = (rect.w.min(rect.h) / 8).max(2).min(4);
         let border_color = palette[rng.random_range(1..4)];
         for edge in 0..4 {
-            draw_fret_border(grid, rect.x, rect.y, rect.w, rect.h, band, edge, border_color);
+            draw_fret_border(
+                grid,
+                rect.x,
+                rect.y,
+                rect.w,
+                rect.h,
+                band,
+                edge,
+                border_color,
+            );
         }
     }
 
@@ -143,7 +162,14 @@ pub fn render_temple(grid: &mut Grid, rect: &Rect, palette: &[Color; 5], rng: &m
         let cx = rect.x + rect.w / 2;
         let cy = rect.y + rect.h / 2;
         let steps = (rect.w.min(rect.h) / 6).max(2).min(5);
-        draw_stepped_fret(grid, cx as i32, cy as i32, steps, Dir::Right, palette[rng.random_range(1..4)]);
+        draw_stepped_fret(
+            grid,
+            cx as i32,
+            cy as i32,
+            steps,
+            Dir::Right,
+            palette[rng.random_range(1..4)],
+        );
     }
 }
 
@@ -185,7 +211,13 @@ pub fn render_geometric(grid: &mut Grid, rect: &Rect, palette: &[Color; 5], rng:
 
 // ── Dispatch ────────────────────────────────────────────────────────
 
-pub fn render_biome(biome: Biome, grid: &mut Grid, rect: &Rect, palette: &[Color; 5], rng: &mut StdRng) {
+pub fn render_biome(
+    biome: Biome,
+    grid: &mut Grid,
+    rect: &Rect,
+    palette: &[Color; 5],
+    rng: &mut StdRng,
+) {
     match biome {
         Biome::Forest => render_forest(grid, rect, palette, rng),
         Biome::Garden => render_garden(grid, rect, palette, rng),
@@ -208,20 +240,20 @@ pub fn render_biome(biome: Biome, grid: &mut Grid, rect: &Rect, palette: &[Color
 /// Width envelope: how the active region narrows or widens across a zone.
 #[derive(Clone, Copy)]
 pub enum Taper {
-    Constant,       // same width top to bottom
-    Opening,        // narrow at top, wide at bottom (tree canopy, pyramid)
-    Closing,        // wide at top, narrow at bottom (funnel, trunk)
-    Diamond,        // narrow → wide → narrow
+    Constant, // same width top to bottom
+    Opening,  // narrow at top, wide at bottom (tree canopy, pyramid)
+    Closing,  // wide at top, narrow at bottom (funnel, trunk)
+    Diamond,  // narrow → wide → narrow
 }
 
 /// A single zone in a flow sequence.
 #[derive(Clone, Copy)]
 pub struct FlowZone {
     pub fill: FillGen,
-    pub height_frac: f32,   // fraction of total strip height this zone occupies
+    pub height_frac: f32, // fraction of total strip height this zone occupies
     pub taper: Taper,
-    pub width_start: f32,   // 0.0-1.0, fraction of strip width at zone top
-    pub width_end: f32,     // 0.0-1.0, fraction of strip width at zone bottom
+    pub width_start: f32, // 0.0-1.0, fraction of strip width at zone top
+    pub width_end: f32,   // 0.0-1.0, fraction of strip width at zone bottom
 }
 
 /// Compute the active x-range for a row within a zone, given taper.
@@ -233,10 +265,16 @@ fn zone_x_range(zone: &FlowZone, strip_x: usize, strip_w: usize, t: f32) -> (usi
         Taper::Diamond => {
             if t < 0.5 {
                 let t2 = t * 2.0;
-                (zone.width_start + (zone.width_end - zone.width_start) * t2, 0.0)
+                (
+                    zone.width_start + (zone.width_end - zone.width_start) * t2,
+                    0.0,
+                )
             } else {
                 let t2 = (t - 0.5) * 2.0;
-                (zone.width_end + (zone.width_start - zone.width_end) * t2, 0.0)
+                (
+                    zone.width_end + (zone.width_start - zone.width_end) * t2,
+                    0.0,
+                )
             }
         }
     };
@@ -253,12 +291,21 @@ fn zone_x_range(zone: &FlowZone, strip_x: usize, strip_w: usize, t: f32) -> (usi
 
 /// Draw dissolve glyphs in a horizontal band, fading from `density` to 0.
 fn draw_dissolve_row(
-    grid: &mut Grid, y: usize, x0: usize, x1: usize,
-    density: f32, color: Color, rng: &mut StdRng,
+    grid: &mut Grid,
+    y: usize,
+    x0: usize,
+    x1: usize,
+    density: f32,
+    color: Color,
+    rng: &mut StdRng,
 ) {
-    if y >= grid.len() { return; }
+    if y >= grid.len() {
+        return;
+    }
     for x in x0..x1 {
-        if x >= grid[0].len() { return; }
+        if x >= grid[0].len() {
+            return;
+        }
         let r: f32 = rng.random::<f32>();
         if r < density * 0.3 {
             let gi = rng.random_range(0..4); // denser dissolve glyphs
@@ -273,15 +320,20 @@ fn draw_dissolve_row(
 
 /// Render a flow: a vertical sequence of zones within a strip rect.
 pub fn render_flow(
-    grid: &mut Grid, rect: &Rect, zones: &[FlowZone],
-    palette: &[Color; 5], rng: &mut StdRng,
+    grid: &mut Grid,
+    rect: &Rect,
+    zones: &[FlowZone],
+    palette: &[Color; 5],
+    rng: &mut StdRng,
 ) {
     let dissolve_rows = 3; // rows of dissolve between zones
     let mut y_cursor = rect.y;
 
     for (zi, zone) in zones.iter().enumerate() {
         let zone_h = (rect.h as f32 * zone.height_frac) as usize;
-        if zone_h == 0 || y_cursor >= rect.y + rect.h { continue; }
+        if zone_h == 0 || y_cursor >= rect.y + rect.h {
+            continue;
+        }
         let zone_h = zone_h.min(rect.y + rect.h - y_cursor);
 
         // for each row in this zone, compute the active x range and fill
@@ -303,8 +355,14 @@ pub fn render_flow(
         // mask: clear cells outside the taper envelope
         for row_i in 0..zone_h {
             let y = y_cursor + row_i;
-            if y >= grid.len() { break; }
-            let t = if zone_h > 1 { row_i as f32 / (zone_h - 1) as f32 } else { 0.5 };
+            if y >= grid.len() {
+                break;
+            }
+            let t = if zone_h > 1 {
+                row_i as f32 / (zone_h - 1) as f32
+            } else {
+                0.5
+            };
             let (x0, x1) = zone_x_range(zone, rect.x, rect.w, t);
 
             // clear left of active zone
@@ -370,15 +428,24 @@ pub fn random_flow(rect: &Rect, palette: &[Color; 5], rng: &mut StdRng) -> Vec<F
         _ => FillGen::DiamondLattice,
     };
     let fills = [
-        FillGen::TilePure(tile_variant_from_index(rng.random_range(0..TILE_VARIANT_COUNT))),
+        FillGen::TilePure(tile_variant_from_index(
+            rng.random_range(0..TILE_VARIANT_COUNT),
+        )),
         FillGen::AztecDiamond((rect.h / 2).min(rect.w / 4).max(2).min(8)),
         FillGen::Tree(rng.random_range(0..12)),
-        FillGen::Noise(noise_variant_from_index(rng.random_range(0..NOISE_VARIANT_COUNT))),
+        FillGen::Noise(noise_variant_from_index(
+            rng.random_range(0..NOISE_VARIANT_COUNT),
+        )),
         line_art,
         FillGen::Noise(NoiseVariant::Dot),
     ];
 
-    let tapers = [Taper::Constant, Taper::Opening, Taper::Closing, Taper::Diamond];
+    let tapers = [
+        Taper::Constant,
+        Taper::Opening,
+        Taper::Closing,
+        Taper::Diamond,
+    ];
 
     // first zone: wide
     let mut prev_w_end = rng.random_range(60..100) as f32 / 100.0;
@@ -424,9 +491,19 @@ pub fn random_flow(rect: &Rect, palette: &[Color; 5], rng: &mut StdRng) -> Vec<F
 /// Midpoint displacement with multiple anchor points for varied ridgelines.
 /// Seeds 3-6 anchors across the width before running displacement, preventing
 /// the single-peak pyramid shape that 2-endpoint displacement always produces.
-pub fn gen_contour(width: usize, base: usize, amplitude: usize, roughness: f32, rng: &mut StdRng) -> Vec<usize> {
-    if width == 0 { return vec![]; }
-    if width == 1 { return vec![base]; }
+pub fn gen_contour(
+    width: usize,
+    base: usize,
+    amplitude: usize,
+    roughness: f32,
+    rng: &mut StdRng,
+) -> Vec<usize> {
+    if width == 0 {
+        return vec![];
+    }
+    if width == 1 {
+        return vec![base];
+    }
 
     let mut heights = vec![0.0f32; width];
     let amp = amplitude as i32;
@@ -451,7 +528,9 @@ pub fn gen_contour(width: usize, base: usize, amplitude: usize, roughness: f32, 
     anchors.dedup();
     for w in anchors.windows(2) {
         let (i0, i1) = (w[0], w[1]);
-        if i1 <= i0 { continue; }
+        if i1 <= i0 {
+            continue;
+        }
         let h0 = heights[i0];
         let h1 = heights[i1];
         for i in i0 + 1..i1 {
@@ -467,8 +546,16 @@ pub fn gen_contour(width: usize, base: usize, amplitude: usize, roughness: f32, 
         let half = step / 2;
         let mut i = half;
         while i < width {
-            let left = if i >= half { heights[i - half] } else { heights[0] };
-            let right = if i + half < width { heights[i + half] } else { heights[width - 1] };
+            let left = if i >= half {
+                heights[i - half]
+            } else {
+                heights[0]
+            };
+            let right = if i + half < width {
+                heights[i + half]
+            } else {
+                heights[width - 1]
+            };
             let mid = (left + right) / 2.0;
             let offset = (rng.random::<f32>() - 0.5) * scale;
             heights[i] = mid + offset;
@@ -488,20 +575,21 @@ pub fn gen_contour(width: usize, base: usize, amplitude: usize, roughness: f32, 
 }
 
 /// Draw the contour line itself with ridge glyphs.
-pub fn draw_contour_ridge(
-    grid: &mut Grid,
-    rect: &Rect,
-    contour: &[usize],
-    color: Color,
-) {
+pub fn draw_contour_ridge(grid: &mut Grid, rect: &Rect, contour: &[usize], color: Color) {
     for col in 0..rect.w.min(contour.len()) {
         let x = rect.x + col;
         let y = contour[col];
-        if x >= grid[0].len() || y >= grid.len() { continue; }
+        if x >= grid[0].len() || y >= grid.len() {
+            continue;
+        }
 
         // pick glyph based on slope
         let prev = if col > 0 { contour[col - 1] } else { y };
-        let next = if col + 1 < contour.len() { contour[col + 1] } else { y };
+        let next = if col + 1 < contour.len() {
+            contour[col + 1]
+        } else {
+            y
+        };
         let ch = if next < y && prev < y {
             '╰' // valley
         } else if next > y && prev > y {
@@ -540,11 +628,15 @@ fn rand_mountain_fill(rng: &mut StdRng) -> FillGen {
 
 fn rand_hill_fill(rng: &mut StdRng) -> FillGen {
     match rng.random_range(0..5) {
-        0 => FillGen::TilePure(tile_variant_from_index(rng.random_range(0..TILE_VARIANT_COUNT))),
+        0 => FillGen::TilePure(tile_variant_from_index(
+            rng.random_range(0..TILE_VARIANT_COUNT),
+        )),
         1 => FillGen::Crosshatch,
         2 => FillGen::Noise(NoiseVariant::Higaki),
         3 => FillGen::Weave,
-        _ => FillGen::TilePure(tile_variant_from_index(rng.random_range(0..TILE_VARIANT_COUNT))),
+        _ => FillGen::TilePure(tile_variant_from_index(
+            rng.random_range(0..TILE_VARIANT_COUNT),
+        )),
     }
 }
 
@@ -552,7 +644,9 @@ fn rand_ground_fill(rng: &mut StdRng) -> FillGen {
     match rng.random_range(0..4) {
         0 => FillGen::Noise(NoiseVariant::Grass),
         1 => FillGen::Noise(NoiseVariant::Dot),
-        2 => FillGen::TilePure(tile_variant_from_index(rng.random_range(0..TILE_VARIANT_COUNT))),
+        2 => FillGen::TilePure(tile_variant_from_index(
+            rng.random_range(0..TILE_VARIANT_COUNT),
+        )),
         _ => FillGen::Noise(NoiseVariant::Grass),
     }
 }
@@ -596,9 +690,17 @@ fn terrain_patches(
 
         let contour_clone = contour.to_vec();
         let contour_mask: MaskFn = if below {
-            Box::new(mask_below_contour(contour_clone, x_offset, contour_dissolve))
+            Box::new(mask_below_contour(
+                contour_clone,
+                x_offset,
+                contour_dissolve,
+            ))
         } else {
-            Box::new(mask_above_contour(contour_clone, x_offset, contour_dissolve))
+            Box::new(mask_above_contour(
+                contour_clone,
+                x_offset,
+                contour_dissolve,
+            ))
         };
         let ellipse = mask_ellipse(cx, cy, rx, ry, 3.0);
         let combined = mask_intersect(contour_mask, ellipse);
@@ -647,13 +749,21 @@ pub fn terrain_scene(rect: &Rect, palette: &[Color; 5], rng: &mut StdRng) -> Ter
         // sky base
         Layer {
             fill: FillGen::Noise(NoiseVariant::Dot),
-            mask: Some(Box::new(mask_above_contour(mountain_contour.clone(), rect.x, 5.0))),
+            mask: Some(Box::new(mask_above_contour(
+                mountain_contour.clone(),
+                rect.x,
+                5.0,
+            ))),
             palette: *palette,
         },
         // mountain base
         Layer {
             fill: rand_mountain_fill(rng),
-            mask: Some(Box::new(mask_below_contour(mountain_contour.clone(), rect.x, 4.0))),
+            mask: Some(Box::new(mask_below_contour(
+                mountain_contour.clone(),
+                rect.x,
+                4.0,
+            ))),
             palette: mtn_palette,
         },
     ];
@@ -661,36 +771,68 @@ pub fn terrain_scene(rect: &Rect, palette: &[Color; 5], rng: &mut StdRng) -> Ter
     // mountain overlay patches
     let mtn_patches = rng.random_range(2..=3);
     layers.extend(terrain_patches(
-        rect, &mountain_contour, rect.x, 4.0, true,
-        &mtn_palette, rand_mountain_fill, 20, mtn_patches, rng,
+        rect,
+        &mountain_contour,
+        rect.x,
+        4.0,
+        true,
+        &mtn_palette,
+        rand_mountain_fill,
+        20,
+        mtn_patches,
+        rng,
     ));
 
     // foothill base
     layers.push(Layer {
         fill: rand_hill_fill(rng),
-        mask: Some(Box::new(mask_below_contour(foothill_contour.clone(), rect.x, 4.0))),
+        mask: Some(Box::new(mask_below_contour(
+            foothill_contour.clone(),
+            rect.x,
+            4.0,
+        ))),
         palette: hill_palette,
     });
 
     // foothill overlay patches
     let hill_patches = rng.random_range(1..=3);
     layers.extend(terrain_patches(
-        rect, &foothill_contour, rect.x, 4.0, true,
-        &hill_palette, rand_hill_fill, 0, hill_patches, rng,
+        rect,
+        &foothill_contour,
+        rect.x,
+        4.0,
+        true,
+        &hill_palette,
+        rand_hill_fill,
+        0,
+        hill_patches,
+        rng,
     ));
 
     // ground base
     layers.push(Layer {
         fill: rand_ground_fill(rng),
-        mask: Some(Box::new(mask_below_contour(ground_contour.clone(), rect.x, 3.0))),
+        mask: Some(Box::new(mask_below_contour(
+            ground_contour.clone(),
+            rect.x,
+            3.0,
+        ))),
         palette: gnd_palette,
     });
 
     // ground overlay patches
     let gnd_patches = rng.random_range(1..=2);
     layers.extend(terrain_patches(
-        rect, &ground_contour, rect.x, 3.0, true,
-        &gnd_palette, rand_ground_fill, 0, gnd_patches, rng,
+        rect,
+        &ground_contour,
+        rect.x,
+        3.0,
+        true,
+        &gnd_palette,
+        rand_ground_fill,
+        0,
+        gnd_patches,
+        rng,
     ));
 
     TerrainContext {
@@ -722,10 +864,15 @@ pub fn terrain_post_pass(
     let tree_spacing = w / (tree_count + 1);
     for i in 0..tree_count {
         let col = tree_spacing * (i + 1);
-        if col >= w || col >= ctx.ground_contour.len() { continue; }
+        if col >= w || col >= ctx.ground_contour.len() {
+            continue;
+        }
         let tx = rect.x + col;
         let ty = ctx.ground_contour[col].saturating_sub(1);
-        let canopy = ctx.foothill_contour.get(col).copied()
+        let canopy = ctx
+            .foothill_contour
+            .get(col)
+            .copied()
             .unwrap_or(ty.saturating_sub(5))
             .min(ty.saturating_sub(3));
         let spread = (tree_spacing / 3).max(2).min(6);
@@ -740,7 +887,9 @@ pub fn terrain_post_pass(
     // scatter flowers along ground
     for _ in 0..(w / 20).max(1) {
         let col = rng.random_range(0..w);
-        if col >= ctx.ground_contour.len() { continue; }
+        if col >= ctx.ground_contour.len() {
+            continue;
+        }
         let fx = rect.x + col;
         let fy = ctx.ground_contour[col] + rng.random_range(1..4);
         if fy < rect.y + h {
@@ -759,7 +908,14 @@ pub fn terrain_post_pass(
             w: 12,
             h: 8,
         };
-        fill_masked(grid, &moon_rect, FillGen::TilePure(TileVariant::Shippo), &moon_mask, palette, rng);
+        fill_masked(
+            grid,
+            &moon_rect,
+            FillGen::TilePure(TileVariant::Shippo),
+            &moon_mask,
+            palette,
+            rng,
+        );
     }
 }
 
@@ -774,7 +930,12 @@ pub fn render_terrain(grid: &mut Grid, rect: &Rect, palette: &[Color; 5], rng: &
 // ── Strip allocator ─────────────────────────────────────────────────
 // Divides the grid into vertical strips of random width, assigns a biome to each.
 
-pub fn allocate_strips(width: usize, min_strip: usize, max_strip: usize, rng: &mut StdRng) -> Vec<(usize, usize)> {
+pub fn allocate_strips(
+    width: usize,
+    min_strip: usize,
+    max_strip: usize,
+    rng: &mut StdRng,
+) -> Vec<(usize, usize)> {
     let mut strips = Vec::new(); // (x, w)
     let mut x = 0;
     while x < width {
@@ -791,14 +952,25 @@ pub fn allocate_strips(width: usize, min_strip: usize, max_strip: usize, rng: &m
 }
 
 /// Render the full grid as a world of vertical biome strips.
-pub fn render_world(grid: &mut Grid, width: usize, height: usize, palette: &[Color; 5], rng: &mut StdRng) {
+pub fn render_world(
+    grid: &mut Grid,
+    width: usize,
+    height: usize,
+    palette: &[Color; 5],
+    rng: &mut StdRng,
+) {
     let min_strip = 15.min(width);
     let max_strip = 40.min(width);
     let strips = allocate_strips(width, min_strip, max_strip, rng);
 
     for (x, w) in &strips {
         let biome = random_biome(rng);
-        let rect = Rect { x: *x, y: 0, w: *w, h: height };
+        let rect = Rect {
+            x: *x,
+            y: 0,
+            w: *w,
+            h: height,
+        };
         render_biome(biome, grid, &rect, palette, rng);
     }
 }

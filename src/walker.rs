@@ -1,18 +1,24 @@
 #![allow(unused)]
-use crossterm::style::Color;
-use rand::rngs::StdRng;
-use rand::RngExt;
-use crate::types::*;
 use crate::color::*;
 use crate::fills::*;
-use crate::sprites::*;
 use crate::scene::*;
+use crate::sprites::*;
+use crate::types::*;
+use crossterm::style::Color;
+use rand::RngExt;
+use rand::rngs::StdRng;
 
 // ── Plant character + node modes ────────────────────────────────────
 
 /// Which direction a walk tapers (nodes shrink toward this end).
 #[derive(Clone, Copy)]
-pub enum TaperDir { Up, Down, Left, Right, None }
+pub enum TaperDir {
+    Up,
+    Down,
+    Left,
+    Right,
+    None,
+}
 
 /// Global personality governing a walk's layout and flavor.
 pub struct PlantCharacter {
@@ -50,7 +56,9 @@ impl PlantCharacter {
     pub fn size_factor(&self, t: f32) -> f32 {
         let raw = match self.taper_dir {
             TaperDir::Up | TaperDir::Right => 1.0 - t * self.taper_strength,
-            TaperDir::Down | TaperDir::Left => t * self.taper_strength + (1.0 - self.taper_strength),
+            TaperDir::Down | TaperDir::Left => {
+                t * self.taper_strength + (1.0 - self.taper_strength)
+            }
             TaperDir::None => 1.0,
         };
         raw.clamp(0.3, 1.0)
@@ -71,7 +79,12 @@ pub enum NodeMode {
 }
 
 #[derive(Clone, Copy)]
-pub enum ClusterArrangement { Hex, Ring, Loose, Grid }
+pub enum ClusterArrangement {
+    Hex,
+    Ring,
+    Loose,
+    Grid,
+}
 
 impl NodeMode {
     pub fn pick(landscape_bias: f32, rng: &mut StdRng) -> Self {
@@ -98,7 +111,11 @@ impl NodeMode {
 // ── Walker mood ────────────────────────────────────────────────────
 
 #[derive(Clone, Copy)]
-pub enum WalkerMood { Organic, Geometric, Empty }
+pub enum WalkerMood {
+    Organic,
+    Geometric,
+    Empty,
+}
 
 pub struct LeafWalker {
     pub mood: WalkerMood,
@@ -109,7 +126,12 @@ pub struct LeafWalker {
 
 impl LeafWalker {
     pub fn new(center_x: usize, center_y: usize) -> Self {
-        LeafWalker { mood: WalkerMood::Organic, energy: 1.0, prev_x: center_x, prev_y: center_y }
+        LeafWalker {
+            mood: WalkerMood::Organic,
+            energy: 1.0,
+            prev_x: center_x,
+            prev_y: center_y,
+        }
     }
 
     pub fn pick_fill(&self, rect: &Rect, rng: &mut StdRng) -> FillGen {
@@ -156,12 +178,17 @@ impl LeafWalker {
             WalkerMood::Geometric => {
                 if area > 300 && rect.h > 15 && rect.w > 20 {
                     match rng.random_range(0..16) {
-                        0 => { let order = (rect.h / 2).min(rect.w / 4).max(2).min(6); FillGen::AztecDiamond(order) }
+                        0 => {
+                            let order = (rect.h / 2).min(rect.w / 4).max(2).min(6);
+                            FillGen::AztecDiamond(order)
+                        }
                         1 => FillGen::Guilloche,
                         2 => FillGen::Weave,
                         3 => FillGen::DiamondLattice,
                         4 => FillGen::Crosshatch,
-                        5 => FillGen::Noise(noise_variant_from_index(rng.random_range(0..NOISE_VARIANT_COUNT))),
+                        5 => FillGen::Noise(noise_variant_from_index(
+                            rng.random_range(0..NOISE_VARIANT_COUNT),
+                        )),
                         6 => FillGen::Spiral,
                         7 => FillGen::Concentric,
                         8 => FillGen::Labyrinth,
@@ -172,14 +199,22 @@ impl LeafWalker {
                     }
                 } else if area > 80 && rect.h > 6 && rect.w > 10 {
                     match rng.random_range(0..15) {
-                        0 => { let steps = (rect.w.min(rect.h) / 3).max(2).min(5); FillGen::Fret(steps) }
-                        1 => { let order = (rect.h / 2).min(rect.w / 4).max(2).min(6); FillGen::AztecDiamond(order) }
+                        0 => {
+                            let steps = (rect.w.min(rect.h) / 3).max(2).min(5);
+                            FillGen::Fret(steps)
+                        }
+                        1 => {
+                            let order = (rect.h / 2).min(rect.w / 4).max(2).min(6);
+                            FillGen::AztecDiamond(order)
+                        }
                         2 => FillGen::Crosshatch,
                         3 => FillGen::Guilloche,
                         4 => FillGen::Weave,
                         5 => FillGen::Zigzag,
                         6 => FillGen::DiamondLattice,
-                        7 => FillGen::Noise(noise_variant_from_index(rng.random_range(0..NOISE_VARIANT_COUNT))),
+                        7 => FillGen::Noise(noise_variant_from_index(
+                            rng.random_range(0..NOISE_VARIANT_COUNT),
+                        )),
                         8 => FillGen::CaSnapshot(rng.random_range(0..4) as u8),
                         9 => FillGen::Explosion,
                         10 => FillGen::Rule1D([30, 90, 110][rng.random_range(0..3)]),
@@ -191,7 +226,9 @@ impl LeafWalker {
                         1 => FillGen::Crosshatch,
                         2 => FillGen::Zigzag,
                         3 => FillGen::DiamondLattice,
-                        4 => FillGen::Noise(noise_variant_from_index(rng.random_range(0..NOISE_VARIANT_COUNT))),
+                        4 => FillGen::Noise(noise_variant_from_index(
+                            rng.random_range(0..NOISE_VARIANT_COUNT),
+                        )),
                         _ => FillGen::Tile(TileParams::randomized(rng)),
                     }
                 } else {
@@ -208,14 +245,26 @@ impl LeafWalker {
 
         if matches!(self.mood, WalkerMood::Empty) {
             self.energy = 0.6;
-            self.mood = if rng.random_range(0..2) == 0 { WalkerMood::Organic } else { WalkerMood::Geometric };
+            self.mood = if rng.random_range(0..2) == 0 {
+                WalkerMood::Organic
+            } else {
+                WalkerMood::Geometric
+            };
         } else if self.energy < 0.3 {
             self.mood = match self.mood {
                 WalkerMood::Organic => {
-                    if rng.random_range(0..10) < 7 { WalkerMood::Geometric } else { WalkerMood::Empty }
+                    if rng.random_range(0..10) < 7 {
+                        WalkerMood::Geometric
+                    } else {
+                        WalkerMood::Empty
+                    }
                 }
                 WalkerMood::Geometric => {
-                    if rng.random_range(0..10) < 5 { WalkerMood::Organic } else { WalkerMood::Empty }
+                    if rng.random_range(0..10) < 5 {
+                        WalkerMood::Organic
+                    } else {
+                        WalkerMood::Empty
+                    }
                 }
                 WalkerMood::Empty => unreachable!(),
             };
@@ -232,7 +281,9 @@ pub fn walk_to_layers(
     palette: &[Color; 5],
     rng: &mut StdRng,
 ) -> Vec<Layer> {
-    if leaves.is_empty() { return vec![]; }
+    if leaves.is_empty() {
+        return vec![];
+    }
 
     let mut walker = LeafWalker::new(center.0, center.1);
     let mut visited = vec![false; leaves.len()];
@@ -242,7 +293,9 @@ pub fn walk_to_layers(
         let mut best_idx = None;
         let mut best_dist = usize::MAX;
         for (i, leaf) in leaves.iter().enumerate() {
-            if visited[i] { continue; }
+            if visited[i] {
+                continue;
+            }
             let cx = leaf.x + leaf.w / 2;
             let cy = leaf.y + leaf.h / 2;
             let dist = cx.abs_diff(walker.prev_x) + cy.abs_diff(walker.prev_y);
@@ -279,23 +332,25 @@ pub fn walk_to_layers(
         pal[1] = palette[rng.random_range(1..4)];
 
         let actual_fill = match fill {
-            FillGen::Tile(params) => {
-                FillGen::Tile(TileParams { jitter: (1.0 - walker.energy).max(0.0) * 0.15, ..params })
-            }
+            FillGen::Tile(params) => FillGen::Tile(TileParams {
+                jitter: (1.0 - walker.energy).max(0.0) * 0.15,
+                ..params
+            }),
             other => other,
         };
 
         // Mix ellipse and rect masks to break the BSP grid feel.
         // Sprites and organic fills get ellipses, geometric fills get rects.
-        let mask: MaskFn = if matches!(walker.mood, WalkerMood::Organic) || rng.random_range(0..3u32) == 0 {
-            let cx = rect.x as f32 + rect.w as f32 / 2.0;
-            let cy = rect.y as f32 + rect.h as f32 / 2.0;
-            let rx = rect.w as f32 / 2.0 + rng.random_range(0..4u32) as f32;
-            let ry = rect.h as f32 / 2.0 + rng.random_range(0..3u32) as f32;
-            Box::new(mask_ellipse(cx, cy, rx, ry, 2.0))
-        } else {
-            Box::new(mask_rect(rect, 0.0))
-        };
+        let mask: MaskFn =
+            if matches!(walker.mood, WalkerMood::Organic) || rng.random_range(0..3u32) == 0 {
+                let cx = rect.x as f32 + rect.w as f32 / 2.0;
+                let cy = rect.y as f32 + rect.h as f32 / 2.0;
+                let rx = rect.w as f32 / 2.0 + rng.random_range(0..4u32) as f32;
+                let ry = rect.h as f32 / 2.0 + rng.random_range(0..3u32) as f32;
+                Box::new(mask_ellipse(cx, cy, rx, ry, 2.0))
+            } else {
+                Box::new(mask_rect(rect, 0.0))
+            };
 
         layers.push(Layer {
             fill: actual_fill,
@@ -313,7 +368,12 @@ pub fn walk_to_layers(
                 } else {
                     FillGen::Flower(rng.random_range(0..5))
                 };
-                let sprite_rect = Rect { x: fx, y: fy, w: 3, h: 3 };
+                let sprite_rect = Rect {
+                    x: fx,
+                    y: fy,
+                    w: 3,
+                    h: 3,
+                };
                 let mut spal = *palette;
                 spal[1] = palette[3];
                 layers.push(Layer {
@@ -333,12 +393,7 @@ pub fn walk_to_layers(
 /// Random-walk path across the canvas. At each waypoint, drop a scene element
 /// (tree, face, pattern, flowers) with breathing room between stops.
 /// The path itself is drawn as a subtle dot trail connecting waypoints.
-pub fn path_walk_layers(
-    w: usize,
-    h: usize,
-    palette: &[Color; 5],
-    rng: &mut StdRng,
-) -> Vec<Layer> {
+pub fn path_walk_layers(w: usize, h: usize, palette: &[Color; 5], rng: &mut StdRng) -> Vec<Layer> {
     let mut layers = Vec::new();
     let mut walker = LeafWalker::new(
         rng.random_range(w / 6..w * 5 / 6),
@@ -372,8 +427,12 @@ pub fn path_walk_layers(
     for pair in stops.windows(2) {
         let (x0, y0) = pair[0];
         let (x1, y1) = pair[1];
-        let steps = ((x1 as f32 - x0 as f32).abs().max((y1 as f32 - y0 as f32).abs())) as usize;
-        if steps == 0 { continue; }
+        let steps = ((x1 as f32 - x0 as f32)
+            .abs()
+            .max((y1 as f32 - y0 as f32).abs())) as usize;
+        if steps == 0 {
+            continue;
+        }
         // Trail as dot noise layers along the line, sparse
         let dot_count = (steps / 4).max(2).min(20);
         for i in 0..dot_count {
@@ -383,18 +442,33 @@ pub fn path_walk_layers(
             // Jitter the trail slightly
             let jx = (tx as i32 + rng.random_range(-1..=1i32)).clamp(0, w as i32 - 1) as usize;
             let jy = (ty as i32 + rng.random_range(-1..=1i32)).clamp(0, h as i32 - 1) as usize;
-            let dot_rect = Rect { x: jx, y: jy, w: 2, h: 1 };
+            let dot_rect = Rect {
+                x: jx,
+                y: jy,
+                w: 2,
+                h: 1,
+            };
             layers.push(Layer {
                 fill: FillGen::Noise(NoiseVariant::Dot),
                 mask: Some(Box::new(mask_rect(&dot_rect, 0.0))),
-                palette: [palette[0], trail_color, trail_color, trail_color, trail_color],
+                palette: [
+                    palette[0],
+                    trail_color,
+                    trail_color,
+                    trail_color,
+                    trail_color,
+                ],
             });
         }
     }
 
     // Place a scene element at each stop
     for (i, &(sx, sy)) in stops.iter().enumerate() {
-        let mood = if i % 2 == 0 { WalkerMood::Organic } else { WalkerMood::Geometric };
+        let mood = if i % 2 == 0 {
+            WalkerMood::Organic
+        } else {
+            WalkerMood::Geometric
+        };
         walker.mood = mood;
         walker.energy = 0.9;
 
@@ -408,7 +482,12 @@ pub fn path_walk_layers(
                 let th = rng.random_range(12..(h / 3).max(13));
                 let tx = sx.saturating_sub(tw / 2).min(w.saturating_sub(tw));
                 let ty = sy.saturating_sub(th / 2).min(h.saturating_sub(th));
-                let rect = Rect { x: tx, y: ty, w: tw, h: th };
+                let rect = Rect {
+                    x: tx,
+                    y: ty,
+                    w: tw,
+                    h: th,
+                };
                 layers.push(Layer {
                     fill: FillGen::Tree(rng.random_range(0..12)),
                     mask: Some(Box::new(mask_rect(&rect, 0.0))),
@@ -422,7 +501,12 @@ pub fn path_walk_layers(
                 let fh = s * 4 + 4;
                 let fx = sx.saturating_sub(fw / 2).min(w.saturating_sub(fw));
                 let fy = sy.saturating_sub(fh / 2).min(h.saturating_sub(fh));
-                let rect = Rect { x: fx, y: fy, w: fw, h: fh };
+                let rect = Rect {
+                    x: fx,
+                    y: fy,
+                    w: fw,
+                    h: fh,
+                };
                 layers.push(Layer {
                     fill: FillGen::Mask(s, rng.random_range(0..MASK_STYLE_COUNT)),
                     mask: Some(Box::new(mask_rect(&rect, 0.0))),
@@ -436,7 +520,12 @@ pub fn path_walk_layers(
                 let ah = order * 2 + 4;
                 let ax = sx.saturating_sub(aw / 2).min(w.saturating_sub(aw));
                 let ay = sy.saturating_sub(ah / 2).min(h.saturating_sub(ah));
-                let rect = Rect { x: ax, y: ay, w: aw, h: ah };
+                let rect = Rect {
+                    x: ax,
+                    y: ay,
+                    w: aw,
+                    h: ah,
+                };
                 layers.push(Layer {
                     fill: FillGen::AztecDiamond(order),
                     mask: Some(Box::new(mask_rect(&rect, 0.0))),
@@ -450,7 +539,12 @@ pub fn path_walk_layers(
                 let fh = steps * 4 + 2;
                 let fx = sx.saturating_sub(fw / 2).min(w.saturating_sub(fw));
                 let fy = sy.saturating_sub(fh / 2).min(h.saturating_sub(fh));
-                let rect = Rect { x: fx, y: fy, w: fw, h: fh };
+                let rect = Rect {
+                    x: fx,
+                    y: fy,
+                    w: fw,
+                    h: fh,
+                };
                 layers.push(Layer {
                     fill: FillGen::Fret(steps),
                     mask: Some(Box::new(mask_rect(&rect, 0.0))),
@@ -460,9 +554,16 @@ pub fn path_walk_layers(
             8 => {
                 // Flower cluster
                 for _ in 0..rng.random_range(2..5u32) {
-                    let fx = (sx as i32 + rng.random_range(-6..6i32)).clamp(2, w as i32 - 4) as usize;
-                    let fy = (sy as i32 + rng.random_range(-4..4i32)).clamp(2, h as i32 - 4) as usize;
-                    let rect = Rect { x: fx, y: fy, w: 5, h: 5 };
+                    let fx =
+                        (sx as i32 + rng.random_range(-6..6i32)).clamp(2, w as i32 - 4) as usize;
+                    let fy =
+                        (sy as i32 + rng.random_range(-4..4i32)).clamp(2, h as i32 - 4) as usize;
+                    let rect = Rect {
+                        x: fx,
+                        y: fy,
+                        w: 5,
+                        h: 5,
+                    };
                     layers.push(Layer {
                         fill: FillGen::Flower(rng.random_range(0..5)),
                         mask: Some(Box::new(mask_rect(&rect, 0.0))),
@@ -478,11 +579,22 @@ pub fn path_walk_layers(
                 let py = sy.saturating_sub(ph / 2).min(h.saturating_sub(ph));
                 let cx = px as f32 + pw as f32 / 2.0;
                 let cy = py as f32 + ph as f32 / 2.0;
-                let rect = Rect { x: px, y: py, w: pw, h: ph };
+                let rect = Rect {
+                    x: px,
+                    y: py,
+                    w: pw,
+                    h: ph,
+                };
                 let _ = rect; // rect only for sizing reference
                 layers.push(Layer {
                     fill: FillGen::Tile(TileParams::randomized(rng)),
-                    mask: Some(Box::new(mask_ellipse(cx, cy, pw as f32 / 2.0, ph as f32 / 2.0, 2.5))),
+                    mask: Some(Box::new(mask_ellipse(
+                        cx,
+                        cy,
+                        pw as f32 / 2.0,
+                        ph as f32 / 2.0,
+                        2.5,
+                    ))),
                     palette: pal,
                 });
             }
@@ -497,18 +609,26 @@ pub fn path_walk_layers(
 /// frets) can exceed the scene ellipse. Rectangular fills (tiles, crosshatch,
 /// noise) stay clipped inside.
 fn fill_breaks_out(fill: &FillGen) -> bool {
-    matches!(fill,
-        FillGen::Tree(_) | FillGen::Flower(_) | FillGen::Fruit(_) |
-        FillGen::AztecDiamond(_) | FillGen::Fret(_) | FillGen::Mask(_, _)
+    matches!(
+        fill,
+        FillGen::Tree(_)
+            | FillGen::Flower(_)
+            | FillGen::Fruit(_)
+            | FillGen::AztecDiamond(_)
+            | FillGen::Fret(_)
+            | FillGen::Mask(_, _)
     )
 }
 
 /// Generate a multi-layer scene at a waypoint. Returns layers for one "world".
 /// Bounded fills get the scene ellipse mask. Breakout fills get a larger rect.
 fn waypoint_scene(
-    sx: usize, sy: usize,
-    scene_w: usize, scene_h: usize,
-    w: usize, h: usize,
+    sx: usize,
+    sy: usize,
+    scene_w: usize,
+    scene_h: usize,
+    w: usize,
+    h: usize,
     palette: &[Color; 5],
     rng: &mut StdRng,
 ) -> Vec<Layer> {
@@ -519,9 +639,18 @@ fn waypoint_scene(
     let ry = scene_h as f32 / 2.0;
 
     // Scene boundary rect (for render_fill dispatch)
-    let bx = sx.saturating_sub(scene_w / 2).min(w.saturating_sub(scene_w));
-    let by = sy.saturating_sub(scene_h / 2).min(h.saturating_sub(scene_h));
-    let scene_rect = Rect { x: bx, y: by, w: scene_w.min(w - bx), h: scene_h.min(h - by) };
+    let bx = sx
+        .saturating_sub(scene_w / 2)
+        .min(w.saturating_sub(scene_w));
+    let by = sy
+        .saturating_sub(scene_h / 2)
+        .min(h.saturating_sub(scene_h));
+    let scene_rect = Rect {
+        x: bx,
+        y: by,
+        w: scene_w.min(w - bx),
+        h: scene_h.min(h - by),
+    };
 
     // Pick 2-4 elements per scene
     let element_count = rng.random_range(2..5u32);
@@ -578,7 +707,12 @@ fn waypoint_scene(
 
         let elx = ex.saturating_sub(ew / 2).min(w.saturating_sub(ew));
         let ely = ey.saturating_sub(eh / 2).min(h.saturating_sub(eh));
-        let el_rect = Rect { x: elx, y: ely, w: ew.min(w - elx), h: eh.min(h - ely) };
+        let el_rect = Rect {
+            x: elx,
+            y: ely,
+            w: ew.min(w - elx),
+            h: eh.min(h - ely),
+        };
 
         let mask: MaskFn = if fill_breaks_out(&fill) {
             // Breakout: element gets its own rect mask, no scene clipping
@@ -588,7 +722,11 @@ fn waypoint_scene(
             Box::new(mask_ellipse(cx, cy, rx, ry, 2.5))
         };
 
-        layers.push(Layer { fill, mask: Some(mask), palette: pal });
+        layers.push(Layer {
+            fill,
+            mask: Some(mask),
+            palette: pal,
+        });
     }
 
     layers
@@ -618,10 +756,9 @@ pub fn path_walk_layers_2(
         let max_step = (w.min(h) / 2).max(min_step + 5);
         let angle: f32 = rng.random::<f32>() * std::f32::consts::TAU;
         let dist = rng.random_range(min_step..max_step) as f32;
-        px = (px as f32 + angle.cos() * dist * 1.8)
-            .clamp(margin as f32, (w - margin) as f32) as usize;
-        py = (py as f32 + angle.sin() * dist)
-            .clamp(margin as f32, (h - margin) as f32) as usize;
+        px = (px as f32 + angle.cos() * dist * 1.8).clamp(margin as f32, (w - margin) as f32)
+            as usize;
+        py = (py as f32 + angle.sin() * dist).clamp(margin as f32, (h - margin) as f32) as usize;
         stops.push((px, py));
     }
 
@@ -637,14 +774,11 @@ pub fn path_walk_layers_2(
 
 /// Draw a path trail between waypoints directly on the grid using box-drawing chars.
 /// Bresenham line with directional glyphs.
-pub fn draw_path_trail(
-    grid: &mut Grid,
-    stops: &[(usize, usize)],
-    color: Color,
-    rng: &mut StdRng,
-) {
+pub fn draw_path_trail(grid: &mut Grid, stops: &[(usize, usize)], color: Color, rng: &mut StdRng) {
     let h = grid.len();
-    if h == 0 { return; }
+    if h == 0 {
+        return;
+    }
     let w = grid[0].len();
 
     let trail_chars: &[char] = &['·', '∙', '°', '⋅'];
@@ -656,20 +790,28 @@ pub fn draw_path_trail(
         let dx = x1 as f32 - x0 as f32;
         let dy = y1 as f32 - y0 as f32;
         let steps = (dx.abs().max(dy.abs())) as usize;
-        if steps == 0 { continue; }
+        if steps == 0 {
+            continue;
+        }
 
         for i in 0..=steps {
             let t = i as f32 / steps as f32;
             let x = (x0 as f32 + dx * t) as usize;
             let y = (y0 as f32 + dy * t) as usize;
 
-            if x >= w || y >= h { continue; }
+            if x >= w || y >= h {
+                continue;
+            }
 
             // Only draw trail on blank cells to avoid overwriting scene content
-            if grid[y][x].ch != ' ' { continue; }
+            if grid[y][x].ch != ' ' {
+                continue;
+            }
 
             // Sparse: skip some cells for a dotted trail feel
-            if rng.random_range(0..3u32) > 0 { continue; }
+            if rng.random_range(0..3u32) > 0 {
+                continue;
+            }
 
             let slope = if dx.abs() < 1.0 {
                 '│'
@@ -698,7 +840,11 @@ pub fn draw_path_trail(
 
 /// Growth pattern for placing elements within a waypoint box.
 #[derive(Clone, Copy)]
-pub enum Growth { Rect, Diamond, FlatHex }
+pub enum Growth {
+    Rect,
+    Diamond,
+    FlatHex,
+}
 
 /// Path walk v3: boxes along a path, each is a mini-world.
 /// Overlapping boxes cannot reuse fill+color combos.
@@ -709,7 +855,11 @@ pub fn path_walk_layers_3(
     palette: &[Color; 5],
     density: u32,
     rng: &mut StdRng,
-) -> (Vec<Layer>, Vec<(usize, usize)>, Vec<(usize, usize, usize, usize)>) {
+) -> (
+    Vec<Layer>,
+    Vec<(usize, usize)>,
+    Vec<(usize, usize, usize, usize)>,
+) {
     let mut layers = Vec::new();
     let margin = 4usize;
     let gap = 6usize; // breathing room between boxes
@@ -731,8 +881,7 @@ pub fn path_walk_layers_3(
 
             // Check overlap with gap padding against all placed boxes
             let overlaps = boxes.iter().any(|&(px, py, pw, ph)| {
-                bx < px + pw + gap && bx + bw + gap > px &&
-                by < py + ph + gap && by + bh + gap > py
+                bx < px + pw + gap && bx + bw + gap > px && by < py + ph + gap && by + bh + gap > py
             });
 
             if !overlaps {
@@ -742,7 +891,9 @@ pub fn path_walk_layers_3(
                 break;
             }
         }
-        if !placed { continue; } // couldn't fit, skip this box
+        if !placed {
+            continue;
+        } // couldn't fit, skip this box
     }
 
     // Sort stops left-to-right so the path reads naturally
@@ -761,7 +912,12 @@ pub fn path_walk_layers_3(
         let sx = bx + bw / 2;
         let sy = by + bh / 2;
 
-        let box_rect = Rect { x: bx, y: by, w: bw, h: bh };
+        let box_rect = Rect {
+            x: bx,
+            y: by,
+            w: bw,
+            h: bh,
+        };
 
         // No overlaps by construction, so no forbidden fills needed
         let mut forbidden: Vec<(u8, usize)> = Vec::new();
@@ -791,8 +947,12 @@ pub fn path_walk_layers_3(
         for ei in 0..element_count {
             let (ox, oy) = growth_offset(growth, ei as i32, spacing);
             // Breakout fills can wander outside box, bounded fills stay inside
-            let ex = (sx as i32 + ox).clamp(bx as i32, (bx + bw) as i32 - 1).clamp(2, w as i32 - 4) as usize;
-            let ey = (sy as i32 + oy).clamp(by as i32, (by + bh) as i32 - 1).clamp(2, h as i32 - 4) as usize;
+            let ex = (sx as i32 + ox)
+                .clamp(bx as i32, (bx + bw) as i32 - 1)
+                .clamp(2, w as i32 - 4) as usize;
+            let ey = (sy as i32 + oy)
+                .clamp(by as i32, (by + bh) as i32 - 1)
+                .clamp(2, h as i32 - 4) as usize;
 
             let (fill, ci) = pick_unique_element(&forbidden, &claims, palette, rng);
             claims.push((fill_disc(&fill), ci));
@@ -803,7 +963,12 @@ pub fn path_walk_layers_3(
             let (ew, eh) = element_size(&fill, rng);
             let elx = ex.saturating_sub(ew / 2).min(w.saturating_sub(ew));
             let ely = ey.saturating_sub(eh / 2).min(h.saturating_sub(eh));
-            let el_rect = Rect { x: elx, y: ely, w: ew.min(w - elx), h: eh.min(h - ely) };
+            let el_rect = Rect {
+                x: elx,
+                y: ely,
+                w: ew.min(w - elx),
+                h: eh.min(h - ely),
+            };
 
             let mask: MaskFn = if fill_breaks_out(&fill) {
                 Box::new(mask_rect(&el_rect, 0.0))
@@ -813,7 +978,11 @@ pub fn path_walk_layers_3(
                 pick_element_mask(ecx, ecy, ew as f32, eh as f32, rng)
             };
 
-            layers.push(Layer { fill, mask: Some(mask), palette: pal });
+            layers.push(Layer {
+                fill,
+                mask: Some(mask),
+                palette: pal,
+            });
         }
 
         box_claims.push(claims);
@@ -826,24 +995,31 @@ pub fn path_walk_layers_3(
 /// cx/cy are the element center, ew/eh are its char dimensions.
 /// Returns a MaskFn shaped to the element, picked from the full shape vocabulary.
 /// Breakout fills (trees, sprites) always get plain rects -- don't call this for them.
-fn pick_element_mask(
-    cx: f32, cy: f32, ew: f32, eh: f32,
-    rng: &mut StdRng,
-) -> MaskFn {
+fn pick_element_mask(cx: f32, cy: f32, ew: f32, eh: f32, rng: &mut StdRng) -> MaskFn {
     // Terminal cells are ~2:1 (h:w), so rx = 2*ry for visually balanced shapes.
     let ry = eh * 0.5;
     let rx = ew * 0.5;
 
     match rng.random_range(0..7u32) {
         0 => Box::new(mask_rect(
-            &Rect { x: (cx - rx) as usize, y: (cy - ry) as usize, w: ew as usize, h: eh as usize },
+            &Rect {
+                x: (cx - rx) as usize,
+                y: (cy - ry) as usize,
+                w: ew as usize,
+                h: eh as usize,
+            },
             0.0,
         )),
         1 => Box::new(mask_ellipse(cx, cy, rx, ry, 1.5)),
         2 => Box::new(mask_diamond(cx, cy, rx, ry, 0.0)),
         3 => Box::new(mask_hexagon(cx, cy, rx, ry, 1.0)),
         4 => {
-            let shear = rng.random_range(3..9) as f32 * if rng.random_range(0..2u32) == 0 { 1.0 } else { -1.0 };
+            let shear = rng.random_range(3..9) as f32
+                * if rng.random_range(0..2u32) == 0 {
+                    1.0
+                } else {
+                    -1.0
+                };
             Box::new(mask_parallelogram(cx, cy, ew * 0.85, eh * 0.85, shear, 0.0))
         }
         5 => {
@@ -895,7 +1071,9 @@ fn fill_disc(f: &FillGen) -> u8 {
 /// Growth offset: position of element `i` relative to center, based on pattern.
 fn growth_offset(growth: Growth, i: i32, spacing: i32) -> (i32, i32) {
     // Element 0 is always at center
-    if i == 0 { return (0, 0); }
+    if i == 0 {
+        return (0, 0);
+    }
     // Remaining elements spiral/spread outward
     let ring = i;
     match growth {
@@ -903,20 +1081,29 @@ fn growth_offset(growth: Growth, i: i32, spacing: i32) -> (i32, i32) {
             // Spread in a grid: alternate left/right, up/down
             let angle = ring as f32 * std::f32::consts::FRAC_PI_2 + 0.3;
             let dist = ring as f32 * spacing as f32;
-            ((angle.cos() * dist * 2.0) as i32, (angle.sin() * dist) as i32)
+            (
+                (angle.cos() * dist * 2.0) as i32,
+                (angle.sin() * dist) as i32,
+            )
         }
         Growth::Diamond => {
             // Alternate sides, growing outward
             let side = if ring % 2 == 0 { 1.0f32 } else { -1.0 };
             let dist = ((ring + 1) / 2) as f32 * spacing as f32;
             let angle = side * std::f32::consts::FRAC_PI_4 + (ring as f32 * 0.8);
-            ((angle.cos() * dist * 2.0) as i32, (angle.sin() * dist) as i32)
+            (
+                (angle.cos() * dist * 2.0) as i32,
+                (angle.sin() * dist) as i32,
+            )
         }
         Growth::FlatHex => {
             // Hex-ish: 60-degree increments
             let angle = ring as f32 * std::f32::consts::FRAC_PI_3;
             let dist = ((ring + 1) / 2) as f32 * spacing as f32;
-            ((angle.cos() * dist * 2.0) as i32, (angle.sin() * dist) as i32)
+            (
+                (angle.cos() * dist * 2.0) as i32,
+                (angle.sin() * dist) as i32,
+            )
         }
     }
 }
@@ -977,7 +1164,10 @@ fn pick_unique_element(
         }
     }
     // fallback
-    (FillGen::Flower(rng.random_range(0..5)), rng.random_range(1..4))
+    (
+        FillGen::Flower(rng.random_range(0..5)),
+        rng.random_range(1..4),
+    )
 }
 
 /// Size in cells for a given fill type.
@@ -1021,7 +1211,11 @@ pub fn scatter_layers(
             5..=7 => {
                 // Faces -- big masks
                 let s = rng.random_range(3..6);
-                (FillGen::Mask(s, rng.random_range(0..MASK_STYLE_COUNT)), s * 4 + 4, s * 4 + 4)
+                (
+                    FillGen::Mask(s, rng.random_range(0..MASK_STYLE_COUNT)),
+                    s * 4 + 4,
+                    s * 4 + 4,
+                )
             }
             8 => {
                 let order = rng.random_range(3..7);
@@ -1036,7 +1230,12 @@ pub fn scatter_layers(
         let x = rng.random_range(2..w.saturating_sub(rw + 2).max(3));
         let y = rng.random_range(2..h.saturating_sub(rh + 2).max(3));
 
-        let rect = Rect { x, y, w: rw.min(w - x), h: rh.min(h - y) };
+        let rect = Rect {
+            x,
+            y,
+            w: rw.min(w - x),
+            h: rh.min(h - y),
+        };
         let cx = x as f32 + rw as f32 / 2.0;
         let cy = y as f32 + rh as f32 / 2.0;
 
@@ -1071,8 +1270,7 @@ pub fn path_walk_stem(
         let t = i as f32 / (n_ctrl - 1) as f32;
         let base_y = (h as f32 - 3.0) - t * (h as f32 - 7.0);
         let wander = rng.random_range(-5i32..6) as f32;
-        let x = (spine.last().unwrap().0 + wander)
-            .clamp(margin_x as f32, (w - margin_x) as f32);
+        let x = (spine.last().unwrap().0 + wander).clamp(margin_x as f32, (w - margin_x) as f32);
         spine.push((x, base_y));
     }
 
@@ -1083,7 +1281,10 @@ pub fn path_walk_stem(
             let dy = s[1].1 - s[0].1;
             (dx * dx + dy * dy).sqrt()
         }))
-        .scan(0.0f32, |acc, v| { *acc += v; Some(*acc) })
+        .scan(0.0f32, |acc, v| {
+            *acc += v;
+            Some(*acc)
+        })
         .collect();
     let total_len = *arc.last().unwrap_or(&1.0);
 
@@ -1093,12 +1294,18 @@ pub fn path_walk_stem(
     let mut leaf_pts: Vec<(f32, f32)> = Vec::with_capacity(leaf_count);
     for i in 0..leaf_count {
         let target = ((i as f32 + 0.5) / leaf_count as f32) * total_len;
-        let seg = arc.windows(2).enumerate()
+        let seg = arc
+            .windows(2)
+            .enumerate()
             .find(|(_, w)| w[1] >= target)
             .map(|(i, _)| i)
             .unwrap_or(spine.len() - 2);
         let seg_len = arc[seg + 1] - arc[seg];
-        let local_t = if seg_len > 0.0 { (target - arc[seg]) / seg_len } else { 0.0 };
+        let local_t = if seg_len > 0.0 {
+            (target - arc[seg]) / seg_len
+        } else {
+            0.0
+        };
         let px = spine[seg].0 + local_t * (spine[seg + 1].0 - spine[seg].0);
         let py = spine[seg].1 + local_t * (spine[seg + 1].1 - spine[seg].1);
         leaf_pts.push((px, py));
@@ -1123,14 +1330,23 @@ pub fn path_walk_stem(
         let lry = (leaf_cy - leaf_h as f32 * 0.5).max(1.0) as usize;
         let lry = lry.min(h.saturating_sub(leaf_h + 1));
         let leaf_rect = Rect {
-            x: lrx, y: lry,
+            x: lrx,
+            y: lry,
             w: leaf_w.min(w - lrx),
             h: leaf_h.min(h - lry),
         };
 
         // Stalk tangent at this point (for parallelogram shear)
-        let prev = if i > 0 { leaf_pts[i - 1] } else { (lx, ly + 3.0) };
-        let next = if i + 1 < leaf_count { leaf_pts[i + 1] } else { (lx, ly - 3.0) };
+        let prev = if i > 0 {
+            leaf_pts[i - 1]
+        } else {
+            (lx, ly + 3.0)
+        };
+        let next = if i + 1 < leaf_count {
+            leaf_pts[i + 1]
+        } else {
+            (lx, ly - 3.0)
+        };
         let tan_x = next.0 - prev.0;
         let tan_y = (prev.1 - next.1).max(0.01); // upward: prev_y > next_y
         let shear = (tan_x / tan_y * 5.0 * side).clamp(-10.0, 10.0);
@@ -1145,7 +1361,14 @@ pub fn path_walk_stem(
             // base: wide-bottom trapezoid
             let w_top = leaf_w as f32 * 0.3;
             let w_bot = leaf_w as f32 * 0.9;
-            Box::new(mask_trapezoid(leaf_cx, leaf_cy, w_top, w_bot, leaf_h as f32 * 0.85, 0.0))
+            Box::new(mask_trapezoid(
+                leaf_cx,
+                leaf_cy,
+                w_top,
+                w_bot,
+                leaf_h as f32 * 0.85,
+                0.0,
+            ))
         } else if t > 0.7 {
             // apex: upward-pointing triangle
             let rx = leaf_w as f32 * 0.5;
@@ -1153,13 +1376,25 @@ pub fn path_walk_stem(
             Box::new(mask_triangle(leaf_cx, leaf_cy, rx, ry, TriDir::Up, 0.0))
         } else {
             // mid: parallelogram leans with stalk tangent direction
-            Box::new(mask_parallelogram(leaf_cx, leaf_cy, leaf_w as f32 * 0.85, leaf_h as f32 * 0.85, shear, 0.0))
+            Box::new(mask_parallelogram(
+                leaf_cx,
+                leaf_cy,
+                leaf_w as f32 * 0.85,
+                leaf_h as f32 * 0.85,
+                shear,
+                0.0,
+            ))
         };
 
-        layers.push(Layer { fill: FillGen::Tile(tile_params), mask: Some(mask), palette: pal });
+        layers.push(Layer {
+            fill: FillGen::Tile(tile_params),
+            mask: Some(mask),
+            palette: pal,
+        });
     }
 
-    let spine_pts: Vec<(usize, usize)> = spine.iter()
+    let spine_pts: Vec<(usize, usize)> = spine
+        .iter()
         .map(|&(x, y)| (x.round() as usize, y.round() as usize))
         .collect();
 
@@ -1168,13 +1403,11 @@ pub fn path_walk_stem(
 
 /// Draw a plant stalk on the grid using line-art chars.
 /// Unlike draw_path_trail, this overwrites existing cells -- the stalk is structural.
-pub fn draw_stalk(
-    grid: &mut Grid,
-    spine: &[(usize, usize)],
-    color: Color,
-) {
+pub fn draw_stalk(grid: &mut Grid, spine: &[(usize, usize)], color: Color) {
     let h = grid.len();
-    if h == 0 { return; }
+    if h == 0 {
+        return;
+    }
     let w = grid[0].len();
 
     for seg in spine.windows(2) {
@@ -1183,13 +1416,17 @@ pub fn draw_stalk(
         let dx = x1 as f32 - x0 as f32;
         let dy = y1 as f32 - y0 as f32;
         let steps = dx.abs().max(dy.abs()) as usize;
-        if steps == 0 { continue; }
+        if steps == 0 {
+            continue;
+        }
 
         for i in 0..=steps {
             let t = i as f32 / steps as f32;
             let x = (x0 as f32 + dx * t).round() as usize;
             let y = (y0 as f32 + dy * t).round() as usize;
-            if x >= w || y >= h { continue; }
+            if x >= w || y >= h {
+                continue;
+            }
 
             // Going upward (dy < 0): classify by horizontal lean
             let ch = if dx.abs() < dy.abs() * 0.35 {
@@ -1228,29 +1465,32 @@ pub fn make_node_scene(
 /// `base_y`: average y of the contour.
 /// `amplitude`: max deviation from base.
 /// `freq`: wave frequency (higher = more peaks).
-fn gen_contour(rect: &Rect, base_y: usize, amplitude: f32, freq: f32, rng: &mut StdRng) -> Vec<usize> {
+fn gen_contour(
+    rect: &Rect,
+    base_y: usize,
+    amplitude: f32,
+    freq: f32,
+    rng: &mut StdRng,
+) -> Vec<usize> {
     let phase = rng.random::<f32>() * std::f32::consts::TAU;
     let phase2 = rng.random::<f32>() * std::f32::consts::TAU;
-    (0..rect.w).map(|col| {
-        let t = col as f32 / rect.w.max(1) as f32;
-        // Two sine waves at different frequencies for organic feel
-        let wave = (t * freq * std::f32::consts::TAU + phase).sin() * amplitude
-                 + (t * freq * 2.3 * std::f32::consts::TAU + phase2).sin() * amplitude * 0.4;
-        let y = base_y as f32 + wave;
-        y.clamp(rect.y as f32 + 2.0, (rect.y + rect.h - 2) as f32) as usize
-    }).collect()
+    (0..rect.w)
+        .map(|col| {
+            let t = col as f32 / rect.w.max(1) as f32;
+            // Two sine waves at different frequencies for organic feel
+            let wave = (t * freq * std::f32::consts::TAU + phase).sin() * amplitude
+                + (t * freq * 2.3 * std::f32::consts::TAU + phase2).sin() * amplitude * 0.4;
+            let y = base_y as f32 + wave;
+            y.clamp(rect.y as f32 + 2.0, (rect.y + rect.h - 2) as f32) as usize
+        })
+        .collect()
 }
 
 /// Landscape: 3-pass rendering.
 /// Pass 1: sky background (sparse dots or nothing -- mostly empty).
 /// Pass 2: ground below a wavy contour line (grass/tile/crosshatch).
 /// Pass 3: foreground sprites rooted ON the ground line.
-fn make_landscape(
-    rect: &Rect,
-    palette: &[Color; 5],
-    detail: u32,
-    rng: &mut StdRng,
-) -> Vec<Layer> {
+fn make_landscape(rect: &Rect, palette: &[Color; 5], detail: u32, rng: &mut StdRng) -> Vec<Layer> {
     let mut layers = Vec::new();
 
     // Horizon: wavy contour line at 40-60% from top
@@ -1311,21 +1551,21 @@ fn make_landscape(
                 let th = rng.random_range(8..rect.h.min(18).max(9));
                 (FillGen::Tree(rng.random_range(0..12)), tw, th)
             }
-            4..=5 => {
-                (FillGen::Flower(rng.random_range(0..5)), 5, 5)
-            }
+            4..=5 => (FillGen::Flower(rng.random_range(0..5)), 5, 5),
             6 => {
                 let s = rng.random_range(2..5);
-                (FillGen::Mask(s, rng.random_range(0..MASK_STYLE_COUNT)), s * 4 + 4, s * 4 + 4)
+                (
+                    FillGen::Mask(s, rng.random_range(0..MASK_STYLE_COUNT)),
+                    s * 4 + 4,
+                    s * 4 + 4,
+                )
             }
             7 => {
                 let tw = rng.random_range(10..20);
                 let th = rng.random_range(6..12);
                 (FillGen::Tile(TileParams::randomized(rng)), tw, th)
             }
-            8 => {
-                (FillGen::Fruit(rng.random_range(0..5)), 5, 5)
-            }
+            8 => (FillGen::Fruit(rng.random_range(0..5)), 5, 5),
             _ => {
                 // Aztec diamond accent
                 let order = rng.random_range(2..5);
@@ -1334,9 +1574,19 @@ fn make_landscape(
         };
 
         // Root the element so its bottom sits on the ground line
-        let elx = ex.saturating_sub(ew / 2).min(rect.x + rect.w - ew.min(rect.w));
-        let ely = ground_y.saturating_sub(eh).max(rect.y).min(rect.y + rect.h - eh.min(rect.h));
-        let el_rect = Rect { x: elx, y: ely, w: ew.min(rect.w), h: eh.min(rect.h) };
+        let elx = ex
+            .saturating_sub(ew / 2)
+            .min(rect.x + rect.w - ew.min(rect.w));
+        let ely = ground_y
+            .saturating_sub(eh)
+            .max(rect.y)
+            .min(rect.y + rect.h - eh.min(rect.h));
+        let el_rect = Rect {
+            x: elx,
+            y: ely,
+            w: ew.min(rect.w),
+            h: eh.min(rect.h),
+        };
 
         let mask: MaskFn = if fill_breaks_out(&fill) {
             Box::new(mask_rect(&el_rect, 0.0))
@@ -1346,18 +1596,18 @@ fn make_landscape(
             Box::new(mask_ellipse(cx, cy, ew as f32 * 0.5, eh as f32 * 0.5, 2.0))
         };
 
-        layers.push(Layer { fill, mask: Some(mask), palette: pal });
+        layers.push(Layer {
+            fill,
+            mask: Some(mask),
+            palette: pal,
+        });
     }
 
     layers
 }
 
 /// Centerpiece with surround: one big element in a patterned field.
-fn make_centerpiece(
-    rect: &Rect,
-    palette: &[Color; 5],
-    rng: &mut StdRng,
-) -> Vec<Layer> {
+fn make_centerpiece(rect: &Rect, palette: &[Color; 5], rng: &mut StdRng) -> Vec<Layer> {
     let mut layers = Vec::new();
     let cx = rect.x as f32 + rect.w as f32 * 0.5;
     let cy = rect.y as f32 + rect.h as f32 * 0.5;
@@ -1391,7 +1641,11 @@ fn make_centerpiece(
             Box::new(mask_trapezoid(cx, cy, wt, wb, rect.h as f32 * 0.9, 2.0))
         }
     };
-    layers.push(Layer { fill: bg_fill, mask: Some(node_mask), palette: bg_pal });
+    layers.push(Layer {
+        fill: bg_fill,
+        mask: Some(node_mask),
+        palette: bg_pal,
+    });
 
     // Centerpiece: big sprite
     let mut cp_pal = *palette;
@@ -1399,7 +1653,11 @@ fn make_centerpiece(
     let (cp_fill, cw, ch) = match rng.random_range(0..6u32) {
         0..=1 => {
             let s = rng.random_range(3..6);
-            (FillGen::Mask(s, rng.random_range(0..MASK_STYLE_COUNT)), s * 4 + 4, s * 4 + 4)
+            (
+                FillGen::Mask(s, rng.random_range(0..MASK_STYLE_COUNT)),
+                s * 4 + 4,
+                s * 4 + 4,
+            )
         }
         2 => {
             let order = rng.random_range(3..7);
@@ -1415,9 +1673,18 @@ fn make_centerpiece(
             (FillGen::Tree(rng.random_range(0..12)), tw, th)
         }
     };
-    let elx = (cx as usize).saturating_sub(cw / 2).min(rect.x + rect.w - cw.min(rect.w));
-    let ely = (cy as usize).saturating_sub(ch / 2).min(rect.y + rect.h - ch.min(rect.h));
-    let el_rect = Rect { x: elx, y: ely, w: cw.min(rect.w), h: ch.min(rect.h) };
+    let elx = (cx as usize)
+        .saturating_sub(cw / 2)
+        .min(rect.x + rect.w - cw.min(rect.w));
+    let ely = (cy as usize)
+        .saturating_sub(ch / 2)
+        .min(rect.y + rect.h - ch.min(rect.h));
+    let el_rect = Rect {
+        x: elx,
+        y: ely,
+        w: cw.min(rect.w),
+        h: ch.min(rect.h),
+    };
     layers.push(Layer {
         fill: cp_fill,
         mask: Some(Box::new(mask_rect(&el_rect, 0.0))),
@@ -1461,24 +1728,47 @@ fn make_cluster(
             4 => (FillGen::Fruit(rng.random_range(0..5)), 5, 5),
             5 => {
                 let s = rng.random_range(2..4);
-                (FillGen::Mask(s, rng.random_range(0..MASK_STYLE_COUNT)), s * 4 + 4, s * 4 + 4)
+                (
+                    FillGen::Mask(s, rng.random_range(0..MASK_STYLE_COUNT)),
+                    s * 4 + 4,
+                    s * 4 + 4,
+                )
             }
-            _ => (FillGen::Noise(noise_variant_from_index(rng.random_range(0..NOISE_VARIANT_COUNT))), cell_w, cell_h),
+            _ => (
+                FillGen::Noise(noise_variant_from_index(
+                    rng.random_range(0..NOISE_VARIANT_COUNT),
+                )),
+                cell_w,
+                cell_h,
+            ),
         };
 
-        let elx = ex.saturating_sub(ew / 2).min(rect.x + rect.w - ew.min(rect.w));
-        let ely = ey.saturating_sub(eh / 2).min(rect.y + rect.h - eh.min(rect.h));
+        let elx = ex
+            .saturating_sub(ew / 2)
+            .min(rect.x + rect.w - ew.min(rect.w));
+        let ely = ey
+            .saturating_sub(eh / 2)
+            .min(rect.y + rect.h - eh.min(rect.h));
 
         let ecx = elx as f32 + ew as f32 * 0.5;
         let ecy = ely as f32 + eh as f32 * 0.5;
         let mask: MaskFn = if fill_breaks_out(&fill) {
-            let el_rect = Rect { x: elx, y: ely, w: ew.min(rect.w), h: eh.min(rect.h) };
+            let el_rect = Rect {
+                x: elx,
+                y: ely,
+                w: ew.min(rect.w),
+                h: eh.min(rect.h),
+            };
             Box::new(mask_rect(&el_rect, 0.0))
         } else {
             pick_element_mask(ecx, ecy, ew as f32, eh as f32, rng)
         };
 
-        layers.push(Layer { fill, mask: Some(mask), palette: pal });
+        layers.push(Layer {
+            fill,
+            mask: Some(mask),
+            palette: pal,
+        });
     }
 
     layers
@@ -1486,11 +1776,7 @@ fn make_cluster(
 
 /// Negative space: mostly empty box with one recognizable organic sprite.
 /// No pattern fills. Just a tree, flower, or fruit sitting in open space.
-fn make_negative_space(
-    rect: &Rect,
-    palette: &[Color; 5],
-    rng: &mut StdRng,
-) -> Vec<Layer> {
+fn make_negative_space(rect: &Rect, palette: &[Color; 5], rng: &mut StdRng) -> Vec<Layer> {
     let mut layers = Vec::new();
     let cx = rect.x as f32 + rect.w as f32 * 0.5;
     let cy = rect.y as f32 + rect.h as f32 * 0.5;
@@ -1504,9 +1790,18 @@ fn make_negative_space(
             // Tree -- the most readable thing we have
             let tw = rect.w.min(24).max(8);
             let th = rect.h.min(18).max(6);
-            let gx = (cx as usize).saturating_sub(tw / 2).min(rect.x + rect.w - tw.min(rect.w));
-            let gy = (cy as usize).saturating_sub(th / 2).min(rect.y + rect.h - th.min(rect.h));
-            let el_rect = Rect { x: gx, y: gy, w: tw.min(rect.w), h: th.min(rect.h) };
+            let gx = (cx as usize)
+                .saturating_sub(tw / 2)
+                .min(rect.x + rect.w - tw.min(rect.w));
+            let gy = (cy as usize)
+                .saturating_sub(th / 2)
+                .min(rect.y + rect.h - th.min(rect.h));
+            let el_rect = Rect {
+                x: gx,
+                y: gy,
+                w: tw.min(rect.w),
+                h: th.min(rect.h),
+            };
             layers.push(Layer {
                 fill: FillGen::Tree(rng.random_range(0..12)),
                 mask: Some(Box::new(mask_rect(&el_rect, 0.0))),
@@ -1517,11 +1812,17 @@ fn make_negative_space(
             // Flower cluster -- 2-3 flowers spaced apart
             let count = rng.random_range(2..4u32).min(rect.w as u32 / 6).max(1);
             for i in 0..count {
-                let fx = rect.x + (rect.w as f32 * (i as f32 + 1.0) / (count as f32 + 1.0)) as usize;
+                let fx =
+                    rect.x + (rect.w as f32 * (i as f32 + 1.0) / (count as f32 + 1.0)) as usize;
                 let fy = rect.y + rect.h / 2 + rng.random_range(0..3) as usize;
                 let fy = fy.min(rect.y + rect.h - 5);
                 let fx = fx.min(rect.x + rect.w - 5);
-                let el_rect = Rect { x: fx, y: fy, w: 5.min(rect.w), h: 5.min(rect.h) };
+                let el_rect = Rect {
+                    x: fx,
+                    y: fy,
+                    w: 5.min(rect.w),
+                    h: 5.min(rect.h),
+                };
                 layers.push(Layer {
                     fill: FillGen::Flower(rng.random_range(0..5)),
                     mask: Some(Box::new(mask_rect(&el_rect, 0.0))),
@@ -1533,11 +1834,17 @@ fn make_negative_space(
             // Fruit cluster
             let count = rng.random_range(2..4u32).min(rect.w as u32 / 6).max(1);
             for i in 0..count {
-                let fx = rect.x + (rect.w as f32 * (i as f32 + 1.0) / (count as f32 + 1.0)) as usize;
+                let fx =
+                    rect.x + (rect.w as f32 * (i as f32 + 1.0) / (count as f32 + 1.0)) as usize;
                 let fy = rect.y + rect.h / 2 + rng.random_range(0..3) as usize;
                 let fy = fy.min(rect.y + rect.h - 5);
                 let fx = fx.min(rect.x + rect.w - 5);
-                let el_rect = Rect { x: fx, y: fy, w: 5.min(rect.w), h: 5.min(rect.h) };
+                let el_rect = Rect {
+                    x: fx,
+                    y: fy,
+                    w: 5.min(rect.w),
+                    h: 5.min(rect.h),
+                };
                 layers.push(Layer {
                     fill: FillGen::Fruit(rng.random_range(0..5)),
                     mask: Some(Box::new(mask_rect(&el_rect, 0.0))),
@@ -1607,7 +1914,9 @@ pub fn soup_walk(
     let character = PlantCharacter::random(rng);
     let mut layers = Vec::new();
 
-    let node_count = rng.random_range(character.branch_factor.0 as u32..=character.branch_factor.1 as u32 + 2) as usize;
+    let node_count = rng
+        .random_range(character.branch_factor.0 as u32..=character.branch_factor.1 as u32 + 2)
+        as usize;
     let margin = 6usize;
 
     let mut stops = Vec::with_capacity(node_count);
@@ -1628,15 +1937,18 @@ pub fn soup_walk(
         let min_step = (w.min(h) / 5).max(10);
         let max_step = (w.min(h) / 3).max(min_step + 5);
         let dist = rng.random_range(min_step..max_step) as f32;
-        px = (px as f32 + angle.cos() * dist * 1.8)
-            .clamp(margin as f32, (w - margin) as f32) as usize;
-        py = (py as f32 + angle.sin() * dist)
-            .clamp(margin as f32, (h - margin) as f32) as usize;
+        px = (px as f32 + angle.cos() * dist * 1.8).clamp(margin as f32, (w - margin) as f32)
+            as usize;
+        py = (py as f32 + angle.sin() * dist).clamp(margin as f32, (h - margin) as f32) as usize;
         stops.push((px, py));
     }
 
     for (i, &(sx, sy)) in stops.iter().enumerate() {
-        let t = if node_count > 1 { i as f32 / (node_count - 1) as f32 } else { 0.5 };
+        let t = if node_count > 1 {
+            i as f32 / (node_count - 1) as f32
+        } else {
+            0.5
+        };
         let sf = character.size_factor(t);
         let base_w = rng.random_range((w / 5).max(16)..(w / 3).max(20));
         let base_h = rng.random_range((h / 5).max(10)..(h / 3).max(14));
@@ -1644,7 +1956,12 @@ pub fn soup_walk(
         let nh = (base_h as f32 * sf) as usize;
         let nx = sx.saturating_sub(nw / 2).min(w.saturating_sub(nw + margin));
         let ny = sy.saturating_sub(nh / 2).min(h.saturating_sub(nh + margin));
-        let node_rect = Rect { x: nx, y: ny, w: nw.min(w - nx), h: nh.min(h - ny) };
+        let node_rect = Rect {
+            x: nx,
+            y: ny,
+            w: nw.min(w - nx),
+            h: nh.min(h - ny),
+        };
         let mode = NodeMode::pick(character.landscape_bias, rng);
         let arc_shift = (i as f32 / node_count as f32 * 60.0) as u8;
         let mut node_pal = *palette;
@@ -1670,7 +1987,12 @@ pub struct PartyParams {
 
 impl PartyParams {
     pub fn default() -> Self {
-        PartyParams { gap: 0, nodes: 0, scale: 50, detail: 50 }
+        PartyParams {
+            gap: 0,
+            nodes: 0,
+            scale: 50,
+            detail: 50,
+        }
     }
 }
 
@@ -1682,11 +2004,19 @@ pub fn party_walk(
     palette: &[Color; 5],
     params: &PartyParams,
     rng: &mut StdRng,
-) -> (Vec<Layer>, Vec<(usize, usize)>, Vec<(usize, usize, usize, usize)>) {
+) -> (
+    Vec<Layer>,
+    Vec<(usize, usize)>,
+    Vec<(usize, usize, usize, usize)>,
+) {
     let character = PlantCharacter::random(rng);
     let mut layers = Vec::new();
     let margin = 2usize;
-    let gap = if params.gap > 0 { params.gap } else { (w.min(h) / 15).max(3) };
+    let gap = if params.gap > 0 {
+        params.gap
+    } else {
+        (w.min(h) / 15).max(3)
+    };
 
     // ── Place non-overlapping boxes via rejection sampling ──
     let target_count = if params.nodes > 0 {
@@ -1703,7 +2033,11 @@ pub fn party_walk(
     let size_mult = params.scale as f32 / 50.0; // 0.0 to 2.0
 
     for i in 0..target_count {
-        let t = if target_count > 1 { i as f32 / (target_count - 1) as f32 } else { 0.5 };
+        let t = if target_count > 1 {
+            i as f32 / (target_count - 1) as f32
+        } else {
+            0.5
+        };
         let sf = character.size_factor(t);
 
         let base_max_bw = (w as u32 * 2 / 5).max(24).min(55);
@@ -1721,8 +2055,7 @@ pub fn party_walk(
             let by = rng.random_range(margin..h.saturating_sub(bh + margin).max(margin + 1));
 
             let overlaps = boxes.iter().any(|&(px, py, pw, ph)| {
-                bx < px + pw + gap && bx + bw + gap > px &&
-                by < py + ph + gap && by + bh + gap > py
+                bx < px + pw + gap && bx + bw + gap > px && by < py + ph + gap && by + bh + gap > py
             });
 
             if !overlaps {
@@ -1733,7 +2066,9 @@ pub fn party_walk(
                 break;
             }
         }
-        if !placed { continue; }
+        if !placed {
+            continue;
+        }
     }
 
     // Sort left-to-right for readable path
@@ -1745,7 +2080,12 @@ pub fn party_walk(
     // ── Build each node ──
     let node_count = boxes.len();
     for (i, &(bx, by, bw, bh)) in boxes.iter().enumerate() {
-        let node_rect = Rect { x: bx, y: by, w: bw, h: bh };
+        let node_rect = Rect {
+            x: bx,
+            y: by,
+            w: bw,
+            h: bh,
+        };
         let cx = bx as f32 + bw as f32 * 0.5;
         let cy = by as f32 + bh as f32 * 0.5;
         let rx = bw as f32 * 0.5;
@@ -1754,7 +2094,11 @@ pub fn party_walk(
         let mode = NodeMode::pick(character.landscape_bias, rng);
 
         // Color arc
-        let arc_shift = if node_count > 1 { (i as f32 / (node_count - 1) as f32 * 60.0) as u8 } else { 0 };
+        let arc_shift = if node_count > 1 {
+            (i as f32 / (node_count - 1) as f32 * 60.0) as u8
+        } else {
+            0
+        };
         let mut node_pal = *palette;
         node_pal[1] = shift_hue(palette[1], arc_shift);
         node_pal[2] = shift_hue(palette[2], arc_shift);
@@ -1766,13 +2110,11 @@ pub fn party_walk(
             1 => NodeShape::Diamond,
             2 => NodeShape::Rect,
             3 => NodeShape::Hexagon,
-            _ => NodeShape::Trapezoid(
-                if rng.random_range(0..2u32) == 0 {
-                    (bw as f32 * 0.4, bw as f32 * 0.9)
-                } else {
-                    (bw as f32 * 0.9, bw as f32 * 0.4)
-                }
-            ),
+            _ => NodeShape::Trapezoid(if rng.random_range(0..2u32) == 0 {
+                (bw as f32 * 0.4, bw as f32 * 0.9)
+            } else {
+                (bw as f32 * 0.9, bw as f32 * 0.4)
+            }),
         };
 
         // Generate the node's internal layers
@@ -1831,20 +2173,20 @@ pub fn party_walk(
 
 /// Draw a box-drawing border around a rect on the grid.
 /// Overwrites whatever is there -- this is structural.
-pub fn draw_box_border(
-    grid: &mut Grid,
-    bx: usize, by: usize, bw: usize, bh: usize,
-    color: Color,
-) {
+pub fn draw_box_border(grid: &mut Grid, bx: usize, by: usize, bw: usize, bh: usize, color: Color) {
     let gh = grid.len();
-    if gh == 0 { return; }
+    if gh == 0 {
+        return;
+    }
     let gw = grid[0].len();
     // Clamp to grid
     let x0 = bx.min(gw.saturating_sub(1));
     let y0 = by.min(gh.saturating_sub(1));
     let x1 = (bx + bw).min(gw.saturating_sub(1));
     let y1 = (by + bh).min(gh.saturating_sub(1));
-    if x1 <= x0 || y1 <= y0 { return; }
+    if x1 <= x0 || y1 <= y0 {
+        return;
+    }
 
     // Top edge
     for x in (x0 + 1)..x1 {
@@ -1872,13 +2214,11 @@ pub fn draw_box_border(
 /// Draw a solid connecting path between waypoints.
 /// Uses box-drawing line chars, overwrites existing cells.
 /// Much more visible than draw_path_trail.
-pub fn draw_walk_path(
-    grid: &mut Grid,
-    stops: &[(usize, usize)],
-    color: Color,
-) {
+pub fn draw_walk_path(grid: &mut Grid, stops: &[(usize, usize)], color: Color) {
     let h = grid.len();
-    if h == 0 { return; }
+    if h == 0 {
+        return;
+    }
     let w = grid[0].len();
 
     for pair in stops.windows(2) {
@@ -1887,13 +2227,17 @@ pub fn draw_walk_path(
         let dx = x1 as f32 - x0 as f32;
         let dy = y1 as f32 - y0 as f32;
         let steps = (dx.abs().max(dy.abs())) as usize;
-        if steps == 0 { continue; }
+        if steps == 0 {
+            continue;
+        }
 
         for i in 0..=steps {
             let t = i as f32 / steps as f32;
             let x = (x0 as f32 + dx * t) as usize;
             let y = (y0 as f32 + dy * t) as usize;
-            if x >= w || y >= h { continue; }
+            if x >= w || y >= h {
+                continue;
+            }
 
             let ch = if dx.abs() < 1.0 {
                 '│'
@@ -1930,9 +2274,21 @@ fn shift_hue(color: Color, degrees: u8) -> Color {
             let d = degrees as f32 / 60.0;
             let phase = d as usize % 3;
             match phase {
-                0 => Color::Rgb { r, g: g.saturating_add(degrees / 3), b: b.saturating_sub(degrees / 4) },
-                1 => Color::Rgb { r: r.saturating_sub(degrees / 4), g, b: b.saturating_add(degrees / 3) },
-                _ => Color::Rgb { r: r.saturating_add(degrees / 3), g: g.saturating_sub(degrees / 4), b },
+                0 => Color::Rgb {
+                    r,
+                    g: g.saturating_add(degrees / 3),
+                    b: b.saturating_sub(degrees / 4),
+                },
+                1 => Color::Rgb {
+                    r: r.saturating_sub(degrees / 4),
+                    g,
+                    b: b.saturating_add(degrees / 3),
+                },
+                _ => Color::Rgb {
+                    r: r.saturating_add(degrees / 3),
+                    g: g.saturating_sub(degrees / 4),
+                    b,
+                },
             }
         }
         other => other,
@@ -1947,7 +2303,9 @@ pub fn walk_and_fill_leaves(
     palette: &[Color; 5],
     rng: &mut StdRng,
 ) {
-    if leaves.is_empty() { return; }
+    if leaves.is_empty() {
+        return;
+    }
 
     let mut walker = LeafWalker::new(grid[0].len() / 2, grid.len() / 2);
     let mut visited = vec![false; leaves.len()];
@@ -1956,7 +2314,9 @@ pub fn walk_and_fill_leaves(
         let mut best_idx = None;
         let mut best_dist = usize::MAX;
         for (i, leaf) in leaves.iter().enumerate() {
-            if visited[i] { continue; }
+            if visited[i] {
+                continue;
+            }
             let cx = leaf.x + leaf.w / 2;
             let cy = leaf.y + leaf.h / 2;
             let dist = cx.abs_diff(walker.prev_x) + cy.abs_diff(walker.prev_y);
@@ -1988,8 +2348,20 @@ pub fn walk_and_fill_leaves(
                 }
             }
             FillGen::Tile(params) => {
-                let jittered = TileParams { jitter: (1.0 - walker.energy).max(0.0) * 0.15, ..params };
-                render_fill(grid, rect, FillGen::Tile(jittered), prim_color, color2, palette, None, rng);
+                let jittered = TileParams {
+                    jitter: (1.0 - walker.energy).max(0.0) * 0.15,
+                    ..params
+                };
+                render_fill(
+                    grid,
+                    rect,
+                    FillGen::Tile(jittered),
+                    prim_color,
+                    color2,
+                    palette,
+                    None,
+                    rng,
+                );
             }
             _ => render_fill(grid, rect, fill, prim_color, color2, palette, None, rng),
         }
@@ -2002,7 +2374,13 @@ pub fn walk_and_fill_leaves(
 
 /// Weather type for atmosphere overlay.
 #[derive(Clone, Copy)]
-pub enum Weather { Rain, Snow, Fog, Stars, None }
+pub enum Weather {
+    Rain,
+    Snow,
+    Fog,
+    Stars,
+    None,
+}
 
 impl Weather {
     pub fn pick(rng: &mut StdRng) -> Self {
@@ -2038,7 +2416,9 @@ pub fn apply_atmosphere(
     rng: &mut StdRng,
 ) {
     let h = grid.len();
-    if h == 0 { return; }
+    if h == 0 {
+        return;
+    }
     let w = grid[0].len();
     let prob = intensity as f32 / 100.0;
 
@@ -2048,11 +2428,17 @@ pub fn apply_atmosphere(
             let rain_chars = ['│', '┊', '╎', '┆'];
             for y in 0..h {
                 for x in 0..w {
-                    if grid[y][x].ch != ' ' { continue; }
-                    if rng.random::<f32>() > prob * 0.15 { continue; }
+                    if grid[y][x].ch != ' ' {
+                        continue;
+                    }
+                    if rng.random::<f32>() > prob * 0.15 {
+                        continue;
+                    }
                     // Rain falls in vertical streaks -- bias toward same x columns
                     let streak = ((x * 7 + 13) % 11) < 3;
-                    if !streak && rng.random::<f32>() > 0.3 { continue; }
+                    if !streak && rng.random::<f32>() > 0.3 {
+                        continue;
+                    }
                     let ch = rain_chars[rng.random_range(0..rain_chars.len())];
                     grid[y][x] = Cell::new(ch, darken(rain_color, rng.random_range(0..20)));
                 }
@@ -2063,8 +2449,12 @@ pub fn apply_atmosphere(
             let snow_chars = ['·', '∙', '°', '*', '⋅'];
             for y in 0..h {
                 for x in 0..w {
-                    if grid[y][x].ch != ' ' { continue; }
-                    if rng.random::<f32>() > prob * 0.08 { continue; }
+                    if grid[y][x].ch != ' ' {
+                        continue;
+                    }
+                    if rng.random::<f32>() > prob * 0.08 {
+                        continue;
+                    }
                     let ch = snow_chars[rng.random_range(0..snow_chars.len())];
                     grid[y][x] = Cell::new(ch, darken(snow_color, rng.random_range(0..40)));
                 }
@@ -2076,12 +2466,17 @@ pub fn apply_atmosphere(
             let fog_chars = ['░', '▒', '·', '∙'];
             for y in 0..h {
                 // Fog density varies by row -- sine wave bands
-                let row_fog = ((y as f32 / h as f32 * 3.0 * std::f32::consts::PI).sin() * 0.5 + 0.5) * prob;
+                let row_fog =
+                    ((y as f32 / h as f32 * 3.0 * std::f32::consts::PI).sin() * 0.5 + 0.5) * prob;
                 for x in 0..w {
-                    if rng.random::<f32>() > row_fog * 0.12 { continue; }
+                    if rng.random::<f32>() > row_fog * 0.12 {
+                        continue;
+                    }
                     // Fog can overwrite sparse chars but not dense structure
                     let existing = grid[y][x].ch;
-                    if existing != ' ' && !matches!(existing, '·' | '∙' | '°' | '⋅') { continue; }
+                    if existing != ' ' && !matches!(existing, '·' | '∙' | '°' | '⋅') {
+                        continue;
+                    }
                     let ch = fog_chars[rng.random_range(0..fog_chars.len())];
                     grid[y][x] = Cell::new(ch, fog_color);
                 }
@@ -2092,8 +2487,12 @@ pub fn apply_atmosphere(
             let star_chars = ['✦', '✧', '·', '∙', '°'];
             for y in 0..h {
                 for x in 0..w {
-                    if grid[y][x].ch != ' ' { continue; }
-                    if rng.random::<f32>() > prob * 0.03 { continue; }
+                    if grid[y][x].ch != ' ' {
+                        continue;
+                    }
+                    if rng.random::<f32>() > prob * 0.03 {
+                        continue;
+                    }
                     let ch = star_chars[rng.random_range(0..star_chars.len())];
                     let twinkle = rng.random_range(0..60);
                     grid[y][x] = Cell::new(ch, darken(star_color, twinkle));
@@ -2162,14 +2561,11 @@ pub fn draw_styled_path(
 }
 
 /// Vine path: organic line with occasional leaf/bud chars branching off.
-fn draw_vine_path(
-    grid: &mut Grid,
-    stops: &[(usize, usize)],
-    color: Color,
-    rng: &mut StdRng,
-) {
+fn draw_vine_path(grid: &mut Grid, stops: &[(usize, usize)], color: Color, rng: &mut StdRng) {
     let h = grid.len();
-    if h == 0 { return; }
+    if h == 0 {
+        return;
+    }
     let w = grid[0].len();
     let vine_chars = ['╱', '╲', '│', '─', '╰', '╮', '╭', '╯'];
     let leaf_chars = ['◠', '◡', '·', '∙', '°'];
@@ -2180,7 +2576,9 @@ fn draw_vine_path(
         let dx = x1 as f32 - x0 as f32;
         let dy = y1 as f32 - y0 as f32;
         let steps = (dx.abs().max(dy.abs())) as usize;
-        if steps == 0 { continue; }
+        if steps == 0 {
+            continue;
+        }
 
         for i in 0..=steps {
             let t = i as f32 / steps as f32;
@@ -2190,12 +2588,19 @@ fn draw_vine_path(
             let perp_y = dx / (dx.abs() + dy.abs()).max(1.0);
             let x = (x0 as f32 + dx * t + perp_x * wobble) as usize;
             let y = (y0 as f32 + dy * t + perp_y * wobble) as usize;
-            if x >= w || y >= h { continue; }
+            if x >= w || y >= h {
+                continue;
+            }
 
-            let ch = if dx.abs() < 1.0 { '│' }
-                     else if dy.abs() / dx.abs() < 0.3 { '─' }
-                     else if (dx > 0.0) == (dy > 0.0) { '╲' }
-                     else { '╱' };
+            let ch = if dx.abs() < 1.0 {
+                '│'
+            } else if dy.abs() / dx.abs() < 0.3 {
+                '─'
+            } else if (dx > 0.0) == (dy > 0.0) {
+                '╲'
+            } else {
+                '╱'
+            };
             grid[y][x] = Cell::new(ch, color);
 
             // Branch off leaf/bud every 5-8 steps
@@ -2212,14 +2617,11 @@ fn draw_vine_path(
 }
 
 /// River path: wider line using water-like chars.
-fn draw_river_path(
-    grid: &mut Grid,
-    stops: &[(usize, usize)],
-    color: Color,
-    rng: &mut StdRng,
-) {
+fn draw_river_path(grid: &mut Grid, stops: &[(usize, usize)], color: Color, rng: &mut StdRng) {
     let h = grid.len();
-    if h == 0 { return; }
+    if h == 0 {
+        return;
+    }
     let w = grid[0].len();
     let water_chars = ['~', '≈', '∿', '─', '╌'];
 
@@ -2229,7 +2631,9 @@ fn draw_river_path(
         let dx = x1 as f32 - x0 as f32;
         let dy = y1 as f32 - y0 as f32;
         let steps = (dx.abs().max(dy.abs())) as usize;
-        if steps == 0 { continue; }
+        if steps == 0 {
+            continue;
+        }
         let perp_x = -dy / (dx.abs() + dy.abs()).max(1.0);
         let perp_y = dx / (dx.abs() + dy.abs()).max(1.0);
 
@@ -2242,9 +2646,15 @@ fn draw_river_path(
             for offset in -1..=1i32 {
                 let px = (cx + perp_x * offset as f32).round() as usize;
                 let py = (cy + perp_y * offset as f32).round() as usize;
-                if px >= w || py >= h { continue; }
+                if px >= w || py >= h {
+                    continue;
+                }
                 let ch = water_chars[rng.random_range(0..water_chars.len())];
-                let c = if offset == 0 { color } else { darken(color, 30) };
+                let c = if offset == 0 {
+                    color
+                } else {
+                    darken(color, 30)
+                };
                 grid[py][px] = Cell::new(ch, c);
             }
         }
@@ -2252,13 +2662,11 @@ fn draw_river_path(
 }
 
 /// Double-line path: uses double box-drawing chars for a bolder connection.
-fn draw_double_path(
-    grid: &mut Grid,
-    stops: &[(usize, usize)],
-    color: Color,
-) {
+fn draw_double_path(grid: &mut Grid, stops: &[(usize, usize)], color: Color) {
     let h = grid.len();
-    if h == 0 { return; }
+    if h == 0 {
+        return;
+    }
     let w = grid[0].len();
 
     for pair in stops.windows(2) {
@@ -2267,17 +2675,25 @@ fn draw_double_path(
         let dx = x1 as f32 - x0 as f32;
         let dy = y1 as f32 - y0 as f32;
         let steps = (dx.abs().max(dy.abs())) as usize;
-        if steps == 0 { continue; }
+        if steps == 0 {
+            continue;
+        }
 
         for i in 0..=steps {
             let t = i as f32 / steps as f32;
             let x = (x0 as f32 + dx * t) as usize;
             let y = (y0 as f32 + dy * t) as usize;
-            if x >= w || y >= h { continue; }
+            if x >= w || y >= h {
+                continue;
+            }
 
-            let ch = if dx.abs() < 1.0 { '║' }
-                     else if dy.abs() / dx.abs() < 0.3 { '═' }
-                     else { '║' }; // double lines only have H/V
+            let ch = if dx.abs() < 1.0 {
+                '║'
+            } else if dy.abs() / dx.abs() < 0.3 {
+                '═'
+            } else {
+                '║'
+            }; // double lines only have H/V
             grid[y][x] = Cell::new(ch, color);
         }
     }

@@ -1,11 +1,11 @@
-use crossterm::style::Color;
-use rand::rngs::StdRng;
-use rand::RngExt;
-use crate::types::*;
 use crate::color::*;
 use crate::fills::*;
 use crate::sprites::*;
+use crate::types::*;
 use crate::walker::*;
+use crossterm::style::Color;
+use rand::RngExt;
+use rand::rngs::StdRng;
 
 // ── CA rules (Birth/Survival) ───────────────────────────────────────
 
@@ -21,19 +21,31 @@ impl CaRule {
         let parts: Vec<&str> = spec.split('/').collect();
         if parts.len() == 2 {
             for ch in parts[0].trim_start_matches('B').chars() {
-                if let Some(n) = ch.to_digit(10) { birth[n as usize] = true; }
+                if let Some(n) = ch.to_digit(10) {
+                    birth[n as usize] = true;
+                }
             }
             for ch in parts[1].trim_start_matches('S').chars() {
-                if let Some(n) = ch.to_digit(10) { survival[n as usize] = true; }
+                if let Some(n) = ch.to_digit(10) {
+                    survival[n as usize] = true;
+                }
             }
         }
         CaRule { birth, survival }
     }
 
-    pub fn life() -> Self  { Self::parse("B3/S23") }
-    pub fn cave() -> Self  { Self::parse("B5678/S45678") }
-    pub fn maze() -> Self  { Self::parse("B3/S12345") }
-    pub fn coral() -> Self { Self::parse("B3/S45678") }
+    pub fn life() -> Self {
+        Self::parse("B3/S23")
+    }
+    pub fn cave() -> Self {
+        Self::parse("B5678/S45678")
+    }
+    pub fn maze() -> Self {
+        Self::parse("B3/S12345")
+    }
+    pub fn coral() -> Self {
+        Self::parse("B3/S45678")
+    }
 }
 
 // ── CA grid ─────────────────────────────────────────────────────────
@@ -46,7 +58,11 @@ pub struct CaGrid {
 
 impl CaGrid {
     pub fn new(w: usize, h: usize) -> Self {
-        CaGrid { cells: vec![vec![false; w]; h], w, h }
+        CaGrid {
+            cells: vec![vec![false; w]; h],
+            w,
+            h,
+        }
     }
 
     pub fn seed_random(&mut self, density: f64, rng: &mut StdRng) {
@@ -64,10 +80,18 @@ impl CaGrid {
             let y = rng.random_range(0..self.h);
             self.cells[y][x] = true;
             // cross seed: also light immediate neighbors for faster growth
-            if x > 0 { self.cells[y][x - 1] = true; }
-            if x + 1 < self.w { self.cells[y][x + 1] = true; }
-            if y > 0 { self.cells[y - 1][x] = true; }
-            if y + 1 < self.h { self.cells[y + 1][x] = true; }
+            if x > 0 {
+                self.cells[y][x - 1] = true;
+            }
+            if x + 1 < self.w {
+                self.cells[y][x + 1] = true;
+            }
+            if y > 0 {
+                self.cells[y - 1][x] = true;
+            }
+            if y + 1 < self.h {
+                self.cells[y + 1][x] = true;
+            }
         }
     }
 
@@ -76,10 +100,15 @@ impl CaGrid {
         let mut n = 0u8;
         for dy in -1i32..=1 {
             for dx in -1i32..=1 {
-                if dx == 0 && dy == 0 { continue; }
+                if dx == 0 && dy == 0 {
+                    continue;
+                }
                 let nx = x as i32 + dx;
                 let ny = y as i32 + dy;
-                if nx >= 0 && ny >= 0 && (nx as usize) < self.w && (ny as usize) < self.h
+                if nx >= 0
+                    && ny >= 0
+                    && (nx as usize) < self.w
+                    && (ny as usize) < self.h
                     && self.cells[ny as usize][nx as usize]
                 {
                     n += 1;
@@ -92,20 +121,36 @@ impl CaGrid {
     /// Cardinal neighbor bitmask: N=1 E=2 S=4 W=8
     pub fn cardinal(&self, x: usize, y: usize) -> u8 {
         let mut m = 0u8;
-        if y > 0 && self.cells[y - 1][x]            { m |= 1; }
-        if x + 1 < self.w && self.cells[y][x + 1]   { m |= 2; }
-        if y + 1 < self.h && self.cells[y + 1][x]    { m |= 4; }
-        if x > 0 && self.cells[y][x - 1]            { m |= 8; }
+        if y > 0 && self.cells[y - 1][x] {
+            m |= 1;
+        }
+        if x + 1 < self.w && self.cells[y][x + 1] {
+            m |= 2;
+        }
+        if y + 1 < self.h && self.cells[y + 1][x] {
+            m |= 4;
+        }
+        if x > 0 && self.cells[y][x - 1] {
+            m |= 8;
+        }
         m
     }
 
     /// Diagonal neighbor bitmask: NE=1 SE=2 SW=4 NW=8
     pub fn diagonal(&self, x: usize, y: usize) -> u8 {
         let mut m = 0u8;
-        if y > 0 && x + 1 < self.w && self.cells[y - 1][x + 1]  { m |= 1; }
-        if y + 1 < self.h && x + 1 < self.w && self.cells[y + 1][x + 1] { m |= 2; }
-        if y + 1 < self.h && x > 0 && self.cells[y + 1][x - 1]  { m |= 4; }
-        if y > 0 && x > 0 && self.cells[y - 1][x - 1]           { m |= 8; }
+        if y > 0 && x + 1 < self.w && self.cells[y - 1][x + 1] {
+            m |= 1;
+        }
+        if y + 1 < self.h && x + 1 < self.w && self.cells[y + 1][x + 1] {
+            m |= 2;
+        }
+        if y + 1 < self.h && x > 0 && self.cells[y + 1][x - 1] {
+            m |= 4;
+        }
+        if y > 0 && x > 0 && self.cells[y - 1][x - 1] {
+            m |= 8;
+        }
         m
     }
 
@@ -114,18 +159,28 @@ impl CaGrid {
         for y in 0..self.h {
             for x in 0..self.w {
                 let n = self.neighbors(x, y) as usize;
-                next[y][x] = if self.cells[y][x] { rule.survival[n] } else { rule.birth[n] };
+                next[y][x] = if self.cells[y][x] {
+                    rule.survival[n]
+                } else {
+                    rule.birth[n]
+                };
             }
         }
         self.cells = next;
     }
 
     pub fn evolve(&mut self, rule: &CaRule, generations: usize) {
-        for _ in 0..generations { self.step(rule); }
+        for _ in 0..generations {
+            self.step(rule);
+        }
     }
 
     pub fn live_count(&self) -> usize {
-        self.cells.iter().flat_map(|r| r.iter()).filter(|&&c| c).count()
+        self.cells
+            .iter()
+            .flat_map(|r| r.iter())
+            .filter(|&&c| c)
+            .count()
     }
 }
 
@@ -143,56 +198,94 @@ pub enum GlyphStyle {
 pub fn cardinal_glyph(mask: u8, diag: u8, style: GlyphStyle) -> char {
     match style {
         GlyphStyle::Box => match mask {
-            0  => '·',
-            1  => '╵', 2 => '╶', 4 => '╷', 8 => '╴',
-            5  => '│', 10 => '─',
-            3  => '└', 6 => '┌', 9 => '┘', 12 => '┐',
-            7  => '├', 11 => '┴', 13 => '┤', 14 => '┬',
+            0 => '·',
+            1 => '╵',
+            2 => '╶',
+            4 => '╷',
+            8 => '╴',
+            5 => '│',
+            10 => '─',
+            3 => '└',
+            6 => '┌',
+            9 => '┘',
+            12 => '┐',
+            7 => '├',
+            11 => '┴',
+            13 => '┤',
+            14 => '┬',
             15 => '┼',
-            _  => '·',
+            _ => '·',
         },
         GlyphStyle::Round => match mask {
-            0  => '·',
-            1  => '╵', 2 => '╶', 4 => '╷', 8 => '╴',
-            5  => '│', 10 => '─',
-            3  => '╰', 6 => '╭', 9 => '╯', 12 => '╮',
-            7  => '├', 11 => '┴', 13 => '┤', 14 => '┬',
+            0 => '·',
+            1 => '╵',
+            2 => '╶',
+            4 => '╷',
+            8 => '╴',
+            5 => '│',
+            10 => '─',
+            3 => '╰',
+            6 => '╭',
+            9 => '╯',
+            12 => '╮',
+            7 => '├',
+            11 => '┴',
+            13 => '┤',
+            14 => '┬',
             15 => '┼',
-            _  => '·',
+            _ => '·',
         },
         GlyphStyle::Diagonal => {
             // Prefer diagonal glyphs where geometry allows
             let card_n = mask.count_ones();
             let diag_n = diag.count_ones();
-            if card_n == 0 && diag_n == 0 { return '·'; }
+            if card_n == 0 && diag_n == 0 {
+                return '·';
+            }
             // If more diagonal than cardinal, use slash/backslash
             if diag_n > card_n {
                 let has_ne = diag & 1 != 0;
                 let has_sw = diag & 4 != 0;
                 let has_nw = diag & 8 != 0;
                 let has_se = diag & 2 != 0;
-                if (has_ne || has_sw) && !(has_nw || has_se) { return '╱'; }
-                if (has_nw || has_se) && !(has_ne || has_sw) { return '╲'; }
+                if (has_ne || has_sw) && !(has_nw || has_se) {
+                    return '╱';
+                }
+                if (has_nw || has_se) && !(has_ne || has_sw) {
+                    return '╲';
+                }
                 return '╳';
             }
             // Fall through to box drawing
             match mask {
-                0  => '·',
+                0 => '·',
                 1 | 4 | 5 => '│',
                 2 | 8 | 10 => '─',
-                3 => '╱', 12 => '╱',
-                6 => '╲', 9 => '╲',
+                3 => '╱',
+                12 => '╱',
+                6 => '╲',
+                9 => '╲',
                 _ => '┼',
             }
-        },
+        }
         GlyphStyle::Heavy => match mask {
-            0  => '·',
-            1  => '╹', 2 => '╺', 4 => '╻', 8 => '╸',
-            5  => '┃', 10 => '━',
-            3  => '┗', 6 => '┏', 9 => '┛', 12 => '┓',
-            7  => '┣', 11 => '┻', 13 => '┫', 14 => '┳',
+            0 => '·',
+            1 => '╹',
+            2 => '╺',
+            4 => '╻',
+            8 => '╸',
+            5 => '┃',
+            10 => '━',
+            3 => '┗',
+            6 => '┏',
+            9 => '┛',
+            12 => '┓',
+            7 => '┣',
+            11 => '┻',
+            13 => '┫',
+            14 => '┳',
             15 => '╋',
-            _  => '·',
+            _ => '·',
         },
     }
 }
@@ -237,10 +330,14 @@ pub fn render_ca(
     // Phase 1: glyph from neighborhood
     for y in 0..ca.h.min(rect.h) {
         for x in 0..ca.w.min(rect.w) {
-            if !ca.cells[y][x] { continue; }
+            if !ca.cells[y][x] {
+                continue;
+            }
             let gx = rect.x + x;
             let gy = rect.y + y;
-            if gy >= grid.len() || gx >= grid[0].len() { continue; }
+            if gy >= grid.len() || gx >= grid[0].len() {
+                continue;
+            }
 
             let card = ca.cardinal(x, y);
             let diag = ca.diagonal(x, y);
@@ -248,19 +345,21 @@ pub fn render_ca(
             let ch = cardinal_glyph(card, diag, style);
 
             let color = match role {
-                CellRole::Isolated  => palette[3],
-                CellRole::Endpoint  => lighten(palette[1], 20),
-                CellRole::Straight  => palette[1],
-                CellRole::Corner    => palette[2],
-                CellRole::Junction  => lighten(palette[2], 30),
-                CellRole::Cross     => palette[3],
+                CellRole::Isolated => palette[3],
+                CellRole::Endpoint => lighten(palette[1], 20),
+                CellRole::Straight => palette[1],
+                CellRole::Corner => palette[2],
+                CellRole::Junction => lighten(palette[2], 30),
+                CellRole::Cross => palette[3],
             };
 
             grid[gy][gx] = Cell::new(ch, color);
         }
     }
 
-    if !seed_primitives { return; }
+    if !seed_primitives {
+        return;
+    }
 
     // Phase 2: seed primitives at structural sites
     // Collect sites first to avoid borrow issues
@@ -270,7 +369,9 @@ pub fn render_ca(
 
     for y in 0..ca.h.min(rect.h) {
         for x in 0..ca.w.min(rect.w) {
-            if !ca.cells[y][x] { continue; }
+            if !ca.cells[y][x] {
+                continue;
+            }
             let card = ca.cardinal(x, y);
             let role = classify(card);
             let gx = rect.x + x;
@@ -311,7 +412,9 @@ pub fn render_ca(
 
     for (gx, gy) in tree_sites {
         let avail_h = gy.saturating_sub(rect.y);
-        if avail_h < 4 { continue; }
+        if avail_h < 4 {
+            continue;
+        }
         let tree_h = rng.random_range(4..avail_h.min(12).max(5));
         let canopy = gy.saturating_sub(tree_h);
         match rng.random_range(0u32..5) {
@@ -357,11 +460,11 @@ pub fn render_automata(
     let mut ca = CaGrid::new(rect.w, rect.h);
 
     let rule = match rule_name {
-        "life"  => CaRule::life(),
-        "cave"  => CaRule::cave(),
-        "maze"  => CaRule::maze(),
+        "life" => CaRule::life(),
+        "cave" => CaRule::cave(),
+        "maze" => CaRule::maze(),
         "coral" => CaRule::coral(),
-        s       => CaRule::parse(s),
+        s => CaRule::parse(s),
     };
 
     match rule_name {
@@ -390,9 +493,9 @@ pub fn render_automata(
 
 /// A connected component of CA cells, mapped to render-grid coordinates.
 pub struct CaRegion {
-    pub cells: Vec<(usize, usize)>,  // CA coords
-    pub bounds: Rect,                 // render-grid bounding rect
-    pub area: usize,                  // cell count
+    pub cells: Vec<(usize, usize)>, // CA coords
+    pub bounds: Rect,               // render-grid bounding rect
+    pub area: usize,                // cell count
 }
 
 /// Flood-fill connected components (4-connected) on the CA grid.
@@ -402,16 +505,26 @@ fn find_components(ca: &CaGrid) -> Vec<Vec<(usize, usize)>> {
 
     for y in 0..ca.h {
         for x in 0..ca.w {
-            if !ca.cells[y][x] || visited[y][x] { continue; }
+            if !ca.cells[y][x] || visited[y][x] {
+                continue;
+            }
             let mut comp = Vec::new();
             let mut stack = vec![(x, y)];
             while let Some((cx, cy)) = stack.pop() {
-                if cx >= ca.w || cy >= ca.h { continue; }
-                if visited[cy][cx] || !ca.cells[cy][cx] { continue; }
+                if cx >= ca.w || cy >= ca.h {
+                    continue;
+                }
+                if visited[cy][cx] || !ca.cells[cy][cx] {
+                    continue;
+                }
                 visited[cy][cx] = true;
                 comp.push((cx, cy));
-                if cx > 0 { stack.push((cx - 1, cy)); }
-                if cy > 0 { stack.push((cx, cy - 1)); }
+                if cx > 0 {
+                    stack.push((cx - 1, cy));
+                }
+                if cy > 0 {
+                    stack.push((cx, cy - 1));
+                }
                 stack.push((cx + 1, cy));
                 stack.push((cx, cy + 1));
             }
@@ -431,20 +544,27 @@ fn components_to_regions(
     offset_x: usize,
     offset_y: usize,
 ) -> Vec<CaRegion> {
-    components.into_iter().map(|cells| {
-        let min_x = cells.iter().map(|c| c.0).min().unwrap();
-        let max_x = cells.iter().map(|c| c.0).max().unwrap();
-        let min_y = cells.iter().map(|c| c.1).min().unwrap();
-        let max_y = cells.iter().map(|c| c.1).max().unwrap();
-        let bounds = Rect {
-            x: offset_x + min_x * cell_w,
-            y: offset_y + min_y * cell_h,
-            w: (max_x - min_x + 1) * cell_w,
-            h: (max_y - min_y + 1) * cell_h,
-        };
-        let area = cells.len();
-        CaRegion { cells, bounds, area }
-    }).collect()
+    components
+        .into_iter()
+        .map(|cells| {
+            let min_x = cells.iter().map(|c| c.0).min().unwrap();
+            let max_x = cells.iter().map(|c| c.0).max().unwrap();
+            let min_y = cells.iter().map(|c| c.1).min().unwrap();
+            let max_y = cells.iter().map(|c| c.1).max().unwrap();
+            let bounds = Rect {
+                x: offset_x + min_x * cell_w,
+                y: offset_y + min_y * cell_h,
+                w: (max_x - min_x + 1) * cell_w,
+                h: (max_y - min_y + 1) * cell_h,
+            };
+            let area = cells.len();
+            CaRegion {
+                cells,
+                bounds,
+                area,
+            }
+        })
+        .collect()
 }
 
 /// Draw the CA skeleton at coarse scale: each live cell gets a box-drawing
@@ -461,7 +581,9 @@ fn draw_ca_skeleton(
 ) {
     for y in 0..ca.h {
         for x in 0..ca.w {
-            if !ca.cells[y][x] { continue; }
+            if !ca.cells[y][x] {
+                continue;
+            }
             let card = ca.cardinal(x, y);
             let diag = ca.diagonal(x, y);
             let ch = cardinal_glyph(card, diag, style);
@@ -478,14 +600,18 @@ fn draw_ca_skeleton(
                 // East: draw ─ from center to right edge
                 for dx in 1..cell_w {
                     let gx = cx + dx;
-                    if gx < grid[0].len() { grid[cy][gx] = Cell::new('─', darken(color, 30)); }
+                    if gx < grid[0].len() {
+                        grid[cy][gx] = Cell::new('─', darken(color, 30));
+                    }
                 }
             }
             if card & 4 != 0 {
                 // South: draw │ from center to bottom edge
                 for dy in 1..cell_h {
                     let gy = cy + dy;
-                    if gy < grid.len() { grid[gy][cx] = Cell::new('│', darken(color, 30)); }
+                    if gy < grid.len() {
+                        grid[gy][cx] = Cell::new('│', darken(color, 30));
+                    }
                 }
             }
         }
@@ -509,20 +635,22 @@ pub fn ca_layout(
     let cell_h = if rect.h >= 60 { 5 } else { 3 };
     let ca_w = rect.w / cell_w;
     let ca_h = rect.h / cell_h;
-    if ca_w < 4 || ca_h < 4 { return Vec::new(); }
+    if ca_w < 4 || ca_h < 4 {
+        return Vec::new();
+    }
 
     let mut ca = CaGrid::new(ca_w, ca_h);
     let rule = match rule_name {
-        "life"  => CaRule::life(),
-        "cave"  => CaRule::cave(),
-        "maze"  => CaRule::maze(),
+        "life" => CaRule::life(),
+        "cave" => CaRule::cave(),
+        "maze" => CaRule::maze(),
         "coral" => CaRule::coral(),
-        s       => CaRule::parse(s),
+        s => CaRule::parse(s),
     };
 
     match rule_name {
         "cave" => ca.seed_random(density.max(0.48), rng),
-        _      => ca.seed_random(density, rng),
+        _ => ca.seed_random(density, rng),
     }
     ca.evolve(&rule, generations);
 
@@ -533,7 +661,16 @@ pub fn ca_layout(
         2 => GlyphStyle::Heavy,
         _ => GlyphStyle::Diagonal,
     };
-    draw_ca_skeleton(grid, &ca, cell_w, cell_h, rect.x, rect.y, style, darken(palette[2], 40));
+    draw_ca_skeleton(
+        grid,
+        &ca,
+        cell_w,
+        cell_h,
+        rect.x,
+        rect.y,
+        style,
+        darken(palette[2], 40),
+    );
 
     // Find connected components and convert to render regions
     let components = find_components(&ca);
@@ -544,8 +681,12 @@ pub fn ca_layout(
     let grid_w = grid[0].len();
     let grid_h = grid.len();
     for r in &mut regions {
-        if r.bounds.x + r.bounds.w > grid_w { r.bounds.w = grid_w.saturating_sub(r.bounds.x); }
-        if r.bounds.y + r.bounds.h > grid_h { r.bounds.h = grid_h.saturating_sub(r.bounds.y); }
+        if r.bounds.x + r.bounds.w > grid_w {
+            r.bounds.w = grid_w.saturating_sub(r.bounds.x);
+        }
+        if r.bounds.y + r.bounds.h > grid_h {
+            r.bounds.h = grid_h.saturating_sub(r.bounds.y);
+        }
     }
 
     // Separate regions into text-worthy (large enough) and art-fill
@@ -555,7 +696,9 @@ pub fn ca_layout(
     let max_text_slots = 4;
     let mut text_slots = 0;
     for r in &regions {
-        if text_slots >= max_text_slots { break; }
+        if text_slots >= max_text_slots {
+            break;
+        }
         if r.bounds.w >= min_text_w && r.bounds.h >= min_text_h {
             text_slots += 1;
         } else {
@@ -570,7 +713,9 @@ pub fn ca_layout(
 
     for region in &art_regions {
         let b = &region.bounds;
-        if b.w < 3 || b.h < 2 { continue; }
+        if b.w < 3 || b.h < 2 {
+            continue;
+        }
 
         if region.area <= 2 {
             // Tiny: stamp a flower or fruit at center
@@ -612,7 +757,14 @@ pub fn ca_layout(
                 _ => {
                     // Fret spiral
                     let steps = (b.w / 4).max(2).min(5);
-                    draw_stepped_fret(grid, cx as i32, (b.y + b.h / 2) as i32, steps, Dir::Right, palette[2]);
+                    draw_stepped_fret(
+                        grid,
+                        cx as i32,
+                        (b.y + b.h / 2) as i32,
+                        steps,
+                        Dir::Right,
+                        palette[2],
+                    );
                 }
             }
         } else {
@@ -641,4 +793,3 @@ pub fn ca_layout(
     // Return text-placement rects (largest regions first)
     regions.iter().take(text_slots).map(|r| r.bounds).collect()
 }
-

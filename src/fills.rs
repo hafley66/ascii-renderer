@@ -1,8 +1,8 @@
-use crossterm::style::Color;
-use rand::rngs::StdRng;
-use rand::RngExt;
-use crate::types::*;
 use crate::color::*;
+use crate::types::*;
+use crossterm::style::Color;
+use rand::RngExt;
+use rand::rngs::StdRng;
 
 // ── Tile pattern system ─────────────────────────────────────────────
 
@@ -13,14 +13,18 @@ use crate::color::*;
 /// - `stagger_rhythm`: how many tile-rows before the offset resets
 ///   (1 = every row staggers, 2 = every other row, etc.)
 pub struct TilePattern {
-    pub cells: Vec<Vec<(char, u8)>>,  // [y][x] -> (char, color_index: 0=primary, 1=secondary)
-    pub row_offset: usize,            // x-shift per stagger group (0 = no stagger)
-    pub stagger_rhythm: usize,        // tile-rows per stagger group (1 = every row, 2 = pairs, etc.)
+    pub cells: Vec<Vec<(char, u8)>>, // [y][x] -> (char, color_index: 0=primary, 1=secondary)
+    pub row_offset: usize,           // x-shift per stagger group (0 = no stagger)
+    pub stagger_rhythm: usize,       // tile-rows per stagger group (1 = every row, 2 = pairs, etc.)
 }
 
 impl TilePattern {
-    pub fn period_x(&self) -> usize { self.cells[0].len() }
-    pub fn period_y(&self) -> usize { self.cells.len() }
+    pub fn period_x(&self) -> usize {
+        self.cells[0].len()
+    }
+    pub fn period_y(&self) -> usize {
+        self.cells.len()
+    }
 
     pub fn at(&self, x: usize, y: usize) -> (char, u8) {
         let py = self.period_y();
@@ -69,21 +73,101 @@ pub fn make_tile(variant: TileVariant) -> TilePattern {
     match variant {
         TileVariant::Asanoha => {
             let g = vec![
-                vec![('╲', 0), ('╱', 1), ('╲', 0), ('╱', 1), ('╲', 1), ('╱', 0), ('╲', 1), ('╱', 0)],
-                vec![('╱', 0), ('╲', 1), ('─', 0), ('─', 0), ('─', 1), ('─', 1), ('╱', 1), ('╲', 0)],
-                vec![('╲', 1), ('╱', 0), ('╲', 1), ('╱', 0), ('╲', 0), ('╱', 1), ('╲', 0), ('╱', 1)],
-                vec![('╱', 1), ('╲', 0), ('─', 1), ('─', 1), ('─', 0), ('─', 0), ('╱', 0), ('╲', 1)],
+                vec![
+                    ('╲', 0),
+                    ('╱', 1),
+                    ('╲', 0),
+                    ('╱', 1),
+                    ('╲', 1),
+                    ('╱', 0),
+                    ('╲', 1),
+                    ('╱', 0),
+                ],
+                vec![
+                    ('╱', 0),
+                    ('╲', 1),
+                    ('─', 0),
+                    ('─', 0),
+                    ('─', 1),
+                    ('─', 1),
+                    ('╱', 1),
+                    ('╲', 0),
+                ],
+                vec![
+                    ('╲', 1),
+                    ('╱', 0),
+                    ('╲', 1),
+                    ('╱', 0),
+                    ('╲', 0),
+                    ('╱', 1),
+                    ('╲', 0),
+                    ('╱', 1),
+                ],
+                vec![
+                    ('╱', 1),
+                    ('╲', 0),
+                    ('─', 1),
+                    ('─', 1),
+                    ('─', 0),
+                    ('─', 0),
+                    ('╱', 0),
+                    ('╲', 1),
+                ],
             ];
-            TilePattern { cells: g, row_offset: 4, stagger_rhythm: 1 }
+            TilePattern {
+                cells: g,
+                row_offset: 4,
+                stagger_rhythm: 1,
+            }
         }
         TileVariant::Seigaiha => {
             let g = vec![
-                vec![('╰', 0), ('─', 0), ('─', 0), ('╯', 0), ('╰', 1), ('─', 1), ('─', 1), ('╯', 1)],
-                vec![(' ', 0), ('╭', 0), ('╮', 0), (' ', 0), (' ', 1), ('╭', 1), ('╮', 1), (' ', 1)],
-                vec![(' ', 0), ('│', 0), ('│', 0), (' ', 0), (' ', 1), ('│', 1), ('│', 1), (' ', 1)],
-                vec![('╭', 0), ('╯', 0), ('╰', 0), ('╮', 0), ('╭', 1), ('╯', 1), ('╰', 1), ('╮', 1)],
+                vec![
+                    ('╰', 0),
+                    ('─', 0),
+                    ('─', 0),
+                    ('╯', 0),
+                    ('╰', 1),
+                    ('─', 1),
+                    ('─', 1),
+                    ('╯', 1),
+                ],
+                vec![
+                    (' ', 0),
+                    ('╭', 0),
+                    ('╮', 0),
+                    (' ', 0),
+                    (' ', 1),
+                    ('╭', 1),
+                    ('╮', 1),
+                    (' ', 1),
+                ],
+                vec![
+                    (' ', 0),
+                    ('│', 0),
+                    ('│', 0),
+                    (' ', 0),
+                    (' ', 1),
+                    ('│', 1),
+                    ('│', 1),
+                    (' ', 1),
+                ],
+                vec![
+                    ('╭', 0),
+                    ('╯', 0),
+                    ('╰', 0),
+                    ('╮', 0),
+                    ('╭', 1),
+                    ('╯', 1),
+                    ('╰', 1),
+                    ('╮', 1),
+                ],
             ];
-            TilePattern { cells: g, row_offset: 4, stagger_rhythm: 1 }
+            TilePattern {
+                cells: g,
+                row_offset: 4,
+                stagger_rhythm: 1,
+            }
         }
         TileVariant::Shippo => {
             let g = vec![
@@ -92,7 +176,11 @@ pub fn make_tile(variant: TileVariant) -> TilePattern {
                 vec![('╱', 0), ('╰', 1), ('─', 1), ('╯', 1), ('╲', 0), (' ', 0)],
                 vec![(' ', 0), (' ', 0), ('╲', 0), ('╱', 0), (' ', 0), (' ', 0)],
             ];
-            TilePattern { cells: g, row_offset: 3, stagger_rhythm: 1 }
+            TilePattern {
+                cells: g,
+                row_offset: 3,
+                stagger_rhythm: 1,
+            }
         }
         TileVariant::BishamonKikko => {
             let g = vec![
@@ -101,7 +189,11 @@ pub fn make_tile(variant: TileVariant) -> TilePattern {
                 vec![('╲', 0), ('─', 0), ('─', 0), ('╱', 0), (' ', 1), (' ', 1)],
                 vec![(' ', 0), (' ', 0), (' ', 0), (' ', 0), (' ', 1), (' ', 1)],
             ];
-            TilePattern { cells: g, row_offset: 3, stagger_rhythm: 1 }
+            TilePattern {
+                cells: g,
+                row_offset: 3,
+                stagger_rhythm: 1,
+            }
         }
         TileVariant::Yabane => {
             let g = vec![
@@ -110,7 +202,11 @@ pub fn make_tile(variant: TileVariant) -> TilePattern {
                 vec![('╲', 1), ('╲', 1), ('╲', 1), ('╱', 0), ('╱', 0), ('╱', 0)],
                 vec![('╲', 1), ('╲', 1), ('╲', 1), ('╱', 0), ('╱', 0), ('╱', 0)],
             ];
-            TilePattern { cells: g, row_offset: 0, stagger_rhythm: 1 }
+            TilePattern {
+                cells: g,
+                row_offset: 0,
+                stagger_rhythm: 1,
+            }
         }
         TileVariant::Nowaki => {
             let g = vec![
@@ -121,7 +217,11 @@ pub fn make_tile(variant: TileVariant) -> TilePattern {
                 vec![(' ', 0), ('│', 0), (' ', 0), ('╱', 1)],
                 vec![('│', 0), (' ', 0), ('╱', 1), (' ', 0)],
             ];
-            TilePattern { cells: g, row_offset: 0, stagger_rhythm: 1 }
+            TilePattern {
+                cells: g,
+                row_offset: 0,
+                stagger_rhythm: 1,
+            }
         }
         TileVariant::Higaki => {
             let g = vec![
@@ -130,15 +230,50 @@ pub fn make_tile(variant: TileVariant) -> TilePattern {
                 vec![('╲', 0), (' ', 0), ('╱', 0), ('╳', 1)],
                 vec![(' ', 0), ('╱', 0), ('╳', 1), ('╲', 0)],
             ];
-            TilePattern { cells: g, row_offset: 0, stagger_rhythm: 1 }
+            TilePattern {
+                cells: g,
+                row_offset: 0,
+                stagger_rhythm: 1,
+            }
         }
         TileVariant::ShellStitch => {
             let g = vec![
-                vec![('╰', 0), ('─', 0), ('╮', 0), (' ', 0), (' ', 0), ('╭', 1), ('─', 1), ('╯', 1)],
-                vec![(' ', 0), (' ', 0), ('│', 0), ('◠', 0), ('◠', 1), ('│', 1), (' ', 1), (' ', 1)],
-                vec![('─', 0), ('╮', 0), ('╰', 0), ('─', 0), ('─', 1), ('╯', 1), ('╭', 1), ('─', 1)],
+                vec![
+                    ('╰', 0),
+                    ('─', 0),
+                    ('╮', 0),
+                    (' ', 0),
+                    (' ', 0),
+                    ('╭', 1),
+                    ('─', 1),
+                    ('╯', 1),
+                ],
+                vec![
+                    (' ', 0),
+                    (' ', 0),
+                    ('│', 0),
+                    ('◠', 0),
+                    ('◠', 1),
+                    ('│', 1),
+                    (' ', 1),
+                    (' ', 1),
+                ],
+                vec![
+                    ('─', 0),
+                    ('╮', 0),
+                    ('╰', 0),
+                    ('─', 0),
+                    ('─', 1),
+                    ('╯', 1),
+                    ('╭', 1),
+                    ('─', 1),
+                ],
             ];
-            TilePattern { cells: g, row_offset: 4, stagger_rhythm: 1 }
+            TilePattern {
+                cells: g,
+                row_offset: 4,
+                stagger_rhythm: 1,
+            }
         }
         TileVariant::GrannySquare => {
             let g = vec![
@@ -149,7 +284,11 @@ pub fn make_tile(variant: TileVariant) -> TilePattern {
                 vec![('│', 0), ('╰', 1), ('─', 1), ('─', 1), ('╯', 1), ('│', 0)],
                 vec![('└', 0), ('─', 0), ('┴', 1), ('┴', 1), ('─', 0), ('┘', 0)],
             ];
-            TilePattern { cells: g, row_offset: 0, stagger_rhythm: 1 }
+            TilePattern {
+                cells: g,
+                row_offset: 0,
+                stagger_rhythm: 1,
+            }
         }
         TileVariant::CrocodileScale => {
             let g = vec![
@@ -158,7 +297,11 @@ pub fn make_tile(variant: TileVariant) -> TilePattern {
                 vec![(' ', 0), ('▕', 1), ('▓', 1), ('▓', 1), ('▏', 1), (' ', 0)],
                 vec![('─', 0), ('╯', 0), (' ', 0), (' ', 0), ('╰', 0), ('─', 0)],
             ];
-            TilePattern { cells: g, row_offset: 3, stagger_rhythm: 1 }
+            TilePattern {
+                cells: g,
+                row_offset: 3,
+                stagger_rhythm: 1,
+            }
         }
     }
 }
@@ -167,32 +310,43 @@ pub fn make_tile(variant: TileVariant) -> TilePattern {
 #[derive(Clone, Copy)]
 pub struct TileParams {
     pub variant: TileVariant,
-    pub density: f32,           // 0.0-1.0, cell draw probability
-    pub stagger_override: i8,   // -1 = use default, 0 = force no stagger, 1+ = override offset
-    pub rhythm_override: u8,    // 0 = use default, 1+ = override stagger_rhythm
-    pub jitter: f32,            // 0.0-1.0, probability of replacing glyph with random line char
-    pub skew: u32,              // 0-100, how much pattern bleeds past rect boundary
+    pub density: f32,         // 0.0-1.0, cell draw probability
+    pub stagger_override: i8, // -1 = use default, 0 = force no stagger, 1+ = override offset
+    pub rhythm_override: u8,  // 0 = use default, 1+ = override stagger_rhythm
+    pub jitter: f32,          // 0.0-1.0, probability of replacing glyph with random line char
+    pub skew: u32,            // 0-100, how much pattern bleeds past rect boundary
 }
 
 impl TileParams {
     pub fn new(variant: TileVariant) -> Self {
-        TileParams { variant, density: 1.0, stagger_override: -1, rhythm_override: 0, jitter: 0.0, skew: 0 }
+        TileParams {
+            variant,
+            density: 1.0,
+            stagger_override: -1,
+            rhythm_override: 0,
+            jitter: 0.0,
+            skew: 0,
+        }
     }
 
     pub fn randomized(rng: &mut StdRng) -> Self {
         let variant = tile_variant_from_index(rng.random_range(0..TILE_VARIANT_COUNT));
-        let density = if rng.random_range(0..4) == 0 { rng.random_range(60..95) as f32 / 100.0 } else { 1.0 };
+        let density = if rng.random_range(0..4) == 0 {
+            rng.random_range(60..95) as f32 / 100.0
+        } else {
+            1.0
+        };
         // 40% chance to vary stagger from default
         let stagger_override = if rng.random_range(0..5) < 2 {
-            rng.random_range(0..6) as i8  // 0 = no stagger, 1-5 = various offsets
+            rng.random_range(0..6) as i8 // 0 = no stagger, 1-5 = various offsets
         } else {
-            -1  // default
+            -1 // default
         };
         // 30% chance to vary rhythm from default
         let rhythm_override = if rng.random_range(0..10) < 3 {
-            rng.random_range(1..5)  // group 1-4 tile-rows before shifting
+            rng.random_range(1..5) // group 1-4 tile-rows before shifting
         } else {
-            0  // default
+            0 // default
         };
         // 30% chance of skew (pattern bleeds past rect edges)
         let skew = if rng.random_range(0..10u32) < 3 {
@@ -200,7 +354,14 @@ impl TileParams {
         } else {
             0
         };
-        TileParams { variant, density, stagger_override, rhythm_override, jitter: 0.0, skew }
+        TileParams {
+            variant,
+            density,
+            stagger_override,
+            rhythm_override,
+            jitter: 0.0,
+            skew,
+        }
     }
 }
 
@@ -216,9 +377,13 @@ pub fn fill_tile_pure(
     let tile = make_tile(variant);
     for y in rect.y..rect.y + rect.h {
         for x in rect.x..rect.x + rect.w {
-            if y >= grid.len() || x >= grid[0].len() { continue; }
+            if y >= grid.len() || x >= grid[0].len() {
+                continue;
+            }
             let (ch, ci) = tile.at(x - rect.x, y - rect.y);
-            if ch == ' ' { continue; }
+            if ch == ' ' {
+                continue;
+            }
             let bg = grid[y][x].bg;
             let fg = if ci == 0 { color } else { color2 };
             grid[y][x] = Cell::with_bg(ch, fg, bg);
@@ -231,18 +396,18 @@ pub fn fill_tile_pure(
 /// Per-cell context passed to edge_behavior so each variant can make
 /// bespoke decisions about what happens at/beyond rect boundaries.
 pub struct TileEdgeContext {
-    pub tx: usize,                   // tile-local x (0..px, phase-shifted)
-    pub ty: usize,                   // tile-local y (0..py, phase-shifted)
-    pub px: usize,                   // tile period x
-    pub py: usize,                   // tile period y
-    pub normal_char: char,           // what normal tile sampling returns here
-    pub normal_ci: u8,               // color index from normal sampling
-    pub dist_left: i32,              // positive = outside left edge by N cells
-    pub dist_right: i32,             // positive = outside right edge
-    pub dist_top: i32,               // positive = outside top edge
-    pub dist_bottom: i32,            // positive = outside bottom edge
-    pub outside: bool,               // true when cell is outside the rect
-    pub extend: usize,               // max bleed distance in cells
+    pub tx: usize,         // tile-local x (0..px, phase-shifted)
+    pub ty: usize,         // tile-local y (0..py, phase-shifted)
+    pub px: usize,         // tile period x
+    pub py: usize,         // tile period y
+    pub normal_char: char, // what normal tile sampling returns here
+    pub normal_ci: u8,     // color index from normal sampling
+    pub dist_left: i32,    // positive = outside left edge by N cells
+    pub dist_right: i32,   // positive = outside right edge
+    pub dist_top: i32,     // positive = outside top edge
+    pub dist_bottom: i32,  // positive = outside bottom edge
+    pub outside: bool,     // true when cell is outside the rect
+    pub extend: usize,     // max bleed distance in cells
     /// Shape-aware: 0.0 = at container boundary, 1.0 = deep inside.
     /// When Some, edge functions use this instead of rect-distance dropout.
     pub boundary_value: Option<f32>,
@@ -260,33 +425,19 @@ fn edge_behavior(
 ) -> Option<(char, u8)> {
     match variant {
         // Arch-based patterns: mirror ty near bottom to close arches
-        TileVariant::Seigaiha | TileVariant::ShellStitch => {
-            mirror_edge(ctx, true, false, rng)
-        }
+        TileVariant::Seigaiha | TileVariant::ShellStitch => mirror_edge(ctx, true, false, rng),
         // Circles: mirror both axes to close
-        TileVariant::Shippo => {
-            mirror_edge(ctx, true, true, rng)
-        }
+        TileVariant::Shippo => mirror_edge(ctx, true, true, rng),
         // Hexagons: mirror ty to close hex tops/bottoms
-        TileVariant::BishamonKikko => {
-            mirror_edge(ctx, true, false, rng)
-        }
+        TileVariant::BishamonKikko => mirror_edge(ctx, true, false, rng),
         // Scales: mirror ty near bottom, tx near right
-        TileVariant::CrocodileScale => {
-            mirror_edge(ctx, true, true, rng)
-        }
+        TileVariant::CrocodileScale => mirror_edge(ctx, true, true, rng),
         // Boxes: close with └─┘ at bottom edge
-        TileVariant::GrannySquare => {
-            granny_edge(ctx, rng)
-        }
+        TileVariant::GrannySquare => granny_edge(ctx, rng),
         // Strokes: extend individual lines with decay
-        TileVariant::Nowaki => {
-            nowaki_edge(ctx, rng)
-        }
+        TileVariant::Nowaki => nowaki_edge(ctx, rng),
         // Self-similar: pure dropout
-        TileVariant::Asanoha | TileVariant::Yabane | TileVariant::Higaki => {
-            default_edge(ctx, rng)
-        }
+        TileVariant::Asanoha | TileVariant::Yabane | TileVariant::Higaki => default_edge(ctx, rng),
     }
 }
 
@@ -294,15 +445,26 @@ fn edge_behavior(
 /// When boundary_value is set, uses it directly as survival probability
 /// instead of rect-edge distance, so dropout follows the container's contour.
 fn default_edge(ctx: &TileEdgeContext, rng: &mut StdRng) -> Option<(char, u8)> {
-    if !ctx.outside { return Some((ctx.normal_char, ctx.normal_ci)); }
-    if ctx.extend == 0 { return None; }
+    if !ctx.outside {
+        return Some((ctx.normal_char, ctx.normal_ci));
+    }
+    if ctx.extend == 0 {
+        return None;
+    }
     let survive = if let Some(bv) = ctx.boundary_value {
         bv.max(0.0)
     } else {
-        let dist = ctx.dist_left.max(ctx.dist_right).max(ctx.dist_top).max(ctx.dist_bottom).max(0) as f32;
+        let dist = ctx
+            .dist_left
+            .max(ctx.dist_right)
+            .max(ctx.dist_top)
+            .max(ctx.dist_bottom)
+            .max(0) as f32;
         1.0 - (dist / ctx.extend as f32).powf(0.7)
     };
-    if survive <= 0.0 || rng.random::<f32>() > survive { return None; }
+    if survive <= 0.0 || rng.random::<f32>() > survive {
+        return None;
+    }
     Some((ctx.normal_char, ctx.normal_ci))
 }
 
@@ -317,10 +479,19 @@ fn mirror_edge(
 ) -> Option<(char, u8)> {
     // Outside the rect: dropout with distance
     if ctx.outside {
-        if ctx.extend == 0 { return None; }
-        let dist = ctx.dist_left.max(ctx.dist_right).max(ctx.dist_top).max(ctx.dist_bottom).max(0) as f32;
+        if ctx.extend == 0 {
+            return None;
+        }
+        let dist = ctx
+            .dist_left
+            .max(ctx.dist_right)
+            .max(ctx.dist_top)
+            .max(ctx.dist_bottom)
+            .max(0) as f32;
         let survive = 1.0 - (dist / ctx.extend as f32).powf(0.7);
-        if survive <= 0.0 || rng.random::<f32>() > survive { return None; }
+        if survive <= 0.0 || rng.random::<f32>() > survive {
+            return None;
+        }
     }
 
     // Near-edge mirroring: reflect tile coords within one period of the edge
@@ -399,7 +570,9 @@ fn nowaki_edge(ctx: &TileEdgeContext, rng: &mut StdRng) -> Option<(char, u8)> {
     if !ctx.outside {
         return Some((ctx.normal_char, ctx.normal_ci));
     }
-    if ctx.extend == 0 { return None; }
+    if ctx.extend == 0 {
+        return None;
+    }
 
     let is_stroke = matches!(ctx.normal_char, '│' | '╱');
     let survive = if let Some(bv) = ctx.boundary_value {
@@ -407,11 +580,18 @@ fn nowaki_edge(ctx: &TileEdgeContext, rng: &mut StdRng) -> Option<(char, u8)> {
         let boost = if is_stroke { 0.3 } else { 0.0 };
         (bv + boost).min(1.0).max(0.0)
     } else {
-        let dist = ctx.dist_left.max(ctx.dist_right).max(ctx.dist_top).max(ctx.dist_bottom).max(0) as f32;
+        let dist = ctx
+            .dist_left
+            .max(ctx.dist_right)
+            .max(ctx.dist_top)
+            .max(ctx.dist_bottom)
+            .max(0) as f32;
         let power = if is_stroke { 1.5 } else { 0.7 };
         1.0 - (dist / ctx.extend as f32).powf(power)
     };
-    if survive <= 0.0 || rng.random::<f32>() > survive { return None; }
+    if survive <= 0.0 || rng.random::<f32>() > survive {
+        return None;
+    }
     Some((ctx.normal_char, ctx.normal_ci))
 }
 
@@ -459,13 +639,31 @@ pub fn fill_tile_ex(
     for y in y0..y1 {
         for x in x0..x1 {
             // signed distances from each edge: positive = outside, negative = inside
-            let dist_left = if x < rect.x { (rect.x - x) as i32 } else { -((x - rect.x) as i32) };
-            let dist_right = if x >= rect.x + rect.w { (x - (rect.x + rect.w) + 1) as i32 } else { -(((rect.x + rect.w - 1) - x) as i32) };
-            let dist_top = if y < rect.y { (rect.y - y) as i32 } else { -((y - rect.y) as i32) };
-            let dist_bottom = if y >= rect.y + rect.h { (y - (rect.y + rect.h) + 1) as i32 } else { -(((rect.y + rect.h - 1) - y) as i32) };
+            let dist_left = if x < rect.x {
+                (rect.x - x) as i32
+            } else {
+                -((x - rect.x) as i32)
+            };
+            let dist_right = if x >= rect.x + rect.w {
+                (x - (rect.x + rect.w) + 1) as i32
+            } else {
+                -(((rect.x + rect.w - 1) - x) as i32)
+            };
+            let dist_top = if y < rect.y {
+                (rect.y - y) as i32
+            } else {
+                -((y - rect.y) as i32)
+            };
+            let dist_bottom = if y >= rect.y + rect.h {
+                (y - (rect.y + rect.h) + 1) as i32
+            } else {
+                -(((rect.y + rect.h - 1) - y) as i32)
+            };
             let outside = dist_left > 0 || dist_right > 0 || dist_top > 0 || dist_bottom > 0;
 
-            if params.density < 1.0 && rng.random::<f32>() > params.density { continue; }
+            if params.density < 1.0 && rng.random::<f32>() > params.density {
+                continue;
+            }
 
             // sample tile using rect-relative coords (phase-shifted)
             let tx = (x as i32 - rect.x as i32 + phase_x as i32).rem_euclid(px as i32) as usize;
@@ -481,12 +679,18 @@ pub fn fill_tile_ex(
                 let near_right = dist_right <= 0 && (-dist_right as usize) < px;
                 let far_from_left = dist_left <= 0 && (-dist_left as usize) >= px;
 
-                let do_mirror_y = matches!(params.variant,
-                    TileVariant::Seigaiha | TileVariant::ShellStitch |
-                    TileVariant::Shippo | TileVariant::BishamonKikko |
-                    TileVariant::CrocodileScale);
-                let do_mirror_x = matches!(params.variant,
-                    TileVariant::Shippo | TileVariant::CrocodileScale);
+                let do_mirror_y = matches!(
+                    params.variant,
+                    TileVariant::Seigaiha
+                        | TileVariant::ShellStitch
+                        | TileVariant::Shippo
+                        | TileVariant::BishamonKikko
+                        | TileVariant::CrocodileScale
+                );
+                let do_mirror_x = matches!(
+                    params.variant,
+                    TileVariant::Shippo | TileVariant::CrocodileScale
+                );
 
                 if do_mirror_y && near_bottom && far_from_top {
                     mty = py - 1 - ty;
@@ -502,22 +706,31 @@ pub fn fill_tile_ex(
             let boundary_value = skew_boundary.map(|f| f(x, y));
 
             // edge behavior decides draw vs skip for cells near/past boundaries
-            let near_edge = params.skew > 0 && (
-                (dist_bottom <= 0 && (-dist_bottom as usize) < py) ||
-                (dist_right <= 0 && (-dist_right as usize) < px)
-            );
+            let near_edge = params.skew > 0
+                && ((dist_bottom <= 0 && (-dist_bottom as usize) < py)
+                    || (dist_right <= 0 && (-dist_right as usize) < px));
 
             if outside || near_edge {
                 let ctx = TileEdgeContext {
-                    tx, ty, px, py,
-                    normal_char, normal_ci,
-                    dist_left, dist_right, dist_top, dist_bottom,
-                    outside, extend,
+                    tx,
+                    ty,
+                    px,
+                    py,
+                    normal_char,
+                    normal_ci,
+                    dist_left,
+                    dist_right,
+                    dist_top,
+                    dist_bottom,
+                    outside,
+                    extend,
                     boundary_value,
                 };
                 match edge_behavior(params.variant, &ctx, rng) {
                     Some((ch, ci)) => {
-                        if ch == ' ' { continue; }
+                        if ch == ' ' {
+                            continue;
+                        }
                         let mut ch = ch;
                         if jitter > 0.0 && rng.random::<f32>() < jitter {
                             ch = jitter_glyphs[rng.random_range(0..jitter_glyphs.len())];
@@ -526,7 +739,11 @@ pub fn fill_tile_ex(
                         let mut fg = if ci == 0 { color } else { color2 };
                         if jitter > 0.0 {
                             let drift = rng.random_range(0..=20) as u8;
-                            if drift > 10 { fg = lighten(fg, drift - 10); } else { fg = darken(fg, 10 - drift); }
+                            if drift > 10 {
+                                fg = lighten(fg, drift - 10);
+                            } else {
+                                fg = darken(fg, 10 - drift);
+                            }
                         }
                         grid[y][x] = Cell::with_bg(ch, fg, bg);
                     }
@@ -534,7 +751,9 @@ pub fn fill_tile_ex(
                 }
             } else {
                 // Fast path: inside rect, far from edges
-                if normal_char == ' ' { continue; }
+                if normal_char == ' ' {
+                    continue;
+                }
                 let mut ch = normal_char;
                 if jitter > 0.0 && rng.random::<f32>() < jitter {
                     ch = jitter_glyphs[rng.random_range(0..jitter_glyphs.len())];
@@ -543,7 +762,11 @@ pub fn fill_tile_ex(
                 let mut fg = if normal_ci == 0 { color } else { color2 };
                 if jitter > 0.0 {
                     let drift = rng.random_range(0..=20) as u8;
-                    if drift > 10 { fg = lighten(fg, drift - 10); } else { fg = darken(fg, 10 - drift); }
+                    if drift > 10 {
+                        fg = lighten(fg, drift - 10);
+                    } else {
+                        fg = darken(fg, 10 - drift);
+                    }
                 }
                 grid[y][x] = Cell::with_bg(ch, fg, bg);
             }
@@ -557,19 +780,19 @@ pub fn fill_tile_ex(
 /// Weights don't need to sum to 1.0 -- they're normalized at fill time.
 pub struct NoiseGlyph {
     pub ch: char,
-    pub ci: u8,       // 0 = primary color, 1 = secondary
-    pub weight: f32,  // relative probability
+    pub ci: u8,      // 0 = primary color, 1 = secondary
+    pub weight: f32, // relative probability
 }
 
 /// Predefined noise palettes.
 #[derive(Clone, Copy)]
 pub enum NoiseVariant {
-    Truchet,       // classic ╱╲ 50/50, coherence 0.0
-    Higaki,        // ╱╲╳ with gaps, coherence 0.7 (long runs, rare breaks)
-    HigakiStatic,  // ╱╲╳ with gaps, coherence 0.0 (per-cell random, the original)
-    Grass,         // ╱╲│ with spaces, coherence 0.5
-    Static,        // ╱╲─│╳·░, coherence 0.0 (pure random)
-    Dot,           // ·∙°, coherence 0.6
+    Truchet,      // classic ╱╲ 50/50, coherence 0.0
+    Higaki,       // ╱╲╳ with gaps, coherence 0.7 (long runs, rare breaks)
+    HigakiStatic, // ╱╲╳ with gaps, coherence 0.0 (per-cell random, the original)
+    Grass,        // ╱╲│ with spaces, coherence 0.5
+    Static,       // ╱╲─│╳·░, coherence 0.0 (pure random)
+    Dot,          // ·∙°, coherence 0.6
 }
 
 pub fn noise_coherence(variant: NoiseVariant) -> f32 {
@@ -586,35 +809,119 @@ pub fn noise_coherence(variant: NoiseVariant) -> f32 {
 pub fn noise_glyphs(variant: NoiseVariant) -> Vec<NoiseGlyph> {
     match variant {
         NoiseVariant::Truchet => vec![
-            NoiseGlyph { ch: '╱', ci: 0, weight: 1.0 },
-            NoiseGlyph { ch: '╲', ci: 0, weight: 1.0 },
+            NoiseGlyph {
+                ch: '╱',
+                ci: 0,
+                weight: 1.0,
+            },
+            NoiseGlyph {
+                ch: '╲',
+                ci: 0,
+                weight: 1.0,
+            },
         ],
         NoiseVariant::Higaki | NoiseVariant::HigakiStatic => vec![
-            NoiseGlyph { ch: '╱', ci: 0, weight: 3.0 },
-            NoiseGlyph { ch: '╲', ci: 0, weight: 3.0 },
-            NoiseGlyph { ch: '╳', ci: 1, weight: 2.0 },
-            NoiseGlyph { ch: ' ', ci: 0, weight: 1.0 },
+            NoiseGlyph {
+                ch: '╱',
+                ci: 0,
+                weight: 3.0,
+            },
+            NoiseGlyph {
+                ch: '╲',
+                ci: 0,
+                weight: 3.0,
+            },
+            NoiseGlyph {
+                ch: '╳',
+                ci: 1,
+                weight: 2.0,
+            },
+            NoiseGlyph {
+                ch: ' ',
+                ci: 0,
+                weight: 1.0,
+            },
         ],
         NoiseVariant::Grass => vec![
-            NoiseGlyph { ch: '╱', ci: 0, weight: 2.0 },
-            NoiseGlyph { ch: '╲', ci: 0, weight: 2.0 },
-            NoiseGlyph { ch: '│', ci: 1, weight: 1.5 },
-            NoiseGlyph { ch: ' ', ci: 0, weight: 3.0 },
+            NoiseGlyph {
+                ch: '╱',
+                ci: 0,
+                weight: 2.0,
+            },
+            NoiseGlyph {
+                ch: '╲',
+                ci: 0,
+                weight: 2.0,
+            },
+            NoiseGlyph {
+                ch: '│',
+                ci: 1,
+                weight: 1.5,
+            },
+            NoiseGlyph {
+                ch: ' ',
+                ci: 0,
+                weight: 3.0,
+            },
         ],
         NoiseVariant::Static => vec![
-            NoiseGlyph { ch: '╱', ci: 0, weight: 2.0 },
-            NoiseGlyph { ch: '╲', ci: 0, weight: 2.0 },
-            NoiseGlyph { ch: '─', ci: 1, weight: 1.0 },
-            NoiseGlyph { ch: '│', ci: 1, weight: 1.0 },
-            NoiseGlyph { ch: '╳', ci: 1, weight: 0.5 },
-            NoiseGlyph { ch: '·', ci: 0, weight: 1.0 },
-            NoiseGlyph { ch: '░', ci: 0, weight: 0.5 },
+            NoiseGlyph {
+                ch: '╱',
+                ci: 0,
+                weight: 2.0,
+            },
+            NoiseGlyph {
+                ch: '╲',
+                ci: 0,
+                weight: 2.0,
+            },
+            NoiseGlyph {
+                ch: '─',
+                ci: 1,
+                weight: 1.0,
+            },
+            NoiseGlyph {
+                ch: '│',
+                ci: 1,
+                weight: 1.0,
+            },
+            NoiseGlyph {
+                ch: '╳',
+                ci: 1,
+                weight: 0.5,
+            },
+            NoiseGlyph {
+                ch: '·',
+                ci: 0,
+                weight: 1.0,
+            },
+            NoiseGlyph {
+                ch: '░',
+                ci: 0,
+                weight: 0.5,
+            },
         ],
         NoiseVariant::Dot => vec![
-            NoiseGlyph { ch: '·', ci: 0, weight: 3.0 },
-            NoiseGlyph { ch: '∙', ci: 1, weight: 1.0 },
-            NoiseGlyph { ch: '°', ci: 1, weight: 0.5 },
-            NoiseGlyph { ch: ' ', ci: 0, weight: 5.0 },
+            NoiseGlyph {
+                ch: '·',
+                ci: 0,
+                weight: 3.0,
+            },
+            NoiseGlyph {
+                ch: '∙',
+                ci: 1,
+                weight: 1.0,
+            },
+            NoiseGlyph {
+                ch: '°',
+                ci: 1,
+                weight: 0.5,
+            },
+            NoiseGlyph {
+                ch: ' ',
+                ci: 0,
+                weight: 5.0,
+            },
         ],
     }
 }
@@ -660,13 +967,17 @@ pub fn fill_noise(
     let mut cur = sample_glyph(&cdf, rng);
     for y in rect.y..rect.y + rect.h {
         for x in rect.x..rect.x + rect.w {
-            if y >= grid.len() || x >= grid[0].len() { continue; }
+            if y >= grid.len() || x >= grid[0].len() {
+                continue;
+            }
             // coherence check: continue run or break?
             if coherence <= 0.0 || rng.random::<f32>() >= coherence {
                 cur = sample_glyph(&cdf, rng);
             }
             let g = &glyphs[cur];
-            if g.ch == ' ' { continue; }
+            if g.ch == ' ' {
+                continue;
+            }
             let bg = grid[y][x].bg;
             let fg = if g.ci == 0 { color } else { color2 };
             grid[y][x] = Cell::with_bg(g.ch, fg, bg);
@@ -676,7 +987,12 @@ pub fn fill_noise(
 
 /// Fill entire grid with Truchet noise. Replaces the duplicated inline loops.
 pub fn fill_truchet(grid: &mut Grid, width: usize, height: usize, color: Color, rng: &mut StdRng) {
-    let rect = Rect { x: 0, y: 0, w: width, h: height };
+    let rect = Rect {
+        x: 0,
+        y: 0,
+        w: width,
+        h: height,
+    };
     fill_noise(grid, &rect, NoiseVariant::Truchet, color, color, rng);
 }
 
@@ -686,9 +1002,15 @@ pub fn fill_truchet(grid: &mut Grid, width: usize, height: usize, color: Color, 
 pub fn draw_crosshatch(grid: &mut Grid, rect: &Rect, color: Color, color2: Color) {
     for y in rect.y..rect.y + rect.h {
         for x in rect.x..rect.x + rect.w {
-            if y >= grid.len() || x >= grid[0].len() { continue; }
+            if y >= grid.len() || x >= grid[0].len() {
+                continue;
+            }
             let bg = grid[y][x].bg;
-            let (ch, c) = if (x + y) % 2 == 0 { ('╱', color) } else { ('╲', color2) };
+            let (ch, c) = if (x + y) % 2 == 0 {
+                ('╱', color)
+            } else {
+                ('╲', color2)
+            };
             grid[y][x] = Cell::with_bg(ch, c, bg);
         }
     }
@@ -698,7 +1020,9 @@ pub fn draw_crosshatch(grid: &mut Grid, rect: &Rect, color: Color, color2: Color
 pub fn draw_guilloche(grid: &mut Grid, rect: &Rect, color: Color, color2: Color) {
     for y in rect.y..rect.y + rect.h {
         for x in rect.x..rect.x + rect.w {
-            if y >= grid.len() || x >= grid[0].len() { continue; }
+            if y >= grid.len() || x >= grid[0].len() {
+                continue;
+            }
             let bg = grid[y][x].bg;
             let ry = (y - rect.y) % 4;
             let rx = (x - rect.x) % 6;
@@ -736,7 +1060,9 @@ pub fn draw_guilloche(grid: &mut Grid, rect: &Rect, color: Color, color2: Color)
 pub fn draw_weave(grid: &mut Grid, rect: &Rect, color: Color, color2: Color) {
     for y in rect.y..rect.y + rect.h {
         for x in rect.x..rect.x + rect.w {
-            if y >= grid.len() || x >= grid[0].len() { continue; }
+            if y >= grid.len() || x >= grid[0].len() {
+                continue;
+            }
             let bg = grid[y][x].bg;
             let ry = (y - rect.y) % 6;
             let rx = (x - rect.x) % 6;
@@ -781,7 +1107,9 @@ pub fn draw_weave(grid: &mut Grid, rect: &Rect, color: Color, color2: Color) {
 pub fn draw_zigzag(grid: &mut Grid, rect: &Rect, color: Color, color2: Color) {
     for y in rect.y..rect.y + rect.h {
         for x in rect.x..rect.x + rect.w {
-            if y >= grid.len() || x >= grid[0].len() { continue; }
+            if y >= grid.len() || x >= grid[0].len() {
+                continue;
+            }
             let bg = grid[y][x].bg;
             let ry = (y - rect.y) % 4;
             let rx = (x - rect.x) % 4;
@@ -805,7 +1133,9 @@ pub fn draw_zigzag(grid: &mut Grid, rect: &Rect, color: Color, color2: Color) {
 pub fn draw_diamond_lattice(grid: &mut Grid, rect: &Rect, color: Color, color2: Color) {
     for y in rect.y..rect.y + rect.h {
         for x in rect.x..rect.x + rect.w {
-            if y >= grid.len() || x >= grid[0].len() { continue; }
+            if y >= grid.len() || x >= grid[0].len() {
+                continue;
+            }
             let bg = grid[y][x].bg;
             let ry = (y - rect.y) % 4;
             let rx = (x - rect.x) % 4;
@@ -844,18 +1174,24 @@ pub fn draw_spiral(grid: &mut Grid, rect: &Rect, color: Color, color2: Color) {
         let px = (cx + angle.cos() * r * 2.0) as usize; // *2 for terminal aspect ratio
         let py = (cy + angle.sin() * r) as usize;
 
-        if py >= grid.len() || px >= grid[0].len() { continue; }
-        if py < rect.y || py >= rect.y + rect.h || px < rect.x || px >= rect.x + rect.w { continue; }
+        if py >= grid.len() || px >= grid[0].len() {
+            continue;
+        }
+        if py < rect.y || py >= rect.y + rect.h || px < rect.x || px >= rect.x + rect.w {
+            continue;
+        }
 
         let dx = px as i32 - prev_x as i32;
         let dy = py as i32 - prev_y as i32;
-        let ch = if dx == 0 && dy == 0 { '·' }
-                 else if dx.abs() > dy.abs() { '─' }
-                 else if dy > 0 {
-                     if dx > 0 { '╲' } else { '╱' }
-                 } else {
-                     if dx > 0 { '╱' } else { '╲' }
-                 };
+        let ch = if dx == 0 && dy == 0 {
+            '·'
+        } else if dx.abs() > dy.abs() {
+            '─'
+        } else if dy > 0 {
+            if dx > 0 { '╲' } else { '╱' }
+        } else {
+            if dx > 0 { '╱' } else { '╲' }
+        };
         let c = if i % 2 == 0 { color } else { color2 };
         let bg = grid[py][px].bg;
         grid[py][px] = Cell::with_bg(ch, c, bg);
@@ -880,16 +1216,32 @@ pub fn draw_concentric(grid: &mut Grid, rect: &Rect, color: Color, color2: Color
             let x = cx + dx - hw;
             let y_top = cy.saturating_sub(hh);
             let y_bot = cy + hh;
-            if x < rect.x || x >= rect.x + rect.w { continue; }
+            if x < rect.x || x >= rect.x + rect.w {
+                continue;
+            }
 
-            if y_top >= rect.y && y_top < rect.y + rect.h && y_top < grid.len() && x < grid[0].len() {
+            if y_top >= rect.y && y_top < rect.y + rect.h && y_top < grid.len() && x < grid[0].len()
+            {
                 let bg = grid[y_top][x].bg;
-                let ch = if dx == 0 { '╭' } else if dx == hw * 2 { '╮' } else { '─' };
+                let ch = if dx == 0 {
+                    '╭'
+                } else if dx == hw * 2 {
+                    '╮'
+                } else {
+                    '─'
+                };
                 grid[y_top][x] = Cell::with_bg(ch, c, bg);
             }
-            if y_bot >= rect.y && y_bot < rect.y + rect.h && y_bot < grid.len() && x < grid[0].len() {
+            if y_bot >= rect.y && y_bot < rect.y + rect.h && y_bot < grid.len() && x < grid[0].len()
+            {
                 let bg = grid[y_bot][x].bg;
-                let ch = if dx == 0 { '╰' } else if dx == hw * 2 { '╯' } else { '─' };
+                let ch = if dx == 0 {
+                    '╰'
+                } else if dx == hw * 2 {
+                    '╯'
+                } else {
+                    '─'
+                };
                 grid[y_bot][x] = Cell::with_bg(ch, dim_c, bg);
             }
         }
@@ -897,7 +1249,9 @@ pub fn draw_concentric(grid: &mut Grid, rect: &Rect, color: Color, color2: Color
             let y = cy.saturating_sub(hh) + dy;
             let x_left = cx.saturating_sub(hw);
             let x_right = cx + hw;
-            if y < rect.y || y >= rect.y + rect.h || y >= grid.len() { continue; }
+            if y < rect.y || y >= rect.y + rect.h || y >= grid.len() {
+                continue;
+            }
             if x_left >= rect.x && x_left < rect.x + rect.w && x_left < grid[0].len() {
                 let bg = grid[y][x_left].bg;
                 grid[y][x_left] = Cell::with_bg('│', c, bg);
@@ -914,7 +1268,9 @@ pub fn draw_concentric(grid: &mut Grid, rect: &Rect, color: Color, color2: Color
 pub fn draw_labyrinth(grid: &mut Grid, rect: &Rect, color: Color, color2: Color) {
     for y in rect.y..rect.y + rect.h {
         for x in rect.x..rect.x + rect.w {
-            if y >= grid.len() || x >= grid[0].len() { continue; }
+            if y >= grid.len() || x >= grid[0].len() {
+                continue;
+            }
             let bg = grid[y][x].bg;
             let rx = x - rect.x;
             let ry = y - rect.y;
@@ -932,16 +1288,25 @@ pub fn draw_labyrinth(grid: &mut Grid, rect: &Rect, color: Color, color2: Color)
                 (0, 1) | (0, 2) => ('─', color),
                 (0, 3) => ('┐', color2),
                 (1, 0) => {
-                    if cell_row % 3 == 0 { ('├', color) }
-                    else { ('│', color) }
+                    if cell_row % 3 == 0 {
+                        ('├', color)
+                    } else {
+                        ('│', color)
+                    }
                 }
                 (1, 3) => {
-                    if (cell_col + cell_row) % 2 == 0 { ('┤', color2) }
-                    else { ('│', color2) }
+                    if (cell_col + cell_row) % 2 == 0 {
+                        ('┤', color2)
+                    } else {
+                        ('│', color2)
+                    }
                 }
                 (1, 1) => {
-                    if cell_row % 2 == 0 { ('·', darken(color, 40)) }
-                    else { continue }
+                    if cell_row % 2 == 0 {
+                        ('·', darken(color, 40))
+                    } else {
+                        continue;
+                    }
                 }
                 _ => continue,
             };

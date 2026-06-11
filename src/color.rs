@@ -28,87 +28,87 @@ pub fn named_theme(name: &str) -> Option<[Color; 5]> {
     Some(match name {
         // --- warm ---
         "ember" => [
-            rgb(25, 8, 2),       // near-black warm
-            rgb(204, 85, 0),     // burnt orange
-            rgb(140, 40, 50),    // dried blood
-            rgb(255, 160, 50),   // amber glow
-            rgb(240, 220, 200),  // warm white
+            rgb(25, 8, 2),      // near-black warm
+            rgb(204, 85, 0),    // burnt orange
+            rgb(140, 40, 50),   // dried blood
+            rgb(255, 160, 50),  // amber glow
+            rgb(240, 220, 200), // warm white
         ],
         "terracotta" => [
-            rgb(30, 15, 10),     // dark earth
-            rgb(180, 100, 60),   // clay
-            rgb(90, 130, 80),    // sage
-            rgb(220, 170, 100),  // sand
-            rgb(235, 225, 210),  // parchment
+            rgb(30, 15, 10),    // dark earth
+            rgb(180, 100, 60),  // clay
+            rgb(90, 130, 80),   // sage
+            rgb(220, 170, 100), // sand
+            rgb(235, 225, 210), // parchment
         ],
         "sakura" => [
-            rgb(20, 10, 18),     // dark plum
-            rgb(200, 120, 160),  // cherry blossom
-            rgb(100, 80, 90),    // bark
-            rgb(255, 180, 200),  // petal pink
-            rgb(240, 235, 240),  // soft white
+            rgb(20, 10, 18),    // dark plum
+            rgb(200, 120, 160), // cherry blossom
+            rgb(100, 80, 90),   // bark
+            rgb(255, 180, 200), // petal pink
+            rgb(240, 235, 240), // soft white
         ],
 
         // --- cool ---
         "arctic" => [
-            rgb(5, 10, 20),      // deep night
-            rgb(100, 160, 220),  // ice blue
-            rgb(60, 80, 120),    // steel
-            rgb(180, 230, 255),  // frost
-            rgb(230, 240, 250),  // snow
+            rgb(5, 10, 20),     // deep night
+            rgb(100, 160, 220), // ice blue
+            rgb(60, 80, 120),   // steel
+            rgb(180, 230, 255), // frost
+            rgb(230, 240, 250), // snow
         ],
         "deep" => [
-            rgb(2, 5, 15),       // abyss
-            rgb(30, 80, 160),    // ocean
-            rgb(80, 40, 120),    // purple depth
-            rgb(50, 200, 180),   // bioluminescent
-            rgb(200, 220, 240),  // foam
+            rgb(2, 5, 15),      // abyss
+            rgb(30, 80, 160),   // ocean
+            rgb(80, 40, 120),   // purple depth
+            rgb(50, 200, 180),  // bioluminescent
+            rgb(200, 220, 240), // foam
         ],
         "moss" => [
-            rgb(8, 15, 5),       // forest floor
-            rgb(80, 140, 60),    // moss green
-            rgb(50, 80, 40),     // dark fern
-            rgb(160, 200, 80),   // lichen
-            rgb(210, 230, 200),  // pale green
+            rgb(8, 15, 5),      // forest floor
+            rgb(80, 140, 60),   // moss green
+            rgb(50, 80, 40),    // dark fern
+            rgb(160, 200, 80),  // lichen
+            rgb(210, 230, 200), // pale green
         ],
 
         // --- monochrome ---
         "bone" => [
-            rgb(15, 14, 12),     // charcoal
-            rgb(180, 170, 155),  // bone
-            rgb(120, 115, 105),  // stone
-            rgb(220, 210, 190),  // ivory
-            rgb(240, 235, 225),  // cream
+            rgb(15, 14, 12),    // charcoal
+            rgb(180, 170, 155), // bone
+            rgb(120, 115, 105), // stone
+            rgb(220, 210, 190), // ivory
+            rgb(240, 235, 225), // cream
         ],
         "silver" => [
-            rgb(10, 10, 12),     // gunmetal
-            rgb(140, 145, 160),  // silver
-            rgb(80, 85, 95),     // pewter
-            rgb(200, 205, 220),  // bright silver
-            rgb(235, 235, 240),  // platinum
+            rgb(10, 10, 12),    // gunmetal
+            rgb(140, 145, 160), // silver
+            rgb(80, 85, 95),    // pewter
+            rgb(200, 205, 220), // bright silver
+            rgb(235, 235, 240), // platinum
         ],
 
         // --- vivid ---
         "neon" => [
-            rgb(5, 0, 10),       // void
-            rgb(0, 255, 128),    // neon green
-            rgb(255, 0, 128),    // hot pink
-            rgb(0, 200, 255),    // cyan
-            rgb(255, 255, 255),  // pure white
+            rgb(5, 0, 10),      // void
+            rgb(0, 255, 128),   // neon green
+            rgb(255, 0, 128),   // hot pink
+            rgb(0, 200, 255),   // cyan
+            rgb(255, 255, 255), // pure white
         ],
         "nerv" => [
-            rgb(10, 2, 15),      // eva purple-black
-            rgb(200, 50, 20),    // nerv red
-            rgb(100, 60, 160),   // eva purple
-            rgb(255, 180, 0),    // warning orange
-            rgb(220, 220, 230),  // terminal gray
+            rgb(10, 2, 15),     // eva purple-black
+            rgb(200, 50, 20),   // nerv red
+            rgb(100, 60, 160),  // eva purple
+            rgb(255, 180, 0),   // warning orange
+            rgb(220, 220, 230), // terminal gray
         ],
         "mitla" => [
-            rgb(20, 12, 5),      // obsidian earth
-            rgb(190, 140, 60),   // gold stone
-            rgb(140, 60, 40),    // red clay
-            rgb(100, 170, 130),  // jade
-            rgb(230, 220, 200),  // limestone
+            rgb(20, 12, 5),     // obsidian earth
+            rgb(190, 140, 60),  // gold stone
+            rgb(140, 60, 40),   // red clay
+            rgb(100, 170, 130), // jade
+            rgb(230, 220, 200), // limestone
         ],
 
         _ => return None,
@@ -140,7 +140,11 @@ pub fn shift_hue(color: Color, degrees: f64) -> Color {
                 return color; // achromatic
             }
             let d = max - min;
-            let s = if l > 0.5 { d / (2.0 - max - min) } else { d / (max + min) };
+            let s = if l > 0.5 {
+                d / (2.0 - max - min)
+            } else {
+                d / (max + min)
+            };
             let h = if (max - rf).abs() < 0.001 {
                 ((gf - bf) / d + if gf < bf { 6.0 } else { 0.0 }) * 60.0
             } else if (max - gf).abs() < 0.001 {
@@ -180,11 +184,28 @@ pub fn darken(color: Color, amount: u8) -> Color {
 pub fn lerp_color(a: Color, b: Color, t: f32) -> Color {
     let t = t.clamp(0.0, 1.0);
     match (a, b) {
-        (Color::Rgb { r: r1, g: g1, b: b1 }, Color::Rgb { r: r2, g: g2, b: b2 }) => Color::Rgb {
+        (
+            Color::Rgb {
+                r: r1,
+                g: g1,
+                b: b1,
+            },
+            Color::Rgb {
+                r: r2,
+                g: g2,
+                b: b2,
+            },
+        ) => Color::Rgb {
             r: (r1 as f32 + (r2 as f32 - r1 as f32) * t) as u8,
             g: (g1 as f32 + (g2 as f32 - g1 as f32) * t) as u8,
             b: (b1 as f32 + (b2 as f32 - b1 as f32) * t) as u8,
         },
-        _ => if t < 0.5 { a } else { b },
+        _ => {
+            if t < 0.5 {
+                a
+            } else {
+                b
+            }
+        }
     }
 }

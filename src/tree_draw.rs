@@ -1,15 +1,20 @@
-use crossterm::style::Color;
-use rand::rngs::StdRng;
-use rand::RngExt;
-use std::cell::Cell as StdCell;
-use crate::types::*;
 use crate::color::*;
-use crate::sprites::{TreePen, MoveDir};
+use crate::sprites::{MoveDir, TreePen};
+use crate::types::*;
+use crossterm::style::Color;
+use rand::RngExt;
+use rand::rngs::StdRng;
+use std::cell::Cell as StdCell;
 
 // ── Inputs ──────────────────────────────────────────────────────────
 
 #[derive(Clone, Copy)]
-pub enum GrowDir { Up, UpLeft, UpRight, Outward }
+pub enum GrowDir {
+    Up,
+    UpLeft,
+    UpRight,
+    Outward,
+}
 
 pub struct TreeParams {
     pub plot: Rect,
@@ -59,13 +64,18 @@ fn set(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
 pub struct BoleExit {
     pub x: i32,
     pub y: i32,
-    pub left: i32,   // half-width extending left of x (0 = just center)
-    pub right: i32,  // half-width extending right of x (0 = just center)
+    pub left: i32,  // half-width extending left of x (0 = just center)
+    pub right: i32, // half-width extending right of x (0 = just center)
 }
 
 impl BoleExit {
     pub fn point(x: i32, y: i32) -> Self {
-        BoleExit { x, y, left: 0, right: 0 }
+        BoleExit {
+            x,
+            y,
+            left: 0,
+            right: 0,
+        }
     }
 }
 
@@ -90,15 +100,17 @@ pub struct BranchIntent {
 
 #[derive(Clone, Copy, Debug)]
 pub enum TaperKind {
-    Diagonal,  // classic ╱─│─╲ triangle
-    Shelf,     // └──┬──┘ horizontal ledges stepping inward
-    Bracket,   // ╭───╮ / ╰─┴─╯ curved cradle
-    Step,      // ├──┼──┤ rectangular frames shrinking per row
-    Melt,      // braille density fade
+    Diagonal, // classic ╱─│─╲ triangle
+    Shelf,    // └──┬──┘ horizontal ledges stepping inward
+    Bracket,  // ╭───╮ / ╰─┴─╯ curved cradle
+    Step,     // ├──┼──┤ rectangular frames shrinking per row
+    Melt,     // braille density fade
 }
 
 impl Default for TaperKind {
-    fn default() -> Self { TaperKind::Diagonal }
+    fn default() -> Self {
+        TaperKind::Diagonal
+    }
 }
 
 fn draw_taper(grid: &mut Grid, exit: &BoleExit, color: Color, kind: TaperKind) -> (i32, i32) {
@@ -108,10 +120,10 @@ fn draw_taper(grid: &mut Grid, exit: &BoleExit, color: Color, kind: TaperKind) -
     }
     match kind {
         TaperKind::Diagonal => taper_diagonal(grid, exit, color),
-        TaperKind::Shelf    => taper_shelf(grid, exit, color),
-        TaperKind::Bracket  => taper_bracket(grid, exit, color),
-        TaperKind::Step     => taper_step(grid, exit, color),
-        TaperKind::Melt     => taper_melt(grid, exit, color),
+        TaperKind::Shelf => taper_shelf(grid, exit, color),
+        TaperKind::Bracket => taper_bracket(grid, exit, color),
+        TaperKind::Step => taper_step(grid, exit, color),
+        TaperKind::Melt => taper_melt(grid, exit, color),
     }
 }
 
@@ -124,16 +136,28 @@ fn taper_diagonal(grid: &mut Grid, exit: &BoleExit, color: Color) -> (i32, i32) 
     while left > 0 || right > 0 {
         if left > 0 {
             set(grid, exit.x - left, cy, '╱', bark);
-            for dx in 1..left { set(grid, exit.x - dx, cy, '─', bark); }
+            for dx in 1..left {
+                set(grid, exit.x - dx, cy, '─', bark);
+            }
         }
         if right > 0 {
             set(grid, exit.x + right, cy, '╲', bark);
-            for dx in 1..right { set(grid, exit.x + dx, cy, '─', bark); }
+            for dx in 1..right {
+                set(grid, exit.x + dx, cy, '─', bark);
+            }
         }
         set(grid, exit.x, cy, '│', color);
 
-        let dl = if left + right > 6 { (left + 1) / 2 } else { 1.min(left) };
-        let dr = if left + right > 6 { (right + 1) / 2 } else { 1.min(right) };
+        let dl = if left + right > 6 {
+            (left + 1) / 2
+        } else {
+            1.min(left)
+        };
+        let dr = if left + right > 6 {
+            (right + 1) / 2
+        } else {
+            1.min(right)
+        };
         left -= dl;
         right -= dr;
         cy -= 1;
@@ -157,8 +181,16 @@ fn taper_shelf(grid: &mut Grid, exit: &BoleExit, color: Color) -> (i32, i32) {
         }
         set(grid, exit.x, cy, '┬', color);
 
-        let dl = if left + right > 6 { (left + 1) / 2 } else { 1.min(left) };
-        let dr = if left + right > 6 { (right + 1) / 2 } else { 1.min(right) };
+        let dl = if left + right > 6 {
+            (left + 1) / 2
+        } else {
+            1.min(left)
+        };
+        let dr = if left + right > 6 {
+            (right + 1) / 2
+        } else {
+            1.min(right)
+        };
         left -= dl;
         right -= dr;
         cy -= 1;
@@ -182,19 +214,39 @@ fn taper_bracket(grid: &mut Grid, exit: &BoleExit, color: Color) -> (i32, i32) {
     set(grid, exit.x, cy, '┴', color);
     cy -= 1;
 
-    let dl = if left + right > 6 { (left + 1) / 2 } else { 1.min(left) };
-    let dr = if left + right > 6 { (right + 1) / 2 } else { 1.min(right) };
+    let dl = if left + right > 6 {
+        (left + 1) / 2
+    } else {
+        1.min(left)
+    };
+    let dr = if left + right > 6 {
+        (right + 1) / 2
+    } else {
+        1.min(right)
+    };
     left -= dl;
     right -= dr;
 
     // Middle rows: vertical walls │   │
     while left > 0 || right > 0 {
-        if left > 0 { set(grid, exit.x - left, cy, '│', bark); }
-        if right > 0 { set(grid, exit.x + right, cy, '│', bark); }
+        if left > 0 {
+            set(grid, exit.x - left, cy, '│', bark);
+        }
+        if right > 0 {
+            set(grid, exit.x + right, cy, '│', bark);
+        }
         set(grid, exit.x, cy, '│', color);
 
-        let dl = if left + right > 4 { (left + 1) / 2 } else { 1.min(left) };
-        let dr = if left + right > 4 { (right + 1) / 2 } else { 1.min(right) };
+        let dl = if left + right > 4 {
+            (left + 1) / 2
+        } else {
+            1.min(left)
+        };
+        let dr = if left + right > 4 {
+            (right + 1) / 2
+        } else {
+            1.min(right)
+        };
         left -= dl;
         right -= dr;
         cy -= 1;
@@ -237,27 +289,45 @@ fn taper_melt(grid: &mut Grid, exit: &BoleExit, color: Color) -> (i32, i32) {
     let mut cy = exit.y;
     let bark = darken(color, 15);
     let dense = ['⣿', '⣾', '⣷', '⣶'];
-    let mid   = ['⡇', '⢸', '⠿', '⠶'];
-    let thin  = ['⠃', '⠆', '⠁', '⠈'];
+    let mid = ['⡇', '⢸', '⠿', '⠶'];
+    let thin = ['⠃', '⠆', '⠁', '⠈'];
 
     let total_rows = (left.max(right) + 1) as usize;
     let mut row = 0;
     while left > 0 || right > 0 {
         let frac = row as f32 / total_rows as f32;
-        let palette = if frac < 0.33 { &dense[..] } else if frac < 0.66 { &mid[..] } else { &thin[..] };
+        let palette = if frac < 0.33 {
+            &dense[..]
+        } else if frac < 0.66 {
+            &mid[..]
+        } else {
+            &thin[..]
+        };
 
         for dx in -left..=right {
             if dx == 0 {
                 set(grid, exit.x, cy, '│', color);
             } else {
                 let idx = ((dx.unsigned_abs() as usize + row) % palette.len()) as usize;
-                let c = if frac < 0.5 { bark } else { lighten(bark, (frac * 30.0) as u8) };
+                let c = if frac < 0.5 {
+                    bark
+                } else {
+                    lighten(bark, (frac * 30.0) as u8)
+                };
                 set(grid, exit.x + dx, cy, palette[idx], c);
             }
         }
 
-        let dl = if left + right > 6 { (left + 1) / 2 } else { 1.min(left) };
-        let dr = if left + right > 6 { (right + 1) / 2 } else { 1.min(right) };
+        let dl = if left + right > 6 {
+            (left + 1) / 2
+        } else {
+            1.min(left)
+        };
+        let dr = if left + right > 6 {
+            (right + 1) / 2
+        } else {
+            1.min(right)
+        };
         left -= dl;
         right -= dr;
         cy -= 1;
@@ -270,8 +340,13 @@ fn taper_melt(grid: &mut Grid, exit: &BoleExit, color: Color) -> (i32, i32) {
 // ── TrunkAlgo ───────────────────────────────────────────────────────────
 
 pub trait TrunkAlgo {
-    fn draw(&self, grid: &mut Grid, pen: &mut TreePen,
-            params: &TreeParams, rng: &mut StdRng) -> Vec<TrunkNode>;
+    fn draw(
+        &self,
+        grid: &mut Grid,
+        pen: &mut TreePen,
+        params: &TreeParams,
+        rng: &mut StdRng,
+    ) -> Vec<TrunkNode>;
 }
 
 // ── Trunk Algorithms ────────────────────────────────────────────────────
@@ -281,8 +356,13 @@ pub struct StraightTrunk {
 }
 
 impl TrunkAlgo for StraightTrunk {
-    fn draw(&self, grid: &mut Grid, pen: &mut TreePen,
-            params: &TreeParams, _rng: &mut StdRng) -> Vec<TrunkNode> {
+    fn draw(
+        &self,
+        grid: &mut Grid,
+        pen: &mut TreePen,
+        params: &TreeParams,
+        _rng: &mut StdRng,
+    ) -> Vec<TrunkNode> {
         let top_y = params.canopy_top();
         let ry = params.root().1;
         let full_height = (ry - top_y).max(1);
@@ -291,7 +371,11 @@ impl TrunkAlgo for StraightTrunk {
 
         for _ in 0..height {
             pen.step(grid, MoveDir::Up);
-            path.push(TrunkNode { x: pen.x, y: pen.y, dir: MoveDir::Up });
+            path.push(TrunkNode {
+                x: pen.x,
+                y: pen.y,
+                dir: MoveDir::Up,
+            });
         }
 
         path
@@ -303,8 +387,13 @@ pub struct ThickTrunk {
 }
 
 impl TrunkAlgo for ThickTrunk {
-    fn draw(&self, grid: &mut Grid, pen: &mut TreePen,
-            params: &TreeParams, _rng: &mut StdRng) -> Vec<TrunkNode> {
+    fn draw(
+        &self,
+        grid: &mut Grid,
+        pen: &mut TreePen,
+        params: &TreeParams,
+        _rng: &mut StdRng,
+    ) -> Vec<TrunkNode> {
         let top_y = params.canopy_top();
         let ry = params.root().1;
         let full_height = (ry - top_y).max(3);
@@ -317,7 +406,11 @@ impl TrunkAlgo for ThickTrunk {
             set(grid, pen.x, pen.y, '┃', params.trunk_color);
             set(grid, pen.x - 1, pen.y, '│', bark);
             set(grid, pen.x + 1, pen.y, '│', bark);
-            path.push(TrunkNode { x: pen.x, y: pen.y, dir: MoveDir::Up });
+            path.push(TrunkNode {
+                x: pen.x,
+                y: pen.y,
+                dir: MoveDir::Up,
+            });
         }
 
         path
@@ -329,8 +422,13 @@ pub struct WobbleTrunk {
 }
 
 impl TrunkAlgo for WobbleTrunk {
-    fn draw(&self, grid: &mut Grid, pen: &mut TreePen,
-            params: &TreeParams, rng: &mut StdRng) -> Vec<TrunkNode> {
+    fn draw(
+        &self,
+        grid: &mut Grid,
+        pen: &mut TreePen,
+        params: &TreeParams,
+        rng: &mut StdRng,
+    ) -> Vec<TrunkNode> {
         let top_y = params.canopy_top();
         let ry = params.root().1;
         let full_height = (ry - top_y).max(3);
@@ -340,13 +438,21 @@ impl TrunkAlgo for WobbleTrunk {
 
         for i in 0..trunk_h {
             if i > 0 && i % freq == 0 && rng.random_range(0..3u32) == 0 {
-                let h_dir = if rng.random::<bool>() { MoveDir::Right } else { MoveDir::Left };
+                let h_dir = if rng.random::<bool>() {
+                    MoveDir::Right
+                } else {
+                    MoveDir::Left
+                };
                 pen.step(grid, h_dir);
                 pen.step(grid, MoveDir::Up);
             } else {
                 pen.step(grid, MoveDir::Up);
             }
-            path.push(TrunkNode { x: pen.x, y: pen.y, dir: MoveDir::Up });
+            path.push(TrunkNode {
+                x: pen.x,
+                y: pen.y,
+                dir: MoveDir::Up,
+            });
         }
 
         path
@@ -359,18 +465,29 @@ pub struct LeanTrunk {
 
 impl LeanTrunk {
     pub fn new() -> Self {
-        LeanTrunk { lean: StdCell::new(0) }
+        LeanTrunk {
+            lean: StdCell::new(0),
+        }
     }
 }
 
 impl TrunkAlgo for LeanTrunk {
-    fn draw(&self, grid: &mut Grid, pen: &mut TreePen,
-            params: &TreeParams, rng: &mut StdRng) -> Vec<TrunkNode> {
+    fn draw(
+        &self,
+        grid: &mut Grid,
+        pen: &mut TreePen,
+        params: &TreeParams,
+        rng: &mut StdRng,
+    ) -> Vec<TrunkNode> {
         let top_y = params.canopy_top();
         let ry = params.root().1;
         let height = (ry - top_y).max(1);
         let spread = params.spread().max(2);
-        let lean: i32 = if rng.random_range(0..2u32) == 0 { 1 } else { -1 };
+        let lean: i32 = if rng.random_range(0..2u32) == 0 {
+            1
+        } else {
+            -1
+        };
         self.lean.set(lean);
         let lean_every = (height / (spread.min(8))).max(2);
         let mut path = Vec::with_capacity(height as usize);
@@ -382,14 +499,22 @@ impl TrunkAlgo for LeanTrunk {
 
             if new_shifts > shifts {
                 shifts = new_shifts;
-                let h_dir = if lean > 0 { MoveDir::Right } else { MoveDir::Left };
+                let h_dir = if lean > 0 {
+                    MoveDir::Right
+                } else {
+                    MoveDir::Left
+                };
                 pen.step(grid, h_dir);
                 pen.step(grid, MoveDir::Up);
             } else {
                 pen.step(grid, MoveDir::Up);
             }
 
-            path.push(TrunkNode { x: pen.x, y: pen.y, dir: MoveDir::Up });
+            path.push(TrunkNode {
+                x: pen.x,
+                y: pen.y,
+                dir: MoveDir::Up,
+            });
         }
 
         path
@@ -399,8 +524,13 @@ impl TrunkAlgo for LeanTrunk {
 pub struct GnarledTrunk;
 
 impl TrunkAlgo for GnarledTrunk {
-    fn draw(&self, grid: &mut Grid, pen: &mut TreePen,
-            params: &TreeParams, rng: &mut StdRng) -> Vec<TrunkNode> {
+    fn draw(
+        &self,
+        grid: &mut Grid,
+        pen: &mut TreePen,
+        params: &TreeParams,
+        rng: &mut StdRng,
+    ) -> Vec<TrunkNode> {
         let top_y = params.canopy_top();
         let ry = params.root().1;
         let height = (ry - top_y).max(1);
@@ -411,13 +541,21 @@ impl TrunkAlgo for GnarledTrunk {
         for i in 0..height {
             let from_root = height - i;
             if from_root > 2 && from_root % 7 == 0 && rng.random_range(0..3u32) == 0 {
-                let h_dir = if rng.random::<bool>() { MoveDir::Right } else { MoveDir::Left };
+                let h_dir = if rng.random::<bool>() {
+                    MoveDir::Right
+                } else {
+                    MoveDir::Left
+                };
                 pen.step(grid, h_dir);
                 pen.step(grid, MoveDir::Up);
             } else {
                 pen.step(grid, MoveDir::Up);
             }
-            path.push(TrunkNode { x: pen.x, y: pen.y, dir: MoveDir::Up });
+            path.push(TrunkNode {
+                x: pen.x,
+                y: pen.y,
+                dir: MoveDir::Up,
+            });
         }
 
         path
@@ -431,8 +569,13 @@ pub struct OrganicTrunk {
 }
 
 impl TrunkAlgo for OrganicTrunk {
-    fn draw(&self, grid: &mut Grid, pen: &mut TreePen,
-            params: &TreeParams, rng: &mut StdRng) -> Vec<TrunkNode> {
+    fn draw(
+        &self,
+        grid: &mut Grid,
+        pen: &mut TreePen,
+        params: &TreeParams,
+        rng: &mut StdRng,
+    ) -> Vec<TrunkNode> {
         let top_y = params.canopy_top();
         let ry = params.root().1;
         let rx = params.root().0;
@@ -455,17 +598,29 @@ impl TrunkAlgo for OrganicTrunk {
                 // First 2 steps always straight up for clean base
                 MoveDir::Up
             } else if rng.random_range(0..3u32) == 0 && drift.abs() < max_drift {
-                if bias > 0 { MoveDir::UpRight } else { MoveDir::UpLeft }
+                if bias > 0 {
+                    MoveDir::UpRight
+                } else {
+                    MoveDir::UpLeft
+                }
             } else if drift.abs() >= max_drift {
                 // Correct back toward center
-                if drift > 0 { MoveDir::UpLeft } else { MoveDir::UpRight }
+                if drift > 0 {
+                    MoveDir::UpLeft
+                } else {
+                    MoveDir::UpRight
+                }
             } else {
                 MoveDir::Up
             };
 
             pen.step(grid, dir);
             drift += dir.dx();
-            path.push(TrunkNode { x: pen.x, y: pen.y, dir });
+            path.push(TrunkNode {
+                x: pen.x,
+                y: pen.y,
+                dir,
+            });
         }
 
         path
@@ -480,8 +635,13 @@ pub struct SineTrunk {
 }
 
 impl TrunkAlgo for SineTrunk {
-    fn draw(&self, grid: &mut Grid, pen: &mut TreePen,
-            params: &TreeParams, rng: &mut StdRng) -> Vec<TrunkNode> {
+    fn draw(
+        &self,
+        grid: &mut Grid,
+        pen: &mut TreePen,
+        params: &TreeParams,
+        rng: &mut StdRng,
+    ) -> Vec<TrunkNode> {
         let top_y = params.canopy_top();
         let ry = params.root().1;
         let full_height = (ry - top_y).max(3);
@@ -504,7 +664,11 @@ impl TrunkAlgo for SineTrunk {
             i += 1;
 
             if dx != 0 {
-                let h_dir = if dx < 0 { MoveDir::Left } else { MoveDir::Right };
+                let h_dir = if dx < 0 {
+                    MoveDir::Left
+                } else {
+                    MoveDir::Right
+                };
                 pen.step(grid, h_dir);
                 pen.step(grid, MoveDir::Up);
                 rows_drawn += 1;
@@ -512,7 +676,11 @@ impl TrunkAlgo for SineTrunk {
                 pen.step(grid, MoveDir::Up);
                 rows_drawn += 1;
             }
-            path.push(TrunkNode { x: pen.x, y: pen.y, dir: MoveDir::Up });
+            path.push(TrunkNode {
+                x: pen.x,
+                y: pen.y,
+                dir: MoveDir::Up,
+            });
         }
 
         path
@@ -530,8 +698,7 @@ pub trait BoleStyle {
 /// No bole
 pub struct NoBole;
 impl BoleStyle for NoBole {
-    fn draw(&self, _grid: &mut Grid, params: &TreeParams,
-            _rng: &mut StdRng) -> BoleExit {
+    fn draw(&self, _grid: &mut Grid, params: &TreeParams, _rng: &mut StdRng) -> BoleExit {
         let (x, y) = params.root();
         BoleExit::point(x, y)
     }
@@ -552,21 +719,37 @@ impl BoleStyle for Bole {
         let color = params.trunk_color;
         let max_w = (params.spread() as i32).max(2);
         let w = ((max_w as f32 * params.energy.clamp(0.3, 1.0)) as i32).max(2);
-        let lw = (w / 2 + rng.random_range(0..(w / 2 + 1).max(1) as u32) as i32).max(1).min(max_w);
-        let rw = (w - lw + rng.random_range(0..(w / 3 + 1).max(1) as u32) as i32).max(1).min(max_w);
+        let lw = (w / 2 + rng.random_range(0..(w / 2 + 1).max(1) as u32) as i32)
+            .max(1)
+            .min(max_w);
+        let rw = (w - lw + rng.random_range(0..(w / 3 + 1).max(1) as u32) as i32)
+            .max(1)
+            .min(max_w);
         let bark = darken(color, 15);
         let dim = darken(color, 30);
-        draw_bole_pattern(grid, root_x, root_y, lw, rw, color, bark, dim,
-                          params.energy, self.style, rng, true)
+        draw_bole_pattern(
+            grid,
+            root_x,
+            root_y,
+            lw,
+            rw,
+            color,
+            bark,
+            dim,
+            params.energy,
+            self.style,
+            rng,
+            true,
+        )
     }
 }
 
 /// Gradient direction for bush color fading.
 #[derive(Clone, Copy, Debug)]
 pub enum FadeDir {
-    Down,       // crown bright, base fades toward ground
-    Up,         // base bright, crown fades
-    CenterOut,  // core bright, all edges fade toward ground
+    Down,      // crown bright, base fades toward ground
+    Up,        // base bright, crown fades
+    CenterOut, // core bright, all edges fade toward ground
 }
 
 /// Standalone bush sprite: renders full-size bole patterns as independent shrubs.
@@ -589,8 +772,20 @@ impl BushSprite {
         let rw = w - lw + rng.random_range(0..(w / 3 + 1).max(1) as u32) as i32;
         let bark = darken(self.color, 15);
         let dim = darken(self.color, 30);
-        let exit = draw_bole_pattern(grid, self.x, self.y, lw.max(1), rw.max(1), self.color,
-                          bark, dim, self.energy, self.style, rng, false);
+        let exit = draw_bole_pattern(
+            grid,
+            self.x,
+            self.y,
+            lw.max(1),
+            rw.max(1),
+            self.color,
+            bark,
+            dim,
+            self.energy,
+            self.style,
+            rng,
+            false,
+        );
 
         // Post-pass: gradient fade toward ground color
         self.apply_fade(grid, &exit);
@@ -600,10 +795,10 @@ impl BushSprite {
 
     fn apply_fade(&self, grid: &mut Grid, exit: &BoleExit) {
         // Compute bounding box from exit info + root position
-        let left = self.x - exit.left - 3;   // padding for sprawl chars
+        let left = self.x - exit.left - 3; // padding for sprawl chars
         let right = self.x + exit.right + 3;
         let top = exit.y - 1;
-        let bot = self.y + 2;                 // some styles draw below root
+        let bot = self.y + 2; // some styles draw below root
 
         let h = (bot - top).max(1) as f32;
         let half_w = ((right - left) / 2).max(1) as f32;
@@ -612,15 +807,17 @@ impl BushSprite {
             let row = gy as usize;
             for gx in left.max(0)..=right.min(grid[0].len() as i32 - 1) {
                 let col = gx as usize;
-                if grid[row][col].ch == ' ' { continue; }
+                if grid[row][col].ch == ' ' {
+                    continue;
+                }
 
                 let dx = (gx - self.x).abs() as f32;
                 let dy_from_top = (gy - top) as f32;
                 let dy_from_bot = (bot - gy) as f32;
 
                 let t = match self.fade {
-                    FadeDir::Down => dy_from_top / h,        // 0 at top, 1 at bottom
-                    FadeDir::Up => dy_from_bot / h,          // 0 at bottom, 1 at top
+                    FadeDir::Down => dy_from_top / h, // 0 at top, 1 at bottom
+                    FadeDir::Up => dy_from_bot / h,   // 0 at bottom, 1 at top
                     FadeDir::CenterOut => {
                         // radial: distance from center normalized to 0..1
                         let nx = dx / half_w;
@@ -631,7 +828,7 @@ impl BushSprite {
 
                 // Blend: t=0 keeps original color, t=1 fully ground color
                 // Use a softer curve (t^0.7) so center stays vivid longer
-                let blend = t.powf(0.7).min(0.85);  // never fully erase to ground
+                let blend = t.powf(0.7).min(0.85); // never fully erase to ground
                 grid[row][col].fg = lerp_color(grid[row][col].fg, self.ground, blend);
             }
         }
@@ -642,1582 +839,2292 @@ impl BushSprite {
 /// `compact`: true clamps layer counts to keep height <= 3 rows (for tree boles).
 ///            false renders full size (for standalone bush sprites).
 fn draw_bole_pattern(
-    grid: &mut Grid, root_x: i32, root_y: i32,
-    lw: i32, rw: i32, color: Color, bark: Color, dim: Color,
-    energy: f32, style: usize, rng: &mut StdRng, compact: bool,
+    grid: &mut Grid,
+    root_x: i32,
+    root_y: i32,
+    lw: i32,
+    rw: i32,
+    color: Color,
+    bark: Color,
+    dim: Color,
+    energy: f32,
+    style: usize,
+    rng: &mut StdRng,
+    compact: bool,
 ) -> BoleExit {
-        match style % 34 {
-            // Style 0: Crescent -- connected via │ at inner edge positions
-            0 => {
-                // Ground row: wide crescent
-                set(grid, root_x, root_y, '┴', color);
-                set(grid, root_x - 1, root_y, '◟', bark);
-                set(grid, root_x + 1, root_y, '◞', bark);
-                for dx in 2..=lw {
-                    set(grid, root_x - dx, root_y, '◠', lighten(bark, ((dx - 2) as u8 * 8).min(40)));
-                }
-                for dx in 2..=rw {
-                    set(grid, root_x + dx, root_y, '◠', lighten(bark, ((dx - 2) as u8 * 8).min(40)));
-                }
-                set(grid, root_x - lw - 1, root_y, '◜', lighten(bark, 30));
-                set(grid, root_x + rw + 1, root_y, '◝', lighten(bark, 30));
-                // Inner crescent with │ connectors down to ground row
-                let ilw = (lw * 2 / 3).max(1);
-                let irw = (rw * 2 / 3).max(1);
-                set(grid, root_x - 1, root_y - 1, '◟', color);
-                set(grid, root_x + 1, root_y - 1, '◞', color);
-                for dx in 2..=ilw {
-                    set(grid, root_x - dx, root_y - 1, '◡', bark);
-                }
-                for dx in 2..=irw {
-                    set(grid, root_x + dx, root_y - 1, '◡', bark);
-                }
-                set(grid, root_x - ilw - 1, root_y - 1, '◜', bark);
-                set(grid, root_x + irw + 1, root_y - 1, '◝', bark);
-                // Vertical connectors: │ at inner crescent edges link to outer crescent
-                set(grid, root_x - ilw - 1, root_y, '│', bark);
-                set(grid, root_x + irw + 1, root_y, '│', bark);
-                // Horizontal bar connecting crescents at mid-width
-                let bar_l = (ilw + lw) / 2;
-                let bar_r = (irw + rw) / 2;
-                if bar_l > ilw + 1 { set(grid, root_x - bar_l, root_y - 1, '─', bark); }
-                if bar_r > irw + 1 { set(grid, root_x + bar_r, root_y - 1, '─', bark); }
-                BoleExit { x: root_x, y: root_y - 1, left: ilw, right: irw }
+    match style % 34 {
+        // Style 0: Crescent -- connected via │ at inner edge positions
+        0 => {
+            // Ground row: wide crescent
+            set(grid, root_x, root_y, '┴', color);
+            set(grid, root_x - 1, root_y, '◟', bark);
+            set(grid, root_x + 1, root_y, '◞', bark);
+            for dx in 2..=lw {
+                set(
+                    grid,
+                    root_x - dx,
+                    root_y,
+                    '◠',
+                    lighten(bark, ((dx - 2) as u8 * 8).min(40)),
+                );
             }
-            // Style 1: Braille cluster -- compact 1-2 row spread
-            1 => {
-                let energy = energy.clamp(0.2, 1.0);
-                let dense = ['⣿', '⣾', '⣷', '⣤', '⣶'];
-                let thin  = ['⡇', '⢸', '⠿', '⠶', '⠛'];
-                let rows = if energy > 0.5 { 2 } else { 1 };
-                let mut cy = root_y;
+            for dx in 2..=rw {
+                set(
+                    grid,
+                    root_x + dx,
+                    root_y,
+                    '◠',
+                    lighten(bark, ((dx - 2) as u8 * 8).min(40)),
+                );
+            }
+            set(grid, root_x - lw - 1, root_y, '◜', lighten(bark, 30));
+            set(grid, root_x + rw + 1, root_y, '◝', lighten(bark, 30));
+            // Inner crescent with │ connectors down to ground row
+            let ilw = (lw * 2 / 3).max(1);
+            let irw = (rw * 2 / 3).max(1);
+            set(grid, root_x - 1, root_y - 1, '◟', color);
+            set(grid, root_x + 1, root_y - 1, '◞', color);
+            for dx in 2..=ilw {
+                set(grid, root_x - dx, root_y - 1, '◡', bark);
+            }
+            for dx in 2..=irw {
+                set(grid, root_x + dx, root_y - 1, '◡', bark);
+            }
+            set(grid, root_x - ilw - 1, root_y - 1, '◜', bark);
+            set(grid, root_x + irw + 1, root_y - 1, '◝', bark);
+            // Vertical connectors: │ at inner crescent edges link to outer crescent
+            set(grid, root_x - ilw - 1, root_y, '│', bark);
+            set(grid, root_x + irw + 1, root_y, '│', bark);
+            // Horizontal bar connecting crescents at mid-width
+            let bar_l = (ilw + lw) / 2;
+            let bar_r = (irw + rw) / 2;
+            if bar_l > ilw + 1 {
+                set(grid, root_x - bar_l, root_y - 1, '─', bark);
+            }
+            if bar_r > irw + 1 {
+                set(grid, root_x + bar_r, root_y - 1, '─', bark);
+            }
+            BoleExit {
+                x: root_x,
+                y: root_y - 1,
+                left: ilw,
+                right: irw,
+            }
+        }
+        // Style 1: Braille cluster -- compact 1-2 row spread
+        1 => {
+            let energy = energy.clamp(0.2, 1.0);
+            let dense = ['⣿', '⣾', '⣷', '⣤', '⣶'];
+            let thin = ['⡇', '⢸', '⠿', '⠶', '⠛'];
+            let rows = if energy > 0.5 { 2 } else { 1 };
+            let mut cy = root_y;
 
-                // Ground row: dense, full width
-                let hw = lw.max(rw);
-                set(grid, root_x, cy, dense[0], color);
-                for dx in 1..=hw {
-                    let ch = dense[rng.random_range(0..dense.len() as u32) as usize];
-                    set(grid, root_x - dx, cy, ch, darken(color, ((dx as u8) * 3).min(15)));
-                    set(grid, root_x + dx, cy, ch, darken(color, ((dx as u8) * 3).min(15)));
+            // Ground row: dense, full width
+            let hw = lw.max(rw);
+            set(grid, root_x, cy, dense[0], color);
+            for dx in 1..=hw {
+                let ch = dense[rng.random_range(0..dense.len() as u32) as usize];
+                set(
+                    grid,
+                    root_x - dx,
+                    cy,
+                    ch,
+                    darken(color, ((dx as u8) * 3).min(15)),
+                );
+                set(
+                    grid,
+                    root_x + dx,
+                    cy,
+                    ch,
+                    darken(color, ((dx as u8) * 3).min(15)),
+                );
+            }
+            cy -= 1;
+
+            // Optional second row: thin, half width
+            if rows > 1 {
+                let hw2 = (hw / 2).max(1);
+                let row_col = darken(color, 10);
+                set(grid, root_x, cy, thin[0], row_col);
+                for dx in 1..=hw2 {
+                    let ch = thin[rng.random_range(0..thin.len() as u32) as usize];
+                    set(
+                        grid,
+                        root_x - dx,
+                        cy,
+                        ch,
+                        darken(row_col, ((dx as u8) * 4).min(15)),
+                    );
+                    set(
+                        grid,
+                        root_x + dx,
+                        cy,
+                        ch,
+                        darken(row_col, ((dx as u8) * 4).min(15)),
+                    );
                 }
-                cy -= 1;
-
-                // Optional second row: thin, half width
-                if rows > 1 {
-                    let hw2 = (hw / 2).max(1);
-                    let row_col = darken(color, 10);
-                    set(grid, root_x, cy, thin[0], row_col);
-                    for dx in 1..=hw2 {
-                        let ch = thin[rng.random_range(0..thin.len() as u32) as usize];
-                        set(grid, root_x - dx, cy, ch, darken(row_col, ((dx as u8) * 4).min(15)));
-                        set(grid, root_x + dx, cy, ch, darken(row_col, ((dx as u8) * 4).min(15)));
-                    }
-                    BoleExit { x: root_x, y: cy, left: hw2, right: hw2 }
-                } else {
-                    BoleExit { x: root_x, y: cy + 1, left: hw, right: hw }
+                BoleExit {
+                    x: root_x,
+                    y: cy,
+                    left: hw2,
+                    right: hw2,
+                }
+            } else {
+                BoleExit {
+                    x: root_x,
+                    y: cy + 1,
+                    left: hw,
+                    right: hw,
                 }
             }
-            // Style 2: Frame -- energy-scaled nested box frames
-            2 => {
-                let energy = energy.clamp(0.2, 1.0);
-                let hlw = lw.max(2);
-                let hrw = rw.max(2);
-                let layers = if compact { 1 } else { ((energy * 3.0).ceil() as i32).clamp(1, 3) };
-                let mut cy = root_y;
+        }
+        // Style 2: Frame -- energy-scaled nested box frames
+        2 => {
+            let energy = energy.clamp(0.2, 1.0);
+            let hlw = lw.max(2);
+            let hrw = rw.max(2);
+            let layers = if compact {
+                1
+            } else {
+                ((energy * 3.0).ceil() as i32).clamp(1, 3)
+            };
+            let mut cy = root_y;
 
-                for layer in 0..layers {
-                    let shrink = layer as f32 * 0.3;
-                    let ll = ((hlw as f32) * (1.0 - shrink)).max(1.0) as i32;
-                    let lr = ((hrw as f32) * (1.0 - shrink)).max(1.0) as i32;
-                    let layer_dim = darken(bark, (layer as u8) * 12);
-                    let layer_col = if layer == 0 { bark } else { layer_dim };
+            for layer in 0..layers {
+                let shrink = layer as f32 * 0.3;
+                let ll = ((hlw as f32) * (1.0 - shrink)).max(1.0) as i32;
+                let lr = ((hrw as f32) * (1.0 - shrink)).max(1.0) as i32;
+                let layer_dim = darken(bark, (layer as u8) * 12);
+                let layer_col = if layer == 0 { bark } else { layer_dim };
 
-                    set(grid, root_x - ll, cy, '╚', layer_col);
-                    set(grid, root_x + lr, cy, '╝', layer_col);
-                    for dx in (-ll + 1)..lr {
-                        let ch = if layer == 0 {
-                            ['░', '▒', '░', '·'][rng.random_range(0..4u32) as usize]
-                        } else {
-                            ['▒', '▓', '█', '▒'][rng.random_range(0..4u32) as usize]
-                        };
-                        set(grid, root_x + dx, cy, ch, dim);
-                    }
-                    set(grid, root_x, cy, '╩', if layer == 0 { color } else { layer_col });
-
-                    cy -= 1;
-                    set(grid, root_x - ll, cy, '╔', layer_col);
-                    set(grid, root_x + lr, cy, '╗', layer_col);
-                    for dx in (-ll + 1)..lr {
-                        set(grid, root_x + dx, cy, '═', layer_col);
-                    }
-                    set(grid, root_x, cy, '╦', if layer == 0 { color } else { layer_col });
-
-                    if layer == 0 && energy > 0.6 {
-                        set(grid, root_x - ll - 1, root_y, '╱', dim);
-                        set(grid, root_x + lr + 1, root_y, '╲', dim);
-                    }
-
-                    cy -= 1;
-                }
-
-                let last_shrink = (layers - 1) as f32 * 0.3;
-                let exit_l = ((hlw as f32) * (1.0 - last_shrink)).max(1.0) as i32;
-                let exit_r = ((hrw as f32) * (1.0 - last_shrink)).max(1.0) as i32;
-                BoleExit { x: root_x, y: cy + 1, left: exit_l, right: exit_r }
-            }
-            // Style 3: Diamond -- compact: wide ground row + 1-2 taper rows
-            3 => {
-                let energy = energy.clamp(0.2, 1.0);
-                let max_half_w = lw.max(rw).max(2);
-                let mut cy = root_y;
-
-                // Ground row: widest point with diamond endpoints and arrow caps
-                set(grid, root_x, cy, '◆', color);
-                for dx in 1..=max_half_w {
-                    let ch = if dx == max_half_w { '◇' } else { '═' };
-                    let c = lighten(color, ((dx as u8) * 4).min(25));
-                    set(grid, root_x - dx, cy, ch, c);
-                    set(grid, root_x + dx, cy, ch, c);
-                }
-                set(grid, root_x - max_half_w - 1, cy, '◁', dim);
-                set(grid, root_x + max_half_w + 1, cy, '▷', dim);
-                cy -= 1;
-
-                // 1-2 taper rows contracting upward
-                let taper_rows = if energy > 0.5 { 2 } else { 1 };
-                for row in 0..taper_rows {
-                    let hw = ((taper_rows - row) as f32 / (taper_rows + 1) as f32 * max_half_w as f32).ceil() as i32;
-                    let row_col = lighten(bark, ((row + 1) as u8 * 8).min(35));
-                    set(grid, root_x, cy, '│', row_col);
-                    for dx in 1..=hw {
-                        let ch = if dx == hw { '◇' } else if dx % 2 == 0 { '─' } else { '◆' };
-                        set(grid, root_x - dx, cy, ch, row_col);
-                        set(grid, root_x + dx, cy, ch, row_col);
-                    }
-                    cy -= 1;
-                }
-
-                let exit_hw = (1.0f32 / (taper_rows + 1) as f32 * max_half_w as f32).ceil() as i32;
-                BoleExit { x: root_x, y: cy + 1, left: exit_hw, right: exit_hw }
-            }
-            // Style 4: Chevron -- energy-scaled layered V-shapes with variable center
-            4 => {
-                let energy = energy.clamp(0.2, 1.0);
-                // Number of chevron layers: 1 at low, up to 4 at high
-                let layers = if compact { 1 } else { ((energy * 3.5).ceil() as i32).clamp(1, 4) };
-                let mut cy = root_y;
-
-                // Ground row: base chevron V
-                set(grid, root_x, cy, '┴', color);
-                let ll = lw.max(2);
-                let rl = rw.max(2);
-                for dx in 1..=ll {
-                    let c = lighten(bark, ((dx as u8) * 5).min(35));
-                    set(grid, root_x - dx, cy, '╱', c);
-                }
-                for dx in 1..=rl {
-                    let c = lighten(bark, ((dx as u8) * 5).min(35));
-                    set(grid, root_x + dx, cy, '╲', c);
-                }
-                set(grid, root_x - ll - 1, cy, '─', dim);
-                set(grid, root_x + rl + 1, cy, '─', dim);
-                cy -= 1;
-
-                // Stacked chevron layers, each narrower
-                for layer in 0..layers {
-                    let shrink = (layer + 1) as f32 * 0.22;
-                    let cl = ((ll as f32) * (1.0 - shrink)).max(1.0) as i32;
-                    let cr = ((rl as f32) * (1.0 - shrink)).max(1.0) as i32;
-                    let lc = if layer == 0 { bark } else { lighten(bark, (layer as u8 * 8).min(30)) };
-
-                    // Inverted V (∧ shape)
-                    let center_ch = match rng.random_range(0..3u32) {
-                        0 => '∧',
-                        1 => '△',
-                        _ => '▵',
+                set(grid, root_x - ll, cy, '╚', layer_col);
+                set(grid, root_x + lr, cy, '╝', layer_col);
+                for dx in (-ll + 1)..lr {
+                    let ch = if layer == 0 {
+                        ['░', '▒', '░', '·'][rng.random_range(0..4u32) as usize]
+                    } else {
+                        ['▒', '▓', '█', '▒'][rng.random_range(0..4u32) as usize]
                     };
-                    set(grid, root_x, cy, center_ch, color);
-                    for dx in 1..=cl {
-                        set(grid, root_x - dx, cy, '╱', lc);
-                    }
-                    for dx in 1..=cr {
-                        set(grid, root_x + dx, cy, '╲', lc);
-                    }
-                    // Horizontal stubs at tips
-                    if cl > 1 {
-                        set(grid, root_x - cl - 1, cy, '─', lighten(lc, 15));
-                    }
-                    if cr > 1 {
-                        set(grid, root_x + cr + 1, cy, '─', lighten(lc, 15));
-                    }
+                    set(grid, root_x + dx, cy, ch, dim);
+                }
+                set(
+                    grid,
+                    root_x,
+                    cy,
+                    '╩',
+                    if layer == 0 { color } else { layer_col },
+                );
 
-                    cy -= 1;
+                cy -= 1;
+                set(grid, root_x - ll, cy, '╔', layer_col);
+                set(grid, root_x + lr, cy, '╗', layer_col);
+                for dx in (-ll + 1)..lr {
+                    set(grid, root_x + dx, cy, '═', layer_col);
+                }
+                set(
+                    grid,
+                    root_x,
+                    cy,
+                    '╦',
+                    if layer == 0 { color } else { layer_col },
+                );
 
-                    // Only add V shape between layers if not last
-                    if layer < layers - 1 {
-                        let vcl = ((cl as f32) * 0.7).max(1.0) as i32;
-                        let vcr = ((cr as f32) * 0.7).max(1.0) as i32;
-                        let vc = match rng.random_range(0..3u32) {
-                            0 => '∨',
-                            1 => '▽',
-                            _ => '▿',
-                        };
-                        set(grid, root_x, cy, vc, lc);
-                        for dx in 1..=vcl {
-                            set(grid, root_x - dx, cy, '╲', lighten(lc, 10));
-                        }
-                        for dx in 1..=vcr {
-                            set(grid, root_x + dx, cy, '╱', lighten(lc, 10));
-                        }
-                        cy -= 1;
-                    }
+                if layer == 0 && energy > 0.6 {
+                    set(grid, root_x - ll - 1, root_y, '╱', dim);
+                    set(grid, root_x + lr + 1, root_y, '╲', dim);
                 }
 
-                BoleExit::point(root_x, cy + 1)
+                cy -= 1;
             }
-            // Style 5: Frame2 -- connected/overlapping stacked frames, shared borders
-            5 => {
-                let energy = energy.clamp(0.2, 1.0);
-                // Layer count: 1-3, varies with energy but not always max
-                let max_layers = if compact { 1 } else { ((energy * 3.0).ceil() as i32).clamp(1, 3) };
-                let layers = if max_layers > 1 {
-                    rng.random_range(1..(max_layers + 1) as u32) as i32
+
+            let last_shrink = (layers - 1) as f32 * 0.3;
+            let exit_l = ((hlw as f32) * (1.0 - last_shrink)).max(1.0) as i32;
+            let exit_r = ((hrw as f32) * (1.0 - last_shrink)).max(1.0) as i32;
+            BoleExit {
+                x: root_x,
+                y: cy + 1,
+                left: exit_l,
+                right: exit_r,
+            }
+        }
+        // Style 3: Diamond -- compact: wide ground row + 1-2 taper rows
+        3 => {
+            let energy = energy.clamp(0.2, 1.0);
+            let max_half_w = lw.max(rw).max(2);
+            let mut cy = root_y;
+
+            // Ground row: widest point with diamond endpoints and arrow caps
+            set(grid, root_x, cy, '◆', color);
+            for dx in 1..=max_half_w {
+                let ch = if dx == max_half_w { '◇' } else { '═' };
+                let c = lighten(color, ((dx as u8) * 4).min(25));
+                set(grid, root_x - dx, cy, ch, c);
+                set(grid, root_x + dx, cy, ch, c);
+            }
+            set(grid, root_x - max_half_w - 1, cy, '◁', dim);
+            set(grid, root_x + max_half_w + 1, cy, '▷', dim);
+            cy -= 1;
+
+            // 1-2 taper rows contracting upward
+            let taper_rows = if energy > 0.5 { 2 } else { 1 };
+            for row in 0..taper_rows {
+                let hw = ((taper_rows - row) as f32 / (taper_rows + 1) as f32 * max_half_w as f32)
+                    .ceil() as i32;
+                let row_col = lighten(bark, ((row + 1) as u8 * 8).min(35));
+                set(grid, root_x, cy, '│', row_col);
+                for dx in 1..=hw {
+                    let ch = if dx == hw {
+                        '◇'
+                    } else if dx % 2 == 0 {
+                        '─'
+                    } else {
+                        '◆'
+                    };
+                    set(grid, root_x - dx, cy, ch, row_col);
+                    set(grid, root_x + dx, cy, ch, row_col);
+                }
+                cy -= 1;
+            }
+
+            let exit_hw = (1.0f32 / (taper_rows + 1) as f32 * max_half_w as f32).ceil() as i32;
+            BoleExit {
+                x: root_x,
+                y: cy + 1,
+                left: exit_hw,
+                right: exit_hw,
+            }
+        }
+        // Style 4: Chevron -- energy-scaled layered V-shapes with variable center
+        4 => {
+            let energy = energy.clamp(0.2, 1.0);
+            // Number of chevron layers: 1 at low, up to 4 at high
+            let layers = if compact {
+                1
+            } else {
+                ((energy * 3.5).ceil() as i32).clamp(1, 4)
+            };
+            let mut cy = root_y;
+
+            // Ground row: base chevron V
+            set(grid, root_x, cy, '┴', color);
+            let ll = lw.max(2);
+            let rl = rw.max(2);
+            for dx in 1..=ll {
+                let c = lighten(bark, ((dx as u8) * 5).min(35));
+                set(grid, root_x - dx, cy, '╱', c);
+            }
+            for dx in 1..=rl {
+                let c = lighten(bark, ((dx as u8) * 5).min(35));
+                set(grid, root_x + dx, cy, '╲', c);
+            }
+            set(grid, root_x - ll - 1, cy, '─', dim);
+            set(grid, root_x + rl + 1, cy, '─', dim);
+            cy -= 1;
+
+            // Stacked chevron layers, each narrower
+            for layer in 0..layers {
+                let shrink = (layer + 1) as f32 * 0.22;
+                let cl = ((ll as f32) * (1.0 - shrink)).max(1.0) as i32;
+                let cr = ((rl as f32) * (1.0 - shrink)).max(1.0) as i32;
+                let lc = if layer == 0 {
+                    bark
+                } else {
+                    lighten(bark, (layer as u8 * 8).min(30))
+                };
+
+                // Inverted V (∧ shape)
+                let center_ch = match rng.random_range(0..3u32) {
+                    0 => '∧',
+                    1 => '△',
+                    _ => '▵',
+                };
+                set(grid, root_x, cy, center_ch, color);
+                for dx in 1..=cl {
+                    set(grid, root_x - dx, cy, '╱', lc);
+                }
+                for dx in 1..=cr {
+                    set(grid, root_x + dx, cy, '╲', lc);
+                }
+                // Horizontal stubs at tips
+                if cl > 1 {
+                    set(grid, root_x - cl - 1, cy, '─', lighten(lc, 15));
+                }
+                if cr > 1 {
+                    set(grid, root_x + cr + 1, cy, '─', lighten(lc, 15));
+                }
+
+                cy -= 1;
+
+                // Only add V shape between layers if not last
+                if layer < layers - 1 {
+                    let vcl = ((cl as f32) * 0.7).max(1.0) as i32;
+                    let vcr = ((cr as f32) * 0.7).max(1.0) as i32;
+                    let vc = match rng.random_range(0..3u32) {
+                        0 => '∨',
+                        1 => '▽',
+                        _ => '▿',
+                    };
+                    set(grid, root_x, cy, vc, lc);
+                    for dx in 1..=vcl {
+                        set(grid, root_x - dx, cy, '╲', lighten(lc, 10));
+                    }
+                    for dx in 1..=vcr {
+                        set(grid, root_x + dx, cy, '╱', lighten(lc, 10));
+                    }
+                    cy -= 1;
+                }
+            }
+
+            BoleExit::point(root_x, cy + 1)
+        }
+        // Style 5: Frame2 -- connected/overlapping stacked frames, shared borders
+        5 => {
+            let energy = energy.clamp(0.2, 1.0);
+            // Layer count: 1-3, varies with energy but not always max
+            let max_layers = if compact {
+                1
+            } else {
+                ((energy * 3.0).ceil() as i32).clamp(1, 3)
+            };
+            let layers = if max_layers > 1 {
+                rng.random_range(1..(max_layers + 1) as u32) as i32
+            } else {
+                1
+            };
+            let mut cy = root_y;
+            let mut cur_lw = lw.max(2);
+            let mut cur_rw = rw.max(2);
+
+            for layer in 0..layers {
+                let layer_col = if layer == 0 { color } else { bark };
+                let fill_col = if layer == 0 { bark } else { dim };
+                // Variable height per layer: 1-3 interior rows
+                let interior_h = if compact {
+                    1
+                } else if energy > 0.7 {
+                    rng.random_range(1..4u32) as i32
+                } else if energy > 0.4 {
+                    rng.random_range(1..3u32) as i32
                 } else {
                     1
                 };
-                let mut cy = root_y;
-                let mut cur_lw = lw.max(2);
-                let mut cur_rw = rw.max(2);
 
-                for layer in 0..layers {
-                    let layer_col = if layer == 0 { color } else { bark };
-                    let fill_col = if layer == 0 { bark } else { dim };
-                    // Variable height per layer: 1-3 interior rows
-                    let interior_h = if compact { 1 } else if energy > 0.7 {
-                        rng.random_range(1..4u32) as i32
-                    } else if energy > 0.4 {
-                        rng.random_range(1..3u32) as i32
+                // Bottom border (shared with previous layer's top if not first)
+                if layer == 0 {
+                    set(grid, root_x - cur_lw, cy, '╚', layer_col);
+                    set(grid, root_x + cur_rw, cy, '╝', layer_col);
+                    for dx in (-cur_lw + 1)..cur_rw {
+                        set(grid, root_x + dx, cy, '═', layer_col);
+                    }
+                    set(grid, root_x, cy, '╩', color);
+                    // Buttress legs at base
+                    if energy > 0.5 {
+                        set(grid, root_x - cur_lw - 1, cy, '╱', fill_col);
+                        set(grid, root_x + cur_rw + 1, cy, '╲', fill_col);
+                    }
+                }
+
+                // Interior fill rows
+                for row in 0..interior_h {
+                    cy -= 1;
+                    set(grid, root_x - cur_lw, cy, '║', color);
+                    set(grid, root_x + cur_rw, cy, '║', color);
+                    let fills = if row == 0 {
+                        ['░', '▒', '░', '·']
                     } else {
-                        1
+                        ['▒', '▓', '█', '▒']
                     };
-
-                    // Bottom border (shared with previous layer's top if not first)
-                    if layer == 0 {
-                        set(grid, root_x - cur_lw, cy, '╚', layer_col);
-                        set(grid, root_x + cur_rw, cy, '╝', layer_col);
-                        for dx in (-cur_lw + 1)..cur_rw {
-                            set(grid, root_x + dx, cy, '═', layer_col);
-                        }
-                        set(grid, root_x, cy, '╩', color);
-                        // Buttress legs at base
-                        if energy > 0.5 {
-                            set(grid, root_x - cur_lw - 1, cy, '╱', fill_col);
-                            set(grid, root_x + cur_rw + 1, cy, '╲', fill_col);
-                        }
-                    }
-
-                    // Interior fill rows
-                    for row in 0..interior_h {
-                        cy -= 1;
-                        set(grid, root_x - cur_lw, cy, '║', color);
-                        set(grid, root_x + cur_rw, cy, '║', color);
-                        let fills = if row == 0 {
-                            ['░', '▒', '░', '·']
-                        } else {
-                            ['▒', '▓', '█', '▒']
-                        };
-                        for dx in (-cur_lw + 1)..cur_rw {
-                            let ch = fills[rng.random_range(0..4u32) as usize];
-                            set(grid, root_x + dx, cy, ch, layer_col);
-                        }
-                        set(grid, root_x, cy, '│', color);
-                    }
-
-                    // Top border / shared border with next layer
-                    cy -= 1;
-                    if layer < layers - 1 {
-                        // Shared border: next layer is narrower, so draw T-junctions
-                        let next_lw = ((cur_lw as f32) * (0.55 + rng.random::<f32>() * 0.25)).max(1.0) as i32;
-                        let next_rw = ((cur_rw as f32) * (0.55 + rng.random::<f32>() * 0.25)).max(1.0) as i32;
-                        // Full width top of current layer
-                        set(grid, root_x - cur_lw, cy, '╔', layer_col);
-                        set(grid, root_x + cur_rw, cy, '╗', layer_col);
-                        for dx in (-cur_lw + 1)..cur_rw {
-                            set(grid, root_x + dx, cy, '═', layer_col);
-                        }
-                        // Overwrite with junction chars where next layer's walls will be
-                        set(grid, root_x - next_lw, cy, '╠', layer_col);
-                        set(grid, root_x + next_rw, cy, '╣', layer_col);
-                        set(grid, root_x, cy, '╬', color);
-                        cur_lw = next_lw;
-                        cur_rw = next_rw;
-                    } else {
-                        // Final top border
-                        set(grid, root_x - cur_lw, cy, '╔', layer_col);
-                        set(grid, root_x + cur_rw, cy, '╗', layer_col);
-                        for dx in (-cur_lw + 1)..cur_rw {
-                            set(grid, root_x + dx, cy, '═', layer_col);
-                        }
-                        set(grid, root_x, cy, '╦', color);
-                    }
-                }
-
-                BoleExit { x: root_x, y: cy, left: cur_lw, right: cur_rw }
-            }
-            // Style 6: Crescent2 -- turbo crescent with hips, valid box-drawing connections
-            6 => {
-                let energy = energy.clamp(0.2, 1.0);
-                let layers = if compact { 2 } else { ((energy * 4.0).ceil() as i32).clamp(2, 5) };
-                let mut cy = root_y;
-
-                // Ground layer: widest crescent with hip flares
-                set(grid, root_x, cy, '┴', color);
-                for dx in 1..=lw {
-                    let ch = if dx <= 2 { '═' } else { '◠' };
-                    set(grid, root_x - dx, cy, ch, lighten(color, ((dx as u8) * 3).min(25)));
-                }
-                for dx in 1..=rw {
-                    let ch = if dx <= 2 { '═' } else { '◠' };
-                    set(grid, root_x + dx, cy, ch, lighten(color, ((dx as u8) * 3).min(25)));
-                }
-                // Hip flares: curved outward kicks
-                set(grid, root_x - lw - 1, cy, '╮', bark);
-                set(grid, root_x + rw + 1, cy, '╭', bark);
-                if lw > 2 {
-                    set(grid, root_x - lw - 2, cy, '─', dim);
-                    set(grid, root_x - lw - 1, cy - 1, '│', bark);
-                    set(grid, root_x - lw - 1, cy + 1, '╯', dim);
-                }
-                if rw > 2 {
-                    set(grid, root_x + rw + 2, cy, '─', dim);
-                    set(grid, root_x + rw + 1, cy - 1, '│', bark);
-                    set(grid, root_x + rw + 1, cy + 1, '╰', dim);
-                }
-                cy -= 1;
-
-                // Stacked crescent arcs, each narrower with random horizontal offsets
-                for layer in 1..layers {
-                    let shrink = layer as f32 * 0.2;
-                    let ll = ((lw as f32) * (1.0 - shrink)).max(1.0) as i32;
-                    let lr = ((rw as f32) * (1.0 - shrink)).max(1.0) as i32;
-                    let offset = rng.random_range(0..3u32) as i32 - 1; // -1, 0, or 1
-                    let cx = root_x + offset;
-                    let lc = lighten(bark, (layer as u8 * 6).min(30));
-
-                    set(grid, cx, cy, '┴', lc);
-                    for dx in 1..=ll {
-                        let ch = ['◠', '◡', '◟', '◞'][rng.random_range(0..4u32) as usize];
-                        set(grid, cx - dx, cy, ch, lighten(lc, ((dx as u8) * 4).min(20)));
-                    }
-                    for dx in 1..=lr {
-                        let ch = ['◠', '◡', '◟', '◞'][rng.random_range(0..4u32) as usize];
-                        set(grid, cx + dx, cy, ch, lighten(lc, ((dx as u8) * 4).min(20)));
-                    }
-                    // Connect back to center if offset
-                    if offset != 0 {
-                        set(grid, root_x, cy, '│', color);
-                    }
-                    // Nip details at crescent tips
-                    set(grid, cx - ll - 1, cy, '◜', lighten(lc, 15));
-                    set(grid, cx + lr + 1, cy, '◝', lighten(lc, 15));
-                    cy -= 1;
-                }
-
-                let last_shrink = (layers - 1) as f32 * 0.2;
-                let exit_l = ((lw as f32) * (1.0 - last_shrink)).max(1.0) as i32;
-                let exit_r = ((rw as f32) * (1.0 - last_shrink)).max(1.0) as i32;
-                BoleExit { x: root_x, y: cy + 1, left: exit_l, right: exit_r }
-            }
-            // Style 7: Braille2 -- thick braille with tapered trunk exit
-            7 => {
-                let energy = energy.clamp(0.2, 1.0);
-                let dense = ['⣿', '⣾', '⣷', '⣶', '⣤'];
-                let mid   = ['⡇', '⢸', '⠿', '⠶', '⠛'];
-                let thin  = ['⡀', '⢀', '⠂', '⠈', '⠁'];
-                let rows = if compact { 2 } else { ((energy * 4.0).ceil() as i32 + 1).clamp(2, 5) };
-                let mut cy = root_y;
-                let base_w = lw.max(rw).max(2);
-
-                for row in 0..rows {
-                    let frac = row as f32 / rows as f32;
-                    let hw = ((base_w as f32) * (1.0 - frac * 0.5)).max(1.0) as i32;
-                    let chars = if frac < 0.3 { &dense } else if frac < 0.6 { &mid } else { &thin };
-                    let rc = if row == 0 { color } else { darken(color, (row as u8 * 4).min(15)) };
-
-                    // Asymmetric: left and right can have different widths
-                    let lhw = hw + rng.random_range(0..2u32) as i32;
-                    let rhw = hw + rng.random_range(0..2u32) as i32;
-
-                    set(grid, root_x, cy, chars[0], rc);
-                    for dx in 1..=lhw {
-                        set(grid, root_x - dx, cy, chars[rng.random_range(0..chars.len() as u32) as usize], darken(rc, ((dx as u8) * 2).min(10)));
-                    }
-                    for dx in 1..=rhw {
-                        set(grid, root_x + dx, cy, chars[rng.random_range(0..chars.len() as u32) as usize], darken(rc, ((dx as u8) * 2).min(10)));
-                    }
-                    cy -= 1;
-                }
-
-                // Taper: 1-2 rows of transition from thick braille to single │
-                let taper_rows = if base_w > 3 { 2 } else { 1 };
-                for t in 0..taper_rows {
-                    let tw = (taper_rows - t).min(2);
-                    let tc = ['⡇', '⢸', '│'][t as usize % 3];
-                    set(grid, root_x, cy, tc, bark);
-                    if tw > 1 {
-                        set(grid, root_x - 1, cy, '⡀', dim);
-                        set(grid, root_x + 1, cy, '⢀', dim);
-                    }
-                    cy -= 1;
-                }
-
-                let exit_hw = if base_w > 3 { 1 } else { 0 };
-                BoleExit { x: root_x, y: cy + 1, left: exit_hw, right: exit_hw }
-            }
-            // Style 8: Frame3 -- stacked boxes, heaviest at bottom, randomly off-center
-            8 => {
-                let energy = energy.clamp(0.2, 1.0);
-                let boxes = if compact { 1 } else { ((energy * 3.0).ceil() as i32).clamp(1, 4) };
-                let mut cy = root_y;
-                let mut cur_lw = lw.max(3);
-                let mut cur_rw = rw.max(3);
-                let mut cx = root_x;
-
-                for b in 0..boxes {
-                    let bc = if b == 0 { color } else { lighten(bark, (b as u8 * 8).min(25)) };
-                    let fc = if b == 0 { bark } else { lighten(dim, (b as u8 * 5).min(20)) };
-                    // Interior height: biggest box at bottom, smaller going up
-                    let interior = if compact { 1 } else if b == 0 {
-                        ((energy * 3.0).ceil() as i32).clamp(1, 3)
-                    } else {
-                        rng.random_range(1..3u32) as i32
-                    };
-
-                    // Bottom edge
-                    set(grid, cx - cur_lw, cy, '╘', bc);
-                    set(grid, cx + cur_rw, cy, '╛', bc);
                     for dx in (-cur_lw + 1)..cur_rw {
-                        set(grid, cx + dx, cy, '═', bc);
-                    }
-                    set(grid, cx, cy, '╧', bc);
-
-                    // Interior rows
-                    for row in 0..interior {
-                        cy -= 1;
-                        set(grid, cx - cur_lw, cy, '│', bc);
-                        set(grid, cx + cur_rw, cy, '│', bc);
-                        let fills = if row == 0 { ['░', '▒', '░', '·'] } else { ['▒', '▓', '▒', '░'] };
-                        for dx in (-cur_lw + 1)..cur_rw {
-                            set(grid, cx + dx, cy, fills[rng.random_range(0..4u32) as usize], fc);
-                        }
-                        set(grid, cx, cy, '│', bc);
-                    }
-
-                    // Top edge
-                    cy -= 1;
-                    set(grid, cx - cur_lw, cy, '╒', bc);
-                    set(grid, cx + cur_rw, cy, '╓', bc);
-                    for dx in (-cur_lw + 1)..cur_rw {
-                        set(grid, cx + dx, cy, '═', bc);
-                    }
-                    set(grid, cx, cy, '╤', bc);
-
-                    // Next box: narrower and randomly offset
-                    let next_lw = ((cur_lw as f32) * (0.5 + rng.random::<f32>() * 0.3)).max(1.0) as i32;
-                    let next_rw = ((cur_rw as f32) * (0.5 + rng.random::<f32>() * 0.3)).max(1.0) as i32;
-                    let drift = rng.random_range(0..3u32) as i32 - 1;
-                    cx += drift;
-                    cur_lw = next_lw;
-                    cur_rw = next_rw;
-
-                    // Connector between boxes: vertical line back to root_x
-                    if b < boxes - 1 {
-                        cy -= 1;
-                        if cx != root_x {
-                            // Draw connector from root_x to cx
-                            let dir = if cx > root_x { 1 } else { -1 };
-                            set(grid, root_x, cy, if dir > 0 { '╰' } else { '╯' }, bc);
-                            for sx in 1..(cx - root_x).abs() {
-                                set(grid, root_x + sx * dir, cy, '─', bc);
-                            }
-                            set(grid, cx, cy, if dir > 0 { '╮' } else { '╭' }, bc);
-                            cy -= 1;
-                        }
-                    }
-                }
-
-                // Final trunk connector at root_x
-                if cx != root_x {
-                    let dir = if root_x > cx { 1 } else { -1 };
-                    set(grid, cx, cy, if dir > 0 { '╰' } else { '╯' }, bark);
-                    for sx in 1..(root_x - cx).abs() {
-                        set(grid, cx + sx * dir, cy, '─', bark);
-                    }
-                    set(grid, root_x, cy, if dir > 0 { '╮' } else { '╭' }, bark);
-                    cy -= 1;
-                }
-                BoleExit { x: root_x, y: cy + 1, left: cur_lw, right: cur_rw }
-            }
-            // Style 9: Diamond2 -- asymmetric diamond with cross-hatching
-            9 => {
-                let energy = energy.clamp(0.2, 1.0);
-                let total_h = if compact { 3 } else { ((energy * 5.0).ceil() as i32 + 2).clamp(3, 7) };
-                let mut cy = root_y;
-                // Asymmetric: bottom half taller than top
-                let bot_h = if compact { 1 } else { (total_h * 2 / 3).max(2) };
-                let top_h = if compact { 1 } else { (total_h - bot_h).max(1) };
-                let max_lw = lw.max(2);
-                let max_rw = rw.max(2);
-
-                // Bottom: expanding upward, left and right sides grow at different rates
-                for row in 0..bot_h {
-                    let frac = (row + 1) as f32 / bot_h as f32;
-                    let hw_l = (frac * max_lw as f32).ceil() as i32;
-                    let hw_r = (frac * max_rw as f32).ceil() as i32;
-                    let rc = lighten(bark, ((bot_h - row) as u8 * 4).min(25));
-                    set(grid, root_x, cy, if row == 0 { '╨' } else { '│' }, color);
-                    for dx in 1..=hw_l {
-                        let ch = if rng.random_range(0..4u32) == 0 { '╳' } else if dx % 2 == 0 { '─' } else { '◆' };
-                        set(grid, root_x - dx, cy, ch, rc);
-                    }
-                    for dx in 1..=hw_r {
-                        let ch = if rng.random_range(0..4u32) == 0 { '╳' } else if dx % 2 == 0 { '─' } else { '◆' };
-                        set(grid, root_x + dx, cy, ch, rc);
-                    }
-                    cy -= 1;
-                }
-
-                // Widest row: asymmetric
-                set(grid, root_x, cy, '◆', color);
-                for dx in 1..=max_lw {
-                    let ch = if dx % 3 == 0 { '╳' } else { '═' };
-                    set(grid, root_x - dx, cy, ch, lighten(color, ((dx as u8) * 3).min(20)));
-                }
-                for dx in 1..=max_rw {
-                    let ch = if dx % 3 == 0 { '╳' } else { '═' };
-                    set(grid, root_x + dx, cy, ch, lighten(color, ((dx as u8) * 3).min(20)));
-                }
-                set(grid, root_x - max_lw - 1, cy, '◁', dim);
-                set(grid, root_x + max_rw + 1, cy, '▷', dim);
-                cy -= 1;
-
-                // Top: contracting, shorter than bottom
-                for row in 0..top_h {
-                    let frac = (top_h - row) as f32 / top_h as f32;
-                    let hw_l = (frac * max_lw as f32).ceil() as i32;
-                    let hw_r = (frac * max_rw as f32).ceil() as i32;
-                    let rc = lighten(bark, ((row + 1) as u8 * 7).min(35));
-                    set(grid, root_x, cy, '│', rc);
-                    for dx in 1..=hw_l {
-                        let ch = if rng.random_range(0..5u32) == 0 { '╳' } else if dx % 2 == 0 { '─' } else { '◇' };
-                        set(grid, root_x - dx, cy, ch, rc);
-                    }
-                    for dx in 1..=hw_r {
-                        let ch = if rng.random_range(0..5u32) == 0 { '╳' } else if dx % 2 == 0 { '─' } else { '◇' };
-                        set(grid, root_x + dx, cy, ch, rc);
-                    }
-                    cy -= 1;
-                }
-
-                let exit_hw_l = (1.0f32 / top_h as f32 * max_lw as f32).ceil() as i32;
-                let exit_hw_r = (1.0f32 / top_h as f32 * max_rw as f32).ceil() as i32;
-                BoleExit { x: root_x, y: cy + 1, left: exit_hw_l, right: exit_hw_r }
-            }
-            // Style 10: Chevron2 -- chevron with horizontal sprawl near base
-            10 => {
-                let energy = energy.clamp(0.2, 1.0);
-                let layers = if compact { 1 } else { ((energy * 3.5).ceil() as i32).clamp(1, 4) };
-                let mut cy = root_y;
-                let ll = lw.max(2);
-                let rl = rw.max(2);
-
-                // Ground sprawl: horizontal bars at base
-                set(grid, root_x, cy, '┴', color);
-                for dx in 1..=ll {
-                    set(grid, root_x - dx, cy, '═', lighten(bark, ((dx as u8) * 3).min(20)));
-                }
-                for dx in 1..=rl {
-                    set(grid, root_x + dx, cy, '═', lighten(bark, ((dx as u8) * 3).min(20)));
-                }
-                // Extended sprawl wings
-                let sprawl_l = ll + rng.random_range(1..4u32) as i32;
-                let sprawl_r = rl + rng.random_range(1..4u32) as i32;
-                for dx in (ll + 1)..=sprawl_l {
-                    set(grid, root_x - dx, cy, '─', dim);
-                }
-                for dx in (rl + 1)..=sprawl_r {
-                    set(grid, root_x + dx, cy, '─', dim);
-                }
-                set(grid, root_x - sprawl_l - 1, cy, '╴', lighten(dim, 10));
-                set(grid, root_x + sprawl_r + 1, cy, '╶', lighten(dim, 10));
-                cy -= 1;
-
-                // Base V with extra width
-                set(grid, root_x, cy, '∨', color);
-                for dx in 1..=ll {
-                    set(grid, root_x - dx, cy, '╲', lighten(bark, ((dx as u8) * 4).min(25)));
-                }
-                for dx in 1..=rl {
-                    set(grid, root_x + dx, cy, '╱', lighten(bark, ((dx as u8) * 4).min(25)));
-                }
-                // Horizontal extensions at V tips
-                set(grid, root_x - ll - 1, cy, '─', dim);
-                set(grid, root_x + rl + 1, cy, '─', dim);
-                cy -= 1;
-
-                // Chevron layers, each narrower, less horizontal sprawl
-                for layer in 0..layers {
-                    let shrink = (layer + 1) as f32 * 0.2;
-                    let cl = ((ll as f32) * (1.0 - shrink)).max(1.0) as i32;
-                    let cr = ((rl as f32) * (1.0 - shrink)).max(1.0) as i32;
-                    let lc = if layer == 0 { bark } else { lighten(bark, (layer as u8 * 7).min(30)) };
-
-                    // ∧ row
-                    let center_ch = ['∧', '△', '▵', '⟋'][rng.random_range(0..4u32) as usize];
-                    set(grid, root_x, cy, center_ch, color);
-                    for dx in 1..=cl {
-                        set(grid, root_x - dx, cy, '╱', lc);
-                    }
-                    for dx in 1..=cr {
-                        set(grid, root_x + dx, cy, '╲', lc);
-                    }
-                    // Sprawl decreases with height
-                    let h_sprawl = ((layers - layer) as f32 * 0.5).ceil() as i32;
-                    if h_sprawl > 0 {
-                        for s in 1..=h_sprawl {
-                            set(grid, root_x - cl - s, cy, '─', lighten(lc, 15));
-                            set(grid, root_x + cr + s, cy, '─', lighten(lc, 15));
-                        }
-                    }
-                    cy -= 1;
-
-                    if layer < layers - 1 {
-                        // ∨ row between layers
-                        let vcl = ((cl as f32) * 0.7).max(1.0) as i32;
-                        let vcr = ((cr as f32) * 0.7).max(1.0) as i32;
-                        let vc = ['∨', '▽', '▿'][rng.random_range(0..3u32) as usize];
-                        set(grid, root_x, cy, vc, lc);
-                        for dx in 1..=vcl {
-                            set(grid, root_x - dx, cy, '╲', lighten(lc, 10));
-                        }
-                        for dx in 1..=vcr {
-                            set(grid, root_x + dx, cy, '╱', lighten(lc, 10));
-                        }
-                        cy -= 1;
-                    }
-                }
-
-                BoleExit::point(root_x, cy + 1)
-            }
-            // Style 11: Frame4 -- same as Frame3 but different corner style
-            11 => {
-                let energy = energy.clamp(0.2, 1.0);
-                let boxes = if compact { 1 } else { ((energy * 3.0).ceil() as i32).clamp(1, 3) };
-                let mut cy = root_y;
-                let mut cur_lw = lw.max(3);
-                let mut cur_rw = rw.max(3);
-                let mut cx = root_x;
-
-                for b in 0..boxes {
-                    let bc = if b == 0 { color } else { lighten(bark, (b as u8 * 10).min(30)) };
-                    let fc = if b == 0 { bark } else { dim };
-                    let interior = if compact { 1 } else if b == 0 {
-                        ((energy * 2.0).ceil() as i32).clamp(1, 3)
-                    } else {
-                        1
-                    };
-
-                    // Bottom
-                    set(grid, cx - cur_lw, cy, '└', bc);
-                    set(grid, cx + cur_rw, cy, '┘', bc);
-                    for dx in (-cur_lw + 1)..cur_rw {
-                        set(grid, cx + dx, cy, '─', bc);
-                    }
-                    set(grid, cx, cy, '┴', bc);
-
-                    for row in 0..interior {
-                        cy -= 1;
-                        set(grid, cx - cur_lw, cy, '│', bc);
-                        set(grid, cx + cur_rw, cy, '│', bc);
-                        let fills = ['·', '∙', '·', ' '];
-                        for dx in (-cur_lw + 1)..cur_rw {
-                            set(grid, cx + dx, cy, fills[rng.random_range(0..4u32) as usize], fc);
-                        }
-                        set(grid, cx, cy, '│', bc);
-                    }
-
-                    cy -= 1;
-                    set(grid, cx - cur_lw, cy, '┌', bc);
-                    set(grid, cx + cur_rw, cy, '┐', bc);
-                    for dx in (-cur_lw + 1)..cur_rw {
-                        set(grid, cx + dx, cy, '─', bc);
-                    }
-                    set(grid, cx, cy, '┬', bc);
-
-                    let next_lw = ((cur_lw as f32) * (0.5 + rng.random::<f32>() * 0.3)).max(1.0) as i32;
-                    let next_rw = ((cur_rw as f32) * (0.5 + rng.random::<f32>() * 0.3)).max(1.0) as i32;
-                    let drift = rng.random_range(0..3u32) as i32 - 1;
-                    cx += drift;
-                    cur_lw = next_lw;
-                    cur_rw = next_rw;
-
-                    if b < boxes - 1 {
-                        cy -= 1;
-                        if cx != root_x {
-                            let dir = if cx > root_x { 1 } else { -1 };
-                            set(grid, root_x, cy, if dir > 0 { '╰' } else { '╯' }, bc);
-                            for sx in 1..(cx - root_x).abs() {
-                                set(grid, root_x + sx * dir, cy, '─', bc);
-                            }
-                            set(grid, cx, cy, if dir > 0 { '╮' } else { '╭' }, bc);
-                            cy -= 1;
-                        }
-                    }
-                }
-
-                if cx != root_x {
-                    let dir = if root_x > cx { 1 } else { -1 };
-                    set(grid, cx, cy, if dir > 0 { '╰' } else { '╯' }, bark);
-                    for sx in 1..(root_x - cx).abs() {
-                        set(grid, cx + sx * dir, cy, '─', bark);
-                    }
-                    set(grid, root_x, cy, if dir > 0 { '╮' } else { '╭' }, bark);
-                    cy -= 1;
-                }
-                BoleExit { x: root_x, y: cy + 1, left: cur_lw, right: cur_rw }
-            }
-            // Style 15: Keel -- short fat asymmetric hull, 2-4 rows max
-            15 => {
-                let energy = energy.clamp(0.2, 1.0);
-                let total_h = if compact { 2 } else { ((energy * 2.0).ceil() as i32 + 1).clamp(2, 4) };
-                let mut cy = root_y;
-                let bias = if rng.random::<bool>() { 1.4f32 } else { 0.6f32 };
-                let max_lw = ((lw as f32) * bias * 1.3).max(3.0) as i32;
-                let max_rw = ((rw as f32) * (2.0 - bias) * 1.3).max(3.0) as i32;
-
-                for row in 0..total_h {
-                    let frac = 1.0 - (row as f32 / total_h as f32);
-                    let hl = (max_lw as f32 * frac).ceil() as i32;
-                    let hr = (max_rw as f32 * frac).ceil() as i32;
-                    let rc = if row == 0 { color } else { lighten(bark, ((row as u8) * 6).min(25)) };
-
-                    if row == 0 {
-                        set(grid, root_x, cy, '╨', color);
-                        set(grid, root_x - 1, cy, '═', color);
-                        set(grid, root_x + 1, cy, '═', color);
-                        for dx in 2..=hl {
-                            let ch = if dx % 3 == 0 { '◆' } else { '═' };
-                            set(grid, root_x - dx, cy, ch, rc);
-                        }
-                        for dx in 2..=hr {
-                            let ch = if dx % 3 == 0 { '◇' } else { '═' };
-                            set(grid, root_x + dx, cy, ch, rc);
-                        }
-                        set(grid, root_x - hl - 1, cy, '╘', dim);
-                        set(grid, root_x + hr + 1, cy, '╛', dim);
-                    } else {
-                        set(grid, root_x, cy, '│', rc);
-                        for dx in 1..=hl {
-                            let ch = ['─', '─', '◇', '─', '═'][rng.random_range(0..5u32) as usize];
-                            set(grid, root_x - dx, cy, ch, rc);
-                        }
-                        for dx in 1..=hr {
-                            let ch = ['─', '─', '◇', '─', '═'][rng.random_range(0..5u32) as usize];
-                            set(grid, root_x + dx, cy, ch, rc);
-                        }
-                        if hl > 0 { set(grid, root_x - hl, cy, '╲', rc); }
-                        if hr > 0 { set(grid, root_x + hr, cy, '╱', rc); }
-                    }
-                    cy -= 1;
-                }
-
-                let exit_frac = 1.0 - ((total_h - 1) as f32 / total_h as f32);
-                let exit_l = (max_lw as f32 * exit_frac).ceil() as i32;
-                let exit_r = (max_rw as f32 * exit_frac).ceil() as i32;
-                BoleExit { x: root_x, y: cy + 1, left: exit_l, right: exit_r }
-            }
-            // Style 17: Buttress -- bright bold curved grounding legs
-            17 => {
-                let energy = energy.clamp(0.2, 1.0);
-                let mut cy = root_y;
-
-                let left_reach = lw.max(2) + rng.random_range(1..4u32) as i32;
-                let right_reach = rw.max(2) + rng.random_range(0..3u32) as i32;
-
-                // Ground anchor: bold and bright
-                set(grid, root_x, cy, '╨', color);
-                set(grid, root_x - 1, cy, '═', color);
-                set(grid, root_x + 1, cy, '═', color);
-                if lw > 2 { set(grid, root_x - 2, cy, '═', bark); }
-                if rw > 2 { set(grid, root_x + 2, cy, '═', bark); }
-
-                // Left leg: curved, BRIGHT
-                let mut lx = root_x - 2;
-                let mut ly = cy;
-                set(grid, lx, ly, '╮', color);
-                for step in 0..left_reach {
-                    if step < left_reach / 3 {
-                        lx -= 1;
-                        set(grid, lx, ly, '─', color);
-                    } else if step == left_reach / 3 {
-                        lx -= 1;
-                        set(grid, lx, ly, '╮', lighten(color, 10));
-                        ly += 1;
-                        if ly <= root_y + 2 { set(grid, lx, ly, '│', lighten(color, 10)); }
-                    } else {
-                        lx -= 1;
-                        ly += 1;
-                        if ly <= root_y + 2 { set(grid, lx, ly, '╲', lighten(color, 5)); }
-                    }
-                }
-                if ly <= root_y + 2 { set(grid, lx, ly, '╰', lighten(color, 10)); }
-
-                // Right leg: different curve, BRIGHT
-                let mut rx = root_x + 2;
-                let mut ry = cy;
-                set(grid, rx, ry, '╭', color);
-                for step in 0..right_reach {
-                    if step < right_reach / 2 {
-                        rx += 1;
-                        set(grid, rx, ry, '─', color);
-                    } else if step == right_reach / 2 {
-                        rx += 1;
-                        set(grid, rx, ry, '╭', lighten(color, 10));
-                        ry += 1;
-                        if ry <= root_y + 2 { set(grid, rx, ry, '│', lighten(color, 10)); }
-                    } else {
-                        rx += 1;
-                        ry += 1;
-                        if ry <= root_y + 2 { set(grid, rx, ry, '╱', lighten(color, 5)); }
-                    }
-                }
-                if ry <= root_y + 2 { set(grid, rx, ry, '╯', lighten(color, 10)); }
-
-                // Cross-brace at high energy: BRIGHT
-                if !compact && energy > 0.5 {
-                    let brace_y = cy - 1;
-                    let bl = (left_reach / 3).max(1);
-                    let br = (right_reach / 3).max(1);
-                    for dx in 1..=bl {
-                        set(grid, root_x - dx, brace_y, '─', color);
-                    }
-                    set(grid, root_x - bl - 1, brace_y, '╴', bark);
-                    for dx in 1..=br {
-                        set(grid, root_x + dx, brace_y, '─', color);
-                    }
-                    set(grid, root_x + br + 1, brace_y, '╶', bark);
-                    set(grid, root_x, brace_y, '┼', color);
-                    cy = brace_y;
-                }
-
-                // Upper secondary hints
-                if !compact && energy > 0.4 {
-                    cy -= 1;
-                    let sl = (left_reach / 3).max(1);
-                    let sr = (right_reach / 3).max(1);
-                    for dx in 1..=sl {
-                        set(grid, root_x - dx, cy, '╱', lighten(color, 15));
-                    }
-                    for dx in 1..=sr {
-                        set(grid, root_x + dx, cy, '╲', lighten(color, 15));
+                        let ch = fills[rng.random_range(0..4u32) as usize];
+                        set(grid, root_x + dx, cy, ch, layer_col);
                     }
                     set(grid, root_x, cy, '│', color);
                 }
 
+                // Top border / shared border with next layer
+                cy -= 1;
+                if layer < layers - 1 {
+                    // Shared border: next layer is narrower, so draw T-junctions
+                    let next_lw =
+                        ((cur_lw as f32) * (0.55 + rng.random::<f32>() * 0.25)).max(1.0) as i32;
+                    let next_rw =
+                        ((cur_rw as f32) * (0.55 + rng.random::<f32>() * 0.25)).max(1.0) as i32;
+                    // Full width top of current layer
+                    set(grid, root_x - cur_lw, cy, '╔', layer_col);
+                    set(grid, root_x + cur_rw, cy, '╗', layer_col);
+                    for dx in (-cur_lw + 1)..cur_rw {
+                        set(grid, root_x + dx, cy, '═', layer_col);
+                    }
+                    // Overwrite with junction chars where next layer's walls will be
+                    set(grid, root_x - next_lw, cy, '╠', layer_col);
+                    set(grid, root_x + next_rw, cy, '╣', layer_col);
+                    set(grid, root_x, cy, '╬', color);
+                    cur_lw = next_lw;
+                    cur_rw = next_rw;
+                } else {
+                    // Final top border
+                    set(grid, root_x - cur_lw, cy, '╔', layer_col);
+                    set(grid, root_x + cur_rw, cy, '╗', layer_col);
+                    for dx in (-cur_lw + 1)..cur_rw {
+                        set(grid, root_x + dx, cy, '═', layer_col);
+                    }
+                    set(grid, root_x, cy, '╦', color);
+                }
+            }
+
+            BoleExit {
+                x: root_x,
+                y: cy,
+                left: cur_lw,
+                right: cur_rw,
+            }
+        }
+        // Style 6: Crescent2 -- turbo crescent with hips, valid box-drawing connections
+        6 => {
+            let energy = energy.clamp(0.2, 1.0);
+            let layers = if compact {
+                2
+            } else {
+                ((energy * 4.0).ceil() as i32).clamp(2, 5)
+            };
+            let mut cy = root_y;
+
+            // Ground layer: widest crescent with hip flares
+            set(grid, root_x, cy, '┴', color);
+            for dx in 1..=lw {
+                let ch = if dx <= 2 { '═' } else { '◠' };
+                set(
+                    grid,
+                    root_x - dx,
+                    cy,
+                    ch,
+                    lighten(color, ((dx as u8) * 3).min(25)),
+                );
+            }
+            for dx in 1..=rw {
+                let ch = if dx <= 2 { '═' } else { '◠' };
+                set(
+                    grid,
+                    root_x + dx,
+                    cy,
+                    ch,
+                    lighten(color, ((dx as u8) * 3).min(25)),
+                );
+            }
+            // Hip flares: curved outward kicks
+            set(grid, root_x - lw - 1, cy, '╮', bark);
+            set(grid, root_x + rw + 1, cy, '╭', bark);
+            if lw > 2 {
+                set(grid, root_x - lw - 2, cy, '─', dim);
+                set(grid, root_x - lw - 1, cy - 1, '│', bark);
+                set(grid, root_x - lw - 1, cy + 1, '╯', dim);
+            }
+            if rw > 2 {
+                set(grid, root_x + rw + 2, cy, '─', dim);
+                set(grid, root_x + rw + 1, cy - 1, '│', bark);
+                set(grid, root_x + rw + 1, cy + 1, '╰', dim);
+            }
+            cy -= 1;
+
+            // Stacked crescent arcs, each narrower with random horizontal offsets
+            for layer in 1..layers {
+                let shrink = layer as f32 * 0.2;
+                let ll = ((lw as f32) * (1.0 - shrink)).max(1.0) as i32;
+                let lr = ((rw as f32) * (1.0 - shrink)).max(1.0) as i32;
+                let offset = rng.random_range(0..3u32) as i32 - 1; // -1, 0, or 1
+                let cx = root_x + offset;
+                let lc = lighten(bark, (layer as u8 * 6).min(30));
+
+                set(grid, cx, cy, '┴', lc);
+                for dx in 1..=ll {
+                    let ch = ['◠', '◡', '◟', '◞'][rng.random_range(0..4u32) as usize];
+                    set(grid, cx - dx, cy, ch, lighten(lc, ((dx as u8) * 4).min(20)));
+                }
+                for dx in 1..=lr {
+                    let ch = ['◠', '◡', '◟', '◞'][rng.random_range(0..4u32) as usize];
+                    set(grid, cx + dx, cy, ch, lighten(lc, ((dx as u8) * 4).min(20)));
+                }
+                // Connect back to center if offset
+                if offset != 0 {
+                    set(grid, root_x, cy, '│', color);
+                }
+                // Nip details at crescent tips
+                set(grid, cx - ll - 1, cy, '◜', lighten(lc, 15));
+                set(grid, cx + lr + 1, cy, '◝', lighten(lc, 15));
+                cy -= 1;
+            }
+
+            let last_shrink = (layers - 1) as f32 * 0.2;
+            let exit_l = ((lw as f32) * (1.0 - last_shrink)).max(1.0) as i32;
+            let exit_r = ((rw as f32) * (1.0 - last_shrink)).max(1.0) as i32;
+            BoleExit {
+                x: root_x,
+                y: cy + 1,
+                left: exit_l,
+                right: exit_r,
+            }
+        }
+        // Style 7: Braille2 -- thick braille with tapered trunk exit
+        7 => {
+            let energy = energy.clamp(0.2, 1.0);
+            let dense = ['⣿', '⣾', '⣷', '⣶', '⣤'];
+            let mid = ['⡇', '⢸', '⠿', '⠶', '⠛'];
+            let thin = ['⡀', '⢀', '⠂', '⠈', '⠁'];
+            let rows = if compact {
+                2
+            } else {
+                ((energy * 4.0).ceil() as i32 + 1).clamp(2, 5)
+            };
+            let mut cy = root_y;
+            let base_w = lw.max(rw).max(2);
+
+            for row in 0..rows {
+                let frac = row as f32 / rows as f32;
+                let hw = ((base_w as f32) * (1.0 - frac * 0.5)).max(1.0) as i32;
+                let chars = if frac < 0.3 {
+                    &dense
+                } else if frac < 0.6 {
+                    &mid
+                } else {
+                    &thin
+                };
+                let rc = if row == 0 {
+                    color
+                } else {
+                    darken(color, (row as u8 * 4).min(15))
+                };
+
+                // Asymmetric: left and right can have different widths
+                let lhw = hw + rng.random_range(0..2u32) as i32;
+                let rhw = hw + rng.random_range(0..2u32) as i32;
+
+                set(grid, root_x, cy, chars[0], rc);
+                for dx in 1..=lhw {
+                    set(
+                        grid,
+                        root_x - dx,
+                        cy,
+                        chars[rng.random_range(0..chars.len() as u32) as usize],
+                        darken(rc, ((dx as u8) * 2).min(10)),
+                    );
+                }
+                for dx in 1..=rhw {
+                    set(
+                        grid,
+                        root_x + dx,
+                        cy,
+                        chars[rng.random_range(0..chars.len() as u32) as usize],
+                        darken(rc, ((dx as u8) * 2).min(10)),
+                    );
+                }
+                cy -= 1;
+            }
+
+            // Taper: 1-2 rows of transition from thick braille to single │
+            let taper_rows = if base_w > 3 { 2 } else { 1 };
+            for t in 0..taper_rows {
+                let tw = (taper_rows - t).min(2);
+                let tc = ['⡇', '⢸', '│'][t as usize % 3];
+                set(grid, root_x, cy, tc, bark);
+                if tw > 1 {
+                    set(grid, root_x - 1, cy, '⡀', dim);
+                    set(grid, root_x + 1, cy, '⢀', dim);
+                }
+                cy -= 1;
+            }
+
+            let exit_hw = if base_w > 3 { 1 } else { 0 };
+            BoleExit {
+                x: root_x,
+                y: cy + 1,
+                left: exit_hw,
+                right: exit_hw,
+            }
+        }
+        // Style 8: Frame3 -- stacked boxes, heaviest at bottom, randomly off-center
+        8 => {
+            let energy = energy.clamp(0.2, 1.0);
+            let boxes = if compact {
+                1
+            } else {
+                ((energy * 3.0).ceil() as i32).clamp(1, 4)
+            };
+            let mut cy = root_y;
+            let mut cur_lw = lw.max(3);
+            let mut cur_rw = rw.max(3);
+            let mut cx = root_x;
+
+            for b in 0..boxes {
+                let bc = if b == 0 {
+                    color
+                } else {
+                    lighten(bark, (b as u8 * 8).min(25))
+                };
+                let fc = if b == 0 {
+                    bark
+                } else {
+                    lighten(dim, (b as u8 * 5).min(20))
+                };
+                // Interior height: biggest box at bottom, smaller going up
+                let interior = if compact {
+                    1
+                } else if b == 0 {
+                    ((energy * 3.0).ceil() as i32).clamp(1, 3)
+                } else {
+                    rng.random_range(1..3u32) as i32
+                };
+
+                // Bottom edge
+                set(grid, cx - cur_lw, cy, '╘', bc);
+                set(grid, cx + cur_rw, cy, '╛', bc);
+                for dx in (-cur_lw + 1)..cur_rw {
+                    set(grid, cx + dx, cy, '═', bc);
+                }
+                set(grid, cx, cy, '╧', bc);
+
+                // Interior rows
+                for row in 0..interior {
+                    cy -= 1;
+                    set(grid, cx - cur_lw, cy, '│', bc);
+                    set(grid, cx + cur_rw, cy, '│', bc);
+                    let fills = if row == 0 {
+                        ['░', '▒', '░', '·']
+                    } else {
+                        ['▒', '▓', '▒', '░']
+                    };
+                    for dx in (-cur_lw + 1)..cur_rw {
+                        set(
+                            grid,
+                            cx + dx,
+                            cy,
+                            fills[rng.random_range(0..4u32) as usize],
+                            fc,
+                        );
+                    }
+                    set(grid, cx, cy, '│', bc);
+                }
+
+                // Top edge
+                cy -= 1;
+                set(grid, cx - cur_lw, cy, '╒', bc);
+                set(grid, cx + cur_rw, cy, '╓', bc);
+                for dx in (-cur_lw + 1)..cur_rw {
+                    set(grid, cx + dx, cy, '═', bc);
+                }
+                set(grid, cx, cy, '╤', bc);
+
+                // Next box: narrower and randomly offset
+                let next_lw = ((cur_lw as f32) * (0.5 + rng.random::<f32>() * 0.3)).max(1.0) as i32;
+                let next_rw = ((cur_rw as f32) * (0.5 + rng.random::<f32>() * 0.3)).max(1.0) as i32;
+                let drift = rng.random_range(0..3u32) as i32 - 1;
+                cx += drift;
+                cur_lw = next_lw;
+                cur_rw = next_rw;
+
+                // Connector between boxes: vertical line back to root_x
+                if b < boxes - 1 {
+                    cy -= 1;
+                    if cx != root_x {
+                        // Draw connector from root_x to cx
+                        let dir = if cx > root_x { 1 } else { -1 };
+                        set(grid, root_x, cy, if dir > 0 { '╰' } else { '╯' }, bc);
+                        for sx in 1..(cx - root_x).abs() {
+                            set(grid, root_x + sx * dir, cy, '─', bc);
+                        }
+                        set(grid, cx, cy, if dir > 0 { '╮' } else { '╭' }, bc);
+                        cy -= 1;
+                    }
+                }
+            }
+
+            // Final trunk connector at root_x
+            if cx != root_x {
+                let dir = if root_x > cx { 1 } else { -1 };
+                set(grid, cx, cy, if dir > 0 { '╰' } else { '╯' }, bark);
+                for sx in 1..(root_x - cx).abs() {
+                    set(grid, cx + sx * dir, cy, '─', bark);
+                }
+                set(grid, root_x, cy, if dir > 0 { '╮' } else { '╭' }, bark);
+                cy -= 1;
+            }
+            BoleExit {
+                x: root_x,
+                y: cy + 1,
+                left: cur_lw,
+                right: cur_rw,
+            }
+        }
+        // Style 9: Diamond2 -- asymmetric diamond with cross-hatching
+        9 => {
+            let energy = energy.clamp(0.2, 1.0);
+            let total_h = if compact {
+                3
+            } else {
+                ((energy * 5.0).ceil() as i32 + 2).clamp(3, 7)
+            };
+            let mut cy = root_y;
+            // Asymmetric: bottom half taller than top
+            let bot_h = if compact { 1 } else { (total_h * 2 / 3).max(2) };
+            let top_h = if compact { 1 } else { (total_h - bot_h).max(1) };
+            let max_lw = lw.max(2);
+            let max_rw = rw.max(2);
+
+            // Bottom: expanding upward, left and right sides grow at different rates
+            for row in 0..bot_h {
+                let frac = (row + 1) as f32 / bot_h as f32;
+                let hw_l = (frac * max_lw as f32).ceil() as i32;
+                let hw_r = (frac * max_rw as f32).ceil() as i32;
+                let rc = lighten(bark, ((bot_h - row) as u8 * 4).min(25));
+                set(grid, root_x, cy, if row == 0 { '╨' } else { '│' }, color);
+                for dx in 1..=hw_l {
+                    let ch = if rng.random_range(0..4u32) == 0 {
+                        '╳'
+                    } else if dx % 2 == 0 {
+                        '─'
+                    } else {
+                        '◆'
+                    };
+                    set(grid, root_x - dx, cy, ch, rc);
+                }
+                for dx in 1..=hw_r {
+                    let ch = if rng.random_range(0..4u32) == 0 {
+                        '╳'
+                    } else if dx % 2 == 0 {
+                        '─'
+                    } else {
+                        '◆'
+                    };
+                    set(grid, root_x + dx, cy, ch, rc);
+                }
+                cy -= 1;
+            }
+
+            // Widest row: asymmetric
+            set(grid, root_x, cy, '◆', color);
+            for dx in 1..=max_lw {
+                let ch = if dx % 3 == 0 { '╳' } else { '═' };
+                set(
+                    grid,
+                    root_x - dx,
+                    cy,
+                    ch,
+                    lighten(color, ((dx as u8) * 3).min(20)),
+                );
+            }
+            for dx in 1..=max_rw {
+                let ch = if dx % 3 == 0 { '╳' } else { '═' };
+                set(
+                    grid,
+                    root_x + dx,
+                    cy,
+                    ch,
+                    lighten(color, ((dx as u8) * 3).min(20)),
+                );
+            }
+            set(grid, root_x - max_lw - 1, cy, '◁', dim);
+            set(grid, root_x + max_rw + 1, cy, '▷', dim);
+            cy -= 1;
+
+            // Top: contracting, shorter than bottom
+            for row in 0..top_h {
+                let frac = (top_h - row) as f32 / top_h as f32;
+                let hw_l = (frac * max_lw as f32).ceil() as i32;
+                let hw_r = (frac * max_rw as f32).ceil() as i32;
+                let rc = lighten(bark, ((row + 1) as u8 * 7).min(35));
+                set(grid, root_x, cy, '│', rc);
+                for dx in 1..=hw_l {
+                    let ch = if rng.random_range(0..5u32) == 0 {
+                        '╳'
+                    } else if dx % 2 == 0 {
+                        '─'
+                    } else {
+                        '◇'
+                    };
+                    set(grid, root_x - dx, cy, ch, rc);
+                }
+                for dx in 1..=hw_r {
+                    let ch = if rng.random_range(0..5u32) == 0 {
+                        '╳'
+                    } else if dx % 2 == 0 {
+                        '─'
+                    } else {
+                        '◇'
+                    };
+                    set(grid, root_x + dx, cy, ch, rc);
+                }
+                cy -= 1;
+            }
+
+            let exit_hw_l = (1.0f32 / top_h as f32 * max_lw as f32).ceil() as i32;
+            let exit_hw_r = (1.0f32 / top_h as f32 * max_rw as f32).ceil() as i32;
+            BoleExit {
+                x: root_x,
+                y: cy + 1,
+                left: exit_hw_l,
+                right: exit_hw_r,
+            }
+        }
+        // Style 10: Chevron2 -- chevron with horizontal sprawl near base
+        10 => {
+            let energy = energy.clamp(0.2, 1.0);
+            let layers = if compact {
+                1
+            } else {
+                ((energy * 3.5).ceil() as i32).clamp(1, 4)
+            };
+            let mut cy = root_y;
+            let ll = lw.max(2);
+            let rl = rw.max(2);
+
+            // Ground sprawl: horizontal bars at base
+            set(grid, root_x, cy, '┴', color);
+            for dx in 1..=ll {
+                set(
+                    grid,
+                    root_x - dx,
+                    cy,
+                    '═',
+                    lighten(bark, ((dx as u8) * 3).min(20)),
+                );
+            }
+            for dx in 1..=rl {
+                set(
+                    grid,
+                    root_x + dx,
+                    cy,
+                    '═',
+                    lighten(bark, ((dx as u8) * 3).min(20)),
+                );
+            }
+            // Extended sprawl wings
+            let sprawl_l = ll + rng.random_range(1..4u32) as i32;
+            let sprawl_r = rl + rng.random_range(1..4u32) as i32;
+            for dx in (ll + 1)..=sprawl_l {
+                set(grid, root_x - dx, cy, '─', dim);
+            }
+            for dx in (rl + 1)..=sprawl_r {
+                set(grid, root_x + dx, cy, '─', dim);
+            }
+            set(grid, root_x - sprawl_l - 1, cy, '╴', lighten(dim, 10));
+            set(grid, root_x + sprawl_r + 1, cy, '╶', lighten(dim, 10));
+            cy -= 1;
+
+            // Base V with extra width
+            set(grid, root_x, cy, '∨', color);
+            for dx in 1..=ll {
+                set(
+                    grid,
+                    root_x - dx,
+                    cy,
+                    '╲',
+                    lighten(bark, ((dx as u8) * 4).min(25)),
+                );
+            }
+            for dx in 1..=rl {
+                set(
+                    grid,
+                    root_x + dx,
+                    cy,
+                    '╱',
+                    lighten(bark, ((dx as u8) * 4).min(25)),
+                );
+            }
+            // Horizontal extensions at V tips
+            set(grid, root_x - ll - 1, cy, '─', dim);
+            set(grid, root_x + rl + 1, cy, '─', dim);
+            cy -= 1;
+
+            // Chevron layers, each narrower, less horizontal sprawl
+            for layer in 0..layers {
+                let shrink = (layer + 1) as f32 * 0.2;
+                let cl = ((ll as f32) * (1.0 - shrink)).max(1.0) as i32;
+                let cr = ((rl as f32) * (1.0 - shrink)).max(1.0) as i32;
+                let lc = if layer == 0 {
+                    bark
+                } else {
+                    lighten(bark, (layer as u8 * 7).min(30))
+                };
+
+                // ∧ row
+                let center_ch = ['∧', '△', '▵', '⟋'][rng.random_range(0..4u32) as usize];
+                set(grid, root_x, cy, center_ch, color);
+                for dx in 1..=cl {
+                    set(grid, root_x - dx, cy, '╱', lc);
+                }
+                for dx in 1..=cr {
+                    set(grid, root_x + dx, cy, '╲', lc);
+                }
+                // Sprawl decreases with height
+                let h_sprawl = ((layers - layer) as f32 * 0.5).ceil() as i32;
+                if h_sprawl > 0 {
+                    for s in 1..=h_sprawl {
+                        set(grid, root_x - cl - s, cy, '─', lighten(lc, 15));
+                        set(grid, root_x + cr + s, cy, '─', lighten(lc, 15));
+                    }
+                }
+                cy -= 1;
+
+                if layer < layers - 1 {
+                    // ∨ row between layers
+                    let vcl = ((cl as f32) * 0.7).max(1.0) as i32;
+                    let vcr = ((cr as f32) * 0.7).max(1.0) as i32;
+                    let vc = ['∨', '▽', '▿'][rng.random_range(0..3u32) as usize];
+                    set(grid, root_x, cy, vc, lc);
+                    for dx in 1..=vcl {
+                        set(grid, root_x - dx, cy, '╲', lighten(lc, 10));
+                    }
+                    for dx in 1..=vcr {
+                        set(grid, root_x + dx, cy, '╱', lighten(lc, 10));
+                    }
+                    cy -= 1;
+                }
+            }
+
+            BoleExit::point(root_x, cy + 1)
+        }
+        // Style 11: Frame4 -- same as Frame3 but different corner style
+        11 => {
+            let energy = energy.clamp(0.2, 1.0);
+            let boxes = if compact {
+                1
+            } else {
+                ((energy * 3.0).ceil() as i32).clamp(1, 3)
+            };
+            let mut cy = root_y;
+            let mut cur_lw = lw.max(3);
+            let mut cur_rw = rw.max(3);
+            let mut cx = root_x;
+
+            for b in 0..boxes {
+                let bc = if b == 0 {
+                    color
+                } else {
+                    lighten(bark, (b as u8 * 10).min(30))
+                };
+                let fc = if b == 0 { bark } else { dim };
+                let interior = if compact {
+                    1
+                } else if b == 0 {
+                    ((energy * 2.0).ceil() as i32).clamp(1, 3)
+                } else {
+                    1
+                };
+
+                // Bottom
+                set(grid, cx - cur_lw, cy, '└', bc);
+                set(grid, cx + cur_rw, cy, '┘', bc);
+                for dx in (-cur_lw + 1)..cur_rw {
+                    set(grid, cx + dx, cy, '─', bc);
+                }
+                set(grid, cx, cy, '┴', bc);
+
+                for row in 0..interior {
+                    cy -= 1;
+                    set(grid, cx - cur_lw, cy, '│', bc);
+                    set(grid, cx + cur_rw, cy, '│', bc);
+                    let fills = ['·', '∙', '·', ' '];
+                    for dx in (-cur_lw + 1)..cur_rw {
+                        set(
+                            grid,
+                            cx + dx,
+                            cy,
+                            fills[rng.random_range(0..4u32) as usize],
+                            fc,
+                        );
+                    }
+                    set(grid, cx, cy, '│', bc);
+                }
+
+                cy -= 1;
+                set(grid, cx - cur_lw, cy, '┌', bc);
+                set(grid, cx + cur_rw, cy, '┐', bc);
+                for dx in (-cur_lw + 1)..cur_rw {
+                    set(grid, cx + dx, cy, '─', bc);
+                }
+                set(grid, cx, cy, '┬', bc);
+
+                let next_lw = ((cur_lw as f32) * (0.5 + rng.random::<f32>() * 0.3)).max(1.0) as i32;
+                let next_rw = ((cur_rw as f32) * (0.5 + rng.random::<f32>() * 0.3)).max(1.0) as i32;
+                let drift = rng.random_range(0..3u32) as i32 - 1;
+                cx += drift;
+                cur_lw = next_lw;
+                cur_rw = next_rw;
+
+                if b < boxes - 1 {
+                    cy -= 1;
+                    if cx != root_x {
+                        let dir = if cx > root_x { 1 } else { -1 };
+                        set(grid, root_x, cy, if dir > 0 { '╰' } else { '╯' }, bc);
+                        for sx in 1..(cx - root_x).abs() {
+                            set(grid, root_x + sx * dir, cy, '─', bc);
+                        }
+                        set(grid, cx, cy, if dir > 0 { '╮' } else { '╭' }, bc);
+                        cy -= 1;
+                    }
+                }
+            }
+
+            if cx != root_x {
+                let dir = if root_x > cx { 1 } else { -1 };
+                set(grid, cx, cy, if dir > 0 { '╰' } else { '╯' }, bark);
+                for sx in 1..(root_x - cx).abs() {
+                    set(grid, cx + sx * dir, cy, '─', bark);
+                }
+                set(grid, root_x, cy, if dir > 0 { '╮' } else { '╭' }, bark);
+                cy -= 1;
+            }
+            BoleExit {
+                x: root_x,
+                y: cy + 1,
+                left: cur_lw,
+                right: cur_rw,
+            }
+        }
+        // Style 15: Keel -- short fat asymmetric hull, 2-4 rows max
+        15 => {
+            let energy = energy.clamp(0.2, 1.0);
+            let total_h = if compact {
+                2
+            } else {
+                ((energy * 2.0).ceil() as i32 + 1).clamp(2, 4)
+            };
+            let mut cy = root_y;
+            let bias = if rng.random::<bool>() { 1.4f32 } else { 0.6f32 };
+            let max_lw = ((lw as f32) * bias * 1.3).max(3.0) as i32;
+            let max_rw = ((rw as f32) * (2.0 - bias) * 1.3).max(3.0) as i32;
+
+            for row in 0..total_h {
+                let frac = 1.0 - (row as f32 / total_h as f32);
+                let hl = (max_lw as f32 * frac).ceil() as i32;
+                let hr = (max_rw as f32 * frac).ceil() as i32;
+                let rc = if row == 0 {
+                    color
+                } else {
+                    lighten(bark, ((row as u8) * 6).min(25))
+                };
+
+                if row == 0 {
+                    set(grid, root_x, cy, '╨', color);
+                    set(grid, root_x - 1, cy, '═', color);
+                    set(grid, root_x + 1, cy, '═', color);
+                    for dx in 2..=hl {
+                        let ch = if dx % 3 == 0 { '◆' } else { '═' };
+                        set(grid, root_x - dx, cy, ch, rc);
+                    }
+                    for dx in 2..=hr {
+                        let ch = if dx % 3 == 0 { '◇' } else { '═' };
+                        set(grid, root_x + dx, cy, ch, rc);
+                    }
+                    set(grid, root_x - hl - 1, cy, '╘', dim);
+                    set(grid, root_x + hr + 1, cy, '╛', dim);
+                } else {
+                    set(grid, root_x, cy, '│', rc);
+                    for dx in 1..=hl {
+                        let ch = ['─', '─', '◇', '─', '═'][rng.random_range(0..5u32) as usize];
+                        set(grid, root_x - dx, cy, ch, rc);
+                    }
+                    for dx in 1..=hr {
+                        let ch = ['─', '─', '◇', '─', '═'][rng.random_range(0..5u32) as usize];
+                        set(grid, root_x + dx, cy, ch, rc);
+                    }
+                    if hl > 0 {
+                        set(grid, root_x - hl, cy, '╲', rc);
+                    }
+                    if hr > 0 {
+                        set(grid, root_x + hr, cy, '╱', rc);
+                    }
+                }
+                cy -= 1;
+            }
+
+            let exit_frac = 1.0 - ((total_h - 1) as f32 / total_h as f32);
+            let exit_l = (max_lw as f32 * exit_frac).ceil() as i32;
+            let exit_r = (max_rw as f32 * exit_frac).ceil() as i32;
+            BoleExit {
+                x: root_x,
+                y: cy + 1,
+                left: exit_l,
+                right: exit_r,
+            }
+        }
+        // Style 17: Buttress -- bright bold curved grounding legs
+        17 => {
+            let energy = energy.clamp(0.2, 1.0);
+            let mut cy = root_y;
+
+            let left_reach = lw.max(2) + rng.random_range(1..4u32) as i32;
+            let right_reach = rw.max(2) + rng.random_range(0..3u32) as i32;
+
+            // Ground anchor: bold and bright
+            set(grid, root_x, cy, '╨', color);
+            set(grid, root_x - 1, cy, '═', color);
+            set(grid, root_x + 1, cy, '═', color);
+            if lw > 2 {
+                set(grid, root_x - 2, cy, '═', bark);
+            }
+            if rw > 2 {
+                set(grid, root_x + 2, cy, '═', bark);
+            }
+
+            // Left leg: curved, BRIGHT
+            let mut lx = root_x - 2;
+            let mut ly = cy;
+            set(grid, lx, ly, '╮', color);
+            for step in 0..left_reach {
+                if step < left_reach / 3 {
+                    lx -= 1;
+                    set(grid, lx, ly, '─', color);
+                } else if step == left_reach / 3 {
+                    lx -= 1;
+                    set(grid, lx, ly, '╮', lighten(color, 10));
+                    ly += 1;
+                    if ly <= root_y + 2 {
+                        set(grid, lx, ly, '│', lighten(color, 10));
+                    }
+                } else {
+                    lx -= 1;
+                    ly += 1;
+                    if ly <= root_y + 2 {
+                        set(grid, lx, ly, '╲', lighten(color, 5));
+                    }
+                }
+            }
+            if ly <= root_y + 2 {
+                set(grid, lx, ly, '╰', lighten(color, 10));
+            }
+
+            // Right leg: different curve, BRIGHT
+            let mut rx = root_x + 2;
+            let mut ry = cy;
+            set(grid, rx, ry, '╭', color);
+            for step in 0..right_reach {
+                if step < right_reach / 2 {
+                    rx += 1;
+                    set(grid, rx, ry, '─', color);
+                } else if step == right_reach / 2 {
+                    rx += 1;
+                    set(grid, rx, ry, '╭', lighten(color, 10));
+                    ry += 1;
+                    if ry <= root_y + 2 {
+                        set(grid, rx, ry, '│', lighten(color, 10));
+                    }
+                } else {
+                    rx += 1;
+                    ry += 1;
+                    if ry <= root_y + 2 {
+                        set(grid, rx, ry, '╱', lighten(color, 5));
+                    }
+                }
+            }
+            if ry <= root_y + 2 {
+                set(grid, rx, ry, '╯', lighten(color, 10));
+            }
+
+            // Cross-brace at high energy: BRIGHT
+            if !compact && energy > 0.5 {
+                let brace_y = cy - 1;
+                let bl = (left_reach / 3).max(1);
+                let br = (right_reach / 3).max(1);
+                for dx in 1..=bl {
+                    set(grid, root_x - dx, brace_y, '─', color);
+                }
+                set(grid, root_x - bl - 1, brace_y, '╴', bark);
+                for dx in 1..=br {
+                    set(grid, root_x + dx, brace_y, '─', color);
+                }
+                set(grid, root_x + br + 1, brace_y, '╶', bark);
+                set(grid, root_x, brace_y, '┼', color);
+                cy = brace_y;
+            }
+
+            // Upper secondary hints
+            if !compact && energy > 0.4 {
                 cy -= 1;
                 let sl = (left_reach / 3).max(1);
                 let sr = (right_reach / 3).max(1);
-                BoleExit { x: root_x, y: cy + 1, left: sl, right: sr }
-            }
-            12 => {
-                BoleExit::point(root_x, root_y)
-            }
-            // Style 13: Braille -- horizontal shelf bole, wide ground then sharp drop
-            13 => {
-                let energy = energy.clamp(0.2, 1.0);
-                let dense = ['⣿', '⣾', '⣷', '⣶', '⣤'];
-                let mid   = ['⡇', '⢸', '⠿', '⠶', '⠛'];
-                let edge  = ['⡀', '⢀', '⠂', '⠁', '⠈'];
-
-                // Shelf structure: 1-2 wide ground rows, then sharp narrow
-                let shelf_rows = if compact { 1 } else if energy > 0.5 { 2 } else { 1 };
-                let upper_rows = if compact { 1 } else { ((energy * 2.0).ceil() as i32).clamp(0, 3) };
-                let base_l = lw.max(3) + rng.random_range(0..3u32) as i32;
-                let base_r = rw.max(3) + rng.random_range(0..2u32) as i32;
-                let mut cy = root_y;
-
-                // SHELF: wide dense ground rows (the horizontal emphasis)
-                for row in 0..shelf_rows {
-                    let sl = base_l - row;
-                    let sr = base_r - row;
-                    let rc = if row == 0 { color } else { darken(color, 4) };
-                    set(grid, root_x, cy, '⣿', rc);
-                    for dx in 1..=sl {
-                        let ch = dense[rng.random_range(0..dense.len() as u32) as usize];
-                        set(grid, root_x - dx, cy, ch, darken(rc, ((dx as u8) * 2).min(8)));
-                    }
-                    for dx in 1..=sr {
-                        let ch = dense[rng.random_range(0..dense.len() as u32) as usize];
-                        set(grid, root_x + dx, cy, ch, darken(rc, ((dx as u8) * 2).min(8)));
-                    }
-                    set(grid, root_x - sl - 1, cy, edge[rng.random_range(0..edge.len() as u32) as usize], dim);
-                    set(grid, root_x + sr + 1, cy, edge[rng.random_range(0..edge.len() as u32) as usize], dim);
-                    cy -= 1;
-                }
-
-                // SHARP DROP: immediately much narrower (40-60% of shelf width)
-                let drop_frac = 0.4 + rng.random::<f32>() * 0.2;
-                let mut cur_l = (base_l as f32 * drop_frac).max(1.0) as i32;
-                let mut cur_r = (base_r as f32 * drop_frac).max(1.0) as i32;
-
-                for row in 0..upper_rows {
-                    let rc = darken(color, ((shelf_rows + row) as u8 * 3).min(12));
-                    let chars = if row == 0 { &mid } else { &mid };
-                    set(grid, root_x, cy, dense[rng.random_range(0..2u32) as usize], rc);
-                    for dx in 1..=cur_l {
-                        set(grid, root_x - dx, cy, chars[rng.random_range(0..chars.len() as u32) as usize], darken(rc, ((dx as u8) * 2).min(8)));
-                    }
-                    for dx in 1..=cur_r {
-                        set(grid, root_x + dx, cy, chars[rng.random_range(0..chars.len() as u32) as usize], darken(rc, ((dx as u8) * 2).min(8)));
-                    }
-                    set(grid, root_x - cur_l - 1, cy, edge[rng.random_range(0..edge.len() as u32) as usize], dim);
-                    set(grid, root_x + cur_r + 1, cy, edge[rng.random_range(0..edge.len() as u32) as usize], dim);
-                    // Taper each upper row slightly
-                    cur_l = (cur_l - rng.random_range(0..2u32) as i32).max(1);
-                    cur_r = (cur_r - rng.random_range(0..2u32) as i32).max(1);
-                    cy -= 1;
-                }
-
-                BoleExit { x: root_x, y: cy, left: cur_l, right: cur_r }
-            }
-            // Style 14: Frame -- overlapping rects with foreground cross glyphs
-            14 => {
-                let energy = energy.clamp(0.2, 1.0);
-                let rects = if compact { 1 } else { ((energy * 2.0).ceil() as i32).clamp(1, 3) };
-                let mut cy = root_y;
-
-                let mut specs: Vec<(i32, i32, i32, i32)> = Vec::new();
-                for r in 0..rects {
-                    let drift = if r == 0 { 0 } else { rng.random_range(0..3u32) as i32 - 1 };
-                    let rlw = if r == 0 { lw.max(3) } else { (lw as f32 * (0.4 + rng.random::<f32>() * 0.4)).max(2.0) as i32 };
-                    let rrw = if r == 0 { rw.max(3) } else { (rw as f32 * (0.4 + rng.random::<f32>() * 0.4)).max(2.0) as i32 };
-                    let ih = if compact { 1 } else if r == 0 { ((energy * 2.0).ceil() as i32).clamp(1, 2) } else { 1 };
-                    specs.push((drift, rlw, rrw, ih));
-                }
-
-                let mut accumulated_drift = 0i32;
-                let mut prev_top_y: Option<i32> = None;
-                let mut last_lw = lw;
-                let mut last_rw = rw;
-
-                for (ri, &(drift, rlw, rrw, ih)) in specs.iter().enumerate() {
-                    last_lw = rlw;
-                    last_rw = rrw;
-                    accumulated_drift += drift;
-                    let cx = root_x + accumulated_drift;
-                    let heavy = ri == 0;
-                    let bc = if heavy { color } else { lighten(bark, (ri as u8 * 10).min(25)) };
-                    let fc = if heavy { bark } else { lighten(dim, (ri as u8 * 6).min(20)) };
-
-                    let on_shared_edge = prev_top_y.map_or(false, |py| py == cy);
-
-                    if on_shared_edge {
-                        set(grid, cx - rlw, cy, '╬', bc);
-                        set(grid, cx + rrw, cy, '╬', bc);
-                        for dx in (-rlw + 1)..rrw {
-                            set(grid, cx + dx, cy, '╪', bc);
-                        }
-                        set(grid, root_x, cy, '╬', color);
-                    } else if heavy {
-                        set(grid, cx - rlw, cy, '╚', bc);
-                        set(grid, cx + rrw, cy, '╝', bc);
-                        for dx in (-rlw + 1)..rrw {
-                            set(grid, cx + dx, cy, '═', bc);
-                        }
-                        set(grid, root_x, cy, '╩', color);
-                    } else {
-                        set(grid, cx - rlw, cy, '└', bc);
-                        set(grid, cx + rrw, cy, '┘', bc);
-                        for dx in (-rlw + 1)..rrw {
-                            set(grid, cx + dx, cy, '─', bc);
-                        }
-                        set(grid, root_x, cy, '┴', bc);
-                    }
-
-                    for row in 0..ih {
-                        cy -= 1;
-                        set(grid, cx - rlw, cy, if heavy { '║' } else { '│' }, bc);
-                        set(grid, cx + rrw, cy, if heavy { '║' } else { '│' }, bc);
-                        let fills = if row == 0 { ['░', '▒', '·', '░'] } else { ['▒', '▓', '░', '·'] };
-                        for dx in (-rlw + 1)..rrw {
-                            set(grid, cx + dx, cy, fills[rng.random_range(0..4u32) as usize], fc);
-                        }
-                        set(grid, root_x, cy, if heavy { '║' } else { '│' }, bc);
-                    }
-
-                    cy -= 1;
-                    if heavy {
-                        set(grid, cx - rlw, cy, '╔', bc);
-                        set(grid, cx + rrw, cy, '╗', bc);
-                        for dx in (-rlw + 1)..rrw {
-                            set(grid, cx + dx, cy, '═', bc);
-                        }
-                        set(grid, root_x, cy, '╦', color);
-                    } else {
-                        set(grid, cx - rlw, cy, '┌', bc);
-                        set(grid, cx + rrw, cy, '┐', bc);
-                        for dx in (-rlw + 1)..rrw {
-                            set(grid, cx + dx, cy, '─', bc);
-                        }
-                        set(grid, root_x, cy, '┬', bc);
-                    }
-
-                    prev_top_y = Some(cy);
-                }
-
-                BoleExit { x: root_x, y: cy, left: last_lw, right: last_rw }
-            }
-            // Style 16: Chevron -- off-center layers that overlap into diamond patterns
-            16 => {
-                let energy = energy.clamp(0.2, 1.0);
-                let layers = if compact { 1 } else { ((energy * 4.0).ceil() as i32).clamp(2, 5) };
-                let mut cy = root_y;
-                let ll = lw.max(2);
-                let rl = rw.max(2);
-
-                // Ground row is also the first ∧ -- no gap between base and chevrons
-                set(grid, root_x, cy, '∧', color);
-                for dx in 1..=ll {
-                    set(grid, root_x - dx, cy, '╱', lighten(bark, ((dx as u8) * 2).min(20)));
-                }
-                for dx in 1..=rl {
-                    set(grid, root_x + dx, cy, '╲', lighten(bark, ((dx as u8) * 2).min(20)));
-                }
-                // Sprawl wings extending from chevron tips
-                let sprawl_l = rng.random_range(1..4u32) as i32;
-                let sprawl_r = rng.random_range(1..3u32) as i32;
-                for s in 1..=sprawl_l {
-                    set(grid, root_x - ll - s, cy, '─', lighten(bark, 12));
-                }
-                for s in 1..=sprawl_r {
-                    set(grid, root_x + rl + s, cy, '─', lighten(bark, 12));
-                }
-                set(grid, root_x - ll - sprawl_l - 1, cy, '╴', dim);
-                set(grid, root_x + rl + sprawl_r + 1, cy, '╶', dim);
-                cy -= 1;
-
-                // Remaining chevron layers with random drift -- overlaps create diamonds
-                for layer in 0..layers {
-                    let shrink = (layer + 1) as f32 * 0.15;
-                    let cl = ((ll as f32) * (1.0 - shrink)).max(1.0) as i32;
-                    let cr = ((rl as f32) * (1.0 - shrink)).max(1.0) as i32;
-                    let lc = if layer == 0 { bark } else { lighten(bark, (layer as u8 * 6).min(30)) };
-                    // Random drift: each layer can be off-center
-                    let drift = rng.random_range(0..3u32) as i32 - 1;
-                    let lcx = root_x + drift;
-
-                    // ∧ row (upward V)
-                    set(grid, lcx, cy, '∧', color);
-                    for dx in 1..=cl {
-                        set(grid, lcx - dx, cy, '╱', lc);
-                    }
-                    for dx in 1..=cr {
-                        set(grid, lcx + dx, cy, '╲', lc);
-                    }
-                    // Horizontal stubs, sprawl decreases with height
-                    let h_sprawl = ((layers - layer) as f32 * 0.7).ceil() as i32;
-                    for s in 1..=h_sprawl {
-                        set(grid, lcx - cl - s, cy, '─', lighten(lc, 12));
-                        set(grid, lcx + cr + s, cy, '─', lighten(lc, 12));
-                    }
-                    cy -= 1;
-
-                    // ∨ row (downward V) -- slightly different drift for overlap
-                    if layer < layers - 1 {
-                        let drift2 = rng.random_range(0..3u32) as i32 - 1;
-                        let vcx = root_x + drift2;
-                        let vcl = ((cl as f32) * 0.75).max(1.0) as i32;
-                        let vcr = ((cr as f32) * 0.75).max(1.0) as i32;
-                        set(grid, vcx, cy, '∨', lighten(lc, 5));
-                        for dx in 1..=vcl {
-                            set(grid, vcx - dx, cy, '╲', lighten(lc, 8));
-                        }
-                        for dx in 1..=vcr {
-                            set(grid, vcx + dx, cy, '╱', lighten(lc, 8));
-                        }
-                        cy -= 1;
-                    }
-                }
-
-                // Chevron's ∧ shape already tapers to a point -- no generic taper needed
-                BoleExit::point(root_x, cy + 1)
-            }
-            // ── Squat boles: max 2 rows, horizontal emphasis, single-column flares ──
-
-            // Squat Crescent: wide single-row arc with flare pokes
-            18 => {
-                set(grid, root_x, root_y, '┴', color);
-                for dx in 1..=lw {
-                    set(grid, root_x - dx, root_y, '═', lighten(bark, ((dx as u8) * 3).min(20)));
-                }
-                for dx in 1..=rw {
-                    set(grid, root_x + dx, root_y, '═', lighten(bark, ((dx as u8) * 3).min(20)));
-                }
-                set(grid, root_x - lw - 1, root_y, '◜', dim);
-                set(grid, root_x + rw + 1, root_y, '◝', dim);
-                // Flares: single-column pokes above at random positions
-                for _ in 0..rng.random_range(1..4u32) {
-                    let fx = root_x + rng.random_range(0..(lw + rw + 1) as u32) as i32 - lw;
-                    if fx != root_x {
-                        set(grid, fx, root_y - 1, '╷', lighten(bark, 15));
-                    }
-                }
-                BoleExit::point(root_x, root_y)
-            }
-            // Squat Braille: 2-row dense shelf, no vertical growth
-            19 => {
-                let dense = ['⣿', '⣾', '⣷', '⣶', '⣤'];
-                let edge  = ['⡀', '⢀', '⠂', '⠁', '⠈'];
-                // Row 1: dense ground
-                set(grid, root_x, root_y, '⣿', color);
-                for dx in 1..=lw {
-                    set(grid, root_x - dx, root_y, dense[rng.random_range(0..dense.len() as u32) as usize], darken(color, ((dx as u8) * 2).min(10)));
-                }
-                for dx in 1..=rw {
-                    set(grid, root_x + dx, root_y, dense[rng.random_range(0..dense.len() as u32) as usize], darken(color, ((dx as u8) * 2).min(10)));
-                }
-                set(grid, root_x - lw - 1, root_y, edge[rng.random_range(0..edge.len() as u32) as usize], dim);
-                set(grid, root_x + rw + 1, root_y, edge[rng.random_range(0..edge.len() as u32) as usize], dim);
-                // Row 2: sparser, narrower
-                let sl = (lw as f32 * 0.5).max(1.0) as i32;
-                let sr = (rw as f32 * 0.5).max(1.0) as i32;
-                let mid = ['⡇', '⢸', '⠿', '⠶', '⠛'];
-                set(grid, root_x, root_y - 1, mid[rng.random_range(0..mid.len() as u32) as usize], bark);
                 for dx in 1..=sl {
-                    set(grid, root_x - dx, root_y - 1, mid[rng.random_range(0..mid.len() as u32) as usize], darken(bark, ((dx as u8) * 3).min(12)));
+                    set(grid, root_x - dx, cy, '╱', lighten(color, 15));
                 }
                 for dx in 1..=sr {
-                    set(grid, root_x + dx, root_y - 1, mid[rng.random_range(0..mid.len() as u32) as usize], darken(bark, ((dx as u8) * 3).min(12)));
+                    set(grid, root_x + dx, cy, '╲', lighten(color, 15));
                 }
-                BoleExit { x: root_x, y: root_y - 1, left: sl, right: sr }
+                set(grid, root_x, cy, '│', color);
             }
-            // Squat Frame: 2-row nested frame with diamond accents and pillar legs
-            20 => {
-                // Row 1 (ground): outer frame base with diamond endpoints
-                set(grid, root_x - lw, root_y, '◇', dim);
-                set(grid, root_x + rw, root_y, '◇', dim);
-                for dx in (-lw + 1)..rw {
-                    let ch = if (root_x + dx) % 2 == 0 { '═' } else { '─' };
-                    set(grid, root_x + dx, root_y, ch, bark);
-                }
-                set(grid, root_x, root_y, '╧', color);
-                // Inner accent: ◆ markers at 1/3 and 2/3 across
-                let third_l = lw / 3;
-                let third_r = rw / 3;
-                if third_l > 0 { set(grid, root_x - third_l, root_y, '◆', lighten(bark, 10)); }
-                if third_r > 0 { set(grid, root_x + third_r, root_y, '◆', lighten(bark, 10)); }
 
-                // Row 2 (above): narrower inner shelf with box corners
-                let iw_l = (lw * 2 / 3).max(1);
-                let iw_r = (rw * 2 / 3).max(1);
-                set(grid, root_x - iw_l, root_y - 1, '╰', lighten(bark, 8));
-                set(grid, root_x + iw_r, root_y - 1, '╯', lighten(bark, 8));
-                for dx in (-iw_l + 1)..iw_r {
-                    set(grid, root_x + dx, root_y - 1, '─', lighten(bark, 12));
-                }
-                set(grid, root_x, root_y - 1, '┼', color);
-                // Pillar legs: drop below at diamond endpoints
-                set(grid, root_x - lw, root_y + 1, '│', dim);
-                set(grid, root_x + rw, root_y + 1, '│', dim);
-                // Random inner flares above inner shelf
-                if rng.random_range(0..2u32) == 0 {
-                    let fx = root_x + rng.random_range(1..iw_r.max(2) as u32) as i32;
-                    set(grid, fx, root_y - 2, '╷', lighten(bark, 20));
-                }
-                if rng.random_range(0..2u32) == 0 {
-                    let fx = root_x - rng.random_range(1..iw_l.max(2) as u32) as i32;
-                    set(grid, fx, root_y - 2, '╷', lighten(bark, 20));
-                }
-                BoleExit { x: root_x, y: root_y - 1, left: iw_l, right: iw_r }
+            cy -= 1;
+            let sl = (left_reach / 3).max(1);
+            let sr = (right_reach / 3).max(1);
+            BoleExit {
+                x: root_x,
+                y: cy + 1,
+                left: sl,
+                right: sr,
             }
-            // Squat Diamond: 2-row flat diamond, single chevron + base
-            21 => {
-                // Ground: wide base
-                set(grid, root_x, root_y, '╨', color);
-                for dx in 1..=lw {
-                    let ch = if dx == lw { '◇' } else { '═' };
-                    set(grid, root_x - dx, root_y, ch, lighten(bark, ((dx as u8) * 3).min(20)));
+        }
+        12 => BoleExit::point(root_x, root_y),
+        // Style 13: Braille -- horizontal shelf bole, wide ground then sharp drop
+        13 => {
+            let energy = energy.clamp(0.2, 1.0);
+            let dense = ['⣿', '⣾', '⣷', '⣶', '⣤'];
+            let mid = ['⡇', '⢸', '⠿', '⠶', '⠛'];
+            let edge = ['⡀', '⢀', '⠂', '⠁', '⠈'];
+
+            // Shelf structure: 1-2 wide ground rows, then sharp narrow
+            let shelf_rows = if compact {
+                1
+            } else if energy > 0.5 {
+                2
+            } else {
+                1
+            };
+            let upper_rows = if compact {
+                1
+            } else {
+                ((energy * 2.0).ceil() as i32).clamp(0, 3)
+            };
+            let base_l = lw.max(3) + rng.random_range(0..3u32) as i32;
+            let base_r = rw.max(3) + rng.random_range(0..2u32) as i32;
+            let mut cy = root_y;
+
+            // SHELF: wide dense ground rows (the horizontal emphasis)
+            for row in 0..shelf_rows {
+                let sl = base_l - row;
+                let sr = base_r - row;
+                let rc = if row == 0 { color } else { darken(color, 4) };
+                set(grid, root_x, cy, '⣿', rc);
+                for dx in 1..=sl {
+                    let ch = dense[rng.random_range(0..dense.len() as u32) as usize];
+                    set(
+                        grid,
+                        root_x - dx,
+                        cy,
+                        ch,
+                        darken(rc, ((dx as u8) * 2).min(8)),
+                    );
                 }
-                for dx in 1..=rw {
-                    let ch = if dx == rw { '◇' } else { '═' };
-                    set(grid, root_x + dx, root_y, ch, lighten(bark, ((dx as u8) * 3).min(20)));
+                for dx in 1..=sr {
+                    let ch = dense[rng.random_range(0..dense.len() as u32) as usize];
+                    set(
+                        grid,
+                        root_x + dx,
+                        cy,
+                        ch,
+                        darken(rc, ((dx as u8) * 2).min(8)),
+                    );
                 }
-                // Row 2: single V narrowing
-                let hw = (lw.max(rw) / 2).max(1);
-                set(grid, root_x, root_y - 1, '│', color);
-                for dx in 1..=hw {
-                    set(grid, root_x - dx, root_y - 1, '╱', bark);
-                    set(grid, root_x + dx, root_y - 1, '╲', bark);
-                }
-                // Tip flares at base ends
-                if lw > 2 { set(grid, root_x - lw, root_y + 1, '╵', dim); }
-                if rw > 2 { set(grid, root_x + rw, root_y + 1, '╵', dim); }
-                BoleExit { x: root_x, y: root_y - 1, left: hw, right: hw }
+                set(
+                    grid,
+                    root_x - sl - 1,
+                    cy,
+                    edge[rng.random_range(0..edge.len() as u32) as usize],
+                    dim,
+                );
+                set(
+                    grid,
+                    root_x + sr + 1,
+                    cy,
+                    edge[rng.random_range(0..edge.len() as u32) as usize],
+                    dim,
+                );
+                cy -= 1;
             }
-            // Squat Chevron: 2-row diamond chevron with inverted V counter-layer
-            22 => {
-                // Row 1 (ground): wide V with diamond at apex
-                let center = ['∧', '△', '▵'][rng.random_range(0..3u32) as usize];
-                set(grid, root_x, root_y, center, color);
-                for dx in 1..=lw {
-                    let c = lighten(bark, ((dx as u8) * 4).min(25));
-                    set(grid, root_x - dx, root_y, '╱', c);
-                }
-                for dx in 1..=rw {
-                    let c = lighten(bark, ((dx as u8) * 4).min(25));
-                    set(grid, root_x + dx, root_y, '╲', c);
-                }
-                // Sprawl arms with stubs
-                let sl = rng.random_range(1..4u32) as i32;
-                let sr = rng.random_range(1..4u32) as i32;
-                for s in 1..=sl {
-                    set(grid, root_x - lw - s, root_y, '─', lighten(bark, 12));
-                }
-                for s in 1..=sr {
-                    set(grid, root_x + rw + s, root_y, '─', lighten(bark, 12));
-                }
-                set(grid, root_x - lw - sl - 1, root_y, '◁', dim);
-                set(grid, root_x + rw + sr + 1, root_y, '▷', dim);
 
-                // Row 2 (above): inverted mini-V counter-layer (creates diamond negative space)
-                let hw = (lw.max(rw) * 2 / 3).max(1);
-                let inv = ['∨', '▽', '▿'][rng.random_range(0..3u32) as usize];
-                set(grid, root_x, root_y - 1, inv, lighten(bark, 10));
-                for dx in 1..=hw {
-                    set(grid, root_x - dx, root_y - 1, '╲', lighten(bark, 15));
-                    set(grid, root_x + dx, root_y - 1, '╱', lighten(bark, 15));
-                }
-                // Horizontal stubs at inverted tips
-                if hw > 1 {
-                    set(grid, root_x - hw - 1, root_y - 1, '─', dim);
-                    set(grid, root_x + hw + 1, root_y - 1, '─', dim);
-                }
+            // SHARP DROP: immediately much narrower (40-60% of shelf width)
+            let drop_frac = 0.4 + rng.random::<f32>() * 0.2;
+            let mut cur_l = (base_l as f32 * drop_frac).max(1.0) as i32;
+            let mut cur_r = (base_r as f32 * drop_frac).max(1.0) as i32;
 
-                // Anchor drops below sprawl endpoints
-                set(grid, root_x - lw - sl, root_y + 1, '╵', dim);
-                set(grid, root_x + rw + sr, root_y + 1, '╵', dim);
-
-                BoleExit { x: root_x, y: root_y - 1, left: hw, right: hw }
+            for row in 0..upper_rows {
+                let rc = darken(color, ((shelf_rows + row) as u8 * 3).min(12));
+                let chars = if row == 0 { &mid } else { &mid };
+                set(
+                    grid,
+                    root_x,
+                    cy,
+                    dense[rng.random_range(0..2u32) as usize],
+                    rc,
+                );
+                for dx in 1..=cur_l {
+                    set(
+                        grid,
+                        root_x - dx,
+                        cy,
+                        chars[rng.random_range(0..chars.len() as u32) as usize],
+                        darken(rc, ((dx as u8) * 2).min(8)),
+                    );
+                }
+                for dx in 1..=cur_r {
+                    set(
+                        grid,
+                        root_x + dx,
+                        cy,
+                        chars[rng.random_range(0..chars.len() as u32) as usize],
+                        darken(rc, ((dx as u8) * 2).min(8)),
+                    );
+                }
+                set(
+                    grid,
+                    root_x - cur_l - 1,
+                    cy,
+                    edge[rng.random_range(0..edge.len() as u32) as usize],
+                    dim,
+                );
+                set(
+                    grid,
+                    root_x + cur_r + 1,
+                    cy,
+                    edge[rng.random_range(0..edge.len() as u32) as usize],
+                    dim,
+                );
+                // Taper each upper row slightly
+                cur_l = (cur_l - rng.random_range(0..2u32) as i32).max(1);
+                cur_r = (cur_r - rng.random_range(0..2u32) as i32).max(1);
+                cy -= 1;
             }
-            // Squat Buttress: ground anchor with curved legs, max 2 rows
-            23 => {
-                set(grid, root_x, root_y, '╨', color);
-                set(grid, root_x - 1, root_y, '═', color);
-                set(grid, root_x + 1, root_y, '═', color);
-                // Left leg: horizontal then down-kick
-                let ll_reach = lw.max(2);
-                set(grid, root_x - 2, root_y, '╮', bark);
-                for dx in 3..=ll_reach {
-                    set(grid, root_x - dx, root_y, '─', lighten(bark, ((dx as u8) * 3).min(20)));
-                }
-                set(grid, root_x - ll_reach - 1, root_y, '╴', dim);
-                // Left leg flare down
-                set(grid, root_x - 2, root_y + 1, '│', dim);
-                set(grid, root_x - 2, root_y + 2, '╵', lighten(dim, 10));
-                // Right leg
-                let rr_reach = rw.max(2);
-                set(grid, root_x + 2, root_y, '╭', bark);
-                for dx in 3..=rr_reach {
-                    set(grid, root_x + dx, root_y, '─', lighten(bark, ((dx as u8) * 3).min(20)));
-                }
-                set(grid, root_x + rr_reach + 1, root_y, '╶', dim);
-                // Right leg flare down
-                set(grid, root_x + 2, root_y + 1, '│', dim);
-                set(grid, root_x + 2, root_y + 2, '╵', lighten(dim, 10));
-                BoleExit::point(root_x, root_y)
-            }
-            // ── Winding boles: serpentine runs, woven strands, coiled arcs ──
 
-            // Serpent: a root snakes across the ground in S-curves, switching
-            // rows with curve corners; the trunk rises wherever it crosses center
-            24 => {
-                let y_b = root_y;
-                let y_t = root_y - 1;
-                let start = root_x - lw.max(3) - 1;
-                let end = root_x + rw.max(3) + 1;
-                let mut on_top = rng.random_range(0..2u32) == 0;
-                let mut run = rng.random_range(2..5u32) as i32;
-                let mut row_at_root = false;  // true if snake is on top row at root_x
-                set(grid, start, if on_top { y_t } else { y_b }, '╶', dim);
-                let mut x = start + 1;
-                while x <= end {
-                    let dist = ((x - root_x).abs() as u8 * 2).min(20);
-                    let c = if (x - root_x).abs() <= 1 { color } else { darken(bark, dist) };
-                    if run == 0 && x < end - 1 {
-                        // switch rows: corner pair links the two runs
-                        if on_top {
-                            set(grid, x, y_t, '╮', c);
-                            set(grid, x, y_b, '╰', c);
-                        } else {
-                            set(grid, x, y_b, '╯', c);
-                            set(grid, x, y_t, '╭', c);
-                        }
-                        on_top = !on_top;
-                        run = rng.random_range(2..5u32) as i32;
-                    } else {
-                        set(grid, x, if on_top { y_t } else { y_b }, '─', c);
-                        run -= 1;
-                    }
-                    if x == root_x { row_at_root = on_top; }
-                    x += 1;
-                }
-                set(grid, end + 1, if on_top { y_t } else { y_b }, '╴', dim);
-                // root tips digging below ground at 1-2 spots
-                for _ in 0..rng.random_range(1..3u32) {
-                    let fx = root_x + rng.random_range(0..(lw + rw).max(2) as u32) as i32 - lw;
-                    set(grid, fx, root_y + 1, '╷', dim);
-                }
-                // trunk junction on whichever row the snake occupies at center
-                if row_at_root {
-                    set(grid, root_x, y_t, '┴', color);
-                    BoleExit::point(root_x, y_t - 1)
+            BoleExit {
+                x: root_x,
+                y: cy,
+                left: cur_l,
+                right: cur_r,
+            }
+        }
+        // Style 14: Frame -- overlapping rects with foreground cross glyphs
+        14 => {
+            let energy = energy.clamp(0.2, 1.0);
+            let rects = if compact {
+                1
+            } else {
+                ((energy * 2.0).ceil() as i32).clamp(1, 3)
+            };
+            let mut cy = root_y;
+
+            let mut specs: Vec<(i32, i32, i32, i32)> = Vec::new();
+            for r in 0..rects {
+                let drift = if r == 0 {
+                    0
                 } else {
-                    set(grid, root_x, y_b, '┴', color);
-                    BoleExit::point(root_x, y_t)
-                }
+                    rng.random_range(0..3u32) as i32 - 1
+                };
+                let rlw = if r == 0 {
+                    lw.max(3)
+                } else {
+                    (lw as f32 * (0.4 + rng.random::<f32>() * 0.4)).max(2.0) as i32
+                };
+                let rrw = if r == 0 {
+                    rw.max(3)
+                } else {
+                    (rw as f32 * (0.4 + rng.random::<f32>() * 0.4)).max(2.0) as i32
+                };
+                let ih = if compact {
+                    1
+                } else if r == 0 {
+                    ((energy * 2.0).ceil() as i32).clamp(1, 2)
+                } else {
+                    1
+                };
+                specs.push((drift, rlw, rrw, ih));
             }
-            // Braid: two strands weave over-under in a period-4 diamond chain
-            25 => {
-                let w = lw.max(rw).max(3);
-                let y_b = root_y;
-                let y_t = root_y - 1;
-                for k in -w..=w {
-                    let x = root_x + k;
-                    let dist = (k.abs() as u8 * 3).min(20);
-                    let (ct, cb) = match k.rem_euclid(4) {
-                        0 => ('─', '─'),
-                        1 => ('╲', '╱'),
-                        2 => ('╱', '╲'),
-                        _ => ('─', '─'),
-                    };
-                    // crossing columns stay bright, straight runs fade outward
-                    let crossing = k.rem_euclid(4) == 1 || k.rem_euclid(4) == 2;
-                    let c = if crossing { lighten(bark, 10) } else { darken(bark, dist) };
-                    set(grid, x, y_t, ct, c);
-                    set(grid, x, y_b, cb, darken(c, 8));
-                }
-                set(grid, root_x - w - 1, y_b, '╾', dim);
-                set(grid, root_x + w + 1, y_b, '╼', dim);
-                set(grid, root_x, y_t, '┼', color);
-                BoleExit { x: root_x, y: y_t, left: 1, right: 1 }
-            }
-            // Coil: nested arcs stacked into a flattened spiral; the tail
-            // sweeps out one side and the gap rotates ring to ring
-            26 => {
-                let w0 = lw.max(rw).max(4);
-                let w1 = (w0 * 2 / 3).max(2);
-                let tail_right = rng.random_range(0..2u32) == 0;
-                let ts = if tail_right { 1 } else { -1 };
-                // outer ring: upward cup on the ground row
-                set(grid, root_x - w0 - 1, root_y, '◟', dim);
-                for dx in -w0..=w0 {
-                    set(grid, root_x + dx, root_y, '◡', darken(bark, (dx.abs() as u8 * 2).min(16)));
-                }
-                set(grid, root_x + w0 + 1, root_y, '◞', dim);
-                // tail sweeps out from the outer ring
-                set(grid, root_x + ts * (w0 + 2), root_y, '─', dim);
-                set(grid, root_x + ts * (w0 + 3), root_y, if tail_right { '╴' } else { '╶' }, darken(dim, 10));
-                // inner ring: downward cap, shifted opposite the tail (spiral offset)
-                let ox = -ts;
-                set(grid, root_x + ox - w1 - 1, root_y - 1, '◜', bark);
-                for dx in -w1..=w1 {
-                    set(grid, root_x + ox + dx, root_y - 1, '◠', lighten(bark, (dx.abs() as u8 * 3).min(18)));
-                }
-                set(grid, root_x + ox + w1 + 1, root_y - 1, '◝', bark);
-                // coil eye where the spiral terminates
-                set(grid, root_x + ox * 2, root_y - 1, '◉', color);
-                set(grid, root_x, root_y - 1, '╂', color);
-                BoleExit { x: root_x, y: root_y - 1, left: 1, right: 1 }
-            }
-            // Taproot: low mound above ground, winding roots dig below it
-            27 => {
-                set(grid, root_x, root_y, '┴', color);
-                for dx in 1..=lw.max(2) {
-                    let ch = if dx == lw.max(2) { '╮' } else { '─' };
-                    set(grid, root_x - dx, root_y, ch, darken(bark, (dx as u8 * 3).min(18)));
-                }
-                for dx in 1..=rw.max(2) {
-                    let ch = if dx == rw.max(2) { '╭' } else { '─' };
-                    set(grid, root_x + dx, root_y, ch, darken(bark, (dx as u8 * 3).min(18)));
-                }
-                // winding roots: walkers descend 1-2 rows, drifting and reversing
-                let n_roots = rng.random_range(3..5u32);
-                for r in 0..n_roots {
-                    let span = (lw + rw).max(2);
-                    let mut x = root_x + rng.random_range(0..span as u32) as i32 - lw;
-                    if x == root_x { x += if r % 2 == 0 { 1 } else { -1 }; }
-                    let mut drift: i32 = if x < root_x { -1 } else { 1 };
-                    let depth = if compact { 1 } else { rng.random_range(1..3u32) as i32 };
-                    let mut y = root_y;
-                    for _ in 0..depth {
-                        y += 1;
-                        if rng.random::<f32>() < 0.6 {
-                            x += drift;
-                            set(grid, x, y, if drift > 0 { '╲' } else { '╱' }, dim);
-                        } else {
-                            set(grid, x, y, '│', dim);
-                        }
-                        if rng.random::<f32>() < 0.3 { drift = -drift; }
-                    }
-                    set(grid, x, y + 1, '╷', darken(dim, 10));
-                }
-                BoleExit { x: root_x, y: root_y, left: 1, right: 1 }
-            }
-            // ── Structural boles: legs, piles, dens, claws, shelves, grass ──
 
-            // Stilts: the trunk stands on splayed mangrove prop legs with
-            // open air underneath
-            28 => {
-                set(grid, root_x, root_y - 1, '┴', color);
-                set(grid, root_x - 1, root_y - 1, '╭', bark);
-                set(grid, root_x + 1, root_y - 1, '╮', bark);
-                let pairs = (lw.max(rw) / 2).clamp(1, 3);
-                for k in 1..=pairs {
-                    // each pair splays one cell further out per row down
-                    let hip = k;
-                    set(grid, root_x - hip - 1, root_y, '╱', darken(bark, (k as u8 * 6).min(18)));
-                    set(grid, root_x + hip + 1, root_y, '╲', darken(bark, (k as u8 * 6).min(18)));
-                    set(grid, root_x - hip - 2, root_y + 1, '╱', dim);
-                    set(grid, root_x + hip + 2, root_y + 1, '╲', dim);
-                }
-                // feet grip the ground below the outermost legs
-                set(grid, root_x - pairs - 3, root_y + 2, '╷', darken(dim, 10));
-                set(grid, root_x + pairs + 3, root_y + 2, '╷', darken(dim, 10));
-                // one off-center brace leg for asymmetry
-                let bx = if rng.random_range(0..2u32) == 0 { -1 } else { 1 };
-                set(grid, root_x + bx, root_y, '│', bark);
-                set(grid, root_x + bx, root_y + 1, '╷', dim);
-                BoleExit { x: root_x, y: root_y - 1, left: 1, right: 1 }
-            }
-            // Cairn: rounded stones piled against the trunk base
-            29 => {
-                let stones = ['◯', '●', '○', '◦'];
-                let hw = lw.max(rw).max(2);
-                for dx in -hw..=hw {
-                    let ch = stones[rng.random_range(0..stones.len() as u32) as usize];
-                    set(grid, root_x + dx, root_y, ch, darken(bark, (dx.abs() as u8 * 4).min(20)));
-                }
-                // top course: fewer, smaller stones nested in the gaps
-                let tw = (hw / 2).max(1);
-                for dx in -tw..=tw {
-                    if dx == 0 { continue; }
-                    let ch = if rng.random_range(0..2u32) == 0 { '○' } else { '◦' };
-                    set(grid, root_x + dx, root_y - 1, ch, bark);
-                }
-                set(grid, root_x, root_y - 1, '╨', color);
-                BoleExit::point(root_x, root_y - 2)
-            }
-            // Hollow: a den opening framed in the trunk base, sloped
-            // shoulders on either side
-            30 => {
-                let hw = lw.max(rw).max(3);
-                // rim row
-                set(grid, root_x, root_y - 1, '┴', color);
-                for dx in 1..hw {
-                    set(grid, root_x - dx, root_y - 1, '─', bark);
-                    set(grid, root_x + dx, root_y - 1, '─', bark);
-                }
-                set(grid, root_x - hw, root_y - 1, '╭', bark);
-                set(grid, root_x + hw, root_y - 1, '╮', bark);
-                // ground row: arch entrance at center, shoulders slope away
-                set(grid, root_x - 1, root_y, '╭', lighten(bark, 15));
-                set(grid, root_x + 1, root_y, '╮', lighten(bark, 15));
-                // the hole itself stays blank at root_x
-                for dx in 2..hw {
-                    set(grid, root_x - dx, root_y, '▒', darken(bark, (dx as u8 * 3).min(15)));
-                    set(grid, root_x + dx, root_y, '▒', darken(bark, (dx as u8 * 3).min(15)));
-                }
-                set(grid, root_x - hw, root_y, '╱', dim);
-                set(grid, root_x + hw, root_y, '╲', dim);
-                BoleExit { x: root_x, y: root_y - 1, left: 2, right: 2 }
-            }
-            // Talon: clawed digits radiate from a center pad and dig in
-            31 => {
-                set(grid, root_x, root_y - 1, '┴', color);
-                let reach_l = lw.max(2).min(4);
-                let reach_r = rw.max(2).min(4);
-                // outer digits: out along the pad, bend, then dig
-                for (side, reach) in [(-1i32, reach_l), (1i32, reach_r)] {
-                    let digits = (reach / 2).max(1);
-                    // longest digit first so shorter bends overwrite its run
-                    for d in (1..=digits).rev() {
-                        let bend = side * (d * 2);
-                        for s in 1..(d * 2) {
-                            set(grid, root_x + side * s, root_y - 1, '─', bark);
-                        }
-                        set(grid, root_x + bend, root_y - 1,
-                            if side < 0 { '╭' } else { '╮' }, bark);
-                        set(grid, root_x + bend, root_y, '│', darken(bark, 8));
-                        set(grid, root_x + bend, root_y + 1, '╷', dim);
+            let mut accumulated_drift = 0i32;
+            let mut prev_top_y: Option<i32> = None;
+            let mut last_lw = lw;
+            let mut last_rw = rw;
+
+            for (ri, &(drift, rlw, rrw, ih)) in specs.iter().enumerate() {
+                last_lw = rlw;
+                last_rw = rrw;
+                accumulated_drift += drift;
+                let cx = root_x + accumulated_drift;
+                let heavy = ri == 0;
+                let bc = if heavy {
+                    color
+                } else {
+                    lighten(bark, (ri as u8 * 10).min(25))
+                };
+                let fc = if heavy {
+                    bark
+                } else {
+                    lighten(dim, (ri as u8 * 6).min(20))
+                };
+
+                let on_shared_edge = prev_top_y.map_or(false, |py| py == cy);
+
+                if on_shared_edge {
+                    set(grid, cx - rlw, cy, '╬', bc);
+                    set(grid, cx + rrw, cy, '╬', bc);
+                    for dx in (-rlw + 1)..rrw {
+                        set(grid, cx + dx, cy, '╪', bc);
                     }
-                }
-                // center digit digs straight down
-                set(grid, root_x, root_y, '│', bark);
-                set(grid, root_x, root_y + 1, '╷', dim);
-                BoleExit::point(root_x, root_y - 2)
-            }
-            // Tiers: stacked pagoda shelves shrinking upward, drip legs
-            // under the outer edges
-            32 => {
-                let w0 = lw.max(rw).max(3);
-                let levels = if energy > 0.6 { 3 } else { 2 };
-                let mut cy = root_y;
-                let mut w = w0;
-                for lvl in 0..levels {
-                    let center = if lvl == levels - 1 { '┴' } else { '╪' };
-                    set(grid, root_x, cy, center, color);
-                    for dx in 1..=w {
-                        set(grid, root_x - dx, cy, '═', darken(bark, (dx as u8 * 3).min(18)));
-                        set(grid, root_x + dx, cy, '═', darken(bark, (dx as u8 * 3).min(18)));
+                    set(grid, root_x, cy, '╬', color);
+                } else if heavy {
+                    set(grid, cx - rlw, cy, '╚', bc);
+                    set(grid, cx + rrw, cy, '╝', bc);
+                    for dx in (-rlw + 1)..rrw {
+                        set(grid, cx + dx, cy, '═', bc);
                     }
-                    if lvl == 0 {
-                        // drip legs under the widest shelf
-                        set(grid, root_x - w, cy + 1, '╷', dim);
-                        set(grid, root_x + w, cy + 1, '╷', dim);
+                    set(grid, root_x, cy, '╩', color);
+                } else {
+                    set(grid, cx - rlw, cy, '└', bc);
+                    set(grid, cx + rrw, cy, '┘', bc);
+                    for dx in (-rlw + 1)..rrw {
+                        set(grid, cx + dx, cy, '─', bc);
+                    }
+                    set(grid, root_x, cy, '┴', bc);
+                }
+
+                for row in 0..ih {
+                    cy -= 1;
+                    set(grid, cx - rlw, cy, if heavy { '║' } else { '│' }, bc);
+                    set(grid, cx + rrw, cy, if heavy { '║' } else { '│' }, bc);
+                    let fills = if row == 0 {
+                        ['░', '▒', '·', '░']
+                    } else {
+                        ['▒', '▓', '░', '·']
+                    };
+                    for dx in (-rlw + 1)..rrw {
+                        set(
+                            grid,
+                            cx + dx,
+                            cy,
+                            fills[rng.random_range(0..4u32) as usize],
+                            fc,
+                        );
+                    }
+                    set(grid, root_x, cy, if heavy { '║' } else { '│' }, bc);
+                }
+
+                cy -= 1;
+                if heavy {
+                    set(grid, cx - rlw, cy, '╔', bc);
+                    set(grid, cx + rrw, cy, '╗', bc);
+                    for dx in (-rlw + 1)..rrw {
+                        set(grid, cx + dx, cy, '═', bc);
+                    }
+                    set(grid, root_x, cy, '╦', color);
+                } else {
+                    set(grid, cx - rlw, cy, '┌', bc);
+                    set(grid, cx + rrw, cy, '┐', bc);
+                    for dx in (-rlw + 1)..rrw {
+                        set(grid, cx + dx, cy, '─', bc);
+                    }
+                    set(grid, root_x, cy, '┬', bc);
+                }
+
+                prev_top_y = Some(cy);
+            }
+
+            BoleExit {
+                x: root_x,
+                y: cy,
+                left: last_lw,
+                right: last_rw,
+            }
+        }
+        // Style 16: Chevron -- off-center layers that overlap into diamond patterns
+        16 => {
+            let energy = energy.clamp(0.2, 1.0);
+            let layers = if compact {
+                1
+            } else {
+                ((energy * 4.0).ceil() as i32).clamp(2, 5)
+            };
+            let mut cy = root_y;
+            let ll = lw.max(2);
+            let rl = rw.max(2);
+
+            // Ground row is also the first ∧ -- no gap between base and chevrons
+            set(grid, root_x, cy, '∧', color);
+            for dx in 1..=ll {
+                set(
+                    grid,
+                    root_x - dx,
+                    cy,
+                    '╱',
+                    lighten(bark, ((dx as u8) * 2).min(20)),
+                );
+            }
+            for dx in 1..=rl {
+                set(
+                    grid,
+                    root_x + dx,
+                    cy,
+                    '╲',
+                    lighten(bark, ((dx as u8) * 2).min(20)),
+                );
+            }
+            // Sprawl wings extending from chevron tips
+            let sprawl_l = rng.random_range(1..4u32) as i32;
+            let sprawl_r = rng.random_range(1..3u32) as i32;
+            for s in 1..=sprawl_l {
+                set(grid, root_x - ll - s, cy, '─', lighten(bark, 12));
+            }
+            for s in 1..=sprawl_r {
+                set(grid, root_x + rl + s, cy, '─', lighten(bark, 12));
+            }
+            set(grid, root_x - ll - sprawl_l - 1, cy, '╴', dim);
+            set(grid, root_x + rl + sprawl_r + 1, cy, '╶', dim);
+            cy -= 1;
+
+            // Remaining chevron layers with random drift -- overlaps create diamonds
+            for layer in 0..layers {
+                let shrink = (layer + 1) as f32 * 0.15;
+                let cl = ((ll as f32) * (1.0 - shrink)).max(1.0) as i32;
+                let cr = ((rl as f32) * (1.0 - shrink)).max(1.0) as i32;
+                let lc = if layer == 0 {
+                    bark
+                } else {
+                    lighten(bark, (layer as u8 * 6).min(30))
+                };
+                // Random drift: each layer can be off-center
+                let drift = rng.random_range(0..3u32) as i32 - 1;
+                let lcx = root_x + drift;
+
+                // ∧ row (upward V)
+                set(grid, lcx, cy, '∧', color);
+                for dx in 1..=cl {
+                    set(grid, lcx - dx, cy, '╱', lc);
+                }
+                for dx in 1..=cr {
+                    set(grid, lcx + dx, cy, '╲', lc);
+                }
+                // Horizontal stubs, sprawl decreases with height
+                let h_sprawl = ((layers - layer) as f32 * 0.7).ceil() as i32;
+                for s in 1..=h_sprawl {
+                    set(grid, lcx - cl - s, cy, '─', lighten(lc, 12));
+                    set(grid, lcx + cr + s, cy, '─', lighten(lc, 12));
+                }
+                cy -= 1;
+
+                // ∨ row (downward V) -- slightly different drift for overlap
+                if layer < layers - 1 {
+                    let drift2 = rng.random_range(0..3u32) as i32 - 1;
+                    let vcx = root_x + drift2;
+                    let vcl = ((cl as f32) * 0.75).max(1.0) as i32;
+                    let vcr = ((cr as f32) * 0.75).max(1.0) as i32;
+                    set(grid, vcx, cy, '∨', lighten(lc, 5));
+                    for dx in 1..=vcl {
+                        set(grid, vcx - dx, cy, '╲', lighten(lc, 8));
+                    }
+                    for dx in 1..=vcr {
+                        set(grid, vcx + dx, cy, '╱', lighten(lc, 8));
                     }
                     cy -= 1;
-                    w = (w * 3 / 5).max(1);
-                    if w < 1 { break; }
                 }
-                BoleExit::point(root_x, root_y - levels)
             }
-            // Tussock: a clump of grass blades hides the trunk base
-            33 => {
-                let blades = ['⌇', '╿', '╽', '┆', '╵'];
-                let hw = lw.max(rw).max(2);
-                for dx in -hw..=hw {
-                    let ch = blades[rng.random_range(0..blades.len() as u32) as usize];
-                    set(grid, root_x + dx, root_y, ch,
-                        lighten(bark, rng.random_range(0..25u32) as u8));
+
+            // Chevron's ∧ shape already tapers to a point -- no generic taper needed
+            BoleExit::point(root_x, cy + 1)
+        }
+        // ── Squat boles: max 2 rows, horizontal emphasis, single-column flares ──
+
+        // Squat Crescent: wide single-row arc with flare pokes
+        18 => {
+            set(grid, root_x, root_y, '┴', color);
+            for dx in 1..=lw {
+                set(
+                    grid,
+                    root_x - dx,
+                    root_y,
+                    '═',
+                    lighten(bark, ((dx as u8) * 3).min(20)),
+                );
+            }
+            for dx in 1..=rw {
+                set(
+                    grid,
+                    root_x + dx,
+                    root_y,
+                    '═',
+                    lighten(bark, ((dx as u8) * 3).min(20)),
+                );
+            }
+            set(grid, root_x - lw - 1, root_y, '◜', dim);
+            set(grid, root_x + rw + 1, root_y, '◝', dim);
+            // Flares: single-column pokes above at random positions
+            for _ in 0..rng.random_range(1..4u32) {
+                let fx = root_x + rng.random_range(0..(lw + rw + 1) as u32) as i32 - lw;
+                if fx != root_x {
+                    set(grid, fx, root_y - 1, '╷', lighten(bark, 15));
                 }
-                // taller blades near the center on a second row
-                let tw = (hw / 2).max(1);
-                for dx in -tw..=tw {
-                    if rng.random::<f32>() < 0.5 {
-                        let ch = blades[rng.random_range(0..blades.len() as u32) as usize];
-                        set(grid, root_x + dx, root_y - 1, ch, bark);
+            }
+            BoleExit::point(root_x, root_y)
+        }
+        // Squat Braille: 2-row dense shelf, no vertical growth
+        19 => {
+            let dense = ['⣿', '⣾', '⣷', '⣶', '⣤'];
+            let edge = ['⡀', '⢀', '⠂', '⠁', '⠈'];
+            // Row 1: dense ground
+            set(grid, root_x, root_y, '⣿', color);
+            for dx in 1..=lw {
+                set(
+                    grid,
+                    root_x - dx,
+                    root_y,
+                    dense[rng.random_range(0..dense.len() as u32) as usize],
+                    darken(color, ((dx as u8) * 2).min(10)),
+                );
+            }
+            for dx in 1..=rw {
+                set(
+                    grid,
+                    root_x + dx,
+                    root_y,
+                    dense[rng.random_range(0..dense.len() as u32) as usize],
+                    darken(color, ((dx as u8) * 2).min(10)),
+                );
+            }
+            set(
+                grid,
+                root_x - lw - 1,
+                root_y,
+                edge[rng.random_range(0..edge.len() as u32) as usize],
+                dim,
+            );
+            set(
+                grid,
+                root_x + rw + 1,
+                root_y,
+                edge[rng.random_range(0..edge.len() as u32) as usize],
+                dim,
+            );
+            // Row 2: sparser, narrower
+            let sl = (lw as f32 * 0.5).max(1.0) as i32;
+            let sr = (rw as f32 * 0.5).max(1.0) as i32;
+            let mid = ['⡇', '⢸', '⠿', '⠶', '⠛'];
+            set(
+                grid,
+                root_x,
+                root_y - 1,
+                mid[rng.random_range(0..mid.len() as u32) as usize],
+                bark,
+            );
+            for dx in 1..=sl {
+                set(
+                    grid,
+                    root_x - dx,
+                    root_y - 1,
+                    mid[rng.random_range(0..mid.len() as u32) as usize],
+                    darken(bark, ((dx as u8) * 3).min(12)),
+                );
+            }
+            for dx in 1..=sr {
+                set(
+                    grid,
+                    root_x + dx,
+                    root_y - 1,
+                    mid[rng.random_range(0..mid.len() as u32) as usize],
+                    darken(bark, ((dx as u8) * 3).min(12)),
+                );
+            }
+            BoleExit {
+                x: root_x,
+                y: root_y - 1,
+                left: sl,
+                right: sr,
+            }
+        }
+        // Squat Frame: 2-row nested frame with diamond accents and pillar legs
+        20 => {
+            // Row 1 (ground): outer frame base with diamond endpoints
+            set(grid, root_x - lw, root_y, '◇', dim);
+            set(grid, root_x + rw, root_y, '◇', dim);
+            for dx in (-lw + 1)..rw {
+                let ch = if (root_x + dx) % 2 == 0 { '═' } else { '─' };
+                set(grid, root_x + dx, root_y, ch, bark);
+            }
+            set(grid, root_x, root_y, '╧', color);
+            // Inner accent: ◆ markers at 1/3 and 2/3 across
+            let third_l = lw / 3;
+            let third_r = rw / 3;
+            if third_l > 0 {
+                set(grid, root_x - third_l, root_y, '◆', lighten(bark, 10));
+            }
+            if third_r > 0 {
+                set(grid, root_x + third_r, root_y, '◆', lighten(bark, 10));
+            }
+
+            // Row 2 (above): narrower inner shelf with box corners
+            let iw_l = (lw * 2 / 3).max(1);
+            let iw_r = (rw * 2 / 3).max(1);
+            set(grid, root_x - iw_l, root_y - 1, '╰', lighten(bark, 8));
+            set(grid, root_x + iw_r, root_y - 1, '╯', lighten(bark, 8));
+            for dx in (-iw_l + 1)..iw_r {
+                set(grid, root_x + dx, root_y - 1, '─', lighten(bark, 12));
+            }
+            set(grid, root_x, root_y - 1, '┼', color);
+            // Pillar legs: drop below at diamond endpoints
+            set(grid, root_x - lw, root_y + 1, '│', dim);
+            set(grid, root_x + rw, root_y + 1, '│', dim);
+            // Random inner flares above inner shelf
+            if rng.random_range(0..2u32) == 0 {
+                let fx = root_x + rng.random_range(1..iw_r.max(2) as u32) as i32;
+                set(grid, fx, root_y - 2, '╷', lighten(bark, 20));
+            }
+            if rng.random_range(0..2u32) == 0 {
+                let fx = root_x - rng.random_range(1..iw_l.max(2) as u32) as i32;
+                set(grid, fx, root_y - 2, '╷', lighten(bark, 20));
+            }
+            BoleExit {
+                x: root_x,
+                y: root_y - 1,
+                left: iw_l,
+                right: iw_r,
+            }
+        }
+        // Squat Diamond: 2-row flat diamond, single chevron + base
+        21 => {
+            // Ground: wide base
+            set(grid, root_x, root_y, '╨', color);
+            for dx in 1..=lw {
+                let ch = if dx == lw { '◇' } else { '═' };
+                set(
+                    grid,
+                    root_x - dx,
+                    root_y,
+                    ch,
+                    lighten(bark, ((dx as u8) * 3).min(20)),
+                );
+            }
+            for dx in 1..=rw {
+                let ch = if dx == rw { '◇' } else { '═' };
+                set(
+                    grid,
+                    root_x + dx,
+                    root_y,
+                    ch,
+                    lighten(bark, ((dx as u8) * 3).min(20)),
+                );
+            }
+            // Row 2: single V narrowing
+            let hw = (lw.max(rw) / 2).max(1);
+            set(grid, root_x, root_y - 1, '│', color);
+            for dx in 1..=hw {
+                set(grid, root_x - dx, root_y - 1, '╱', bark);
+                set(grid, root_x + dx, root_y - 1, '╲', bark);
+            }
+            // Tip flares at base ends
+            if lw > 2 {
+                set(grid, root_x - lw, root_y + 1, '╵', dim);
+            }
+            if rw > 2 {
+                set(grid, root_x + rw, root_y + 1, '╵', dim);
+            }
+            BoleExit {
+                x: root_x,
+                y: root_y - 1,
+                left: hw,
+                right: hw,
+            }
+        }
+        // Squat Chevron: 2-row diamond chevron with inverted V counter-layer
+        22 => {
+            // Row 1 (ground): wide V with diamond at apex
+            let center = ['∧', '△', '▵'][rng.random_range(0..3u32) as usize];
+            set(grid, root_x, root_y, center, color);
+            for dx in 1..=lw {
+                let c = lighten(bark, ((dx as u8) * 4).min(25));
+                set(grid, root_x - dx, root_y, '╱', c);
+            }
+            for dx in 1..=rw {
+                let c = lighten(bark, ((dx as u8) * 4).min(25));
+                set(grid, root_x + dx, root_y, '╲', c);
+            }
+            // Sprawl arms with stubs
+            let sl = rng.random_range(1..4u32) as i32;
+            let sr = rng.random_range(1..4u32) as i32;
+            for s in 1..=sl {
+                set(grid, root_x - lw - s, root_y, '─', lighten(bark, 12));
+            }
+            for s in 1..=sr {
+                set(grid, root_x + rw + s, root_y, '─', lighten(bark, 12));
+            }
+            set(grid, root_x - lw - sl - 1, root_y, '◁', dim);
+            set(grid, root_x + rw + sr + 1, root_y, '▷', dim);
+
+            // Row 2 (above): inverted mini-V counter-layer (creates diamond negative space)
+            let hw = (lw.max(rw) * 2 / 3).max(1);
+            let inv = ['∨', '▽', '▿'][rng.random_range(0..3u32) as usize];
+            set(grid, root_x, root_y - 1, inv, lighten(bark, 10));
+            for dx in 1..=hw {
+                set(grid, root_x - dx, root_y - 1, '╲', lighten(bark, 15));
+                set(grid, root_x + dx, root_y - 1, '╱', lighten(bark, 15));
+            }
+            // Horizontal stubs at inverted tips
+            if hw > 1 {
+                set(grid, root_x - hw - 1, root_y - 1, '─', dim);
+                set(grid, root_x + hw + 1, root_y - 1, '─', dim);
+            }
+
+            // Anchor drops below sprawl endpoints
+            set(grid, root_x - lw - sl, root_y + 1, '╵', dim);
+            set(grid, root_x + rw + sr, root_y + 1, '╵', dim);
+
+            BoleExit {
+                x: root_x,
+                y: root_y - 1,
+                left: hw,
+                right: hw,
+            }
+        }
+        // Squat Buttress: ground anchor with curved legs, max 2 rows
+        23 => {
+            set(grid, root_x, root_y, '╨', color);
+            set(grid, root_x - 1, root_y, '═', color);
+            set(grid, root_x + 1, root_y, '═', color);
+            // Left leg: horizontal then down-kick
+            let ll_reach = lw.max(2);
+            set(grid, root_x - 2, root_y, '╮', bark);
+            for dx in 3..=ll_reach {
+                set(
+                    grid,
+                    root_x - dx,
+                    root_y,
+                    '─',
+                    lighten(bark, ((dx as u8) * 3).min(20)),
+                );
+            }
+            set(grid, root_x - ll_reach - 1, root_y, '╴', dim);
+            // Left leg flare down
+            set(grid, root_x - 2, root_y + 1, '│', dim);
+            set(grid, root_x - 2, root_y + 2, '╵', lighten(dim, 10));
+            // Right leg
+            let rr_reach = rw.max(2);
+            set(grid, root_x + 2, root_y, '╭', bark);
+            for dx in 3..=rr_reach {
+                set(
+                    grid,
+                    root_x + dx,
+                    root_y,
+                    '─',
+                    lighten(bark, ((dx as u8) * 3).min(20)),
+                );
+            }
+            set(grid, root_x + rr_reach + 1, root_y, '╶', dim);
+            // Right leg flare down
+            set(grid, root_x + 2, root_y + 1, '│', dim);
+            set(grid, root_x + 2, root_y + 2, '╵', lighten(dim, 10));
+            BoleExit::point(root_x, root_y)
+        }
+        // ── Winding boles: serpentine runs, woven strands, coiled arcs ──
+
+        // Serpent: a root snakes across the ground in S-curves, switching
+        // rows with curve corners; the trunk rises wherever it crosses center
+        24 => {
+            let y_b = root_y;
+            let y_t = root_y - 1;
+            let start = root_x - lw.max(3) - 1;
+            let end = root_x + rw.max(3) + 1;
+            let mut on_top = rng.random_range(0..2u32) == 0;
+            let mut run = rng.random_range(2..5u32) as i32;
+            let mut row_at_root = false; // true if snake is on top row at root_x
+            set(grid, start, if on_top { y_t } else { y_b }, '╶', dim);
+            let mut x = start + 1;
+            while x <= end {
+                let dist = ((x - root_x).abs() as u8 * 2).min(20);
+                let c = if (x - root_x).abs() <= 1 {
+                    color
+                } else {
+                    darken(bark, dist)
+                };
+                if run == 0 && x < end - 1 {
+                    // switch rows: corner pair links the two runs
+                    if on_top {
+                        set(grid, x, y_t, '╮', c);
+                        set(grid, x, y_b, '╰', c);
+                    } else {
+                        set(grid, x, y_b, '╯', c);
+                        set(grid, x, y_t, '╭', c);
+                    }
+                    on_top = !on_top;
+                    run = rng.random_range(2..5u32) as i32;
+                } else {
+                    set(grid, x, if on_top { y_t } else { y_b }, '─', c);
+                    run -= 1;
+                }
+                if x == root_x {
+                    row_at_root = on_top;
+                }
+                x += 1;
+            }
+            set(grid, end + 1, if on_top { y_t } else { y_b }, '╴', dim);
+            // root tips digging below ground at 1-2 spots
+            for _ in 0..rng.random_range(1..3u32) {
+                let fx = root_x + rng.random_range(0..(lw + rw).max(2) as u32) as i32 - lw;
+                set(grid, fx, root_y + 1, '╷', dim);
+            }
+            // trunk junction on whichever row the snake occupies at center
+            if row_at_root {
+                set(grid, root_x, y_t, '┴', color);
+                BoleExit::point(root_x, y_t - 1)
+            } else {
+                set(grid, root_x, y_b, '┴', color);
+                BoleExit::point(root_x, y_t)
+            }
+        }
+        // Braid: two strands weave over-under in a period-4 diamond chain
+        25 => {
+            let w = lw.max(rw).max(3);
+            let y_b = root_y;
+            let y_t = root_y - 1;
+            for k in -w..=w {
+                let x = root_x + k;
+                let dist = (k.abs() as u8 * 3).min(20);
+                let (ct, cb) = match k.rem_euclid(4) {
+                    0 => ('─', '─'),
+                    1 => ('╲', '╱'),
+                    2 => ('╱', '╲'),
+                    _ => ('─', '─'),
+                };
+                // crossing columns stay bright, straight runs fade outward
+                let crossing = k.rem_euclid(4) == 1 || k.rem_euclid(4) == 2;
+                let c = if crossing {
+                    lighten(bark, 10)
+                } else {
+                    darken(bark, dist)
+                };
+                set(grid, x, y_t, ct, c);
+                set(grid, x, y_b, cb, darken(c, 8));
+            }
+            set(grid, root_x - w - 1, y_b, '╾', dim);
+            set(grid, root_x + w + 1, y_b, '╼', dim);
+            set(grid, root_x, y_t, '┼', color);
+            BoleExit {
+                x: root_x,
+                y: y_t,
+                left: 1,
+                right: 1,
+            }
+        }
+        // Coil: nested arcs stacked into a flattened spiral; the tail
+        // sweeps out one side and the gap rotates ring to ring
+        26 => {
+            let w0 = lw.max(rw).max(4);
+            let w1 = (w0 * 2 / 3).max(2);
+            let tail_right = rng.random_range(0..2u32) == 0;
+            let ts = if tail_right { 1 } else { -1 };
+            // outer ring: upward cup on the ground row
+            set(grid, root_x - w0 - 1, root_y, '◟', dim);
+            for dx in -w0..=w0 {
+                set(
+                    grid,
+                    root_x + dx,
+                    root_y,
+                    '◡',
+                    darken(bark, (dx.abs() as u8 * 2).min(16)),
+                );
+            }
+            set(grid, root_x + w0 + 1, root_y, '◞', dim);
+            // tail sweeps out from the outer ring
+            set(grid, root_x + ts * (w0 + 2), root_y, '─', dim);
+            set(
+                grid,
+                root_x + ts * (w0 + 3),
+                root_y,
+                if tail_right { '╴' } else { '╶' },
+                darken(dim, 10),
+            );
+            // inner ring: downward cap, shifted opposite the tail (spiral offset)
+            let ox = -ts;
+            set(grid, root_x + ox - w1 - 1, root_y - 1, '◜', bark);
+            for dx in -w1..=w1 {
+                set(
+                    grid,
+                    root_x + ox + dx,
+                    root_y - 1,
+                    '◠',
+                    lighten(bark, (dx.abs() as u8 * 3).min(18)),
+                );
+            }
+            set(grid, root_x + ox + w1 + 1, root_y - 1, '◝', bark);
+            // coil eye where the spiral terminates
+            set(grid, root_x + ox * 2, root_y - 1, '◉', color);
+            set(grid, root_x, root_y - 1, '╂', color);
+            BoleExit {
+                x: root_x,
+                y: root_y - 1,
+                left: 1,
+                right: 1,
+            }
+        }
+        // Taproot: low mound above ground, winding roots dig below it
+        27 => {
+            set(grid, root_x, root_y, '┴', color);
+            for dx in 1..=lw.max(2) {
+                let ch = if dx == lw.max(2) { '╮' } else { '─' };
+                set(
+                    grid,
+                    root_x - dx,
+                    root_y,
+                    ch,
+                    darken(bark, (dx as u8 * 3).min(18)),
+                );
+            }
+            for dx in 1..=rw.max(2) {
+                let ch = if dx == rw.max(2) { '╭' } else { '─' };
+                set(
+                    grid,
+                    root_x + dx,
+                    root_y,
+                    ch,
+                    darken(bark, (dx as u8 * 3).min(18)),
+                );
+            }
+            // winding roots: walkers descend 1-2 rows, drifting and reversing
+            let n_roots = rng.random_range(3..5u32);
+            for r in 0..n_roots {
+                let span = (lw + rw).max(2);
+                let mut x = root_x + rng.random_range(0..span as u32) as i32 - lw;
+                if x == root_x {
+                    x += if r % 2 == 0 { 1 } else { -1 };
+                }
+                let mut drift: i32 = if x < root_x { -1 } else { 1 };
+                let depth = if compact {
+                    1
+                } else {
+                    rng.random_range(1..3u32) as i32
+                };
+                let mut y = root_y;
+                for _ in 0..depth {
+                    y += 1;
+                    if rng.random::<f32>() < 0.6 {
+                        x += drift;
+                        set(grid, x, y, if drift > 0 { '╲' } else { '╱' }, dim);
+                    } else {
+                        set(grid, x, y, '│', dim);
+                    }
+                    if rng.random::<f32>() < 0.3 {
+                        drift = -drift;
                     }
                 }
-                // seed heads drift above the clump
-                for _ in 0..rng.random_range(1..4u32) {
-                    let sx = root_x + rng.random_range(0..(hw * 2 + 1) as u32) as i32 - hw;
-                    set(grid, sx, root_y - 2, '·', dim);
-                }
-                set(grid, root_x, root_y - 1, '│', color);
-                BoleExit::point(root_x, root_y - 1)
+                set(grid, x, y + 1, '╷', darken(dim, 10));
             }
-            _ => BoleExit::point(root_x, root_y),
+            BoleExit {
+                x: root_x,
+                y: root_y,
+                left: 1,
+                right: 1,
+            }
         }
+        // ── Structural boles: legs, piles, dens, claws, shelves, grass ──
+
+        // Stilts: the trunk stands on splayed mangrove prop legs with
+        // open air underneath
+        28 => {
+            set(grid, root_x, root_y - 1, '┴', color);
+            set(grid, root_x - 1, root_y - 1, '╭', bark);
+            set(grid, root_x + 1, root_y - 1, '╮', bark);
+            let pairs = (lw.max(rw) / 2).clamp(1, 3);
+            for k in 1..=pairs {
+                // each pair splays one cell further out per row down
+                let hip = k;
+                set(
+                    grid,
+                    root_x - hip - 1,
+                    root_y,
+                    '╱',
+                    darken(bark, (k as u8 * 6).min(18)),
+                );
+                set(
+                    grid,
+                    root_x + hip + 1,
+                    root_y,
+                    '╲',
+                    darken(bark, (k as u8 * 6).min(18)),
+                );
+                set(grid, root_x - hip - 2, root_y + 1, '╱', dim);
+                set(grid, root_x + hip + 2, root_y + 1, '╲', dim);
+            }
+            // feet grip the ground below the outermost legs
+            set(grid, root_x - pairs - 3, root_y + 2, '╷', darken(dim, 10));
+            set(grid, root_x + pairs + 3, root_y + 2, '╷', darken(dim, 10));
+            // one off-center brace leg for asymmetry
+            let bx = if rng.random_range(0..2u32) == 0 {
+                -1
+            } else {
+                1
+            };
+            set(grid, root_x + bx, root_y, '│', bark);
+            set(grid, root_x + bx, root_y + 1, '╷', dim);
+            BoleExit {
+                x: root_x,
+                y: root_y - 1,
+                left: 1,
+                right: 1,
+            }
+        }
+        // Cairn: rounded stones piled against the trunk base
+        29 => {
+            let stones = ['◯', '●', '○', '◦'];
+            let hw = lw.max(rw).max(2);
+            for dx in -hw..=hw {
+                let ch = stones[rng.random_range(0..stones.len() as u32) as usize];
+                set(
+                    grid,
+                    root_x + dx,
+                    root_y,
+                    ch,
+                    darken(bark, (dx.abs() as u8 * 4).min(20)),
+                );
+            }
+            // top course: fewer, smaller stones nested in the gaps
+            let tw = (hw / 2).max(1);
+            for dx in -tw..=tw {
+                if dx == 0 {
+                    continue;
+                }
+                let ch = if rng.random_range(0..2u32) == 0 {
+                    '○'
+                } else {
+                    '◦'
+                };
+                set(grid, root_x + dx, root_y - 1, ch, bark);
+            }
+            set(grid, root_x, root_y - 1, '╨', color);
+            BoleExit::point(root_x, root_y - 2)
+        }
+        // Hollow: a den opening framed in the trunk base, sloped
+        // shoulders on either side
+        30 => {
+            let hw = lw.max(rw).max(3);
+            // rim row
+            set(grid, root_x, root_y - 1, '┴', color);
+            for dx in 1..hw {
+                set(grid, root_x - dx, root_y - 1, '─', bark);
+                set(grid, root_x + dx, root_y - 1, '─', bark);
+            }
+            set(grid, root_x - hw, root_y - 1, '╭', bark);
+            set(grid, root_x + hw, root_y - 1, '╮', bark);
+            // ground row: arch entrance at center, shoulders slope away
+            set(grid, root_x - 1, root_y, '╭', lighten(bark, 15));
+            set(grid, root_x + 1, root_y, '╮', lighten(bark, 15));
+            // the hole itself stays blank at root_x
+            for dx in 2..hw {
+                set(
+                    grid,
+                    root_x - dx,
+                    root_y,
+                    '▒',
+                    darken(bark, (dx as u8 * 3).min(15)),
+                );
+                set(
+                    grid,
+                    root_x + dx,
+                    root_y,
+                    '▒',
+                    darken(bark, (dx as u8 * 3).min(15)),
+                );
+            }
+            set(grid, root_x - hw, root_y, '╱', dim);
+            set(grid, root_x + hw, root_y, '╲', dim);
+            BoleExit {
+                x: root_x,
+                y: root_y - 1,
+                left: 2,
+                right: 2,
+            }
+        }
+        // Talon: clawed digits radiate from a center pad and dig in
+        31 => {
+            set(grid, root_x, root_y - 1, '┴', color);
+            let reach_l = lw.max(2).min(4);
+            let reach_r = rw.max(2).min(4);
+            // outer digits: out along the pad, bend, then dig
+            for (side, reach) in [(-1i32, reach_l), (1i32, reach_r)] {
+                let digits = (reach / 2).max(1);
+                // longest digit first so shorter bends overwrite its run
+                for d in (1..=digits).rev() {
+                    let bend = side * (d * 2);
+                    for s in 1..(d * 2) {
+                        set(grid, root_x + side * s, root_y - 1, '─', bark);
+                    }
+                    set(
+                        grid,
+                        root_x + bend,
+                        root_y - 1,
+                        if side < 0 { '╭' } else { '╮' },
+                        bark,
+                    );
+                    set(grid, root_x + bend, root_y, '│', darken(bark, 8));
+                    set(grid, root_x + bend, root_y + 1, '╷', dim);
+                }
+            }
+            // center digit digs straight down
+            set(grid, root_x, root_y, '│', bark);
+            set(grid, root_x, root_y + 1, '╷', dim);
+            BoleExit::point(root_x, root_y - 2)
+        }
+        // Tiers: stacked pagoda shelves shrinking upward, drip legs
+        // under the outer edges
+        32 => {
+            let w0 = lw.max(rw).max(3);
+            let levels = if energy > 0.6 { 3 } else { 2 };
+            let mut cy = root_y;
+            let mut w = w0;
+            for lvl in 0..levels {
+                let center = if lvl == levels - 1 { '┴' } else { '╪' };
+                set(grid, root_x, cy, center, color);
+                for dx in 1..=w {
+                    set(
+                        grid,
+                        root_x - dx,
+                        cy,
+                        '═',
+                        darken(bark, (dx as u8 * 3).min(18)),
+                    );
+                    set(
+                        grid,
+                        root_x + dx,
+                        cy,
+                        '═',
+                        darken(bark, (dx as u8 * 3).min(18)),
+                    );
+                }
+                if lvl == 0 {
+                    // drip legs under the widest shelf
+                    set(grid, root_x - w, cy + 1, '╷', dim);
+                    set(grid, root_x + w, cy + 1, '╷', dim);
+                }
+                cy -= 1;
+                w = (w * 3 / 5).max(1);
+                if w < 1 {
+                    break;
+                }
+            }
+            BoleExit::point(root_x, root_y - levels)
+        }
+        // Tussock: a clump of grass blades hides the trunk base
+        33 => {
+            let blades = ['⌇', '╿', '╽', '┆', '╵'];
+            let hw = lw.max(rw).max(2);
+            for dx in -hw..=hw {
+                let ch = blades[rng.random_range(0..blades.len() as u32) as usize];
+                set(
+                    grid,
+                    root_x + dx,
+                    root_y,
+                    ch,
+                    lighten(bark, rng.random_range(0..25u32) as u8),
+                );
+            }
+            // taller blades near the center on a second row
+            let tw = (hw / 2).max(1);
+            for dx in -tw..=tw {
+                if rng.random::<f32>() < 0.5 {
+                    let ch = blades[rng.random_range(0..blades.len() as u32) as usize];
+                    set(grid, root_x + dx, root_y - 1, ch, bark);
+                }
+            }
+            // seed heads drift above the clump
+            for _ in 0..rng.random_range(1..4u32) {
+                let sx = root_x + rng.random_range(0..(hw * 2 + 1) as u32) as i32 - hw;
+                set(grid, sx, root_y - 2, '·', dim);
+            }
+            set(grid, root_x, root_y - 1, '│', color);
+            BoleExit::point(root_x, root_y - 1)
+        }
+        _ => BoleExit::point(root_x, root_y),
+    }
 }
 
 pub struct TreeWithTrunk<T: TreeDrawer> {
@@ -2226,19 +3133,35 @@ pub struct TreeWithTrunk<T: TreeDrawer> {
 }
 
 impl<T: TreeDrawer> TreeDrawer for TreeWithTrunk<T> {
-    fn draw_trunk(&self, grid: &mut Grid, pen: &mut TreePen,
-                  params: &TreeParams, rng: &mut StdRng) -> Vec<TrunkNode> {
+    fn draw_trunk(
+        &self,
+        grid: &mut Grid,
+        pen: &mut TreePen,
+        params: &TreeParams,
+        rng: &mut StdRng,
+    ) -> Vec<TrunkNode> {
         self.trunk.draw(grid, pen, params, rng)
     }
 
-    fn should_branch(&self, idx: usize, count: usize,
-                     params: &TreeParams, rng: &mut StdRng) -> Option<BranchIntent> {
+    fn should_branch(
+        &self,
+        idx: usize,
+        count: usize,
+        params: &TreeParams,
+        rng: &mut StdRng,
+    ) -> Option<BranchIntent> {
         self.tree.should_branch(idx, count, params, rng)
     }
 
-    fn draw_branch(&self, grid: &mut Grid, pen: &mut TreePen,
-                   intent: &BranchIntent, depth: usize,
-                   params: &TreeParams, rng: &mut StdRng) -> BranchResult {
+    fn draw_branch(
+        &self,
+        grid: &mut Grid,
+        pen: &mut TreePen,
+        intent: &BranchIntent,
+        depth: usize,
+        params: &TreeParams,
+        rng: &mut StdRng,
+    ) -> BranchResult {
         self.tree.draw_branch(grid, pen, intent, depth, params, rng)
     }
 
@@ -2255,20 +3178,30 @@ impl<T: TreeDrawer> TreeDrawer for TreeWithTrunk<T> {
 
 pub trait TreeDrawer {
     fn draw_trunk(
-        &self, grid: &mut Grid, pen: &mut TreePen,
-        params: &TreeParams, rng: &mut StdRng,
+        &self,
+        grid: &mut Grid,
+        pen: &mut TreePen,
+        params: &TreeParams,
+        rng: &mut StdRng,
     ) -> Vec<TrunkNode>;
 
     /// idx = trunk node index, count = total trunk nodes.
     fn should_branch(
-        &self, idx: usize, count: usize,
-        params: &TreeParams, rng: &mut StdRng,
+        &self,
+        idx: usize,
+        count: usize,
+        params: &TreeParams,
+        rng: &mut StdRng,
     ) -> Option<BranchIntent>;
 
     fn draw_branch(
-        &self, grid: &mut Grid, pen: &mut TreePen,
-        intent: &BranchIntent, depth: usize,
-        params: &TreeParams, rng: &mut StdRng,
+        &self,
+        grid: &mut Grid,
+        pen: &mut TreePen,
+        intent: &BranchIntent,
+        depth: usize,
+        params: &TreeParams,
+        rng: &mut StdRng,
     ) -> BranchResult;
 
     fn draw_tip(&self, grid: &mut Grid, x: i32, y: i32, params: &TreeParams);
@@ -2288,7 +3221,9 @@ pub trait TreeDrawer {
         pen.last_dir = Some(MoveDir::Up);
 
         let trunk = self.draw_trunk(grid, &mut pen, params, rng);
-        if trunk.is_empty() { return; }
+        if trunk.is_empty() {
+            return;
+        }
 
         let trunk_len = trunk.len();
         let mut all_tips: Vec<(i32, i32)> = Vec::new();
@@ -2303,7 +3238,9 @@ pub trait TreeDrawer {
                 let result = self.draw_branch(grid, &mut bp, &intent, 0, params, rng);
                 all_tips.extend(result.tips);
 
-                if i == trunk_len - 1 { apex_branched = true; }
+                if i == trunk_len - 1 {
+                    apex_branched = true;
+                }
             }
         }
 
@@ -2332,19 +3269,32 @@ pub struct SpiralTree;
 
 impl TreeDrawer for SpiralTree {
     fn draw_trunk(
-        &self, grid: &mut Grid, pen: &mut TreePen,
-        params: &TreeParams, rng: &mut StdRng,
+        &self,
+        grid: &mut Grid,
+        pen: &mut TreePen,
+        params: &TreeParams,
+        rng: &mut StdRng,
     ) -> Vec<TrunkNode> {
-        StraightTrunk { height_fraction: 1.0 }.draw(grid, pen, params, rng)
+        StraightTrunk {
+            height_fraction: 1.0,
+        }
+        .draw(grid, pen, params, rng)
     }
 
     fn should_branch(
-        &self, idx: usize, count: usize,
-        params: &TreeParams, _rng: &mut StdRng,
+        &self,
+        idx: usize,
+        count: usize,
+        params: &TreeParams,
+        _rng: &mut StdRng,
     ) -> Option<BranchIntent> {
         let interval = (count / 5).max(2);
-        if idx < interval || idx >= count - 1 { return None; }
-        if idx % interval != 0 { return None; }
+        if idx < interval || idx >= count - 1 {
+            return None;
+        }
+        if idx % interval != 0 {
+            return None;
+        }
 
         let level = idx / interval - 1;
         let go_left = level % 2 == 0;
@@ -2352,20 +3302,31 @@ impl TreeDrawer for SpiralTree {
         let max_arm = params.spread();
         let arm = (max_arm - level as i32 * 2).max(2);
 
-        Some(BranchIntent { go_left, length: arm, level })
+        Some(BranchIntent {
+            go_left,
+            length: arm,
+            level,
+        })
     }
 
     fn draw_branch(
-        &self, grid: &mut Grid, pen: &mut TreePen,
-        intent: &BranchIntent, _depth: usize,
-        params: &TreeParams, _rng: &mut StdRng,
+        &self,
+        grid: &mut Grid,
+        pen: &mut TreePen,
+        intent: &BranchIntent,
+        _depth: usize,
+        params: &TreeParams,
+        _rng: &mut StdRng,
     ) -> BranchResult {
         use MoveDir::*;
         let h_dir = if intent.go_left { Left } else { Right };
         let mut tips = Vec::new();
 
         // Color: lighten more near top (level 0 = lightest), matching old algo
-        let c = lighten(params.trunk_color, 60u8.saturating_sub((intent.level * 15) as u8));
+        let c = lighten(
+            params.trunk_color,
+            60u8.saturating_sub((intent.level * 15) as u8),
+        );
         pen.color = c;
 
         // Junction at trunk attachment point
@@ -2420,28 +3381,45 @@ pub struct CandelabraTree;
 
 impl TreeDrawer for CandelabraTree {
     fn draw_trunk(
-        &self, grid: &mut Grid, pen: &mut TreePen,
-        params: &TreeParams, rng: &mut StdRng,
+        &self,
+        grid: &mut Grid,
+        pen: &mut TreePen,
+        params: &TreeParams,
+        rng: &mut StdRng,
     ) -> Vec<TrunkNode> {
-        ThickTrunk { height_fraction: 1.0 / 3.0 }.draw(grid, pen, params, rng)
+        ThickTrunk {
+            height_fraction: 1.0 / 3.0,
+        }
+        .draw(grid, pen, params, rng)
     }
 
     fn should_branch(
-        &self, idx: usize, count: usize,
-        _params: &TreeParams, _rng: &mut StdRng,
+        &self,
+        idx: usize,
+        count: usize,
+        _params: &TreeParams,
+        _rng: &mut StdRng,
     ) -> Option<BranchIntent> {
         // Fire once at the trunk top -- draw_branch builds the whole crown
         if idx == count - 1 {
-            Some(BranchIntent { go_left: false, length: 0, level: 0 })
+            Some(BranchIntent {
+                go_left: false,
+                length: 0,
+                level: 0,
+            })
         } else {
             None
         }
     }
 
     fn draw_branch(
-        &self, grid: &mut Grid, _pen: &mut TreePen,
-        _intent: &BranchIntent, _depth: usize,
-        params: &TreeParams, rng: &mut StdRng,
+        &self,
+        grid: &mut Grid,
+        _pen: &mut TreePen,
+        _intent: &BranchIntent,
+        _depth: usize,
+        params: &TreeParams,
+        rng: &mut StdRng,
     ) -> BranchResult {
         let (rx, _) = params.root();
         let top_y = params.canopy_top();
@@ -2501,17 +3479,35 @@ impl TreeDrawer for CandelabraTree {
                 for x in spur_lo..=spur_hi {
                     set(grid, x, fork_y, '─', params.trunk_color);
                 }
-                let jc = if ax < rx { '┘' } else if ax > rx { '└' } else { '┤' };
+                let jc = if ax < rx {
+                    '┘'
+                } else if ax > rx {
+                    '└'
+                } else {
+                    '┤'
+                };
                 set(grid, ax, fork_y, jc, params.trunk_color);
                 set(grid, rx, fork_y, '┼', params.trunk_color);
             } else {
                 // Classic: junction char on the shared bar
-                let jc = if i == 0 { '└' } else if i == arm_count - 1 { '┘' } else { '┴' };
+                let jc = if i == 0 {
+                    '└'
+                } else if i == arm_count - 1 {
+                    '┘'
+                } else {
+                    '┴'
+                };
                 set(grid, ax, fork_y, jc, params.trunk_color);
             }
 
             // Lean direction: arms left of center lean left, right lean right
-            let lean: i32 = if ax < rx { -1 } else if ax > rx { 1 } else { 0 };
+            let lean: i32 = if ax < rx {
+                -1
+            } else if ax > rx {
+                1
+            } else {
+                0
+            };
             let arm_top = top_y + rng.random_range(0..3u32) as i32;
 
             // Vertical arm with corner-pair lean at midpoint
@@ -2566,39 +3562,57 @@ pub struct SplitTree;
 
 impl TreeDrawer for SplitTree {
     fn draw_trunk(
-        &self, grid: &mut Grid, pen: &mut TreePen,
-        params: &TreeParams, rng: &mut StdRng,
+        &self,
+        grid: &mut Grid,
+        pen: &mut TreePen,
+        params: &TreeParams,
+        rng: &mut StdRng,
     ) -> Vec<TrunkNode> {
         // Minimal stump -- splitting IS the tree
         let mut nodes = Vec::new();
         pen.step(grid, MoveDir::Up);
-        nodes.push(TrunkNode { x: pen.x, y: pen.y, dir: MoveDir::Up });
+        nodes.push(TrunkNode {
+            x: pen.x,
+            y: pen.y,
+            dir: MoveDir::Up,
+        });
         nodes
     }
 
     fn should_branch(
-        &self, idx: usize, count: usize,
-        _params: &TreeParams, _rng: &mut StdRng,
+        &self,
+        idx: usize,
+        count: usize,
+        _params: &TreeParams,
+        _rng: &mut StdRng,
     ) -> Option<BranchIntent> {
         // Fire once at the trunk top -- draw_branch does recursive forking
         if idx == count - 1 {
-            Some(BranchIntent { go_left: false, length: 0, level: 0 })
+            Some(BranchIntent {
+                go_left: false,
+                length: 0,
+                level: 0,
+            })
         } else {
             None
         }
     }
 
     fn draw_branch(
-        &self, grid: &mut Grid, _pen: &mut TreePen,
-        _intent: &BranchIntent, _depth: usize,
-        params: &TreeParams, rng: &mut StdRng,
+        &self,
+        grid: &mut Grid,
+        _pen: &mut TreePen,
+        _intent: &BranchIntent,
+        _depth: usize,
+        params: &TreeParams,
+        rng: &mut StdRng,
     ) -> BranchResult {
         // Start from where the trunk actually ended, not params.root()
         let trunk_top_x = _pen.x;
         let trunk_top_y = _pen.y;
         let top_y = params.canopy_top();
         let height = (trunk_top_y - top_y).max(3);
-        let first_split = trunk_top_y;  // split immediately from trunk top
+        let first_split = trunk_top_y; // split immediately from trunk top
         let spread = params.spread();
         let mut tips = Vec::new();
 
@@ -2631,7 +3645,9 @@ impl TreeDrawer for SplitTree {
 
             // Off-center split: 30-70% of segment height
             let split_frac = 30 + rng.random_range(0..41u32) as i32;
-            let split_y = (top + (bottom - top) * split_frac / 100).max(top + 1).min(bottom - 1);
+            let split_y = (top + (bottom - top) * split_frac / 100)
+                .max(top + 1)
+                .min(bottom - 1);
 
             // Vertical segment below split
             for y in (split_y + 1)..bottom {
@@ -2675,8 +3691,12 @@ impl TreeDrawer for SplitTree {
     fn draw_fruit(&self, grid: &mut Grid, x: i32, y: i32, params: &TreeParams, rng: &mut StdRng) {
         // Berry cluster: 2-3 dots around tip
         set(grid, x, y, '•', params.fruit_color);
-        if rng.random::<bool>() { set(grid, x - 1, y, '•', lighten(params.fruit_color, 20)); }
-        if rng.random::<bool>() { set(grid, x + 1, y - 1, '•', lighten(params.fruit_color, 10)); }
+        if rng.random::<bool>() {
+            set(grid, x - 1, y, '•', lighten(params.fruit_color, 20));
+        }
+        if rng.random::<bool>() {
+            set(grid, x + 1, y - 1, '•', lighten(params.fruit_color, 10));
+        }
     }
 }
 
@@ -2689,39 +3709,62 @@ pub struct BirchTree;
 
 impl TreeDrawer for BirchTree {
     fn draw_trunk(
-        &self, grid: &mut Grid, pen: &mut TreePen,
-        params: &TreeParams, rng: &mut StdRng,
+        &self,
+        grid: &mut Grid,
+        pen: &mut TreePen,
+        params: &TreeParams,
+        rng: &mut StdRng,
     ) -> Vec<TrunkNode> {
-        StraightTrunk { height_fraction: 1.0 }.draw(grid, pen, params, rng)
+        StraightTrunk {
+            height_fraction: 1.0,
+        }
+        .draw(grid, pen, params, rng)
     }
 
     fn should_branch(
-        &self, idx: usize, count: usize,
-        params: &TreeParams, rng: &mut StdRng,
+        &self,
+        idx: usize,
+        count: usize,
+        params: &TreeParams,
+        rng: &mut StdRng,
     ) -> Option<BranchIntent> {
         let interval = 2;
 
         // Skip first and last node
-        if idx == 0 || idx >= count - 1 { return None; }
+        if idx == 0 || idx >= count - 1 {
+            return None;
+        }
 
         // Branch at interval=2, alternating left/right
-        if idx % interval != 0 { return None; }
+        if idx % interval != 0 {
+            return None;
+        }
 
         // 25% chance to skip this branch
-        if rng.random_range(0..4u32) == 0 { return None; }
+        if rng.random_range(0..4u32) == 0 {
+            return None;
+        }
 
         let level = idx / interval - 1;
         let go_left = level % 2 == 0;
         let max_arm = params.spread().max(2).min(6);
         let length = rng.random_range(2..=max_arm);
 
-        Some(BranchIntent { go_left, length, level })
+        Some(BranchIntent {
+            go_left,
+            length,
+            level,
+        })
     }
 
     fn draw_branch(
-        &self, grid: &mut Grid, pen: &mut TreePen,
-        intent: &BranchIntent, _depth: usize,
-        params: &TreeParams, rng: &mut StdRng,
+        &self,
+        grid: &mut Grid,
+        pen: &mut TreePen,
+        intent: &BranchIntent,
+        _depth: usize,
+        params: &TreeParams,
+        rng: &mut StdRng,
     ) -> BranchResult {
         use MoveDir::*;
         let h_dir = if intent.go_left { Left } else { Right };
@@ -2772,7 +3815,13 @@ impl TreeDrawer for BirchTree {
         // Catkin: braille dangle below tip
         let len = 1 + rng.random_range(0..2u32) as i32;
         for i in 0..len {
-            set(grid, x, y + 1 + i, '⡇', lighten(params.fruit_color, (i * 20) as u8));
+            set(
+                grid,
+                x,
+                y + 1 + i,
+                '⡇',
+                lighten(params.fruit_color, (i * 20) as u8),
+            );
         }
     }
 }
@@ -2786,34 +3835,57 @@ pub struct WavyBirch;
 
 impl TreeDrawer for WavyBirch {
     fn draw_trunk(
-        &self, grid: &mut Grid, pen: &mut TreePen,
-        params: &TreeParams, rng: &mut StdRng,
+        &self,
+        grid: &mut Grid,
+        pen: &mut TreePen,
+        params: &TreeParams,
+        rng: &mut StdRng,
     ) -> Vec<TrunkNode> {
-        StraightTrunk { height_fraction: 1.0 }.draw(grid, pen, params, rng)
+        StraightTrunk {
+            height_fraction: 1.0,
+        }
+        .draw(grid, pen, params, rng)
     }
 
     fn should_branch(
-        &self, idx: usize, count: usize,
-        params: &TreeParams, rng: &mut StdRng,
+        &self,
+        idx: usize,
+        count: usize,
+        params: &TreeParams,
+        rng: &mut StdRng,
     ) -> Option<BranchIntent> {
         let interval = 2;
-        if idx == 0 || idx >= count - 1 { return None; }
-        if idx % interval != 0 { return None; }
+        if idx == 0 || idx >= count - 1 {
+            return None;
+        }
+        if idx % interval != 0 {
+            return None;
+        }
         // 15% skip (less than birch's 25% -- wavy looks better dense)
-        if rng.random_range(0..7u32) == 0 { return None; }
+        if rng.random_range(0..7u32) == 0 {
+            return None;
+        }
 
         let level = idx / interval - 1;
         let go_left = level % 2 == 0;
         let max_arm = params.spread().max(3).min(8);
         let length = rng.random_range(3..=max_arm);
 
-        Some(BranchIntent { go_left, length, level })
+        Some(BranchIntent {
+            go_left,
+            length,
+            level,
+        })
     }
 
     fn draw_branch(
-        &self, grid: &mut Grid, pen: &mut TreePen,
-        intent: &BranchIntent, _depth: usize,
-        params: &TreeParams, rng: &mut StdRng,
+        &self,
+        grid: &mut Grid,
+        pen: &mut TreePen,
+        intent: &BranchIntent,
+        _depth: usize,
+        params: &TreeParams,
+        rng: &mut StdRng,
     ) -> BranchResult {
         use MoveDir::*;
         let h_dir = if intent.go_left { Left } else { Right };
@@ -2839,7 +3911,8 @@ impl TreeDrawer for WavyBirch {
         for i in 1..=intent.length {
             pen.x += h_dir.dx();
             let t = i as f32 / wave_period;
-            let wave_y = start_y + ((t + side_phase + intent.level as f32 * 0.7).sin() * wave_amp) as i32;
+            let wave_y =
+                start_y + ((t + side_phase + intent.level as f32 * 0.7).sin() * wave_amp) as i32;
             let dy = (wave_y - prev_y).clamp(-1, 1);
             let cur_y = prev_y + dy;
 
@@ -2890,7 +3963,9 @@ impl TreeDrawer for WavyBirch {
     fn draw_fruit(&self, grid: &mut Grid, x: i32, y: i32, params: &TreeParams, rng: &mut StdRng) {
         // Seed pod: diamond with scatter dots
         set(grid, x, y, '◆', params.fruit_color);
-        if rng.random::<bool>() { set(grid, x + 1, y, '·', lighten(params.fruit_color, 30)); }
+        if rng.random::<bool>() {
+            set(grid, x + 1, y, '·', lighten(params.fruit_color, 30));
+        }
     }
 }
 
@@ -2906,23 +3981,33 @@ pub struct StormTree {
 
 impl StormTree {
     pub fn new() -> Self {
-        StormTree { lean_trunk: LeanTrunk::new() }
+        StormTree {
+            lean_trunk: LeanTrunk::new(),
+        }
     }
 }
 
 impl TreeDrawer for StormTree {
     fn draw_trunk(
-        &self, grid: &mut Grid, pen: &mut TreePen,
-        params: &TreeParams, rng: &mut StdRng,
+        &self,
+        grid: &mut Grid,
+        pen: &mut TreePen,
+        params: &TreeParams,
+        rng: &mut StdRng,
     ) -> Vec<TrunkNode> {
         self.lean_trunk.draw(grid, pen, params, rng)
     }
 
     fn should_branch(
-        &self, idx: usize, count: usize,
-        params: &TreeParams, _rng: &mut StdRng,
+        &self,
+        idx: usize,
+        count: usize,
+        params: &TreeParams,
+        _rng: &mut StdRng,
     ) -> Option<BranchIntent> {
-        if count < 4 { return None; }
+        if count < 4 {
+            return None;
+        }
 
         let height = params.root().1 - params.canopy_top();
         let interval = (height / 4).max(2);
@@ -2930,8 +4015,12 @@ impl TreeDrawer for StormTree {
         // idx 0 = nearest root, idx count-1 = apex
         let distance_from_root = count as i32 - 1 - idx as i32;
 
-        if distance_from_root < 2 { return None; }
-        if (distance_from_root - 2) % interval != 0 { return None; }
+        if distance_from_root < 2 {
+            return None;
+        }
+        if (distance_from_root - 2) % interval != 0 {
+            return None;
+        }
 
         let level = ((distance_from_root - 2) / interval) as usize;
         let max_spread = params.spread();
@@ -2940,13 +4029,21 @@ impl TreeDrawer for StormTree {
         // go_left encodes windward side (opposite lean)
         let go_left = self.lean_trunk.lean.get() > 0;
 
-        Some(BranchIntent { go_left, length: arm, level })
+        Some(BranchIntent {
+            go_left,
+            length: arm,
+            level,
+        })
     }
 
     fn draw_branch(
-        &self, grid: &mut Grid, pen: &mut TreePen,
-        intent: &BranchIntent, _depth: usize,
-        params: &TreeParams, _rng: &mut StdRng,
+        &self,
+        grid: &mut Grid,
+        pen: &mut TreePen,
+        intent: &BranchIntent,
+        _depth: usize,
+        params: &TreeParams,
+        _rng: &mut StdRng,
     ) -> BranchResult {
         use MoveDir::*;
 
@@ -2981,8 +4078,12 @@ impl TreeDrawer for StormTree {
     fn draw_fruit(&self, grid: &mut Grid, x: i32, y: i32, params: &TreeParams, rng: &mut StdRng) {
         // Lightning fruit: spark with scatter
         set(grid, x, y, '✦', params.fruit_color);
-        if rng.random::<bool>() { set(grid, x + 1, y - 1, '·', lighten(params.fruit_color, 30)); }
-        if rng.random::<bool>() { set(grid, x - 1, y, '·', lighten(params.fruit_color, 20)); }
+        if rng.random::<bool>() {
+            set(grid, x + 1, y - 1, '·', lighten(params.fruit_color, 30));
+        }
+        if rng.random::<bool>() {
+            set(grid, x - 1, y, '·', lighten(params.fruit_color, 20));
+        }
     }
 }
 
@@ -2996,33 +4097,51 @@ pub struct DeadTree;
 
 impl TreeDrawer for DeadTree {
     fn draw_trunk(
-        &self, grid: &mut Grid, pen: &mut TreePen,
-        params: &TreeParams, rng: &mut StdRng,
+        &self,
+        grid: &mut Grid,
+        pen: &mut TreePen,
+        params: &TreeParams,
+        rng: &mut StdRng,
     ) -> Vec<TrunkNode> {
         GnarledTrunk.draw(grid, pen, params, rng)
     }
 
     fn should_branch(
-        &self, idx: usize, count: usize,
-        params: &TreeParams, rng: &mut StdRng,
+        &self,
+        idx: usize,
+        count: usize,
+        params: &TreeParams,
+        rng: &mut StdRng,
     ) -> Option<BranchIntent> {
         // Sparse branches: ~5-6 branches evenly spaced
         let interval = (count / 6).max(2);
-        if idx < interval || idx >= count - 1 { return None; }
-        if idx % interval != 0 { return None; }
+        if idx < interval || idx >= count - 1 {
+            return None;
+        }
+        if idx % interval != 0 {
+            return None;
+        }
 
         let level = idx / interval;
         let go_left = level % 2 == 0;
         let max_arm = params.spread().max(2).min(8);
         let length = rng.random_range(2..=max_arm);
 
-        Some(BranchIntent { go_left, length, level })
+        Some(BranchIntent {
+            go_left,
+            length,
+            level,
+        })
     }
 
     fn draw_branch(
-        &self, grid: &mut Grid, _pen: &mut TreePen,
-        intent: &BranchIntent, _depth: usize,
-        params: &TreeParams, _rng: &mut StdRng,
+        &self,
+        grid: &mut Grid,
+        _pen: &mut TreePen,
+        intent: &BranchIntent,
+        _depth: usize,
+        params: &TreeParams,
+        _rng: &mut StdRng,
     ) -> BranchResult {
         use MoveDir::*;
         let tip_chars = ['╴', '╶', '·', '╷'];
@@ -3091,28 +4210,45 @@ pub struct DroopingTree;
 
 impl TreeDrawer for DroopingTree {
     fn draw_trunk(
-        &self, grid: &mut Grid, pen: &mut TreePen,
-        params: &TreeParams, rng: &mut StdRng,
+        &self,
+        grid: &mut Grid,
+        pen: &mut TreePen,
+        params: &TreeParams,
+        rng: &mut StdRng,
     ) -> Vec<TrunkNode> {
-        StraightTrunk { height_fraction: 2.0 / 3.0 }.draw(grid, pen, params, rng)
+        StraightTrunk {
+            height_fraction: 2.0 / 3.0,
+        }
+        .draw(grid, pen, params, rng)
     }
 
     fn should_branch(
-        &self, idx: usize, count: usize,
-        _params: &TreeParams, _rng: &mut StdRng,
+        &self,
+        idx: usize,
+        count: usize,
+        _params: &TreeParams,
+        _rng: &mut StdRng,
     ) -> Option<BranchIntent> {
         // Fire once at the trunk top -- draw_branch builds the whole crown
         if idx == count - 1 {
-            Some(BranchIntent { go_left: false, length: 0, level: 0 })
+            Some(BranchIntent {
+                go_left: false,
+                length: 0,
+                level: 0,
+            })
         } else {
             None
         }
     }
 
     fn draw_branch(
-        &self, grid: &mut Grid, _pen: &mut TreePen,
-        _intent: &BranchIntent, _depth: usize,
-        params: &TreeParams, rng: &mut StdRng,
+        &self,
+        grid: &mut Grid,
+        _pen: &mut TreePen,
+        _intent: &BranchIntent,
+        _depth: usize,
+        params: &TreeParams,
+        rng: &mut StdRng,
     ) -> BranchResult {
         let (rx, ry) = params.root();
         let top_y = params.canopy_top();
@@ -3137,11 +4273,7 @@ impl TreeDrawer for DroopingTree {
 
             // Horizontal segment from trunk center to arm x at first_split
             if arm_x_offset != 0 {
-                let (x0, x1) = if arm_x_offset < 0 {
-                    (bx, rx)
-                } else {
-                    (rx, bx)
-                };
+                let (x0, x1) = if arm_x_offset < 0 { (bx, rx) } else { (rx, bx) };
                 for x in x0..=x1 {
                     set(grid, x, first_split, '─', bar_color);
                 }
@@ -3207,30 +4339,51 @@ pub struct PineTree;
 
 impl TreeDrawer for PineTree {
     fn draw_trunk(
-        &self, grid: &mut Grid, pen: &mut TreePen,
-        params: &TreeParams, rng: &mut StdRng,
+        &self,
+        grid: &mut Grid,
+        pen: &mut TreePen,
+        params: &TreeParams,
+        rng: &mut StdRng,
     ) -> Vec<TrunkNode> {
-        StraightTrunk { height_fraction: 0.3 }.draw(grid, pen, params, rng)
+        StraightTrunk {
+            height_fraction: 0.3,
+        }
+        .draw(grid, pen, params, rng)
     }
 
     fn should_branch(
-        &self, idx: usize, count: usize,
-        _params: &TreeParams, _rng: &mut StdRng,
+        &self,
+        idx: usize,
+        count: usize,
+        _params: &TreeParams,
+        _rng: &mut StdRng,
     ) -> Option<BranchIntent> {
         // Branch at every 2-3 rows through the trunk for needle tiers
-        if idx < 2 || idx >= count { return None; }
+        if idx < 2 || idx >= count {
+            return None;
+        }
         let interval = 2;
-        if idx % interval != 0 { return None; }
+        if idx % interval != 0 {
+            return None;
+        }
         let level = idx / interval;
         // Tiers get narrower toward top
         let length = ((count - idx) as i32 / 2).max(2);
-        Some(BranchIntent { go_left: level % 2 == 0, length, level })
+        Some(BranchIntent {
+            go_left: level % 2 == 0,
+            length,
+            level,
+        })
     }
 
     fn draw_branch(
-        &self, grid: &mut Grid, _pen: &mut TreePen,
-        intent: &BranchIntent, _depth: usize,
-        params: &TreeParams, _rng: &mut StdRng,
+        &self,
+        grid: &mut Grid,
+        _pen: &mut TreePen,
+        intent: &BranchIntent,
+        _depth: usize,
+        params: &TreeParams,
+        _rng: &mut StdRng,
     ) -> BranchResult {
         let bx = _pen.x;
         let by = _pen.y;
@@ -3244,7 +4397,11 @@ impl TreeDrawer for PineTree {
         set(grid, bx + half, by, '╲', color);
         for dx in 1..half {
             let needle = needles[((bx + dx) as usize + by as usize) % needles.len()];
-            let nc = if (dx as usize + by as usize) % 3 == 0 { lighten(color, 20) } else { color };
+            let nc = if (dx as usize + by as usize) % 3 == 0 {
+                lighten(color, 20)
+            } else {
+                color
+            };
             set(grid, bx - dx, by, needle, nc);
             set(grid, bx + dx, by, needle, nc);
         }
@@ -3272,29 +4429,50 @@ pub struct WillowTree;
 
 impl TreeDrawer for WillowTree {
     fn draw_trunk(
-        &self, grid: &mut Grid, pen: &mut TreePen,
-        params: &TreeParams, rng: &mut StdRng,
+        &self,
+        grid: &mut Grid,
+        pen: &mut TreePen,
+        params: &TreeParams,
+        rng: &mut StdRng,
     ) -> Vec<TrunkNode> {
-        StraightTrunk { height_fraction: 0.4 }.draw(grid, pen, params, rng)
+        StraightTrunk {
+            height_fraction: 0.4,
+        }
+        .draw(grid, pen, params, rng)
     }
 
     fn should_branch(
-        &self, idx: usize, count: usize,
-        _params: &TreeParams, _rng: &mut StdRng,
+        &self,
+        idx: usize,
+        count: usize,
+        _params: &TreeParams,
+        _rng: &mut StdRng,
     ) -> Option<BranchIntent> {
         // Branch in the top half, every 2 rows, both sides
         let start = count / 2;
-        if idx < start { return None; }
-        if (idx - start) % 2 != 0 { return None; }
+        if idx < start {
+            return None;
+        }
+        if (idx - start) % 2 != 0 {
+            return None;
+        }
         let go_left = (idx - start) % 4 < 2;
         let length = ((count - idx) as i32).max(8).min(16);
-        Some(BranchIntent { go_left, length, level: idx - start })
+        Some(BranchIntent {
+            go_left,
+            length,
+            level: idx - start,
+        })
     }
 
     fn draw_branch(
-        &self, grid: &mut Grid, _pen: &mut TreePen,
-        intent: &BranchIntent, _depth: usize,
-        params: &TreeParams, rng: &mut StdRng,
+        &self,
+        grid: &mut Grid,
+        _pen: &mut TreePen,
+        intent: &BranchIntent,
+        _depth: usize,
+        params: &TreeParams,
+        rng: &mut StdRng,
     ) -> BranchResult {
         let bx = _pen.x;
         let by = _pen.y;
@@ -3309,7 +4487,13 @@ impl TreeDrawer for WillowTree {
         }
         set(grid, bx, by, '┼', color);
         let end_x = bx + arm_len * dir;
-        set(grid, end_x, by, if intent.go_left { '╭' } else { '╮' }, color);
+        set(
+            grid,
+            end_x,
+            by,
+            if intent.go_left { '╭' } else { '╮' },
+            color,
+        );
 
         // Droops at multiple points along the arm, no two on the same x
         let droop_chars = ['│', '┊', '╎', '┆'];
@@ -3351,7 +4535,14 @@ impl TreeDrawer for WillowTree {
         set(grid, x, y, '·', lighten(params.tip_color, 50));
     }
 
-    fn draw_fruit(&self, _grid: &mut Grid, _x: i32, _y: i32, _params: &TreeParams, _rng: &mut StdRng) {
+    fn draw_fruit(
+        &self,
+        _grid: &mut Grid,
+        _x: i32,
+        _y: i32,
+        _params: &TreeParams,
+        _rng: &mut StdRng,
+    ) {
         // Willows don't fruit visually
     }
 }
@@ -3363,27 +4554,49 @@ pub struct PalmTree;
 
 impl TreeDrawer for PalmTree {
     fn draw_trunk(
-        &self, grid: &mut Grid, pen: &mut TreePen,
-        params: &TreeParams, rng: &mut StdRng,
+        &self,
+        grid: &mut Grid,
+        pen: &mut TreePen,
+        params: &TreeParams,
+        rng: &mut StdRng,
     ) -> Vec<TrunkNode> {
-        SineTrunk { height_fraction: 0.7, amplitude: 2 }.draw(grid, pen, params, rng)
+        SineTrunk {
+            height_fraction: 0.7,
+            amplitude: 2,
+        }
+        .draw(grid, pen, params, rng)
     }
 
     fn should_branch(
-        &self, idx: usize, count: usize,
-        _params: &TreeParams, _rng: &mut StdRng,
+        &self,
+        idx: usize,
+        count: usize,
+        _params: &TreeParams,
+        _rng: &mut StdRng,
     ) -> Option<BranchIntent> {
         // Only branch at the apex (top 2 nodes)
-        if count < 3 { return None; }
-        if idx < count - 2 { return None; }
+        if count < 3 {
+            return None;
+        }
+        if idx < count - 2 {
+            return None;
+        }
         let go_left = idx == count - 2;
-        Some(BranchIntent { go_left, length: 6, level: 0 })
+        Some(BranchIntent {
+            go_left,
+            length: 6,
+            level: 0,
+        })
     }
 
     fn draw_branch(
-        &self, grid: &mut Grid, _pen: &mut TreePen,
-        intent: &BranchIntent, _depth: usize,
-        params: &TreeParams, rng: &mut StdRng,
+        &self,
+        grid: &mut Grid,
+        _pen: &mut TreePen,
+        intent: &BranchIntent,
+        _depth: usize,
+        params: &TreeParams,
+        rng: &mut StdRng,
     ) -> BranchResult {
         let bx = _pen.x;
         let by = _pen.y;
@@ -3395,7 +4608,11 @@ impl TreeDrawer for PalmTree {
         let frond_len = intent.length;
 
         for f in 0..frond_count {
-            let go_left = if intent.go_left { f % 2 == 0 } else { f % 2 == 1 };
+            let go_left = if intent.go_left {
+                f % 2 == 0
+            } else {
+                f % 2 == 1
+            };
             let dir: i32 = if go_left { -1 } else { 1 };
             let droop_rate = rng.random_range(2..5u32) as i32; // droop every N cells
 
@@ -3406,9 +4623,13 @@ impl TreeDrawer for PalmTree {
                 if step > 1 && step % droop_rate == 0 {
                     fy += 1;
                 }
-                let ch = if step == frond_len { '~' }
-                    else if fy > by { if go_left { '╲' } else { '╱' } }
-                    else { '─' };
+                let ch = if step == frond_len {
+                    '~'
+                } else if fy > by {
+                    if go_left { '╲' } else { '╱' }
+                } else {
+                    '─'
+                };
                 let fc = lighten(color, ((step * 5) as u8).min(40));
                 set(grid, fx, fy, ch, fc);
             }
@@ -3435,8 +4656,11 @@ pub struct WideTree;
 
 impl TreeDrawer for WideTree {
     fn draw_trunk(
-        &self, grid: &mut Grid, pen: &mut TreePen,
-        params: &TreeParams, _rng: &mut StdRng,
+        &self,
+        grid: &mut Grid,
+        pen: &mut TreePen,
+        params: &TreeParams,
+        _rng: &mut StdRng,
     ) -> Vec<TrunkNode> {
         // Short trunk: bottom quarter
         let height = params.plot.h as i32;
@@ -3444,27 +4668,42 @@ impl TreeDrawer for WideTree {
         let mut nodes = Vec::new();
         for _ in 0..trunk_len {
             pen.step(grid, MoveDir::Up);
-            nodes.push(TrunkNode { x: pen.x, y: pen.y, dir: MoveDir::Up });
+            nodes.push(TrunkNode {
+                x: pen.x,
+                y: pen.y,
+                dir: MoveDir::Up,
+            });
         }
         nodes
     }
 
     fn should_branch(
-        &self, idx: usize, count: usize,
-        _params: &TreeParams, _rng: &mut StdRng,
+        &self,
+        idx: usize,
+        count: usize,
+        _params: &TreeParams,
+        _rng: &mut StdRng,
     ) -> Option<BranchIntent> {
         // Single branch event at trunk top -- draw_branch handles all 3 tiers
         if idx == count - 1 {
-            Some(BranchIntent { go_left: false, length: 0, level: 0 })
+            Some(BranchIntent {
+                go_left: false,
+                length: 0,
+                level: 0,
+            })
         } else {
             None
         }
     }
 
     fn draw_branch(
-        &self, grid: &mut Grid, _pen: &mut TreePen,
-        _intent: &BranchIntent, _depth: usize,
-        params: &TreeParams, rng: &mut StdRng,
+        &self,
+        grid: &mut Grid,
+        _pen: &mut TreePen,
+        _intent: &BranchIntent,
+        _depth: usize,
+        params: &TreeParams,
+        rng: &mut StdRng,
     ) -> BranchResult {
         let rx = _pen.x;
         let trunk_top_y = _pen.y;
@@ -3494,15 +4733,27 @@ impl TreeDrawer for WideTree {
 
             // Horizontal bar
             set(grid, rx, sy, '┼', c);
-            for x in lx..rx { set(grid, x, sy, '─', c); }
-            for x in rx + 1..=rx2 { set(grid, x, sy, '─', c); }
+            for x in lx..rx {
+                set(grid, x, sy, '─', c);
+            }
+            for x in rx + 1..=rx2 {
+                set(grid, x, sy, '─', c);
+            }
             set(grid, lx, sy, '╭', c);
             set(grid, rx2, sy, '╮', c);
 
             // Vertical sub-trunks to next tier
-            let next_sy = if ti + 1 < tiers.len() { tiers[ti + 1].0 } else { top_y };
-            for y in next_sy..sy { set(grid, lx, y, '│', c); }
-            for y in next_sy..sy { set(grid, rx2, y, '│', c); }
+            let next_sy = if ti + 1 < tiers.len() {
+                tiers[ti + 1].0
+            } else {
+                top_y
+            };
+            for y in next_sy..sy {
+                set(grid, lx, y, '│', c);
+            }
+            for y in next_sy..sy {
+                set(grid, rx2, y, '│', c);
+            }
 
             if ti + 1 >= tiers.len() {
                 tips.push((lx, next_sy));
@@ -3510,8 +4761,12 @@ impl TreeDrawer for WideTree {
             }
         }
         // Center trunk between tiers
-        for y in tiers[1].0..trunk_top_y { set(grid, rx, y, '│', params.trunk_color); }
-        for y in tiers[2].0..tiers[1].0 { set(grid, rx, y, '│', params.trunk_color); }
+        for y in tiers[1].0..trunk_top_y {
+            set(grid, rx, y, '│', params.trunk_color);
+        }
+        for y in tiers[2].0..tiers[1].0 {
+            set(grid, rx, y, '│', params.trunk_color);
+        }
 
         BranchResult { tips }
     }
@@ -3532,34 +4787,52 @@ pub struct AsymmetricTree;
 
 impl TreeDrawer for AsymmetricTree {
     fn draw_trunk(
-        &self, grid: &mut Grid, pen: &mut TreePen,
-        params: &TreeParams, _rng: &mut StdRng,
+        &self,
+        grid: &mut Grid,
+        pen: &mut TreePen,
+        params: &TreeParams,
+        _rng: &mut StdRng,
     ) -> Vec<TrunkNode> {
         let height = params.plot.h as i32;
         let trunk_len = (height / 3).max(2);
         let mut nodes = Vec::new();
         for _ in 0..trunk_len {
             pen.step(grid, MoveDir::Up);
-            nodes.push(TrunkNode { x: pen.x, y: pen.y, dir: MoveDir::Up });
+            nodes.push(TrunkNode {
+                x: pen.x,
+                y: pen.y,
+                dir: MoveDir::Up,
+            });
         }
         nodes
     }
 
     fn should_branch(
-        &self, idx: usize, count: usize,
-        _params: &TreeParams, _rng: &mut StdRng,
+        &self,
+        idx: usize,
+        count: usize,
+        _params: &TreeParams,
+        _rng: &mut StdRng,
     ) -> Option<BranchIntent> {
         if idx == count - 1 {
-            Some(BranchIntent { go_left: false, length: 0, level: 0 })
+            Some(BranchIntent {
+                go_left: false,
+                length: 0,
+                level: 0,
+            })
         } else {
             None
         }
     }
 
     fn draw_branch(
-        &self, grid: &mut Grid, _pen: &mut TreePen,
-        _intent: &BranchIntent, _depth: usize,
-        params: &TreeParams, rng: &mut StdRng,
+        &self,
+        grid: &mut Grid,
+        _pen: &mut TreePen,
+        _intent: &BranchIntent,
+        _depth: usize,
+        params: &TreeParams,
+        rng: &mut StdRng,
     ) -> BranchResult {
         let rx = _pen.x;
         let split_y = _pen.y;
@@ -3580,8 +4853,12 @@ impl TreeDrawer for AsymmetricTree {
 
         // Initial junction
         set(grid, rx, split_y, '┼', params.trunk_color);
-        for x in rx - left_spread..rx { set(grid, x, split_y, '─', params.trunk_color); }
-        for x in rx + 1..=rx + right_spread { set(grid, x, split_y, '─', params.trunk_color); }
+        for x in rx - left_spread..rx {
+            set(grid, x, split_y, '─', params.trunk_color);
+        }
+        for x in rx + 1..=rx + right_spread {
+            set(grid, x, split_y, '─', params.trunk_color);
+        }
         set(grid, rx - left_spread, split_y, '╭', params.trunk_color);
         set(grid, rx + right_spread, split_y, '╮', params.trunk_color);
 
@@ -3593,7 +4870,9 @@ impl TreeDrawer for AsymmetricTree {
 
         while let Some((x, top, bottom, depth, max_d)) = queue.pop() {
             let c = lighten(params.branch_color, (depth as u8 * 18).min(60));
-            for y in top + 1..bottom { set(grid, x, y, '│', c); }
+            for y in top + 1..bottom {
+                set(grid, x, y, '│', c);
+            }
 
             if depth >= max_d || bottom - top <= 2 {
                 tips.push((x, top));
@@ -3602,14 +4881,20 @@ impl TreeDrawer for AsymmetricTree {
 
             // Randomize split height (20-60% of segment)
             let split_frac = 20 + rng.random_range(0..41u32) as i32;
-            let split_at = (top + (bottom - top) * split_frac / 100).max(top + 1).min(bottom - 1);
+            let split_at = (top + (bottom - top) * split_frac / 100)
+                .max(top + 1)
+                .min(bottom - 1);
             // Unequal arms: one side 50-150% of base arm
             let base_arm = (base >> (depth + 1) as u32).max(1);
             let left_arm = (base_arm * rng.random_range(30..120u32) as i32 / 100).max(1);
             let right_arm = (base_arm * rng.random_range(50..170u32) as i32 / 100).max(1);
             set(grid, x, split_at, '┼', c);
-            for ax in x - left_arm..x { set(grid, ax, split_at, '─', c); }
-            for ax in x + 1..=x + right_arm { set(grid, ax, split_at, '─', c); }
+            for ax in x - left_arm..x {
+                set(grid, ax, split_at, '─', c);
+            }
+            for ax in x + 1..=x + right_arm {
+                set(grid, ax, split_at, '─', c);
+            }
             set(grid, x - left_arm, split_at, '╭', c);
             set(grid, x + right_arm, split_at, '╮', c);
 
@@ -3625,7 +4910,11 @@ impl TreeDrawer for AsymmetricTree {
     }
 
     fn draw_fruit(&self, grid: &mut Grid, x: i32, y: i32, params: &TreeParams, rng: &mut StdRng) {
-        let ch = if rng.random_range(0..2u32) == 0 { '◇' } else { '●' };
+        let ch = if rng.random_range(0..2u32) == 0 {
+            '◇'
+        } else {
+            '●'
+        };
         set(grid, x, y - 1, ch, params.fruit_color);
     }
 }
@@ -3637,8 +4926,11 @@ pub struct KaijuTree;
 
 impl TreeDrawer for KaijuTree {
     fn draw_trunk(
-        &self, grid: &mut Grid, pen: &mut TreePen,
-        params: &TreeParams, rng: &mut StdRng,
+        &self,
+        grid: &mut Grid,
+        pen: &mut TreePen,
+        params: &TreeParams,
+        rng: &mut StdRng,
     ) -> Vec<TrunkNode> {
         // Thick 3-wide base for bottom third
         let height = params.plot.h as i32;
@@ -3651,7 +4943,11 @@ impl TreeDrawer for KaijuTree {
             // Thick: flanking columns
             set(grid, pen.x - 1, pen.y, '│', bark);
             set(grid, pen.x + 1, pen.y, '│', bark);
-            nodes.push(TrunkNode { x: pen.x, y: pen.y, dir: MoveDir::Up });
+            nodes.push(TrunkNode {
+                x: pen.x,
+                y: pen.y,
+                dir: MoveDir::Up,
+            });
         }
         // Overwrite center with thick char
         for n in &nodes {
@@ -3661,20 +4957,31 @@ impl TreeDrawer for KaijuTree {
     }
 
     fn should_branch(
-        &self, idx: usize, count: usize,
-        _params: &TreeParams, _rng: &mut StdRng,
+        &self,
+        idx: usize,
+        count: usize,
+        _params: &TreeParams,
+        _rng: &mut StdRng,
     ) -> Option<BranchIntent> {
         if idx == count - 1 {
-            Some(BranchIntent { go_left: false, length: 0, level: 0 })
+            Some(BranchIntent {
+                go_left: false,
+                length: 0,
+                level: 0,
+            })
         } else {
             None
         }
     }
 
     fn draw_branch(
-        &self, grid: &mut Grid, _pen: &mut TreePen,
-        _intent: &BranchIntent, _depth: usize,
-        params: &TreeParams, rng: &mut StdRng,
+        &self,
+        grid: &mut Grid,
+        _pen: &mut TreePen,
+        _intent: &BranchIntent,
+        _depth: usize,
+        params: &TreeParams,
+        rng: &mut StdRng,
     ) -> BranchResult {
         let rx = _pen.x;
         let base_top = _pen.y;
@@ -3687,19 +4994,39 @@ impl TreeDrawer for KaijuTree {
         let total_spread = spread * 2;
         let c0 = lighten(params.trunk_color, 10);
 
-        struct SubTrunk { target_x: i32, lean: i32, branch_side: i32 }
+        struct SubTrunk {
+            target_x: i32,
+            lean: i32,
+            branch_side: i32,
+        }
         let mut sub_trunks: Vec<SubTrunk> = Vec::new();
         for i in 0..trunk_count {
             let frac = i as f32 / (trunk_count - 1).max(1) as f32;
             let target_x = rx - total_spread + (frac * (total_spread * 2) as f32) as i32;
-            let lean = if target_x < rx { -1 } else if target_x > rx { 1 } else { 0 };
-            let branch_side = if rng.random_range(0..2u32) == 0 { -1i32 } else { 1 };
-            sub_trunks.push(SubTrunk { target_x, lean, branch_side });
+            let lean = if target_x < rx {
+                -1
+            } else if target_x > rx {
+                1
+            } else {
+                0
+            };
+            let branch_side = if rng.random_range(0..2u32) == 0 {
+                -1i32
+            } else {
+                1
+            };
+            sub_trunks.push(SubTrunk {
+                target_x,
+                lean,
+                branch_side,
+            });
         }
 
         let leftmost = sub_trunks.iter().map(|t| t.target_x).min().unwrap_or(rx);
         let rightmost = sub_trunks.iter().map(|t| t.target_x).max().unwrap_or(rx);
-        for x in leftmost..=rightmost { set(grid, x, base_top, '─', c0); }
+        for x in leftmost..=rightmost {
+            set(grid, x, base_top, '─', c0);
+        }
         set(grid, rx, base_top, '┬', c0);
 
         let lean_every = ((base_top - top_y) / 5).max(3);
@@ -3728,7 +5055,9 @@ impl TreeDrawer for KaijuTree {
             for b in 0..branch_count {
                 let jitter = rng.random_range(0..3u32) as i32 - 1;
                 let by = trunk_top + (interval * (b + 1)) as i32 + jitter;
-                if by >= base_top || by <= trunk_top { continue; }
+                if by >= base_top || by <= trunk_top {
+                    continue;
+                }
 
                 let rows_up = base_top - by;
                 let tx = st.target_x + st.lean * (rows_up / lean_every);
@@ -3745,19 +5074,27 @@ impl TreeDrawer for KaijuTree {
 
                 let c = lighten(params.branch_color, (b as u8 * 12 + 15).min(60));
                 if left_arm > 0 {
-                    for i in 1..=left_arm { set(grid, tx - i, by, '─', c); }
+                    for i in 1..=left_arm {
+                        set(grid, tx - i, by, '─', c);
+                    }
                     set(grid, tx - left_arm, by, '╮', c);
                     tips.push((tx - left_arm - 1, by - 1));
                 }
                 if right_arm > 0 {
-                    for i in 1..=right_arm { set(grid, tx + i, by, '─', c); }
+                    for i in 1..=right_arm {
+                        set(grid, tx + i, by, '─', c);
+                    }
                     set(grid, tx + right_arm, by, '╭', c);
                     tips.push((tx + right_arm + 1, by - 1));
                 }
 
-                let jc = if left_arm > 0 && right_arm > 0 { '┼' }
-                         else if left_arm > 0 { '┤' }
-                         else { '├' };
+                let jc = if left_arm > 0 && right_arm > 0 {
+                    '┼'
+                } else if left_arm > 0 {
+                    '┤'
+                } else {
+                    '├'
+                };
                 set(grid, tx, by, jc, c);
             }
             tips.push((cx, trunk_top));
@@ -3781,8 +5118,11 @@ pub struct ZigzagTree;
 
 impl TreeDrawer for ZigzagTree {
     fn draw_trunk(
-        &self, grid: &mut Grid, pen: &mut TreePen,
-        params: &TreeParams, rng: &mut StdRng,
+        &self,
+        grid: &mut Grid,
+        pen: &mut TreePen,
+        params: &TreeParams,
+        rng: &mut StdRng,
     ) -> Vec<TrunkNode> {
         let height = params.plot.h as i32;
         let zig_width = rng.random_range(2..4u32) as i32;
@@ -3791,12 +5131,20 @@ impl TreeDrawer for ZigzagTree {
         let bark = darken(params.trunk_color, 15);
 
         for i in 0..height {
-            let dir = if going_right { MoveDir::UpRight } else { MoveDir::UpLeft };
+            let dir = if going_right {
+                MoveDir::UpRight
+            } else {
+                MoveDir::UpLeft
+            };
             pen.step(grid, dir);
             // Thick: parallel char
             let ch = if going_right { '╱' } else { '╲' };
             set(grid, pen.x + 1, pen.y, ch, bark);
-            nodes.push(TrunkNode { x: pen.x, y: pen.y, dir });
+            nodes.push(TrunkNode {
+                x: pen.x,
+                y: pen.y,
+                dir,
+            });
 
             if i > 0 && i % (zig_width * 2 + 1) == 0 {
                 going_right = !going_right;
@@ -3806,23 +5154,34 @@ impl TreeDrawer for ZigzagTree {
     }
 
     fn should_branch(
-        &self, idx: usize, count: usize,
-        _params: &TreeParams, rng: &mut StdRng,
+        &self,
+        idx: usize,
+        count: usize,
+        _params: &TreeParams,
+        rng: &mut StdRng,
     ) -> Option<BranchIntent> {
         // Branch at random trunk positions, ~30% of nodes
         if count > 4 && idx > 1 && idx < count - 1 && rng.random_range(0..10u32) < 3 {
             let go_left = rng.random_range(0..2u32) == 0;
             let length = rng.random_range(3..10u32) as i32;
-            Some(BranchIntent { go_left, length, level: 0 })
+            Some(BranchIntent {
+                go_left,
+                length,
+                level: 0,
+            })
         } else {
             None
         }
     }
 
     fn draw_branch(
-        &self, grid: &mut Grid, _pen: &mut TreePen,
-        intent: &BranchIntent, _depth: usize,
-        params: &TreeParams, rng: &mut StdRng,
+        &self,
+        grid: &mut Grid,
+        _pen: &mut TreePen,
+        intent: &BranchIntent,
+        _depth: usize,
+        params: &TreeParams,
+        rng: &mut StdRng,
     ) -> BranchResult {
         let mut tips = Vec::new();
         let bx = _pen.x;
@@ -3831,9 +5190,17 @@ impl TreeDrawer for ZigzagTree {
         let dy: i32 = -1; // upward
 
         fn draw_ray(
-            grid: &mut Grid, x: i32, y: i32, dx: i32, dy: i32, len: i32,
-            color: Color, depth: usize, max_depth: usize,
-            tips: &mut Vec<(i32, i32)>, rng: &mut StdRng,
+            grid: &mut Grid,
+            x: i32,
+            y: i32,
+            dx: i32,
+            dy: i32,
+            len: i32,
+            color: Color,
+            depth: usize,
+            max_depth: usize,
+            tips: &mut Vec<(i32, i32)>,
+            rng: &mut StdRng,
         ) {
             let ch = match (dx < 0, dy < 0) {
                 (true, true) => '╲',
@@ -3844,21 +5211,49 @@ impl TreeDrawer for ZigzagTree {
             let c = lighten(color, (depth as u8 * 18).min(60));
             for step in 1..=len {
                 set(grid, x + dx * step, y + dy * step, ch, c);
-                if depth < max_depth && step > 1 && step < len
+                if depth < max_depth
+                    && step > 1
+                    && step < len
                     && rng.random_range(0..(3 + depth as u32)) == 0
                 {
-                    let sub_dx = if rng.random_range(0..2u32) == 0 { -dx } else { dx };
+                    let sub_dx = if rng.random_range(0..2u32) == 0 {
+                        -dx
+                    } else {
+                        dx
+                    };
                     let sub_len = rng.random_range(1..(len / 2 + 1).max(2) as u32) as i32;
-                    draw_ray(grid, x + dx * step, y + dy * step, sub_dx, -dy,
-                             sub_len, color, depth + 1, max_depth, tips, rng);
+                    draw_ray(
+                        grid,
+                        x + dx * step,
+                        y + dy * step,
+                        sub_dx,
+                        -dy,
+                        sub_len,
+                        color,
+                        depth + 1,
+                        max_depth,
+                        tips,
+                        rng,
+                    );
                 }
             }
             tips.push((x + dx * (len + 1), y + dy * (len + 1)));
         }
 
         let max_depth = rng.random_range(1..3u32) as usize;
-        draw_ray(grid, bx, by, dx, dy, intent.length, params.branch_color,
-                 0, max_depth, &mut tips, rng);
+        draw_ray(
+            grid,
+            bx,
+            by,
+            dx,
+            dy,
+            intent.length,
+            params.branch_color,
+            0,
+            max_depth,
+            &mut tips,
+            rng,
+        );
         BranchResult { tips }
     }
 
@@ -3878,8 +5273,11 @@ pub struct BrailleCanopyTree;
 
 impl TreeDrawer for BrailleCanopyTree {
     fn draw_trunk(
-        &self, grid: &mut Grid, pen: &mut TreePen,
-        params: &TreeParams, _rng: &mut StdRng,
+        &self,
+        grid: &mut Grid,
+        pen: &mut TreePen,
+        params: &TreeParams,
+        _rng: &mut StdRng,
     ) -> Vec<TrunkNode> {
         let height = params.plot.h as i32;
         let trunk_len = (height / 3).max(2);
@@ -3888,26 +5286,41 @@ impl TreeDrawer for BrailleCanopyTree {
         for _ in 0..trunk_len {
             pen.step(grid, MoveDir::Up);
             set(grid, pen.x, pen.y, '│', bark);
-            nodes.push(TrunkNode { x: pen.x, y: pen.y, dir: MoveDir::Up });
+            nodes.push(TrunkNode {
+                x: pen.x,
+                y: pen.y,
+                dir: MoveDir::Up,
+            });
         }
         nodes
     }
 
     fn should_branch(
-        &self, idx: usize, count: usize,
-        _params: &TreeParams, _rng: &mut StdRng,
+        &self,
+        idx: usize,
+        count: usize,
+        _params: &TreeParams,
+        _rng: &mut StdRng,
     ) -> Option<BranchIntent> {
         if idx == count - 1 {
-            Some(BranchIntent { go_left: false, length: 0, level: 0 })
+            Some(BranchIntent {
+                go_left: false,
+                length: 0,
+                level: 0,
+            })
         } else {
             None
         }
     }
 
     fn draw_branch(
-        &self, grid: &mut Grid, _pen: &mut TreePen,
-        _intent: &BranchIntent, _depth: usize,
-        params: &TreeParams, rng: &mut StdRng,
+        &self,
+        grid: &mut Grid,
+        _pen: &mut TreePen,
+        _intent: &BranchIntent,
+        _depth: usize,
+        params: &TreeParams,
+        rng: &mut StdRng,
     ) -> BranchResult {
         let cx = _pen.x as f32;
         let trunk_top = _pen.y;
@@ -3923,7 +5336,9 @@ impl TreeDrawer for BrailleCanopyTree {
         let cuttlefish = rng.random_range(0..7u32) == 0;
         let base_hue: f64 = if let Color::Rgb { r, g, .. } = params.branch_color {
             (r as f64 * 1.4 + g as f64 * 0.7) % 360.0
-        } else { 180.0 };
+        } else {
+            180.0
+        };
 
         let mut tips = Vec::new();
 
@@ -3944,7 +5359,9 @@ impl TreeDrawer for BrailleCanopyTree {
                 } else if dx_norm < 0.85 {
                     braille_sparse[rng.random_range(0..braille_sparse.len() as u32) as usize]
                 } else {
-                    if rng.random_range(0..3u32) == 0 { continue; }
+                    if rng.random_range(0..3u32) == 0 {
+                        continue;
+                    }
                     braille_sparse[rng.random_range(0..braille_sparse.len() as u32) as usize]
                 };
 
@@ -3954,7 +5371,11 @@ impl TreeDrawer for BrailleCanopyTree {
                     vert_t as f64 * 40.0 - 20.0
                 };
                 let h = (base_hue + hue_shift).rem_euclid(360.0);
-                let s = if cuttlefish { 0.8 } else { 0.5 + (1.0 - dx_norm) as f64 * 0.3 };
+                let s = if cuttlefish {
+                    0.8
+                } else {
+                    0.5 + (1.0 - dx_norm) as f64 * 0.3
+                };
                 let l = 0.2 + (1.0 - dx_norm) as f64 * 0.3 + vert_t as f64 * 0.15;
                 let c = crate::color::hsl_to_rgb(h, s, l.min(0.65));
 
@@ -3988,34 +5409,52 @@ pub struct TendrilTree;
 
 impl TreeDrawer for TendrilTree {
     fn draw_trunk(
-        &self, grid: &mut Grid, pen: &mut TreePen,
-        params: &TreeParams, _rng: &mut StdRng,
+        &self,
+        grid: &mut Grid,
+        pen: &mut TreePen,
+        params: &TreeParams,
+        _rng: &mut StdRng,
     ) -> Vec<TrunkNode> {
         let height = params.plot.h as i32;
         let trunk_len = (height / 3).max(2);
         let mut nodes = Vec::new();
         for _ in 0..trunk_len {
             pen.step(grid, MoveDir::Up);
-            nodes.push(TrunkNode { x: pen.x, y: pen.y, dir: MoveDir::Up });
+            nodes.push(TrunkNode {
+                x: pen.x,
+                y: pen.y,
+                dir: MoveDir::Up,
+            });
         }
         nodes
     }
 
     fn should_branch(
-        &self, idx: usize, count: usize,
-        _params: &TreeParams, _rng: &mut StdRng,
+        &self,
+        idx: usize,
+        count: usize,
+        _params: &TreeParams,
+        _rng: &mut StdRng,
     ) -> Option<BranchIntent> {
         if idx == count - 1 {
-            Some(BranchIntent { go_left: false, length: 0, level: 0 })
+            Some(BranchIntent {
+                go_left: false,
+                length: 0,
+                level: 0,
+            })
         } else {
             None
         }
     }
 
     fn draw_branch(
-        &self, grid: &mut Grid, _pen: &mut TreePen,
-        _intent: &BranchIntent, _depth: usize,
-        params: &TreeParams, rng: &mut StdRng,
+        &self,
+        grid: &mut Grid,
+        _pen: &mut TreePen,
+        _intent: &BranchIntent,
+        _depth: usize,
+        params: &TreeParams,
+        rng: &mut StdRng,
     ) -> BranchResult {
         let cx = _pen.x as f32;
         let cy = _pen.y as f32;
@@ -4023,12 +5462,20 @@ impl TreeDrawer for TendrilTree {
         let mut tips = Vec::new();
 
         fn draw_tendril(
-            grid: &mut Grid, x: f32, y: f32,
-            angle: f32, length: f32, min_len: f32,
-            color: Color, depth: usize, tips: &mut Vec<(i32, i32)>,
+            grid: &mut Grid,
+            x: f32,
+            y: f32,
+            angle: f32,
+            length: f32,
+            min_len: f32,
+            color: Color,
+            depth: usize,
+            tips: &mut Vec<(i32, i32)>,
             rng: &mut StdRng,
         ) {
-            if length < min_len || depth > 5 { return; }
+            if length < min_len || depth > 5 {
+                return;
+            }
             let c = lighten(color, (depth as u8 * 15).min(60));
             let steps = length as i32;
             let dx = angle.cos();
@@ -4039,10 +5486,15 @@ impl TreeDrawer for TendrilTree {
                 let py = (y + dy * step as f32) as i32;
                 let abs_dx = dx.abs();
                 let abs_dy = dy.abs();
-                let ch = if abs_dx > abs_dy * 1.5 { '─' }
-                    else if abs_dy > abs_dx * 1.5 { '│' }
-                    else if (dx > 0.0) == (dy > 0.0) { '╲' }
-                    else { '╱' };
+                let ch = if abs_dx > abs_dy * 1.5 {
+                    '─'
+                } else if abs_dy > abs_dx * 1.5 {
+                    '│'
+                } else if (dx > 0.0) == (dy > 0.0) {
+                    '╲'
+                } else {
+                    '╱'
+                };
                 set(grid, px, py, ch, c);
             }
 
@@ -4055,8 +5507,18 @@ impl TreeDrawer for TendrilTree {
                 let jitter = (rng.random::<f32>() - 0.5) * 1.2;
                 let sub_angle = angle + jitter;
                 let sub_len = length * (0.4 + rng.random::<f32>() * 0.2);
-                draw_tendril(grid, tip_x, tip_y, sub_angle, sub_len,
-                             min_len, color, depth + 1, tips, rng);
+                draw_tendril(
+                    grid,
+                    tip_x,
+                    tip_y,
+                    sub_angle,
+                    sub_len,
+                    min_len,
+                    color,
+                    depth + 1,
+                    tips,
+                    rng,
+                );
             }
         }
 
@@ -4064,12 +5526,22 @@ impl TreeDrawer for TendrilTree {
         let base_len = spread.max(3.0).min(15.0);
 
         for i in 0..ray_count {
-            let base_angle = -std::f32::consts::PI
-                + (i as f32 / ray_count as f32) * std::f32::consts::PI;
+            let base_angle =
+                -std::f32::consts::PI + (i as f32 / ray_count as f32) * std::f32::consts::PI;
             let angle = base_angle + (rng.random::<f32>() - 0.5) * 0.5;
             let len = base_len * (0.6 + rng.random::<f32>() * 0.4);
-            draw_tendril(grid, cx, cy, angle, len, 1.5,
-                         params.branch_color, 0, &mut tips, rng);
+            draw_tendril(
+                grid,
+                cx,
+                cy,
+                angle,
+                len,
+                1.5,
+                params.branch_color,
+                0,
+                &mut tips,
+                rng,
+            );
         }
         BranchResult { tips }
     }
@@ -4090,10 +5562,19 @@ impl TreeDrawer for TendrilTree {
 pub struct OakTree;
 
 fn oak_limb(
-    grid: &mut Grid, x: i32, y: i32, dx: i32, len: i32,
-    depth: usize, params: &TreeParams, tips: &mut Vec<(i32, i32)>, rng: &mut StdRng,
+    grid: &mut Grid,
+    x: i32,
+    y: i32,
+    dx: i32,
+    len: i32,
+    depth: usize,
+    params: &TreeParams,
+    tips: &mut Vec<(i32, i32)>,
+    rng: &mut StdRng,
 ) {
-    if len < 2 || depth > 2 { return; }
+    if len < 2 || depth > 2 {
+        return;
+    }
     let c = params.color_at_depth(depth as f32 * 0.3);
     let mut cx = x;
     let mut cy = y;
@@ -4124,37 +5605,65 @@ fn oak_limb(
 
 impl TreeDrawer for OakTree {
     fn draw_trunk(
-        &self, grid: &mut Grid, pen: &mut TreePen,
-        params: &TreeParams, rng: &mut StdRng,
+        &self,
+        grid: &mut Grid,
+        pen: &mut TreePen,
+        params: &TreeParams,
+        rng: &mut StdRng,
     ) -> Vec<TrunkNode> {
         GnarledTrunk.draw(grid, pen, params, rng)
     }
 
     fn should_branch(
-        &self, idx: usize, count: usize,
-        params: &TreeParams, rng: &mut StdRng,
+        &self,
+        idx: usize,
+        count: usize,
+        params: &TreeParams,
+        rng: &mut StdRng,
     ) -> Option<BranchIntent> {
         // limbs from the upper 2/3 of the trunk, denser near the top
-        if count < 4 || idx < count / 3 { return None; }
+        if count < 4 || idx < count / 3 {
+            return None;
+        }
         let top_frac = idx as f32 / count as f32;
-        if idx != count - 1 && rng.random::<f32>() > 0.25 + top_frac * 0.3 { return None; }
+        if idx != count - 1 && rng.random::<f32>() > 0.25 + top_frac * 0.3 {
+            return None;
+        }
         let go_left = rng.random_range(0..2u32) == 0;
         let length = (params.spread() as f32 * (0.5 + rng.random::<f32>() * 0.5)) as i32;
         let level = ((1.0 - top_frac) * 3.0) as usize;
-        Some(BranchIntent { go_left, length: length.max(2), level })
+        Some(BranchIntent {
+            go_left,
+            length: length.max(2),
+            level,
+        })
     }
 
     fn draw_branch(
-        &self, grid: &mut Grid, pen: &mut TreePen,
-        intent: &BranchIntent, _depth: usize,
-        params: &TreeParams, rng: &mut StdRng,
+        &self,
+        grid: &mut Grid,
+        pen: &mut TreePen,
+        intent: &BranchIntent,
+        _depth: usize,
+        params: &TreeParams,
+        rng: &mut StdRng,
     ) -> BranchResult {
         let dx = if intent.go_left { -1 } else { 1 };
         // knot where the limb leaves the trunk
         let jc = if intent.go_left { '┤' } else { '├' };
         set(grid, pen.x, pen.y, jc, darken(params.trunk_color, 10));
         let mut tips = Vec::new();
-        oak_limb(grid, pen.x, pen.y, dx, intent.length, 0, params, &mut tips, rng);
+        oak_limb(
+            grid,
+            pen.x,
+            pen.y,
+            dx,
+            intent.length,
+            0,
+            params,
+            &mut tips,
+            rng,
+        );
         BranchResult { tips }
     }
 
@@ -4176,7 +5685,11 @@ impl TreeDrawer for OakTree {
 
     fn draw_fruit(&self, grid: &mut Grid, x: i32, y: i32, params: &TreeParams, rng: &mut StdRng) {
         // acorns hang one cell below the leaf cluster
-        let ch = if rng.random_range(0..2u32) == 0 { '●' } else { '◍' };
+        let ch = if rng.random_range(0..2u32) == 0 {
+            '●'
+        } else {
+            '◍'
+        };
         set(grid, x, y + 1, ch, params.fruit_color);
     }
 }
@@ -4189,27 +5702,44 @@ pub struct FountainTree;
 
 impl TreeDrawer for FountainTree {
     fn draw_trunk(
-        &self, grid: &mut Grid, pen: &mut TreePen,
-        params: &TreeParams, rng: &mut StdRng,
+        &self,
+        grid: &mut Grid,
+        pen: &mut TreePen,
+        params: &TreeParams,
+        rng: &mut StdRng,
     ) -> Vec<TrunkNode> {
-        StraightTrunk { height_fraction: 0.45 }.draw(grid, pen, params, rng)
+        StraightTrunk {
+            height_fraction: 0.45,
+        }
+        .draw(grid, pen, params, rng)
     }
 
     fn should_branch(
-        &self, idx: usize, count: usize,
-        _params: &TreeParams, _rng: &mut StdRng,
+        &self,
+        idx: usize,
+        count: usize,
+        _params: &TreeParams,
+        _rng: &mut StdRng,
     ) -> Option<BranchIntent> {
         if idx == count - 1 {
-            Some(BranchIntent { go_left: false, length: 0, level: 0 })
+            Some(BranchIntent {
+                go_left: false,
+                length: 0,
+                level: 0,
+            })
         } else {
             None
         }
     }
 
     fn draw_branch(
-        &self, grid: &mut Grid, pen: &mut TreePen,
-        _intent: &BranchIntent, _depth: usize,
-        params: &TreeParams, rng: &mut StdRng,
+        &self,
+        grid: &mut Grid,
+        pen: &mut TreePen,
+        _intent: &BranchIntent,
+        _depth: usize,
+        params: &TreeParams,
+        rng: &mut StdRng,
     ) -> BranchResult {
         let apex_x = pen.x as f32;
         let apex_y = pen.y as f32;
@@ -4231,13 +5761,20 @@ impl TreeDrawer for FountainTree {
                     py += vy;
                     vy += 0.22; // gravity pulls the jet over
                     vx *= 1.04; // slight outward fan as it falls
-                    if py >= floor_y { break; }
+                    if py >= floor_y {
+                        break;
+                    }
                     let abs_vx = vx.abs();
                     let abs_vy = vy.abs();
-                    let ch = if abs_vx > abs_vy * 1.5 { '─' }
-                        else if abs_vy > abs_vx * 1.5 { '│' }
-                        else if (vx > 0.0) == (vy > 0.0) { '╲' }
-                        else { '╱' };
+                    let ch = if abs_vx > abs_vy * 1.5 {
+                        '─'
+                    } else if abs_vy > abs_vx * 1.5 {
+                        '│'
+                    } else if (vx > 0.0) == (vy > 0.0) {
+                        '╲'
+                    } else {
+                        '╱'
+                    };
                     set(grid, px as i32, py as i32, ch, c);
                     last = (px as i32, py as i32);
                 }
@@ -4267,14 +5804,19 @@ pub struct WindsweptTree {
 
 impl WindsweptTree {
     pub fn new(rng: &mut StdRng) -> Self {
-        WindsweptTree { lean_right: rng.random_range(0..2u32) == 0 }
+        WindsweptTree {
+            lean_right: rng.random_range(0..2u32) == 0,
+        }
     }
 }
 
 impl TreeDrawer for WindsweptTree {
     fn draw_trunk(
-        &self, grid: &mut Grid, pen: &mut TreePen,
-        params: &TreeParams, rng: &mut StdRng,
+        &self,
+        grid: &mut Grid,
+        pen: &mut TreePen,
+        params: &TreeParams,
+        rng: &mut StdRng,
     ) -> Vec<TrunkNode> {
         let height = (params.plot.h as f32 * params.energy.clamp(0.3, 1.0)) as i32;
         let lean_dx: i32 = if self.lean_right { 1 } else { -1 };
@@ -4296,16 +5838,25 @@ impl TreeDrawer for WindsweptTree {
                 pen.y -= 1;
                 set(grid, pen.x, pen.y, '│', params.trunk_color);
             }
-            nodes.push(TrunkNode { x: pen.x, y: pen.y, dir: MoveDir::Up });
+            nodes.push(TrunkNode {
+                x: pen.x,
+                y: pen.y,
+                dir: MoveDir::Up,
+            });
         }
         nodes
     }
 
     fn should_branch(
-        &self, idx: usize, count: usize,
-        params: &TreeParams, rng: &mut StdRng,
+        &self,
+        idx: usize,
+        count: usize,
+        params: &TreeParams,
+        rng: &mut StdRng,
     ) -> Option<BranchIntent> {
-        if count < 4 || idx < count / 4 { return None; }
+        if count < 4 || idx < count / 4 {
+            return None;
+        }
         if idx != count - 1 && rng.random::<f32>() > 0.55 * params.branch_factor.max(0.4) {
             return None;
         }
@@ -4313,13 +5864,21 @@ impl TreeDrawer for WindsweptTree {
         let go_left = !self.lean_right;
         let top_frac = idx as f32 / count as f32;
         let length = (params.spread() as f32 * (0.7 + top_frac * 0.8)) as i32;
-        Some(BranchIntent { go_left, length: length.max(3), level: 0 })
+        Some(BranchIntent {
+            go_left,
+            length: length.max(3),
+            level: 0,
+        })
     }
 
     fn draw_branch(
-        &self, grid: &mut Grid, pen: &mut TreePen,
-        intent: &BranchIntent, _depth: usize,
-        params: &TreeParams, rng: &mut StdRng,
+        &self,
+        grid: &mut Grid,
+        pen: &mut TreePen,
+        intent: &BranchIntent,
+        _depth: usize,
+        params: &TreeParams,
+        rng: &mut StdRng,
     ) -> BranchResult {
         let dx: i32 = if intent.go_left { -1 } else { 1 };
         let jc = if intent.go_left { '┤' } else { '├' };
@@ -4369,8 +5928,15 @@ impl TreeDrawer for WindsweptTree {
 pub struct FractalTree;
 
 fn fractal_limb(
-    grid: &mut Grid, x: f32, y: f32, slope: f32, len: f32,
-    depth: usize, params: &TreeParams, tips: &mut Vec<(i32, i32)>, rng: &mut StdRng,
+    grid: &mut Grid,
+    x: f32,
+    y: f32,
+    slope: f32,
+    len: f32,
+    depth: usize,
+    params: &TreeParams,
+    tips: &mut Vec<(i32, i32)>,
+    rng: &mut StdRng,
 ) {
     if len < 1.2 || depth > 5 {
         tips.push((x as i32, y as i32));
@@ -4382,15 +5948,23 @@ fn fractal_limb(
     for _ in 0..len as i32 {
         let nx = px + slope * 1.6;
         let ny = py - 1.0;
-        if nx < params.plot.x as f32 || nx >= (params.plot.x + params.plot.w) as f32
-            || ny < params.plot.y as f32 {
+        if nx < params.plot.x as f32
+            || nx >= (params.plot.x + params.plot.w) as f32
+            || ny < params.plot.y as f32
+        {
             // limb hit the plot edge: end it here, no children
             tips.push((px as i32, py as i32));
             return;
         }
         px = nx;
         py = ny;
-        let ch = if slope > 0.25 { '╱' } else if slope < -0.25 { '╲' } else { '│' };
+        let ch = if slope > 0.25 {
+            '╱'
+        } else if slope < -0.25 {
+            '╲'
+        } else {
+            '│'
+        };
         set(grid, px as i32, py as i32, ch, c);
     }
     let tilt = 0.6 + rng.random::<f32>() * 0.4;
@@ -4398,8 +5972,17 @@ fn fractal_limb(
     for side in [-1.0f32, 1.0] {
         if rng.random::<f32>() > 0.12 {
             let jitter = (rng.random::<f32>() - 0.5) * 0.2;
-            fractal_limb(grid, px, py, slope + side * tilt + jitter,
-                         child_len, depth + 1, params, tips, rng);
+            fractal_limb(
+                grid,
+                px,
+                py,
+                slope + side * tilt + jitter,
+                child_len,
+                depth + 1,
+                params,
+                tips,
+                rng,
+            );
         } else {
             tips.push((px as i32, py as i32));
         }
@@ -4408,33 +5991,59 @@ fn fractal_limb(
 
 impl TreeDrawer for FractalTree {
     fn draw_trunk(
-        &self, grid: &mut Grid, pen: &mut TreePen,
-        params: &TreeParams, rng: &mut StdRng,
+        &self,
+        grid: &mut Grid,
+        pen: &mut TreePen,
+        params: &TreeParams,
+        rng: &mut StdRng,
     ) -> Vec<TrunkNode> {
-        StraightTrunk { height_fraction: 0.25 }.draw(grid, pen, params, rng)
+        StraightTrunk {
+            height_fraction: 0.25,
+        }
+        .draw(grid, pen, params, rng)
     }
 
     fn should_branch(
-        &self, idx: usize, count: usize,
-        _params: &TreeParams, _rng: &mut StdRng,
+        &self,
+        idx: usize,
+        count: usize,
+        _params: &TreeParams,
+        _rng: &mut StdRng,
     ) -> Option<BranchIntent> {
         if idx == count - 1 {
-            Some(BranchIntent { go_left: false, length: 0, level: 0 })
+            Some(BranchIntent {
+                go_left: false,
+                length: 0,
+                level: 0,
+            })
         } else {
             None
         }
     }
 
     fn draw_branch(
-        &self, grid: &mut Grid, pen: &mut TreePen,
-        _intent: &BranchIntent, _depth: usize,
-        params: &TreeParams, rng: &mut StdRng,
+        &self,
+        grid: &mut Grid,
+        pen: &mut TreePen,
+        _intent: &BranchIntent,
+        _depth: usize,
+        params: &TreeParams,
+        rng: &mut StdRng,
     ) -> BranchResult {
         let canopy_h = (pen.y - params.canopy_top()).max(4) as f32;
         let mut tips = Vec::new();
         let slope = (rng.random::<f32>() - 0.5) * 0.4;
-        fractal_limb(grid, pen.x as f32, pen.y as f32, slope,
-                     canopy_h * 0.35, 0, params, &mut tips, rng);
+        fractal_limb(
+            grid,
+            pen.x as f32,
+            pen.y as f32,
+            slope,
+            canopy_h * 0.35,
+            0,
+            params,
+            &mut tips,
+            rng,
+        );
         BranchResult { tips }
     }
 
@@ -4455,7 +6064,13 @@ impl TreeDrawer for FractalTree {
 pub struct LSystemTree;
 
 fn lsystem_expand(energy: f32) -> String {
-    let iters = if energy > 0.7 { 4 } else if energy > 0.45 { 3 } else { 2 };
+    let iters = if energy > 0.7 {
+        4
+    } else if energy > 0.45 {
+        3
+    } else {
+        2
+    };
     let mut s = String::from("X");
     for _ in 0..iters {
         let mut next = String::new();
@@ -4472,31 +6087,56 @@ fn lsystem_expand(energy: f32) -> String {
 
 impl TreeDrawer for LSystemTree {
     fn draw_trunk(
-        &self, grid: &mut Grid, pen: &mut TreePen,
-        params: &TreeParams, rng: &mut StdRng,
+        &self,
+        grid: &mut Grid,
+        pen: &mut TreePen,
+        params: &TreeParams,
+        rng: &mut StdRng,
     ) -> Vec<TrunkNode> {
-        StraightTrunk { height_fraction: 0.2 }.draw(grid, pen, params, rng)
+        StraightTrunk {
+            height_fraction: 0.2,
+        }
+        .draw(grid, pen, params, rng)
     }
 
     fn should_branch(
-        &self, idx: usize, count: usize,
-        _params: &TreeParams, _rng: &mut StdRng,
+        &self,
+        idx: usize,
+        count: usize,
+        _params: &TreeParams,
+        _rng: &mut StdRng,
     ) -> Option<BranchIntent> {
         if idx == count - 1 {
-            Some(BranchIntent { go_left: false, length: 0, level: 0 })
+            Some(BranchIntent {
+                go_left: false,
+                length: 0,
+                level: 0,
+            })
         } else {
             None
         }
     }
 
     fn draw_branch(
-        &self, grid: &mut Grid, pen: &mut TreePen,
-        _intent: &BranchIntent, _depth: usize,
-        params: &TreeParams, rng: &mut StdRng,
+        &self,
+        grid: &mut Grid,
+        pen: &mut TreePen,
+        _intent: &BranchIntent,
+        _depth: usize,
+        params: &TreeParams,
+        rng: &mut StdRng,
     ) -> BranchResult {
         // 8 directions, N=0 clockwise; + turns left 45, - turns right 45
-        const DXY: [(i32, i32); 8] = [(0, -1), (1, -1), (1, 0), (1, 1),
-                                      (0, 1), (-1, 1), (-1, 0), (-1, -1)];
+        const DXY: [(i32, i32); 8] = [
+            (0, -1),
+            (1, -1),
+            (1, 0),
+            (1, 1),
+            (0, 1),
+            (-1, 1),
+            (-1, 0),
+            (-1, -1),
+        ];
         const GLYPH: [char; 8] = ['│', '╱', '─', '╲', '│', '╱', '─', '╲'];
         let s = lsystem_expand(params.energy);
         let mut x = pen.x;
@@ -4512,14 +6152,18 @@ impl TreeDrawer for LSystemTree {
         let mut moves = 0;
         let floor = params.root().1;
         let in_plot = |px: i32, py: i32| {
-            px >= params.plot.x as i32 && px < (params.plot.x + params.plot.w) as i32
-                && py >= params.plot.y as i32 && py < floor
+            px >= params.plot.x as i32
+                && px < (params.plot.x + params.plot.w) as i32
+                && py >= params.plot.y as i32
+                && py < floor
         };
         for ch in s.chars() {
             match ch {
                 'F' => {
                     moves += 1;
-                    if moves > 220 { break; }
+                    if moves > 220 {
+                        break;
+                    }
                     let (dx, dy) = DXY[dir];
                     x += dx;
                     y += dy;
@@ -4553,7 +6197,11 @@ impl TreeDrawer for LSystemTree {
     }
 
     fn draw_fruit(&self, grid: &mut Grid, x: i32, y: i32, params: &TreeParams, rng: &mut StdRng) {
-        let dx = if rng.random_range(0..2u32) == 0 { -1 } else { 1 };
+        let dx = if rng.random_range(0..2u32) == 0 {
+            -1
+        } else {
+            1
+        };
         set(grid, x + dx, y, '✿', params.fruit_color);
     }
 }
@@ -4571,8 +6219,14 @@ fn dragon_turn_left(i: u32) -> bool {
 }
 
 fn dragon_arm(
-    grid: &mut Grid, x0: i32, y0: i32, start_dir: usize, mirror: bool,
-    segments: u32, params: &TreeParams, tips: &mut Vec<(i32, i32)>,
+    grid: &mut Grid,
+    x0: i32,
+    y0: i32,
+    start_dir: usize,
+    mirror: bool,
+    segments: u32,
+    params: &TreeParams,
+    tips: &mut Vec<(i32, i32)>,
 ) {
     // 4 directions, N=0 clockwise. Corner char connects came-from + go-to.
     const DXY: [(i32, i32); 4] = [(0, -1), (1, 0), (0, 1), (-1, 0)];
@@ -4597,14 +6251,24 @@ fn dragon_arm(
         let left = dragon_turn_left(i) != mirror;
         let new_dir = if left { (dir + 3) % 4 } else { (dir + 1) % 4 };
         let frac = i as f32 / segments as f32;
-        if x >= params.plot.x as i32 && x < (params.plot.x + params.plot.w) as i32
-            && y >= params.plot.y as i32 {
-            set(grid, x, y, corner(dir, new_dir), params.color_at_depth(frac));
+        if x >= params.plot.x as i32
+            && x < (params.plot.x + params.plot.w) as i32
+            && y >= params.plot.y as i32
+        {
+            set(
+                grid,
+                x,
+                y,
+                corner(dir, new_dir),
+                params.color_at_depth(frac),
+            );
         }
         let (dx, dy) = DXY[new_dir];
         x += dx;
         y += dy;
-        if y >= floor { break; }
+        if y >= floor {
+            break;
+        }
         dir = new_dir;
         // fold-back points (two same turns in a row) sprout occasional tips
         if i > 4 && i % 16 == 0 {
@@ -4616,27 +6280,44 @@ fn dragon_arm(
 
 impl TreeDrawer for DragonTree {
     fn draw_trunk(
-        &self, grid: &mut Grid, pen: &mut TreePen,
-        params: &TreeParams, rng: &mut StdRng,
+        &self,
+        grid: &mut Grid,
+        pen: &mut TreePen,
+        params: &TreeParams,
+        rng: &mut StdRng,
     ) -> Vec<TrunkNode> {
-        StraightTrunk { height_fraction: 0.4 }.draw(grid, pen, params, rng)
+        StraightTrunk {
+            height_fraction: 0.4,
+        }
+        .draw(grid, pen, params, rng)
     }
 
     fn should_branch(
-        &self, idx: usize, count: usize,
-        _params: &TreeParams, _rng: &mut StdRng,
+        &self,
+        idx: usize,
+        count: usize,
+        _params: &TreeParams,
+        _rng: &mut StdRng,
     ) -> Option<BranchIntent> {
         if idx == count - 1 {
-            Some(BranchIntent { go_left: false, length: 0, level: 0 })
+            Some(BranchIntent {
+                go_left: false,
+                length: 0,
+                level: 0,
+            })
         } else {
             None
         }
     }
 
     fn draw_branch(
-        &self, grid: &mut Grid, pen: &mut TreePen,
-        _intent: &BranchIntent, _depth: usize,
-        params: &TreeParams, rng: &mut StdRng,
+        &self,
+        grid: &mut Grid,
+        pen: &mut TreePen,
+        _intent: &BranchIntent,
+        _depth: usize,
+        params: &TreeParams,
+        rng: &mut StdRng,
     ) -> BranchResult {
         let base = if params.energy > 0.6 { 40 } else { 20 };
         let mut tips = Vec::new();
@@ -4644,12 +6325,39 @@ impl TreeDrawer for DragonTree {
         // unequal lengths keep the two sides from twinning
         let seg_l = base + rng.random_range(0..16u32);
         let seg_r = base + rng.random_range(0..16u32);
-        dragon_arm(grid, pen.x - 1, pen.y - 1, 3, false, seg_l, params, &mut tips);
-        dragon_arm(grid, pen.x + 1, pen.y - 1, 1, true, seg_r, params, &mut tips);
+        dragon_arm(
+            grid,
+            pen.x - 1,
+            pen.y - 1,
+            3,
+            false,
+            seg_l,
+            params,
+            &mut tips,
+        );
+        dragon_arm(
+            grid,
+            pen.x + 1,
+            pen.y - 1,
+            1,
+            true,
+            seg_r,
+            params,
+            &mut tips,
+        );
         set(grid, pen.x, pen.y - 1, '┴', params.trunk_color);
         // small jitter arm straight up on some trees
         if rng.random_range(0..2u32) == 0 {
-            dragon_arm(grid, pen.x, pen.y - 2, 0, false, base / 2, params, &mut tips);
+            dragon_arm(
+                grid,
+                pen.x,
+                pen.y - 2,
+                0,
+                false,
+                base / 2,
+                params,
+                &mut tips,
+            );
         }
         BranchResult { tips }
     }
@@ -4671,8 +6379,11 @@ pub struct HelixTree;
 
 impl TreeDrawer for HelixTree {
     fn draw_trunk(
-        &self, grid: &mut Grid, pen: &mut TreePen,
-        params: &TreeParams, rng: &mut StdRng,
+        &self,
+        grid: &mut Grid,
+        pen: &mut TreePen,
+        params: &TreeParams,
+        rng: &mut StdRng,
     ) -> Vec<TrunkNode> {
         let height = ((params.plot.h as f32 * params.energy.clamp(0.3, 1.0)) as i32).max(6);
         // strand offset cycles with period 6: cross, part, hold, cross, ...
@@ -4687,12 +6398,28 @@ impl TreeDrawer for HelixTree {
             let off = OFF[(i as usize + phase) % 6];
             if off == 0 {
                 set(grid, pen.x, y, '╳', bright);
-                nodes.push(TrunkNode { x: pen.x, y, dir: MoveDir::Up });
+                nodes.push(TrunkNode {
+                    x: pen.x,
+                    y,
+                    dir: MoveDir::Up,
+                });
             } else {
                 let da = off - prev;
-                let ca = if da > 0 { '╱' } else if da < 0 { '╲' } else { '│' };
+                let ca = if da > 0 {
+                    '╱'
+                } else if da < 0 {
+                    '╲'
+                } else {
+                    '│'
+                };
                 // mirrored strand: opposite offset and slope
-                let cb = if da > 0 { '╲' } else if da < 0 { '╱' } else { '│' };
+                let cb = if da > 0 {
+                    '╲'
+                } else if da < 0 {
+                    '╱'
+                } else {
+                    '│'
+                };
                 set(grid, pen.x + off, y, ca, bright);
                 set(grid, pen.x - off, y, cb, dim);
             }
@@ -4703,28 +6430,45 @@ impl TreeDrawer for HelixTree {
         set(grid, pen.x - 1, top, '╮', dim);
         set(grid, pen.x + 1, top, '╭', bright);
         set(grid, pen.x, top, '┴', bright);
-        nodes.push(TrunkNode { x: pen.x, y: top, dir: MoveDir::Up });
+        nodes.push(TrunkNode {
+            x: pen.x,
+            y: top,
+            dir: MoveDir::Up,
+        });
         nodes
     }
 
     fn should_branch(
-        &self, idx: usize, count: usize,
-        params: &TreeParams, rng: &mut StdRng,
+        &self,
+        idx: usize,
+        count: usize,
+        params: &TreeParams,
+        rng: &mut StdRng,
     ) -> Option<BranchIntent> {
         // sprigs from the knots only; skip the lowest, alternate sides
-        if idx == 0 { return None; }
+        if idx == 0 {
+            return None;
+        }
         if idx < count - 1 && rng.random::<f32>() > 0.4 + params.branch_factor * 0.4 {
             return None;
         }
         let go_left = idx % 2 == 0;
         let length = (params.spread() / 2 + rng.random_range(0..3u32) as i32).max(2);
-        Some(BranchIntent { go_left, length, level: 0 })
+        Some(BranchIntent {
+            go_left,
+            length,
+            level: 0,
+        })
     }
 
     fn draw_branch(
-        &self, grid: &mut Grid, pen: &mut TreePen,
-        intent: &BranchIntent, _depth: usize,
-        params: &TreeParams, rng: &mut StdRng,
+        &self,
+        grid: &mut Grid,
+        pen: &mut TreePen,
+        intent: &BranchIntent,
+        _depth: usize,
+        params: &TreeParams,
+        rng: &mut StdRng,
     ) -> BranchResult {
         let dx = if intent.go_left { -1 } else { 1 };
         let c = params.branch_color;
@@ -4739,7 +6483,9 @@ impl TreeDrawer for HelixTree {
                 set(grid, cx, cy, '─', c);
             }
         }
-        BranchResult { tips: vec![(cx + dx, cy)] }
+        BranchResult {
+            tips: vec![(cx + dx, cy)],
+        }
     }
 
     fn draw_tip(&self, grid: &mut Grid, x: i32, y: i32, params: &TreeParams) {
@@ -4756,8 +6502,8 @@ impl TreeDrawer for HelixTree {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rand::SeedableRng;
     use crossterm::style::Color;
+    use rand::SeedableRng;
 
     fn make_grid(w: usize, h: usize) -> Grid {
         vec![vec![Cell::new(' ', Color::Reset); w]; h]
@@ -4771,9 +6517,18 @@ mod tests {
     }
 
     fn test_params(plot_x: usize, plot_y: usize, plot_w: usize, plot_h: usize) -> TreeParams {
-        let green = Color::Rgb { r: 80, g: 140, b: 60 };
+        let green = Color::Rgb {
+            r: 80,
+            g: 140,
+            b: 60,
+        };
         TreeParams {
-            plot: Rect { x: plot_x, y: plot_y, w: plot_w, h: plot_h },
+            plot: Rect {
+                x: plot_x,
+                y: plot_y,
+                w: plot_w,
+                h: plot_h,
+            },
             energy: 0.9,
             trunk_color: green,
             bark_color: green,

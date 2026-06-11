@@ -1,8 +1,10 @@
-use pulldown_cmark::{Event, HeadingLevel, Parser, Tag, TagEnd};
 use crate::content::*;
+use pulldown_cmark::{Event, HeadingLevel, Parser, Tag, TagEnd};
 
 fn flush_block(blocks: &mut Vec<ContentBlock>, items: &mut Vec<ContentItem>) {
-    if items.is_empty() { return; }
+    if items.is_empty() {
+        return;
+    }
     blocks.push(ContentBlock {
         items: items.drain(..).collect(),
         padding: 1,

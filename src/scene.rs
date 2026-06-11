@@ -1,11 +1,11 @@
-use crossterm::style::Color;
-use rand::rngs::StdRng;
-use rand::RngExt;
-use crate::types::*;
+use crate::automata::*;
 use crate::color::*;
 use crate::fills::*;
 use crate::sprites::*;
-use crate::automata::*;
+use crate::types::*;
+use crossterm::style::Color;
+use rand::RngExt;
+use rand::rngs::StdRng;
 
 // ── Types ───────────────────────────────────────────────────────────
 
@@ -25,16 +25,16 @@ pub enum FillGen {
     Concentric,
     Labyrinth,
     // Sprites -- positioned within rect
-    Tree(usize),           // tree type 0-3
-    AztecDiamond(usize),   // order
-    Flower(usize),         // style 0-4
-    Fruit(usize),          // style 0-4
-    Mask(usize, usize),    // (size, style)
-    Fret(usize),           // steps
+    Tree(usize),         // tree type 0-3
+    AztecDiamond(usize), // order
+    Flower(usize),       // style 0-4
+    Fruit(usize),        // style 0-4
+    Mask(usize, usize),  // (size, style)
+    Fret(usize),         // steps
     // Floaty / free-form fills
-    CaSnapshot(u8),    // rule index: 0=life, 1=cave, 2=maze, 3=coral
-    Explosion,         // radial burst from center
-    Rule1D(u8),        // Wolfram 1D rule number (30, 90, 110, etc.)
+    CaSnapshot(u8), // rule index: 0=life, 1=cave, 2=maze, 3=coral
+    Explosion,      // radial burst from center
+    Rule1D(u8),     // Wolfram 1D rule number (30, 90, 110, etc.)
     // Single character placed at fill position
     Glyph(char),
     // No-op
@@ -79,7 +79,16 @@ pub fn render_fill(
 ) {
     match fill {
         FillGen::TilePure(v) => fill_tile_pure(grid, rect, v, color, color2),
-        FillGen::Tile(params) => fill_tile_ex(grid, rect, &params, color, color2, params.jitter, skew_boundary, rng),
+        FillGen::Tile(params) => fill_tile_ex(
+            grid,
+            rect,
+            &params,
+            color,
+            color2,
+            params.jitter,
+            skew_boundary,
+            rng,
+        ),
         FillGen::Noise(v) => fill_noise(grid, rect, v, color, color2, rng),
         FillGen::Crosshatch => draw_crosshatch(grid, rect, color, color2),
         FillGen::Guilloche => draw_guilloche(grid, rect, color, color2),
@@ -117,7 +126,14 @@ pub fn render_fill(
             draw_mask(grid, cx, cy, size, style, color);
         }
         FillGen::Fret(steps) => {
-            draw_stepped_fret(grid, rect.x as i32 + 2, rect.y as i32 + 1, steps, Dir::Right, color);
+            draw_stepped_fret(
+                grid,
+                rect.x as i32 + 2,
+                rect.y as i32 + 1,
+                steps,
+                Dir::Right,
+                color,
+            );
         }
         FillGen::CaSnapshot(rule_idx) => {
             draw_ca_snapshot(grid, rect, rule_idx, color, color2, rng);
@@ -188,12 +204,7 @@ pub fn fill_masked(
 }
 
 /// Render a scene: iterate layers bottom-to-top, compositing each.
-pub fn render_scene(
-    grid: &mut Grid,
-    rect: &Rect,
-    scene: &Scene,
-    rng: &mut StdRng,
-) {
+pub fn render_scene(grid: &mut Grid, rect: &Rect, scene: &Scene, rng: &mut StdRng) {
     for layer in &scene.layers {
         match &layer.mask {
             Some(mask) => fill_masked(grid, rect, layer.fill, mask.as_ref(), &layer.palette, rng),
@@ -209,7 +220,13 @@ pub fn render_scene(
 // ── Mask constructors ───────────────────────────────────────────────
 
 /// Circle/ellipse mask centered at (cx, cy).
-pub fn mask_ellipse(cx: f32, cy: f32, rx: f32, ry: f32, dissolve: f32) -> impl Fn(usize, usize) -> f32 {
+pub fn mask_ellipse(
+    cx: f32,
+    cy: f32,
+    rx: f32,
+    ry: f32,
+    dissolve: f32,
+) -> impl Fn(usize, usize) -> f32 {
     move |x, y| {
         let dx = (x as f32 - cx) / rx;
         let dy = (y as f32 - cy) / ry;
@@ -226,7 +243,11 @@ pub fn mask_ellipse(cx: f32, cy: f32, rx: f32, ry: f32, dissolve: f32) -> impl F
 
 /// Contour mask: inside below the contour line.
 /// `contour[x - x_offset]` gives the y-threshold.
-pub fn mask_below_contour(contour: Vec<usize>, x_offset: usize, dissolve: f32) -> impl Fn(usize, usize) -> f32 {
+pub fn mask_below_contour(
+    contour: Vec<usize>,
+    x_offset: usize,
+    dissolve: f32,
+) -> impl Fn(usize, usize) -> f32 {
     move |x, y| {
         let col = x.saturating_sub(x_offset);
         let threshold = contour.get(col).copied().unwrap_or(usize::MAX);
@@ -242,7 +263,11 @@ pub fn mask_below_contour(contour: Vec<usize>, x_offset: usize, dissolve: f32) -
 }
 
 /// Contour mask: inside above the contour line.
-pub fn mask_above_contour(contour: Vec<usize>, x_offset: usize, dissolve: f32) -> impl Fn(usize, usize) -> f32 {
+pub fn mask_above_contour(
+    contour: Vec<usize>,
+    x_offset: usize,
+    dissolve: f32,
+) -> impl Fn(usize, usize) -> f32 {
     move |x, y| {
         let col = x.saturating_sub(x_offset);
         let threshold = contour.get(col).copied().unwrap_or(0);
@@ -264,7 +289,11 @@ pub fn mask_band(y_top: usize, y_bot: usize, dissolve: f32) -> impl Fn(usize, us
             let from_top = (y - y_top) as f32;
             let from_bot = (y_bot - y) as f32;
             let edge_dist = from_top.min(from_bot);
-            if edge_dist >= dissolve { 1.0 } else { edge_dist / dissolve }
+            if edge_dist >= dissolve {
+                1.0
+            } else {
+                edge_dist / dissolve
+            }
         } else {
             0.0
         }
@@ -288,7 +317,11 @@ pub fn mask_rect(rect: &Rect, dissolve: f32) -> impl Fn(usize, usize) -> f32 + u
             let from_top = (y - y0) as f32;
             let from_bot = (y1 - 1 - y) as f32;
             let edge = from_left.min(from_right).min(from_top).min(from_bot);
-            if edge >= dissolve { 1.0 } else { edge / dissolve }
+            if edge >= dissolve {
+                1.0
+            } else {
+                edge / dissolve
+            }
         }
     }
 }
@@ -314,7 +347,13 @@ pub fn mask_union(
 /// Diamond (rhombus) mask: L1 norm with soft dissolve at edges.
 /// rx/ry are half-widths along each axis. In terminal cells x:y ≈ 2:1,
 /// so pass rx ≈ 2*ry for a visually balanced diamond.
-pub fn mask_diamond(cx: f32, cy: f32, rx: f32, ry: f32, dissolve: f32) -> impl Fn(usize, usize) -> f32 {
+pub fn mask_diamond(
+    cx: f32,
+    cy: f32,
+    rx: f32,
+    ry: f32,
+    dissolve: f32,
+) -> impl Fn(usize, usize) -> f32 {
     move |x, y| {
         let dx = (x as f32 - cx) / rx;
         let dy = (y as f32 - cy) / ry;
@@ -332,28 +371,51 @@ pub fn mask_diamond(cx: f32, cy: f32, rx: f32, ry: f32, dissolve: f32) -> impl F
 /// Parallelogram mask: a rectangle sheared along x by `shear` cells per
 /// unit of normalized dy from center. Positive shear leans right going down.
 /// w/h are full width and height, centered at (cx, cy).
-pub fn mask_parallelogram(cx: f32, cy: f32, w: f32, h: f32, shear: f32, dissolve: f32) -> impl Fn(usize, usize) -> f32 {
+pub fn mask_parallelogram(
+    cx: f32,
+    cy: f32,
+    w: f32,
+    h: f32,
+    shear: f32,
+    dissolve: f32,
+) -> impl Fn(usize, usize) -> f32 {
     move |x, y| {
         let dy = y as f32 - cy;
         let sx = x as f32 - cx - shear * (dy / (h * 0.5));
-        let from_left  = sx + w * 0.5;
+        let from_left = sx + w * 0.5;
         let from_right = w * 0.5 - sx;
-        let from_top   = dy + h * 0.5;
-        let from_bot   = h * 0.5 - dy;
+        let from_top = dy + h * 0.5;
+        let from_bot = h * 0.5 - dy;
         let edge = from_left.min(from_right).min(from_top).min(from_bot);
-        if edge <= 0.0 { 0.0 }
-        else if dissolve <= 0.0 || edge >= dissolve { 1.0 }
-        else { edge / dissolve }
+        if edge <= 0.0 {
+            0.0
+        } else if dissolve <= 0.0 || edge >= dissolve {
+            1.0
+        } else {
+            edge / dissolve
+        }
     }
 }
 
 /// Which direction the apex of a triangle points.
 #[derive(Clone, Copy)]
-pub enum TriDir { Up, Down, Left, Right }
+pub enum TriDir {
+    Up,
+    Down,
+    Left,
+    Right,
+}
 
 /// Triangle mask. Apex points in `dir`, base is opposite.
 /// rx/ry are half-extents from center to the widest cross-section.
-pub fn mask_triangle(cx: f32, cy: f32, rx: f32, ry: f32, dir: TriDir, dissolve: f32) -> impl Fn(usize, usize) -> f32 {
+pub fn mask_triangle(
+    cx: f32,
+    cy: f32,
+    rx: f32,
+    ry: f32,
+    dir: TriDir,
+    dissolve: f32,
+) -> impl Fn(usize, usize) -> f32 {
     move |x, y| {
         let fx = x as f32;
         let fy = y as f32;
@@ -378,22 +440,34 @@ pub fn mask_triangle(cx: f32, cy: f32, rx: f32, ry: f32, dir: TriDir, dissolve: 
             }
         };
 
-        if t < 0.0 || t > 1.0 || x_off > 1.0 { return 0.0; }
+        if t < 0.0 || t > 1.0 || x_off > 1.0 {
+            return 0.0;
+        }
 
         // Approximate pixel distance from slanted edge, capped by base distance.
         let slant_dist = (1.0 - x_off) * (t * rx.min(ry));
         let edge = slant_dist.min(base_dist);
 
-        if edge <= 0.0 { 0.0 }
-        else if dissolve <= 0.0 || edge >= dissolve { 1.0 }
-        else { edge / dissolve }
+        if edge <= 0.0 {
+            0.0
+        } else if dissolve <= 0.0 || edge >= dissolve {
+            1.0
+        } else {
+            edge / dissolve
+        }
     }
 }
 
 /// Hexagon mask. Regular hexagon with flat top/bottom.
 /// rx is half-width (horizontal), ry is half-height (vertical).
 /// Hex shape: top/bottom edges are flat (w = rx), sides are angled.
-pub fn mask_hexagon(cx: f32, cy: f32, rx: f32, ry: f32, dissolve: f32) -> impl Fn(usize, usize) -> f32 {
+pub fn mask_hexagon(
+    cx: f32,
+    cy: f32,
+    rx: f32,
+    ry: f32,
+    dissolve: f32,
+) -> impl Fn(usize, usize) -> f32 {
     move |x, y| {
         let dx = (x as f32 - cx).abs();
         let dy = (y as f32 - cy).abs();
@@ -416,19 +490,32 @@ pub fn mask_hexagon(cx: f32, cy: f32, rx: f32, ry: f32, dissolve: f32) -> impl F
 
 /// Trapezoid mask. Top edge width `w_top`, bottom edge width `w_bot`,
 /// total height `h`, centered at (cx, cy). Sides taper linearly.
-pub fn mask_trapezoid(cx: f32, cy: f32, w_top: f32, w_bot: f32, h: f32, dissolve: f32) -> impl Fn(usize, usize) -> f32 {
+pub fn mask_trapezoid(
+    cx: f32,
+    cy: f32,
+    w_top: f32,
+    w_bot: f32,
+    h: f32,
+    dissolve: f32,
+) -> impl Fn(usize, usize) -> f32 {
     move |x, y| {
         let dy = y as f32 - cy;
         let from_top = dy + h * 0.5;
         let from_bot = h * 0.5 - dy;
-        if from_top < 0.0 || from_bot < 0.0 { return 0.0; }
+        if from_top < 0.0 || from_bot < 0.0 {
+            return 0.0;
+        }
         let t = from_top / h; // 0.0 at top edge, 1.0 at bottom edge
         let half_w = w_top * 0.5 * (1.0 - t) + w_bot * 0.5 * t;
         let from_side = half_w - (x as f32 - cx).abs();
         let edge = from_side.min(from_top).min(from_bot);
-        if edge <= 0.0 { 0.0 }
-        else if dissolve <= 0.0 || edge >= dissolve { 1.0 }
-        else { edge / dissolve }
+        if edge <= 0.0 {
+            0.0
+        } else if dissolve <= 0.0 || edge >= dissolve {
+            1.0
+        } else {
+            edge / dissolve
+        }
     }
 }
 
@@ -474,10 +561,14 @@ fn draw_ca_snapshot(
 
     for y in 0..rect.h {
         for x in 0..rect.w {
-            if !ca.cells[y][x] { continue; }
+            if !ca.cells[y][x] {
+                continue;
+            }
             let gx = rect.x + x;
             let gy = rect.y + y;
-            if gy >= grid.len() || gx >= grid[0].len() { continue; }
+            if gy >= grid.len() || gx >= grid[0].len() {
+                continue;
+            }
             let card = ca.cardinal(x, y);
             let diag = ca.diagonal(x, y);
             let ch = cardinal_glyph(card, diag, style);
@@ -489,12 +580,7 @@ fn draw_ca_snapshot(
 }
 
 /// Explosion: radial burst from center. Dense core, rays thinning outward.
-fn draw_explosion(
-    grid: &mut Grid,
-    rect: &Rect,
-    color: Color,
-    color2: Color,
-) {
+fn draw_explosion(grid: &mut Grid, rect: &Rect, color: Color, color2: Color) {
     let cx = rect.w as f32 * 0.5;
     let cy = rect.h as f32 * 0.5;
     let max_r = cx.min(cy * 2.0);
@@ -506,7 +592,9 @@ fn draw_explosion(
         for x in 0..rect.w {
             let gx = rect.x + x;
             let gy = rect.y + y;
-            if gy >= grid.len() || gx >= grid[0].len() { continue; }
+            if gy >= grid.len() || gx >= grid[0].len() {
+                continue;
+            }
 
             let dx = x as f32 - cx;
             let dy = (y as f32 - cy) * 2.0; // aspect ratio correction
@@ -528,8 +616,12 @@ fn draw_explosion(
             let angle_off = (angle - nearest_ray).abs();
 
             let ray_width = 0.3 * (1.0 - nd * 0.7);
-            if angle_off > ray_width { continue; }
-            if nd > 0.85 { continue; }
+            if angle_off > ray_width {
+                continue;
+            }
+            if nd > 0.85 {
+                continue;
+            }
 
             let ch_idx = ((nd * (ray_chars.len() - 1) as f32) as usize).min(ray_chars.len() - 1);
             let ch = ray_chars[ch_idx];
@@ -542,14 +634,10 @@ fn draw_explosion(
 
 /// 1D elementary cellular automaton (Wolfram rules). Renders top-to-bottom,
 /// each row is the next generation. Popular rules: 30, 90, 110, 150, 184.
-fn draw_rule_1d(
-    grid: &mut Grid,
-    rect: &Rect,
-    rule: u8,
-    color: Color,
-    color2: Color,
-) {
-    if rect.w == 0 || rect.h == 0 { return; }
+fn draw_rule_1d(grid: &mut Grid, rect: &Rect, rule: u8, color: Color, color2: Color) {
+    if rect.w == 0 || rect.h == 0 {
+        return;
+    }
 
     let mut row = vec![false; rect.w];
     row[rect.w / 2] = true;
@@ -558,12 +646,18 @@ fn draw_rule_1d(
 
     for y in 0..rect.h {
         let gy = rect.y + y;
-        if gy >= grid.len() { break; }
+        if gy >= grid.len() {
+            break;
+        }
 
         for x in 0..rect.w {
-            if !row[x] { continue; }
+            if !row[x] {
+                continue;
+            }
             let gx = rect.x + x;
-            if gx >= grid[0].len() { continue; }
+            if gx >= grid[0].len() {
+                continue;
+            }
             let ch = chars_on[(y / 2) % chars_on.len()];
             let c = if (x + y) % 3 == 0 { color2 } else { color };
             let bg = grid[gy][gx].bg;

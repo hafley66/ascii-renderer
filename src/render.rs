@@ -1,6 +1,6 @@
+use crate::types::*;
 use crossterm::style::Color;
 use std::io::{self, Write};
-use crate::types::*;
 
 /// Render grid to plain text (no ANSI escapes).
 pub fn grid_to_plain(grid: &Grid) -> Vec<String> {
@@ -52,7 +52,12 @@ pub fn render_grid(grid: &Grid) {
             }
         }
         if cur_bg != Color::Reset {
-            write!(out, "{}", crossterm::style::SetBackgroundColor(Color::Reset)).unwrap();
+            write!(
+                out,
+                "{}",
+                crossterm::style::SetBackgroundColor(Color::Reset)
+            )
+            .unwrap();
             cur_bg = Color::Reset;
         }
         writeln!(out).unwrap();

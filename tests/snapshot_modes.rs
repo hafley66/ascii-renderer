@@ -19,7 +19,9 @@ fn strip_ansi(s: &str) -> String {
             // Skip until we hit a letter (end of escape sequence)
             while let Some(&next) = chars.peek() {
                 chars.next();
-                if next.is_ascii_alphabetic() { break; }
+                if next.is_ascii_alphabetic() {
+                    break;
+                }
             }
         } else {
             out.push(c);
@@ -87,12 +89,16 @@ fn mondrian2_seed_77() {
 
 #[test]
 fn party_seed_42() {
-    insta::assert_snapshot!(render(&["42", "party", "ember", "0", "6", "50", "50", "none", "line", "0"]));
+    insta::assert_snapshot!(render(&[
+        "42", "party", "ember", "0", "6", "50", "50", "none", "line", "0"
+    ]));
 }
 
 #[test]
 fn party_seed_99() {
-    insta::assert_snapshot!(render(&["99", "party", "midnight", "0", "5", "50", "50", "stars", "vine", "30"]));
+    insta::assert_snapshot!(render(&[
+        "99", "party", "midnight", "0", "5", "50", "50", "stars", "vine", "30"
+    ]));
 }
 
 #[test]
@@ -258,4 +264,74 @@ fn quilt_seed_42() {
 #[test]
 fn patchwalk_seed_42() {
     insta::assert_snapshot!(render(&["42", "patchwalk", "ember"]));
+}
+
+#[test]
+fn aurora_seed_42() {
+    insta::assert_snapshot!(render(&["42", "aurora", "deep"]));
+}
+
+#[test]
+fn aura2_seed_42() {
+    insta::assert_snapshot!(render(&["42", "aura2", "deep"]));
+}
+
+#[test]
+fn harbor_seed_42() {
+    insta::assert_snapshot!(render(&["42", "harbor", "arctic"]));
+}
+
+#[test]
+fn labyrinth_seed_42() {
+    insta::assert_snapshot!(render(&["42", "labyrinth", "mitla"]));
+}
+
+#[test]
+fn eyes_seed_42() {
+    insta::assert_snapshot!(render(&["42", "eyes", "neon"]));
+}
+
+#[test]
+fn eyes2_seed_42() {
+    insta::assert_snapshot!(render(&["42", "eyes2", "bone"]));
+}
+
+#[test]
+fn fullmetal_eyes_seed_42() {
+    insta::assert_snapshot!(render(&["42", "fullmetal-eyes", "nerv"]));
+}
+
+#[test]
+fn fullmetal_alchemist_seed_42() {
+    insta::assert_snapshot!(render(&["42", "fullmetal-alchemist", "ember"]));
+}
+
+#[test]
+fn fullmetal_alchemist2_seed_42() {
+    insta::assert_snapshot!(render(&["42", "fullmetal-alchemist2", "neon"]));
+}
+
+#[test]
+fn rainfall_seed_42() {
+    insta::assert_snapshot!(render(&["42", "rainfall", "silver"]));
+}
+
+#[test]
+fn meadow_seed_42() {
+    insta::assert_snapshot!(render(&["42", "meadow", "moss"]));
+}
+
+#[test]
+fn watershed_seed_42() {
+    insta::assert_snapshot!(render(&["42", "watershed", "moss"]));
+}
+
+#[test]
+fn solar_system_seed_42() {
+    insta::assert_snapshot!(render(&["42", "solar-system", "deep"]));
+}
+
+#[test]
+fn world2_seed_42() {
+    insta::assert_snapshot!(render(&["42", "world2", "ember"]));
 }

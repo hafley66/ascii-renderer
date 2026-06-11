@@ -1,26 +1,34 @@
-use crossterm::style::Color;
-use rand::rngs::StdRng;
-use rand::RngExt;
-use crate::types::*;
 use crate::content::*;
 use crate::sprites::draw_fret_border;
+use crate::types::*;
+use crossterm::style::Color;
+use rand::RngExt;
+use rand::rngs::StdRng;
 
-pub enum BorderStyle { Light, Heavy, Double, Rounded, Fret }
+pub enum BorderStyle {
+    Light,
+    Heavy,
+    Double,
+    Rounded,
+    Fret,
+}
 
 pub fn border_glyphs(style: &BorderStyle) -> (char, char, char, char, char, char) {
     match style {
-        BorderStyle::Light   => ('┌', '┐', '└', '┘', '─', '│'),
-        BorderStyle::Heavy   => ('┏', '┓', '┗', '┛', '━', '┃'),
-        BorderStyle::Double  => ('╔', '╗', '╚', '╝', '═', '║'),
+        BorderStyle::Light => ('┌', '┐', '└', '┘', '─', '│'),
+        BorderStyle::Heavy => ('┏', '┓', '┗', '┛', '━', '┃'),
+        BorderStyle::Double => ('╔', '╗', '╚', '╝', '═', '║'),
         BorderStyle::Rounded => ('╭', '╮', '╰', '╯', '─', '│'),
-        BorderStyle::Fret    => unreachable!(),
+        BorderStyle::Fret => unreachable!(),
     }
 }
 
 /// Draw a box border around rect, preserving existing bg colors.
 /// No-op if rect < 3x3. Fret falls back to Light if rect < 8x6.
 pub fn draw_box_border(grid: &mut Grid, rect: &Rect, style: &BorderStyle, color: Color) {
-    if rect.w < 3 || rect.h < 3 { return; }
+    if rect.w < 3 || rect.h < 3 {
+        return;
+    }
 
     if matches!(style, BorderStyle::Fret) {
         if rect.w < 8 || rect.h < 6 {
@@ -64,7 +72,9 @@ pub fn draw_box_border(grid: &mut Grid, rect: &Rect, style: &BorderStyle, color:
 /// Draw decorative corner embellishments on a bordered rect.
 /// Overlays triangle/block motifs at each corner, preserving bg.
 pub fn draw_corner_embellishments(grid: &mut Grid, rect: &Rect, style: usize, color: Color) {
-    if rect.w < 5 || rect.h < 4 { return; }
+    if rect.w < 5 || rect.h < 4 {
+        return;
+    }
 
     let x0 = rect.x;
     let y0 = rect.y;
@@ -81,52 +91,108 @@ pub fn draw_corner_embellishments(grid: &mut Grid, rect: &Rect, style: usize, co
     match style % 6 {
         0 => {
             // Fan: quarter-triangle + half-block extensions
-            set(grid, x0, y0, '◤'); set(grid, x0 + 1, y0, '▀'); set(grid, x0, y0 + 1, '▌');
-            set(grid, x1, y0, '◥'); set(grid, x1 - 1, y0, '▀'); set(grid, x1, y0 + 1, '▐');
-            set(grid, x0, y1, '◣'); set(grid, x0 + 1, y1, '▄'); set(grid, x0, y1 - 1, '▌');
-            set(grid, x1, y1, '◢'); set(grid, x1 - 1, y1, '▄'); set(grid, x1, y1 - 1, '▐');
+            set(grid, x0, y0, '◤');
+            set(grid, x0 + 1, y0, '▀');
+            set(grid, x0, y0 + 1, '▌');
+            set(grid, x1, y0, '◥');
+            set(grid, x1 - 1, y0, '▀');
+            set(grid, x1, y0 + 1, '▐');
+            set(grid, x0, y1, '◣');
+            set(grid, x0 + 1, y1, '▄');
+            set(grid, x0, y1 - 1, '▌');
+            set(grid, x1, y1, '◢');
+            set(grid, x1 - 1, y1, '▄');
+            set(grid, x1, y1 - 1, '▐');
         }
         1 => {
             // Double triangle: two quarter-triangles per corner
-            set(grid, x0, y0, '◤'); set(grid, x0 + 1, y0, '◥'); set(grid, x0, y0 + 1, '◣');
-            set(grid, x1, y0, '◥'); set(grid, x1 - 1, y0, '◤'); set(grid, x1, y0 + 1, '◢');
-            set(grid, x0, y1, '◣'); set(grid, x0 + 1, y1, '◢'); set(grid, x0, y1 - 1, '◤');
-            set(grid, x1, y1, '◢'); set(grid, x1 - 1, y1, '◣'); set(grid, x1, y1 - 1, '◥');
+            set(grid, x0, y0, '◤');
+            set(grid, x0 + 1, y0, '◥');
+            set(grid, x0, y0 + 1, '◣');
+            set(grid, x1, y0, '◥');
+            set(grid, x1 - 1, y0, '◤');
+            set(grid, x1, y0 + 1, '◢');
+            set(grid, x0, y1, '◣');
+            set(grid, x0 + 1, y1, '◢');
+            set(grid, x0, y1 - 1, '◤');
+            set(grid, x1, y1, '◢');
+            set(grid, x1 - 1, y1, '◣');
+            set(grid, x1, y1 - 1, '◥');
         }
         2 => {
             // Block: three-quadrant block chars
-            set(grid, x0, y0, '▛'); set(grid, x0 + 1, y0, '▀'); set(grid, x0, y0 + 1, '▌');
-            set(grid, x1, y0, '▜'); set(grid, x1 - 1, y0, '▀'); set(grid, x1, y0 + 1, '▐');
-            set(grid, x0, y1, '▙'); set(grid, x0 + 1, y1, '▄'); set(grid, x0, y1 - 1, '▌');
-            set(grid, x1, y1, '▟'); set(grid, x1 - 1, y1, '▄'); set(grid, x1, y1 - 1, '▐');
+            set(grid, x0, y0, '▛');
+            set(grid, x0 + 1, y0, '▀');
+            set(grid, x0, y0 + 1, '▌');
+            set(grid, x1, y0, '▜');
+            set(grid, x1 - 1, y0, '▀');
+            set(grid, x1, y0 + 1, '▐');
+            set(grid, x0, y1, '▙');
+            set(grid, x0 + 1, y1, '▄');
+            set(grid, x0, y1 - 1, '▌');
+            set(grid, x1, y1, '▟');
+            set(grid, x1 - 1, y1, '▄');
+            set(grid, x1, y1 - 1, '▐');
         }
         3 => {
             // Arrow: triangle + directional pointer
-            set(grid, x0, y0, '◤'); set(grid, x0 + 1, y0, '▶'); set(grid, x0, y0 + 1, '▼');
-            set(grid, x1, y0, '◥'); set(grid, x1 - 1, y0, '◀'); set(grid, x1, y0 + 1, '▼');
-            set(grid, x0, y1, '◣'); set(grid, x0 + 1, y1, '▶'); set(grid, x0, y1 - 1, '▲');
-            set(grid, x1, y1, '◢'); set(grid, x1 - 1, y1, '◀'); set(grid, x1, y1 - 1, '▲');
+            set(grid, x0, y0, '◤');
+            set(grid, x0 + 1, y0, '▶');
+            set(grid, x0, y0 + 1, '▼');
+            set(grid, x1, y0, '◥');
+            set(grid, x1 - 1, y0, '◀');
+            set(grid, x1, y0 + 1, '▼');
+            set(grid, x0, y1, '◣');
+            set(grid, x0 + 1, y1, '▶');
+            set(grid, x0, y1 - 1, '▲');
+            set(grid, x1, y1, '◢');
+            set(grid, x1 - 1, y1, '◀');
+            set(grid, x1, y1 - 1, '▲');
         }
         4 if rect.w >= 7 && rect.h >= 5 => {
             // Layered: 3-deep triangle cascade
-            set(grid, x0, y0, '◤'); set(grid, x0+1, y0, '◥'); set(grid, x0+2, y0, '▀');
-            set(grid, x0, y0+1, '◣'); set(grid, x0+1, y0+1, '◤'); set(grid, x0, y0+2, '▌');
+            set(grid, x0, y0, '◤');
+            set(grid, x0 + 1, y0, '◥');
+            set(grid, x0 + 2, y0, '▀');
+            set(grid, x0, y0 + 1, '◣');
+            set(grid, x0 + 1, y0 + 1, '◤');
+            set(grid, x0, y0 + 2, '▌');
 
-            set(grid, x1, y0, '◥'); set(grid, x1-1, y0, '◤'); set(grid, x1-2, y0, '▀');
-            set(grid, x1, y0+1, '◢'); set(grid, x1-1, y0+1, '◥'); set(grid, x1, y0+2, '▐');
+            set(grid, x1, y0, '◥');
+            set(grid, x1 - 1, y0, '◤');
+            set(grid, x1 - 2, y0, '▀');
+            set(grid, x1, y0 + 1, '◢');
+            set(grid, x1 - 1, y0 + 1, '◥');
+            set(grid, x1, y0 + 2, '▐');
 
-            set(grid, x0, y1, '◣'); set(grid, x0+1, y1, '◢'); set(grid, x0+2, y1, '▄');
-            set(grid, x0, y1-1, '◤'); set(grid, x0+1, y1-1, '◣'); set(grid, x0, y1-2, '▌');
+            set(grid, x0, y1, '◣');
+            set(grid, x0 + 1, y1, '◢');
+            set(grid, x0 + 2, y1, '▄');
+            set(grid, x0, y1 - 1, '◤');
+            set(grid, x0 + 1, y1 - 1, '◣');
+            set(grid, x0, y1 - 2, '▌');
 
-            set(grid, x1, y1, '◢'); set(grid, x1-1, y1, '◣'); set(grid, x1-2, y1, '▄');
-            set(grid, x1, y1-1, '◥'); set(grid, x1-1, y1-1, '◢'); set(grid, x1, y1-2, '▐');
+            set(grid, x1, y1, '◢');
+            set(grid, x1 - 1, y1, '◣');
+            set(grid, x1 - 2, y1, '▄');
+            set(grid, x1, y1 - 1, '◥');
+            set(grid, x1 - 1, y1 - 1, '◢');
+            set(grid, x1, y1 - 2, '▐');
         }
         _ => {
             // Bracket: half-bracket corners with side accents
-            set(grid, x0, y0, '⌜'); set(grid, x0 + 1, y0, '▀'); set(grid, x0, y0 + 1, '▏');
-            set(grid, x1, y0, '⌝'); set(grid, x1 - 1, y0, '▀'); set(grid, x1, y0 + 1, '▕');
-            set(grid, x0, y1, '⌞'); set(grid, x0 + 1, y1, '▄'); set(grid, x0, y1 - 1, '▏');
-            set(grid, x1, y1, '⌟'); set(grid, x1 - 1, y1, '▄'); set(grid, x1, y1 - 1, '▕');
+            set(grid, x0, y0, '⌜');
+            set(grid, x0 + 1, y0, '▀');
+            set(grid, x0, y0 + 1, '▏');
+            set(grid, x1, y0, '⌝');
+            set(grid, x1 - 1, y0, '▀');
+            set(grid, x1, y0 + 1, '▕');
+            set(grid, x0, y1, '⌞');
+            set(grid, x0 + 1, y1, '▄');
+            set(grid, x0, y1 - 1, '▏');
+            set(grid, x1, y1, '⌟');
+            set(grid, x1 - 1, y1, '▄');
+            set(grid, x1, y1 - 1, '▕');
         }
     }
 }
@@ -134,14 +200,24 @@ pub fn draw_corner_embellishments(grid: &mut Grid, rect: &Rect, style: usize, co
 pub fn pick_border_style(rng: &mut StdRng, w: usize, h: usize) -> BorderStyle {
     let area = w * h;
     if area < 100 {
-        if rng.random_range(0..2) == 0 { BorderStyle::Light } else { BorderStyle::Rounded }
+        if rng.random_range(0..2) == 0 {
+            BorderStyle::Light
+        } else {
+            BorderStyle::Rounded
+        }
     } else {
         match rng.random_range(0..5) {
             0 => BorderStyle::Light,
             1 => BorderStyle::Heavy,
             2 => BorderStyle::Double,
             3 => BorderStyle::Rounded,
-            _ => if w >= 8 && h >= 6 { BorderStyle::Fret } else { BorderStyle::Light },
+            _ => {
+                if w >= 8 && h >= 6 {
+                    BorderStyle::Fret
+                } else {
+                    BorderStyle::Light
+                }
+            }
         }
     }
 }

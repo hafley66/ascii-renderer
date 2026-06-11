@@ -1,12 +1,17 @@
-use crossterm::style::Color;
-use rand::rngs::StdRng;
-use rand::RngExt;
-use crate::types::*;
 use crate::color::*;
+use crate::types::*;
+use crossterm::style::Color;
+use rand::RngExt;
+use rand::rngs::StdRng;
 
 /// Cardinal directions for the turtle walker.
 #[derive(Clone, Copy)]
-pub enum Dir { Right, Down, Left, Up }
+pub enum Dir {
+    Right,
+    Down,
+    Left,
+    Up,
+}
 
 impl Dir {
     pub fn turn_right(self) -> Dir {
@@ -36,8 +41,17 @@ impl Dir {
 }
 
 /// Draw a single stepped fret (xicalcoliuhqui) spiral.
-pub fn draw_stepped_fret(grid: &mut Grid, start_x: i32, start_y: i32, steps: usize, initial_dir: Dir, color: Color) {
-    if steps == 0 { return; }
+pub fn draw_stepped_fret(
+    grid: &mut Grid,
+    start_x: i32,
+    start_y: i32,
+    steps: usize,
+    initial_dir: Dir,
+    color: Color,
+) {
+    if steps == 0 {
+        return;
+    }
 
     let set = |grid: &mut Grid, x: i32, y: i32, ch: char| {
         if x >= 0 && y >= 0 && (y as usize) < grid.len() && (x as usize) < grid[0].len() {
@@ -67,9 +81,9 @@ pub fn draw_stepped_fret(grid: &mut Grid, start_x: i32, start_y: i32, steps: usi
 
         let corner = match dir {
             Dir::Right => '┐',
-            Dir::Down  => '┘',
-            Dir::Left  => '└',
-            Dir::Up    => '┌',
+            Dir::Down => '┘',
+            Dir::Left => '└',
+            Dir::Up => '┌',
         };
         set(grid, x, y, corner);
 
@@ -83,7 +97,16 @@ pub fn draw_stepped_fret(grid: &mut Grid, start_x: i32, start_y: i32, steps: usi
 }
 
 /// Draw a stepped fret border band along an edge of a rectangular region.
-pub fn draw_fret_border(grid: &mut Grid, x0: usize, y0: usize, w: usize, h: usize, band_depth: usize, edge: usize, color: Color) {
+pub fn draw_fret_border(
+    grid: &mut Grid,
+    x0: usize,
+    y0: usize,
+    w: usize,
+    h: usize,
+    band_depth: usize,
+    edge: usize,
+    color: Color,
+) {
     let (start_x, start_y, dir, count) = match edge {
         0 => (x0 as i32, y0 as i32, Dir::Right, w),
         1 => ((x0 + w - 1) as i32, y0 as i32, Dir::Down, h),
@@ -106,7 +129,14 @@ pub fn draw_fret_border(grid: &mut Grid, x0: usize, y0: usize, w: usize, h: usiz
 }
 
 /// Draw a conifer/pine tree.
-pub fn draw_pine(grid: &mut Grid, root_x: usize, root_y: usize, tiers: usize, base_width: usize, color: Color) {
+pub fn draw_pine(
+    grid: &mut Grid,
+    root_x: usize,
+    root_y: usize,
+    tiers: usize,
+    base_width: usize,
+    color: Color,
+) {
     let set = |grid: &mut Grid, x: usize, y: usize, ch: char, fg: Color| {
         if y < grid.len() && x < grid[0].len() {
             grid[y][x] = Cell::new(ch, fg);
@@ -140,12 +170,22 @@ pub fn draw_pine(grid: &mut Grid, root_x: usize, root_y: usize, tiers: usize, ba
             let needles = ['▪', '◆', '●', '▫'];
             for x in (left + 1)..right {
                 let needle = needles[(x + row) % needles.len()];
-                let nc = if (x + row) % 3 == 0 { lighten(color, 20) } else { color };
+                let nc = if (x + row) % 3 == 0 {
+                    lighten(color, 20)
+                } else {
+                    color
+                };
                 set(grid, x, row, needle, nc);
             }
         }
         if tier_top > 0 && t == tiers - 1 {
-            set(grid, root_x, tier_top.saturating_sub(1), '▲', lighten(color, 30));
+            set(
+                grid,
+                root_x,
+                tier_top.saturating_sub(1),
+                '▲',
+                lighten(color, 30),
+            );
         }
 
         tier_bottom = tier_top + 1;
@@ -153,7 +193,14 @@ pub fn draw_pine(grid: &mut Grid, root_x: usize, root_y: usize, tiers: usize, ba
 }
 
 /// Draw a weeping willow.
-pub fn draw_willow(grid: &mut Grid, root_x: usize, root_y: usize, canopy_y: usize, spread: usize, color: Color) {
+pub fn draw_willow(
+    grid: &mut Grid,
+    root_x: usize,
+    root_y: usize,
+    canopy_y: usize,
+    spread: usize,
+    color: Color,
+) {
     let set = |grid: &mut Grid, x: usize, y: usize, ch: char, fg: Color| {
         if y < grid.len() && x < grid[0].len() && grid[y][x].ch == ' ' {
             grid[y][x] = Cell::new(ch, fg);
@@ -161,7 +208,9 @@ pub fn draw_willow(grid: &mut Grid, root_x: usize, root_y: usize, canopy_y: usiz
     };
 
     let height = root_y.saturating_sub(canopy_y);
-    if height < 4 { return; }
+    if height < 4 {
+        return;
+    }
     let first_split = root_y.saturating_sub((height / 3).max(2));
 
     for y in first_split..root_y {
@@ -230,7 +279,14 @@ pub fn draw_willow(grid: &mut Grid, root_x: usize, root_y: usize, canopy_y: usiz
 }
 
 /// Draw a palm tree.
-pub fn draw_palm(grid: &mut Grid, root_x: usize, root_y: usize, trunk_height: usize, color: Color, rng: &mut StdRng) {
+pub fn draw_palm(
+    grid: &mut Grid,
+    root_x: usize,
+    root_y: usize,
+    trunk_height: usize,
+    color: Color,
+    rng: &mut StdRng,
+) {
     let set = |grid: &mut Grid, x: usize, y: usize, ch: char, fg: Color| {
         if y < grid.len() && x < grid[0].len() {
             grid[y][x] = Cell::new(ch, fg);
@@ -249,14 +305,14 @@ pub fn draw_palm(grid: &mut Grid, root_x: usize, root_y: usize, trunk_height: us
     let frond_color = lighten(color, 10);
     let frond_defs: &[(i32, i32, &[char])] = &[
         (-2, -1, &['╲', '─', '╲', '╲', '╷']),
-        (-2,  0, &['─', '─', '╲', '╲', '╷']),
-        (-1,  1, &['╲', '╲', '╲', '╷', '╵']),
-        ( 2, -1, &['╱', '─', '╱', '╱', '╷']),
-        ( 2,  0, &['─', '─', '╱', '╱', '╷']),
-        ( 1,  1, &['╱', '╱', '╱', '╷', '╵']),
-        ( 0, -1, &['│', '│', '╷', '·']),
+        (-2, 0, &['─', '─', '╲', '╲', '╷']),
+        (-1, 1, &['╲', '╲', '╲', '╷', '╵']),
+        (2, -1, &['╱', '─', '╱', '╱', '╷']),
+        (2, 0, &['─', '─', '╱', '╱', '╷']),
+        (1, 1, &['╱', '╱', '╱', '╷', '╵']),
+        (0, -1, &['│', '│', '╷', '·']),
         (-1, -1, &['╲', '╲', '╲', '╷']),
-        ( 1, -1, &['╱', '╱', '╱', '╷']),
+        (1, -1, &['╱', '╱', '╱', '╷']),
     ];
 
     for (dx, dy, glyphs) in frond_defs {
@@ -266,7 +322,11 @@ pub fn draw_palm(grid: &mut Grid, root_x: usize, root_y: usize, trunk_height: us
             fx += dx;
             fy += dy;
             if fx >= 0 && fy >= 0 && (fy as usize) < grid.len() && (fx as usize) < grid[0].len() {
-                let fc = if step < 2 { frond_color } else { lighten(frond_color, (step as u8) * 12) };
+                let fc = if step < 2 {
+                    frond_color
+                } else {
+                    lighten(frond_color, (step as u8) * 12)
+                };
                 set(grid, fx as usize, fy as usize, ch, fc);
             }
         }
@@ -288,9 +348,21 @@ pub fn draw_palm(grid: &mut Grid, root_x: usize, root_y: usize, trunk_height: us
 pub fn draw_fruit(grid: &mut Grid, cx: usize, cy: usize, style: usize, color: Color) {
     let patterns: &[&[(i32, i32, char)]] = &[
         &[(0, 0, '●'), (0, -1, '╿'), (1, -1, '╌')],
-        &[(-1, 0, '●'), (1, 0, '●'), (-1, -1, '╱'), (1, -1, '╲'), (0, -1, '┬')],
+        &[
+            (-1, 0, '●'),
+            (1, 0, '●'),
+            (-1, -1, '╱'),
+            (1, -1, '╲'),
+            (0, -1, '┬'),
+        ],
         &[(0, 0, '◉'), (0, -1, '╷')],
-        &[(0, 0, '●'), (-1, 0, '•'), (1, 0, '•'), (0, -1, '•'), (0, 1, '•')],
+        &[
+            (0, 0, '●'),
+            (-1, 0, '•'),
+            (1, 0, '•'),
+            (0, -1, '•'),
+            (0, 1, '•'),
+        ],
         &[(0, 0, '◆'), (0, 1, '●'), (0, -1, '╿'), (1, -1, '╌')],
     ];
 
@@ -299,21 +371,35 @@ pub fn draw_fruit(grid: &mut Grid, cx: usize, cy: usize, style: usize, color: Co
         let x = cx as i32 + dx;
         let y = cy as i32 + dy;
         if x >= 0 && y >= 0 && (y as usize) < grid.len() && (x as usize) < grid[0].len() {
-            let c = if dx == 0 && dy == 0 { lighten(color, 30) } else { color };
+            let c = if dx == 0 && dy == 0 {
+                lighten(color, 30)
+            } else {
+                color
+            };
             grid[y as usize][x as usize] = Cell::new(ch, c);
         }
     }
 }
 
 /// Grow a GRIS-style tree upward from (root_x, root_y).
-pub fn grow_tree(grid: &mut Grid, root_x: usize, root_y: usize, canopy_y: usize, spread: usize, color: Color, rng: &mut StdRng) {
+pub fn grow_tree(
+    grid: &mut Grid,
+    root_x: usize,
+    root_y: usize,
+    canopy_y: usize,
+    spread: usize,
+    color: Color,
+    rng: &mut StdRng,
+) {
     let set = |grid: &mut Grid, x: usize, y: usize, ch: char, fg: Color| {
         if y < grid.len() && x < grid[0].len() {
             grid[y][x] = Cell::new(ch, fg);
         }
     };
 
-    if canopy_y >= root_y { return; }
+    if canopy_y >= root_y {
+        return;
+    }
     let height = root_y - canopy_y;
     let first_split = root_y.saturating_sub((height / 3).max(2));
 
@@ -399,8 +485,13 @@ pub fn grow_tree(grid: &mut Grid, root_x: usize, root_y: usize, canopy_y: usize,
 fn tset(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
     if x >= 0 && y >= 0 && (y as usize) < grid.len() && (x as usize) < grid[0].len() {
         let cell = &mut grid[y as usize][x as usize];
-        let overwritable = matches!(cell.ch, ' ' | '·' | '∙' | '∿' | '~' | '░' | '▒' | '▓' | '╱' | '╲');
-        if overwritable { *cell = Cell::new(ch, fg); }
+        let overwritable = matches!(
+            cell.ch,
+            ' ' | '·' | '∙' | '∿' | '~' | '░' | '▒' | '▓' | '╱' | '╲'
+        );
+        if overwritable {
+            *cell = Cell::new(ch, fg);
+        }
     }
 }
 
@@ -417,8 +508,14 @@ fn tset_over(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
 /// Movement direction for connected drawing.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum MoveDir {
-    Up, Down, Left, Right,
-    UpLeft, UpRight, DownLeft, DownRight,
+    Up,
+    Down,
+    Left,
+    Right,
+    UpLeft,
+    UpRight,
+    DownLeft,
+    DownRight,
 }
 
 impl MoveDir {
@@ -452,17 +549,17 @@ fn connect_glyph(from: MoveDir, to: MoveDir) -> char {
         // Cardinal turns: (prev_travel_dir, next_travel_dir)
         // Char needs exit toward opposite(from) to connect back + exit toward `to`.
         // Was going up (prev cell below), turning right
-        (Up, Right) => '╭',    // exits: Down, Right
-        (Up, Left)  => '╮',    // exits: Down, Left
+        (Up, Right) => '╭', // exits: Down, Right
+        (Up, Left) => '╮',  // exits: Down, Left
         // Was going down (prev cell above), turning right/left
-        (Down, Right) => '╰',  // exits: Up, Right
-        (Down, Left)  => '╯',  // exits: Up, Left
+        (Down, Right) => '╰', // exits: Up, Right
+        (Down, Left) => '╯',  // exits: Up, Left
         // Was going right (prev cell left), turning up/down
-        (Right, Up)   => '╯',  // exits: Up, Left
-        (Right, Down) => '╮',  // exits: Down, Left
+        (Right, Up) => '╯',   // exits: Up, Left
+        (Right, Down) => '╮', // exits: Down, Left
         // Was going left (prev cell right), turning up/down
-        (Left, Up)    => '╰',  // exits: Up, Right
-        (Left, Down)  => '╭',  // exits: Down, Right
+        (Left, Up) => '╰',   // exits: Up, Right
+        (Left, Down) => '╭', // exits: Down, Right
 
         // T-junctions (straight + branch)
         (Up, _) | (Down, _) if to.dx() != 0 => '├',
@@ -510,10 +607,10 @@ pub fn char_exits(ch: char) -> &'static [MoveDir] {
         '┼' | '╋' => &[Up, Down, Left, Right],
 
         // Half-lines (stubs)
-        '╷' => &[Up],        // stub pointing up (endpoint coming from above)
-        '╵' => &[Down],      // stub pointing down
-        '╴' => &[Left],      // stub pointing left
-        '╶' => &[Right],     // stub pointing right
+        '╷' => &[Up],    // stub pointing up (endpoint coming from above)
+        '╵' => &[Down],  // stub pointing down
+        '╴' => &[Left],  // stub pointing left
+        '╶' => &[Right], // stub pointing right
 
         _ => &[],
     }
@@ -523,10 +620,14 @@ pub fn char_exits(ch: char) -> &'static [MoveDir] {
 pub fn opposite(dir: MoveDir) -> MoveDir {
     use MoveDir::*;
     match dir {
-        Up => Down, Down => Up,
-        Left => Right, Right => Left,
-        UpLeft => DownRight, UpRight => DownLeft,
-        DownLeft => UpRight, DownRight => UpLeft,
+        Up => Down,
+        Down => Up,
+        Left => Right,
+        Right => Left,
+        UpLeft => DownRight,
+        UpRight => DownLeft,
+        DownLeft => UpRight,
+        DownRight => UpLeft,
     }
 }
 
@@ -544,7 +645,7 @@ pub fn char_for_connection(entry: MoveDir, exit: MoveDir) -> char {
     use MoveDir::*;
     // entry_exit: the char needs exit toward opposite(entry) AND toward exit
     let from = opposite(entry); // char's exit back toward where we came from
-    let to = exit;              // char's exit toward where we're going
+    let to = exit; // char's exit toward where we're going
 
     match (from, to) {
         // Straight
@@ -567,7 +668,10 @@ pub fn char_for_connection(entry: MoveDir, exit: MoveDir) -> char {
 /// From a given cell with char `ch`, what are the valid next positions
 /// and the direction to get there?
 pub fn valid_moves(ch: char) -> Vec<(MoveDir, i32, i32)> {
-    char_exits(ch).iter().map(|&d| (d, d.dx(), d.dy())).collect()
+    char_exits(ch)
+        .iter()
+        .map(|&d| (d, d.dx(), d.dy()))
+        .collect()
 }
 
 /// Direction-appropriate continuation glyph (what to draw while moving in a direction).
@@ -592,7 +696,12 @@ pub struct TreePen {
 
 impl TreePen {
     pub fn new(x: i32, y: i32, color: Color) -> Self {
-        TreePen { x, y, last_dir: None, color }
+        TreePen {
+            x,
+            y,
+            last_dir: None,
+            color,
+        }
     }
 
     /// Move one step in the given direction, drawing the correct connecting glyph.
@@ -631,7 +740,12 @@ impl TreePen {
 
     /// Fork: return a new pen at the current position for drawing a branch.
     pub fn fork(&self, color: Color) -> TreePen {
-        TreePen { x: self.x, y: self.y, last_dir: self.last_dir, color }
+        TreePen {
+            x: self.x,
+            y: self.y,
+            last_dir: self.last_dir,
+            color,
+        }
     }
 }
 
@@ -639,18 +753,23 @@ impl TreePen {
 /// draw_trunk returns the x-path (y -> x) so branches can attach correctly.
 #[derive(Clone, Copy)]
 pub enum TrunkStyle {
-    Straight,   // │
-    Wobble,     // │ with random ╱╲ lateral shifts
-    Curved,     // S-curve using ╭╯╰╮
-    Thick,      // ┃ center flanked by │
-    Gnarled,    // irregular width with knots ┼ ╋
+    Straight, // │
+    Wobble,   // │ with random ╱╲ lateral shifts
+    Curved,   // S-curve using ╭╯╰╮
+    Thick,    // ┃ center flanked by │
+    Gnarled,  // irregular width with knots ┼ ╋
 }
 
 /// Draw a trunk from bot_y (ground) up to top_y using the given style.
 /// Returns Vec<(y, x)> sorted top-to-bottom for branch attachment lookup.
 pub fn draw_trunk(
-    grid: &mut Grid, start_x: i32, top_y: i32, bot_y: i32,
-    style: TrunkStyle, color: Color, rng: &mut StdRng,
+    grid: &mut Grid,
+    start_x: i32,
+    top_y: i32,
+    bot_y: i32,
+    style: TrunkStyle,
+    color: Color,
+    rng: &mut StdRng,
 ) -> Vec<(i32, i32)> {
     let mut path: Vec<(i32, i32)> = Vec::new();
     let bark = darken(color, 15);
@@ -681,18 +800,30 @@ pub fn draw_trunk(
         TrunkStyle::Curved => {
             // S-curve: trunk bends left then right (or vice versa)
             let height = (bot_y - top_y).max(1);
-            let bend_dir: i32 = if rng.random_range(0..2u32) == 0 { 1 } else { -1 };
+            let bend_dir: i32 = if rng.random_range(0..2u32) == 0 {
+                1
+            } else {
+                -1
+            };
             let bend_amount = rng.random_range(1..4u32) as i32;
             for y in top_y..bot_y {
                 let t = (y - top_y) as f32 / height as f32;
                 // Sine-like offset
-                let offset = (bend_dir as f32 * bend_amount as f32 * (t * std::f32::consts::PI).sin()) as i32;
+                let offset = (bend_dir as f32
+                    * bend_amount as f32
+                    * (t * std::f32::consts::PI).sin()) as i32;
                 let x = start_x + offset;
-                let ch = if offset > 0 && y > top_y && (y - top_y) < height / 2 { '╲' }
-                    else if offset < 0 && y > top_y && (y - top_y) < height / 2 { '╱' }
-                    else if offset > 0 && (y - top_y) >= height / 2 { '╱' }
-                    else if offset < 0 && (y - top_y) >= height / 2 { '╲' }
-                    else { '│' };
+                let ch = if offset > 0 && y > top_y && (y - top_y) < height / 2 {
+                    '╲'
+                } else if offset < 0 && y > top_y && (y - top_y) < height / 2 {
+                    '╱'
+                } else if offset > 0 && (y - top_y) >= height / 2 {
+                    '╱'
+                } else if offset < 0 && (y - top_y) >= height / 2 {
+                    '╲'
+                } else {
+                    '│'
+                };
                 tset_over(grid, x, y, ch, color);
                 path.push((y, x));
             }
@@ -725,13 +856,27 @@ pub fn draw_trunk(
                 }
                 // Knots at random
                 if rng.random_range(0..6u32) == 0 {
-                    let knot_ch = if rng.random_range(0..2u32) == 0 { '┼' } else { '╋' };
+                    let knot_ch = if rng.random_range(0..2u32) == 0 {
+                        '┼'
+                    } else {
+                        '╋'
+                    };
                     tset_over(grid, cx, y, knot_ch, lighten(color, 10));
                 }
                 // Bark nubs
                 if rng.random_range(0..5u32) == 0 {
-                    let side = if rng.random_range(0..2u32) == 0 { -1i32 } else { 1 };
-                    tset(grid, cx + side * trunk_width, y, if side > 0 { '╶' } else { '╴' }, bark);
+                    let side = if rng.random_range(0..2u32) == 0 {
+                        -1i32
+                    } else {
+                        1
+                    };
+                    tset(
+                        grid,
+                        cx + side * trunk_width,
+                        y,
+                        if side > 0 { '╶' } else { '╴' },
+                        bark,
+                    );
                 }
                 path.push((y, cx));
             }
@@ -743,7 +888,11 @@ pub fn draw_trunk(
     for dy in 0..flare_rows {
         let y = bot_y - 1 - dy;
         let fw = (flare_rows - dy) as i32;
-        let bx = path.iter().find(|&&(py, _)| py == y).map(|&(_, px)| px).unwrap_or(start_x);
+        let bx = path
+            .iter()
+            .find(|&&(py, _)| py == y)
+            .map(|&(_, px)| px)
+            .unwrap_or(start_x);
         tset_over(grid, bx - fw, y, '╱', bark);
         tset_over(grid, bx + fw, y, '╲', bark);
     }
@@ -756,10 +905,16 @@ pub fn draw_trunk(
 /// each shorter than the last. Secondary twigs curl upward off the tips.
 pub fn grow_spiral_tree(
     grid: &mut Grid,
-    root_x: usize, root_y: usize, canopy_y: usize,
-    spread: usize, color: Color, rng: &mut StdRng,
+    root_x: usize,
+    root_y: usize,
+    canopy_y: usize,
+    spread: usize,
+    color: Color,
+    rng: &mut StdRng,
 ) {
-    if canopy_y >= root_y { return; }
+    if canopy_y >= root_y {
+        return;
+    }
     let height = root_y - canopy_y;
     let rx = root_x as i32;
 
@@ -780,7 +935,9 @@ pub fn grow_spiral_tree(
 
         if left {
             tset_over(grid, rx, y, '┤', c);
-            for i in 1..arm { tset(grid, rx - i, y, '─', c); }
+            for i in 1..arm {
+                tset(grid, rx - i, y, '─', c);
+            }
             tset(grid, rx - arm, y, '╴', c);
             if level < 3 {
                 tset(grid, rx - arm, y - 1, '╮', c);
@@ -788,7 +945,9 @@ pub fn grow_spiral_tree(
             }
         } else {
             tset_over(grid, rx, y, '├', c);
-            for i in 1..arm { tset(grid, rx + i, y, '─', c); }
+            for i in 1..arm {
+                tset(grid, rx + i, y, '─', c);
+            }
             tset(grid, rx + arm, y, '╶', c);
             if level < 3 {
                 tset(grid, rx + arm, y - 1, '╭', c);
@@ -806,10 +965,16 @@ pub fn grow_spiral_tree(
 /// Short thick trunk splits into 3-5 near-vertical arms that each branch once at the top.
 pub fn grow_candelabra(
     grid: &mut Grid,
-    root_x: usize, root_y: usize, canopy_y: usize,
-    spread: usize, color: Color, rng: &mut StdRng,
+    root_x: usize,
+    root_y: usize,
+    canopy_y: usize,
+    spread: usize,
+    color: Color,
+    rng: &mut StdRng,
 ) {
-    if canopy_y >= root_y { return; }
+    if canopy_y >= root_y {
+        return;
+    }
     let height = root_y - canopy_y;
     let rx = root_x as i32;
     let arm_count = rng.random_range(3..6usize);
@@ -833,11 +998,23 @@ pub fn grow_candelabra(
 
     for i in 0..arm_count {
         let ax = start_x + i as i32 * step;
-        let jc = if i == 0 { '└' } else if i == arm_count - 1 { '┘' } else { '┴' };
+        let jc = if i == 0 {
+            '└'
+        } else if i == arm_count - 1 {
+            '┘'
+        } else {
+            '┴'
+        };
         tset_over(grid, ax, split_y, jc, color);
 
         // Each arm goes straight up with a small tilt
-        let lean: i32 = if ax < rx { -1 } else if ax > rx { 1 } else { 0 };
+        let lean: i32 = if ax < rx {
+            -1
+        } else if ax > rx {
+            1
+        } else {
+            0
+        };
         let arm_top = canopy_y as i32 + rng.random_range(0..3u32) as i32;
         let arm_color = lighten(color, 20);
 
@@ -866,10 +1043,16 @@ pub fn grow_candelabra(
 /// Tall, thin trunk. Very short branches peeling off frequently. Spray tips.
 pub fn grow_birch(
     grid: &mut Grid,
-    root_x: usize, root_y: usize, canopy_y: usize,
-    spread: usize, color: Color, rng: &mut StdRng,
+    root_x: usize,
+    root_y: usize,
+    canopy_y: usize,
+    spread: usize,
+    color: Color,
+    rng: &mut StdRng,
 ) {
-    if canopy_y >= root_y { return; }
+    if canopy_y >= root_y {
+        return;
+    }
     let height = root_y - canopy_y;
     let rx = root_x as i32;
 
@@ -883,24 +1066,36 @@ pub fn grow_birch(
 
     while y < root_y as i32 - 1 {
         // Skip some for density variation
-        if rng.random_range(0..4u32) == 0 { y += interval; left = !left; continue; }
+        if rng.random_range(0..4u32) == 0 {
+            y += interval;
+            left = !left;
+            continue;
+        }
 
         let arm = (rng.random_range(2..=spread.max(2).min(6)) as i32).max(1);
         let c = lighten(color, rng.random_range(10..50) as u8);
 
         if left {
             tset_over(grid, rx, y, '┤', c);
-            for i in 1..arm { tset(grid, rx - i, y, '─', c); }
+            for i in 1..arm {
+                tset(grid, rx - i, y, '─', c);
+            }
             // spray tip: two short diagonals
             tset(grid, rx - arm, y, '╮', c);
             tset(grid, rx - arm - 1, y - 1, '╷', lighten(c, 20));
-            if arm > 2 { tset(grid, rx - arm + 1, y - 1, '╷', lighten(c, 10)); }
+            if arm > 2 {
+                tset(grid, rx - arm + 1, y - 1, '╷', lighten(c, 10));
+            }
         } else {
             tset_over(grid, rx, y, '├', c);
-            for i in 1..arm { tset(grid, rx + i, y, '─', c); }
+            for i in 1..arm {
+                tset(grid, rx + i, y, '─', c);
+            }
             tset(grid, rx + arm, y, '╭', c);
             tset(grid, rx + arm + 1, y - 1, '╷', lighten(c, 20));
-            if arm > 2 { tset(grid, rx + arm - 1, y - 1, '╷', lighten(c, 10)); }
+            if arm > 2 {
+                tset(grid, rx + arm - 1, y - 1, '╷', lighten(c, 10));
+            }
         }
 
         left = !left;
@@ -914,12 +1109,22 @@ pub fn grow_birch(
 /// Trunk drawn with diagonal chars, leaning to one side. Branches on windward side.
 pub fn grow_storm_tree(
     grid: &mut Grid,
-    root_x: usize, root_y: usize, canopy_y: usize,
-    spread: usize, color: Color, rng: &mut StdRng,
+    root_x: usize,
+    root_y: usize,
+    canopy_y: usize,
+    spread: usize,
+    color: Color,
+    rng: &mut StdRng,
 ) {
-    if canopy_y >= root_y { return; }
+    if canopy_y >= root_y {
+        return;
+    }
     let height = root_y - canopy_y;
-    let lean: i32 = if rng.random_range(0..2u32) == 0 { 1 } else { -1 };
+    let lean: i32 = if rng.random_range(0..2u32) == 0 {
+        1
+    } else {
+        -1
+    };
     let lean_every = (height / (spread.min(8))).max(2) as i32;
 
     // Draw leaning trunk
@@ -980,10 +1185,16 @@ pub fn grow_storm_tree(
 /// Lower splits are very wide, upper ones narrow. Broad silhouette.
 pub fn grow_wide_tree(
     grid: &mut Grid,
-    root_x: usize, root_y: usize, canopy_y: usize,
-    spread: usize, color: Color, _rng: &mut StdRng,
+    root_x: usize,
+    root_y: usize,
+    canopy_y: usize,
+    spread: usize,
+    color: Color,
+    _rng: &mut StdRng,
 ) {
-    if canopy_y >= root_y { return; }
+    if canopy_y >= root_y {
+        return;
+    }
     let height = root_y - canopy_y;
     let rx = root_x as i32;
     let first_split = (root_y - height / 4) as i32;
@@ -1008,16 +1219,28 @@ pub fn grow_wide_tree(
         let rx2 = rx + arm;
 
         tset_over(grid, rx, sy, '┼', c);
-        for x in lx..rx { tset(grid, x, sy, '─', c); }
-        for x in rx+1..=rx2 { tset(grid, x, sy, '─', c); }
+        for x in lx..rx {
+            tset(grid, x, sy, '─', c);
+        }
+        for x in rx + 1..=rx2 {
+            tset(grid, x, sy, '─', c);
+        }
         tset(grid, lx, sy, '╭', c);
         tset(grid, rx2, sy, '╮', c);
 
-        let next_sy = if li + 1 < levels.len() { levels[li + 1].0 } else { canopy_y as i32 };
+        let next_sy = if li + 1 < levels.len() {
+            levels[li + 1].0
+        } else {
+            canopy_y as i32
+        };
 
         // left and right sub-trunks
-        for y in next_sy..sy { tset(grid, lx, y, '│', c); }
-        for y in next_sy..sy { tset(grid, rx2, y, '│', c); }
+        for y in next_sy..sy {
+            tset(grid, lx, y, '│', c);
+        }
+        for y in next_sy..sy {
+            tset(grid, rx2, y, '│', c);
+        }
 
         if li + 1 >= levels.len() {
             tset(grid, lx, canopy_y as i32, '╷', lighten(c, 30));
@@ -1030,10 +1253,16 @@ pub fn grow_wide_tree(
 /// Left and right arms are deliberately different lengths. Wind-blown feel.
 pub fn grow_asymmetric_tree(
     grid: &mut Grid,
-    root_x: usize, root_y: usize, canopy_y: usize,
-    spread: usize, color: Color, rng: &mut StdRng,
+    root_x: usize,
+    root_y: usize,
+    canopy_y: usize,
+    spread: usize,
+    color: Color,
+    rng: &mut StdRng,
 ) {
-    if canopy_y >= root_y { return; }
+    if canopy_y >= root_y {
+        return;
+    }
     let height = root_y - canopy_y;
     let rx = root_x as i32;
     let first_split = root_y.saturating_sub((height / 3).max(2));
@@ -1056,15 +1285,31 @@ pub fn grow_asymmetric_tree(
     let right_depth = if heavy_left { 2 } else { 4 };
 
     let mut queue: Vec<(i32, i32, i32, usize, usize)> = vec![
-        (rx - left_spread, canopy_y as i32, first_split as i32, 0, left_depth),
-        (rx + right_spread, canopy_y as i32, first_split as i32, 0, right_depth),
+        (
+            rx - left_spread,
+            canopy_y as i32,
+            first_split as i32,
+            0,
+            left_depth,
+        ),
+        (
+            rx + right_spread,
+            canopy_y as i32,
+            first_split as i32,
+            0,
+            right_depth,
+        ),
     ];
 
     // junction at first split
     let c0 = color;
     tset_over(grid, rx, first_split as i32, '┼', c0);
-    for x in rx - left_spread..rx { tset(grid, x, first_split as i32, '─', c0); }
-    for x in rx + 1..=rx + right_spread { tset(grid, x, first_split as i32, '─', c0); }
+    for x in rx - left_spread..rx {
+        tset(grid, x, first_split as i32, '─', c0);
+    }
+    for x in rx + 1..=rx + right_spread {
+        tset(grid, x, first_split as i32, '─', c0);
+    }
     tset(grid, rx - left_spread, first_split as i32, '╭', c0);
     tset(grid, rx + right_spread, first_split as i32, '╮', c0);
 
@@ -1084,8 +1329,12 @@ pub fn grow_asymmetric_tree(
         let arm = ((base_spread >> (depth + 1)) as i32).max(1);
 
         tset_over(grid, x, split_y, '┼', c);
-        for ax in x - arm..x { tset(grid, ax, split_y, '─', c); }
-        for ax in x + 1..=x + arm { tset(grid, ax, split_y, '─', c); }
+        for ax in x - arm..x {
+            tset(grid, ax, split_y, '─', c);
+        }
+        for ax in x + 1..=x + arm {
+            tset(grid, ax, split_y, '─', c);
+        }
         tset(grid, x - arm, split_y, '╭', c);
         tset(grid, x + arm, split_y, '╮', c);
 
@@ -1098,10 +1347,16 @@ pub fn grow_asymmetric_tree(
 /// Very little horizontal spread. Many levels of short branches. Columnar.
 pub fn grow_tall_narrow(
     grid: &mut Grid,
-    root_x: usize, root_y: usize, canopy_y: usize,
-    _spread: usize, color: Color, _rng: &mut StdRng,
+    root_x: usize,
+    root_y: usize,
+    canopy_y: usize,
+    _spread: usize,
+    color: Color,
+    _rng: &mut StdRng,
 ) {
-    if canopy_y >= root_y { return; }
+    if canopy_y >= root_y {
+        return;
+    }
     let height = root_y - canopy_y;
     let rx = root_x as i32;
 
@@ -1124,16 +1379,22 @@ pub fn grow_tall_narrow(
         tset_over(grid, x, split_y, '┤', c);
         tset(grid, x - 1, split_y, '─', c);
         tset(grid, x - arm, split_y, '╭', c);
-        for ax in x - arm + 1..x - 1 { tset(grid, ax, split_y, '─', c); }
+        for ax in x - arm + 1..x - 1 {
+            tset(grid, ax, split_y, '─', c);
+        }
         tset_over(grid, x, split_y, '├', c);
         tset(grid, x + 1, split_y, '─', c);
         tset(grid, x + arm, split_y, '╮', c);
-        for ax in x + 2..x + arm { tset(grid, ax, split_y, '─', c); }
+        for ax in x + 2..x + arm {
+            tset(grid, ax, split_y, '─', c);
+        }
 
         queue.push((x - arm, top, split_y, depth + 1));
         queue.push((x + arm, top, split_y, depth + 1));
         // Continue center upward
-        for y in top + 1..split_y { tset(grid, x, y, '│', c); }
+        for y in top + 1..split_y {
+            tset(grid, x, y, '│', c);
+        }
     }
 }
 
@@ -1141,10 +1402,16 @@ pub fn grow_tall_narrow(
 /// Sparse angular branches. Uses diagonal chars and sharp tips. Eerie.
 pub fn grow_dead_tree(
     grid: &mut Grid,
-    root_x: usize, root_y: usize, canopy_y: usize,
-    spread: usize, color: Color, rng: &mut StdRng,
+    root_x: usize,
+    root_y: usize,
+    canopy_y: usize,
+    spread: usize,
+    color: Color,
+    rng: &mut StdRng,
 ) {
-    if canopy_y >= root_y { return; }
+    if canopy_y >= root_y {
+        return;
+    }
     let height = root_y - canopy_y;
     let rx = root_x as i32;
 
@@ -1154,7 +1421,11 @@ pub fn grow_dead_tree(
         let iy = y as i32;
         let from_root = root_y as i32 - iy;
         let ch = if from_root > 2 && from_root % 7 == 0 && rng.random_range(0..3u32) == 0 {
-            let lean = if rng.random_range(0..2u32) == 0 { -1i32 } else { 1 };
+            let lean = if rng.random_range(0..2u32) == 0 {
+                -1i32
+            } else {
+                1
+            };
             cx += lean;
             if lean > 0 { '╱' } else { '╲' }
         } else {
@@ -1171,7 +1442,9 @@ pub fn grow_dead_tree(
 
     let mut trunk_cx = cx;
     for b in 0..branch_count {
-        if by >= root_y as i32 - 1 { break; }
+        if by >= root_y as i32 - 1 {
+            break;
+        }
         let c = lighten(color, (b * 12) as u8);
         let arm = rng.random_range(2..=(spread.max(2).min(8))) as i32;
 
@@ -1218,10 +1491,16 @@ pub fn grow_dead_tree(
 /// Branches arc outward and curve downward with rounded corners. Elegant droop.
 pub fn grow_drooping_tree(
     grid: &mut Grid,
-    root_x: usize, root_y: usize, canopy_y: usize,
-    spread: usize, color: Color, rng: &mut StdRng,
+    root_x: usize,
+    root_y: usize,
+    canopy_y: usize,
+    spread: usize,
+    color: Color,
+    rng: &mut StdRng,
 ) {
-    if canopy_y >= root_y { return; }
+    if canopy_y >= root_y {
+        return;
+    }
     let height = root_y - canopy_y;
     let rx = root_x as i32;
     let first_split = (root_y - height / 3) as i32;
@@ -1249,7 +1528,9 @@ pub fn grow_drooping_tree(
         // Horizontal segment from trunk to arm x
         if arm_x_offset != 0 {
             let (x0, x1) = if arm_x_offset < 0 { (bx, rx) } else { (rx, bx) };
-            for x in x0..=x1 { tset(grid, x, first_split, '─', c0); }
+            for x in x0..=x1 {
+                tset(grid, x, first_split, '─', c0);
+            }
             let corner = if arm_x_offset < 0 { '╭' } else { '╮' };
             tset(grid, bx, first_split, corner, c0);
             tset_over(grid, rx, first_split, '┼', c0);
@@ -1291,10 +1572,16 @@ pub fn grow_drooping_tree(
 /// Branches at irregular intervals with unequal arm lengths. Dominates the scene.
 pub fn grow_kaiju_tree(
     grid: &mut Grid,
-    root_x: usize, root_y: usize, canopy_y: usize,
-    spread: usize, color: Color, rng: &mut StdRng,
+    root_x: usize,
+    root_y: usize,
+    canopy_y: usize,
+    spread: usize,
+    color: Color,
+    rng: &mut StdRng,
 ) {
-    if canopy_y + 4 >= root_y { return; }
+    if canopy_y + 4 >= root_y {
+        return;
+    }
     let height = root_y - canopy_y;
     let rx = root_x as i32;
 
@@ -1310,16 +1597,36 @@ pub fn grow_kaiju_tree(
     let trunk_count = rng.random_range(2..4u32) as usize;
     let total_spread = spread as i32 * 2;
 
-    struct Trunk { x: i32, lean: i32, branch_side: i32, depth: usize }
+    struct Trunk {
+        x: i32,
+        lean: i32,
+        branch_side: i32,
+        depth: usize,
+    }
     let mut trunks: Vec<Trunk> = Vec::new();
 
     for i in 0..trunk_count {
         let frac = i as f32 / (trunk_count - 1).max(1) as f32;
         let target_x = rx - total_spread / 2 + (frac * total_spread as f32) as i32;
-        let lean = if target_x < rx { -1 } else if target_x > rx { 1 } else { 0 };
-        let branch_side = if rng.random_range(0..2u32) == 0 { -1 } else { 1 };
+        let lean = if target_x < rx {
+            -1
+        } else if target_x > rx {
+            1
+        } else {
+            0
+        };
+        let branch_side = if rng.random_range(0..2u32) == 0 {
+            -1
+        } else {
+            1
+        };
         let depth = rng.random_range(3..6u32) as usize;
-        trunks.push(Trunk { x: target_x, lean, branch_side, depth });
+        trunks.push(Trunk {
+            x: target_x,
+            lean,
+            branch_side,
+            depth,
+        });
     }
 
     // Fork connector at base_top
@@ -1360,7 +1667,9 @@ pub fn grow_kaiju_tree(
         for b in 0..branch_count {
             let jitter = rng.random_range(0..3u32) as i32 - 1;
             let by = trunk_top + (base_interval * (b + 1)) as i32 + jitter;
-            if by >= base_top || by <= trunk_top { continue; }
+            if by >= base_top || by <= trunk_top {
+                continue;
+            }
 
             // Find trunk x at this y
             let rows_up = base_top - by;
@@ -1382,7 +1691,9 @@ pub fn grow_kaiju_tree(
 
             // Left arm
             if left_arm > 0 {
-                for i in 1..=left_arm { tset(grid, tx - i, by, '─', c); }
+                for i in 1..=left_arm {
+                    tset(grid, tx - i, by, '─', c);
+                }
                 tset(grid, tx - left_arm, by, '╮', c);
                 tset(grid, tx - left_arm - 1, by - 1, '╷', lighten(c, 25));
                 // Sub-twig on longer arms
@@ -1394,7 +1705,9 @@ pub fn grow_kaiju_tree(
             }
             // Right arm
             if right_arm > 0 {
-                for i in 1..=right_arm { tset(grid, tx + i, by, '─', c); }
+                for i in 1..=right_arm {
+                    tset(grid, tx + i, by, '─', c);
+                }
                 tset(grid, tx + right_arm, by, '╭', c);
                 tset(grid, tx + right_arm + 1, by - 1, '╷', lighten(c, 25));
                 if right_arm > 3 && rng.random_range(0..3u32) != 0 {
@@ -1404,9 +1717,13 @@ pub fn grow_kaiju_tree(
                 }
             }
 
-            let jc = if left_arm > 0 && right_arm > 0 { '┼' }
-                     else if left_arm > 0 { '┤' }
-                     else { '├' };
+            let jc = if left_arm > 0 && right_arm > 0 {
+                '┼'
+            } else if left_arm > 0 {
+                '┤'
+            } else {
+                '├'
+            };
             tset_over(grid, tx, by, jc, c);
         }
     }
@@ -1415,20 +1732,32 @@ pub fn grow_kaiju_tree(
 /// Dispatch all tree variants by kind index (0..18).
 pub fn draw_tree(
     grid: &mut Grid,
-    root_x: usize, root_y: usize, canopy_y: usize,
-    spread: usize, kind: usize, color: Color, rng: &mut StdRng,
+    root_x: usize,
+    root_y: usize,
+    canopy_y: usize,
+    spread: usize,
+    kind: usize,
+    color: Color,
+    rng: &mut StdRng,
 ) {
     match kind % 19 {
-        0  => grow_tree(grid, root_x, root_y, canopy_y, spread, color, rng),
-        1  => draw_pine(grid, root_x, root_y, 3, (spread * 2).min(12), color),
-        2  => draw_willow(grid, root_x, root_y, canopy_y, spread, color),
-        3  => draw_palm(grid, root_x, root_y, root_y.saturating_sub(canopy_y).saturating_sub(4), color, rng),
-        4  => grow_spiral_tree(grid, root_x, root_y, canopy_y, spread, color, rng),
-        5  => grow_candelabra(grid, root_x, root_y, canopy_y, spread, color, rng),
-        6  => grow_birch(grid, root_x, root_y, canopy_y, spread, color, rng),
-        7  => grow_storm_tree(grid, root_x, root_y, canopy_y, spread, color, rng),
-        8  => grow_wide_tree(grid, root_x, root_y, canopy_y, spread, color, rng),
-        9  => grow_asymmetric_tree(grid, root_x, root_y, canopy_y, spread, color, rng),
+        0 => grow_tree(grid, root_x, root_y, canopy_y, spread, color, rng),
+        1 => draw_pine(grid, root_x, root_y, 3, (spread * 2).min(12), color),
+        2 => draw_willow(grid, root_x, root_y, canopy_y, spread, color),
+        3 => draw_palm(
+            grid,
+            root_x,
+            root_y,
+            root_y.saturating_sub(canopy_y).saturating_sub(4),
+            color,
+            rng,
+        ),
+        4 => grow_spiral_tree(grid, root_x, root_y, canopy_y, spread, color, rng),
+        5 => grow_candelabra(grid, root_x, root_y, canopy_y, spread, color, rng),
+        6 => grow_birch(grid, root_x, root_y, canopy_y, spread, color, rng),
+        7 => grow_storm_tree(grid, root_x, root_y, canopy_y, spread, color, rng),
+        8 => grow_wide_tree(grid, root_x, root_y, canopy_y, spread, color, rng),
+        9 => grow_asymmetric_tree(grid, root_x, root_y, canopy_y, spread, color, rng),
         10 => grow_tall_narrow(grid, root_x, root_y, canopy_y, spread, color, rng),
         11 => grow_drooping_tree(grid, root_x, root_y, canopy_y, spread, color, rng),
         12 => grow_dead_tree(grid, root_x, root_y, canopy_y, spread, color, rng),
@@ -1437,7 +1766,7 @@ pub fn draw_tree(
         15 => grow_zigzag_tree(grid, root_x, root_y, canopy_y, spread, color, rng),
         16 => grow_braille_tree(grid, root_x, root_y, canopy_y, spread, color, rng),
         17 => grow_tendril_tree(grid, root_x, root_y, canopy_y, spread, color, rng),
-        _  => grow_connected_tree(grid, root_x, root_y, canopy_y, spread, color, rng),
+        _ => grow_connected_tree(grid, root_x, root_y, canopy_y, spread, color, rng),
     }
 }
 
@@ -1450,100 +1779,165 @@ pub fn draw_tree(
 
 /// Where branches concentrate along the trunk.
 #[derive(Clone, Copy)]
-pub enum BranchZone { TopHeavy, BottomHeavy, MidBand, Uniform }
+pub enum BranchZone {
+    TopHeavy,
+    BottomHeavy,
+    MidBand,
+    Uniform,
+}
 
 /// How branch tips end.
 #[derive(Clone, Copy)]
-pub enum TipCurl { Up, Down, DiagOut, SCurve, Straight }
+pub enum TipCurl {
+    Up,
+    Down,
+    DiagOut,
+    SCurve,
+    Straight,
+}
 
 /// Recipe that fully parameterizes a path-aware tree's personality.
 /// All fields can be overridden via CLI args for deterministic control.
 #[derive(Clone)]
 pub struct TreeRecipe {
-    pub trunk_wobble_freq: u32,    // how often trunk wobbles (higher = less frequent)
-    pub trunk_wobble_prob: u32,    // 0-100 chance of wobbling at each freq tick
-    pub trunk_lean: i32,           // -1 left, 0 straight, 1 right
-    pub branch_count: (u32, u32),  // (min, max) branch count range
+    pub trunk_wobble_freq: u32, // how often trunk wobbles (higher = less frequent)
+    pub trunk_wobble_prob: u32, // 0-100 chance of wobbling at each freq tick
+    pub trunk_lean: i32,        // -1 left, 0 straight, 1 right
+    pub branch_count: (u32, u32), // (min, max) branch count range
     pub branch_zone: BranchZone,
-    pub left_bias: f32,            // 0.0 = all right, 1.0 = all left, 0.5 = balanced
+    pub left_bias: f32, // 0.0 = all right, 1.0 = all left, 0.5 = balanced
     pub arm_length_min: u32,
     pub arm_length_max: u32,
-    pub tip_curls: &'static [TipCurl],  // pool of tip styles to pick from
-    pub sub_branch_prob: u32,      // 0-100 chance of sub-branching
-    pub max_depth: usize,          // recursive sub-branch depth
-    pub flare_width: u32,          // base flare (0 = none, 1-3 = wider)
+    pub tip_curls: &'static [TipCurl], // pool of tip styles to pick from
+    pub sub_branch_prob: u32,          // 0-100 chance of sub-branching
+    pub max_depth: usize,              // recursive sub-branch depth
+    pub flare_width: u32,              // base flare (0 = none, 1-3 = wider)
 }
 
 impl TreeRecipe {
     /// Balanced branching tree (kind 0 equivalent).
     pub fn balanced() -> Self {
         TreeRecipe {
-            trunk_wobble_freq: 5, trunk_wobble_prob: 20, trunk_lean: 0,
-            branch_count: (4, 7), branch_zone: BranchZone::Uniform,
-            left_bias: 0.5, arm_length_min: 2, arm_length_max: 8,
+            trunk_wobble_freq: 5,
+            trunk_wobble_prob: 20,
+            trunk_lean: 0,
+            branch_count: (4, 7),
+            branch_zone: BranchZone::Uniform,
+            left_bias: 0.5,
+            arm_length_min: 2,
+            arm_length_max: 8,
             tip_curls: &[TipCurl::Up, TipCurl::DiagOut, TipCurl::Straight],
-            sub_branch_prob: 30, max_depth: 2, flare_width: 1,
+            sub_branch_prob: 30,
+            max_depth: 2,
+            flare_width: 1,
         }
     }
     /// Wild / asymmetric (kind 14 equivalent).
     pub fn wild() -> Self {
         TreeRecipe {
-            trunk_wobble_freq: 3, trunk_wobble_prob: 40, trunk_lean: 0,
-            branch_count: (3, 9), branch_zone: BranchZone::TopHeavy,
-            left_bias: 0.3, arm_length_min: 1, arm_length_max: 12,
-            tip_curls: &[TipCurl::Up, TipCurl::Down, TipCurl::DiagOut, TipCurl::SCurve, TipCurl::Straight],
-            sub_branch_prob: 50, max_depth: 3, flare_width: 0,
+            trunk_wobble_freq: 3,
+            trunk_wobble_prob: 40,
+            trunk_lean: 0,
+            branch_count: (3, 9),
+            branch_zone: BranchZone::TopHeavy,
+            left_bias: 0.3,
+            arm_length_min: 1,
+            arm_length_max: 12,
+            tip_curls: &[
+                TipCurl::Up,
+                TipCurl::Down,
+                TipCurl::DiagOut,
+                TipCurl::SCurve,
+                TipCurl::Straight,
+            ],
+            sub_branch_prob: 50,
+            max_depth: 3,
+            flare_width: 0,
         }
     }
     /// Storm-leaning (kind 7 equivalent).
     pub fn storm(lean: i32) -> Self {
         TreeRecipe {
-            trunk_wobble_freq: 4, trunk_wobble_prob: 0, trunk_lean: lean,
-            branch_count: (3, 6), branch_zone: BranchZone::Uniform,
+            trunk_wobble_freq: 4,
+            trunk_wobble_prob: 0,
+            trunk_lean: lean,
+            branch_count: (3, 6),
+            branch_zone: BranchZone::Uniform,
             left_bias: if lean < 0 { 0.8 } else { 0.2 }, // branches opposite to lean
-            arm_length_min: 3, arm_length_max: 10,
+            arm_length_min: 3,
+            arm_length_max: 10,
             tip_curls: &[TipCurl::Up, TipCurl::DiagOut],
-            sub_branch_prob: 20, max_depth: 1, flare_width: 1,
+            sub_branch_prob: 20,
+            max_depth: 1,
+            flare_width: 1,
         }
     }
     /// Drooping / weeping (kind 11 equivalent).
     pub fn weeping() -> Self {
         TreeRecipe {
-            trunk_wobble_freq: 6, trunk_wobble_prob: 15, trunk_lean: 0,
-            branch_count: (5, 8), branch_zone: BranchZone::TopHeavy,
-            left_bias: 0.5, arm_length_min: 3, arm_length_max: 10,
+            trunk_wobble_freq: 6,
+            trunk_wobble_prob: 15,
+            trunk_lean: 0,
+            branch_count: (5, 8),
+            branch_zone: BranchZone::TopHeavy,
+            left_bias: 0.5,
+            arm_length_min: 3,
+            arm_length_max: 10,
             tip_curls: &[TipCurl::Down, TipCurl::Down, TipCurl::Straight],
-            sub_branch_prob: 40, max_depth: 2, flare_width: 2,
+            sub_branch_prob: 40,
+            max_depth: 2,
+            flare_width: 2,
         }
     }
     /// Sparse / dead (kind 12 equivalent).
     pub fn dead() -> Self {
         TreeRecipe {
-            trunk_wobble_freq: 4, trunk_wobble_prob: 30, trunk_lean: 0,
-            branch_count: (2, 4), branch_zone: BranchZone::Uniform,
-            left_bias: 0.5, arm_length_min: 2, arm_length_max: 6,
+            trunk_wobble_freq: 4,
+            trunk_wobble_prob: 30,
+            trunk_lean: 0,
+            branch_count: (2, 4),
+            branch_zone: BranchZone::Uniform,
+            left_bias: 0.5,
+            arm_length_min: 2,
+            arm_length_max: 6,
             tip_curls: &[TipCurl::Straight, TipCurl::Straight, TipCurl::DiagOut],
-            sub_branch_prob: 10, max_depth: 1, flare_width: 0,
+            sub_branch_prob: 10,
+            max_depth: 1,
+            flare_width: 0,
         }
     }
     /// Tall narrow columnar (kind 10 equivalent).
     pub fn columnar() -> Self {
         TreeRecipe {
-            trunk_wobble_freq: 8, trunk_wobble_prob: 10, trunk_lean: 0,
-            branch_count: (6, 10), branch_zone: BranchZone::Uniform,
-            left_bias: 0.5, arm_length_min: 1, arm_length_max: 3,
+            trunk_wobble_freq: 8,
+            trunk_wobble_prob: 10,
+            trunk_lean: 0,
+            branch_count: (6, 10),
+            branch_zone: BranchZone::Uniform,
+            left_bias: 0.5,
+            arm_length_min: 1,
+            arm_length_max: 3,
             tip_curls: &[TipCurl::Up, TipCurl::Straight],
-            sub_branch_prob: 5, max_depth: 1, flare_width: 0,
+            sub_branch_prob: 5,
+            max_depth: 1,
+            flare_width: 0,
         }
     }
     /// Gnarled sprawler with thick base.
     pub fn gnarled() -> Self {
         TreeRecipe {
-            trunk_wobble_freq: 2, trunk_wobble_prob: 50, trunk_lean: 0,
-            branch_count: (3, 6), branch_zone: BranchZone::BottomHeavy,
-            left_bias: 0.5, arm_length_min: 3, arm_length_max: 14,
+            trunk_wobble_freq: 2,
+            trunk_wobble_prob: 50,
+            trunk_lean: 0,
+            branch_count: (3, 6),
+            branch_zone: BranchZone::BottomHeavy,
+            left_bias: 0.5,
+            arm_length_min: 3,
+            arm_length_max: 14,
             tip_curls: &[TipCurl::SCurve, TipCurl::DiagOut, TipCurl::Down],
-            sub_branch_prob: 60, max_depth: 3, flare_width: 3,
+            sub_branch_prob: 60,
+            max_depth: 3,
+            flare_width: 3,
         }
     }
 }
@@ -1551,11 +1945,18 @@ impl TreeRecipe {
 /// Grow a tree using TreePen with the given recipe. Always path-connected.
 pub fn grow_pen_tree(
     grid: &mut Grid,
-    root_x: usize, root_y: usize, canopy_y: usize,
-    spread: usize, color: Color, recipe: &TreeRecipe, rng: &mut StdRng,
+    root_x: usize,
+    root_y: usize,
+    canopy_y: usize,
+    spread: usize,
+    color: Color,
+    recipe: &TreeRecipe,
+    rng: &mut StdRng,
 ) {
     use MoveDir::*;
-    if canopy_y + 3 >= root_y { return; }
+    if canopy_y + 3 >= root_y {
+        return;
+    }
     let height = (root_y - canopy_y) as i32;
 
     // Trunk
@@ -1579,10 +1980,20 @@ pub fn grow_pen_tree(
 
     for i in 0..trunk_len {
         let dir = if recipe.trunk_lean != 0 && i > 0 && i % recipe.trunk_wobble_freq as i32 == 0 {
-            if recipe.trunk_lean < 0 { UpLeft } else { UpRight }
-        } else if i > 2 && rng.random_range(0..100u32) < recipe.trunk_wobble_prob
-                        && i % recipe.trunk_wobble_freq as i32 == 0 {
-            if rng.random_range(0..2u32) == 0 { UpLeft } else { UpRight }
+            if recipe.trunk_lean < 0 {
+                UpLeft
+            } else {
+                UpRight
+            }
+        } else if i > 2
+            && rng.random_range(0..100u32) < recipe.trunk_wobble_prob
+            && i % recipe.trunk_wobble_freq as i32 == 0
+        {
+            if rng.random_range(0..2u32) == 0 {
+                UpLeft
+            } else {
+                UpRight
+            }
         } else {
             Up
         };
@@ -1591,14 +2002,22 @@ pub fn grow_pen_tree(
     }
 
     // Branch points
-    let branch_count = rng.random_range(recipe.branch_count.0..recipe.branch_count.1.max(recipe.branch_count.0 + 1)) as usize;
+    let branch_count = rng
+        .random_range(recipe.branch_count.0..recipe.branch_count.1.max(recipe.branch_count.0 + 1))
+        as usize;
 
     // Generate branch y positions based on zone
     let mut branch_positions: Vec<usize> = Vec::new();
     for _ in 0..branch_count {
         let t = match recipe.branch_zone {
-            BranchZone::TopHeavy => { let t = rng.random::<f32>(); t * t }
-            BranchZone::BottomHeavy => { let t = rng.random::<f32>(); 1.0 - (1.0 - t) * (1.0 - t) }
+            BranchZone::TopHeavy => {
+                let t = rng.random::<f32>();
+                t * t
+            }
+            BranchZone::BottomHeavy => {
+                let t = rng.random::<f32>();
+                1.0 - (1.0 - t) * (1.0 - t)
+            }
             BranchZone::MidBand => 0.3 + rng.random::<f32>() * 0.4,
             BranchZone::Uniform => rng.random::<f32>(),
         };
@@ -1609,9 +2028,15 @@ pub fn grow_pen_tree(
     branch_positions.dedup();
 
     fn draw_branch(
-        grid: &mut Grid, bx: i32, by: i32, go_left: bool,
-        arm_len: i32, branch_color: Color, recipe: &TreeRecipe,
-        depth: usize, rng: &mut StdRng,
+        grid: &mut Grid,
+        bx: i32,
+        by: i32,
+        go_left: bool,
+        arm_len: i32,
+        branch_color: Color,
+        recipe: &TreeRecipe,
+        depth: usize,
+        rng: &mut StdRng,
     ) {
         let h_dir = if go_left { Left } else { Right };
 
@@ -1630,7 +2055,8 @@ pub fn grow_pen_tree(
         }
 
         // Sub-branch before tip
-        if depth < recipe.max_depth && arm_len > 2
+        if depth < recipe.max_depth
+            && arm_len > 2
             && rng.random_range(0..100u32) < recipe.sub_branch_prob
         {
             let sub_color = lighten(branch_color, 15);
@@ -1639,7 +2065,17 @@ pub fn grow_pen_tree(
             let fork_x = pen.x;
             let fork_y = pen.y;
             tset_over(grid, fork_x, fork_y, '┬', sub_color);
-            draw_branch(grid, fork_x, fork_y - 1, go_left, sub_arm, sub_color, recipe, depth + 1, rng);
+            draw_branch(
+                grid,
+                fork_x,
+                fork_y - 1,
+                go_left,
+                sub_arm,
+                sub_color,
+                recipe,
+                depth + 1,
+                rng,
+            );
         }
 
         // Tip curl
@@ -1647,18 +2083,24 @@ pub fn grow_pen_tree(
         match curl {
             TipCurl::Up => {
                 let n = rng.random_range(1..4u32);
-                for _ in 0..n { pen.step(grid, Up); }
+                for _ in 0..n {
+                    pen.step(grid, Up);
+                }
                 pen.tip(grid);
             }
             TipCurl::Down => {
                 let n = rng.random_range(1..3u32);
-                for _ in 0..n { pen.step(grid, Down); }
+                for _ in 0..n {
+                    pen.step(grid, Down);
+                }
                 pen.tip(grid);
             }
             TipCurl::DiagOut => {
                 let diag = if go_left { UpLeft } else { UpRight };
                 let n = rng.random_range(1..4u32);
-                for _ in 0..n { pen.step(grid, diag); }
+                for _ in 0..n {
+                    pen.step(grid, diag);
+                }
                 pen.tip(grid);
             }
             TipCurl::SCurve => {
@@ -1675,12 +2117,13 @@ pub fn grow_pen_tree(
 
     for (bi, &path_idx) in branch_positions.iter().enumerate() {
         let (bx, by) = trunk_path[path_idx];
-        let go_left = (rng.random::<f32>() > recipe.left_bias)
-            ^ (bi % 2 == 0); // alternate with bias
+        let go_left = (rng.random::<f32>() > recipe.left_bias) ^ (bi % 2 == 0); // alternate with bias
 
         let t = path_idx as f32 / trunk_path.len() as f32;
         let max_arm = (spread as f32 * (1.0 - t * 0.4)).max(2.0) as i32;
-        let arm_max = (max_arm as u32).min(recipe.arm_length_max).max(recipe.arm_length_min + 1);
+        let arm_max = (max_arm as u32)
+            .min(recipe.arm_length_max)
+            .max(recipe.arm_length_min + 1);
         let arm_len = rng.random_range(recipe.arm_length_min..arm_max) as i32;
 
         let branch_color = lighten(color, (bi * 10 + 10) as u8);
@@ -1694,14 +2137,22 @@ pub fn grow_pen_tree(
 /// 0=balanced, 1=wild, 2=storm, 3=weeping, 4=dead, 5=columnar, 6=gnarled
 pub fn grow_connected_tree(
     grid: &mut Grid,
-    root_x: usize, root_y: usize, canopy_y: usize,
-    spread: usize, color: Color, rng: &mut StdRng,
+    root_x: usize,
+    root_y: usize,
+    canopy_y: usize,
+    spread: usize,
+    color: Color,
+    rng: &mut StdRng,
 ) {
     // Pick a random recipe for backward compat
     let recipe = match rng.random_range(0..7u32) {
         0 => TreeRecipe::balanced(),
         1 => TreeRecipe::wild(),
-        2 => TreeRecipe::storm(if rng.random_range(0..2u32) == 0 { -1 } else { 1 }),
+        2 => TreeRecipe::storm(if rng.random_range(0..2u32) == 0 {
+            -1
+        } else {
+            1
+        }),
         3 => TreeRecipe::weeping(),
         4 => TreeRecipe::dead(),
         5 => TreeRecipe::columnar(),
@@ -1723,8 +2174,13 @@ pub fn grow_connected_tree(
 fn split_set(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
     if x >= 0 && y >= 0 && (y as usize) < grid.len() && (x as usize) < grid[0].len() {
         let cell = &mut grid[y as usize][x as usize];
-        let ok = matches!(cell.ch, ' ' | '·' | '∙' | '∿' | '~' | '░' | '▒' | '▓' | '╱' | '╲' | '╷');
-        if ok { *cell = Cell::new(ch, fg); }
+        let ok = matches!(
+            cell.ch,
+            ' ' | '·' | '∙' | '∿' | '~' | '░' | '▒' | '▓' | '╱' | '╲' | '╷'
+        );
+        if ok {
+            *cell = Cell::new(ch, fg);
+        }
     }
 }
 fn split_set_over(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
@@ -1739,11 +2195,17 @@ fn split_set_over(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
 /// subdivision fills the canopy densely. Tips marked with ╷.
 pub fn grow_split_pen(
     grid: &mut Grid,
-    root_x: usize, root_y: usize, canopy_y: usize,
-    spread: usize, color: Color, rng: &mut StdRng,
+    root_x: usize,
+    root_y: usize,
+    canopy_y: usize,
+    spread: usize,
+    color: Color,
+    rng: &mut StdRng,
 ) {
     use MoveDir::*;
-    if canopy_y + 3 >= root_y { return; }
+    if canopy_y + 3 >= root_y {
+        return;
+    }
     let height = root_y - canopy_y;
     let first_split = root_y.saturating_sub((height / 3).max(2));
     let rx = root_x as i32;
@@ -1784,7 +2246,11 @@ pub fn grow_split_pen(
 
         // Bark nubs for texture
         if rng.random_range(0..5u32) == 0 {
-            let side = if rng.random_range(0..2u32) == 0 { -1i32 } else { 1 };
+            let side = if rng.random_range(0..2u32) == 0 {
+                -1i32
+            } else {
+                1
+            };
             split_set(grid, cx + side, y, if side > 0 { '╶' } else { '╴' }, bark);
         }
     }
@@ -1792,14 +2258,16 @@ pub fn grow_split_pen(
     // ── Canopy: recursive binary split via pen forks ──
     // Each level: vertical segment + horizontal arms + recurse on endpoints
     struct Split {
-        x: i32, y: i32,
+        x: i32,
+        y: i32,
         top_y: i32,
         depth: usize,
     }
 
     let max_depth = 4usize;
     let mut queue: Vec<Split> = vec![Split {
-        x: cx, y: first_split as i32,
+        x: cx,
+        y: first_split as i32,
         top_y: canopy_y as i32,
         depth: 0,
     }];
@@ -1854,8 +2322,18 @@ pub fn grow_split_pen(
             split_set(grid, ax, sy, '─', bc);
         }
 
-        queue.push(Split { x: lx, y: sy, top_y: seg.top_y, depth: seg.depth + 1 });
-        queue.push(Split { x: rrx, y: sy, top_y: seg.top_y, depth: seg.depth + 1 });
+        queue.push(Split {
+            x: lx,
+            y: sy,
+            top_y: seg.top_y,
+            depth: seg.depth + 1,
+        });
+        queue.push(Split {
+            x: rrx,
+            y: sy,
+            top_y: seg.top_y,
+            depth: seg.depth + 1,
+        });
     }
 }
 
@@ -1864,8 +2342,13 @@ pub fn grow_split_pen(
 fn spiral_set(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
     if x >= 0 && y >= 0 && (y as usize) < grid.len() && (x as usize) < grid[0].len() {
         let cell = &mut grid[y as usize][x as usize];
-        let ok = matches!(cell.ch, ' ' | '·' | '∙' | '∿' | '~' | '░' | '▒' | '▓' | '╱' | '╲');
-        if ok { *cell = Cell::new(ch, fg); }
+        let ok = matches!(
+            cell.ch,
+            ' ' | '·' | '∙' | '∿' | '~' | '░' | '▒' | '▓' | '╱' | '╲'
+        );
+        if ok {
+            *cell = Cell::new(ch, fg);
+        }
     }
 }
 
@@ -1875,11 +2358,17 @@ fn spiral_set(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
 /// twig sprouting from the curl.
 pub fn grow_spiral_pen(
     grid: &mut Grid,
-    root_x: usize, root_y: usize, canopy_y: usize,
-    spread: usize, color: Color, rng: &mut StdRng,
+    root_x: usize,
+    root_y: usize,
+    canopy_y: usize,
+    spread: usize,
+    color: Color,
+    rng: &mut StdRng,
 ) {
     use MoveDir::*;
-    if canopy_y + 3 >= root_y { return; }
+    if canopy_y + 3 >= root_y {
+        return;
+    }
     let height = root_y - canopy_y;
     let rx = root_x as i32;
 
@@ -1903,7 +2392,9 @@ pub fn grow_spiral_pen(
         if left {
             // Junction + horizontal arm leftward
             tset_over(grid, rx, y, '┤', c);
-            for i in 1..arm { spiral_set(grid, rx - i, y, '─', c); }
+            for i in 1..arm {
+                spiral_set(grid, rx - i, y, '─', c);
+            }
             spiral_set(grid, rx - arm, y, '╴', c);
             // Curl-up tip with secondary twig
             if level < 3 {
@@ -1918,7 +2409,9 @@ pub fn grow_spiral_pen(
         } else {
             // Junction + horizontal arm rightward
             tset_over(grid, rx, y, '├', c);
-            for i in 1..arm { spiral_set(grid, rx + i, y, '─', c); }
+            for i in 1..arm {
+                spiral_set(grid, rx + i, y, '─', c);
+            }
             spiral_set(grid, rx + arm, y, '╶', c);
             if level < 3 {
                 spiral_set(grid, rx + arm, y - 1, '╭', c);
@@ -1941,10 +2434,13 @@ pub fn grow_spiral_pen(
 fn cand_set(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
     if x >= 0 && y >= 0 && (y as usize) < grid.len() && (x as usize) < grid[0].len() {
         let cell = &mut grid[y as usize][x as usize];
-        let ok = matches!(cell.ch,
+        let ok = matches!(
+            cell.ch,
             ' ' | '·' | '∙' | '∿' | '~' | '░' | '▒' | '▓' | '╱' | '╲' | '╷'
         );
-        if ok { *cell = Cell::new(ch, fg); }
+        if ok {
+            *cell = Cell::new(ch, fg);
+        }
     }
 }
 
@@ -1954,10 +2450,16 @@ fn cand_set(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
 /// ends, ┴ at arm attachments.
 pub fn grow_candelabra_pen(
     grid: &mut Grid,
-    root_x: usize, root_y: usize, canopy_y: usize,
-    spread: usize, color: Color, rng: &mut StdRng,
+    root_x: usize,
+    root_y: usize,
+    canopy_y: usize,
+    spread: usize,
+    color: Color,
+    rng: &mut StdRng,
 ) {
-    if canopy_y + 4 >= root_y { return; }
+    if canopy_y + 4 >= root_y {
+        return;
+    }
     let height = root_y - canopy_y;
     let rx = root_x as i32;
     let arm_count = rng.random_range(3..6usize);
@@ -1995,11 +2497,23 @@ pub fn grow_candelabra_pen(
         let arm_top = canopy_y as i32 + rng.random_range(0..3u32) as i32;
 
         // Attachment junction on bar
-        let jc = if i == 0 { '└' } else if i == arm_count - 1 { '┘' } else { '┴' };
+        let jc = if i == 0 {
+            '└'
+        } else if i == arm_count - 1 {
+            '┘'
+        } else {
+            '┴'
+        };
         tset_over(grid, ax, split_y, jc, color);
 
         // Each arm goes straight up with a lean near midpoint
-        let lean: i32 = if ax < rx { -1 } else if ax > rx { 1 } else { 0 };
+        let lean: i32 = if ax < rx {
+            -1
+        } else if ax > rx {
+            1
+        } else {
+            0
+        };
         let arm_height = (split_y - arm_top).max(1);
         let mid_y = arm_top + arm_height / 2;
 
@@ -2015,7 +2529,11 @@ pub fn grow_candelabra_pen(
             }
             // Bark nub texture
             if rng.random_range(0..4u32) == 0 {
-                let side = if rng.random_range(0..2u32) == 0 { -1i32 } else { 1 };
+                let side = if rng.random_range(0..2u32) == 0 {
+                    -1i32
+                } else {
+                    1
+                };
                 cand_set(grid, cx + side, y, if side > 0 { '╶' } else { '╴' }, bark);
             }
         }
@@ -2036,10 +2554,16 @@ pub fn grow_candelabra_pen(
 
 pub fn grow_tendril_tree(
     grid: &mut Grid,
-    root_x: usize, root_y: usize, canopy_y: usize,
-    spread: usize, color: Color, rng: &mut StdRng,
+    root_x: usize,
+    root_y: usize,
+    canopy_y: usize,
+    spread: usize,
+    color: Color,
+    rng: &mut StdRng,
 ) {
-    if canopy_y + 2 >= root_y { return; }
+    if canopy_y + 2 >= root_y {
+        return;
+    }
     let height = (root_y - canopy_y) as i32;
 
     // Short trunk up to the burst center
@@ -2053,11 +2577,19 @@ pub fn grow_tendril_tree(
 
     // Draw a ray from (x,y) at angle, length, recursing with halved length
     fn draw_tendril(
-        grid: &mut Grid, x: f32, y: f32,
-        angle: f32, length: f32, min_len: f32,
-        color: Color, depth: usize, rng: &mut StdRng,
+        grid: &mut Grid,
+        x: f32,
+        y: f32,
+        angle: f32,
+        length: f32,
+        min_len: f32,
+        color: Color,
+        depth: usize,
+        rng: &mut StdRng,
     ) {
-        if length < min_len || depth > 5 { return; }
+        if length < min_len || depth > 5 {
+            return;
+        }
 
         let c = lighten(color, (depth * 15) as u8);
         let steps = length as i32;
@@ -2098,7 +2630,17 @@ pub fn grow_tendril_tree(
             let angle_jitter = (rng.random::<f32>() - 0.5) * 1.2; // +-0.6 radians
             let sub_angle = angle + angle_jitter;
             let sub_len = length * (0.4 + rng.random::<f32>() * 0.2); // 40-60% of parent
-            draw_tendril(grid, tip_x, tip_y, sub_angle, sub_len, min_len, color, depth + 1, rng);
+            draw_tendril(
+                grid,
+                tip_x,
+                tip_y,
+                sub_angle,
+                sub_len,
+                min_len,
+                color,
+                depth + 1,
+                rng,
+            );
         }
     }
 
@@ -2109,7 +2651,8 @@ pub fn grow_tendril_tree(
 
     for i in 0..ray_count {
         // Spread rays in upper semicircle with some randomness
-        let base_angle = -std::f32::consts::PI + (i as f32 / ray_count as f32) * std::f32::consts::PI;
+        let base_angle =
+            -std::f32::consts::PI + (i as f32 / ray_count as f32) * std::f32::consts::PI;
         let angle = base_angle + (rng.random::<f32>() - 0.5) * 0.5;
         let len = base_len * (0.6 + rng.random::<f32>() * 0.4);
         draw_tendril(grid, cx, cy, angle, len, min_len, color, 0, rng);
@@ -2120,10 +2663,16 @@ pub fn grow_tendril_tree(
 /// Thick trunk (double-wide diagonals), branches fork recursively off rays.
 pub fn grow_zigzag_tree(
     grid: &mut Grid,
-    root_x: usize, root_y: usize, canopy_y: usize,
-    spread: usize, color: Color, rng: &mut StdRng,
+    root_x: usize,
+    root_y: usize,
+    canopy_y: usize,
+    spread: usize,
+    color: Color,
+    rng: &mut StdRng,
 ) {
-    if canopy_y + 3 >= root_y { return; }
+    if canopy_y + 3 >= root_y {
+        return;
+    }
     let height = (root_y - canopy_y) as i32;
 
     // Thick zigzag trunk: two parallel diagonal lines
@@ -2149,9 +2698,15 @@ pub fn grow_zigzag_tree(
 
     // Recursive diagonal ray helper
     fn draw_ray(
-        grid: &mut Grid, x: i32, y: i32,
-        dx: i32, dy: i32, len: i32,
-        color: Color, depth: usize, max_depth: usize,
+        grid: &mut Grid,
+        x: i32,
+        y: i32,
+        dx: i32,
+        dy: i32,
+        len: i32,
+        color: Color,
+        depth: usize,
+        max_depth: usize,
         rng: &mut StdRng,
     ) {
         let ch = match (dx < 0, dy < 0) {
@@ -2168,11 +2723,30 @@ pub fn grow_zigzag_tree(
             tset(grid, rx, ry, ch, c);
 
             // Random sub-branch: probability decreases with depth
-            if depth < max_depth && step > 1 && step < len && rng.random_range(0..(3 + depth as u32)) == 0 {
-                let sub_dx = if rng.random_range(0..2u32) == 0 { -dx } else { dx };
+            if depth < max_depth
+                && step > 1
+                && step < len
+                && rng.random_range(0..(3 + depth as u32)) == 0
+            {
+                let sub_dx = if rng.random_range(0..2u32) == 0 {
+                    -dx
+                } else {
+                    dx
+                };
                 let sub_dy = -dy; // flip vertical direction for variety
                 let sub_len = rng.random_range(1..(len / 2 + 1).max(2) as u32) as i32;
-                draw_ray(grid, rx, ry, sub_dx, sub_dy, sub_len, color, depth + 1, max_depth, rng);
+                draw_ray(
+                    grid,
+                    rx,
+                    ry,
+                    sub_dx,
+                    sub_dy,
+                    sub_len,
+                    color,
+                    depth + 1,
+                    max_depth,
+                    rng,
+                );
             }
         }
         // Tip
@@ -2204,10 +2778,16 @@ pub fn grow_zigzag_tree(
 /// Vertical color gradient through canopy. Occasional cuttlefish hue shift.
 pub fn grow_braille_tree(
     grid: &mut Grid,
-    root_x: usize, root_y: usize, canopy_y: usize,
-    spread: usize, color: Color, rng: &mut StdRng,
+    root_x: usize,
+    root_y: usize,
+    canopy_y: usize,
+    spread: usize,
+    color: Color,
+    rng: &mut StdRng,
 ) {
-    if canopy_y + 2 >= root_y { return; }
+    if canopy_y + 2 >= root_y {
+        return;
+    }
     let rx = root_x as i32;
     let height = (root_y - canopy_y) as i32;
 
@@ -2228,7 +2808,9 @@ pub fn grow_braille_tree(
     // Base hue for gradient (extract from color or randomize)
     let base_hue: f64 = if let Color::Rgb { r, g, .. } = color {
         (r as f64 * 1.4 + g as f64 * 0.7) % 360.0
-    } else { 180.0 };
+    } else {
+        180.0
+    };
 
     let braille_dense = ['⣿', '⣾', '⣷', '⣯', '⣻', '⣽', '⣖', '⣶'];
     let braille_sparse = ['⡇', '⢸', '⣤', '⣀', '⠛', '⠶'];
@@ -2253,7 +2835,9 @@ pub fn grow_braille_tree(
             } else if dist < 0.85 {
                 braille_sparse[rng.random_range(0..braille_sparse.len() as u32) as usize]
             } else {
-                if rng.random_range(0..3u32) == 0 { continue; }
+                if rng.random_range(0..3u32) == 0 {
+                    continue;
+                }
                 braille_sparse[rng.random_range(0..braille_sparse.len() as u32) as usize]
             };
 
@@ -2266,7 +2850,11 @@ pub fn grow_braille_tree(
                 vert_t as f64 * 40.0 - 20.0
             };
             let h = (base_hue + hue_shift).rem_euclid(360.0);
-            let s = if cuttlefish { 0.8 } else { 0.5 + (1.0 - dist) as f64 * 0.3 };
+            let s = if cuttlefish {
+                0.8
+            } else {
+                0.5 + (1.0 - dist) as f64 * 0.3
+            };
             let l = 0.2 + (1.0 - dist) as f64 * 0.3 + vert_t as f64 * 0.15;
             let c = crate::color::hsl_to_rgb(h, s, l.min(0.65));
 
@@ -2280,9 +2868,7 @@ pub fn grow_braille_tree(
 /// Sprout braille leaf clusters at branch tips on the grid.
 /// Scans for tip chars (╷ ╮ ╭ · ╴ ╶) and places small braille clusters
 /// around them. Only overwrites blank cells so branches show through.
-pub fn sprout_leaves(
-    grid: &mut Grid, leaf_color: Color, density: u32, rng: &mut StdRng,
-) {
+pub fn sprout_leaves(grid: &mut Grid, leaf_color: Color, density: u32, rng: &mut StdRng) {
     let tip_chars = ['╷', '╮', '╭', '╴', '╶'];
     let leaf_chars = ['⣿', '⣾', '⣷', '⡇', '⢸', '⣤', '⣀', '⠛'];
     let sparse_leaf = ['⠂', '⠄', '⡀', '⠈', '⠁'];
@@ -2301,31 +2887,46 @@ pub fn sprout_leaves(
 
     for (tx, ty, branch_color) in tips {
         // Skip some tips based on density (0=none, 100=all)
-        if rng.random_range(0..100u32) >= density { continue; }
+        if rng.random_range(0..100u32) >= density {
+            continue;
+        }
 
         // Cluster radius: 1-3 cells
         let radius = rng.random_range(1..4u32) as i32;
         // Mix leaf color with branch color for variety
-        let lc = if rng.random_range(0..3u32) == 0 { leaf_color } else { branch_color };
+        let lc = if rng.random_range(0..3u32) == 0 {
+            leaf_color
+        } else {
+            branch_color
+        };
 
         for dy in -radius..=radius {
-            for dx in (-radius * 2)..=(radius * 2) { // aspect correction
+            for dx in (-radius * 2)..=(radius * 2) {
+                // aspect correction
                 let gx = tx as i32 + dx;
                 let gy = ty as i32 + dy;
-                if gx < 0 || gy < 0 || gy as usize >= h || gx as usize >= w { continue; }
+                if gx < 0 || gy < 0 || gy as usize >= h || gx as usize >= w {
+                    continue;
+                }
 
                 let dist = ((dx as f32 / 2.0).powi(2) + (dy as f32).powi(2)).sqrt();
-                if dist > radius as f32 { continue; }
+                if dist > radius as f32 {
+                    continue;
+                }
 
                 let cell = &grid[gy as usize][gx as usize];
                 // Only fill blank cells
-                if cell.ch != ' ' { continue; }
+                if cell.ch != ' ' {
+                    continue;
+                }
 
                 let ch = if dist < radius as f32 * 0.5 {
                     leaf_chars[rng.random_range(0..leaf_chars.len() as u32) as usize]
                 } else {
                     // Ragged edge: sometimes skip
-                    if rng.random_range(0..3u32) == 0 { continue; }
+                    if rng.random_range(0..3u32) == 0 {
+                        continue;
+                    }
                     sparse_leaf[rng.random_range(0..sparse_leaf.len() as u32) as usize]
                 };
 
@@ -2340,11 +2941,19 @@ pub fn sprout_leaves(
 /// Collect branch tip positions within a bounding rect.
 /// Returns (x, y, color) for each tip char found in the region.
 pub fn collect_tips_in_rect(
-    grid: &Grid, x0: usize, y0: usize, x1: usize, y1: usize,
+    grid: &Grid,
+    x0: usize,
+    y0: usize,
+    x1: usize,
+    y1: usize,
 ) -> Vec<(usize, usize, Color)> {
     let tip_chars = ['╷', '╮', '╭', '╴', '╶', '·'];
     let h = grid.len();
-    let w = if h > 0 { grid[0].len() } else { return Vec::new() };
+    let w = if h > 0 {
+        grid[0].len()
+    } else {
+        return Vec::new();
+    };
     let mut tips = Vec::new();
     for y in y0..y1.min(h) {
         for x in x0..x1.min(w) {
@@ -2359,17 +2968,21 @@ pub fn collect_tips_in_rect(
 /// Tip decorator styles. Each transforms a tip position differently.
 #[derive(Clone, Copy)]
 pub enum TipDeco {
-    Fruit,   // single fruit glyph
-    Flower,  // tiny radial flower
-    Drip,    // hanging dot below
-    None,    // leave as-is
+    Fruit,  // single fruit glyph
+    Flower, // tiny radial flower
+    Drip,   // hanging dot below
+    None,   // leave as-is
 }
 
 /// Decorate collected tips with the chosen style.
 /// `chance` is 0-100 probability per tip.
 pub fn decorate_tips(
-    grid: &mut Grid, tips: &[(usize, usize, Color)],
-    deco: TipDeco, color: Color, chance: u32, rng: &mut StdRng,
+    grid: &mut Grid,
+    tips: &[(usize, usize, Color)],
+    deco: TipDeco,
+    color: Color,
+    chance: u32,
+    rng: &mut StdRng,
 ) {
     let h = grid.len();
     let w = if h > 0 { grid[0].len() } else { return };
@@ -2377,7 +2990,9 @@ pub fn decorate_tips(
     let flower_glyphs = ['✦', '✧', '◉', '❋', '✿'];
 
     for &(tx, ty, _tip_color) in tips {
-        if rng.random_range(0..100u32) >= chance { continue; }
+        if rng.random_range(0..100u32) >= chance {
+            continue;
+        }
         let c = shift_hue(color, rng.random_range(0..40u32) as f64 - 20.0);
 
         match deco {
@@ -2416,17 +3031,23 @@ pub fn decorate_tips(
 /// Pick a trunk style that matches a tree family index.
 pub fn trunk_style_for_family(family_idx: usize, rng: &mut StdRng) -> TrunkStyle {
     match family_idx {
-        0 => [TrunkStyle::Wobble, TrunkStyle::Straight, TrunkStyle::Curved][rng.random_range(0..3u32) as usize],
+        0 => [TrunkStyle::Wobble, TrunkStyle::Straight, TrunkStyle::Curved]
+            [rng.random_range(0..3u32) as usize],
         1 => [TrunkStyle::Straight, TrunkStyle::Curved][rng.random_range(0..2u32) as usize],
         2 => [TrunkStyle::Gnarled, TrunkStyle::Wobble][rng.random_range(0..2u32) as usize],
-        3 => [TrunkStyle::Thick, TrunkStyle::Gnarled, TrunkStyle::Wobble][rng.random_range(0..3u32) as usize],
+        3 => [TrunkStyle::Thick, TrunkStyle::Gnarled, TrunkStyle::Wobble]
+            [rng.random_range(0..3u32) as usize],
         _ => TrunkStyle::Straight,
     }
 }
 
 pub fn draw_cloud(
-    grid: &mut Grid, cx: usize, cy: usize,
-    cloud_w: usize, color: Color, rng: &mut StdRng,
+    grid: &mut Grid,
+    cx: usize,
+    cy: usize,
+    cloud_w: usize,
+    color: Color,
+    rng: &mut StdRng,
 ) {
     let dense_chars = ['▓', '▒', '░'];
     let wisp_chars = ['░', '·', '∙', '~', '⠂', '⠄'];
@@ -2448,13 +3069,17 @@ pub fn draw_cloud(
     let x0 = cx as i32 - half_w;
     for (col, &col_h) in heights.iter().enumerate() {
         let gx = x0 + col as i32;
-        if gx < 0 || gx as usize >= grid[0].len() { continue; }
+        if gx < 0 || gx as usize >= grid[0].len() {
+            continue;
+        }
 
         // Dense core: fill from cy - col_h/2 to cy + col_h/2
         let top = cy as i32 - col_h / 2;
         let bot = cy as i32 + (col_h + 1) / 2;
         for gy in top..=bot {
-            if gy < 0 || gy as usize >= grid.len() { continue; }
+            if gy < 0 || gy as usize >= grid.len() {
+                continue;
+            }
             let vert_dist = ((gy - cy as i32) as f32 / (col_h as f32 + 1.0).max(1.0)).abs();
             let ch = if vert_dist < 0.3 {
                 dense_chars[0]
@@ -2491,13 +3116,21 @@ pub fn draw_cloud(
 /// Branch zone biased: some trees branch only near top, others near bottom.
 pub fn grow_wild_tree(
     grid: &mut Grid,
-    root_x: usize, root_y: usize, canopy_y: usize,
-    spread: usize, color: Color, rng: &mut StdRng,
+    root_x: usize,
+    root_y: usize,
+    canopy_y: usize,
+    spread: usize,
+    color: Color,
+    rng: &mut StdRng,
 ) {
-    if canopy_y + 2 >= root_y { return; }
+    if canopy_y + 2 >= root_y {
+        return;
+    }
     let rx = root_x as i32;
     let height = (root_y - canopy_y) as i32;
-    if height < 3 { return; }
+    if height < 3 {
+        return;
+    }
 
     // Wobbling trunk: variable wobble intensity
     let mut cx = rx;
@@ -2508,13 +3141,14 @@ pub fn grow_wild_tree(
 
     for y in (canopy_y as i32..root_y as i32).rev() {
         let rows_up = root_y as i32 - y;
-        let ch = if rows_up > 1 && rows_up % wobble_freq == 0 && rng.random_range(0..wobble_prob) == 0 {
-            let dir = rng.random_range(0..2u32) as i32 * 2 - 1;
-            cx += dir;
-            if dir > 0 { '╱' } else { '╲' }
-        } else {
-            '│'
-        };
+        let ch =
+            if rows_up > 1 && rows_up % wobble_freq == 0 && rng.random_range(0..wobble_prob) == 0 {
+                let dir = rng.random_range(0..2u32) as i32 * 2 - 1;
+                cx += dir;
+                if dir > 0 { '╱' } else { '╲' }
+            } else {
+                '│'
+            };
         tset_over(grid, cx, y, ch, color);
         trunk_xs.push((y, cx));
     }
@@ -2522,7 +3156,8 @@ pub fn grow_wild_tree(
 
     // Trunk x lookup
     let trunk_x_at = |target_y: i32| -> i32 {
-        trunk_xs.iter()
+        trunk_xs
+            .iter()
             .min_by_key(|&&(y, _)| (y - target_y).abs())
             .map(|&(_, x)| x)
             .unwrap_or(rx)
@@ -2573,27 +3208,46 @@ pub fn grow_wild_tree(
         let c = lighten(color, (i * 12 + 10) as u8);
 
         tset_over(grid, tx, by, '┤', c);
-        for j in 1..=arm { tset(grid, tx - j, by, '─', c); }
+        for j in 1..=arm {
+            tset(grid, tx - j, by, '─', c);
+        }
         // Tip style varies
         match rng.random_range(0..4u32) {
-            0 => { tset(grid, tx - arm, by, '╮', c); tset(grid, tx - arm - 1, by - 1, '╷', lighten(c, 25)); }
-            1 => { tset(grid, tx - arm, by, '╴', lighten(c, 20)); }
-            2 => { tset(grid, tx - arm, by, '·', lighten(c, 35)); }
-            _ => { tset(grid, tx - arm, by, '╮', c);
-                   // Upward sub-branch
-                   let sub = rng.random_range(1..4u32) as i32;
-                   for j in 1..=sub { tset(grid, tx - arm, by - j, '│', lighten(c, 20)); }
-                   tset(grid, tx - arm, by - sub - 1, '╷', lighten(c, 35)); }
+            0 => {
+                tset(grid, tx - arm, by, '╮', c);
+                tset(grid, tx - arm - 1, by - 1, '╷', lighten(c, 25));
+            }
+            1 => {
+                tset(grid, tx - arm, by, '╴', lighten(c, 20));
+            }
+            2 => {
+                tset(grid, tx - arm, by, '·', lighten(c, 35));
+            }
+            _ => {
+                tset(grid, tx - arm, by, '╮', c);
+                // Upward sub-branch
+                let sub = rng.random_range(1..4u32) as i32;
+                for j in 1..=sub {
+                    tset(grid, tx - arm, by - j, '│', lighten(c, 20));
+                }
+                tset(grid, tx - arm, by - sub - 1, '╷', lighten(c, 35));
+            }
         }
 
         // Fork with higher probability, variable direction
         if arm > 2 && rng.random_range(0..2u32) == 0 {
             let fork_at = rng.random_range(1..arm as u32) as i32;
             let fork_x = tx - fork_at;
-            let fork_dir = if rng.random_range(0..2u32) == 0 { 1i32 } else { -1 }; // up or down
+            let fork_dir = if rng.random_range(0..2u32) == 0 {
+                1i32
+            } else {
+                -1
+            }; // up or down
             tset_over(grid, fork_x, by, '┬', c);
             let sub_len = rng.random_range(1..5u32) as i32;
-            for j in 1..=sub_len { tset(grid, fork_x, by + j * fork_dir, '│', lighten(c, 20)); }
+            for j in 1..=sub_len {
+                tset(grid, fork_x, by + j * fork_dir, '│', lighten(c, 20));
+            }
         }
     }
 
@@ -2604,34 +3258,50 @@ pub fn grow_wild_tree(
         let c = lighten(color, (i * 12 + 10) as u8);
 
         tset_over(grid, tx, by, '├', c);
-        for j in 1..=arm { tset(grid, tx + j, by, '─', c); }
+        for j in 1..=arm {
+            tset(grid, tx + j, by, '─', c);
+        }
         match rng.random_range(0..4u32) {
-            0 => { tset(grid, tx + arm, by, '╭', c); tset(grid, tx + arm + 1, by - 1, '╷', lighten(c, 25)); }
-            1 => { tset(grid, tx + arm, by, '╶', lighten(c, 20)); }
-            2 => { tset(grid, tx + arm, by, '·', lighten(c, 35)); }
-            _ => { tset(grid, tx + arm, by, '╭', c);
-                   let sub = rng.random_range(1..4u32) as i32;
-                   for j in 1..=sub { tset(grid, tx + arm, by - j, '│', lighten(c, 20)); }
-                   tset(grid, tx + arm, by - sub - 1, '╷', lighten(c, 35)); }
+            0 => {
+                tset(grid, tx + arm, by, '╭', c);
+                tset(grid, tx + arm + 1, by - 1, '╷', lighten(c, 25));
+            }
+            1 => {
+                tset(grid, tx + arm, by, '╶', lighten(c, 20));
+            }
+            2 => {
+                tset(grid, tx + arm, by, '·', lighten(c, 35));
+            }
+            _ => {
+                tset(grid, tx + arm, by, '╭', c);
+                let sub = rng.random_range(1..4u32) as i32;
+                for j in 1..=sub {
+                    tset(grid, tx + arm, by - j, '│', lighten(c, 20));
+                }
+                tset(grid, tx + arm, by - sub - 1, '╷', lighten(c, 35));
+            }
         }
 
         if arm > 2 && rng.random_range(0..2u32) == 0 {
             let fork_at = rng.random_range(1..arm as u32) as i32;
             let fork_x = tx + fork_at;
-            let fork_dir = if rng.random_range(0..2u32) == 0 { 1i32 } else { -1 };
+            let fork_dir = if rng.random_range(0..2u32) == 0 {
+                1i32
+            } else {
+                -1
+            };
             tset_over(grid, fork_x, by, '┬', c);
             let sub_len = rng.random_range(1..5u32) as i32;
-            for j in 1..=sub_len { tset(grid, fork_x, by + j * fork_dir, '│', lighten(c, 20)); }
+            for j in 1..=sub_len {
+                tset(grid, fork_x, by + j * fork_dir, '│', lighten(c, 20));
+            }
         }
     }
 }
 
 /// Algorithmic flower: radial petals generated by loop with variable count,
 /// radius, rotation offset, and petal chars. No stamp array.
-pub fn grow_flower_spiral(
-    grid: &mut Grid, cx: usize, cy: usize,
-    color: Color, rng: &mut StdRng,
-) {
+pub fn grow_flower_spiral(grid: &mut Grid, cx: usize, cy: usize, color: Color, rng: &mut StdRng) {
     let petal_count = rng.random_range(3..9u32);
     let radius = rng.random_range(1..3u32) as f32;
     let rotation = rng.random::<f32>() * std::f32::consts::TAU;
@@ -2651,7 +3321,11 @@ pub fn grow_flower_spiral(
         let px = (cx as f32 + angle.cos() * radius * 1.8) as i32; // aspect correction
         let py = (cy as f32 + angle.sin() * radius) as i32;
         if px >= 0 && py >= 0 && (py as usize) < grid.len() && (px as usize) < grid[0].len() {
-            let c = if i % 2 == 0 { color } else { lighten(color, 20) };
+            let c = if i % 2 == 0 {
+                color
+            } else {
+                lighten(color, 20)
+            };
             grid[py as usize][px as usize] = Cell::new(petal_ch, c);
         }
     }
@@ -2670,10 +3344,7 @@ pub fn grow_flower_spiral(
 
 /// Algorithmic fruit: random walk vine that drops fruit chars along its path.
 /// Produces a short meandering line of connected segments with fruit at bends.
-pub fn grow_fruit_vine(
-    grid: &mut Grid, cx: usize, cy: usize,
-    color: Color, rng: &mut StdRng,
-) {
+pub fn grow_fruit_vine(grid: &mut Grid, cx: usize, cy: usize, color: Color, rng: &mut StdRng) {
     let vine_len = rng.random_range(3..8u32) as usize;
     let fruit_chars = ['●', '◉', '◆', '•'];
     let fruit_ch = fruit_chars[rng.random_range(0..fruit_chars.len() as u32) as usize];
@@ -2702,9 +3373,21 @@ pub fn grow_fruit_vine(
         match rng.random_range(0..5u32) {
             0 => x -= 1,
             1 => x += 1,
-            2 => { x += 1; y += 1; },
-            3 => { x -= 1; y += 1; },
-            _ => x += if rng.random_range(0..2u32) == 0 { -1 } else { 1 },
+            2 => {
+                x += 1;
+                y += 1;
+            }
+            3 => {
+                x -= 1;
+                y += 1;
+            }
+            _ => {
+                x += if rng.random_range(0..2u32) == 0 {
+                    -1
+                } else {
+                    1
+                }
+            }
         }
     }
 }
@@ -2712,11 +3395,53 @@ pub fn grow_fruit_vine(
 /// Draw a small flower/rosette at (cx, cy)
 pub fn draw_flower(grid: &mut Grid, cx: usize, cy: usize, style: usize, color: Color) {
     let patterns: &[&[(i32, i32, char)]] = &[
-        &[(0,-1,'◆'), (-1,0,'◇'), (1,0,'◇'), (0,1,'◆'), (0,0,'✦')],
-        &[(0,-1,'◠'), (-1,0,'◟'), (1,0,'◞'), (0,1,'◡'), (0,0,'◉')],
-        &[(0,-1,'∧'), (-1,0,'⟨'), (1,0,'⟩'), (0,1,'∨'), (0,0,'✧'), (-1,-1,'╱'), (1,-1,'╲'), (-1,1,'╲'), (1,1,'╱')],
-        &[(0,-1,'╥'), (-1,0,'╟'), (1,0,'╢'), (0,1,'╨'), (0,0,'╬'), (-1,-1,'╔'), (1,-1,'╗'), (-1,1,'╚'), (1,1,'╝')],
-        &[(0,0,'⣿'), (-1,0,'⡇'), (1,0,'⢸'), (0,-1,'⣤'), (0,1,'⣶'), (-1,-1,'⠁'), (1,-1,'⠈'), (-1,1,'⢀'), (1,1,'⡀')],
+        &[
+            (0, -1, '◆'),
+            (-1, 0, '◇'),
+            (1, 0, '◇'),
+            (0, 1, '◆'),
+            (0, 0, '✦'),
+        ],
+        &[
+            (0, -1, '◠'),
+            (-1, 0, '◟'),
+            (1, 0, '◞'),
+            (0, 1, '◡'),
+            (0, 0, '◉'),
+        ],
+        &[
+            (0, -1, '∧'),
+            (-1, 0, '⟨'),
+            (1, 0, '⟩'),
+            (0, 1, '∨'),
+            (0, 0, '✧'),
+            (-1, -1, '╱'),
+            (1, -1, '╲'),
+            (-1, 1, '╲'),
+            (1, 1, '╱'),
+        ],
+        &[
+            (0, -1, '╥'),
+            (-1, 0, '╟'),
+            (1, 0, '╢'),
+            (0, 1, '╨'),
+            (0, 0, '╬'),
+            (-1, -1, '╔'),
+            (1, -1, '╗'),
+            (-1, 1, '╚'),
+            (1, 1, '╝'),
+        ],
+        &[
+            (0, 0, '⣿'),
+            (-1, 0, '⡇'),
+            (1, 0, '⢸'),
+            (0, -1, '⣤'),
+            (0, 1, '⣶'),
+            (-1, -1, '⠁'),
+            (1, -1, '⠈'),
+            (-1, 1, '⢀'),
+            (1, 1, '⡀'),
+        ],
     ];
 
     let pattern = patterns[style % patterns.len()];
@@ -2804,13 +3529,28 @@ pub fn draw_mask(grid: &mut Grid, cx: usize, cy: usize, size: usize, style: usiz
 pub const MASK_STYLE_COUNT: usize = 4;
 
 /// Aztec diamond domino tiling via domino shuffling.
-pub fn draw_aztec_diamond(grid: &mut Grid, center_x: usize, center_y: usize, order: usize, palette: &[Color; 5], rng: &mut StdRng) {
+pub fn draw_aztec_diamond(
+    grid: &mut Grid,
+    center_x: usize,
+    center_y: usize,
+    order: usize,
+    palette: &[Color; 5],
+    rng: &mut StdRng,
+) {
     #[derive(Clone, Copy, PartialEq, Eq)]
-    enum D { N, S, E, W, Empty }
+    enum D {
+        N,
+        S,
+        E,
+        W,
+        Empty,
+    }
 
     let in_diamond = |r: usize, c: usize, ord: usize| -> bool {
         let size = 2 * ord;
-        if r >= size || c >= size { return false; }
+        if r >= size || c >= size {
+            return false;
+        }
         let rr = (2 * r + 1) as i32 - size as i32;
         let cc = (2 * c + 1) as i32 - size as i32;
         rr.abs() + cc.abs() <= size as i32
@@ -2818,11 +3558,15 @@ pub fn draw_aztec_diamond(grid: &mut Grid, center_x: usize, center_y: usize, ord
 
     let mut state: Vec<Vec<D>> = vec![vec![D::Empty; 2]; 2];
     if rng.random_range(0..2) == 0 {
-        state[0][0] = D::W; state[0][1] = D::E;
-        state[1][0] = D::W; state[1][1] = D::E;
+        state[0][0] = D::W;
+        state[0][1] = D::E;
+        state[1][0] = D::W;
+        state[1][1] = D::E;
     } else {
-        state[0][0] = D::N; state[0][1] = D::N;
-        state[1][0] = D::S; state[1][1] = D::S;
+        state[0][0] = D::N;
+        state[0][1] = D::N;
+        state[1][0] = D::S;
+        state[1][1] = D::S;
     }
 
     for k in 2..=order {
@@ -2836,12 +3580,16 @@ pub fn draw_aztec_diamond(grid: &mut Grid, center_x: usize, center_y: usize, ord
                 let bl = state[r + 1][c];
                 let br = state[r + 1][c + 1];
                 if tl == D::S && tr == D::S && bl == D::N && br == D::N {
-                    state[r][c] = D::Empty;     state[r][c + 1] = D::Empty;
-                    state[r + 1][c] = D::Empty; state[r + 1][c + 1] = D::Empty;
+                    state[r][c] = D::Empty;
+                    state[r][c + 1] = D::Empty;
+                    state[r + 1][c] = D::Empty;
+                    state[r + 1][c + 1] = D::Empty;
                 }
                 if tl == D::E && tr == D::W && bl == D::E && br == D::W {
-                    state[r][c] = D::Empty;     state[r][c + 1] = D::Empty;
-                    state[r + 1][c] = D::Empty; state[r + 1][c + 1] = D::Empty;
+                    state[r][c] = D::Empty;
+                    state[r][c + 1] = D::Empty;
+                    state[r + 1][c] = D::Empty;
+                    state[r + 1][c + 1] = D::Empty;
                 }
             }
         }
@@ -2850,9 +3598,11 @@ pub fn draw_aztec_diamond(grid: &mut Grid, center_x: usize, center_y: usize, ord
         for r in 0..old_size {
             for c in 0..old_size {
                 let d = state[r][c];
-                if d == D::Empty { continue; }
+                if d == D::Empty {
+                    continue;
+                }
                 let (nr, nc) = match d {
-                    D::N => (r,     c + 1),
+                    D::N => (r, c + 1),
                     D::S => (r + 2, c + 1),
                     D::W => (r + 1, c),
                     D::E => (r + 1, c + 2),
@@ -2876,11 +3626,15 @@ pub fn draw_aztec_diamond(grid: &mut Grid, center_x: usize, center_y: usize, ord
                     && in_diamond(r + 1, c + 1, k)
                 {
                     if rng.random_range(0..2) == 0 {
-                        ns[r][c] = D::N;     ns[r][c + 1] = D::N;
-                        ns[r + 1][c] = D::S; ns[r + 1][c + 1] = D::S;
+                        ns[r][c] = D::N;
+                        ns[r][c + 1] = D::N;
+                        ns[r + 1][c] = D::S;
+                        ns[r + 1][c + 1] = D::S;
                     } else {
-                        ns[r][c] = D::W;     ns[r][c + 1] = D::E;
-                        ns[r + 1][c] = D::W; ns[r + 1][c + 1] = D::E;
+                        ns[r][c] = D::W;
+                        ns[r][c + 1] = D::E;
+                        ns[r + 1][c] = D::W;
+                        ns[r + 1][c + 1] = D::E;
                     }
                 }
             }
@@ -2896,7 +3650,9 @@ pub fn draw_aztec_diamond(grid: &mut Grid, center_x: usize, center_y: usize, ord
     let colors = [palette[1], palette[2], palette[3], lighten(palette[2], 40)];
     for r in 0..size {
         for c in 0..size {
-            if state[r][c] == D::Empty { continue; }
+            if state[r][c] == D::Empty {
+                continue;
+            }
             let gr = off_r + r;
             let gc = off_c + c * 2;
             let color = match state[r][c] {
