@@ -226,6 +226,11 @@ fn boles4_seed_42() {
 }
 
 #[test]
+fn boles5_seed_42() {
+    insta::assert_snapshot!(render(&["42", "boles5", "ember"]));
+}
+
+#[test]
 fn kintsugi_seed_42() {
     insta::assert_snapshot!(render(&["42", "kintsugi", "ember"]));
 }

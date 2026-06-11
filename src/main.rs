@@ -53,8 +53,8 @@ fn run_demo(initial_seed: u64) {
         "shapes", "tiles", "tiles-rand", "tiles-skew", "mondrian", "mondrian2", "bsp",
         "layout", "terrain", "flow", "noise", "ca", "stem", "scene-walk", "scene-walk-2",
         "scene-walk-3", "world", "boles1", "boles2", "boles3", "trunks1", "trees1",
-        "trees2", "trees3", "trees4", "trees8", "trees9", "boles4", "bushes", "kintsugi",
-        "constellation", "strata", "circuit", "quilt",
+        "trees2", "trees3", "trees4", "trees8", "trees9", "boles4", "boles5", "bushes",
+        "kintsugi", "constellation", "strata", "circuit", "quilt",
     ];
     let all_themes: &[&str] = &[
         "", "ember", "terracotta", "sakura", "arctic", "deep", "moss",
@@ -181,6 +181,7 @@ fn main() {
         eprintln!("  boles2    Experimental bole styles v2");
         eprintln!("  boles3    Refined bole styles with descriptive names");
         eprintln!("  boles4    Winding bole styles: Serpent/Braid/Coil/Taproot");
+        eprintln!("  boles5    Structural bole styles: Stilts/Cairn/Hollow/Talon/Tiers/Tussock");
         eprintln!("  trunks1   Horizontal trunk algorithms + direction-aware branching");
         eprintln!("  trees1    Full pipeline: tree+trunk+bole combos [energy] [fruit] [branch] [bole]");
         eprintln!("  trees2    Squat horizontal boles (1-2 rows) [energy] [fruit] [branch]");
@@ -2256,6 +2257,69 @@ fn main() {
                     if ly < height {
                         for (j, ch) in elabel.chars().enumerate() {
                             if j < cx as usize - 1 {
+                                grid[ly][j] = Cell::new(ch, rgb(120, 120, 120));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+    } else if mode == "boles5" {
+        // boles5: structural bole styles (28-33)
+        let styles = ["Stilts", "Cairn", "Hollow", "Talon", "Tiers", "Tussock"];
+        let energies: [f32; 3] = [0.3, 0.6, 1.0];
+        let energy_labels = ["Low", "Mid", "High"];
+        let col_w = width / styles.len();
+        let row_h = (height - 2) / energies.len();
+
+        for (si, style_name) in styles.iter().enumerate() {
+            let cx = (si * col_w + col_w / 2) as i32;
+            let color = lighten(palette[si % palette.len()], 40);
+
+            let lx = (cx - style_name.len() as i32 / 2).max(0) as usize;
+            for (j, ch) in style_name.chars().enumerate() {
+                if lx + j < width {
+                    grid[height - 1][lx + j] = Cell::new(ch, lighten(color, 40));
+                }
+            }
+
+            for (ei, &energy) in energies.iter().enumerate() {
+                let ground_y = ((ei + 1) * row_h - 4) as i32;
+                if ground_y < 2 || ground_y as usize >= height - 2 { continue; }
+
+                let plot_w = (col_w as i32 - 2).max(6);
+                let tp = TreeParams {
+                    plot: Rect { x: (cx - plot_w / 2).max(0) as usize, y: 0, w: plot_w as usize, h: (ground_y + 1) as usize },
+                    energy,
+                    trunk_color: color,
+                    bark_color: darken(color, 15),
+                    branch_color: color,
+                    tip_color: color,
+                    fruit_color: color,
+                    fruit_factor: 0.0,
+                    branch_factor: 0.5,
+                    direction: GrowDir::Up,
+                    bole: None,
+                taper: TaperKind::default(),
+                };
+
+                let bole = Bole { style: si + 28 };
+                let exit = bole.draw(&mut grid, &tp, &mut rng);
+                let (tx, ty) = (exit.x, exit.y);
+
+                for y in (ground_y - (row_h as i32 / 2) + 1)..ty {
+                    if y >= 0 && (y as usize) < height && (tx as usize) < width {
+                        grid[y as usize][tx as usize] = Cell::new('│', color);
+                    }
+                }
+
+                if si == 0 {
+                    let elabel = energy_labels[ei];
+                    let ly = ground_y as usize;
+                    if ly < height {
+                        for (j, ch) in elabel.chars().enumerate() {
+                            if j < cx as usize - 5 {
                                 grid[ly][j] = Cell::new(ch, rgb(120, 120, 120));
                             }
                         }

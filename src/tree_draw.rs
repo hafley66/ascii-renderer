@@ -638,7 +638,7 @@ impl BushSprite {
     }
 }
 
-/// Shared bole/bush pattern renderer. 28 style variants.
+/// Shared bole/bush pattern renderer. 34 style variants.
 /// `compact`: true clamps layer counts to keep height <= 3 rows (for tree boles).
 ///            false renders full size (for standalone bush sprites).
 fn draw_bole_pattern(
@@ -646,7 +646,7 @@ fn draw_bole_pattern(
     lw: i32, rw: i32, color: Color, bark: Color, dim: Color,
     energy: f32, style: usize, rng: &mut StdRng, compact: bool,
 ) -> BoleExit {
-        match style % 28 {
+        match style % 34 {
             // Style 0: Crescent -- connected via │ at inner edge positions
             0 => {
                 // Ground row: wide crescent
@@ -2072,6 +2072,149 @@ fn draw_bole_pattern(
                     set(grid, x, y + 1, '╷', darken(dim, 10));
                 }
                 BoleExit { x: root_x, y: root_y, left: 1, right: 1 }
+            }
+            // ── Structural boles: legs, piles, dens, claws, shelves, grass ──
+
+            // Stilts: the trunk stands on splayed mangrove prop legs with
+            // open air underneath
+            28 => {
+                set(grid, root_x, root_y - 1, '┴', color);
+                set(grid, root_x - 1, root_y - 1, '╭', bark);
+                set(grid, root_x + 1, root_y - 1, '╮', bark);
+                let pairs = (lw.max(rw) / 2).clamp(1, 3);
+                for k in 1..=pairs {
+                    // each pair splays one cell further out per row down
+                    let hip = k;
+                    set(grid, root_x - hip - 1, root_y, '╱', darken(bark, (k as u8 * 6).min(18)));
+                    set(grid, root_x + hip + 1, root_y, '╲', darken(bark, (k as u8 * 6).min(18)));
+                    set(grid, root_x - hip - 2, root_y + 1, '╱', dim);
+                    set(grid, root_x + hip + 2, root_y + 1, '╲', dim);
+                }
+                // feet grip the ground below the outermost legs
+                set(grid, root_x - pairs - 3, root_y + 2, '╷', darken(dim, 10));
+                set(grid, root_x + pairs + 3, root_y + 2, '╷', darken(dim, 10));
+                // one off-center brace leg for asymmetry
+                let bx = if rng.random_range(0..2u32) == 0 { -1 } else { 1 };
+                set(grid, root_x + bx, root_y, '│', bark);
+                set(grid, root_x + bx, root_y + 1, '╷', dim);
+                BoleExit { x: root_x, y: root_y - 1, left: 1, right: 1 }
+            }
+            // Cairn: rounded stones piled against the trunk base
+            29 => {
+                let stones = ['◯', '●', '○', '◦'];
+                let hw = lw.max(rw).max(2);
+                for dx in -hw..=hw {
+                    let ch = stones[rng.random_range(0..stones.len() as u32) as usize];
+                    set(grid, root_x + dx, root_y, ch, darken(bark, (dx.abs() as u8 * 4).min(20)));
+                }
+                // top course: fewer, smaller stones nested in the gaps
+                let tw = (hw / 2).max(1);
+                for dx in -tw..=tw {
+                    if dx == 0 { continue; }
+                    let ch = if rng.random_range(0..2u32) == 0 { '○' } else { '◦' };
+                    set(grid, root_x + dx, root_y - 1, ch, bark);
+                }
+                set(grid, root_x, root_y - 1, '╨', color);
+                BoleExit::point(root_x, root_y - 2)
+            }
+            // Hollow: a den opening framed in the trunk base, sloped
+            // shoulders on either side
+            30 => {
+                let hw = lw.max(rw).max(3);
+                // rim row
+                set(grid, root_x, root_y - 1, '┴', color);
+                for dx in 1..hw {
+                    set(grid, root_x - dx, root_y - 1, '─', bark);
+                    set(grid, root_x + dx, root_y - 1, '─', bark);
+                }
+                set(grid, root_x - hw, root_y - 1, '╭', bark);
+                set(grid, root_x + hw, root_y - 1, '╮', bark);
+                // ground row: arch entrance at center, shoulders slope away
+                set(grid, root_x - 1, root_y, '╭', lighten(bark, 15));
+                set(grid, root_x + 1, root_y, '╮', lighten(bark, 15));
+                // the hole itself stays blank at root_x
+                for dx in 2..hw {
+                    set(grid, root_x - dx, root_y, '▒', darken(bark, (dx as u8 * 3).min(15)));
+                    set(grid, root_x + dx, root_y, '▒', darken(bark, (dx as u8 * 3).min(15)));
+                }
+                set(grid, root_x - hw, root_y, '╱', dim);
+                set(grid, root_x + hw, root_y, '╲', dim);
+                BoleExit { x: root_x, y: root_y - 1, left: 2, right: 2 }
+            }
+            // Talon: clawed digits radiate from a center pad and dig in
+            31 => {
+                set(grid, root_x, root_y - 1, '┴', color);
+                let reach_l = lw.max(2).min(4);
+                let reach_r = rw.max(2).min(4);
+                // outer digits: out along the pad, bend, then dig
+                for (side, reach) in [(-1i32, reach_l), (1i32, reach_r)] {
+                    let digits = (reach / 2).max(1);
+                    // longest digit first so shorter bends overwrite its run
+                    for d in (1..=digits).rev() {
+                        let bend = side * (d * 2);
+                        for s in 1..(d * 2) {
+                            set(grid, root_x + side * s, root_y - 1, '─', bark);
+                        }
+                        set(grid, root_x + bend, root_y - 1,
+                            if side < 0 { '╭' } else { '╮' }, bark);
+                        set(grid, root_x + bend, root_y, '│', darken(bark, 8));
+                        set(grid, root_x + bend, root_y + 1, '╷', dim);
+                    }
+                }
+                // center digit digs straight down
+                set(grid, root_x, root_y, '│', bark);
+                set(grid, root_x, root_y + 1, '╷', dim);
+                BoleExit::point(root_x, root_y - 2)
+            }
+            // Tiers: stacked pagoda shelves shrinking upward, drip legs
+            // under the outer edges
+            32 => {
+                let w0 = lw.max(rw).max(3);
+                let levels = if energy > 0.6 { 3 } else { 2 };
+                let mut cy = root_y;
+                let mut w = w0;
+                for lvl in 0..levels {
+                    let center = if lvl == levels - 1 { '┴' } else { '╪' };
+                    set(grid, root_x, cy, center, color);
+                    for dx in 1..=w {
+                        set(grid, root_x - dx, cy, '═', darken(bark, (dx as u8 * 3).min(18)));
+                        set(grid, root_x + dx, cy, '═', darken(bark, (dx as u8 * 3).min(18)));
+                    }
+                    if lvl == 0 {
+                        // drip legs under the widest shelf
+                        set(grid, root_x - w, cy + 1, '╷', dim);
+                        set(grid, root_x + w, cy + 1, '╷', dim);
+                    }
+                    cy -= 1;
+                    w = (w * 3 / 5).max(1);
+                    if w < 1 { break; }
+                }
+                BoleExit::point(root_x, root_y - levels)
+            }
+            // Tussock: a clump of grass blades hides the trunk base
+            33 => {
+                let blades = ['⌇', '╿', '╽', '┆', '╵'];
+                let hw = lw.max(rw).max(2);
+                for dx in -hw..=hw {
+                    let ch = blades[rng.random_range(0..blades.len() as u32) as usize];
+                    set(grid, root_x + dx, root_y, ch,
+                        lighten(bark, rng.random_range(0..25u32) as u8));
+                }
+                // taller blades near the center on a second row
+                let tw = (hw / 2).max(1);
+                for dx in -tw..=tw {
+                    if rng.random::<f32>() < 0.5 {
+                        let ch = blades[rng.random_range(0..blades.len() as u32) as usize];
+                        set(grid, root_x + dx, root_y - 1, ch, bark);
+                    }
+                }
+                // seed heads drift above the clump
+                for _ in 0..rng.random_range(1..4u32) {
+                    let sx = root_x + rng.random_range(0..(hw * 2 + 1) as u32) as i32 - hw;
+                    set(grid, sx, root_y - 2, '·', dim);
+                }
+                set(grid, root_x, root_y - 1, '│', color);
+                BoleExit::point(root_x, root_y - 1)
             }
             _ => BoleExit::point(root_x, root_y),
         }
@@ -4809,5 +4952,18 @@ mod tests {
             bole.draw(&mut grid, &tp, &mut rng);
         }
         insta::assert_snapshot!("winding_boles_42", grid_to_string(&grid));
+    }
+
+    #[test]
+    fn snapshot_structural_boles() {
+        // all six structural bole styles (28-33) on one grid
+        let mut grid = make_grid(120, 12);
+        let mut rng = StdRng::seed_from_u64(42);
+        for (i, style) in (28..34).enumerate() {
+            let tp = test_params(i * 20, 1, 18, 8);
+            let bole = Bole { style };
+            bole.draw(&mut grid, &tp, &mut rng);
+        }
+        insta::assert_snapshot!("structural_boles_42", grid_to_string(&grid));
     }
 }
