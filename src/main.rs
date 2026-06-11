@@ -3656,106 +3656,159 @@ fn main() {
         }
     } else if mode == "patchwalk" {
         // patchwalk [stops] [line_w] -- quilt x scene-walk x mondrian2:
-        // mondrian BSP geometry as the quilt layout, each leaf a stitched
-        // tile patch, scene-walk waypoints punched in as clearings joined
-        // by an embroidered trail.
+        // skewed BSP with big flat fields against small quilted clusters,
+        // a heavy thread route stitched between clearings.
         let stop_count: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(4).clamp(2, 8);
         let line_w: usize = args.get(5).and_then(|s| s.parse().ok()).unwrap_or(2).clamp(1, 3);
 
-        // 1. Mondrian skeleton: BSP leaves + thick binding lines
-        let fill_colors = [
-            lighten(palette[0], 40),
-            palette[1],
-            palette[2],
-            palette[3],
-            lighten(palette[0], 40),
-        ];
+        // 1. Binding everywhere; leaves get carved out of it
         let line_color = darken(palette[0], 60);
-        let rects = layout_mondrian(
-            &mut grid, &[], 0, line_w, 12, 5,
-            line_color, line_color, &fill_colors, line_color, &mut rng,
-        );
-
-        // 2. Quilt the leaves: tile patch per leaf + echo-stitch ring
-        let thread = darken(palette[4], 40);
-        for rect in &rects {
-            if rect.w < 4 || rect.h < 3 { continue; }
-            let variant = tile_variant_from_index(rng.random_range(0..TILE_VARIANT_COUNT));
-            let c1 = darken(palette[1 + rng.random_range(0..3)], rng.random_range(0..50));
-            let c2 = darken(palette[1 + rng.random_range(0..3)], rng.random_range(20..70));
-            fill_tile_pure(&mut grid, rect, variant, c1, c2);
-
-            // running stitch just inside the patch edge
-            let (x0, y0) = (rect.x, rect.y);
-            let (x1, y1) = (rect.x + rect.w - 1, rect.y + rect.h - 1);
-            for x in x0..=x1 {
-                if (x + y0) % 2 == 0 && y0 < height && x < width {
-                    grid[y0][x] = Cell::new('┈', thread);
-                }
-                if (x + y1) % 2 == 0 && y1 < height && x < width {
-                    grid[y1][x] = Cell::new('┈', thread);
-                }
-            }
-            for y in y0..=y1 {
-                if (x0 + y) % 2 == 0 && y < height && x0 < width {
-                    grid[y][x0] = Cell::new('┊', thread);
-                }
-                if (x1 + y) % 2 == 0 && y < height && x1 < width {
-                    grid[y][x1] = Cell::new('┊', thread);
-                }
+        for y in 0..height {
+            for x in 0..width {
+                grid[y][x] = Cell::with_bg(' ', line_color, line_color);
             }
         }
 
-        // 3. Scene-walk waypoints: random-walk stops across the quilt
-        let margin = 8usize;
-        let mut stops: Vec<(usize, usize)> = Vec::new();
-        let mut px = rng.random_range(width as u32 / 6..width as u32 * 5 / 6) as usize;
-        let mut py = rng.random_range(height as u32 / 6..height as u32 * 5 / 6) as usize;
-        stops.push((px, py));
-        for _ in 1..stop_count {
-            let min_step = (width.min(height) / 4).max(12);
-            let max_step = (width.min(height) / 2).max(min_step + 5);
-            let angle: f32 = rng.random::<f32>() * std::f32::consts::TAU;
-            let dist = rng.random_range(min_step as u32..max_step as u32) as f32;
-            px = (px as f32 + angle.cos() * dist * 1.8)
-                .clamp(margin as f32, (width - margin) as f32) as usize;
-            py = (py as f32 + angle.sin() * dist)
-                .clamp(margin as f32, (height - margin) as f32) as usize;
-            stops.push((px, py));
+        // 2. Skewed BSP: splits land at 0.22-0.38, one branch can stop
+        // early so big fields sit next to small clusters
+        let mut leaves: Vec<Rect> = Vec::new();
+        let mut stack: Vec<(Rect, usize)> = vec![(
+            Rect { x: line_w, y: 1, w: width - line_w * 2, h: height - 2 }, 0,
+        )];
+        while let Some((r, d)) = stack.pop() {
+            let can_v = r.w >= 15 + line_w;
+            let can_h = r.h >= 8;
+            let stop_p = match d { 0 => 0.0, 1 => 0.08, 2 => 0.3, _ => 0.55 };
+            if (!can_v && !can_h) || d >= 5 || rng.random::<f32>() < stop_p {
+                leaves.push(r);
+                continue;
+            }
+            let vert = if !can_h { true } else if !can_v { false }
+                else if r.w > r.h * 3 { true }
+                else if r.h * 2 > r.w { false }
+                else { rng.random_range(0..2u32) == 0 };
+            let mut t = 0.22 + rng.random::<f32>() * 0.16;
+            if rng.random_range(0..2u32) == 0 { t = 1.0 - t; }
+            if vert {
+                let sw = ((r.w as f32 * t) as usize).clamp(6, r.w - 6 - line_w);
+                stack.push((Rect { x: r.x, y: r.y, w: sw, h: r.h }, d + 1));
+                stack.push((Rect { x: r.x + sw + line_w, y: r.y,
+                                   w: r.w - sw - line_w, h: r.h }, d + 1));
+            } else {
+                let sh = ((r.h as f32 * t) as usize).clamp(3, r.h - 4);
+                stack.push((Rect { x: r.x, y: r.y, w: r.w, h: sh }, d + 1));
+                stack.push((Rect { x: r.x, y: r.y + sh + 1,
+                                   w: r.w, h: r.h - sh - 1 }, d + 1));
+            }
         }
 
-        // 4. Embroidered trail: stitched over the fabric, not around it
-        for pair in stops.windows(2) {
-            let (x0, y0) = pair[0];
-            let (x1, y1) = pair[1];
-            let dx = x1 as f32 - x0 as f32;
-            let dy = y1 as f32 - y0 as f32;
-            let steps = (dx.abs().max(dy.abs())) as usize;
-            if steps == 0 { continue; }
-            for i in 0..=steps {
-                let t = i as f32 / steps as f32;
-                let x = (x0 as f32 + dx * t) as usize;
-                let y = (y0 as f32 + dy * t) as usize;
-                if x >= width || y >= height { continue; }
-                // footprints over the fabric: dots with occasional slope marks
-                if i % 3 == 2 { continue; }
-                let ch = if i % 5 == 0 {
-                    if dx.abs() < 1.0 { '│' } else {
-                        let ratio = dy / dx;
-                        if ratio.abs() < 0.3 { '─' }
-                        else if ratio > 0.0 { '╲' }
-                        else { '╱' }
+        // 3. Treatments: big leaves lean flat color (mondrian fields),
+        // small leaves lean quilted; white-weighted like the source
+        let canvas = lighten(palette[0], 45);
+        let field_colors = [canvas, canvas, canvas, palette[1], palette[2], palette[3]];
+        let thread = darken(palette[4], 30);
+        for r in &leaves {
+            let area = r.w * r.h;
+            let flat_p = if area > 400 { 0.92 } else if area > 300 { 0.75 }
+                else if area > 120 { 0.5 } else { 0.3 };
+            if rng.random::<f32>() < flat_p {
+                let bg = field_colors[rng.random_range(0..field_colors.len())];
+                for y in r.y..(r.y + r.h).min(height) {
+                    for x in r.x..(r.x + r.w).min(width) {
+                        grid[y][x] = Cell::with_bg(' ', bg, bg);
                     }
-                } else {
-                    ['·', '∙', '°', '⋅'][i % 4]
-                };
-                grid[y][x] = Cell::new(ch, lighten(palette[4], 20));
+                }
+            } else {
+                let variant = tile_variant_from_index(rng.random_range(0..TILE_VARIANT_COUNT));
+                let c1 = darken(palette[1 + rng.random_range(0..3)], rng.random_range(0..50));
+                let c2 = darken(palette[1 + rng.random_range(0..3)], rng.random_range(20..70));
+                fill_tile_pure(&mut grid, r, variant, c1, c2);
+                // running stitch just inside the patch edge
+                let (x0, y0) = (r.x, r.y);
+                let (x1, y1) = (r.x + r.w - 1, r.y + r.h - 1);
+                for x in x0..=x1 {
+                    if x % 2 == 0 && y0 < height && x < width {
+                        grid[y0][x] = Cell::new('┈', thread);
+                    }
+                    if x % 2 == 0 && y1 < height && x < width {
+                        grid[y1][x] = Cell::new('┈', thread);
+                    }
+                }
+                for y in y0..=y1 {
+                    if y % 2 == 0 && y < height && x0 < width {
+                        grid[y][x0] = Cell::new('┊', thread);
+                    }
+                    if y % 2 == 0 && y < height && x1 < width {
+                        grid[y][x1] = Cell::new('┊', thread);
+                    }
+                }
             }
         }
 
-        // 5. Clearings at each stop: punch through the quilt, applique inside
+        // 4. Stops: centers of randomly chosen roomy leaves, walked
+        // left to right
+        let mut cands: Vec<(usize, usize)> = leaves.iter()
+            .filter(|r| r.w >= 10 && r.h >= 5)
+            .map(|r| (r.x + r.w / 2, r.y + r.h / 2))
+            .collect();
+        let mut stops: Vec<(usize, usize)> = Vec::new();
+        while stops.len() < stop_count && !cands.is_empty() {
+            let i = rng.random_range(0..cands.len() as u32) as usize;
+            stops.push(cands.remove(i));
+        }
+        stops.sort_by_key(|s| s.0);
+
+        // 5. Thread route: heavy box-drawing polyline, orthogonal runs
+        // with elbows alternating horizontal-first / vertical-first
+        let mut pts: Vec<(i32, i32)> = Vec::new();
+        for (i, &(sx, sy)) in stops.iter().enumerate() {
+            let p = (sx as i32, sy as i32);
+            if i > 0 {
+                let last = *pts.last().unwrap();
+                let elbow = if i % 2 == 1 { (p.0, last.1) } else { (last.0, p.1) };
+                if elbow != last && elbow != p { pts.push(elbow); }
+            }
+            pts.push(p);
+        }
+        let path_color = lighten(palette[4], 25);
+        let dir_of = |a: (i32, i32), b: (i32, i32)| -> (i32, i32) {
+            ((b.0 - a.0).signum(), (b.1 - a.1).signum())
+        };
+        for seg in pts.windows(2) {
+            let (a, b) = (seg[0], seg[1]);
+            let d = dir_of(a, b);
+            if d == (0, 0) { continue; }
+            let ch = if d.0 != 0 { '━' } else { '┃' };
+            let mut p = a;
+            loop {
+                p = (p.0 + d.0, p.1 + d.1);
+                if p == b { break; }
+                if p.0 >= 0 && p.1 >= 0 && (p.0 as usize) < width && (p.1 as usize) < height {
+                    grid[p.1 as usize][p.0 as usize] = Cell::new(ch, path_color);
+                }
+            }
+        }
+        for i in 1..pts.len().saturating_sub(1) {
+            let din = dir_of(pts[i - 1], pts[i]);
+            let dout = dir_of(pts[i], pts[i + 1]);
+            if din == (0, 0) || dout == (0, 0) { continue; }
+            let ch = match (din, dout) {
+                ((1, 0), (0, 1)) | ((0, -1), (-1, 0)) => '┓',
+                ((1, 0), (0, -1)) | ((0, 1), (-1, 0)) => '┛',
+                ((-1, 0), (0, 1)) | ((0, -1), (1, 0)) => '┏',
+                ((-1, 0), (0, -1)) | ((0, 1), (1, 0)) => '┗',
+                _ if din == dout => if din.0 != 0 { '━' } else { '┃' },
+                _ => '╋',
+            };
+            let (vx, vy) = pts[i];
+            if vx >= 0 && vy >= 0 && (vx as usize) < width && (vy as usize) < height {
+                grid[vy as usize][vx as usize] = Cell::new(ch, path_color);
+            }
+        }
+
+        // 6. Clearings at each stop: punch through, applique inside
         for (si, &(sx, sy)) in stops.iter().enumerate() {
-            let rx = rng.random_range(4..8u32) as i32;
+            let rx = rng.random_range(3..7u32) as i32;
             let ry = rng.random_range(2..4u32) as i32;
             for y in (sy as i32 - ry)..=(sy as i32 + ry) {
                 for x in (sx as i32 - rx)..=(sx as i32 + rx) {
@@ -3767,7 +3820,6 @@ fn main() {
                     }
                 }
             }
-            // applique: what the walker found at this stop
             match rng.random_range(0..4u32) {
                 0 => {
                     draw_flower(&mut grid, sx, sy, rng.random_range(0..5), palette[3]);
@@ -3781,11 +3833,9 @@ fn main() {
                               (rx as usize / 2).max(2), rng.random_range(0..12), palette[1], &mut rng);
                 }
                 _ => {
-                    // numbered marker stone
                     draw_flower(&mut grid, sx, sy, rng.random_range(0..5), palette[rng.random_range(1..4)]);
                 }
             }
-            // stop number stitched under the clearing
             let label = format!("{}", si + 1);
             let ly = sy + ry as usize + 1;
             if ly < height && sx < width {
