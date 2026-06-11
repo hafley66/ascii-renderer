@@ -254,3 +254,8 @@ fn circuit_seed_42() {
 fn quilt_seed_42() {
     insta::assert_snapshot!(render(&["42", "quilt", "ember"]));
 }
+
+#[test]
+fn patchwalk_seed_42() {
+    insta::assert_snapshot!(render(&["42", "patchwalk", "ember"]));
+}

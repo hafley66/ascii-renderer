@@ -54,7 +54,7 @@ fn run_demo(initial_seed: u64) {
         "layout", "terrain", "flow", "noise", "ca", "stem", "scene-walk", "scene-walk-2",
         "scene-walk-3", "world", "boles1", "boles2", "boles3", "trunks1", "trees1",
         "trees2", "trees3", "trees4", "trees8", "trees9", "boles4", "boles5", "bushes",
-        "kintsugi", "constellation", "strata", "circuit", "quilt",
+        "kintsugi", "constellation", "strata", "circuit", "quilt", "patchwalk",
     ];
     let all_themes: &[&str] = &[
         "", "ember", "terracotta", "sakura", "arctic", "deep", "moss",
@@ -196,6 +196,7 @@ fn main() {
         eprintln!("  strata    Geological cross-section with fossils [layers]");
         eprintln!("  circuit   PCB traces with pads, Manhattan routing [traces]");
         eprintln!("  quilt     Stitched patchwork of tile patterns [min_patch] [max_patch]");
+        eprintln!("  patchwalk Quilted mondrian crossed by a waypoint trail [stops] [line_w]");
         eprintln!("  swatch    Color swatches for all named themes");
         eprintln!();
         eprintln!("THEMES:");
@@ -3652,6 +3653,144 @@ fn main() {
             let cx = r.x + r.w / 2;
             let cy = r.y + r.h / 2;
             draw_flower(&mut grid, cx, cy, rng.random_range(0..5), lighten(palette[3], 20));
+        }
+    } else if mode == "patchwalk" {
+        // patchwalk [stops] [line_w] -- quilt x scene-walk x mondrian2:
+        // mondrian BSP geometry as the quilt layout, each leaf a stitched
+        // tile patch, scene-walk waypoints punched in as clearings joined
+        // by an embroidered trail.
+        let stop_count: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(4).clamp(2, 8);
+        let line_w: usize = args.get(5).and_then(|s| s.parse().ok()).unwrap_or(2).clamp(1, 3);
+
+        // 1. Mondrian skeleton: BSP leaves + thick binding lines
+        let fill_colors = [
+            lighten(palette[0], 40),
+            palette[1],
+            palette[2],
+            palette[3],
+            lighten(palette[0], 40),
+        ];
+        let line_color = darken(palette[0], 60);
+        let rects = layout_mondrian(
+            &mut grid, &[], 0, line_w, 12, 5,
+            line_color, line_color, &fill_colors, line_color, &mut rng,
+        );
+
+        // 2. Quilt the leaves: tile patch per leaf + echo-stitch ring
+        let thread = darken(palette[4], 40);
+        for rect in &rects {
+            if rect.w < 4 || rect.h < 3 { continue; }
+            let variant = tile_variant_from_index(rng.random_range(0..TILE_VARIANT_COUNT));
+            let c1 = darken(palette[1 + rng.random_range(0..3)], rng.random_range(0..50));
+            let c2 = darken(palette[1 + rng.random_range(0..3)], rng.random_range(20..70));
+            fill_tile_pure(&mut grid, rect, variant, c1, c2);
+
+            // running stitch just inside the patch edge
+            let (x0, y0) = (rect.x, rect.y);
+            let (x1, y1) = (rect.x + rect.w - 1, rect.y + rect.h - 1);
+            for x in x0..=x1 {
+                if (x + y0) % 2 == 0 && y0 < height && x < width {
+                    grid[y0][x] = Cell::new('┈', thread);
+                }
+                if (x + y1) % 2 == 0 && y1 < height && x < width {
+                    grid[y1][x] = Cell::new('┈', thread);
+                }
+            }
+            for y in y0..=y1 {
+                if (x0 + y) % 2 == 0 && y < height && x0 < width {
+                    grid[y][x0] = Cell::new('┊', thread);
+                }
+                if (x1 + y) % 2 == 0 && y < height && x1 < width {
+                    grid[y][x1] = Cell::new('┊', thread);
+                }
+            }
+        }
+
+        // 3. Scene-walk waypoints: random-walk stops across the quilt
+        let margin = 8usize;
+        let mut stops: Vec<(usize, usize)> = Vec::new();
+        let mut px = rng.random_range(width as u32 / 6..width as u32 * 5 / 6) as usize;
+        let mut py = rng.random_range(height as u32 / 6..height as u32 * 5 / 6) as usize;
+        stops.push((px, py));
+        for _ in 1..stop_count {
+            let min_step = (width.min(height) / 4).max(12);
+            let max_step = (width.min(height) / 2).max(min_step + 5);
+            let angle: f32 = rng.random::<f32>() * std::f32::consts::TAU;
+            let dist = rng.random_range(min_step as u32..max_step as u32) as f32;
+            px = (px as f32 + angle.cos() * dist * 1.8)
+                .clamp(margin as f32, (width - margin) as f32) as usize;
+            py = (py as f32 + angle.sin() * dist)
+                .clamp(margin as f32, (height - margin) as f32) as usize;
+            stops.push((px, py));
+        }
+
+        // 4. Embroidered trail: stitched over the fabric, not around it
+        for pair in stops.windows(2) {
+            let (x0, y0) = pair[0];
+            let (x1, y1) = pair[1];
+            let dx = x1 as f32 - x0 as f32;
+            let dy = y1 as f32 - y0 as f32;
+            let steps = (dx.abs().max(dy.abs())) as usize;
+            if steps == 0 { continue; }
+            for i in 0..=steps {
+                let t = i as f32 / steps as f32;
+                let x = (x0 as f32 + dx * t) as usize;
+                let y = (y0 as f32 + dy * t) as usize;
+                if x >= width || y >= height { continue; }
+                // footprints over the fabric: dots with occasional slope marks
+                if i % 3 == 2 { continue; }
+                let ch = if i % 5 == 0 {
+                    if dx.abs() < 1.0 { '│' } else {
+                        let ratio = dy / dx;
+                        if ratio.abs() < 0.3 { '─' }
+                        else if ratio > 0.0 { '╲' }
+                        else { '╱' }
+                    }
+                } else {
+                    ['·', '∙', '°', '⋅'][i % 4]
+                };
+                grid[y][x] = Cell::new(ch, lighten(palette[4], 20));
+            }
+        }
+
+        // 5. Clearings at each stop: punch through the quilt, applique inside
+        for (si, &(sx, sy)) in stops.iter().enumerate() {
+            let rx = rng.random_range(4..8u32) as i32;
+            let ry = rng.random_range(2..4u32) as i32;
+            for y in (sy as i32 - ry)..=(sy as i32 + ry) {
+                for x in (sx as i32 - rx)..=(sx as i32 + rx) {
+                    if x < 0 || y < 0 || x as usize >= width || y as usize >= height { continue; }
+                    let nx = (x - sx as i32) as f32 / rx as f32;
+                    let ny = (y - sy as i32) as f32 / ry as f32;
+                    if nx * nx + ny * ny <= 1.0 {
+                        grid[y as usize][x as usize] = Cell::blank();
+                    }
+                }
+            }
+            // applique: what the walker found at this stop
+            match rng.random_range(0..4u32) {
+                0 => {
+                    draw_flower(&mut grid, sx, sy, rng.random_range(0..5), palette[3]);
+                }
+                1 => {
+                    draw_fruit(&mut grid, sx, sy, rng.random_range(0..5), palette[2]);
+                }
+                2 => {
+                    let canopy = sy.saturating_sub(ry as usize);
+                    draw_tree(&mut grid, sx, sy + ry as usize - 1, canopy,
+                              (rx as usize / 2).max(2), rng.random_range(0..12), palette[1], &mut rng);
+                }
+                _ => {
+                    // numbered marker stone
+                    draw_flower(&mut grid, sx, sy, rng.random_range(0..5), palette[rng.random_range(1..4)]);
+                }
+            }
+            // stop number stitched under the clearing
+            let label = format!("{}", si + 1);
+            let ly = sy + ry as usize + 1;
+            if ly < height && sx < width {
+                grid[ly][sx] = Cell::new(label.chars().next().unwrap(), thread);
+            }
         }
     } else if mode == "world" {
         render_world(&mut grid, width, height, &palette, &mut rng);
