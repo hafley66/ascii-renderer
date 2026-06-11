@@ -638,7 +638,7 @@ impl BushSprite {
     }
 }
 
-/// Shared bole/bush pattern renderer. 24 style variants.
+/// Shared bole/bush pattern renderer. 28 style variants.
 /// `compact`: true clamps layer counts to keep height <= 3 rows (for tree boles).
 ///            false renders full size (for standalone bush sprites).
 fn draw_bole_pattern(
@@ -646,7 +646,7 @@ fn draw_bole_pattern(
     lw: i32, rw: i32, color: Color, bark: Color, dim: Color,
     energy: f32, style: usize, rng: &mut StdRng, compact: bool,
 ) -> BoleExit {
-        match style % 24 {
+        match style % 28 {
             // Style 0: Crescent -- connected via │ at inner edge positions
             0 => {
                 // Ground row: wide crescent
@@ -1935,6 +1935,143 @@ fn draw_bole_pattern(
                 set(grid, root_x + 2, root_y + 1, '│', dim);
                 set(grid, root_x + 2, root_y + 2, '╵', lighten(dim, 10));
                 BoleExit::point(root_x, root_y)
+            }
+            // ── Winding boles: serpentine runs, woven strands, coiled arcs ──
+
+            // Serpent: a root snakes across the ground in S-curves, switching
+            // rows with curve corners; the trunk rises wherever it crosses center
+            24 => {
+                let y_b = root_y;
+                let y_t = root_y - 1;
+                let start = root_x - lw.max(3) - 1;
+                let end = root_x + rw.max(3) + 1;
+                let mut on_top = rng.random_range(0..2u32) == 0;
+                let mut run = rng.random_range(2..5u32) as i32;
+                let mut row_at_root = false;  // true if snake is on top row at root_x
+                set(grid, start, if on_top { y_t } else { y_b }, '╶', dim);
+                let mut x = start + 1;
+                while x <= end {
+                    let dist = ((x - root_x).abs() as u8 * 2).min(20);
+                    let c = if (x - root_x).abs() <= 1 { color } else { darken(bark, dist) };
+                    if run == 0 && x < end - 1 {
+                        // switch rows: corner pair links the two runs
+                        if on_top {
+                            set(grid, x, y_t, '╮', c);
+                            set(grid, x, y_b, '╰', c);
+                        } else {
+                            set(grid, x, y_b, '╯', c);
+                            set(grid, x, y_t, '╭', c);
+                        }
+                        on_top = !on_top;
+                        run = rng.random_range(2..5u32) as i32;
+                    } else {
+                        set(grid, x, if on_top { y_t } else { y_b }, '─', c);
+                        run -= 1;
+                    }
+                    if x == root_x { row_at_root = on_top; }
+                    x += 1;
+                }
+                set(grid, end + 1, if on_top { y_t } else { y_b }, '╴', dim);
+                // root tips digging below ground at 1-2 spots
+                for _ in 0..rng.random_range(1..3u32) {
+                    let fx = root_x + rng.random_range(0..(lw + rw).max(2) as u32) as i32 - lw;
+                    set(grid, fx, root_y + 1, '╷', dim);
+                }
+                // trunk junction on whichever row the snake occupies at center
+                if row_at_root {
+                    set(grid, root_x, y_t, '┴', color);
+                    BoleExit::point(root_x, y_t - 1)
+                } else {
+                    set(grid, root_x, y_b, '┴', color);
+                    BoleExit::point(root_x, y_t)
+                }
+            }
+            // Braid: two strands weave over-under in a period-4 diamond chain
+            25 => {
+                let w = lw.max(rw).max(3);
+                let y_b = root_y;
+                let y_t = root_y - 1;
+                for k in -w..=w {
+                    let x = root_x + k;
+                    let dist = (k.abs() as u8 * 3).min(20);
+                    let (ct, cb) = match k.rem_euclid(4) {
+                        0 => ('─', '─'),
+                        1 => ('╲', '╱'),
+                        2 => ('╱', '╲'),
+                        _ => ('─', '─'),
+                    };
+                    // crossing columns stay bright, straight runs fade outward
+                    let crossing = k.rem_euclid(4) == 1 || k.rem_euclid(4) == 2;
+                    let c = if crossing { lighten(bark, 10) } else { darken(bark, dist) };
+                    set(grid, x, y_t, ct, c);
+                    set(grid, x, y_b, cb, darken(c, 8));
+                }
+                set(grid, root_x - w - 1, y_b, '╾', dim);
+                set(grid, root_x + w + 1, y_b, '╼', dim);
+                set(grid, root_x, y_t, '┼', color);
+                BoleExit { x: root_x, y: y_t, left: 1, right: 1 }
+            }
+            // Coil: nested arcs stacked into a flattened spiral; the tail
+            // sweeps out one side and the gap rotates ring to ring
+            26 => {
+                let w0 = lw.max(rw).max(4);
+                let w1 = (w0 * 2 / 3).max(2);
+                let tail_right = rng.random_range(0..2u32) == 0;
+                let ts = if tail_right { 1 } else { -1 };
+                // outer ring: upward cup on the ground row
+                set(grid, root_x - w0 - 1, root_y, '◟', dim);
+                for dx in -w0..=w0 {
+                    set(grid, root_x + dx, root_y, '◡', darken(bark, (dx.abs() as u8 * 2).min(16)));
+                }
+                set(grid, root_x + w0 + 1, root_y, '◞', dim);
+                // tail sweeps out from the outer ring
+                set(grid, root_x + ts * (w0 + 2), root_y, '─', dim);
+                set(grid, root_x + ts * (w0 + 3), root_y, if tail_right { '╴' } else { '╶' }, darken(dim, 10));
+                // inner ring: downward cap, shifted opposite the tail (spiral offset)
+                let ox = -ts;
+                set(grid, root_x + ox - w1 - 1, root_y - 1, '◜', bark);
+                for dx in -w1..=w1 {
+                    set(grid, root_x + ox + dx, root_y - 1, '◠', lighten(bark, (dx.abs() as u8 * 3).min(18)));
+                }
+                set(grid, root_x + ox + w1 + 1, root_y - 1, '◝', bark);
+                // coil eye where the spiral terminates
+                set(grid, root_x + ox * 2, root_y - 1, '◉', color);
+                set(grid, root_x, root_y - 1, '╂', color);
+                BoleExit { x: root_x, y: root_y - 1, left: 1, right: 1 }
+            }
+            // Taproot: low mound above ground, winding roots dig below it
+            27 => {
+                set(grid, root_x, root_y, '┴', color);
+                for dx in 1..=lw.max(2) {
+                    let ch = if dx == lw.max(2) { '╮' } else { '─' };
+                    set(grid, root_x - dx, root_y, ch, darken(bark, (dx as u8 * 3).min(18)));
+                }
+                for dx in 1..=rw.max(2) {
+                    let ch = if dx == rw.max(2) { '╭' } else { '─' };
+                    set(grid, root_x + dx, root_y, ch, darken(bark, (dx as u8 * 3).min(18)));
+                }
+                // winding roots: walkers descend 1-2 rows, drifting and reversing
+                let n_roots = rng.random_range(3..5u32);
+                for r in 0..n_roots {
+                    let span = (lw + rw).max(2);
+                    let mut x = root_x + rng.random_range(0..span as u32) as i32 - lw;
+                    if x == root_x { x += if r % 2 == 0 { 1 } else { -1 }; }
+                    let mut drift: i32 = if x < root_x { -1 } else { 1 };
+                    let depth = if compact { 1 } else { rng.random_range(1..3u32) as i32 };
+                    let mut y = root_y;
+                    for _ in 0..depth {
+                        y += 1;
+                        if rng.random::<f32>() < 0.6 {
+                            x += drift;
+                            set(grid, x, y, if drift > 0 { '╲' } else { '╱' }, dim);
+                        } else {
+                            set(grid, x, y, '│', dim);
+                        }
+                        if rng.random::<f32>() < 0.3 { drift = -drift; }
+                    }
+                    set(grid, x, y + 1, '╷', darken(dim, 10));
+                }
+                BoleExit { x: root_x, y: root_y, left: 1, right: 1 }
             }
             _ => BoleExit::point(root_x, root_y),
         }
@@ -4081,6 +4218,396 @@ impl TreeDrawer for WindsweptTree {
     }
 }
 
+// ── FractalTree ──────────────────────────────────────────────────────
+// Recursive binary fractal: every limb splits into two shorter children
+// tilted apart, five levels deep. Random tilt jitter and occasional
+// dropped children keep the self-similar silhouette from going symmetric.
+
+pub struct FractalTree;
+
+fn fractal_limb(
+    grid: &mut Grid, x: f32, y: f32, slope: f32, len: f32,
+    depth: usize, params: &TreeParams, tips: &mut Vec<(i32, i32)>, rng: &mut StdRng,
+) {
+    if len < 1.2 || depth > 5 {
+        tips.push((x as i32, y as i32));
+        return;
+    }
+    let c = params.color_at_depth(depth as f32 * 0.2);
+    let mut px = x;
+    let mut py = y;
+    for _ in 0..len as i32 {
+        let nx = px + slope * 1.6;
+        let ny = py - 1.0;
+        if nx < params.plot.x as f32 || nx >= (params.plot.x + params.plot.w) as f32
+            || ny < params.plot.y as f32 {
+            // limb hit the plot edge: end it here, no children
+            tips.push((px as i32, py as i32));
+            return;
+        }
+        px = nx;
+        py = ny;
+        let ch = if slope > 0.25 { '╱' } else if slope < -0.25 { '╲' } else { '│' };
+        set(grid, px as i32, py as i32, ch, c);
+    }
+    let tilt = 0.6 + rng.random::<f32>() * 0.4;
+    let child_len = len * (0.72 + rng.random::<f32>() * 0.12);
+    for side in [-1.0f32, 1.0] {
+        if rng.random::<f32>() > 0.12 {
+            let jitter = (rng.random::<f32>() - 0.5) * 0.2;
+            fractal_limb(grid, px, py, slope + side * tilt + jitter,
+                         child_len, depth + 1, params, tips, rng);
+        } else {
+            tips.push((px as i32, py as i32));
+        }
+    }
+}
+
+impl TreeDrawer for FractalTree {
+    fn draw_trunk(
+        &self, grid: &mut Grid, pen: &mut TreePen,
+        params: &TreeParams, rng: &mut StdRng,
+    ) -> Vec<TrunkNode> {
+        StraightTrunk { height_fraction: 0.25 }.draw(grid, pen, params, rng)
+    }
+
+    fn should_branch(
+        &self, idx: usize, count: usize,
+        _params: &TreeParams, _rng: &mut StdRng,
+    ) -> Option<BranchIntent> {
+        if idx == count - 1 {
+            Some(BranchIntent { go_left: false, length: 0, level: 0 })
+        } else {
+            None
+        }
+    }
+
+    fn draw_branch(
+        &self, grid: &mut Grid, pen: &mut TreePen,
+        _intent: &BranchIntent, _depth: usize,
+        params: &TreeParams, rng: &mut StdRng,
+    ) -> BranchResult {
+        let canopy_h = (pen.y - params.canopy_top()).max(4) as f32;
+        let mut tips = Vec::new();
+        let slope = (rng.random::<f32>() - 0.5) * 0.4;
+        fractal_limb(grid, pen.x as f32, pen.y as f32, slope,
+                     canopy_h * 0.35, 0, params, &mut tips, rng);
+        BranchResult { tips }
+    }
+
+    fn draw_tip(&self, grid: &mut Grid, x: i32, y: i32, params: &TreeParams) {
+        set(grid, x, y, '✶', lighten(params.tip_color, 15));
+    }
+
+    fn draw_fruit(&self, grid: &mut Grid, x: i32, y: i32, params: &TreeParams, _rng: &mut StdRng) {
+        set(grid, x, y - 1, '◦', params.fruit_color);
+    }
+}
+
+// ── LSystemTree ──────────────────────────────────────────────────────
+// String-rewrite tree: axiom X with rule X -> F[+X]F[-X]+X, expanded
+// 2-4 times by energy, then walked by an 8-direction turtle with a
+// state stack. Leaf tips appear where deep brackets close.
+
+pub struct LSystemTree;
+
+fn lsystem_expand(energy: f32) -> String {
+    let iters = if energy > 0.7 { 4 } else if energy > 0.45 { 3 } else { 2 };
+    let mut s = String::from("X");
+    for _ in 0..iters {
+        let mut next = String::new();
+        for ch in s.chars() {
+            match ch {
+                'X' => next.push_str("F[+X]F[-X]+X"),
+                other => next.push(other),
+            }
+        }
+        s = next;
+    }
+    s
+}
+
+impl TreeDrawer for LSystemTree {
+    fn draw_trunk(
+        &self, grid: &mut Grid, pen: &mut TreePen,
+        params: &TreeParams, rng: &mut StdRng,
+    ) -> Vec<TrunkNode> {
+        StraightTrunk { height_fraction: 0.2 }.draw(grid, pen, params, rng)
+    }
+
+    fn should_branch(
+        &self, idx: usize, count: usize,
+        _params: &TreeParams, _rng: &mut StdRng,
+    ) -> Option<BranchIntent> {
+        if idx == count - 1 {
+            Some(BranchIntent { go_left: false, length: 0, level: 0 })
+        } else {
+            None
+        }
+    }
+
+    fn draw_branch(
+        &self, grid: &mut Grid, pen: &mut TreePen,
+        _intent: &BranchIntent, _depth: usize,
+        params: &TreeParams, rng: &mut StdRng,
+    ) -> BranchResult {
+        // 8 directions, N=0 clockwise; + turns left 45, - turns right 45
+        const DXY: [(i32, i32); 8] = [(0, -1), (1, -1), (1, 0), (1, 1),
+                                      (0, 1), (-1, 1), (-1, 0), (-1, -1)];
+        const GLYPH: [char; 8] = ['│', '╱', '─', '╲', '│', '╱', '─', '╲'];
+        let s = lsystem_expand(params.energy);
+        let mut x = pen.x;
+        let mut y = pen.y;
+        // whole-plant tilt: start one step off vertical half the time
+        let mut dir: usize = match rng.random_range(0..4u32) {
+            0 => 7,
+            1 => 1,
+            _ => 0,
+        };
+        let mut stack: Vec<(i32, i32, usize)> = Vec::new();
+        let mut tips = Vec::new();
+        let mut moves = 0;
+        let floor = params.root().1;
+        let in_plot = |px: i32, py: i32| {
+            px >= params.plot.x as i32 && px < (params.plot.x + params.plot.w) as i32
+                && py >= params.plot.y as i32 && py < floor
+        };
+        for ch in s.chars() {
+            match ch {
+                'F' => {
+                    moves += 1;
+                    if moves > 220 { break; }
+                    let (dx, dy) = DXY[dir];
+                    x += dx;
+                    y += dy;
+                    if in_plot(x, y) {
+                        let depth_frac = (stack.len() as f32 / 4.0).min(1.0);
+                        set(grid, x, y, GLYPH[dir], params.color_at_depth(depth_frac));
+                    }
+                }
+                '+' => dir = (dir + 7) % 8,
+                '-' => dir = (dir + 1) % 8,
+                '[' => stack.push((x, y, dir)),
+                ']' => {
+                    if stack.len() >= 2 && in_plot(x, y) && rng.random::<f32>() < 0.4 {
+                        tips.push((x, y));
+                    }
+                    if let Some((sx, sy, sd)) = stack.pop() {
+                        x = sx;
+                        y = sy;
+                        dir = sd;
+                    }
+                }
+                _ => {}
+            }
+        }
+        tips.push((x, y));
+        BranchResult { tips }
+    }
+
+    fn draw_tip(&self, grid: &mut Grid, x: i32, y: i32, params: &TreeParams) {
+        set(grid, x, y, '✳', lighten(params.tip_color, 20));
+    }
+
+    fn draw_fruit(&self, grid: &mut Grid, x: i32, y: i32, params: &TreeParams, rng: &mut StdRng) {
+        let dx = if rng.random_range(0..2u32) == 0 { -1 } else { 1 };
+        set(grid, x + dx, y, '✿', params.fruit_color);
+    }
+}
+
+// ── DragonTree ───────────────────────────────────────────────────────
+// Two mirrored dragon-curve arms unfold from the apex, drawn with
+// box-drawing corners at every fold like a writhing paper crease.
+
+pub struct DragonTree;
+
+/// Fold parity for segment i of the dragon curve: true = turn left.
+fn dragon_turn_left(i: u32) -> bool {
+    let b = i & i.wrapping_neg();
+    (i & (b << 1)) == 0
+}
+
+fn dragon_arm(
+    grid: &mut Grid, x0: i32, y0: i32, start_dir: usize, mirror: bool,
+    segments: u32, params: &TreeParams, tips: &mut Vec<(i32, i32)>,
+) {
+    // 4 directions, N=0 clockwise. Corner char connects came-from + go-to.
+    const DXY: [(i32, i32); 4] = [(0, -1), (1, 0), (0, 1), (-1, 0)];
+    let corner = |din: usize, dout: usize| -> char {
+        if din == dout {
+            return if din % 2 == 0 { '│' } else { '─' };
+        }
+        // exits: opposite of incoming movement, plus outgoing
+        match (din, dout) {
+            (0, 1) | (3, 2) => '╭',
+            (0, 3) | (1, 2) => '╮',
+            (2, 1) | (3, 0) => '╰',
+            (2, 3) | (1, 0) => '╯',
+            _ => '┼',
+        }
+    };
+    let floor = params.root().1;
+    let mut x = x0;
+    let mut y = y0;
+    let mut dir = start_dir;
+    for i in 1..=segments {
+        let left = dragon_turn_left(i) != mirror;
+        let new_dir = if left { (dir + 3) % 4 } else { (dir + 1) % 4 };
+        let frac = i as f32 / segments as f32;
+        if x >= params.plot.x as i32 && x < (params.plot.x + params.plot.w) as i32
+            && y >= params.plot.y as i32 {
+            set(grid, x, y, corner(dir, new_dir), params.color_at_depth(frac));
+        }
+        let (dx, dy) = DXY[new_dir];
+        x += dx;
+        y += dy;
+        if y >= floor { break; }
+        dir = new_dir;
+        // fold-back points (two same turns in a row) sprout occasional tips
+        if i > 4 && i % 16 == 0 {
+            tips.push((x, y));
+        }
+    }
+    tips.push((x, y));
+}
+
+impl TreeDrawer for DragonTree {
+    fn draw_trunk(
+        &self, grid: &mut Grid, pen: &mut TreePen,
+        params: &TreeParams, rng: &mut StdRng,
+    ) -> Vec<TrunkNode> {
+        StraightTrunk { height_fraction: 0.4 }.draw(grid, pen, params, rng)
+    }
+
+    fn should_branch(
+        &self, idx: usize, count: usize,
+        _params: &TreeParams, _rng: &mut StdRng,
+    ) -> Option<BranchIntent> {
+        if idx == count - 1 {
+            Some(BranchIntent { go_left: false, length: 0, level: 0 })
+        } else {
+            None
+        }
+    }
+
+    fn draw_branch(
+        &self, grid: &mut Grid, pen: &mut TreePen,
+        _intent: &BranchIntent, _depth: usize,
+        params: &TreeParams, rng: &mut StdRng,
+    ) -> BranchResult {
+        let base = if params.energy > 0.6 { 40 } else { 20 };
+        let mut tips = Vec::new();
+        // arms unfold sideways from the apex, mirrored fold parity;
+        // unequal lengths keep the two sides from twinning
+        let seg_l = base + rng.random_range(0..16u32);
+        let seg_r = base + rng.random_range(0..16u32);
+        dragon_arm(grid, pen.x - 1, pen.y - 1, 3, false, seg_l, params, &mut tips);
+        dragon_arm(grid, pen.x + 1, pen.y - 1, 1, true, seg_r, params, &mut tips);
+        set(grid, pen.x, pen.y - 1, '┴', params.trunk_color);
+        // small jitter arm straight up on some trees
+        if rng.random_range(0..2u32) == 0 {
+            dragon_arm(grid, pen.x, pen.y - 2, 0, false, base / 2, params, &mut tips);
+        }
+        BranchResult { tips }
+    }
+
+    fn draw_tip(&self, grid: &mut Grid, x: i32, y: i32, params: &TreeParams) {
+        set(grid, x, y, '✦', lighten(params.tip_color, 20));
+    }
+
+    fn draw_fruit(&self, grid: &mut Grid, x: i32, y: i32, params: &TreeParams, _rng: &mut StdRng) {
+        set(grid, x, y + 1, '◉', params.fruit_color);
+    }
+}
+
+// ── HelixTree ────────────────────────────────────────────────────────
+// Twin trunk strands wind around each other, crossing in ╳ knots; sprig
+// pairs sprout from the knots and the strands part into curls at the crown.
+
+pub struct HelixTree;
+
+impl TreeDrawer for HelixTree {
+    fn draw_trunk(
+        &self, grid: &mut Grid, pen: &mut TreePen,
+        params: &TreeParams, rng: &mut StdRng,
+    ) -> Vec<TrunkNode> {
+        let height = ((params.plot.h as f32 * params.energy.clamp(0.3, 1.0)) as i32).max(6);
+        // strand offset cycles with period 6: cross, part, hold, cross, ...
+        const OFF: [i32; 6] = [0, 1, 1, 0, -1, -1];
+        let bright = params.trunk_color;
+        let dim = darken(params.bark_color, 12);
+        let phase = rng.random_range(0..6u32) as usize;
+        let mut nodes = Vec::new();
+        let mut prev = OFF[phase % 6];
+        for i in 0..height {
+            let y = pen.y - i;
+            let off = OFF[(i as usize + phase) % 6];
+            if off == 0 {
+                set(grid, pen.x, y, '╳', bright);
+                nodes.push(TrunkNode { x: pen.x, y, dir: MoveDir::Up });
+            } else {
+                let da = off - prev;
+                let ca = if da > 0 { '╱' } else if da < 0 { '╲' } else { '│' };
+                // mirrored strand: opposite offset and slope
+                let cb = if da > 0 { '╲' } else if da < 0 { '╱' } else { '│' };
+                set(grid, pen.x + off, y, ca, bright);
+                set(grid, pen.x - off, y, cb, dim);
+            }
+            prev = off;
+        }
+        // crown: strands part and curl outward
+        let top = pen.y - height;
+        set(grid, pen.x - 1, top, '╮', dim);
+        set(grid, pen.x + 1, top, '╭', bright);
+        set(grid, pen.x, top, '┴', bright);
+        nodes.push(TrunkNode { x: pen.x, y: top, dir: MoveDir::Up });
+        nodes
+    }
+
+    fn should_branch(
+        &self, idx: usize, count: usize,
+        params: &TreeParams, rng: &mut StdRng,
+    ) -> Option<BranchIntent> {
+        // sprigs from the knots only; skip the lowest, alternate sides
+        if idx == 0 { return None; }
+        if idx < count - 1 && rng.random::<f32>() > 0.4 + params.branch_factor * 0.4 {
+            return None;
+        }
+        let go_left = idx % 2 == 0;
+        let length = (params.spread() / 2 + rng.random_range(0..3u32) as i32).max(2);
+        Some(BranchIntent { go_left, length, level: 0 })
+    }
+
+    fn draw_branch(
+        &self, grid: &mut Grid, pen: &mut TreePen,
+        intent: &BranchIntent, _depth: usize,
+        params: &TreeParams, rng: &mut StdRng,
+    ) -> BranchResult {
+        let dx = if intent.go_left { -1 } else { 1 };
+        let c = params.branch_color;
+        let mut cx = pen.x;
+        let mut cy = pen.y;
+        for _ in 0..intent.length {
+            cx += dx;
+            if rng.random::<f32>() < 0.4 {
+                cy -= 1;
+                set(grid, cx, cy, if dx > 0 { '╱' } else { '╲' }, c);
+            } else {
+                set(grid, cx, cy, '─', c);
+            }
+        }
+        BranchResult { tips: vec![(cx + dx, cy)] }
+    }
+
+    fn draw_tip(&self, grid: &mut Grid, x: i32, y: i32, params: &TreeParams) {
+        set(grid, x, y, '❉', lighten(params.tip_color, 15));
+    }
+
+    fn draw_fruit(&self, grid: &mut Grid, x: i32, y: i32, params: &TreeParams, _rng: &mut StdRng) {
+        set(grid, x, y + 1, '○', params.fruit_color);
+    }
+}
+
 // ── Tests ────────────────────────────────────────────────────────────
 
 #[cfg(test)]
@@ -4233,5 +4760,54 @@ mod tests {
         let mut rng = StdRng::seed_from_u64(42);
         WindsweptTree { lean_right: true }.grow(&mut grid, &tp, &mut rng);
         insta::assert_snapshot!("windswept_tree_42", grid_to_string(&grid));
+    }
+
+    #[test]
+    fn snapshot_fractal_tree() {
+        let mut grid = make_grid(40, 20);
+        let tp = test_params(10, 1, 20, 18);
+        let mut rng = StdRng::seed_from_u64(42);
+        FractalTree.grow(&mut grid, &tp, &mut rng);
+        insta::assert_snapshot!("fractal_tree_42", grid_to_string(&grid));
+    }
+
+    #[test]
+    fn snapshot_lsystem_tree() {
+        let mut grid = make_grid(40, 20);
+        let tp = test_params(10, 1, 20, 18);
+        let mut rng = StdRng::seed_from_u64(42);
+        LSystemTree.grow(&mut grid, &tp, &mut rng);
+        insta::assert_snapshot!("lsystem_tree_42", grid_to_string(&grid));
+    }
+
+    #[test]
+    fn snapshot_dragon_tree() {
+        let mut grid = make_grid(40, 20);
+        let tp = test_params(10, 1, 20, 18);
+        let mut rng = StdRng::seed_from_u64(42);
+        DragonTree.grow(&mut grid, &tp, &mut rng);
+        insta::assert_snapshot!("dragon_tree_42", grid_to_string(&grid));
+    }
+
+    #[test]
+    fn snapshot_helix_tree() {
+        let mut grid = make_grid(40, 20);
+        let tp = test_params(10, 1, 20, 18);
+        let mut rng = StdRng::seed_from_u64(42);
+        HelixTree.grow(&mut grid, &tp, &mut rng);
+        insta::assert_snapshot!("helix_tree_42", grid_to_string(&grid));
+    }
+
+    #[test]
+    fn snapshot_winding_boles() {
+        // all four winding bole styles (24-27) on one grid
+        let mut grid = make_grid(80, 10);
+        let mut rng = StdRng::seed_from_u64(42);
+        for (i, style) in (24..28).enumerate() {
+            let tp = test_params(i * 20, 1, 18, 8);
+            let bole = Bole { style };
+            bole.draw(&mut grid, &tp, &mut rng);
+        }
+        insta::assert_snapshot!("winding_boles_42", grid_to_string(&grid));
     }
 }

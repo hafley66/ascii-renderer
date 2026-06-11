@@ -53,8 +53,8 @@ fn run_demo(initial_seed: u64) {
         "shapes", "tiles", "tiles-rand", "tiles-skew", "mondrian", "mondrian2", "bsp",
         "layout", "terrain", "flow", "noise", "ca", "stem", "scene-walk", "scene-walk-2",
         "scene-walk-3", "world", "boles1", "boles2", "boles3", "trunks1", "trees1",
-        "trees2", "trees3", "trees4", "trees8", "bushes", "kintsugi", "constellation",
-        "strata", "circuit", "quilt",
+        "trees2", "trees3", "trees4", "trees8", "trees9", "boles4", "bushes", "kintsugi",
+        "constellation", "strata", "circuit", "quilt",
     ];
     let all_themes: &[&str] = &[
         "", "ember", "terracotta", "sakura", "arctic", "deep", "moss",
@@ -180,6 +180,7 @@ fn main() {
         eprintln!("  boles1    Bole styles at 3 energy levels (low/mid/high)");
         eprintln!("  boles2    Experimental bole styles v2");
         eprintln!("  boles3    Refined bole styles with descriptive names");
+        eprintln!("  boles4    Winding bole styles: Serpent/Braid/Coil/Taproot");
         eprintln!("  trunks1   Horizontal trunk algorithms + direction-aware branching");
         eprintln!("  trees1    Full pipeline: tree+trunk+bole combos [energy] [fruit] [branch] [bole]");
         eprintln!("  trees2    Squat horizontal boles (1-2 rows) [energy] [fruit] [branch]");
@@ -187,6 +188,7 @@ fn main() {
         eprintln!("  trees4    All 17 TreeDrawer types with boles and fruit");
         eprintln!("  bushes    Full-size bole patterns as standalone bush sprites");
         eprintln!("  trees8    Oak/Fountain/Windswept drawers at two energies [energy] [fruit] [branch]");
+        eprintln!("  trees9    Fractal/L-System/Dragon/Helix drawers, winding boles [energy] [fruit] [branch]");
         eprintln!("  forest7   Layered showcase forest with boles, tapers, fruit");
         eprintln!("  kintsugi  Shattered tile shards repaired with gold seams [cracks]");
         eprintln!("  constellation  Night sky with named, line-connected star clusters [count]");
@@ -2199,6 +2201,69 @@ fn main() {
             }
         }
 
+    } else if mode == "boles4" {
+        // boles4: winding bole styles (24-27)
+        let styles = ["Serpent", "Braid", "Coil", "Taproot"];
+        let energies: [f32; 3] = [0.3, 0.6, 1.0];
+        let energy_labels = ["Low", "Mid", "High"];
+        let col_w = width / styles.len();
+        let row_h = (height - 2) / energies.len();
+
+        for (si, style_name) in styles.iter().enumerate() {
+            let cx = (si * col_w + col_w / 2) as i32;
+            let color = lighten(palette[si % palette.len()], 40);
+
+            let lx = (cx - style_name.len() as i32 / 2).max(0) as usize;
+            for (j, ch) in style_name.chars().enumerate() {
+                if lx + j < width {
+                    grid[height - 1][lx + j] = Cell::new(ch, lighten(color, 40));
+                }
+            }
+
+            for (ei, &energy) in energies.iter().enumerate() {
+                let ground_y = ((ei + 1) * row_h - 3) as i32;
+                if ground_y < 2 || ground_y as usize >= height - 2 { continue; }
+
+                let plot_w = (col_w as i32 - 2).max(6);
+                let tp = TreeParams {
+                    plot: Rect { x: (cx - plot_w / 2).max(0) as usize, y: 0, w: plot_w as usize, h: (ground_y + 1) as usize },
+                    energy,
+                    trunk_color: color,
+                    bark_color: darken(color, 15),
+                    branch_color: color,
+                    tip_color: color,
+                    fruit_color: color,
+                    fruit_factor: 0.0,
+                    branch_factor: 0.5,
+                    direction: GrowDir::Up,
+                    bole: None,
+                taper: TaperKind::default(),
+                };
+
+                let bole = Bole { style: si + 24 };
+                let exit = bole.draw(&mut grid, &tp, &mut rng);
+                let (tx, ty) = (exit.x, exit.y);
+
+                for y in (ground_y - (row_h as i32 / 2))..ty {
+                    if y >= 0 && (y as usize) < height && (tx as usize) < width {
+                        grid[y as usize][tx as usize] = Cell::new('│', color);
+                    }
+                }
+
+                if si == 0 {
+                    let elabel = energy_labels[ei];
+                    let ly = ground_y as usize;
+                    if ly < height {
+                        for (j, ch) in elabel.chars().enumerate() {
+                            if j < cx as usize - 1 {
+                                grid[ly][j] = Cell::new(ch, rgb(120, 120, 120));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
     } else if mode == "trunks1" {
         // trunks1: horizontal trunk algorithms + direction-aware branching
         let labels = ["Straight", "Wobble", "Organic", "Sine(2)", "Sine(4)", "Gnarled"];
@@ -2657,6 +2722,66 @@ fn main() {
                     branch_factor: branch,
                     direction: GrowDir::Up,
                     bole: Some(Bole { style: i * 2 + row }),
+                    taper: tapers[(i + row) % tapers.len()],
+                };
+                drawer.grow(&mut pg, &params, &mut rng);
+
+                let lx = px + cell_w / 2 - label.len() / 2;
+                let ly = py + cell_h - 1;
+                for (j, ch) in label.chars().enumerate() {
+                    if lx + j < width && ly < page_h {
+                        pg[ly][lx + j] = Cell::new(ch, darken(color, 20));
+                    }
+                }
+            }
+        }
+
+        render_grid(&pg);
+        return;
+
+    } else if mode == "trees9" {
+        // trees9: [energy] [fruit] [branch]
+        // Esoteric drawers (Fractal, L-System, Dragon, Helix) at two
+        // energies, planted on the winding boles (24-27).
+        let energy: f32 = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0.85);
+        let fruit: f32 = args.get(5).and_then(|s| s.parse().ok()).unwrap_or(0.25);
+        let branch: f32 = args.get(6).and_then(|s| s.parse().ok()).unwrap_or(0.7);
+
+        let drawers: Vec<(&str, Box<dyn TreeDrawer>)> = vec![
+            ("Fractal",  Box::new(FractalTree)),
+            ("L-System", Box::new(LSystemTree)),
+            ("Dragon",   Box::new(DragonTree)),
+            ("Helix",    Box::new(HelixTree)),
+        ];
+        let tapers = [TaperKind::Diagonal, TaperKind::Bracket, TaperKind::Shelf];
+
+        let cols = drawers.len();
+        let cell_w = width / cols;
+        let cell_h = 24usize;
+        let rows = 2usize;
+        let page_h = rows * cell_h + 2;
+        let mut pg = vec![vec![Cell::blank(); width]; page_h];
+
+        for row in 0..rows {
+            // top row full energy, bottom row scrub-sized
+            let row_energy = if row == 0 { energy } else { energy * 0.6 };
+            for (i, (label, drawer)) in drawers.iter().enumerate() {
+                let px = i * cell_w;
+                let py = row * cell_h;
+                let color = palette[(i + row * 3) % palette.len()];
+
+                let params = TreeParams {
+                    plot: Rect { x: px + 1, y: py + 1, w: cell_w - 2, h: cell_h - 5 },
+                    energy: row_energy,
+                    trunk_color: color,
+                    bark_color: darken(color, 15),
+                    branch_color: lighten(color, 20),
+                    tip_color: lighten(color, 40),
+                    fruit_color: palette[(i + 3) % palette.len()],
+                    fruit_factor: fruit,
+                    branch_factor: branch,
+                    direction: GrowDir::Up,
+                    bole: Some(Bole { style: 24 + (i + row) % 4 }),
                     taper: tapers[(i + row) % tapers.len()],
                 };
                 drawer.grow(&mut pg, &params, &mut rng);
