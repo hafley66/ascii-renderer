@@ -91,6 +91,7 @@ fn run_demo(initial_seed: u64) {
         "fullmetal-eyes",
         "fullmetal-alchemist",
         "fullmetal-alchemist2",
+        "fa3",
         "rainfall",
         "meadow",
         "world",
@@ -7972,6 +7973,327 @@ fn main() {
             put(&mut grid, nx + 2, ny, '│', lighten(chalk, 8));
             put(&mut grid, nx, ny, node_glyphs[i % node_glyphs.len()], ether);
         }
+    } else if mode == "fa3" || mode == "fullmetal-alchemist3" {
+        // fa3 [paths=0] [rings] [nodes=0] -- ornamented ray paths with inner circles and node stations
+        let path_arg: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0);
+        let path_count = if path_arg == 0 {
+            8 + ((seed as usize * 19 + 3) % 8)
+        } else {
+            path_arg.clamp(5, 22)
+        };
+        let inner_count: usize = args.get(5).and_then(|s| s.parse().ok()).unwrap_or(4);
+        let inner_count = inner_count.clamp(2, 7);
+        let node_arg: usize = args.get(6).and_then(|s| s.parse().ok()).unwrap_or(0);
+        let base_nodes = if node_arg == 0 {
+            4 + ((seed as usize * 31 + 7) % 7)
+        } else {
+            node_arg.clamp(3, 14)
+        };
+
+        let bg = darken(palette[0], 12);
+        let chalk = lighten(palette[4], 12);
+        let gold = lighten(palette[1], 32);
+        let ether = shift_hue(lighten(palette[3], 36), 35.0);
+        let rose = shift_hue(lighten(palette[2], 42), -38.0);
+        let hush = darken(palette[2], 66);
+
+        for y in 0..height {
+            for x in 0..width {
+                let n = (x * 29 + y * 37 + seed as usize * 11) % 173;
+                let ch = match n {
+                    0 => '·',
+                    1 => '∙',
+                    2 if (x + y) % 5 == 0 => '°',
+                    _ => ' ',
+                };
+                grid[y][x] = if ch == ' ' {
+                    Cell::new(' ', bg)
+                } else {
+                    Cell::new(ch, hush)
+                };
+            }
+        }
+
+        let put = |grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color| {
+            if x >= 0 && y >= 0 && (x as usize) < width && (y as usize) < height {
+                grid[y as usize][x as usize] = Cell::new(ch, fg);
+            }
+        };
+        let blank = |grid: &mut Grid, x: i32, y: i32| {
+            if x >= 0 && y >= 0 && (x as usize) < width && (y as usize) < height {
+                grid[y as usize][x as usize] = Cell::blank();
+            }
+        };
+        let stroke_char = |x0: i32, y0: i32, x1: i32, y1: i32| {
+            let dx = x1 - x0;
+            let dy = y1 - y0;
+            if dx.abs() > dy.abs() * 2 {
+                '─'
+            } else if dy.abs() > dx.abs() * 2 {
+                '│'
+            } else if dx.signum() == dy.signum() {
+                '╲'
+            } else {
+                '╱'
+            }
+        };
+        let draw_line = |grid: &mut Grid, mut x0: i32, mut y0: i32, x1: i32, y1: i32, fg: Color| {
+            let ch = stroke_char(x0, y0, x1, y1);
+            let dx = (x1 - x0).abs();
+            let sx = if x0 < x1 { 1 } else { -1 };
+            let dy = -(y1 - y0).abs();
+            let sy = if y0 < y1 { 1 } else { -1 };
+            let mut err = dx + dy;
+            loop {
+                put(grid, x0, y0, ch, fg);
+                if x0 == x1 && y0 == y1 {
+                    break;
+                }
+                let e2 = 2 * err;
+                if e2 >= dy {
+                    err += dy;
+                    x0 += sx;
+                }
+                if e2 <= dx {
+                    err += dx;
+                    y0 += sy;
+                }
+            }
+        };
+        let point_on = |cx: i32, cy: i32, rx: f32, ry: f32, angle: f32| {
+            (
+                cx + (angle.cos() * rx).round() as i32,
+                cy + (angle.sin() * ry).round() as i32,
+            )
+        };
+        let draw_arc = |grid: &mut Grid,
+                        cx: i32,
+                        cy: i32,
+                        rx: f32,
+                        ry: f32,
+                        start: f32,
+                        end: f32,
+                        fg: Color,
+                        gap: usize| {
+            let span = (end - start).abs().max(0.05);
+            let samples = ((rx + ry) * span * 3.6).max(18.0) as usize;
+            let mut prev: Option<(i32, i32)> = None;
+            for i in 0..=samples {
+                if gap > 0 && i % gap == gap - 1 {
+                    prev = None;
+                    continue;
+                }
+                let a = start + (end - start) * i as f32 / samples as f32;
+                let p = point_on(cx, cy, rx, ry, a);
+                if let Some(q) = prev {
+                    draw_line(grid, q.0, q.1, p.0, p.1, fg);
+                } else {
+                    put(grid, p.0, p.1, '·', fg);
+                }
+                prev = Some(p);
+            }
+        };
+        let draw_shape = |grid: &mut Grid, x: i32, y: i32, kind: usize, fg: Color| {
+            match kind % 7 {
+                0 => {
+                    put(grid, x, y, '◇', fg);
+                    put(grid, x - 1, y, '╴', darken(fg, 18));
+                    put(grid, x + 1, y, '╶', darken(fg, 18));
+                }
+                1 => {
+                    for dx in -1..=1 {
+                        put(grid, x + dx, y - 1, '─', fg);
+                        put(grid, x + dx, y + 1, '─', fg);
+                    }
+                    put(grid, x - 2, y, '│', fg);
+                    put(grid, x + 2, y, '│', fg);
+                    put(grid, x, y, '□', lighten(fg, 10));
+                }
+                2 => {
+                    put(grid, x, y - 1, '△', lighten(fg, 8));
+                    put(grid, x - 1, y, '╱', fg);
+                    put(grid, x + 1, y, '╲', fg);
+                    put(grid, x, y + 1, '─', darken(fg, 12));
+                }
+                3 => {
+                    put(grid, x, y - 1, '○', fg);
+                    put(grid, x - 1, y, '◌', darken(fg, 10));
+                    put(grid, x, y, '☉', lighten(fg, 10));
+                    put(grid, x + 1, y, '◌', darken(fg, 10));
+                    put(grid, x, y + 1, '○', fg);
+                }
+                4 => {
+                    put(grid, x, y, '⊕', lighten(fg, 12));
+                    put(grid, x - 1, y, '─', fg);
+                    put(grid, x + 1, y, '─', fg);
+                    put(grid, x, y - 1, '│', fg);
+                    put(grid, x, y + 1, '│', fg);
+                }
+                5 => {
+                    put(grid, x, y, '⌬', lighten(fg, 8));
+                    put(grid, x - 1, y - 1, '╲', fg);
+                    put(grid, x + 1, y - 1, '╱', fg);
+                    put(grid, x - 1, y + 1, '╱', fg);
+                    put(grid, x + 1, y + 1, '╲', fg);
+                }
+                _ => {
+                    put(grid, x, y, '✦', lighten(fg, 14));
+                    put(grid, x - 1, y, '·', fg);
+                    put(grid, x + 1, y, '·', fg);
+                    put(grid, x, y - 1, '·', fg);
+                    put(grid, x, y + 1, '·', fg);
+                }
+            }
+        };
+
+        let cx = width as i32 / 2;
+        let cy = height as i32 / 2;
+        let max_rx = (width as f32 / 2.0 - 3.0).max(10.0);
+        let max_ry = (height as f32 / 2.0 - 2.0).max(5.0);
+        let phase = -std::f32::consts::FRAC_PI_2 + rng.random_range(-0.10..0.10);
+
+        for y in 0..height {
+            for x in 0..width {
+                let dx = (x as i32 - cx) as f32 / (max_rx * 0.96);
+                let dy = (y as i32 - cy) as f32 / (max_ry * 0.96);
+                let metric = dx * dx + dy * dy;
+                if metric < 0.88 {
+                    blank(&mut grid, x as i32, y as i32);
+                } else if metric < 1.07 && (x + y + seed as usize) % 4 == 0 {
+                    grid[y][x] = Cell::new('·', darken(chalk, 55));
+                }
+            }
+        }
+
+        for band in 0..4 {
+            let rx = max_rx - band as f32 * 2.6;
+            let ry = max_ry - band as f32 * 1.05;
+            let fg = match band {
+                0 => ether,
+                1 => chalk,
+                2 => gold,
+                _ => darken(rose, 4),
+            };
+            let gap = 0.08 + band as f32 * 0.035;
+            let segments = path_count.max(6);
+            for seg in 0..segments {
+                let a0 = phase + seg as f32 * std::f32::consts::TAU / segments as f32 + gap;
+                let a1 = phase + (seg + 1) as f32 * std::f32::consts::TAU / segments as f32 - gap;
+                draw_arc(
+                    &mut grid,
+                    cx,
+                    cy,
+                    rx,
+                    ry,
+                    a0,
+                    a1,
+                    darken(fg, (band * 7) as u8),
+                    if band == 2 { 6 } else { 0 },
+                );
+            }
+        }
+
+        let mut ring_specs = Vec::new();
+        for r in 0..inner_count {
+            let t = (r + 1) as f32 / (inner_count + 1) as f32;
+            let scale = 0.18 + t * 0.60 + rng.random_range(-0.025..0.025);
+            let node_count = (base_nodes + r + (seed as usize % 3)).clamp(3, 16);
+            let ring_phase = phase + r as f32 * 0.41 + rng.random_range(-0.12..0.12);
+            let fg = match r % 4 {
+                0 => gold,
+                1 => ether,
+                2 => chalk,
+                _ => rose,
+            };
+            ring_specs.push((scale, node_count, ring_phase, fg));
+            draw_arc(
+                &mut grid,
+                cx,
+                cy,
+                max_rx * scale,
+                max_ry * scale,
+                ring_phase,
+                ring_phase + std::f32::consts::TAU,
+                darken(fg, 8),
+                if r % 2 == 0 { 8 } else { 0 },
+            );
+            for n in 0..node_count {
+                let a = ring_phase + n as f32 * std::f32::consts::TAU / node_count as f32;
+                let p = point_on(cx, cy, max_rx * scale, max_ry * scale, a);
+                draw_shape(&mut grid, p.0, p.1, (n + r * 3) % 7, fg);
+            }
+        }
+
+        for path in 0..path_count {
+            let base_a = phase
+                + path as f32 * std::f32::consts::TAU / path_count as f32
+                + rng.random_range(-0.13..0.13);
+            let mut prev = point_on(cx, cy, max_rx * 0.08, max_ry * 0.08, base_a);
+            let path_color = match path % 4 {
+                0 => ether,
+                1 => gold,
+                2 => chalk,
+                _ => rose,
+            };
+            for (ri, &(scale, _, ring_phase, _)) in ring_specs.iter().enumerate() {
+                let a = base_a + (ring_phase - phase) * 0.18 + (ri as f32 * 0.11).sin() * 0.16;
+                let p = point_on(cx, cy, max_rx * scale, max_ry * scale, a);
+                draw_line(&mut grid, prev.0, prev.1, p.0, p.1, darken(path_color, 10));
+                draw_shape(
+                    &mut grid,
+                    p.0,
+                    p.1,
+                    path + ri + (seed as usize % 5),
+                    shift_hue(lighten(path_color, 6), (ri * 22) as f64),
+                );
+
+                let bead_count = 1 + ((path + ri + seed as usize) % 3);
+                for bead in 1..=bead_count {
+                    let f = bead as f32 / (bead_count + 1) as f32;
+                    let bx = (prev.0 as f32 + (p.0 - prev.0) as f32 * f).round() as i32;
+                    let by = (prev.1 as f32 + (p.1 - prev.1) as f32 * f).round() as i32;
+                    let bead_ch = ['○', '□', '◇', '△', '☉', '⊕'][(path + ri + bead) % 6];
+                    put(&mut grid, bx, by, bead_ch, darken(path_color, 4));
+                }
+                prev = p;
+            }
+            let outer = point_on(cx, cy, max_rx * 0.96, max_ry * 0.96, base_a + rng.random_range(-0.05..0.05));
+            draw_line(&mut grid, prev.0, prev.1, outer.0, outer.1, darken(path_color, 8));
+            draw_shape(&mut grid, outer.0, outer.1, path + 3, lighten(path_color, 8));
+        }
+
+        let core_rx = (max_rx * 0.17).round() as i32;
+        let core_ry = (max_ry * 0.17).round() as i32;
+        for dy in -core_ry..=core_ry {
+            for dx in -core_rx..=core_rx {
+                let metric = (dx as f32 / core_rx.max(1) as f32).powi(2)
+                    + (dy as f32 / core_ry.max(1) as f32).powi(2);
+                if metric <= 1.0 {
+                    blank(&mut grid, cx + dx, cy + dy);
+                }
+            }
+        }
+        for r in 0..3 {
+            let scale = 0.06 + r as f32 * 0.045;
+            draw_arc(
+                &mut grid,
+                cx,
+                cy,
+                max_rx * scale,
+                max_ry * scale,
+                phase,
+                phase + std::f32::consts::TAU,
+                if r == 1 { gold } else { chalk },
+                if r == 2 { 5 } else { 0 },
+            );
+        }
+        let core_nodes = 6 + (seed as usize % 3);
+        for n in 0..core_nodes {
+            let a = phase + n as f32 * std::f32::consts::TAU / core_nodes as f32;
+            let p = point_on(cx, cy, max_rx * 0.13, max_ry * 0.13, a);
+            draw_shape(&mut grid, p.0, p.1, n + 4, if n % 2 == 0 { gold } else { ether });
+        }
+        put(&mut grid, cx, cy, '⊙', lighten(rose, 16));
     } else if mode == "world" {
         render_world(&mut grid, width, height, &palette, &mut rng);
     } else if mode == "noise" {

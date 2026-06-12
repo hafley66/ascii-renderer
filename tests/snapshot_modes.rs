@@ -312,6 +312,11 @@ fn fullmetal_alchemist2_seed_42() {
 }
 
 #[test]
+fn fa3_seed_42() {
+    insta::assert_snapshot!(render(&["42", "fa3", "neon"]));
+}
+
+#[test]
 fn rainfall_seed_42() {
     insta::assert_snapshot!(render(&["42", "rainfall", "silver"]));
 }
