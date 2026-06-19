@@ -11508,11 +11508,11 @@ fn main() {
     } else if mode == "forest++" {
         draw_forest_pp(&mut grid, width, height, seed, &palette, &mut rng);
     } else if mode == "phyllotaxis" {
-        draw_phyllotaxis(&mut grid, width, height, seed, &palette, &mut rng);
+        draw_phyllotaxis(&mut grid, width, height, seed, &palette, &mut rng, t_anim);
     } else if mode == "moire" {
-        draw_moire(&mut grid, width, height, seed, &palette, &mut rng);
+        draw_moire(&mut grid, width, height, seed, &palette, &mut rng, t_anim);
     } else if mode == "nebula" {
-        draw_nebula(&mut grid, width, height, seed, &palette, &mut rng);
+        draw_nebula(&mut grid, width, height, seed, &palette, &mut rng, t_anim);
     } else if mode == "delta" {
         draw_delta(&mut grid, width, height, seed, &palette, &mut rng, t_anim);
     } else if mode == "stained" {
@@ -12132,7 +12132,7 @@ fn draw_forest_pp(grid: &mut Grid, width: usize, height: usize, seed: u64, palet
 
 // --- phyllotaxis : golden-angle sunflower spiral; glyph scales with radius,
 //     color ramps outward through the palette. ---
-fn draw_phyllotaxis(grid: &mut Grid, width: usize, height: usize, seed: u64, palette: &[Color; 5], rng: &mut StdRng) {
+fn draw_phyllotaxis(grid: &mut Grid, width: usize, height: usize, seed: u64, palette: &[Color; 5], rng: &mut StdRng, t: f32) {
     let bg = darken(palette[0], 6);
     for y in 0..height {
         for x in 0..width {
@@ -12145,7 +12145,8 @@ fn draw_phyllotaxis(grid: &mut Grid, width: usize, height: usize, seed: u64, pal
     let n = 520 + (seed as usize % 280);
     let sx = width as f32 * 0.47 / (n as f32).sqrt();
     let sy = height as f32 * 0.47 / (n as f32).sqrt();
-    let rot = (seed as f32 % 360.0).to_radians() + rng.random_range(0.0f32..0.5);
+    // t rotates the whole spiral (the florets wheel around the center).
+    let rot = (seed as f32 % 360.0).to_radians() + rng.random_range(0.0f32..0.5) + t * 0.15;
     let glyphs = ['·', '∙', '•', '◦', '○', '◌', '✦', '◆', '❀', '✺'];
     for i in 0..n {
         let a = i as f32 * golden + rot;
@@ -12162,12 +12163,14 @@ fn draw_phyllotaxis(grid: &mut Grid, width: usize, height: usize, seed: u64, pal
 }
 
 // --- moire : two radial sine gratings interfering; shade ramp + color blend. ---
-fn draw_moire(grid: &mut Grid, width: usize, height: usize, _seed: u64, palette: &[Color; 5], rng: &mut StdRng) {
+fn draw_moire(grid: &mut Grid, width: usize, height: usize, _seed: u64, palette: &[Color; 5], rng: &mut StdRng, t: f32) {
     let ramp = [' ', '·', ':', '-', '=', '+', '*', '#', '%', '@'];
-    let ax = width as f32 * rng.random_range(0.2..0.4);
-    let ay = height as f32 * rng.random_range(0.3..0.6);
-    let bx = width as f32 * rng.random_range(0.6..0.8);
-    let by = height as f32 * rng.random_range(0.4..0.7);
+    // t drifts the two centers in a slow orbit so the interference fringes flow.
+    // Offsets use (cos-1, sin) so they're exactly zero at t=0 (snapshot identity).
+    let ax = width as f32 * rng.random_range(0.2..0.4) + ((t * 0.7).cos() - 1.0) * width as f32 * 0.05;
+    let ay = height as f32 * rng.random_range(0.3..0.6) + (t * 0.7).sin() * height as f32 * 0.05;
+    let bx = width as f32 * rng.random_range(0.6..0.8) - ((t * 0.6).cos() - 1.0) * width as f32 * 0.05;
+    let by = height as f32 * rng.random_range(0.4..0.7) - (t * 0.6).sin() * height as f32 * 0.05;
     let f1 = rng.random_range(0.5f32..0.95);
     let f2 = rng.random_range(0.5f32..0.95);
     for y in 0..height {
@@ -12226,11 +12229,12 @@ fn pp_fbm(fx: f32, fy: f32, seed: u64) -> f32 {
 
 // --- nebula : fbm cloud field with a shade ramp, palette gradient, scattered
 //     stars in the dark voids. ---
-fn draw_nebula(grid: &mut Grid, width: usize, height: usize, seed: u64, palette: &[Color; 5], rng: &mut StdRng) {
+fn draw_nebula(grid: &mut Grid, width: usize, height: usize, seed: u64, palette: &[Color; 5], rng: &mut StdRng, t: f32) {
     let ramp = [' ', ' ', '·', '∙', ':', '*', '▒', '▓'];
+    // t pans the cloud field; the starfield (rng-placed) stays put behind it.
     for y in 0..height {
         for x in 0..width {
-            let fx = x as f32 / 11.0;
+            let fx = x as f32 / 11.0 + t * 0.08;
             let fy = y as f32 / 5.5;
             let n = pp_fbm(fx, fy, seed);
             let t = ((n - 0.25) * 1.7).clamp(0.0, 1.0);
@@ -14352,6 +14356,18 @@ fn iterate_grid(mode: &str, seed: u64, theme: &str, w: usize, h: usize, t: f32) 
             draw_delta(&mut grid, w, h, seed, &palette, &mut rng, t);
             Some(grid)
         }
+        "phyllotaxis" => {
+            draw_phyllotaxis(&mut grid, w, h, seed, &palette, &mut rng, t);
+            Some(grid)
+        }
+        "moire" => {
+            draw_moire(&mut grid, w, h, seed, &palette, &mut rng, t);
+            Some(grid)
+        }
+        "nebula" => {
+            draw_nebula(&mut grid, w, h, seed, &palette, &mut rng, t);
+            Some(grid)
+        }
         "solar-system" => Some(draw_solar_system(grid, w, h, seed, palette, rng, t, &[])),
         "eyes3" => Some(draw_eyes3(grid, w, h, seed, palette, rng, t, &[])),
         "fullmetal-eyes" => Some(draw_fullmetal_eyes(grid, w, h, seed, palette, rng, t, &[])),
@@ -14952,7 +14968,7 @@ mod tests {
     #[test]
     fn warps_are_deterministic_and_animate() {
         let (mut g, mut rng, pal) = make_grid(80, 24, 4);
-        draw_nebula(&mut g, 80, 24, 4, &pal, &mut rng);
+        draw_nebula(&mut g, 80, 24, 4, &pal, &mut rng, 0.0);
         for warp in [warp_drift, warp_swirl, warp_ripple, warp_breathe, warp_wind] {
             let a = warp(&g, 1.0, 2.0);
             assert_eq!(grid_to_string(&a), grid_to_string(&warp(&g, 1.0, 2.0)), "deterministic");
@@ -14980,7 +14996,7 @@ mod tests {
     #[test]
     fn warp_wind_moves_and_zero_amp_identity() {
         let (mut g, mut rng, pal) = make_grid(80, 24, 1);
-        draw_phyllotaxis(&mut g, 80, 24, 1, &pal, &mut rng);
+        draw_phyllotaxis(&mut g, 80, 24, 1, &pal, &mut rng, 0.0);
         // amplitude 0 -> no displacement -> identity
         assert_eq!(grid_to_string(&warp_wind(&g, 5.0, 0.0)), grid_to_string(&g));
         // deterministic, and different times differ
@@ -14992,7 +15008,7 @@ mod tests {
     #[test]
     fn grid_serialize_roundtrip() {
         let (mut grid, mut rng, palette) = make_grid(20, 6, 42);
-        draw_phyllotaxis(&mut grid, 20, 6, 42, &palette, &mut rng);
+        draw_phyllotaxis(&mut grid, 20, 6, 42, &palette, &mut rng, 0.0);
         let restored = parse_grid(&serialize_grid(&grid));
         assert_eq!(restored.len(), grid.len());
         assert_eq!(restored[0].len(), grid[0].len());
@@ -15006,9 +15022,9 @@ mod tests {
 
     fn morph_pair() -> MorphState {
         let (mut a, mut ra, pa) = make_grid(80, 24, 1);
-        draw_phyllotaxis(&mut a, 80, 24, 1, &pa, &mut ra);
+        draw_phyllotaxis(&mut a, 80, 24, 1, &pa, &mut ra, 0.0);
         let (mut b, mut rb, pb) = make_grid(80, 24, 7);
-        draw_phyllotaxis(&mut b, 80, 24, 7, &pb, &mut rb);
+        draw_phyllotaxis(&mut b, 80, 24, 7, &pb, &mut rb, 0.0);
         MorphState::new(a, b)
     }
 
@@ -15101,21 +15117,21 @@ mod tests {
     #[test]
     fn phyllotaxis_42() {
         let (mut grid, mut rng, palette) = make_grid(80, 24, 42);
-        draw_phyllotaxis(&mut grid, 80, 24, 42, &palette, &mut rng);
+        draw_phyllotaxis(&mut grid, 80, 24, 42, &palette, &mut rng, 0.0);
         insta::assert_snapshot!("phyllotaxis_42", grid_to_string(&grid));
     }
 
     #[test]
     fn moire_42() {
         let (mut grid, mut rng, palette) = make_grid(80, 24, 42);
-        draw_moire(&mut grid, 80, 24, 42, &palette, &mut rng);
+        draw_moire(&mut grid, 80, 24, 42, &palette, &mut rng, 0.0);
         insta::assert_snapshot!("moire_42", grid_to_string(&grid));
     }
 
     #[test]
     fn nebula_42() {
         let (mut grid, mut rng, palette) = make_grid(80, 24, 42);
-        draw_nebula(&mut grid, 80, 24, 42, &palette, &mut rng);
+        draw_nebula(&mut grid, 80, 24, 42, &palette, &mut rng, 0.0);
         insta::assert_snapshot!("nebula_42", grid_to_string(&grid));
     }
 
