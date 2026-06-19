@@ -77,6 +77,7 @@ static DELTA_PARAMS: &[Param] = &[
     Param { key: "ZETA", label: "damping",    min: 0.02,  max: 1.0,  default: 0.18,   step: 0.02 },
     Param { key: "WIND", label: "wind",       min: 0.0,   max: 3.0,  default: 1.0,    step: 0.1 },
     Param { key: "TURB", label: "turbulence", min: 0.0,   max: 3.0,  default: 1.0,    step: 0.1 },
+    Param { key: "RBOW", label: "rainbow",    min: 0.0,   max: 1.0,  default: 0.0,    step: 0.25 },
 ];
 
 /// Look up a mode's declared config. Unlisted modes default to seed-morph, no knobs.
@@ -144,11 +145,19 @@ fn demo_pick_mode(all_modes: &[&str], current: usize) -> Option<usize> {
         let (tw, th) = terminal::size().unwrap_or((80, 45));
         let tw = tw as usize;
         let th = th as usize;
-        let list_h = th.saturating_sub(3).max(1);
-        let offset = if filtered.len() <= list_h || sel < list_h / 2 {
+        // `cancel_idx` is a virtual last entry pinned below a divider. sel ranges
+        // 0..=cancel_idx; landing on it and pressing enter cancels.
+        let cancel_idx = filtered.len();
+        if sel > cancel_idx {
+            sel = cancel_idx;
+        }
+        // reserve 2 header rows + 2 rows for the divider and the cancel entry.
+        let list_h = th.saturating_sub(5).max(1);
+        let anchor = sel.min(filtered.len().saturating_sub(1));
+        let offset = if filtered.len() <= list_h || anchor < list_h / 2 {
             0
         } else {
-            (sel - list_h / 2).min(filtered.len().saturating_sub(list_h))
+            (anchor - list_h / 2).min(filtered.len().saturating_sub(list_h))
         };
 
         let query_disp = if query.is_empty() {
@@ -177,6 +186,15 @@ fn demo_pick_mode(all_modes: &[&str], current: usize) -> Option<usize> {
                 buf.push_str(&format!("   {}\r\n", name));
             }
         }
+        // divider + pinned cancel entry.
+        buf.push_str(&format!("\x1b[90m{}\x1b[0m\r\n", "\u{2500}".repeat(tw.min(40))));
+        if sel == cancel_idx {
+            let label = "\u{2715} cancel";
+            let pad = tw.saturating_sub(label.chars().count() + 3);
+            buf.push_str(&format!("\x1b[7m \u{25b8} {}{} \x1b[0m", label, " ".repeat(pad)));
+        } else {
+            buf.push_str("   \x1b[90m\u{2715} cancel\x1b[0m");
+        }
 
         execute!(
             io::stdout(),
@@ -191,11 +209,16 @@ fn demo_pick_mode(all_modes: &[&str], current: usize) -> Option<usize> {
             match key.code {
                 KeyCode::Esc => return None,
                 KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => return None,
-                KeyCode::Enter => return filtered.get(sel).copied(),
+                KeyCode::Enter => {
+                    if sel == filtered.len() {
+                        return None; // cancel entry
+                    }
+                    return filtered.get(sel).copied();
+                }
                 KeyCode::Up => sel = sel.saturating_sub(1),
                 KeyCode::Down => {
-                    if sel + 1 < filtered.len() {
-                        sel += 1;
+                    if sel < filtered.len() {
+                        sel += 1; // can land on the cancel entry
                     }
                 }
                 KeyCode::Backspace => {
@@ -13801,6 +13824,7 @@ fn draw_delta(grid: &mut Grid, width: usize, height: usize, _seed: u64, palette:
     let zeta = param_f32("ZETA", 0.18); // damping ratio (underdamped -> lively)
     let wind_amt = param_f32("WIND", 1.0); // gust strength multiplier
     let turb_amt = param_f32("TURB", 1.0); // turbulence multiplier
+    let rbow = param_f32("RBOW", 0.0); // 0 = palette colors, 1 = full rainbow gradient
     let stiff = |len: f32| kk * len;
     let inertia = |len: f32| (dd * len * len * len).max(1e-4);
     let damp = |len: f32| 2.0 * zeta * (stiff(len) * inertia(len)).sqrt();
@@ -13887,7 +13911,14 @@ fn draw_delta(grid: &mut Grid, width: usize, height: usize, _seed: u64, palette:
         let ey = by + a.sin() * nd.len;
         tipx[i] = ex;
         tipy[i] = ey;
-        let col = lerp_color(palette[1], palette[3], nd.depth as f32 / 7.0);
+        let mut col = lerp_color(palette[1], palette[3], nd.depth as f32 / 7.0);
+        if rbow > 0.0 {
+            // hue sweeps with depth (trunk -> tips) plus horizontal position, so the
+            // canopy reads as a rainbow gradient. `rbow` blends it over the palette.
+            let hue = ((nd.depth as f32 / 7.0) * 280.0 + (ex / width as f32) * 80.0).rem_euclid(360.0);
+            let rainbow = hsl_to_rgb(hue as f64, 0.75, 0.55);
+            col = lerp_color(col, rainbow, rbow);
+        }
         pp_line(grid, bx.round() as i32, by.round() as i32, ex.round() as i32, ey.round() as i32, col);
         pp_put(grid, ex.round() as i32, ey.round() as i32, '◆', lighten(col, 10));
     }
@@ -14278,6 +14309,30 @@ impl MorphState {
     }
 }
 
+/// In-process iterate render for modes that support it -- no subprocess fork,
+/// no serialize/parse round trip. Returns None for modes not handled here so the
+/// caller can fall back to the subprocess path. Reads the same ASCII_P_* knob env
+/// as the dispatch, so live tuning still applies.
+fn iterate_grid(mode: &str, seed: u64, theme: &str, w: usize, h: usize, t: f32) -> Option<Grid> {
+    if w == 0 || h == 0 {
+        return None;
+    }
+    let palette = if theme.is_empty() {
+        make_palette(seed)
+    } else {
+        named_theme(theme).unwrap_or_else(|| make_palette(seed))
+    };
+    let mut grid = vec![vec![Cell::blank(); w]; h];
+    let mut rng = StdRng::seed_from_u64(seed);
+    match mode {
+        "delta" => {
+            draw_delta(&mut grid, w, h, seed, &palette, &mut rng, t);
+            Some(grid)
+        }
+        _ => None,
+    }
+}
+
 /// Render any (mode, seed) to a Grid by re-running this binary with the dump flag.
 fn render_frame(exe: &std::path::Path, seed: u64, mode: &str, theme: &str, w: usize, h: usize) -> Option<Grid> {
     render_frame_t(exe, seed, mode, theme, w, h, 0.0)
@@ -14614,7 +14669,25 @@ fn morph_session(mode_a: &str, seed_a: u64, mode_b: &str, seed_b: u64, strat0: &
     let mut clock = 0.0_f32;
     let speed = 0.022_f32;
 
+    // Live knob editing while animating: same declared config + pane as the demo
+    // browser. Auto-open when the mode declares knobs so they're visible on entry.
+    let spec = mode_spec(mode_a);
+    let mut pvals: Vec<f32> = spec.params.iter().map(|p| p.default).collect();
+    let mut psel: usize = 0;
+    let mut pane_open = !spec.params.is_empty();
+    let has_params = !spec.params.is_empty();
+
     loop {
+        // Push knob values to env so the iterate subprocess picks up live edits.
+        // SAFETY: morph_session runs on the single demo thread.
+        for (p, v) in spec.params.iter().zip(pvals.iter()) {
+            unsafe { std::env::set_var(format!("ASCII_P_{}", p.key), format!("{}", v)) };
+        }
+        // When the pane is open, render the animation narrower so the tree isn't
+        // hidden behind it (width-parametric strats only; warps/morph overlay).
+        let pane_w = if pane_open { 34.min(w / 2) } else { 0 };
+        let rw = w.saturating_sub(pane_w).max(1);
+
         if playing {
             clock += 0.12;
             phase += dir * speed;
@@ -14645,8 +14718,9 @@ fn morph_session(mode_a: &str, seed_a: u64, mode_b: &str, seed_b: u64, strat0: &
             "swirl" => warp_swirl(&st.a, clock, 1.0),
             "ripple" => warp_ripple(&st.a, clock, 2.2),
             "breathe" => warp_breathe(&st.a, clock, 1.0),
-            "vflow" => voronoi_flow_frame(w, h, seed_a, clock, &palette),
-            "iterate" => render_frame_t(&exe, seed_a, mode_a, theme, w, h, clock)
+            "vflow" => voronoi_flow_frame(rw, h, seed_a, clock, &palette),
+            "iterate" => iterate_grid(mode_a, seed_a, theme, rw, h, clock)
+                .or_else(|| render_frame_t(&exe, seed_a, mode_a, theme, rw, h, clock))
                 .unwrap_or_else(|| st.a.clone()),
             _ => st.frame(t, &strat),
         };
@@ -14654,16 +14728,23 @@ fn morph_session(mode_a: &str, seed_a: u64, mode_b: &str, seed_b: u64, strat0: &
         // Overwrite in place: every grid row is full-width so it repaints every
         // cell -- no Clear needed (Clear + full-width writes were causing the
         // bottom-right autoscroll that spammed scrollback).
-        let status = format!(
-            " morph {}:{} \u{2192} {}:{} | {} | t={:.2} | {} | space 1-4=morph 5-0=warp i=iterate \u{2190}\u{2192} w n q ",
-            mode_a,
-            seed_a,
-            if walk { mode_a } else { mode_b },
-            if walk { walk_seed } else { seed_b },
-            strat,
-            t,
-            if playing { "\u{25b6}" } else { "\u{2161}" },
-        );
+        let status = if pane_open && has_params {
+            format!(
+                " morph {} | {} | t={:.2} | {} | o=close opts  \u{2191}\u{2193}=select  \u{2190}\u{2192}=adjust  r=reset  i=iterate  q ",
+                mode_a, strat, t, if playing { "\u{25b6}" } else { "\u{2161}" },
+            )
+        } else {
+            format!(
+                " morph {}:{} \u{2192} {}:{} | {} | t={:.2} | {} | space 1-4=morph 5-0=warp i=iterate o=opts \u{2190}\u{2192} w n q ",
+                mode_a,
+                seed_a,
+                if walk { mode_a } else { mode_b },
+                if walk { walk_seed } else { seed_b },
+                strat,
+                t,
+                if playing { "\u{25b6}" } else { "\u{2161}" },
+            )
+        };
         // Leave the last cell of the last row untouched to avoid corner autoscroll.
         let status_w = w.saturating_sub(1);
         let status: String = status.chars().take(status_w).collect();
@@ -14674,6 +14755,10 @@ fn morph_session(mode_a: &str, seed_a: u64, mode_b: &str, seed_b: u64, strat0: &
         buf.push_str(&format!("\x1b[7m{}{}\x1b[0m", status, " ".repeat(pad)));
         print!("{}", buf);
         io::stdout().flush().unwrap();
+        if pane_open {
+            // overlay the knob pane on the right; covers columns rw..w each frame.
+            draw_options_pane(rw, th, mode_a, &spec, &pvals, psel, seed_a, theme);
+        }
 
         if event::poll(Duration::from_millis(33)).unwrap_or(false) {
             match event::read() {
@@ -14693,6 +14778,32 @@ fn morph_session(mode_a: &str, seed_a: u64, mode_b: &str, seed_b: u64, strat0: &
                     KeyCode::Char('0') => strat = "drift".to_string(),
                     KeyCode::Char('i') => strat = "iterate".to_string(),
                     KeyCode::Char('w') => walk = !walk,
+                    KeyCode::Char('o') => pane_open = !pane_open,
+                    KeyCode::Up if pane_open && has_params => {
+                        psel = (psel + spec.params.len() - 1) % spec.params.len();
+                    }
+                    KeyCode::Down if pane_open && has_params => {
+                        psel = (psel + 1) % spec.params.len();
+                    }
+                    KeyCode::Char('-') | KeyCode::Char('_') if pane_open && has_params => {
+                        let p = &spec.params[psel];
+                        pvals[psel] = (pvals[psel] - p.step).max(p.min);
+                    }
+                    KeyCode::Char('+') | KeyCode::Char('=') if pane_open && has_params => {
+                        let p = &spec.params[psel];
+                        pvals[psel] = (pvals[psel] + p.step).min(p.max);
+                    }
+                    KeyCode::Char('r') if pane_open && has_params => {
+                        pvals[psel] = spec.params[psel].default;
+                    }
+                    KeyCode::Left if pane_open && has_params => {
+                        let p = &spec.params[psel];
+                        pvals[psel] = (pvals[psel] - p.step).max(p.min);
+                    }
+                    KeyCode::Right if pane_open && has_params => {
+                        let p = &spec.params[psel];
+                        pvals[psel] = (pvals[psel] + p.step).min(p.max);
+                    }
                     KeyCode::Left => {
                         playing = false;
                         phase = (phase - 0.02).max(0.0);
