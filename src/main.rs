@@ -7024,363 +7024,7 @@ fn main() {
             }
         }
     } else if mode == "solar-system" {
-        // solar-system [bodies] -- 3D-ish orbital diagram with planets, cubes, and space hardware
-        let body_count: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(8);
-        let body_count = body_count.clamp(3, 12);
-
-        macro_rules! set_cell {
-            ($x:expr, $y:expr, $ch:expr, $fg:expr) => {{
-                let sx = $x;
-                let sy = $y;
-                if sx >= 0 && sy >= 0 && (sx as usize) < width && (sy as usize) < height {
-                    grid[sy as usize][sx as usize] = Cell::new($ch, $fg);
-                }
-            }};
-        }
-
-        let space = Rect {
-            x: 0,
-            y: 0,
-            w: width,
-            h: height,
-        };
-        fill_noise(
-            &mut grid,
-            &space,
-            NoiseVariant::Dot,
-            darken(palette[2], 94),
-            darken(palette[3], 88),
-            &mut rng,
-        );
-
-        for _ in 0..(width * height / 36).max(8) {
-            let x = rng.random_range(0..width);
-            let y = rng.random_range(0..height);
-            let ch = ['·', '∙', '°', '*', '✦'][rng.random_range(0..5usize)];
-            grid[y][x] = Cell::new(
-                ch,
-                darken(lighten(palette[4], 10), rng.random_range(15..75)),
-            );
-        }
-
-        let center_phase = seed as f32 * 0.073 + t_anim * 0.25;
-        let center_x_ratio = (0.47 + center_phase.sin() * 0.12).clamp(0.34, 0.62);
-        let center_y_ratio = (0.51 + (center_phase * 1.41).cos() * 0.14).clamp(0.34, 0.66);
-        let cx = width as f32 * center_x_ratio;
-        let cy = height as f32 * center_y_ratio;
-        let max_rx = ((cx - 3.0).min(width as f32 - cx - 3.0))
-            .max(12.0)
-            .min(width as f32 * 0.46);
-        let min_rx = (width as f32 * 0.10).max(5.0);
-        let max_ry = ((cy - 2.0).min(height as f32 - cy - 2.0))
-            .max(4.0)
-            .min(height as f32 * 0.38);
-        let min_ry = (height as f32 * 0.08).max(2.0).min(max_ry * 0.55);
-        let orbit_count = body_count.min(10);
-        let sun_rx = (width as f32 / 16.0).clamp(4.0, 8.0);
-        let sun_ry = (height as f32 / 8.0).clamp(2.0, 4.0);
-
-        // Perspective orbital plane: rear arcs now complete behind the solar sphere.
-        for i in 0..orbit_count {
-            let t = i as f32 / orbit_count.max(1) as f32;
-            let rx = min_rx + (max_rx - min_rx) * t;
-            let ry = min_ry + (max_ry - min_ry) * t;
-            let tilt = (i as f32 - orbit_count as f32 * 0.5) * 0.22;
-            for s in 0..360 {
-                if s % 3 == 1 && i > 6 {
-                    continue;
-                }
-                let a = s as f32 / 360.0 * std::f32::consts::TAU;
-                let x = cx + a.cos() * rx + a.sin() * tilt;
-                let y = cy + a.sin() * ry;
-                if x < 0.0 || y < 0.0 || x >= width as f32 || y >= height as f32 {
-                    continue;
-                }
-                let near = a.sin() > 0.0;
-                let ch = if near {
-                    if s % 7 == 0 { '═' } else { '─' }
-                } else if s % 11 == 0 {
-                    '∙'
-                } else if s % 4 == 0 {
-                    '·'
-                } else {
-                    ' '
-                };
-                if ch != ' ' {
-                    let color = if near {
-                        darken(palette[4], 45)
-                    } else {
-                        darken(palette[2], 72)
-                    };
-                    set_cell!(x.round() as i32, y.round() as i32, ch, color);
-                }
-            }
-        }
-
-        // Solar sphere with shaded cells.
-        for yy in (cy - sun_ry - 1.0).floor() as i32..=(cy + sun_ry + 1.0).ceil() as i32 {
-            for xx in (cx - sun_rx - 1.0).floor() as i32..=(cx + sun_rx + 1.0).ceil() as i32 {
-                let dx = (xx as f32 - cx) / sun_rx;
-                let dy = (yy as f32 - cy) / sun_ry;
-                let d = (dx * dx + dy * dy).sqrt();
-                if d > 1.0 {
-                    continue;
-                }
-                let ch = if d < 0.28 {
-                    '◉'
-                } else if dx < -0.2 || dy > 0.35 {
-                    '▒'
-                } else if d > 0.78 {
-                    '░'
-                } else {
-                    '●'
-                };
-                let color = if d < 0.35 {
-                    lighten(palette[3], 35)
-                } else if dx < -0.2 || dy > 0.35 {
-                    darken(palette[3], 25)
-                } else {
-                    lighten(palette[3], 10)
-                };
-                set_cell!(xx, yy, ch, color);
-            }
-        }
-
-        // Planets, moons, and little labels/ticks.
-        let planet_glyphs = ['●', '◐', '◑', '◉', '◆', '○'];
-        for i in 0..body_count {
-            let t = i as f32 / body_count.max(1) as f32;
-            let rx = min_rx + (max_rx - min_rx) * (0.12 + t * 0.88);
-            let ry = min_ry + (max_ry - min_ry) * (0.12 + t * 0.88);
-            let angle = seed as f32 * 0.017 + i as f32 * 1.37 + rng.random::<f32>() * 0.35;
-            let px = cx + angle.cos() * rx + angle.sin() * (i as f32 - 3.0) * 0.18;
-            let py = cy + angle.sin() * ry;
-            let radius = match i % 5 {
-                0 => 1,
-                1 => 2,
-                2 => 1,
-                3 => 3,
-                _ => 2,
-            };
-            let color = shift_hue(lighten(palette[1 + i % 3], 12), (i * 37) as f64);
-
-            if radius == 1 {
-                set_cell!(
-                    px.round() as i32,
-                    py.round() as i32,
-                    planet_glyphs[i % planet_glyphs.len()],
-                    color
-                );
-            } else {
-                for dy in -(radius as i32)..=(radius as i32) {
-                    for dx in -(radius as i32 * 2)..=(radius as i32 * 2) {
-                        let nx = dx as f32 / (radius as f32 * 2.0);
-                        let ny = dy as f32 / radius as f32;
-                        if nx * nx + ny * ny > 1.0 {
-                            continue;
-                        }
-                        let shade = nx * -0.7 + ny * 0.45;
-                        let ch = if shade > 0.35 {
-                            '░'
-                        } else if shade < -0.35 {
-                            '▓'
-                        } else if dx == 0 && dy == 0 {
-                            '◉'
-                        } else {
-                            '●'
-                        };
-                        let fg = if shade > 0.35 {
-                            darken(color, 35)
-                        } else if shade < -0.35 {
-                            lighten(color, 25)
-                        } else {
-                            color
-                        };
-                        set_cell!(px.round() as i32 + dx, py.round() as i32 + dy, ch, fg);
-                    }
-                }
-            }
-
-            if i % 3 == 1 {
-                let moon_angle = angle * 1.9 + 0.8;
-                let mx = px + moon_angle.cos() * (radius as f32 * 3.2 + 3.0);
-                let my = py + moon_angle.sin() * (radius as f32 * 1.3 + 1.4);
-                set_cell!(
-                    mx.round() as i32,
-                    my.round() as i32,
-                    '○',
-                    lighten(palette[4], 5)
-                );
-                set_cell!(
-                    ((px + mx) * 0.5).round() as i32,
-                    ((py + my) * 0.5).round() as i32,
-                    '·',
-                    darken(palette[4], 45)
-                );
-            }
-
-            if i % 4 == 2 {
-                let lx = px.round() as i32 + radius as i32 * 2 + 2;
-                let ly = py.round() as i32;
-                for (j, ch) in format!("p{}", i + 1).chars().enumerate() {
-                    set_cell!(lx + j as i32, ly, ch, darken(palette[4], 38));
-                }
-            }
-        }
-
-        // Isometric orbital stations: seed-driven boxes riding different orbital lanes.
-        let station_count = 2 + (seed as usize % 2);
-        for s in 0..station_count {
-            let lane = (0.56 + s as f32 * 0.17).min(0.92);
-            let station_angle = center_phase * (0.52 + s as f32 * 0.21)
-                + s as f32 * std::f32::consts::TAU / station_count as f32
-                + 0.85;
-            let sx = cx + station_angle.cos() * max_rx * lane;
-            let sy = cy + station_angle.sin() * max_ry * (0.66 + s as f32 * 0.08);
-            let cube_w = (width as i32 / (10 + s as i32)).clamp(6, 13);
-            let cube_h = (height as i32 / (5 + s as i32)).clamp(4, 8);
-            let max_cube_x = (width as i32 - cube_w - 7).max(1);
-            let max_cube_y = (height as i32 - cube_h - 4).max(2);
-            let cube_x = (sx.round() as i32 - cube_w / 2).clamp(1, max_cube_x);
-            let cube_y = (sy.round() as i32 - cube_h / 2).clamp(2, max_cube_y);
-            let off_x: i32 = if sx >= cx { 4 } else { -4 };
-            let off_y: i32 = if s % 2 == 0 { -2 } else { 2 };
-            let back_x = cube_x + off_x;
-            let back_y = cube_y + off_y;
-            let cube_color = shift_hue(lighten(palette[2], 25), s as f64 * 46.0);
-            let back_color = darken(cube_color, 18);
-
-            for x in 0..=cube_w {
-                set_cell!(cube_x + x, cube_y, '─', cube_color);
-                set_cell!(cube_x + x, cube_y + cube_h, '─', cube_color);
-                set_cell!(back_x + x, back_y, '─', back_color);
-                set_cell!(back_x + x, back_y + cube_h, '─', back_color);
-            }
-            for y in 0..=cube_h {
-                set_cell!(cube_x, cube_y + y, '│', cube_color);
-                set_cell!(cube_x + cube_w, cube_y + y, '│', cube_color);
-                set_cell!(back_x, back_y + y, '│', back_color);
-                set_cell!(back_x + cube_w, back_y + y, '│', back_color);
-            }
-            for &(x, y, ch) in &[
-                (cube_x, cube_y, '┌'),
-                (cube_x + cube_w, cube_y, '┐'),
-                (cube_x, cube_y + cube_h, '└'),
-                (cube_x + cube_w, cube_y + cube_h, '┘'),
-                (back_x, back_y, '┌'),
-                (back_x + cube_w, back_y, '┐'),
-                (back_x, back_y + cube_h, '└'),
-                (back_x + cube_w, back_y + cube_h, '┘'),
-            ] {
-                set_cell!(x, y, ch, lighten(cube_color, 10));
-            }
-
-            let connector = if off_x > 0 { '╱' } else { '╲' };
-            for k in 1..=off_x.abs() {
-                let dx = if off_x > 0 { k } else { -k };
-                let dy = off_y * k / off_x.abs();
-                set_cell!(cube_x + dx, cube_y + dy, connector, darken(cube_color, 5));
-                set_cell!(
-                    cube_x + cube_w + dx,
-                    cube_y + dy,
-                    connector,
-                    darken(cube_color, 5)
-                );
-                set_cell!(
-                    cube_x + dx,
-                    cube_y + cube_h + dy,
-                    connector,
-                    darken(cube_color, 5)
-                );
-                set_cell!(
-                    cube_x + cube_w + dx,
-                    cube_y + cube_h + dy,
-                    connector,
-                    darken(cube_color, 5)
-                );
-            }
-            for y in 1..cube_h {
-                for x in 1..cube_w {
-                    if (x * 2 + y + s as i32) % 4 == 0 {
-                        set_cell!(cube_x + x, cube_y + y, '▪', darken(cube_color, 30));
-                    }
-                }
-            }
-
-            let dock_dir: i32 = if sx < cx { 1 } else { -1 };
-            let dock_y = cube_y + cube_h / 2;
-            for k in 1..=5 {
-                set_cell!(
-                    cube_x + if dock_dir > 0 { cube_w + k } else { -k },
-                    dock_y,
-                    '─',
-                    darken(cube_color, 20)
-                );
-            }
-            set_cell!(
-                cube_x + if dock_dir > 0 { cube_w + 6 } else { -6 },
-                dock_y,
-                '◇',
-                lighten(palette[3], 20)
-            );
-        }
-
-        // Solar panel squares and a probe mast, also attached to a seed-shifting lane.
-        let panel_angle = (center_phase * 0.88 - 0.20).rem_euclid(std::f32::consts::TAU);
-        let panel_anchor_x = cx + panel_angle.cos() * max_rx * 0.78;
-        let panel_anchor_y = cy + panel_angle.sin() * max_ry * 0.86;
-        let panel_x_max = (width as i32 - 32).max(2);
-        let panel_y_max = (height as i32 - 7).max(2);
-        let panel_x = (panel_anchor_x.round() as i32 - 13).clamp(2, panel_x_max);
-        let panel_y = (panel_anchor_y.round() as i32 - 2).clamp(2, panel_y_max);
-        for p in 0..3 {
-            let x0 = panel_x + p * 9;
-            let y0 = panel_y + if p % 2 == 0 { 0 } else { -1 };
-            for x in 0..7 {
-                set_cell!(x0 + x, y0, '─', lighten(palette[1], 20));
-                set_cell!(x0 + x, y0 + 4, '─', lighten(palette[1], 20));
-            }
-            for y in 0..=4 {
-                set_cell!(x0, y0 + y, '│', lighten(palette[1], 20));
-                set_cell!(x0 + 7, y0 + y, '│', lighten(palette[1], 20));
-            }
-            set_cell!(x0, y0, '┌', lighten(palette[1], 35));
-            set_cell!(x0 + 7, y0, '┐', lighten(palette[1], 35));
-            set_cell!(x0, y0 + 4, '└', lighten(palette[1], 35));
-            set_cell!(x0 + 7, y0 + 4, '┘', lighten(palette[1], 35));
-            for x in 1..7 {
-                for y in 1..4 {
-                    if (x + y + p) % 2 == 0 {
-                        set_cell!(x0 + x, y0 + y, '□', darken(palette[1], 15));
-                    }
-                }
-            }
-        }
-        let mast_x = panel_x + 27;
-        for y in panel_y - 5..=panel_y + 2 {
-            set_cell!(mast_x, y, '│', palette[4]);
-        }
-        set_cell!(mast_x, panel_y - 6, '◇', lighten(palette[3], 25));
-        set_cell!(mast_x - 1, panel_y - 3, '╱', palette[4]);
-        set_cell!(mast_x + 1, panel_y - 3, '╲', palette[4]);
-
-        // Perspective rays from the star through the orbital plane.
-        for ray in -3..=3 {
-            let angle = ray as f32 * 0.18 + 0.9;
-            for step in 6..(width / 3).max(8) {
-                let x = cx as i32 + (angle.cos() * step as f32 * 1.8).round() as i32;
-                let y = cy as i32 + (angle.sin() * step as f32 * 0.55).round() as i32;
-                if x >= 0
-                    && y >= 0
-                    && (x as usize) < width
-                    && (y as usize) < height
-                    && grid[y as usize][x as usize].ch == ' '
-                    && step % 4 == 0
-                {
-                    set_cell!(x, y, '·', darken(palette[3], 55));
-                }
-            }
-        }
+        grid = draw_solar_system(grid, width, height, seed, palette, rng, t_anim, &args);
     } else if mode == "world2" {
         // world2 [shards] -- cracked/leaking biome partitions with aurora and scene islands
         let shard_count: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(6);
@@ -8252,1135 +7896,11 @@ fn main() {
             );
         }
     } else if mode == "eyes3" {
-        // eyes3 [rays=0] [satellites=0] -- radiant all-seeing eye in a stepped pyramid
-        let ray_arg: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0);
-        let ray_count = if ray_arg == 0 {
-            18 + (seed as usize % 14)
-        } else {
-            ray_arg.clamp(8, 48)
-        };
-        let sat_arg: usize = args.get(5).and_then(|s| s.parse().ok()).unwrap_or(0);
-        let sat_count = if sat_arg == 0 {
-            2 + (seed as usize % 3)
-        } else {
-            sat_arg.clamp(0, 6)
-        };
-
-        let bg = darken(palette[0], 14);
-        let chalk = lighten(palette[4], 14);
-        let gold = lighten(palette[1], 32);
-        let iris_outer = shift_hue(lighten(palette[3], 26), 18.0);
-        let iris_inner = lighten(palette[2], 20);
-        let lid_color = lighten(palette[1], 18);
-        let pupil = darken(palette[0], 2);
-        let sclera = lighten(palette[4], 6);
-        let ray_color = lighten(palette[4], 18);
-        let hush = darken(palette[2], 60);
-        let base_c = darken(gold, 8);
-
-        for y in 0..height {
-            for x in 0..width {
-                let n = (x * 17 + y * 29 + seed as usize * 3) % 97;
-                let ch = match n {
-                    0 => '·',
-                    1 if (x + y) % 3 == 0 => '∙',
-                    _ => ' ',
-                };
-                grid[y][x] = if ch == ' ' {
-                    Cell::new(' ', bg)
-                } else {
-                    Cell::new(ch, hush)
-                };
-            }
-        }
-
-        let put = |grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color| {
-            if x >= 0 && y >= 0 && (x as usize) < width && (y as usize) < height {
-                grid[y as usize][x as usize] = Cell::new(ch, fg);
-            }
-        };
-        let point_on = |cx: i32, cy: i32, rx: f32, ry: f32, angle: f32| {
-            (
-                cx + (angle.cos() * rx).round() as i32,
-                cy + (angle.sin() * ry).round() as i32,
-            )
-        };
-        let stroke_char = |x0: i32, y0: i32, x1: i32, y1: i32| {
-            let dx = x1 - x0;
-            let dy = y1 - y0;
-            if dx.abs() > dy.abs() * 2 {
-                '─'
-            } else if dy.abs() > dx.abs() * 2 {
-                '│'
-            } else if dx.signum() == dy.signum() {
-                '╲'
-            } else {
-                '╱'
-            }
-        };
-        let draw_line = |grid: &mut Grid,
-                         mut x0: i32,
-                         mut y0: i32,
-                         x1: i32,
-                         y1: i32,
-                         fg: Color| {
-            let ch = stroke_char(x0, y0, x1, y1);
-            let dx = (x1 - x0).abs();
-            let sx = if x0 < x1 { 1 } else { -1 };
-            let dy = -(y1 - y0).abs();
-            let sy = if y0 < y1 { 1 } else { -1 };
-            let mut err = dx + dy;
-            loop {
-                put(grid, x0, y0, ch, fg);
-                if x0 == x1 && y0 == y1 {
-                    break;
-                }
-                let e2 = 2 * err;
-                if e2 >= dy {
-                    err += dy;
-                    x0 += sx;
-                }
-                if e2 <= dx {
-                    err += dx;
-                    y0 += sy;
-                }
-            }
-        };
-        let curve_char = |prev: (i32, i32), here: (i32, i32), next: (i32, i32)| {
-            let dx1 = (here.0 - prev.0).signum();
-            let dy1 = (here.1 - prev.1).signum();
-            let dx2 = (next.0 - here.0).signum();
-            let dy2 = (next.1 - here.1).signum();
-            if (dx1, dy1) == (dx2, dy2) {
-                if dy1 == 0 {
-                    '─'
-                } else if dx1 == 0 {
-                    '│'
-                } else if dx1 == dy1 {
-                    '╲'
-                } else {
-                    '╱'
-                }
-            } else if dy1 == 0 && dx2 == 0 {
-                match (dx1, dy2) {
-                    (1, 1) => '╮',
-                    (1, -1) => '╯',
-                    (-1, 1) => '╭',
-                    (-1, -1) => '╰',
-                    _ => '╮',
-                }
-            } else if dx1 == 0 && dy2 == 0 {
-                match (dy1, dx2) {
-                    (1, 1) => '╰',
-                    (1, -1) => '╯',
-                    (-1, 1) => '╭',
-                    (-1, -1) => '╮',
-                    _ => '╰',
-                }
-            } else if dx2 == 0 || dx1 == 0 {
-                '│'
-            } else if dy2 == 0 || dy1 == 0 {
-                '─'
-            } else if dx2 == dy2 {
-                '╲'
-            } else {
-                '╱'
-            }
-        };
-        let draw_arc = |grid: &mut Grid,
-                        cx: i32,
-                        cy: i32,
-                        rx: f32,
-                        ry: f32,
-                        start: f32,
-                        end: f32,
-                        fg: Color| {
-            let span = (end - start).abs().max(0.05);
-            let samples = ((rx + ry) * span * 3.8).max(18.0) as usize;
-            let mut pts: Vec<(i32, i32)> = Vec::new();
-            for i in 0..=samples {
-                let a = start + (end - start) * i as f32 / samples as f32;
-                let p = point_on(cx, cy, rx, ry, a);
-                if pts.last().copied() != Some(p) {
-                    pts.push(p);
-                }
-            }
-            if pts.len() > 2 {
-                for p in 1..pts.len() - 1 {
-                    let ch = curve_char(pts[p - 1], pts[p], pts[p + 1]);
-                    put(grid, pts[p].0, pts[p].1, ch, fg);
-                }
-            }
-        };
-        let draw_small_eye = |grid: &mut Grid,
-                              ex: i32,
-                              ey: i32,
-                              rx: i32,
-                              ry: i32,
-                              iris_color: Color,
-                              lid: Color| {
-            let rx = rx.max(3);
-            let ry = ry.max(1);
-            let iris_rx = (rx / 3).max(1);
-            let iris_ry = (ry / 2).max(1);
-            for dy in -ry - 1..=ry + 1 {
-                for dx in -rx - 1..=rx + 1 {
-                    let nx = dx as f32 / rx as f32;
-                    let ny = dy as f32 / ry as f32;
-                    let metric = nx * nx + ny * ny;
-                    if metric > 1.30 {
-                        continue;
-                    }
-                    let edge = (metric - 1.0).abs();
-                    let x = ex + dx;
-                    let y = ey + dy;
-                    if edge < 0.24 {
-                        let ch = if dy < -ry / 3 {
-                            if dx < -rx / 2 { '╭' } else if dx > rx / 2 { '╮' } else { '─' }
-                        } else if dy > ry / 3 {
-                            if dx < -rx / 2 { '╰' } else if dx > rx / 2 { '╯' } else { '─' }
-                        } else if dx < 0 {
-                            '╱'
-                        } else if dx > 0 {
-                            '╲'
-                        } else {
-                            '│'
-                        };
-                        put(grid, x, y, ch, lid);
-                        continue;
-                    }
-                    let im = (dx as f32 / iris_rx as f32).powi(2)
-                        + (dy as f32 / iris_ry as f32).powi(2);
-                    if im <= 1.0 {
-                        put(grid, x, y, '●', pupil);
-                    } else {
-                        put(grid, x, y, ' ', sclera);
-                    }
-                }
-            }
-            put(grid, ex - iris_rx / 2, ey - iris_ry / 2, '˙', chalk);
-        };
-
-        let cx = width as i32 / 2;
-        let cy = height as i32 / 2;
-        let max_rx = (width as f32 / 2.0 - 1.0).max(10.0);
-        let max_ry = (height as f32 / 2.0 - 1.0).max(5.0);
-        let phase = rng.random_range(0.0..std::f32::consts::TAU) + t_anim * 0.15;
-
-        // radiating light rays from center (alternating long/short)
-        for i in 0..ray_count {
-            let a = phase + i as f32 * std::f32::consts::TAU / ray_count as f32;
-            let long = i % 2 == 0;
-            let r0 = if long { 7.0 } else { 5.0 };
-            let r1 = if long { 0.98 } else { 0.66 };
-            let p0 = point_on(cx, cy, r0, r0 * 0.5, a);
-            let p1 = point_on(cx, cy, max_rx * r1, max_ry * r1, a);
-            draw_line(
-                &mut grid,
-                p0.0,
-                p0.1,
-                p1.0,
-                p1.1,
-                darken(ray_color, if long { 8 } else { 28 }),
-            );
-            if long {
-                put(&mut grid, p1.0, p1.1, '◇', darken(ray_color, 18));
-            }
-        }
-
-        // faint halo arcs behind the eye
-        for r in [0.46_f32, 0.58, 0.72] {
-            draw_arc(
-                &mut grid,
-                cx,
-                cy,
-                max_rx * r,
-                max_ry * r,
-                0.0,
-                std::f32::consts::TAU,
-                darken(gold, 28 + (r * 18.0) as u8),
-            );
-        }
-
-        // focal lure (seeded) -- eyes track it for per-seed variation
-        let lure_x = (cx + rng.random_range(-(width as i32 / 6)..=(width as i32 / 6)))
-            .clamp(8, width as i32 - 8);
-        let lure_y = (cy + rng.random_range(-(height as i32 / 5)..=(height as i32 / 5)))
-            .clamp(6, height as i32 - 4);
-        let lure_col = shift_hue(lighten(iris_inner, 26), rng.random_range(-40..=40) as f64);
-        for dy in -2i32..=2 {
-            for dx in -4i32..=4 {
-                let m = (dx as f32 / 4.0).powi(2) + (dy as f32 / 2.0).powi(2);
-                if m <= 1.0 && (dx.abs() + dy.abs()) % 2 == 0 {
-                    put(&mut grid, lure_x + dx, lure_y + dy, '·', darken(lure_col, 24));
-                }
-            }
-        }
-
-        // gaze helper: iris offset toward lure, clamped to eye size
-        let gaze_for = |ex: i32, ey: i32, rx: i32, ry: i32| -> (i32, i32) {
-            let dx = (lure_x - ex) as f32;
-            let dy = (lure_y - ey) as f32;
-            let d = (dx * dx + dy * dy).sqrt().max(1.0);
-            let gx = ((dx / d) * (rx as f32 * 0.30)).round() as i32;
-            let gy = ((dy / d) * (ry as f32 * 0.55)).round() as i32;
-            (
-                gx.clamp(-(rx / 3).max(1), (rx / 3).max(1)),
-                gy.clamp(-(ry / 2).max(1), (ry / 2).max(1)),
-            )
-        };
-        // equilateral triangle, drawn via 3 line edges (rotatable -> "angled")
-        let draw_equilateral = |grid: &mut Grid, tcx: i32, tcy: i32, r: f32, rot: f32, fg: Color| {
-            let mut verts = [(0i32, 0i32); 3];
-            for i in 0..3usize {
-                let a = rot + i as f32 * std::f32::consts::TAU / 3.0;
-                verts[i] = point_on(tcx, tcy, r, r * 0.5, a);
-            }
-            for i in 0..3usize {
-                let (ax, ay) = verts[i];
-                let (bx, by) = verts[(i + 1) % 3];
-                draw_line(grid, ax, ay, bx, by, fg);
-            }
-        };
-        // layered almond eye with radial-fiber iris, gaze-shifted toward lure
-        let draw_layered_eye = |grid: &mut Grid,
-                                ex: i32,
-                                ey: i32,
-                                erx: i32,
-                                ery: i32,
-                                gx: i32,
-                                gy: i32,
-                                io: Color,
-                                ii: Color,
-                                lid: Color,
-                                fibers: usize| {
-            let iris_rx = (erx as f32 * 0.44).round() as i32;
-            let iris_ry = (ery as f32 * 0.92).round() as i32;
-            let pupil_rx = (iris_rx as f32 * 0.42).round() as i32;
-            let pupil_ry = (iris_ry as f32 * 0.62).round() as i32;
-            let icx = ex + gx;
-            let icy = ey + gy;
-            for dx in -erx - 1..=erx + 1 {
-                let nx = dx as f32 / erx as f32;
-                if nx.abs() > 1.04 {
-                    continue;
-                }
-                let curve = (1.0 - nx.abs().powf(1.8)).max(0.0).powf(0.6);
-                let top = (-ery as f32 * curve).round() as i32;
-                let bot = (ery as f32 * curve).round() as i32;
-                for dy in top..=bot {
-                    let x = ex + dx;
-                    let y = ey + dy;
-                    let idx = dx - gx;
-                    let idy = dy - gy;
-                    let im = (idx as f32 / iris_rx as f32).powi(2)
-                        + (idy as f32 / iris_ry as f32).powi(2);
-                    if im <= 1.0 {
-                        let pm = (idx as f32 / pupil_rx as f32).powi(2)
-                            + (idy as f32 / pupil_ry as f32).powi(2);
-                        if pm <= 1.0 {
-                            put(grid, x, y, '●', pupil);
-                        } else {
-                            put(grid, x, y, '·', darken(ii, 14));
-                        }
-                    } else {
-                        put(grid, x, y, ' ', sclera);
-                    }
-                }
-            }
-            for i in 0..fibers {
-                let a = i as f32 * std::f32::consts::TAU / fibers as f32;
-                let p0 = point_on(icx, icy, pupil_rx as f32 * 1.1, pupil_ry as f32 * 1.1, a);
-                let p1 = point_on(icx, icy, iris_rx as f32 * 0.96, iris_ry as f32 * 0.96, a);
-                let col = if i % 2 == 0 { io } else { darken(ii, 6) };
-                draw_line(grid, p0.0, p0.1, p1.0, p1.1, col);
-            }
-            draw_arc(
-                grid,
-                icx,
-                icy,
-                pupil_rx as f32 * 1.1,
-                pupil_ry as f32 * 1.1,
-                0.0,
-                std::f32::consts::TAU,
-                pupil,
-            );
-            put(grid, icx, icy, '◉', pupil);
-            put(grid, icx - iris_rx / 2, icy - iris_ry / 2, '˙', chalk);
-            for dx in -erx - 1..=erx + 1 {
-                let nx = dx as f32 / erx as f32;
-                if nx.abs() > 1.04 {
-                    continue;
-                }
-                let curve = (1.0 - nx.abs().powf(1.8)).max(0.0).powf(0.6);
-                let top = (-ery as f32 * curve).round() as i32;
-                let bot = (ery as f32 * curve).round() as i32;
-                let cht = if dx < -erx / 2 { '╭' } else if dx > erx / 2 { '╮' } else { '─' };
-                let chb = if dx < -erx / 2 { '╰' } else if dx > erx / 2 { '╯' } else { '─' };
-                put(grid, ex + dx, ey + top, cht, lighten(lid, 10));
-                put(grid, ex + dx, ey + bot, chb, darken(lid, 4));
-            }
-            put(grid, ex - erx, ey, '<', lighten(lid, 6));
-            put(grid, ex + erx, ey, '>', lighten(lid, 6));
-        };
-
-        // TRIANGLE CLUSTER -- angled, numerous, overlapping (seeded rotation/count)
-        let tri_count = 4 + (seed as usize % 4);
-        for t in 0..tri_count {
-            let r = max_rx * rng.random_range(0.55..0.95);
-            let rot = phase * 0.4
-                + t as f32 * std::f32::consts::TAU / 3.0
-                + rng.random_range(-0.35..0.35);
-            let col = match t % 4 {
-                0 => darken(gold, 4),
-                1 => chalk,
-                2 => darken(gold, 18),
-                _ => darken(ray_color, 8),
-            };
-            draw_equilateral(&mut grid, cx, cy, r, rot, col);
-            for i in 0..3usize {
-                let a = rot + i as f32 * std::f32::consts::TAU / 3.0;
-                let v = point_on(cx, cy, r, r * 0.5, a);
-                let g = if (v.0 + v.1 + t as i32) % 2 == 0 { '△' } else { '◆' };
-                put(&mut grid, v.0, v.1, g, lighten(col, 8));
-            }
-        }
-
-        // LAYERED EYE CLUSTER -- secondary eyes behind, gazing at the lure
-        let extra = 2 + (seed as usize % 3);
-        for i in 0..extra {
-            let ang = phase
-                + i as f32 * std::f32::consts::TAU / extra as f32
-                + rng.random_range(-0.4..0.4);
-            let dist = rng.random_range(0.30..0.62);
-            let ex = (cx as f32 + ang.cos() * max_rx * dist * 0.8).round() as i32;
-            let ey = (cy as f32 + ang.sin() * max_ry * dist * 0.9).round() as i32;
-            if ex < 6 || ey < 3 || ex >= width as i32 - 6 || ey >= height as i32 - 3 {
-                continue;
-            }
-            let rx = rng.random_range(7..=12);
-            let ry = rng.random_range(3..=5);
-            let (gx, gy) = gaze_for(ex, ey, rx, ry);
-            let io = shift_hue(iris_outer, rng.random_range(-80..=80) as f64);
-            let ii = shift_hue(iris_inner, rng.random_range(-60..=60) as f64);
-            let lid = shift_hue(lid_color, rng.random_range(-40..=40) as f64);
-            let fibers = 12 + (i + seed as usize) % 5;
-            draw_layered_eye(&mut grid, ex, ey, rx, ry, gx, gy, io, ii, lid, fibers);
-        }
-
-        // HERO eye on top (biggest, fullest detail), gazing at the lure
-        let hero_rx = ((width as f32 * 0.205).round() as i32).clamp(10, 22);
-        let hero_ry = ((height as f32 * 0.16).round() as i32).clamp(3, 7);
-        let hero_x = cx;
-        let hero_y = cy - (height as i32 / 14).max(1);
-        let (hgx, hgy) = gaze_for(hero_x, hero_y, hero_rx, hero_ry);
-        draw_layered_eye(
-            &mut grid,
-            hero_x,
-            hero_y,
-            hero_rx,
-            hero_ry,
-            hgx,
-            hgy,
-            iris_outer,
-            iris_inner,
-            lid_color,
-            18 + (seed as usize % 8),
-        );
-        // hero brow chevron
-        let brow_y = hero_y - hero_ry - 2;
-        let brow_half = hero_rx - 1;
-        draw_line(
-            &mut grid,
-            hero_x - brow_half,
-            brow_y + 1,
-            hero_x,
-            brow_y - 1,
-            darken(lid_color, 6),
-        );
-        draw_line(
-            &mut grid,
-            hero_x,
-            brow_y - 1,
-            hero_x + brow_half,
-            brow_y + 1,
-            darken(lid_color, 6),
-        );
-
-        // tiny corner satellites, staring at the viewer (gaze 0,0)
-        let corners = [
-            (cx - max_rx as i32 + 3, cy - max_ry as i32 + 2),
-            (cx + max_rx as i32 - 3, cy - max_ry as i32 + 2),
-            (cx - max_rx as i32 + 4, cy + max_ry as i32 - 2),
-            (cx + max_rx as i32 - 4, cy + max_ry as i32 - 2),
-            (cx, cy + max_ry as i32 - 1),
-        ];
-        for i in 0..sat_count.min(corners.len()) {
-            let (sx, sy) = corners[i];
-            if sx < 3 || sy < 2 || sx >= width as i32 - 3 || sy >= height as i32 - 2 {
-                continue;
-            }
-            let srx = rng.random_range(3..=5);
-            let sry = rng.random_range(2..=3);
-            let iris = shift_hue(iris_outer, rng.random_range(-60..=60) as f64);
-            let lid = shift_hue(lid_color, rng.random_range(-40..=40) as f64);
-            draw_small_eye(&mut grid, sx, sy, srx, sry, iris, lid);
-        }
-
-        // lure core on top of everything so the focal point always reads
-        put(&mut grid, lure_x, lure_y, '◆', lighten(lure_col, 12));
+        grid = draw_eyes3(grid, width, height, seed, palette, rng, t_anim, &args);
     } else if mode == "fullmetal-eyes" {
-        // fullmetal-eyes [nodes] [runes] -- alchemical eye seal with watching glyph nodes
-        let node_count: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(8);
-        let node_count = node_count.clamp(5, 12);
-        let rune_count: usize = args.get(5).and_then(|s| s.parse().ok()).unwrap_or(72);
-        let rune_count = rune_count.clamp(16, 180);
-
-        let bg = darken(palette[0], 12);
-        let chalk = lighten(palette[4], 12);
-        let gold = lighten(palette[1], 30);
-        let iris = lighten(palette[3], 30);
-        let lid = lighten(palette[2], 18);
-        let pupil = darken(palette[0], 2);
-        let shadow = darken(palette[2], 60);
-
-        for y in 0..height {
-            for x in 0..width {
-                let n = (x * 19 + y * 43 + seed as usize * 5) % 151;
-                let ch = match n {
-                    0 => '·',
-                    1 => '∙',
-                    _ => ' ',
-                };
-                grid[y][x] = if ch == ' ' {
-                    Cell::new(' ', bg)
-                } else {
-                    Cell::new(ch, shadow)
-                };
-            }
-        }
-
-        let put = |grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color| {
-            if x >= 0 && y >= 0 && (x as usize) < width && (y as usize) < height {
-                grid[y as usize][x as usize] = Cell::new(ch, fg);
-            }
-        };
-        let stroke_char = |x0: i32, y0: i32, x1: i32, y1: i32| {
-            let dx = x1 - x0;
-            let dy = y1 - y0;
-            if dx.abs() > dy.abs() * 2 {
-                '─'
-            } else if dy.abs() > dx.abs() * 2 {
-                '│'
-            } else if dx.signum() == dy.signum() {
-                '╲'
-            } else {
-                '╱'
-            }
-        };
-        let draw_line = |grid: &mut Grid, mut x0: i32, mut y0: i32, x1: i32, y1: i32, fg: Color| {
-            let ch = stroke_char(x0, y0, x1, y1);
-            let dx = (x1 - x0).abs();
-            let sx = if x0 < x1 { 1 } else { -1 };
-            let dy = -(y1 - y0).abs();
-            let sy = if y0 < y1 { 1 } else { -1 };
-            let mut err = dx + dy;
-            loop {
-                put(grid, x0, y0, ch, fg);
-                if x0 == x1 && y0 == y1 {
-                    break;
-                }
-                let e2 = 2 * err;
-                if e2 >= dy {
-                    err += dy;
-                    x0 += sx;
-                }
-                if e2 <= dx {
-                    err += dx;
-                    y0 += sy;
-                }
-            }
-        };
-        let point_on = |cx: i32, cy: i32, rx: f32, ry: f32, angle: f32| {
-            (
-                cx + (angle.cos() * rx).round() as i32,
-                cy + (angle.sin() * ry).round() as i32,
-            )
-        };
-        let draw_arc = |grid: &mut Grid,
-                        cx: i32,
-                        cy: i32,
-                        rx: f32,
-                        ry: f32,
-                        start: f32,
-                        end: f32,
-                        fg: Color,
-                        gap: usize| {
-            let samples = ((rx + ry) * 16.0).max(90.0) as usize;
-            let mut prev: Option<(i32, i32)> = None;
-            for i in 0..=samples {
-                if gap > 0 && i % gap == gap - 1 {
-                    prev = None;
-                    continue;
-                }
-                let a = start + (end - start) * i as f32 / samples as f32;
-                let p = point_on(cx, cy, rx, ry, a);
-                if let Some(q) = prev {
-                    draw_line(grid, q.0, q.1, p.0, p.1, fg);
-                } else {
-                    put(grid, p.0, p.1, '·', fg);
-                }
-                prev = Some(p);
-            }
-        };
-        let draw_small_eye = |grid: &mut Grid,
-                              cx: i32,
-                              cy: i32,
-                              rx: i32,
-                              ry: i32,
-                              lid_color: Color,
-                              iris_color: Color,
-                              style: usize| {
-            for dx in -rx..=rx {
-                let nx = dx as f32 / rx as f32;
-                let curve = (1.0 - nx.abs().powf(1.65)).max(0.0).powf(0.55);
-                let top = (-(ry as f32) * curve).round() as i32;
-                let bottom = ((ry as f32) * 0.75 * curve).round() as i32;
-                for dy in top..=bottom {
-                    let x = cx + dx;
-                    let y = cy + dy;
-                    if dy == top || dy == bottom {
-                        let ch = if dx < -rx / 2 {
-                            if dy == top { '╱' } else { '╲' }
-                        } else if dx > rx / 2 {
-                            if dy == top { '╲' } else { '╱' }
-                        } else {
-                            '─'
-                        };
-                        put(grid, x, y, ch, lid_color);
-                    } else {
-                        let im = (dx as f32 / (rx as f32 * 0.32)).powi(2)
-                            + (dy as f32 / ry.max(1) as f32).powi(2);
-                        if im <= 0.18 {
-                            put(grid, x, y, if style % 2 == 0 { '◐' } else { '◑' }, pupil);
-                        } else if im <= 1.0 {
-                            let ch = if im > 0.74 {
-                                '○'
-                            } else if (dx.abs() + dy.abs() + style as i32) % 4 == 0 {
-                                '╎'
-                            } else {
-                                '·'
-                            };
-                            put(grid, x, y, ch, iris_color);
-                        }
-                    }
-                }
-            }
-            put(grid, cx - 1, cy - 1, '˙', chalk);
-        };
-
-        let cx = width as i32 / 2;
-        let cy = height as i32 / 2;
-        let max_rx = (width as f32 / 2.0 - 4.0).max(12.0);
-        let max_ry = (height as f32 / 2.0 - 2.0).max(5.0);
-        let phase = seed as f32 * 0.031 - std::f32::consts::FRAC_PI_2 + t_anim * 0.12;
-
-        for i in 0..3 {
-            let rx = max_rx * (0.92 - i as f32 * 0.16);
-            let ry = max_ry * (0.92 - i as f32 * 0.16);
-            draw_arc(
-                &mut grid,
-                cx,
-                cy,
-                rx,
-                ry,
-                phase,
-                phase + std::f32::consts::TAU,
-                if i == 1 { gold } else { chalk },
-                if i == 2 { 7 } else { 0 },
-            );
-        }
-
-        let mut nodes = Vec::new();
-        for i in 0..node_count {
-            let a = phase + i as f32 * std::f32::consts::TAU / node_count as f32;
-            let outer = point_on(cx, cy, max_rx * 0.82, max_ry * 0.82, a);
-            let inner = point_on(cx, cy, max_rx * 0.45, max_ry * 0.45, a);
-            nodes.push(outer);
-            draw_line(
-                &mut grid,
-                inner.0,
-                inner.1,
-                outer.0,
-                outer.1,
-                darken(gold, 8),
-            );
-        }
-        for i in 0..nodes.len() {
-            let j = (i + 2) % nodes.len();
-            draw_line(
-                &mut grid,
-                nodes[i].0,
-                nodes[i].1,
-                nodes[j].0,
-                nodes[j].1,
-                darken(chalk, 18),
-            );
-        }
-
-        let runes = [
-            '△', '▽', '□', '◇', '☉', '☽', '☿', '♄', '♃', '✦', '∴', '∵', '⊕', '⊗',
-        ];
-        for i in 0..rune_count {
-            let lane = match i % 4 {
-                0 => 0.92,
-                1 => 0.74,
-                2 => 0.58,
-                _ => rng.random_range(0.38..0.88),
-            };
-            let a = phase
-                + i as f32 / rune_count as f32 * std::f32::consts::TAU
-                + rng.random_range(-0.035..0.035);
-            let p = point_on(cx, cy, max_rx * lane, max_ry * lane, a);
-            put(
-                &mut grid,
-                p.0,
-                p.1,
-                runes[(i + rng.random_range(0..runes.len())) % runes.len()],
-                shift_hue(gold, rng.random_range(-50..=65) as f64),
-            );
-        }
-
-        draw_small_eye(
-            &mut grid,
-            cx,
-            cy,
-            (width as i32 / 5).clamp(12, 20),
-            (height as i32 / 5).clamp(4, 7),
-            lighten(lid, 10),
-            lighten(iris, 16),
-            seed as usize,
-        );
-        for (i, &(nx, ny)) in nodes.iter().enumerate() {
-            draw_small_eye(
-                &mut grid,
-                nx,
-                ny,
-                5 + (i as i32 % 2),
-                2,
-                darken(lid, 8),
-                shift_hue(iris, i as f64 * 38.0),
-                i,
-            );
-            put(
-                &mut grid,
-                nx,
-                ny + 3,
-                runes[i % runes.len()],
-                lighten(gold, 12),
-            );
-        }
-
-        for _ in 0..node_count {
-            let a = phase + rng.random::<f32>() * std::f32::consts::TAU;
-            let p1 = point_on(
-                cx,
-                cy,
-                max_rx * rng.random_range(0.22..0.45),
-                max_ry * rng.random_range(0.22..0.45),
-                a,
-            );
-            let p2 = point_on(
-                cx,
-                cy,
-                max_rx * rng.random_range(0.60..0.90),
-                max_ry * rng.random_range(0.60..0.90),
-                a + rng.random_range(0.3..1.3),
-            );
-            draw_line(&mut grid, p1.0, p1.1, p2.0, p2.1, darken(iris, 18));
-        }
+        grid = draw_fullmetal_eyes(grid, width, height, seed, palette, rng, t_anim, &args);
     } else if mode == "fullmetal-eyes2" {
-        // fullmetal-eyes2 [tiers=0] [runes=0] -- multi-tier watching seal; every eye tracks a seeded lure
-        let tier_arg: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0);
-        let tier_count = if tier_arg == 0 {
-            2 + (seed as usize % 2) // 2..3
-        } else {
-            tier_arg.clamp(1, 4)
-        };
-        let rune_arg: usize = args.get(5).and_then(|s| s.parse().ok()).unwrap_or(0);
-        let rune_count = if rune_arg == 0 {
-            60 + (seed as usize % 60) // 60..119
-        } else {
-            rune_arg.clamp(16, 200)
-        };
-
-        let bg = darken(palette[0], 12);
-        let chalk = lighten(palette[4], 12);
-        let gold = lighten(palette[1], 30);
-        let iris = lighten(palette[3], 30);
-        let lid = lighten(palette[2], 18);
-        let pupil = darken(palette[0], 2);
-        let sclera = lighten(palette[4], 4);
-        let shadow = darken(palette[2], 60);
-
-        // bg haze
-        for y in 0..height {
-            for x in 0..width {
-                let n = (x * 19 + y * 43 + seed as usize * 5) % 151;
-                let ch = match n {
-                    0 => '·',
-                    1 => '∙',
-                    _ => ' ',
-                };
-                grid[y][x] = if ch == ' ' {
-                    Cell::new(' ', bg)
-                } else {
-                    Cell::new(ch, shadow)
-                };
-            }
-        }
-
-        let put = |grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color| {
-            if x >= 0 && y >= 0 && (x as usize) < width && (y as usize) < height {
-                grid[y as usize][x as usize] = Cell::new(ch, fg);
-            }
-        };
-        let stroke_char = |x0: i32, y0: i32, x1: i32, y1: i32| {
-            let dx = x1 - x0;
-            let dy = y1 - y0;
-            if dx.abs() > dy.abs() * 2 {
-                '─'
-            } else if dy.abs() > dx.abs() * 2 {
-                '│'
-            } else if dx.signum() == dy.signum() {
-                '╲'
-            } else {
-                '╱'
-            }
-        };
-        let draw_line = |grid: &mut Grid, mut x0: i32, mut y0: i32, x1: i32, y1: i32, fg: Color| {
-            let ch = stroke_char(x0, y0, x1, y1);
-            let dx = (x1 - x0).abs();
-            let sx = if x0 < x1 { 1 } else { -1 };
-            let dy = -(y1 - y0).abs();
-            let sy = if y0 < y1 { 1 } else { -1 };
-            let mut err = dx + dy;
-            loop {
-                put(grid, x0, y0, ch, fg);
-                if x0 == x1 && y0 == y1 {
-                    break;
-                }
-                let e2 = 2 * err;
-                if e2 >= dy {
-                    err += dy;
-                    x0 += sx;
-                }
-                if e2 <= dx {
-                    err += dx;
-                    y0 += sy;
-                }
-            }
-        };
-        let point_on = |cx: i32, cy: i32, rx: f32, ry: f32, angle: f32| {
-            (
-                cx + (angle.cos() * rx).round() as i32,
-                cy + (angle.sin() * ry).round() as i32,
-            )
-        };
-        let draw_arc = |grid: &mut Grid,
-                        cx: i32,
-                        cy: i32,
-                        rx: f32,
-                        ry: f32,
-                        start: f32,
-                        end: f32,
-                        fg: Color,
-                        gap: usize| {
-            let samples = ((rx + ry) * 16.0).max(90.0) as usize;
-            let mut prev: Option<(i32, i32)> = None;
-            for i in 0..=samples {
-                if gap > 0 && i % gap == gap - 1 {
-                    prev = None;
-                    continue;
-                }
-                let a = start + (end - start) * i as f32 / samples as f32;
-                let p = point_on(cx, cy, rx, ry, a);
-                if let Some(q) = prev {
-                    draw_line(grid, q.0, q.1, p.0, p.1, fg);
-                } else {
-                    put(grid, p.0, p.1, '·', fg);
-                }
-                prev = Some(p);
-            }
-        };
-
-        let cx = width as i32 / 2;
-        let cy = height as i32 / 2;
-        let max_rx = (width as f32 / 2.0 - 4.0).max(12.0);
-        let max_ry = (height as f32 / 2.0 - 2.0).max(5.0);
-        let phase = seed as f32 * 0.031 - std::f32::consts::FRAC_PI_2 + t_anim * 0.12;
-
-        // seeded focal lure: the lever that makes every eye gaze a different way per seed
-        let lure_x = cx + (rng.random_range(-0.35..0.35) * max_rx * 0.9) as i32;
-        let lure_y = cy + (rng.random_range(-0.30..0.30) * max_ry * 0.9) as i32;
-        draw_arc(
-            &mut grid,
-            lure_x,
-            lure_y,
-            3.0,
-            1.5,
-            0.0,
-            std::f32::consts::TAU,
-            shift_hue(gold, 40.0),
-            4,
-        );
-        put(&mut grid, lure_x, lure_y, '◆', lighten(gold, 20));
-
-        // gaze helper: unit vector toward lure, scaled to eye radius
-        let gaze_for = |ex: i32, ey: i32, rx: i32, ry: i32| -> (i32, i32) {
-            let dx = (lure_x - ex) as f32;
-            let dy = (lure_y - ey) as f32;
-            let d = (dx * dx + dy * dy).sqrt().max(1.0);
-            let mx = rx as f32 * 0.34;
-            let my = ry as f32 * 0.6;
-            let gx = ((dx / d) * mx).round() as i32;
-            let gy = ((dy / d) * my).round() as i32;
-            (
-                gx.clamp(-(rx / 3).max(1), (rx / 3).max(1)),
-                gy.clamp(-(ry / 2).max(1), (ry / 2).max(1)),
-            )
-        };
-
-        // hero layered eye: almond sclera + lid rims + gaze-shifted radial-fiber iris + ◉ pupil
-        let draw_hero_eye = |grid: &mut Grid,
-                             ex: i32,
-                             ey: i32,
-                             rx: i32,
-                             ry: i32,
-                             gx: i32,
-                             gy: i32,
-                             iris_c: Color,
-                             lid_c: Color| {
-            for dx in -rx..=rx {
-                let nx = dx as f32 / rx as f32;
-                let curve = (1.0 - nx.abs().powf(1.6)).max(0.0).powf(0.55);
-                let top = (-(ry as f32) * curve).round() as i32;
-                let bottom = ((ry as f32) * 0.78 * curve).round() as i32;
-                for dy in top..=bottom {
-                    let x = ex + dx;
-                    let y = ey + dy;
-                    if dy == top || dy == bottom {
-                        let ch = if dx < -rx / 2 {
-                            if dy == top { '╱' } else { '╲' }
-                        } else if dx > rx / 2 {
-                            if dy == top { '╲' } else { '╱' }
-                        } else {
-                            '─'
-                        };
-                        put(grid, x, y, ch, lid_c);
-                    } else {
-                        let ix = (dx - gx) as f32 / (rx as f32 * 0.42);
-                        let iy = (dy - gy) as f32 / ry.max(1) as f32;
-                        let im = ix * ix + iy * iy;
-                        if im <= 0.16 {
-                            put(grid, x, y, '◉', pupil);
-                        } else if im <= 1.0 {
-                            let ang =
-                                (iy.atan2(ix) + std::f32::consts::TAU) % std::f32::consts::TAU;
-                            let fiber = ((ang / (std::f32::consts::TAU / 16.0)).round() as i32) % 2
-                                == 0;
-                            let ch = if im > 0.78 {
-                                '○'
-                            } else if fiber {
-                                '╎'
-                            } else {
-                                '·'
-                            };
-                            put(grid, x, y, ch, iris_c);
-                        } else {
-                            put(grid, x, y, '·', sclera);
-                        }
-                    }
-                }
-            }
-            put(grid, ex + gx - 1, ey + gy - 1, '˙', chalk);
-            put(grid, ex + gx, ey + gy - 1, '˙', chalk);
-        };
-
-        // small gazing node eye
-        let draw_node_eye = |grid: &mut Grid,
-                             ncx: i32,
-                             ncy: i32,
-                             rx: i32,
-                             ry: i32,
-                             gx: i32,
-                             gy: i32,
-                             lid_c: Color,
-                             iris_c: Color| {
-            for dx in -rx..=rx {
-                let nx = dx as f32 / rx as f32;
-                let curve = (1.0 - nx.abs().powf(1.65)).max(0.0).powf(0.55);
-                let top = (-(ry as f32) * curve).round() as i32;
-                let bottom = ((ry as f32) * 0.75 * curve).round() as i32;
-                for dy in top..=bottom {
-                    let x = ncx + dx;
-                    let y = ncy + dy;
-                    if dy == top || dy == bottom {
-                        let ch = if dx < -rx / 2 {
-                            if dy == top { '╱' } else { '╲' }
-                        } else if dx > rx / 2 {
-                            if dy == top { '╲' } else { '╱' }
-                        } else {
-                            '─'
-                        };
-                        put(grid, x, y, ch, lid_c);
-                    } else {
-                        let ix = (dx - gx) as f32 / (rx as f32 * 0.5);
-                        let iy = (dy - gy) as f32 / ry.max(1) as f32;
-                        let im = ix * ix + iy * iy;
-                        if im <= 0.5 {
-                            put(grid, x, y, '◉', pupil);
-                        } else if im <= 1.0 {
-                            put(grid, x, y, '·', iris_c);
-                        }
-                    }
-                }
-            }
-            put(grid, ncx + gx - 1, ncy + gy - 1, '˙', chalk);
-        };
-
-        let runes = [
-            '△', '▽', '□', '◇', '☉', '☽', '☿', '♄', '♃', '✦', '∴', '∵', '⊕', '⊗', '✶', '◈',
-        ];
-
-        // arc bands: 3 concentric, alternating chalk/gold/iris, iris dashed
-        let band_count = 3;
-        for i in 0..band_count {
-            let t = i as f32 / (band_count - 1).max(1) as f32;
-            let r = 0.50 + t * 0.40;
-            let col = match i % 3 {
-                0 => chalk,
-                1 => gold,
-                _ => iris,
-            };
-            let gap = if i % 3 == 2 { 9 } else { 0 };
-            draw_arc(
-                &mut grid,
-                cx,
-                cy,
-                max_rx * r,
-                max_ry * r,
-                phase,
-                phase + std::f32::consts::TAU,
-                col,
-                gap,
-            );
-        }
-
-        // multi-tier node web: each tier is a {n/k} star polygon, seeded n/k/rotation
-        let mut tier_verts: Vec<Vec<(i32, i32)>> = Vec::new();
-        for ti in 0..tier_count {
-            let rad = 0.42 + ti as f32 * 0.16;
-            let n = 5 + (seed as usize + ti * 7) % 6;
-            let rot = phase + ti as f32 * 0.4 + seed as f32 * 0.01 * ti as f32;
-            let mut verts: Vec<(i32, i32)> = Vec::with_capacity(n);
-            for i in 0..n {
-                let a = rot + i as f32 * std::f32::consts::TAU / n as f32;
-                verts.push(point_on(cx, cy, max_rx * rad, max_ry * rad, a));
-            }
-            let max_k = ((n - 1) / 2).max(1);
-            let k = if max_k >= 2 {
-                2 + (seed as usize + ti) % (max_k - 1)
-            } else {
-                1
-            };
-            let col = if ti % 2 == 0 { gold } else { chalk };
-            for i in 0..n {
-                let (ax, ay) = verts[i];
-                let (bx, by) = verts[(i + k.min(max_k)) % n];
-                draw_line(&mut grid, ax, ay, bx, by, darken(col, 8));
-            }
-            for &v in &verts {
-                put(&mut grid, v.0, v.1, '◇', lighten(col, 8));
-            }
-            tier_verts.push(verts);
-        }
-
-        // curved rune inscription band running around the outer ring
-        let inscribe_r = 0.92;
-        let ins_n = (rune_count / 4).clamp(14, 30);
-        for i in 0..ins_n {
-            let a = phase + i as f32 * std::f32::consts::TAU / ins_n as f32;
-            let p = point_on(cx, cy, max_rx * inscribe_r, max_ry * inscribe_r, a);
-            put(
-                &mut grid,
-                p.0,
-                p.1,
-                runes[(i + seed as usize) % runes.len()],
-                lighten(gold, 8),
-            );
-        }
-
-        // hero eye at center, gazing at lure
-        let hero_rx = (width as f32 * 0.12) as i32;
-        let hero_ry = (height as f32 * 0.14) as i32;
-        let (hgx, hgy) = gaze_for(cx, cy, hero_rx, hero_ry);
-        draw_hero_eye(
-            &mut grid,
-            cx,
-            cy,
-            hero_rx,
-            hero_ry,
-            hgx,
-            hgy,
-            lighten(iris, 16),
-            lighten(lid, 10),
-        );
-
-        // node eyes at outer tier, each gazing at the lure
-        if let Some(outer) = tier_verts.last() {
-            for (i, &(nx, ny)) in outer.iter().enumerate() {
-                let (ngx, ngy) = gaze_for(nx, ny, 5, 2);
-                draw_node_eye(
-                    &mut grid,
-                    nx,
-                    ny,
-                    5,
-                    2,
-                    ngx,
-                    ngy,
-                    darken(lid, 6),
-                    shift_hue(iris, i as f64 * 40.0),
-                );
-                put(
-                    &mut grid,
-                    nx,
-                    ny + 3,
-                    runes[i % runes.len()],
-                    lighten(gold, 12),
-                );
-            }
-        }
-
-        // a few seeded crossing chords for energy
-        for _ in 0..(tier_count + 1) {
-            let a = phase + rng.random::<f32>() * std::f32::consts::TAU;
-            let p1 = point_on(
-                cx,
-                cy,
-                max_rx * rng.random_range(0.22..0.45),
-                max_ry * rng.random_range(0.22..0.45),
-                a,
-            );
-            let p2 = point_on(
-                cx,
-                cy,
-                max_rx * rng.random_range(0.60..0.90),
-                max_ry * rng.random_range(0.60..0.90),
-                a + rng.random_range(0.3..1.3),
-            );
-            draw_line(&mut grid, p1.0, p1.1, p2.0, p2.1, darken(iris, 18));
-        }
+        grid = draw_fullmetal_eyes2(grid, width, height, seed, palette, rng, t_anim, &args);
     } else if mode == "fullmetal-alchemist" {
         // fullmetal-alchemist [rings] [glyphs] -- original generative alchemical sealwork
         let ring_count: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(5);
@@ -13734,6 +12254,1506 @@ fn draw_nebula(grid: &mut Grid, width: usize, height: usize, seed: u64, palette:
 }
 
 // --- delta : recursive branching river/lightning system fanning down-screen. ---
+fn draw_solar_system(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, args: &[String]) -> Grid {
+        // solar-system [bodies] -- 3D-ish orbital diagram with planets, cubes, and space hardware
+        let body_count: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(8);
+        let body_count = body_count.clamp(3, 12);
+
+        macro_rules! set_cell {
+            ($x:expr, $y:expr, $ch:expr, $fg:expr) => {{
+                let sx = $x;
+                let sy = $y;
+                if sx >= 0 && sy >= 0 && (sx as usize) < width && (sy as usize) < height {
+                    grid[sy as usize][sx as usize] = Cell::new($ch, $fg);
+                }
+            }};
+        }
+
+        let space = Rect {
+            x: 0,
+            y: 0,
+            w: width,
+            h: height,
+        };
+        fill_noise(
+            &mut grid,
+            &space,
+            NoiseVariant::Dot,
+            darken(palette[2], 94),
+            darken(palette[3], 88),
+            &mut rng,
+        );
+
+        for _ in 0..(width * height / 36).max(8) {
+            let x = rng.random_range(0..width);
+            let y = rng.random_range(0..height);
+            let ch = ['·', '∙', '°', '*', '✦'][rng.random_range(0..5usize)];
+            grid[y][x] = Cell::new(
+                ch,
+                darken(lighten(palette[4], 10), rng.random_range(15..75)),
+            );
+        }
+
+        let center_phase = seed as f32 * 0.073 + t_anim * 0.25;
+        let center_x_ratio = (0.47 + center_phase.sin() * 0.12).clamp(0.34, 0.62);
+        let center_y_ratio = (0.51 + (center_phase * 1.41).cos() * 0.14).clamp(0.34, 0.66);
+        let cx = width as f32 * center_x_ratio;
+        let cy = height as f32 * center_y_ratio;
+        let max_rx = ((cx - 3.0).min(width as f32 - cx - 3.0))
+            .max(12.0)
+            .min(width as f32 * 0.46);
+        let min_rx = (width as f32 * 0.10).max(5.0);
+        let max_ry = ((cy - 2.0).min(height as f32 - cy - 2.0))
+            .max(4.0)
+            .min(height as f32 * 0.38);
+        let min_ry = (height as f32 * 0.08).max(2.0).min(max_ry * 0.55);
+        let orbit_count = body_count.min(10);
+        let sun_rx = (width as f32 / 16.0).clamp(4.0, 8.0);
+        let sun_ry = (height as f32 / 8.0).clamp(2.0, 4.0);
+
+        // Perspective orbital plane: rear arcs now complete behind the solar sphere.
+        for i in 0..orbit_count {
+            let t = i as f32 / orbit_count.max(1) as f32;
+            let rx = min_rx + (max_rx - min_rx) * t;
+            let ry = min_ry + (max_ry - min_ry) * t;
+            let tilt = (i as f32 - orbit_count as f32 * 0.5) * 0.22;
+            for s in 0..360 {
+                if s % 3 == 1 && i > 6 {
+                    continue;
+                }
+                let a = s as f32 / 360.0 * std::f32::consts::TAU;
+                let x = cx + a.cos() * rx + a.sin() * tilt;
+                let y = cy + a.sin() * ry;
+                if x < 0.0 || y < 0.0 || x >= width as f32 || y >= height as f32 {
+                    continue;
+                }
+                let near = a.sin() > 0.0;
+                let ch = if near {
+                    if s % 7 == 0 { '═' } else { '─' }
+                } else if s % 11 == 0 {
+                    '∙'
+                } else if s % 4 == 0 {
+                    '·'
+                } else {
+                    ' '
+                };
+                if ch != ' ' {
+                    let color = if near {
+                        darken(palette[4], 45)
+                    } else {
+                        darken(palette[2], 72)
+                    };
+                    set_cell!(x.round() as i32, y.round() as i32, ch, color);
+                }
+            }
+        }
+
+        // Solar sphere with shaded cells.
+        for yy in (cy - sun_ry - 1.0).floor() as i32..=(cy + sun_ry + 1.0).ceil() as i32 {
+            for xx in (cx - sun_rx - 1.0).floor() as i32..=(cx + sun_rx + 1.0).ceil() as i32 {
+                let dx = (xx as f32 - cx) / sun_rx;
+                let dy = (yy as f32 - cy) / sun_ry;
+                let d = (dx * dx + dy * dy).sqrt();
+                if d > 1.0 {
+                    continue;
+                }
+                let ch = if d < 0.28 {
+                    '◉'
+                } else if dx < -0.2 || dy > 0.35 {
+                    '▒'
+                } else if d > 0.78 {
+                    '░'
+                } else {
+                    '●'
+                };
+                let color = if d < 0.35 {
+                    lighten(palette[3], 35)
+                } else if dx < -0.2 || dy > 0.35 {
+                    darken(palette[3], 25)
+                } else {
+                    lighten(palette[3], 10)
+                };
+                set_cell!(xx, yy, ch, color);
+            }
+        }
+
+        // Planets, moons, and little labels/ticks.
+        let planet_glyphs = ['●', '◐', '◑', '◉', '◆', '○'];
+        for i in 0..body_count {
+            let t = i as f32 / body_count.max(1) as f32;
+            let rx = min_rx + (max_rx - min_rx) * (0.12 + t * 0.88);
+            let ry = min_ry + (max_ry - min_ry) * (0.12 + t * 0.88);
+            let angle = seed as f32 * 0.017 + i as f32 * 1.37 + rng.random::<f32>() * 0.35;
+            let px = cx + angle.cos() * rx + angle.sin() * (i as f32 - 3.0) * 0.18;
+            let py = cy + angle.sin() * ry;
+            let radius = match i % 5 {
+                0 => 1,
+                1 => 2,
+                2 => 1,
+                3 => 3,
+                _ => 2,
+            };
+            let color = shift_hue(lighten(palette[1 + i % 3], 12), (i * 37) as f64);
+
+            if radius == 1 {
+                set_cell!(
+                    px.round() as i32,
+                    py.round() as i32,
+                    planet_glyphs[i % planet_glyphs.len()],
+                    color
+                );
+            } else {
+                for dy in -(radius as i32)..=(radius as i32) {
+                    for dx in -(radius as i32 * 2)..=(radius as i32 * 2) {
+                        let nx = dx as f32 / (radius as f32 * 2.0);
+                        let ny = dy as f32 / radius as f32;
+                        if nx * nx + ny * ny > 1.0 {
+                            continue;
+                        }
+                        let shade = nx * -0.7 + ny * 0.45;
+                        let ch = if shade > 0.35 {
+                            '░'
+                        } else if shade < -0.35 {
+                            '▓'
+                        } else if dx == 0 && dy == 0 {
+                            '◉'
+                        } else {
+                            '●'
+                        };
+                        let fg = if shade > 0.35 {
+                            darken(color, 35)
+                        } else if shade < -0.35 {
+                            lighten(color, 25)
+                        } else {
+                            color
+                        };
+                        set_cell!(px.round() as i32 + dx, py.round() as i32 + dy, ch, fg);
+                    }
+                }
+            }
+
+            if i % 3 == 1 {
+                let moon_angle = angle * 1.9 + 0.8;
+                let mx = px + moon_angle.cos() * (radius as f32 * 3.2 + 3.0);
+                let my = py + moon_angle.sin() * (radius as f32 * 1.3 + 1.4);
+                set_cell!(
+                    mx.round() as i32,
+                    my.round() as i32,
+                    '○',
+                    lighten(palette[4], 5)
+                );
+                set_cell!(
+                    ((px + mx) * 0.5).round() as i32,
+                    ((py + my) * 0.5).round() as i32,
+                    '·',
+                    darken(palette[4], 45)
+                );
+            }
+
+            if i % 4 == 2 {
+                let lx = px.round() as i32 + radius as i32 * 2 + 2;
+                let ly = py.round() as i32;
+                for (j, ch) in format!("p{}", i + 1).chars().enumerate() {
+                    set_cell!(lx + j as i32, ly, ch, darken(palette[4], 38));
+                }
+            }
+        }
+
+        // Isometric orbital stations: seed-driven boxes riding different orbital lanes.
+        let station_count = 2 + (seed as usize % 2);
+        for s in 0..station_count {
+            let lane = (0.56 + s as f32 * 0.17).min(0.92);
+            let station_angle = center_phase * (0.52 + s as f32 * 0.21)
+                + s as f32 * std::f32::consts::TAU / station_count as f32
+                + 0.85;
+            let sx = cx + station_angle.cos() * max_rx * lane;
+            let sy = cy + station_angle.sin() * max_ry * (0.66 + s as f32 * 0.08);
+            let cube_w = (width as i32 / (10 + s as i32)).clamp(6, 13);
+            let cube_h = (height as i32 / (5 + s as i32)).clamp(4, 8);
+            let max_cube_x = (width as i32 - cube_w - 7).max(1);
+            let max_cube_y = (height as i32 - cube_h - 4).max(2);
+            let cube_x = (sx.round() as i32 - cube_w / 2).clamp(1, max_cube_x);
+            let cube_y = (sy.round() as i32 - cube_h / 2).clamp(2, max_cube_y);
+            let off_x: i32 = if sx >= cx { 4 } else { -4 };
+            let off_y: i32 = if s % 2 == 0 { -2 } else { 2 };
+            let back_x = cube_x + off_x;
+            let back_y = cube_y + off_y;
+            let cube_color = shift_hue(lighten(palette[2], 25), s as f64 * 46.0);
+            let back_color = darken(cube_color, 18);
+
+            for x in 0..=cube_w {
+                set_cell!(cube_x + x, cube_y, '─', cube_color);
+                set_cell!(cube_x + x, cube_y + cube_h, '─', cube_color);
+                set_cell!(back_x + x, back_y, '─', back_color);
+                set_cell!(back_x + x, back_y + cube_h, '─', back_color);
+            }
+            for y in 0..=cube_h {
+                set_cell!(cube_x, cube_y + y, '│', cube_color);
+                set_cell!(cube_x + cube_w, cube_y + y, '│', cube_color);
+                set_cell!(back_x, back_y + y, '│', back_color);
+                set_cell!(back_x + cube_w, back_y + y, '│', back_color);
+            }
+            for &(x, y, ch) in &[
+                (cube_x, cube_y, '┌'),
+                (cube_x + cube_w, cube_y, '┐'),
+                (cube_x, cube_y + cube_h, '└'),
+                (cube_x + cube_w, cube_y + cube_h, '┘'),
+                (back_x, back_y, '┌'),
+                (back_x + cube_w, back_y, '┐'),
+                (back_x, back_y + cube_h, '└'),
+                (back_x + cube_w, back_y + cube_h, '┘'),
+            ] {
+                set_cell!(x, y, ch, lighten(cube_color, 10));
+            }
+
+            let connector = if off_x > 0 { '╱' } else { '╲' };
+            for k in 1..=off_x.abs() {
+                let dx = if off_x > 0 { k } else { -k };
+                let dy = off_y * k / off_x.abs();
+                set_cell!(cube_x + dx, cube_y + dy, connector, darken(cube_color, 5));
+                set_cell!(
+                    cube_x + cube_w + dx,
+                    cube_y + dy,
+                    connector,
+                    darken(cube_color, 5)
+                );
+                set_cell!(
+                    cube_x + dx,
+                    cube_y + cube_h + dy,
+                    connector,
+                    darken(cube_color, 5)
+                );
+                set_cell!(
+                    cube_x + cube_w + dx,
+                    cube_y + cube_h + dy,
+                    connector,
+                    darken(cube_color, 5)
+                );
+            }
+            for y in 1..cube_h {
+                for x in 1..cube_w {
+                    if (x * 2 + y + s as i32) % 4 == 0 {
+                        set_cell!(cube_x + x, cube_y + y, '▪', darken(cube_color, 30));
+                    }
+                }
+            }
+
+            let dock_dir: i32 = if sx < cx { 1 } else { -1 };
+            let dock_y = cube_y + cube_h / 2;
+            for k in 1..=5 {
+                set_cell!(
+                    cube_x + if dock_dir > 0 { cube_w + k } else { -k },
+                    dock_y,
+                    '─',
+                    darken(cube_color, 20)
+                );
+            }
+            set_cell!(
+                cube_x + if dock_dir > 0 { cube_w + 6 } else { -6 },
+                dock_y,
+                '◇',
+                lighten(palette[3], 20)
+            );
+        }
+
+        // Solar panel squares and a probe mast, also attached to a seed-shifting lane.
+        let panel_angle = (center_phase * 0.88 - 0.20).rem_euclid(std::f32::consts::TAU);
+        let panel_anchor_x = cx + panel_angle.cos() * max_rx * 0.78;
+        let panel_anchor_y = cy + panel_angle.sin() * max_ry * 0.86;
+        let panel_x_max = (width as i32 - 32).max(2);
+        let panel_y_max = (height as i32 - 7).max(2);
+        let panel_x = (panel_anchor_x.round() as i32 - 13).clamp(2, panel_x_max);
+        let panel_y = (panel_anchor_y.round() as i32 - 2).clamp(2, panel_y_max);
+        for p in 0..3 {
+            let x0 = panel_x + p * 9;
+            let y0 = panel_y + if p % 2 == 0 { 0 } else { -1 };
+            for x in 0..7 {
+                set_cell!(x0 + x, y0, '─', lighten(palette[1], 20));
+                set_cell!(x0 + x, y0 + 4, '─', lighten(palette[1], 20));
+            }
+            for y in 0..=4 {
+                set_cell!(x0, y0 + y, '│', lighten(palette[1], 20));
+                set_cell!(x0 + 7, y0 + y, '│', lighten(palette[1], 20));
+            }
+            set_cell!(x0, y0, '┌', lighten(palette[1], 35));
+            set_cell!(x0 + 7, y0, '┐', lighten(palette[1], 35));
+            set_cell!(x0, y0 + 4, '└', lighten(palette[1], 35));
+            set_cell!(x0 + 7, y0 + 4, '┘', lighten(palette[1], 35));
+            for x in 1..7 {
+                for y in 1..4 {
+                    if (x + y + p) % 2 == 0 {
+                        set_cell!(x0 + x, y0 + y, '□', darken(palette[1], 15));
+                    }
+                }
+            }
+        }
+        let mast_x = panel_x + 27;
+        for y in panel_y - 5..=panel_y + 2 {
+            set_cell!(mast_x, y, '│', palette[4]);
+        }
+        set_cell!(mast_x, panel_y - 6, '◇', lighten(palette[3], 25));
+        set_cell!(mast_x - 1, panel_y - 3, '╱', palette[4]);
+        set_cell!(mast_x + 1, panel_y - 3, '╲', palette[4]);
+
+        // Perspective rays from the star through the orbital plane.
+        for ray in -3..=3 {
+            let angle = ray as f32 * 0.18 + 0.9;
+            for step in 6..(width / 3).max(8) {
+                let x = cx as i32 + (angle.cos() * step as f32 * 1.8).round() as i32;
+                let y = cy as i32 + (angle.sin() * step as f32 * 0.55).round() as i32;
+                if x >= 0
+                    && y >= 0
+                    && (x as usize) < width
+                    && (y as usize) < height
+                    && grid[y as usize][x as usize].ch == ' '
+                    && step % 4 == 0
+                {
+                    set_cell!(x, y, '·', darken(palette[3], 55));
+                }
+            }
+        }
+    grid
+}
+
+fn draw_eyes3(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, args: &[String]) -> Grid {
+        // eyes3 [rays=0] [satellites=0] -- radiant all-seeing eye in a stepped pyramid
+        let ray_arg: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0);
+        let ray_count = if ray_arg == 0 {
+            18 + (seed as usize % 14)
+        } else {
+            ray_arg.clamp(8, 48)
+        };
+        let sat_arg: usize = args.get(5).and_then(|s| s.parse().ok()).unwrap_or(0);
+        let sat_count = if sat_arg == 0 {
+            2 + (seed as usize % 3)
+        } else {
+            sat_arg.clamp(0, 6)
+        };
+
+        let bg = darken(palette[0], 14);
+        let chalk = lighten(palette[4], 14);
+        let gold = lighten(palette[1], 32);
+        let iris_outer = shift_hue(lighten(palette[3], 26), 18.0);
+        let iris_inner = lighten(palette[2], 20);
+        let lid_color = lighten(palette[1], 18);
+        let pupil = darken(palette[0], 2);
+        let sclera = lighten(palette[4], 6);
+        let ray_color = lighten(palette[4], 18);
+        let hush = darken(palette[2], 60);
+        let base_c = darken(gold, 8);
+
+        for y in 0..height {
+            for x in 0..width {
+                let n = (x * 17 + y * 29 + seed as usize * 3) % 97;
+                let ch = match n {
+                    0 => '·',
+                    1 if (x + y) % 3 == 0 => '∙',
+                    _ => ' ',
+                };
+                grid[y][x] = if ch == ' ' {
+                    Cell::new(' ', bg)
+                } else {
+                    Cell::new(ch, hush)
+                };
+            }
+        }
+
+        let put = |grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color| {
+            if x >= 0 && y >= 0 && (x as usize) < width && (y as usize) < height {
+                grid[y as usize][x as usize] = Cell::new(ch, fg);
+            }
+        };
+        let point_on = |cx: i32, cy: i32, rx: f32, ry: f32, angle: f32| {
+            (
+                cx + (angle.cos() * rx).round() as i32,
+                cy + (angle.sin() * ry).round() as i32,
+            )
+        };
+        let stroke_char = |x0: i32, y0: i32, x1: i32, y1: i32| {
+            let dx = x1 - x0;
+            let dy = y1 - y0;
+            if dx.abs() > dy.abs() * 2 {
+                '─'
+            } else if dy.abs() > dx.abs() * 2 {
+                '│'
+            } else if dx.signum() == dy.signum() {
+                '╲'
+            } else {
+                '╱'
+            }
+        };
+        let draw_line = |grid: &mut Grid,
+                         mut x0: i32,
+                         mut y0: i32,
+                         x1: i32,
+                         y1: i32,
+                         fg: Color| {
+            let ch = stroke_char(x0, y0, x1, y1);
+            let dx = (x1 - x0).abs();
+            let sx = if x0 < x1 { 1 } else { -1 };
+            let dy = -(y1 - y0).abs();
+            let sy = if y0 < y1 { 1 } else { -1 };
+            let mut err = dx + dy;
+            loop {
+                put(grid, x0, y0, ch, fg);
+                if x0 == x1 && y0 == y1 {
+                    break;
+                }
+                let e2 = 2 * err;
+                if e2 >= dy {
+                    err += dy;
+                    x0 += sx;
+                }
+                if e2 <= dx {
+                    err += dx;
+                    y0 += sy;
+                }
+            }
+        };
+        let curve_char = |prev: (i32, i32), here: (i32, i32), next: (i32, i32)| {
+            let dx1 = (here.0 - prev.0).signum();
+            let dy1 = (here.1 - prev.1).signum();
+            let dx2 = (next.0 - here.0).signum();
+            let dy2 = (next.1 - here.1).signum();
+            if (dx1, dy1) == (dx2, dy2) {
+                if dy1 == 0 {
+                    '─'
+                } else if dx1 == 0 {
+                    '│'
+                } else if dx1 == dy1 {
+                    '╲'
+                } else {
+                    '╱'
+                }
+            } else if dy1 == 0 && dx2 == 0 {
+                match (dx1, dy2) {
+                    (1, 1) => '╮',
+                    (1, -1) => '╯',
+                    (-1, 1) => '╭',
+                    (-1, -1) => '╰',
+                    _ => '╮',
+                }
+            } else if dx1 == 0 && dy2 == 0 {
+                match (dy1, dx2) {
+                    (1, 1) => '╰',
+                    (1, -1) => '╯',
+                    (-1, 1) => '╭',
+                    (-1, -1) => '╮',
+                    _ => '╰',
+                }
+            } else if dx2 == 0 || dx1 == 0 {
+                '│'
+            } else if dy2 == 0 || dy1 == 0 {
+                '─'
+            } else if dx2 == dy2 {
+                '╲'
+            } else {
+                '╱'
+            }
+        };
+        let draw_arc = |grid: &mut Grid,
+                        cx: i32,
+                        cy: i32,
+                        rx: f32,
+                        ry: f32,
+                        start: f32,
+                        end: f32,
+                        fg: Color| {
+            let span = (end - start).abs().max(0.05);
+            let samples = ((rx + ry) * span * 3.8).max(18.0) as usize;
+            let mut pts: Vec<(i32, i32)> = Vec::new();
+            for i in 0..=samples {
+                let a = start + (end - start) * i as f32 / samples as f32;
+                let p = point_on(cx, cy, rx, ry, a);
+                if pts.last().copied() != Some(p) {
+                    pts.push(p);
+                }
+            }
+            if pts.len() > 2 {
+                for p in 1..pts.len() - 1 {
+                    let ch = curve_char(pts[p - 1], pts[p], pts[p + 1]);
+                    put(grid, pts[p].0, pts[p].1, ch, fg);
+                }
+            }
+        };
+        let draw_small_eye = |grid: &mut Grid,
+                              ex: i32,
+                              ey: i32,
+                              rx: i32,
+                              ry: i32,
+                              iris_color: Color,
+                              lid: Color| {
+            let rx = rx.max(3);
+            let ry = ry.max(1);
+            let iris_rx = (rx / 3).max(1);
+            let iris_ry = (ry / 2).max(1);
+            for dy in -ry - 1..=ry + 1 {
+                for dx in -rx - 1..=rx + 1 {
+                    let nx = dx as f32 / rx as f32;
+                    let ny = dy as f32 / ry as f32;
+                    let metric = nx * nx + ny * ny;
+                    if metric > 1.30 {
+                        continue;
+                    }
+                    let edge = (metric - 1.0).abs();
+                    let x = ex + dx;
+                    let y = ey + dy;
+                    if edge < 0.24 {
+                        let ch = if dy < -ry / 3 {
+                            if dx < -rx / 2 { '╭' } else if dx > rx / 2 { '╮' } else { '─' }
+                        } else if dy > ry / 3 {
+                            if dx < -rx / 2 { '╰' } else if dx > rx / 2 { '╯' } else { '─' }
+                        } else if dx < 0 {
+                            '╱'
+                        } else if dx > 0 {
+                            '╲'
+                        } else {
+                            '│'
+                        };
+                        put(grid, x, y, ch, lid);
+                        continue;
+                    }
+                    let im = (dx as f32 / iris_rx as f32).powi(2)
+                        + (dy as f32 / iris_ry as f32).powi(2);
+                    if im <= 1.0 {
+                        put(grid, x, y, '●', pupil);
+                    } else {
+                        put(grid, x, y, ' ', sclera);
+                    }
+                }
+            }
+            put(grid, ex - iris_rx / 2, ey - iris_ry / 2, '˙', chalk);
+        };
+
+        let cx = width as i32 / 2;
+        let cy = height as i32 / 2;
+        let max_rx = (width as f32 / 2.0 - 1.0).max(10.0);
+        let max_ry = (height as f32 / 2.0 - 1.0).max(5.0);
+        let phase = rng.random_range(0.0..std::f32::consts::TAU) + t_anim * 0.15;
+
+        // radiating light rays from center (alternating long/short)
+        for i in 0..ray_count {
+            let a = phase + i as f32 * std::f32::consts::TAU / ray_count as f32;
+            let long = i % 2 == 0;
+            let r0 = if long { 7.0 } else { 5.0 };
+            let r1 = if long { 0.98 } else { 0.66 };
+            let p0 = point_on(cx, cy, r0, r0 * 0.5, a);
+            let p1 = point_on(cx, cy, max_rx * r1, max_ry * r1, a);
+            draw_line(
+                &mut grid,
+                p0.0,
+                p0.1,
+                p1.0,
+                p1.1,
+                darken(ray_color, if long { 8 } else { 28 }),
+            );
+            if long {
+                put(&mut grid, p1.0, p1.1, '◇', darken(ray_color, 18));
+            }
+        }
+
+        // faint halo arcs behind the eye
+        for r in [0.46_f32, 0.58, 0.72] {
+            draw_arc(
+                &mut grid,
+                cx,
+                cy,
+                max_rx * r,
+                max_ry * r,
+                0.0,
+                std::f32::consts::TAU,
+                darken(gold, 28 + (r * 18.0) as u8),
+            );
+        }
+
+        // focal lure (seeded) -- eyes track it for per-seed variation
+        let lure_x = (cx + rng.random_range(-(width as i32 / 6)..=(width as i32 / 6)))
+            .clamp(8, width as i32 - 8);
+        let lure_y = (cy + rng.random_range(-(height as i32 / 5)..=(height as i32 / 5)))
+            .clamp(6, height as i32 - 4);
+        let lure_col = shift_hue(lighten(iris_inner, 26), rng.random_range(-40..=40) as f64);
+        for dy in -2i32..=2 {
+            for dx in -4i32..=4 {
+                let m = (dx as f32 / 4.0).powi(2) + (dy as f32 / 2.0).powi(2);
+                if m <= 1.0 && (dx.abs() + dy.abs()) % 2 == 0 {
+                    put(&mut grid, lure_x + dx, lure_y + dy, '·', darken(lure_col, 24));
+                }
+            }
+        }
+
+        // gaze helper: iris offset toward lure, clamped to eye size
+        let gaze_for = |ex: i32, ey: i32, rx: i32, ry: i32| -> (i32, i32) {
+            let dx = (lure_x - ex) as f32;
+            let dy = (lure_y - ey) as f32;
+            let d = (dx * dx + dy * dy).sqrt().max(1.0);
+            let gx = ((dx / d) * (rx as f32 * 0.30)).round() as i32;
+            let gy = ((dy / d) * (ry as f32 * 0.55)).round() as i32;
+            (
+                gx.clamp(-(rx / 3).max(1), (rx / 3).max(1)),
+                gy.clamp(-(ry / 2).max(1), (ry / 2).max(1)),
+            )
+        };
+        // equilateral triangle, drawn via 3 line edges (rotatable -> "angled")
+        let draw_equilateral = |grid: &mut Grid, tcx: i32, tcy: i32, r: f32, rot: f32, fg: Color| {
+            let mut verts = [(0i32, 0i32); 3];
+            for i in 0..3usize {
+                let a = rot + i as f32 * std::f32::consts::TAU / 3.0;
+                verts[i] = point_on(tcx, tcy, r, r * 0.5, a);
+            }
+            for i in 0..3usize {
+                let (ax, ay) = verts[i];
+                let (bx, by) = verts[(i + 1) % 3];
+                draw_line(grid, ax, ay, bx, by, fg);
+            }
+        };
+        // layered almond eye with radial-fiber iris, gaze-shifted toward lure
+        let draw_layered_eye = |grid: &mut Grid,
+                                ex: i32,
+                                ey: i32,
+                                erx: i32,
+                                ery: i32,
+                                gx: i32,
+                                gy: i32,
+                                io: Color,
+                                ii: Color,
+                                lid: Color,
+                                fibers: usize| {
+            let iris_rx = (erx as f32 * 0.44).round() as i32;
+            let iris_ry = (ery as f32 * 0.92).round() as i32;
+            let pupil_rx = (iris_rx as f32 * 0.42).round() as i32;
+            let pupil_ry = (iris_ry as f32 * 0.62).round() as i32;
+            let icx = ex + gx;
+            let icy = ey + gy;
+            for dx in -erx - 1..=erx + 1 {
+                let nx = dx as f32 / erx as f32;
+                if nx.abs() > 1.04 {
+                    continue;
+                }
+                let curve = (1.0 - nx.abs().powf(1.8)).max(0.0).powf(0.6);
+                let top = (-ery as f32 * curve).round() as i32;
+                let bot = (ery as f32 * curve).round() as i32;
+                for dy in top..=bot {
+                    let x = ex + dx;
+                    let y = ey + dy;
+                    let idx = dx - gx;
+                    let idy = dy - gy;
+                    let im = (idx as f32 / iris_rx as f32).powi(2)
+                        + (idy as f32 / iris_ry as f32).powi(2);
+                    if im <= 1.0 {
+                        let pm = (idx as f32 / pupil_rx as f32).powi(2)
+                            + (idy as f32 / pupil_ry as f32).powi(2);
+                        if pm <= 1.0 {
+                            put(grid, x, y, '●', pupil);
+                        } else {
+                            put(grid, x, y, '·', darken(ii, 14));
+                        }
+                    } else {
+                        put(grid, x, y, ' ', sclera);
+                    }
+                }
+            }
+            for i in 0..fibers {
+                let a = i as f32 * std::f32::consts::TAU / fibers as f32;
+                let p0 = point_on(icx, icy, pupil_rx as f32 * 1.1, pupil_ry as f32 * 1.1, a);
+                let p1 = point_on(icx, icy, iris_rx as f32 * 0.96, iris_ry as f32 * 0.96, a);
+                let col = if i % 2 == 0 { io } else { darken(ii, 6) };
+                draw_line(grid, p0.0, p0.1, p1.0, p1.1, col);
+            }
+            draw_arc(
+                grid,
+                icx,
+                icy,
+                pupil_rx as f32 * 1.1,
+                pupil_ry as f32 * 1.1,
+                0.0,
+                std::f32::consts::TAU,
+                pupil,
+            );
+            put(grid, icx, icy, '◉', pupil);
+            put(grid, icx - iris_rx / 2, icy - iris_ry / 2, '˙', chalk);
+            for dx in -erx - 1..=erx + 1 {
+                let nx = dx as f32 / erx as f32;
+                if nx.abs() > 1.04 {
+                    continue;
+                }
+                let curve = (1.0 - nx.abs().powf(1.8)).max(0.0).powf(0.6);
+                let top = (-ery as f32 * curve).round() as i32;
+                let bot = (ery as f32 * curve).round() as i32;
+                let cht = if dx < -erx / 2 { '╭' } else if dx > erx / 2 { '╮' } else { '─' };
+                let chb = if dx < -erx / 2 { '╰' } else if dx > erx / 2 { '╯' } else { '─' };
+                put(grid, ex + dx, ey + top, cht, lighten(lid, 10));
+                put(grid, ex + dx, ey + bot, chb, darken(lid, 4));
+            }
+            put(grid, ex - erx, ey, '<', lighten(lid, 6));
+            put(grid, ex + erx, ey, '>', lighten(lid, 6));
+        };
+
+        // TRIANGLE CLUSTER -- angled, numerous, overlapping (seeded rotation/count)
+        let tri_count = 4 + (seed as usize % 4);
+        for t in 0..tri_count {
+            let r = max_rx * rng.random_range(0.55..0.95);
+            let rot = phase * 0.4
+                + t as f32 * std::f32::consts::TAU / 3.0
+                + rng.random_range(-0.35..0.35);
+            let col = match t % 4 {
+                0 => darken(gold, 4),
+                1 => chalk,
+                2 => darken(gold, 18),
+                _ => darken(ray_color, 8),
+            };
+            draw_equilateral(&mut grid, cx, cy, r, rot, col);
+            for i in 0..3usize {
+                let a = rot + i as f32 * std::f32::consts::TAU / 3.0;
+                let v = point_on(cx, cy, r, r * 0.5, a);
+                let g = if (v.0 + v.1 + t as i32) % 2 == 0 { '△' } else { '◆' };
+                put(&mut grid, v.0, v.1, g, lighten(col, 8));
+            }
+        }
+
+        // LAYERED EYE CLUSTER -- secondary eyes behind, gazing at the lure
+        let extra = 2 + (seed as usize % 3);
+        for i in 0..extra {
+            let ang = phase
+                + i as f32 * std::f32::consts::TAU / extra as f32
+                + rng.random_range(-0.4..0.4);
+            let dist = rng.random_range(0.30..0.62);
+            let ex = (cx as f32 + ang.cos() * max_rx * dist * 0.8).round() as i32;
+            let ey = (cy as f32 + ang.sin() * max_ry * dist * 0.9).round() as i32;
+            if ex < 6 || ey < 3 || ex >= width as i32 - 6 || ey >= height as i32 - 3 {
+                continue;
+            }
+            let rx = rng.random_range(7..=12);
+            let ry = rng.random_range(3..=5);
+            let (gx, gy) = gaze_for(ex, ey, rx, ry);
+            let io = shift_hue(iris_outer, rng.random_range(-80..=80) as f64);
+            let ii = shift_hue(iris_inner, rng.random_range(-60..=60) as f64);
+            let lid = shift_hue(lid_color, rng.random_range(-40..=40) as f64);
+            let fibers = 12 + (i + seed as usize) % 5;
+            draw_layered_eye(&mut grid, ex, ey, rx, ry, gx, gy, io, ii, lid, fibers);
+        }
+
+        // HERO eye on top (biggest, fullest detail), gazing at the lure
+        let hero_rx = ((width as f32 * 0.205).round() as i32).clamp(10, 22);
+        let hero_ry = ((height as f32 * 0.16).round() as i32).clamp(3, 7);
+        let hero_x = cx;
+        let hero_y = cy - (height as i32 / 14).max(1);
+        let (hgx, hgy) = gaze_for(hero_x, hero_y, hero_rx, hero_ry);
+        draw_layered_eye(
+            &mut grid,
+            hero_x,
+            hero_y,
+            hero_rx,
+            hero_ry,
+            hgx,
+            hgy,
+            iris_outer,
+            iris_inner,
+            lid_color,
+            18 + (seed as usize % 8),
+        );
+        // hero brow chevron
+        let brow_y = hero_y - hero_ry - 2;
+        let brow_half = hero_rx - 1;
+        draw_line(
+            &mut grid,
+            hero_x - brow_half,
+            brow_y + 1,
+            hero_x,
+            brow_y - 1,
+            darken(lid_color, 6),
+        );
+        draw_line(
+            &mut grid,
+            hero_x,
+            brow_y - 1,
+            hero_x + brow_half,
+            brow_y + 1,
+            darken(lid_color, 6),
+        );
+
+        // tiny corner satellites, staring at the viewer (gaze 0,0)
+        let corners = [
+            (cx - max_rx as i32 + 3, cy - max_ry as i32 + 2),
+            (cx + max_rx as i32 - 3, cy - max_ry as i32 + 2),
+            (cx - max_rx as i32 + 4, cy + max_ry as i32 - 2),
+            (cx + max_rx as i32 - 4, cy + max_ry as i32 - 2),
+            (cx, cy + max_ry as i32 - 1),
+        ];
+        for i in 0..sat_count.min(corners.len()) {
+            let (sx, sy) = corners[i];
+            if sx < 3 || sy < 2 || sx >= width as i32 - 3 || sy >= height as i32 - 2 {
+                continue;
+            }
+            let srx = rng.random_range(3..=5);
+            let sry = rng.random_range(2..=3);
+            let iris = shift_hue(iris_outer, rng.random_range(-60..=60) as f64);
+            let lid = shift_hue(lid_color, rng.random_range(-40..=40) as f64);
+            draw_small_eye(&mut grid, sx, sy, srx, sry, iris, lid);
+        }
+
+        // lure core on top of everything so the focal point always reads
+        put(&mut grid, lure_x, lure_y, '◆', lighten(lure_col, 12));
+    grid
+}
+
+fn draw_fullmetal_eyes(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, args: &[String]) -> Grid {
+        // fullmetal-eyes [nodes] [runes] -- alchemical eye seal with watching glyph nodes
+        let node_count: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(8);
+        let node_count = node_count.clamp(5, 12);
+        let rune_count: usize = args.get(5).and_then(|s| s.parse().ok()).unwrap_or(72);
+        let rune_count = rune_count.clamp(16, 180);
+
+        let bg = darken(palette[0], 12);
+        let chalk = lighten(palette[4], 12);
+        let gold = lighten(palette[1], 30);
+        let iris = lighten(palette[3], 30);
+        let lid = lighten(palette[2], 18);
+        let pupil = darken(palette[0], 2);
+        let shadow = darken(palette[2], 60);
+
+        for y in 0..height {
+            for x in 0..width {
+                let n = (x * 19 + y * 43 + seed as usize * 5) % 151;
+                let ch = match n {
+                    0 => '·',
+                    1 => '∙',
+                    _ => ' ',
+                };
+                grid[y][x] = if ch == ' ' {
+                    Cell::new(' ', bg)
+                } else {
+                    Cell::new(ch, shadow)
+                };
+            }
+        }
+
+        let put = |grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color| {
+            if x >= 0 && y >= 0 && (x as usize) < width && (y as usize) < height {
+                grid[y as usize][x as usize] = Cell::new(ch, fg);
+            }
+        };
+        let stroke_char = |x0: i32, y0: i32, x1: i32, y1: i32| {
+            let dx = x1 - x0;
+            let dy = y1 - y0;
+            if dx.abs() > dy.abs() * 2 {
+                '─'
+            } else if dy.abs() > dx.abs() * 2 {
+                '│'
+            } else if dx.signum() == dy.signum() {
+                '╲'
+            } else {
+                '╱'
+            }
+        };
+        let draw_line = |grid: &mut Grid, mut x0: i32, mut y0: i32, x1: i32, y1: i32, fg: Color| {
+            let ch = stroke_char(x0, y0, x1, y1);
+            let dx = (x1 - x0).abs();
+            let sx = if x0 < x1 { 1 } else { -1 };
+            let dy = -(y1 - y0).abs();
+            let sy = if y0 < y1 { 1 } else { -1 };
+            let mut err = dx + dy;
+            loop {
+                put(grid, x0, y0, ch, fg);
+                if x0 == x1 && y0 == y1 {
+                    break;
+                }
+                let e2 = 2 * err;
+                if e2 >= dy {
+                    err += dy;
+                    x0 += sx;
+                }
+                if e2 <= dx {
+                    err += dx;
+                    y0 += sy;
+                }
+            }
+        };
+        let point_on = |cx: i32, cy: i32, rx: f32, ry: f32, angle: f32| {
+            (
+                cx + (angle.cos() * rx).round() as i32,
+                cy + (angle.sin() * ry).round() as i32,
+            )
+        };
+        let draw_arc = |grid: &mut Grid,
+                        cx: i32,
+                        cy: i32,
+                        rx: f32,
+                        ry: f32,
+                        start: f32,
+                        end: f32,
+                        fg: Color,
+                        gap: usize| {
+            let samples = ((rx + ry) * 16.0).max(90.0) as usize;
+            let mut prev: Option<(i32, i32)> = None;
+            for i in 0..=samples {
+                if gap > 0 && i % gap == gap - 1 {
+                    prev = None;
+                    continue;
+                }
+                let a = start + (end - start) * i as f32 / samples as f32;
+                let p = point_on(cx, cy, rx, ry, a);
+                if let Some(q) = prev {
+                    draw_line(grid, q.0, q.1, p.0, p.1, fg);
+                } else {
+                    put(grid, p.0, p.1, '·', fg);
+                }
+                prev = Some(p);
+            }
+        };
+        let draw_small_eye = |grid: &mut Grid,
+                              cx: i32,
+                              cy: i32,
+                              rx: i32,
+                              ry: i32,
+                              lid_color: Color,
+                              iris_color: Color,
+                              style: usize| {
+            for dx in -rx..=rx {
+                let nx = dx as f32 / rx as f32;
+                let curve = (1.0 - nx.abs().powf(1.65)).max(0.0).powf(0.55);
+                let top = (-(ry as f32) * curve).round() as i32;
+                let bottom = ((ry as f32) * 0.75 * curve).round() as i32;
+                for dy in top..=bottom {
+                    let x = cx + dx;
+                    let y = cy + dy;
+                    if dy == top || dy == bottom {
+                        let ch = if dx < -rx / 2 {
+                            if dy == top { '╱' } else { '╲' }
+                        } else if dx > rx / 2 {
+                            if dy == top { '╲' } else { '╱' }
+                        } else {
+                            '─'
+                        };
+                        put(grid, x, y, ch, lid_color);
+                    } else {
+                        let im = (dx as f32 / (rx as f32 * 0.32)).powi(2)
+                            + (dy as f32 / ry.max(1) as f32).powi(2);
+                        if im <= 0.18 {
+                            put(grid, x, y, if style % 2 == 0 { '◐' } else { '◑' }, pupil);
+                        } else if im <= 1.0 {
+                            let ch = if im > 0.74 {
+                                '○'
+                            } else if (dx.abs() + dy.abs() + style as i32) % 4 == 0 {
+                                '╎'
+                            } else {
+                                '·'
+                            };
+                            put(grid, x, y, ch, iris_color);
+                        }
+                    }
+                }
+            }
+            put(grid, cx - 1, cy - 1, '˙', chalk);
+        };
+
+        let cx = width as i32 / 2;
+        let cy = height as i32 / 2;
+        let max_rx = (width as f32 / 2.0 - 4.0).max(12.0);
+        let max_ry = (height as f32 / 2.0 - 2.0).max(5.0);
+        let phase = seed as f32 * 0.031 - std::f32::consts::FRAC_PI_2 + t_anim * 0.12;
+
+        for i in 0..3 {
+            let rx = max_rx * (0.92 - i as f32 * 0.16);
+            let ry = max_ry * (0.92 - i as f32 * 0.16);
+            draw_arc(
+                &mut grid,
+                cx,
+                cy,
+                rx,
+                ry,
+                phase,
+                phase + std::f32::consts::TAU,
+                if i == 1 { gold } else { chalk },
+                if i == 2 { 7 } else { 0 },
+            );
+        }
+
+        let mut nodes = Vec::new();
+        for i in 0..node_count {
+            let a = phase + i as f32 * std::f32::consts::TAU / node_count as f32;
+            let outer = point_on(cx, cy, max_rx * 0.82, max_ry * 0.82, a);
+            let inner = point_on(cx, cy, max_rx * 0.45, max_ry * 0.45, a);
+            nodes.push(outer);
+            draw_line(
+                &mut grid,
+                inner.0,
+                inner.1,
+                outer.0,
+                outer.1,
+                darken(gold, 8),
+            );
+        }
+        for i in 0..nodes.len() {
+            let j = (i + 2) % nodes.len();
+            draw_line(
+                &mut grid,
+                nodes[i].0,
+                nodes[i].1,
+                nodes[j].0,
+                nodes[j].1,
+                darken(chalk, 18),
+            );
+        }
+
+        let runes = [
+            '△', '▽', '□', '◇', '☉', '☽', '☿', '♄', '♃', '✦', '∴', '∵', '⊕', '⊗',
+        ];
+        for i in 0..rune_count {
+            let lane = match i % 4 {
+                0 => 0.92,
+                1 => 0.74,
+                2 => 0.58,
+                _ => rng.random_range(0.38..0.88),
+            };
+            let a = phase
+                + i as f32 / rune_count as f32 * std::f32::consts::TAU
+                + rng.random_range(-0.035..0.035);
+            let p = point_on(cx, cy, max_rx * lane, max_ry * lane, a);
+            put(
+                &mut grid,
+                p.0,
+                p.1,
+                runes[(i + rng.random_range(0..runes.len())) % runes.len()],
+                shift_hue(gold, rng.random_range(-50..=65) as f64),
+            );
+        }
+
+        draw_small_eye(
+            &mut grid,
+            cx,
+            cy,
+            (width as i32 / 5).clamp(12, 20),
+            (height as i32 / 5).clamp(4, 7),
+            lighten(lid, 10),
+            lighten(iris, 16),
+            seed as usize,
+        );
+        for (i, &(nx, ny)) in nodes.iter().enumerate() {
+            draw_small_eye(
+                &mut grid,
+                nx,
+                ny,
+                5 + (i as i32 % 2),
+                2,
+                darken(lid, 8),
+                shift_hue(iris, i as f64 * 38.0),
+                i,
+            );
+            put(
+                &mut grid,
+                nx,
+                ny + 3,
+                runes[i % runes.len()],
+                lighten(gold, 12),
+            );
+        }
+
+        for _ in 0..node_count {
+            let a = phase + rng.random::<f32>() * std::f32::consts::TAU;
+            let p1 = point_on(
+                cx,
+                cy,
+                max_rx * rng.random_range(0.22..0.45),
+                max_ry * rng.random_range(0.22..0.45),
+                a,
+            );
+            let p2 = point_on(
+                cx,
+                cy,
+                max_rx * rng.random_range(0.60..0.90),
+                max_ry * rng.random_range(0.60..0.90),
+                a + rng.random_range(0.3..1.3),
+            );
+            draw_line(&mut grid, p1.0, p1.1, p2.0, p2.1, darken(iris, 18));
+        }
+    grid
+}
+
+fn draw_fullmetal_eyes2(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, args: &[String]) -> Grid {
+        // fullmetal-eyes2 [tiers=0] [runes=0] -- multi-tier watching seal; every eye tracks a seeded lure
+        let tier_arg: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0);
+        let tier_count = if tier_arg == 0 {
+            2 + (seed as usize % 2) // 2..3
+        } else {
+            tier_arg.clamp(1, 4)
+        };
+        let rune_arg: usize = args.get(5).and_then(|s| s.parse().ok()).unwrap_or(0);
+        let rune_count = if rune_arg == 0 {
+            60 + (seed as usize % 60) // 60..119
+        } else {
+            rune_arg.clamp(16, 200)
+        };
+
+        let bg = darken(palette[0], 12);
+        let chalk = lighten(palette[4], 12);
+        let gold = lighten(palette[1], 30);
+        let iris = lighten(palette[3], 30);
+        let lid = lighten(palette[2], 18);
+        let pupil = darken(palette[0], 2);
+        let sclera = lighten(palette[4], 4);
+        let shadow = darken(palette[2], 60);
+
+        // bg haze
+        for y in 0..height {
+            for x in 0..width {
+                let n = (x * 19 + y * 43 + seed as usize * 5) % 151;
+                let ch = match n {
+                    0 => '·',
+                    1 => '∙',
+                    _ => ' ',
+                };
+                grid[y][x] = if ch == ' ' {
+                    Cell::new(' ', bg)
+                } else {
+                    Cell::new(ch, shadow)
+                };
+            }
+        }
+
+        let put = |grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color| {
+            if x >= 0 && y >= 0 && (x as usize) < width && (y as usize) < height {
+                grid[y as usize][x as usize] = Cell::new(ch, fg);
+            }
+        };
+        let stroke_char = |x0: i32, y0: i32, x1: i32, y1: i32| {
+            let dx = x1 - x0;
+            let dy = y1 - y0;
+            if dx.abs() > dy.abs() * 2 {
+                '─'
+            } else if dy.abs() > dx.abs() * 2 {
+                '│'
+            } else if dx.signum() == dy.signum() {
+                '╲'
+            } else {
+                '╱'
+            }
+        };
+        let draw_line = |grid: &mut Grid, mut x0: i32, mut y0: i32, x1: i32, y1: i32, fg: Color| {
+            let ch = stroke_char(x0, y0, x1, y1);
+            let dx = (x1 - x0).abs();
+            let sx = if x0 < x1 { 1 } else { -1 };
+            let dy = -(y1 - y0).abs();
+            let sy = if y0 < y1 { 1 } else { -1 };
+            let mut err = dx + dy;
+            loop {
+                put(grid, x0, y0, ch, fg);
+                if x0 == x1 && y0 == y1 {
+                    break;
+                }
+                let e2 = 2 * err;
+                if e2 >= dy {
+                    err += dy;
+                    x0 += sx;
+                }
+                if e2 <= dx {
+                    err += dx;
+                    y0 += sy;
+                }
+            }
+        };
+        let point_on = |cx: i32, cy: i32, rx: f32, ry: f32, angle: f32| {
+            (
+                cx + (angle.cos() * rx).round() as i32,
+                cy + (angle.sin() * ry).round() as i32,
+            )
+        };
+        let draw_arc = |grid: &mut Grid,
+                        cx: i32,
+                        cy: i32,
+                        rx: f32,
+                        ry: f32,
+                        start: f32,
+                        end: f32,
+                        fg: Color,
+                        gap: usize| {
+            let samples = ((rx + ry) * 16.0).max(90.0) as usize;
+            let mut prev: Option<(i32, i32)> = None;
+            for i in 0..=samples {
+                if gap > 0 && i % gap == gap - 1 {
+                    prev = None;
+                    continue;
+                }
+                let a = start + (end - start) * i as f32 / samples as f32;
+                let p = point_on(cx, cy, rx, ry, a);
+                if let Some(q) = prev {
+                    draw_line(grid, q.0, q.1, p.0, p.1, fg);
+                } else {
+                    put(grid, p.0, p.1, '·', fg);
+                }
+                prev = Some(p);
+            }
+        };
+
+        let cx = width as i32 / 2;
+        let cy = height as i32 / 2;
+        let max_rx = (width as f32 / 2.0 - 4.0).max(12.0);
+        let max_ry = (height as f32 / 2.0 - 2.0).max(5.0);
+        let phase = seed as f32 * 0.031 - std::f32::consts::FRAC_PI_2 + t_anim * 0.12;
+
+        // seeded focal lure: the lever that makes every eye gaze a different way per seed
+        let lure_x = cx + (rng.random_range(-0.35..0.35) * max_rx * 0.9) as i32;
+        let lure_y = cy + (rng.random_range(-0.30..0.30) * max_ry * 0.9) as i32;
+        draw_arc(
+            &mut grid,
+            lure_x,
+            lure_y,
+            3.0,
+            1.5,
+            0.0,
+            std::f32::consts::TAU,
+            shift_hue(gold, 40.0),
+            4,
+        );
+        put(&mut grid, lure_x, lure_y, '◆', lighten(gold, 20));
+
+        // gaze helper: unit vector toward lure, scaled to eye radius
+        let gaze_for = |ex: i32, ey: i32, rx: i32, ry: i32| -> (i32, i32) {
+            let dx = (lure_x - ex) as f32;
+            let dy = (lure_y - ey) as f32;
+            let d = (dx * dx + dy * dy).sqrt().max(1.0);
+            let mx = rx as f32 * 0.34;
+            let my = ry as f32 * 0.6;
+            let gx = ((dx / d) * mx).round() as i32;
+            let gy = ((dy / d) * my).round() as i32;
+            (
+                gx.clamp(-(rx / 3).max(1), (rx / 3).max(1)),
+                gy.clamp(-(ry / 2).max(1), (ry / 2).max(1)),
+            )
+        };
+
+        // hero layered eye: almond sclera + lid rims + gaze-shifted radial-fiber iris + ◉ pupil
+        let draw_hero_eye = |grid: &mut Grid,
+                             ex: i32,
+                             ey: i32,
+                             rx: i32,
+                             ry: i32,
+                             gx: i32,
+                             gy: i32,
+                             iris_c: Color,
+                             lid_c: Color| {
+            for dx in -rx..=rx {
+                let nx = dx as f32 / rx as f32;
+                let curve = (1.0 - nx.abs().powf(1.6)).max(0.0).powf(0.55);
+                let top = (-(ry as f32) * curve).round() as i32;
+                let bottom = ((ry as f32) * 0.78 * curve).round() as i32;
+                for dy in top..=bottom {
+                    let x = ex + dx;
+                    let y = ey + dy;
+                    if dy == top || dy == bottom {
+                        let ch = if dx < -rx / 2 {
+                            if dy == top { '╱' } else { '╲' }
+                        } else if dx > rx / 2 {
+                            if dy == top { '╲' } else { '╱' }
+                        } else {
+                            '─'
+                        };
+                        put(grid, x, y, ch, lid_c);
+                    } else {
+                        let ix = (dx - gx) as f32 / (rx as f32 * 0.42);
+                        let iy = (dy - gy) as f32 / ry.max(1) as f32;
+                        let im = ix * ix + iy * iy;
+                        if im <= 0.16 {
+                            put(grid, x, y, '◉', pupil);
+                        } else if im <= 1.0 {
+                            let ang =
+                                (iy.atan2(ix) + std::f32::consts::TAU) % std::f32::consts::TAU;
+                            let fiber = ((ang / (std::f32::consts::TAU / 16.0)).round() as i32) % 2
+                                == 0;
+                            let ch = if im > 0.78 {
+                                '○'
+                            } else if fiber {
+                                '╎'
+                            } else {
+                                '·'
+                            };
+                            put(grid, x, y, ch, iris_c);
+                        } else {
+                            put(grid, x, y, '·', sclera);
+                        }
+                    }
+                }
+            }
+            put(grid, ex + gx - 1, ey + gy - 1, '˙', chalk);
+            put(grid, ex + gx, ey + gy - 1, '˙', chalk);
+        };
+
+        // small gazing node eye
+        let draw_node_eye = |grid: &mut Grid,
+                             ncx: i32,
+                             ncy: i32,
+                             rx: i32,
+                             ry: i32,
+                             gx: i32,
+                             gy: i32,
+                             lid_c: Color,
+                             iris_c: Color| {
+            for dx in -rx..=rx {
+                let nx = dx as f32 / rx as f32;
+                let curve = (1.0 - nx.abs().powf(1.65)).max(0.0).powf(0.55);
+                let top = (-(ry as f32) * curve).round() as i32;
+                let bottom = ((ry as f32) * 0.75 * curve).round() as i32;
+                for dy in top..=bottom {
+                    let x = ncx + dx;
+                    let y = ncy + dy;
+                    if dy == top || dy == bottom {
+                        let ch = if dx < -rx / 2 {
+                            if dy == top { '╱' } else { '╲' }
+                        } else if dx > rx / 2 {
+                            if dy == top { '╲' } else { '╱' }
+                        } else {
+                            '─'
+                        };
+                        put(grid, x, y, ch, lid_c);
+                    } else {
+                        let ix = (dx - gx) as f32 / (rx as f32 * 0.5);
+                        let iy = (dy - gy) as f32 / ry.max(1) as f32;
+                        let im = ix * ix + iy * iy;
+                        if im <= 0.5 {
+                            put(grid, x, y, '◉', pupil);
+                        } else if im <= 1.0 {
+                            put(grid, x, y, '·', iris_c);
+                        }
+                    }
+                }
+            }
+            put(grid, ncx + gx - 1, ncy + gy - 1, '˙', chalk);
+        };
+
+        let runes = [
+            '△', '▽', '□', '◇', '☉', '☽', '☿', '♄', '♃', '✦', '∴', '∵', '⊕', '⊗', '✶', '◈',
+        ];
+
+        // arc bands: 3 concentric, alternating chalk/gold/iris, iris dashed
+        let band_count = 3;
+        for i in 0..band_count {
+            let t = i as f32 / (band_count - 1).max(1) as f32;
+            let r = 0.50 + t * 0.40;
+            let col = match i % 3 {
+                0 => chalk,
+                1 => gold,
+                _ => iris,
+            };
+            let gap = if i % 3 == 2 { 9 } else { 0 };
+            draw_arc(
+                &mut grid,
+                cx,
+                cy,
+                max_rx * r,
+                max_ry * r,
+                phase,
+                phase + std::f32::consts::TAU,
+                col,
+                gap,
+            );
+        }
+
+        // multi-tier node web: each tier is a {n/k} star polygon, seeded n/k/rotation
+        let mut tier_verts: Vec<Vec<(i32, i32)>> = Vec::new();
+        for ti in 0..tier_count {
+            let rad = 0.42 + ti as f32 * 0.16;
+            let n = 5 + (seed as usize + ti * 7) % 6;
+            let rot = phase + ti as f32 * 0.4 + seed as f32 * 0.01 * ti as f32;
+            let mut verts: Vec<(i32, i32)> = Vec::with_capacity(n);
+            for i in 0..n {
+                let a = rot + i as f32 * std::f32::consts::TAU / n as f32;
+                verts.push(point_on(cx, cy, max_rx * rad, max_ry * rad, a));
+            }
+            let max_k = ((n - 1) / 2).max(1);
+            let k = if max_k >= 2 {
+                2 + (seed as usize + ti) % (max_k - 1)
+            } else {
+                1
+            };
+            let col = if ti % 2 == 0 { gold } else { chalk };
+            for i in 0..n {
+                let (ax, ay) = verts[i];
+                let (bx, by) = verts[(i + k.min(max_k)) % n];
+                draw_line(&mut grid, ax, ay, bx, by, darken(col, 8));
+            }
+            for &v in &verts {
+                put(&mut grid, v.0, v.1, '◇', lighten(col, 8));
+            }
+            tier_verts.push(verts);
+        }
+
+        // curved rune inscription band running around the outer ring
+        let inscribe_r = 0.92;
+        let ins_n = (rune_count / 4).clamp(14, 30);
+        for i in 0..ins_n {
+            let a = phase + i as f32 * std::f32::consts::TAU / ins_n as f32;
+            let p = point_on(cx, cy, max_rx * inscribe_r, max_ry * inscribe_r, a);
+            put(
+                &mut grid,
+                p.0,
+                p.1,
+                runes[(i + seed as usize) % runes.len()],
+                lighten(gold, 8),
+            );
+        }
+
+        // hero eye at center, gazing at lure
+        let hero_rx = (width as f32 * 0.12) as i32;
+        let hero_ry = (height as f32 * 0.14) as i32;
+        let (hgx, hgy) = gaze_for(cx, cy, hero_rx, hero_ry);
+        draw_hero_eye(
+            &mut grid,
+            cx,
+            cy,
+            hero_rx,
+            hero_ry,
+            hgx,
+            hgy,
+            lighten(iris, 16),
+            lighten(lid, 10),
+        );
+
+        // node eyes at outer tier, each gazing at the lure
+        if let Some(outer) = tier_verts.last() {
+            for (i, &(nx, ny)) in outer.iter().enumerate() {
+                let (ngx, ngy) = gaze_for(nx, ny, 5, 2);
+                draw_node_eye(
+                    &mut grid,
+                    nx,
+                    ny,
+                    5,
+                    2,
+                    ngx,
+                    ngy,
+                    darken(lid, 6),
+                    shift_hue(iris, i as f64 * 40.0),
+                );
+                put(
+                    &mut grid,
+                    nx,
+                    ny + 3,
+                    runes[i % runes.len()],
+                    lighten(gold, 12),
+                );
+            }
+        }
+
+        // a few seeded crossing chords for energy
+        for _ in 0..(tier_count + 1) {
+            let a = phase + rng.random::<f32>() * std::f32::consts::TAU;
+            let p1 = point_on(
+                cx,
+                cy,
+                max_rx * rng.random_range(0.22..0.45),
+                max_ry * rng.random_range(0.22..0.45),
+                a,
+            );
+            let p2 = point_on(
+                cx,
+                cy,
+                max_rx * rng.random_range(0.60..0.90),
+                max_ry * rng.random_range(0.60..0.90),
+                a + rng.random_range(0.3..1.3),
+            );
+            draw_line(&mut grid, p1.0, p1.1, p2.0, p2.1, darken(iris, 18));
+        }
+    grid
+}
+
 fn draw_delta(grid: &mut Grid, width: usize, height: usize, _seed: u64, palette: &[Color; 5], rng: &mut StdRng, t: f32) {
     use std::f32::consts::FRAC_PI_2;
     let bg = darken(palette[0], 6);
@@ -14329,6 +14349,10 @@ fn iterate_grid(mode: &str, seed: u64, theme: &str, w: usize, h: usize, t: f32) 
             draw_delta(&mut grid, w, h, seed, &palette, &mut rng, t);
             Some(grid)
         }
+        "solar-system" => Some(draw_solar_system(grid, w, h, seed, palette, rng, t, &[])),
+        "eyes3" => Some(draw_eyes3(grid, w, h, seed, palette, rng, t, &[])),
+        "fullmetal-eyes" => Some(draw_fullmetal_eyes(grid, w, h, seed, palette, rng, t, &[])),
+        "fullmetal-eyes2" => Some(draw_fullmetal_eyes2(grid, w, h, seed, palette, rng, t, &[])),
         _ => None,
     }
 }
@@ -14360,13 +14384,38 @@ fn render_frame_t(exe: &std::path::Path, seed: u64, mode: &str, theme: &str, w: 
 /// Paint a grid with each row positioned by an absolute cursor escape and NO
 /// newlines, so the terminal can never scroll (the definitive anti-scrollback
 /// measure for the morph player).
+/// Write the SGR escape for a color directly into `s` (no per-call String alloc,
+/// unlike crossterm's `SetForegroundColor(..).to_string()`). `fg` selects the
+/// foreground (38/39) vs background (48/49) parameter group.
+fn write_sgr(s: &mut String, c: Color, fg: bool) {
+    use std::fmt::Write as _;
+    match c {
+        Color::Rgb { r, g, b } => {
+            let lead = if fg { 38 } else { 48 };
+            let _ = write!(s, "\x1b[{};2;{};{};{}m", lead, r, g, b);
+        }
+        Color::Reset => s.push_str(if fg { "\x1b[39m" } else { "\x1b[49m" }),
+        other => {
+            // rare named/ansi variants: fall back to crossterm's formatter.
+            use crossterm::style::{SetBackgroundColor, SetForegroundColor};
+            if fg {
+                let _ = write!(s, "{}", SetForegroundColor(other));
+            } else {
+                let _ = write!(s, "{}", SetBackgroundColor(other));
+            }
+        }
+    }
+}
+
 fn grid_to_ansi(grid: &Grid) -> String {
-    use crossterm::style::{SetBackgroundColor, SetForegroundColor};
-    let mut s = String::new();
+    use std::fmt::Write as _;
+    // preallocate roughly enough for chars + cursor escapes + some color runs.
+    let approx = grid.len() * (grid.first().map_or(0, |r| r.len()) + 8) + 64;
+    let mut s = String::with_capacity(approx);
     let mut cur_fg = Color::Reset;
     let mut cur_bg = Color::Reset;
     for (y, row) in grid.iter().enumerate() {
-        s.push_str(&format!("\x1b[{};1H", y + 1)); // home of this row (1-based)
+        let _ = write!(s, "\x1b[{};1H", y + 1); // home of this row (1-based)
         let mut skip = false;
         for cell in row {
             if skip {
@@ -14374,11 +14423,11 @@ fn grid_to_ansi(grid: &Grid) -> String {
                 continue;
             }
             if cell.fg != cur_fg {
-                s.push_str(&SetForegroundColor(cell.fg).to_string());
+                write_sgr(&mut s, cell.fg, true);
                 cur_fg = cell.fg;
             }
             if cell.bg != cur_bg {
-                s.push_str(&SetBackgroundColor(cell.bg).to_string());
+                write_sgr(&mut s, cell.bg, false);
                 cur_bg = cell.bg;
             }
             s.push(cell.ch);
@@ -14387,7 +14436,7 @@ fn grid_to_ansi(grid: &Grid) -> String {
             }
         }
         if cur_bg != Color::Reset {
-            s.push_str(&SetBackgroundColor(Color::Reset).to_string());
+            write_sgr(&mut s, Color::Reset, false);
             cur_bg = Color::Reset;
         }
     }
