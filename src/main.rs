@@ -10249,462 +10249,9 @@ fn main() {
     } else if mode == "spiro-tile" {
         grid = draw_spiro_tile(grid, width, height, seed, palette, rng, t_anim, &args);
     } else if mode == "weave" {
-        // weave [horiz=0] [vert=0] -- interlaced wavy warp/weft strands
-        let h_arg: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0);
-        let h_count = if h_arg == 0 {
-            3 + (seed as usize % 3)
-        } else {
-            h_arg.clamp(2, 8)
-        };
-        let v_arg: usize = args.get(5).and_then(|s| s.parse().ok()).unwrap_or(0);
-        let v_count = if v_arg == 0 {
-            3 + (seed as usize % 4)
-        } else {
-            v_arg.clamp(2, 8)
-        };
-
-        let bg = darken(palette[0], 10);
-        let chalk = lighten(palette[4], 12);
-        let gold = lighten(palette[1], 28);
-        let cyan = shift_hue(lighten(palette[3], 32), 35.0);
-        let rose = shift_hue(lighten(palette[2], 38), -40.0);
-        let lime = shift_hue(lighten(palette[1], 26), 90.0);
-        let h_colors = [chalk, gold, cyan, rose, lime, chalk, gold, cyan];
-        let v_colors = [gold, rose, lime, chalk, cyan, gold, rose, lime];
-
-        for y in 0..height {
-            for x in 0..width {
-                grid[y][x] = Cell::new(' ', bg);
-            }
-        }
-
-        let put = |grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color| {
-            if x >= 0 && y >= 0 && (x as usize) < width && (y as usize) < height {
-                grid[y as usize][x as usize] = Cell::new(ch, fg);
-            }
-        };
-        let curve_char = |prev: (i32, i32), here: (i32, i32), next: (i32, i32)| {
-            let dx1 = (here.0 - prev.0).signum();
-            let dy1 = (here.1 - prev.1).signum();
-            let dx2 = (next.0 - here.0).signum();
-            let dy2 = (next.1 - here.1).signum();
-            if (dx1, dy1) == (dx2, dy2) {
-                if dy1 == 0 {
-                    '─'
-                } else if dx1 == 0 {
-                    '│'
-                } else if dx1 == dy1 {
-                    '╲'
-                } else {
-                    '╱'
-                }
-            } else if dy1 == 0 && dx2 == 0 {
-                match (dx1, dy2) {
-                    (1, 1) => '╮',
-                    (1, -1) => '╯',
-                    (-1, 1) => '╭',
-                    (-1, -1) => '╰',
-                    _ => '╮',
-                }
-            } else if dx1 == 0 && dy2 == 0 {
-                match (dy1, dx2) {
-                    (1, 1) => '╰',
-                    (1, -1) => '╯',
-                    (-1, 1) => '╭',
-                    (-1, -1) => '╮',
-                    _ => '╰',
-                }
-            } else if dx2 == 0 || dx1 == 0 {
-                '│'
-            } else if dy2 == 0 || dy1 == 0 {
-                '─'
-            } else {
-                '┼'
-            }
-        };
-
-        let mut h_spec: Vec<(f32, f32, f32, f32, Color)> = Vec::new();
-        let mut v_spec: Vec<(f32, f32, f32, f32, Color)> = Vec::new();
-        for i in 0..h_count {
-            let base = (i as f32 + 0.5) * (height as f32 / h_count as f32);
-            let amp = (height as f32 / (h_count as f32 + 1.0)) * rng.random_range(0.35..0.7);
-            let freq = rng.random_range(0.06..0.16);
-            let phase = rng.random_range(0.0..std::f32::consts::TAU);
-            h_spec.push((base, amp, freq, phase, h_colors[i % h_colors.len()]));
-        }
-        for i in 0..v_count {
-            let base = (i as f32 + 0.5) * (width as f32 / v_count as f32);
-            let amp = (width as f32 / (v_count as f32 + 1.0)) * rng.random_range(0.30..0.62);
-            let freq = rng.random_range(0.06..0.16);
-            let phase = rng.random_range(0.0..std::f32::consts::TAU);
-            v_spec.push((base, amp, freq, phase, v_colors[i % v_colors.len()]));
-        }
-
-        let y_h = |i: usize, x: i32| -> i32 {
-            let (base, amp, freq, phase, _) = h_spec[i];
-            (base + amp * (freq * x as f32 + phase).sin()).round() as i32
-        };
-        let x_v = |i: usize, y: i32| -> i32 {
-            let (base, amp, freq, phase, _) = v_spec[i];
-            (base + amp * (freq * y as f32 + phase).sin()).round() as i32
-        };
-
-        // occupancy: which strand ids pass through a cell
-        let mut occ_h: Vec<Vec<Vec<u8>>> = vec![vec![Vec::new(); width]; height];
-        let mut occ_v: Vec<Vec<Vec<u8>>> = vec![vec![Vec::new(); width]; height];
-        for i in 0..h_count {
-            for x in 0..width {
-                let y = y_h(i, x as i32);
-                if y >= 0 && (y as usize) < height {
-                    occ_h[y as usize][x].push(i as u8);
-                }
-            }
-        }
-        for i in 0..v_count {
-            for y in 0..height {
-                let x = x_v(i, y as i32);
-                if x >= 0 && (x as usize) < width {
-                    occ_v[y][x as usize].push(i as u8);
-                }
-            }
-        }
-
-        // draw horizontal strands
-        for i in 0..h_count {
-            let color = h_spec[i].4;
-            let mut prev = (0, y_h(i, 0));
-            let mut here = prev;
-            for x in 0..width {
-                let next = ((x + 1) as i32, y_h(i, (x + 1) as i32));
-                if x > 0 {
-                    prev = ((x - 1) as i32, y_h(i, (x - 1) as i32));
-                }
-                here = (x as i32, y_h(i, x as i32));
-                let y = here.1;
-                if y < 0 || (y as usize) >= height {
-                    continue;
-                }
-                // over/under: skip if a vertical dominates here
-                let vs = &occ_v[y as usize][x];
-                let mut under = false;
-                if !vs.is_empty() {
-                    let v0 = vs[0] as usize;
-                    if (i + v0) % 2 != 0 {
-                        under = true;
-                    }
-                }
-                if !under {
-                    let ch = if x == 0 || x == width - 1 {
-                        '─'
-                    } else {
-                        curve_char(prev, here, next)
-                    };
-                    put(&mut grid, here.0, here.1, ch, color);
-                }
-            }
-        }
-        // draw vertical strands
-        for i in 0..v_count {
-            let color = v_spec[i].4;
-            let mut prev = (x_v(i, 0), 0);
-            let mut here = prev;
-            for y in 0..height {
-                let next = (x_v(i, (y + 1) as i32), (y + 1) as i32);
-                if y > 0 {
-                    prev = (x_v(i, (y - 1) as i32), (y - 1) as i32);
-                }
-                here = (x_v(i, y as i32), y as i32);
-                let x = here.0;
-                if x < 0 || (x as usize) >= width {
-                    continue;
-                }
-                let hs = &occ_h[y][x as usize];
-                let mut under = false;
-                if !hs.is_empty() {
-                    let h0 = hs[0] as usize;
-                    if (h0 + i) % 2 == 0 {
-                        under = true;
-                    }
-                }
-                if !under {
-                    let ch = if y == 0 || y == height - 1 {
-                        '│'
-                    } else {
-                        curve_char(prev, here, next)
-                    };
-                    put(&mut grid, here.0, here.1, ch, color);
-                }
-            }
-        }
+        grid = draw_weave(grid, width, height, seed, palette, rng, t_anim, &args);
     } else if mode == "gears" {
-        // gears [count=0] [teeth=0] -- interlocking clockwork mechanism
-        let count_arg: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0);
-        let gear_count = if count_arg == 0 {
-            2 + (seed as usize % 3)
-        } else {
-            count_arg.clamp(2, 4)
-        };
-        let teeth_arg: usize = args.get(5).and_then(|s| s.parse().ok()).unwrap_or(0);
-        let base_teeth = if teeth_arg == 0 {
-            8 + (seed as usize % 9)
-        } else {
-            teeth_arg.clamp(6, 24)
-        };
-
-        let bg = darken(palette[0], 12);
-        let chalk = lighten(palette[4], 14);
-        let brass = lighten(palette[1], 30);
-        let steel = lighten(palette[3], 28);
-        let copper = shift_hue(lighten(palette[2], 36), -22.0);
-        let patina = shift_hue(lighten(palette[1], 24), 92.0);
-        let gear_colors = [chalk, brass, steel, copper, patina, brass];
-        let hush = darken(palette[2], 66);
-
-        for y in 0..height {
-            for x in 0..width {
-                let n = (x * 17 + y * 23 + seed as usize * 7) % 149;
-                let ch = if n == 0 { '·' } else { ' ' };
-                grid[y][x] = if ch == ' ' {
-                    Cell::new(' ', bg)
-                } else {
-                    Cell::new(ch, hush)
-                };
-            }
-        }
-
-        let put = |grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color| {
-            if x >= 0 && y >= 0 && (x as usize) < width && (y as usize) < height {
-                grid[y as usize][x as usize] = Cell::new(ch, fg);
-            }
-        };
-        let point_on = |cx: i32, cy: i32, rx: f32, ry: f32, angle: f32| {
-            (
-                cx + (angle.cos() * rx).round() as i32,
-                cy + (angle.sin() * ry).round() as i32,
-            )
-        };
-        let stroke_char = |x0: i32, y0: i32, x1: i32, y1: i32| {
-            let dx = x1 - x0;
-            let dy = y1 - y0;
-            if dx.abs() > dy.abs() * 2 {
-                '─'
-            } else if dy.abs() > dx.abs() * 2 {
-                '│'
-            } else if dx.signum() == dy.signum() {
-                '╲'
-            } else {
-                '╱'
-            }
-        };
-        let draw_line = |grid: &mut Grid,
-                         mut x0: i32,
-                         mut y0: i32,
-                         x1: i32,
-                         y1: i32,
-                         fg: Color| {
-            let ch = stroke_char(x0, y0, x1, y1);
-            let dx = (x1 - x0).abs();
-            let sx = if x0 < x1 { 1 } else { -1 };
-            let dy = -(y1 - y0).abs();
-            let sy = if y0 < y1 { 1 } else { -1 };
-            let mut err = dx + dy;
-            loop {
-                put(grid, x0, y0, ch, fg);
-                if x0 == x1 && y0 == y1 {
-                    break;
-                }
-                let e2 = 2 * err;
-                if e2 >= dy {
-                    err += dy;
-                    x0 += sx;
-                }
-                if e2 <= dx {
-                    err += dx;
-                    y0 += sy;
-                }
-            }
-        };
-        let curve_char = |prev: (i32, i32), here: (i32, i32), next: (i32, i32)| {
-            let dx1 = (here.0 - prev.0).signum();
-            let dy1 = (here.1 - prev.1).signum();
-            let dx2 = (next.0 - here.0).signum();
-            let dy2 = (next.1 - here.1).signum();
-            if (dx1, dy1) == (dx2, dy2) {
-                if dy1 == 0 {
-                    '─'
-                } else if dx1 == 0 {
-                    '│'
-                } else if dx1 == dy1 {
-                    '╲'
-                } else {
-                    '╱'
-                }
-            } else if dy1 == 0 && dx2 == 0 {
-                match (dx1, dy2) {
-                    (1, 1) => '╮',
-                    (1, -1) => '╯',
-                    (-1, 1) => '╭',
-                    (-1, -1) => '╰',
-                    _ => '╮',
-                }
-            } else if dx1 == 0 && dy2 == 0 {
-                match (dy1, dx2) {
-                    (1, 1) => '╰',
-                    (1, -1) => '╯',
-                    (-1, 1) => '╭',
-                    (-1, -1) => '╮',
-                    _ => '╰',
-                }
-            } else if dx2 == 0 || dx1 == 0 {
-                '│'
-            } else if dy2 == 0 || dy1 == 0 {
-                '─'
-            } else if dx2 == dy2 {
-                '╲'
-            } else {
-                '╱'
-            }
-        };
-        let draw_arc = |grid: &mut Grid,
-                        cx: i32,
-                        cy: i32,
-                        rx: f32,
-                        ry: f32,
-                        start: f32,
-                        end: f32,
-                        fg: Color| {
-            let span = (end - start).abs().max(0.05);
-            let samples = ((rx + ry) * span * 3.8).max(18.0) as usize;
-            let mut pts: Vec<(i32, i32)> = Vec::new();
-            for i in 0..=samples {
-                let a = start + (end - start) * i as f32 / samples as f32;
-                let p = point_on(cx, cy, rx, ry, a);
-                if pts.last().copied() != Some(p) {
-                    pts.push(p);
-                }
-            }
-            if pts.len() > 2 {
-                for p in 1..pts.len() - 1 {
-                    let ch = curve_char(pts[p - 1], pts[p], pts[p + 1]);
-                    put(grid, pts[p].0, pts[p].1, ch, fg);
-                }
-            }
-        };
-        let draw_gear = |grid: &mut Grid,
-                         cx: i32,
-                         cy: i32,
-                         r: i32,
-                         teeth: usize,
-                         phase: f32,
-                         fg: Color,
-                         accent: Color| {
-            let rf = r as f32;
-            let rx = rf;
-            let ry = rf * 0.5;
-            // teeth: radial bars from rim to tip
-            for i in 0..teeth {
-                let a = phase + i as f32 * std::f32::consts::TAU / teeth as f32;
-                let inner = point_on(cx, cy, rx * 0.92, ry * 0.92, a);
-                let outer = point_on(cx, cy, rx + 1.4, ry + 0.7, a);
-                draw_line(grid, inner.0, inner.1, outer.0, outer.1, accent);
-                let tip = point_on(cx, cy, rx + 1.4, ry + 0.7, a);
-                put(grid, tip.0, tip.1, '◆', lighten(accent, 10));
-            }
-            // rim
-            draw_arc(grid, cx, cy, rx, ry, 0.0, std::f32::consts::TAU, fg);
-            draw_arc(grid, cx, cy, rx * 0.82, ry * 0.82, 0.0, std::f32::consts::TAU, darken(fg, 8));
-            // spokes
-            let spokes = (teeth / 2).clamp(3, 6);
-            for s in 0..spokes {
-                let a = phase + s as f32 * std::f32::consts::TAU / spokes as f32;
-                let p_in = point_on(cx, cy, rx * 0.30, ry * 0.30, a);
-                let p_out = point_on(cx, cy, rx * 0.80, ry * 0.80, a);
-                draw_line(grid, p_in.0, p_in.1, p_out.0, p_out.1, darken(fg, 6));
-                put(grid, p_out.0, p_out.1, '○', darken(accent, 6));
-            }
-            // hub
-            draw_arc(grid, cx, cy, rx * 0.30, ry * 0.30, 0.0, std::f32::consts::TAU, accent);
-            put(grid, cx, cy, '⊙', lighten(accent, 14));
-        };
-
-        // layout: place gears, each tangent to an existing one
-        let cx0 = (width as f32 / 2.0).round() as i32;
-        let cy0 = (height as f32 / 2.0).round() as i32;
-        let r0 = (width.min(height * 2) as f32 / 7.0).round() as i32;
-        let mut placed: Vec<(i32, i32, i32, usize, f32, Color)> = Vec::new();
-        placed.push((
-            cx0,
-            cy0,
-            r0,
-            base_teeth,
-            rng.random_range(0.0..std::f32::consts::TAU),
-            gear_colors[0],
-        ));
-        let mut attempts = 0;
-        while placed.len() < gear_count && attempts < 60 {
-            attempts += 1;
-            let anchor = placed[rng.random_range(0..placed.len())];
-            let (ax, ay, ar, _, _, _) = anchor;
-            let new_r = ((ar as f32) * rng.random_range(0.6..1.1))
-                .clamp(4.0, (width.min(height * 2) as f32 / 5.0));
-            let new_ri = new_r.round() as i32;
-            let ang = rng.random_range(0.0..std::f32::consts::TAU);
-            let dist = (ar + new_ri) as f32;
-            let nx = ax + (dist * ang.cos()).round() as i32;
-            let ny = ay + (dist * ang.sin() * 0.5).round() as i32;
-            let margin = new_ri + 2;
-            if nx < margin
-                || ny < margin / 2
-                || nx >= width as i32 - margin
-                || ny >= height as i32 - margin / 2
-            {
-                continue;
-            }
-            // reject overlap
-            let mut overlap = false;
-            for (ox, oy, or_, _, _, _) in &placed {
-                let dx = nx - ox;
-                let dy = (ny - oy) * 2;
-                let d = ((dx * dx + dy * dy) as f32).sqrt();
-                if d < (new_ri + or_) as f32 * 0.92 {
-                    overlap = true;
-                    break;
-                }
-            }
-            if overlap {
-                continue;
-            }
-            let teeth = (base_teeth as f32 * new_r / r0 as f32)
-                .round()
-                .max(6.0) as usize;
-            // mesh tooth phase: half-tooth offset relative to anchor
-            let anchor_teeth = anchor.3;
-            let anchor_phase = anchor.4;
-            let mesh_angle = ang + std::f32::consts::PI;
-            let off = std::f32::consts::TAU / anchor_teeth as f32 / 2.0;
-            let phase = mesh_angle
-                + off
-                - (std::f32::consts::TAU / teeth as f32)
-                * ((mesh_angle - anchor_phase) / (std::f32::consts::TAU / teeth as f32)).round();
-            let color = gear_colors[placed.len() % gear_colors.len()];
-            placed.push((nx, ny, new_ri, teeth, phase, color));
-        }
-
-        for &(_, _, _, _, _, color) in &placed {
-            // shadow lines: none; gears drawn next
-        }
-        for &(gx, gy, gr, gteeth, gphase, color) in &placed {
-            draw_gear(
-                &mut grid,
-                gx,
-                gy,
-                gr,
-                gteeth,
-                gphase,
-                darken(color, 6),
-                lighten(color, 12),
-            );
-        }
+        grid = draw_gears(grid, width, height, seed, palette, rng, t_anim, &args);
     } else if mode == "kaleido" {
         // kaleido [folds=0] [strokes=0] [mirror=0] -- N-fold symmetric mandala
         let fold_arg: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0);
@@ -13771,6 +13318,472 @@ fn draw_spiro_tile(mut grid: Grid, width: usize, height: usize, seed: u64, palet
     grid
 }
 
+fn draw_weave(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, args: &[String]) -> Grid {
+        // weave [horiz=0] [vert=0] -- interlaced wavy warp/weft strands
+        let h_arg: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0);
+        let h_count = if h_arg == 0 {
+            3 + (seed as usize % 3)
+        } else {
+            h_arg.clamp(2, 8)
+        };
+        let v_arg: usize = args.get(5).and_then(|s| s.parse().ok()).unwrap_or(0);
+        let v_count = if v_arg == 0 {
+            3 + (seed as usize % 4)
+        } else {
+            v_arg.clamp(2, 8)
+        };
+
+        let bg = darken(palette[0], 10);
+        let chalk = lighten(palette[4], 12);
+        let gold = lighten(palette[1], 28);
+        let cyan = shift_hue(lighten(palette[3], 32), 35.0);
+        let rose = shift_hue(lighten(palette[2], 38), -40.0);
+        let lime = shift_hue(lighten(palette[1], 26), 90.0);
+        let h_colors = [chalk, gold, cyan, rose, lime, chalk, gold, cyan];
+        let v_colors = [gold, rose, lime, chalk, cyan, gold, rose, lime];
+
+        for y in 0..height {
+            for x in 0..width {
+                grid[y][x] = Cell::new(' ', bg);
+            }
+        }
+
+        let put = |grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color| {
+            if x >= 0 && y >= 0 && (x as usize) < width && (y as usize) < height {
+                grid[y as usize][x as usize] = Cell::new(ch, fg);
+            }
+        };
+        let curve_char = |prev: (i32, i32), here: (i32, i32), next: (i32, i32)| {
+            let dx1 = (here.0 - prev.0).signum();
+            let dy1 = (here.1 - prev.1).signum();
+            let dx2 = (next.0 - here.0).signum();
+            let dy2 = (next.1 - here.1).signum();
+            if (dx1, dy1) == (dx2, dy2) {
+                if dy1 == 0 {
+                    '─'
+                } else if dx1 == 0 {
+                    '│'
+                } else if dx1 == dy1 {
+                    '╲'
+                } else {
+                    '╱'
+                }
+            } else if dy1 == 0 && dx2 == 0 {
+                match (dx1, dy2) {
+                    (1, 1) => '╮',
+                    (1, -1) => '╯',
+                    (-1, 1) => '╭',
+                    (-1, -1) => '╰',
+                    _ => '╮',
+                }
+            } else if dx1 == 0 && dy2 == 0 {
+                match (dy1, dx2) {
+                    (1, 1) => '╰',
+                    (1, -1) => '╯',
+                    (-1, 1) => '╭',
+                    (-1, -1) => '╮',
+                    _ => '╰',
+                }
+            } else if dx2 == 0 || dx1 == 0 {
+                '│'
+            } else if dy2 == 0 || dy1 == 0 {
+                '─'
+            } else {
+                '┼'
+            }
+        };
+
+        let mut h_spec: Vec<(f32, f32, f32, f32, Color)> = Vec::new();
+        let mut v_spec: Vec<(f32, f32, f32, f32, Color)> = Vec::new();
+        for i in 0..h_count {
+            let base = (i as f32 + 0.5) * (height as f32 / h_count as f32);
+            let amp = (height as f32 / (h_count as f32 + 1.0)) * rng.random_range(0.35..0.7);
+            let freq = rng.random_range(0.06..0.16);
+            let phase = rng.random_range(0.0..std::f32::consts::TAU) + t_anim * 0.6; // warp strands drift
+            h_spec.push((base, amp, freq, phase, h_colors[i % h_colors.len()]));
+        }
+        for i in 0..v_count {
+            let base = (i as f32 + 0.5) * (width as f32 / v_count as f32);
+            let amp = (width as f32 / (v_count as f32 + 1.0)) * rng.random_range(0.30..0.62);
+            let freq = rng.random_range(0.06..0.16);
+            let phase = rng.random_range(0.0..std::f32::consts::TAU) - t_anim * 0.6; // weft strands counter-drift
+            v_spec.push((base, amp, freq, phase, v_colors[i % v_colors.len()]));
+        }
+
+        let y_h = |i: usize, x: i32| -> i32 {
+            let (base, amp, freq, phase, _) = h_spec[i];
+            (base + amp * (freq * x as f32 + phase).sin()).round() as i32
+        };
+        let x_v = |i: usize, y: i32| -> i32 {
+            let (base, amp, freq, phase, _) = v_spec[i];
+            (base + amp * (freq * y as f32 + phase).sin()).round() as i32
+        };
+
+        // occupancy: which strand ids pass through a cell
+        let mut occ_h: Vec<Vec<Vec<u8>>> = vec![vec![Vec::new(); width]; height];
+        let mut occ_v: Vec<Vec<Vec<u8>>> = vec![vec![Vec::new(); width]; height];
+        for i in 0..h_count {
+            for x in 0..width {
+                let y = y_h(i, x as i32);
+                if y >= 0 && (y as usize) < height {
+                    occ_h[y as usize][x].push(i as u8);
+                }
+            }
+        }
+        for i in 0..v_count {
+            for y in 0..height {
+                let x = x_v(i, y as i32);
+                if x >= 0 && (x as usize) < width {
+                    occ_v[y][x as usize].push(i as u8);
+                }
+            }
+        }
+
+        // draw horizontal strands
+        for i in 0..h_count {
+            let color = h_spec[i].4;
+            let mut prev = (0, y_h(i, 0));
+            let mut here = prev;
+            for x in 0..width {
+                let next = ((x + 1) as i32, y_h(i, (x + 1) as i32));
+                if x > 0 {
+                    prev = ((x - 1) as i32, y_h(i, (x - 1) as i32));
+                }
+                here = (x as i32, y_h(i, x as i32));
+                let y = here.1;
+                if y < 0 || (y as usize) >= height {
+                    continue;
+                }
+                // over/under: skip if a vertical dominates here
+                let vs = &occ_v[y as usize][x];
+                let mut under = false;
+                if !vs.is_empty() {
+                    let v0 = vs[0] as usize;
+                    if (i + v0) % 2 != 0 {
+                        under = true;
+                    }
+                }
+                if !under {
+                    let ch = if x == 0 || x == width - 1 {
+                        '─'
+                    } else {
+                        curve_char(prev, here, next)
+                    };
+                    put(&mut grid, here.0, here.1, ch, color);
+                }
+            }
+        }
+        // draw vertical strands
+        for i in 0..v_count {
+            let color = v_spec[i].4;
+            let mut prev = (x_v(i, 0), 0);
+            let mut here = prev;
+            for y in 0..height {
+                let next = (x_v(i, (y + 1) as i32), (y + 1) as i32);
+                if y > 0 {
+                    prev = (x_v(i, (y - 1) as i32), (y - 1) as i32);
+                }
+                here = (x_v(i, y as i32), y as i32);
+                let x = here.0;
+                if x < 0 || (x as usize) >= width {
+                    continue;
+                }
+                let hs = &occ_h[y][x as usize];
+                let mut under = false;
+                if !hs.is_empty() {
+                    let h0 = hs[0] as usize;
+                    if (h0 + i) % 2 == 0 {
+                        under = true;
+                    }
+                }
+                if !under {
+                    let ch = if y == 0 || y == height - 1 {
+                        '│'
+                    } else {
+                        curve_char(prev, here, next)
+                    };
+                    put(&mut grid, here.0, here.1, ch, color);
+                }
+            }
+        }
+    grid
+}
+
+fn draw_gears(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, args: &[String]) -> Grid {
+        // gears [count=0] [teeth=0] -- interlocking clockwork mechanism
+        let count_arg: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0);
+        let gear_count = if count_arg == 0 {
+            2 + (seed as usize % 3)
+        } else {
+            count_arg.clamp(2, 4)
+        };
+        let teeth_arg: usize = args.get(5).and_then(|s| s.parse().ok()).unwrap_or(0);
+        let base_teeth = if teeth_arg == 0 {
+            8 + (seed as usize % 9)
+        } else {
+            teeth_arg.clamp(6, 24)
+        };
+
+        let bg = darken(palette[0], 12);
+        let chalk = lighten(palette[4], 14);
+        let brass = lighten(palette[1], 30);
+        let steel = lighten(palette[3], 28);
+        let copper = shift_hue(lighten(palette[2], 36), -22.0);
+        let patina = shift_hue(lighten(palette[1], 24), 92.0);
+        let gear_colors = [chalk, brass, steel, copper, patina, brass];
+        let hush = darken(palette[2], 66);
+
+        for y in 0..height {
+            for x in 0..width {
+                let n = (x * 17 + y * 23 + seed as usize * 7) % 149;
+                let ch = if n == 0 { '·' } else { ' ' };
+                grid[y][x] = if ch == ' ' {
+                    Cell::new(' ', bg)
+                } else {
+                    Cell::new(ch, hush)
+                };
+            }
+        }
+
+        let put = |grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color| {
+            if x >= 0 && y >= 0 && (x as usize) < width && (y as usize) < height {
+                grid[y as usize][x as usize] = Cell::new(ch, fg);
+            }
+        };
+        let point_on = |cx: i32, cy: i32, rx: f32, ry: f32, angle: f32| {
+            (
+                cx + (angle.cos() * rx).round() as i32,
+                cy + (angle.sin() * ry).round() as i32,
+            )
+        };
+        let stroke_char = |x0: i32, y0: i32, x1: i32, y1: i32| {
+            let dx = x1 - x0;
+            let dy = y1 - y0;
+            if dx.abs() > dy.abs() * 2 {
+                '─'
+            } else if dy.abs() > dx.abs() * 2 {
+                '│'
+            } else if dx.signum() == dy.signum() {
+                '╲'
+            } else {
+                '╱'
+            }
+        };
+        let draw_line = |grid: &mut Grid,
+                         mut x0: i32,
+                         mut y0: i32,
+                         x1: i32,
+                         y1: i32,
+                         fg: Color| {
+            let ch = stroke_char(x0, y0, x1, y1);
+            let dx = (x1 - x0).abs();
+            let sx = if x0 < x1 { 1 } else { -1 };
+            let dy = -(y1 - y0).abs();
+            let sy = if y0 < y1 { 1 } else { -1 };
+            let mut err = dx + dy;
+            loop {
+                put(grid, x0, y0, ch, fg);
+                if x0 == x1 && y0 == y1 {
+                    break;
+                }
+                let e2 = 2 * err;
+                if e2 >= dy {
+                    err += dy;
+                    x0 += sx;
+                }
+                if e2 <= dx {
+                    err += dx;
+                    y0 += sy;
+                }
+            }
+        };
+        let curve_char = |prev: (i32, i32), here: (i32, i32), next: (i32, i32)| {
+            let dx1 = (here.0 - prev.0).signum();
+            let dy1 = (here.1 - prev.1).signum();
+            let dx2 = (next.0 - here.0).signum();
+            let dy2 = (next.1 - here.1).signum();
+            if (dx1, dy1) == (dx2, dy2) {
+                if dy1 == 0 {
+                    '─'
+                } else if dx1 == 0 {
+                    '│'
+                } else if dx1 == dy1 {
+                    '╲'
+                } else {
+                    '╱'
+                }
+            } else if dy1 == 0 && dx2 == 0 {
+                match (dx1, dy2) {
+                    (1, 1) => '╮',
+                    (1, -1) => '╯',
+                    (-1, 1) => '╭',
+                    (-1, -1) => '╰',
+                    _ => '╮',
+                }
+            } else if dx1 == 0 && dy2 == 0 {
+                match (dy1, dx2) {
+                    (1, 1) => '╰',
+                    (1, -1) => '╯',
+                    (-1, 1) => '╭',
+                    (-1, -1) => '╮',
+                    _ => '╰',
+                }
+            } else if dx2 == 0 || dx1 == 0 {
+                '│'
+            } else if dy2 == 0 || dy1 == 0 {
+                '─'
+            } else if dx2 == dy2 {
+                '╲'
+            } else {
+                '╱'
+            }
+        };
+        let draw_arc = |grid: &mut Grid,
+                        cx: i32,
+                        cy: i32,
+                        rx: f32,
+                        ry: f32,
+                        start: f32,
+                        end: f32,
+                        fg: Color| {
+            let span = (end - start).abs().max(0.05);
+            let samples = ((rx + ry) * span * 3.8).max(18.0) as usize;
+            let mut pts: Vec<(i32, i32)> = Vec::new();
+            for i in 0..=samples {
+                let a = start + (end - start) * i as f32 / samples as f32;
+                let p = point_on(cx, cy, rx, ry, a);
+                if pts.last().copied() != Some(p) {
+                    pts.push(p);
+                }
+            }
+            if pts.len() > 2 {
+                for p in 1..pts.len() - 1 {
+                    let ch = curve_char(pts[p - 1], pts[p], pts[p + 1]);
+                    put(grid, pts[p].0, pts[p].1, ch, fg);
+                }
+            }
+        };
+        let draw_gear = |grid: &mut Grid,
+                         cx: i32,
+                         cy: i32,
+                         r: i32,
+                         teeth: usize,
+                         phase: f32,
+                         fg: Color,
+                         accent: Color| {
+            let rf = r as f32;
+            let rx = rf;
+            let ry = rf * 0.5;
+            // teeth: radial bars from rim to tip
+            for i in 0..teeth {
+                let a = phase + i as f32 * std::f32::consts::TAU / teeth as f32;
+                let inner = point_on(cx, cy, rx * 0.92, ry * 0.92, a);
+                let outer = point_on(cx, cy, rx + 1.4, ry + 0.7, a);
+                draw_line(grid, inner.0, inner.1, outer.0, outer.1, accent);
+                let tip = point_on(cx, cy, rx + 1.4, ry + 0.7, a);
+                put(grid, tip.0, tip.1, '◆', lighten(accent, 10));
+            }
+            // rim
+            draw_arc(grid, cx, cy, rx, ry, 0.0, std::f32::consts::TAU, fg);
+            draw_arc(grid, cx, cy, rx * 0.82, ry * 0.82, 0.0, std::f32::consts::TAU, darken(fg, 8));
+            // spokes
+            let spokes = (teeth / 2).clamp(3, 6);
+            for s in 0..spokes {
+                let a = phase + s as f32 * std::f32::consts::TAU / spokes as f32;
+                let p_in = point_on(cx, cy, rx * 0.30, ry * 0.30, a);
+                let p_out = point_on(cx, cy, rx * 0.80, ry * 0.80, a);
+                draw_line(grid, p_in.0, p_in.1, p_out.0, p_out.1, darken(fg, 6));
+                put(grid, p_out.0, p_out.1, '○', darken(accent, 6));
+            }
+            // hub
+            draw_arc(grid, cx, cy, rx * 0.30, ry * 0.30, 0.0, std::f32::consts::TAU, accent);
+            put(grid, cx, cy, '⊙', lighten(accent, 14));
+        };
+
+        // layout: place gears, each tangent to an existing one
+        let cx0 = (width as f32 / 2.0).round() as i32;
+        let cy0 = (height as f32 / 2.0).round() as i32;
+        let r0 = (width.min(height * 2) as f32 / 7.0).round() as i32;
+        let mut placed: Vec<(i32, i32, i32, usize, f32, f32, Color)> = Vec::new();
+        placed.push((
+            cx0,
+            cy0,
+            r0,
+            base_teeth,
+            rng.random_range(0.0..std::f32::consts::TAU),
+            1.0,
+            gear_colors[0],
+        ));
+        let mut attempts = 0;
+        while placed.len() < gear_count && attempts < 60 {
+            attempts += 1;
+            let anchor = placed[rng.random_range(0..placed.len())];
+            let (ax, ay, ar, _, _, _, _) = anchor;
+            let new_r = ((ar as f32) * rng.random_range(0.6..1.1))
+                .clamp(4.0, (width.min(height * 2) as f32 / 5.0));
+            let new_ri = new_r.round() as i32;
+            let ang = rng.random_range(0.0..std::f32::consts::TAU);
+            let dist = (ar + new_ri) as f32;
+            let nx = ax + (dist * ang.cos()).round() as i32;
+            let ny = ay + (dist * ang.sin() * 0.5).round() as i32;
+            let margin = new_ri + 2;
+            if nx < margin
+                || ny < margin / 2
+                || nx >= width as i32 - margin
+                || ny >= height as i32 - margin / 2
+            {
+                continue;
+            }
+            // reject overlap
+            let mut overlap = false;
+            for (ox, oy, or_, _, _, _, _) in &placed {
+                let dx = nx - ox;
+                let dy = (ny - oy) * 2;
+                let d = ((dx * dx + dy * dy) as f32).sqrt();
+                if d < (new_ri + or_) as f32 * 0.92 {
+                    overlap = true;
+                    break;
+                }
+            }
+            if overlap {
+                continue;
+            }
+            let teeth = (base_teeth as f32 * new_r / r0 as f32)
+                .round()
+                .max(6.0) as usize;
+            // mesh tooth phase: half-tooth offset relative to anchor
+            let anchor_teeth = anchor.3;
+            let anchor_phase = anchor.4;
+            let anchor_speed = anchor.5;
+            let mesh_angle = ang + std::f32::consts::PI;
+            let off = std::f32::consts::TAU / anchor_teeth as f32 / 2.0;
+            let phase = mesh_angle
+                + off
+                - (std::f32::consts::TAU / teeth as f32)
+                * ((mesh_angle - anchor_phase) / (std::f32::consts::TAU / teeth as f32)).round();
+            let speed = -anchor_speed * anchor_teeth as f32 / teeth as f32;
+            let color = gear_colors[placed.len() % gear_colors.len()];
+            placed.push((nx, ny, new_ri, teeth, phase, speed, color));
+        }
+
+        for &(_, _, _, _, _, _, color) in &placed {
+            // shadow lines: none; gears drawn next
+        }
+        for &(gx, gy, gr, gteeth, gphase, gspeed, color) in &placed {
+            draw_gear(
+                &mut grid,
+                gx,
+                gy,
+                gr,
+                gteeth,
+                gphase + gspeed * t_anim * 0.15,
+                darken(color, 6),
+                lighten(color, 12),
+            );
+        }
+    grid
+}
+
 fn draw_delta(grid: &mut Grid, width: usize, height: usize, _seed: u64, palette: &[Color; 5], rng: &mut StdRng, t: f32) {
     use std::f32::consts::FRAC_PI_2;
     let bg = darken(palette[0], 6);
@@ -14380,6 +14393,8 @@ fn iterate_grid(mode: &str, seed: u64, theme: &str, w: usize, h: usize, t: f32) 
         }
         "spiro" => Some(draw_spiro(grid, w, h, seed, palette, rng, t, &[])),
         "spiro-tile" => Some(draw_spiro_tile(grid, w, h, seed, palette, rng, t, &[])),
+        "weave" => Some(draw_weave(grid, w, h, seed, palette, rng, t, &[])),
+        "gears" => Some(draw_gears(grid, w, h, seed, palette, rng, t, &[])),
         "solar-system" => Some(draw_solar_system(grid, w, h, seed, palette, rng, t, &[])),
         "eyes3" => Some(draw_eyes3(grid, w, h, seed, palette, rng, t, &[])),
         "fullmetal-eyes" => Some(draw_fullmetal_eyes(grid, w, h, seed, palette, rng, t, &[])),
