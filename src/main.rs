@@ -37,6 +37,246 @@ use tree_draw::*;
 use types::*;
 use walker::*;
 
+// ============================================================================
+// Declarative mode config. A mode declares how it animates and which runtime
+// knobs it exposes. The demo panel reads this to render the options pane and to
+// pick the animate strategy; renderers read the knob values from env vars
+// (ASCII_P_<KEY>) so values flow demo -> env -> subprocess render with no
+// per-mode wiring. Unlisted modes get the default spec (morph, no knobs).
+// ============================================================================
+
+/// One tunable knob. `key` is the env suffix (ASCII_P_<KEY>) and the renderer
+/// reads it via `param_f32(key, default)`.
+#[derive(Clone, Copy)]
+struct Param {
+    key: &'static str,
+    label: &'static str,
+    min: f32,
+    max: f32,
+    default: f32,
+    step: f32,
+}
+
+/// How the `a` key animates a mode.
+#[derive(Clone, Copy, PartialEq)]
+enum AnimKind {
+    Iterate, // native time T: re-render the mode with a live clock
+    Vflow,   // flow the Voronoi sites (stained)
+    Morph,   // tween across adjacent seeds (transport)
+}
+
+/// Declared config for a mode.
+struct ModeSpec {
+    animate: AnimKind,
+    params: &'static [Param],
+}
+
+static DELTA_PARAMS: &[Param] = &[
+    Param { key: "K",    label: "stiffness",  min: 0.5,   max: 12.0, default: 4.0,    step: 0.5 },
+    Param { key: "D",    label: "inertia",    min: 0.001, max: 0.03, default: 0.0055, step: 0.001 },
+    Param { key: "ZETA", label: "damping",    min: 0.02,  max: 1.0,  default: 0.18,   step: 0.02 },
+    Param { key: "WIND", label: "wind",       min: 0.0,   max: 3.0,  default: 1.0,    step: 0.1 },
+    Param { key: "TURB", label: "turbulence", min: 0.0,   max: 3.0,  default: 1.0,    step: 0.1 },
+];
+
+/// Look up a mode's declared config. Unlisted modes default to seed-morph, no knobs.
+fn mode_spec(name: &str) -> ModeSpec {
+    match name {
+        "delta" => ModeSpec { animate: AnimKind::Iterate, params: DELTA_PARAMS },
+        "fullmetal-eyes" | "fullmetal-eyes2" | "eyes3" | "solar-system" => {
+            ModeSpec { animate: AnimKind::Iterate, params: &[] }
+        }
+        "stained" => ModeSpec { animate: AnimKind::Vflow, params: &[] },
+        _ => ModeSpec { animate: AnimKind::Morph, params: &[] },
+    }
+}
+
+/// Strategy string the morph player understands for a given animate kind.
+fn anim_strat(k: AnimKind) -> &'static str {
+    match k {
+        AnimKind::Iterate => "iterate",
+        AnimKind::Vflow => "vflow",
+        AnimKind::Morph => "transport",
+    }
+}
+
+/// Read a runtime knob set by the demo panel (env ASCII_P_<KEY>), or `default`.
+fn param_f32(key: &str, default: f32) -> f32 {
+    std::env::var(format!("ASCII_P_{}", key))
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(default)
+}
+
+/// Indices of modes whose name contains `query` (case-insensitive). Empty query
+/// matches all, preserving order.
+fn demo_filter_modes(all_modes: &[&str], query: &str) -> Vec<usize> {
+    let ql = query.to_lowercase();
+    all_modes
+        .iter()
+        .enumerate()
+        .filter(|(_, m)| ql.is_empty() || m.to_lowercase().contains(&ql))
+        .map(|(i, _)| i)
+        .collect()
+}
+
+/// Full-screen list+filter picker. Type to filter (substring, case-insensitive),
+/// Up/Down to move, Enter to select, Esc to cancel. Returns the chosen index into
+/// `all_modes`, or None if cancelled. Caller must have raw mode enabled.
+fn demo_pick_mode(all_modes: &[&str], current: usize) -> Option<usize> {
+    use crossterm::{
+        cursor,
+        event::{self, Event, KeyCode, KeyModifiers},
+        execute,
+        terminal::{self, ClearType},
+    };
+    use std::io::Write;
+
+    let mut query = String::new();
+    let mut sel: usize = current; // index into the filtered list
+
+    loop {
+        let filtered = demo_filter_modes(all_modes, &query);
+        if sel >= filtered.len() {
+            sel = filtered.len().saturating_sub(1);
+        }
+
+        let (tw, th) = terminal::size().unwrap_or((80, 45));
+        let tw = tw as usize;
+        let th = th as usize;
+        let list_h = th.saturating_sub(3).max(1);
+        let offset = if filtered.len() <= list_h || sel < list_h / 2 {
+            0
+        } else {
+            (sel - list_h / 2).min(filtered.len().saturating_sub(list_h))
+        };
+
+        let query_disp = if query.is_empty() {
+            "\u{2026}".to_string()
+        } else {
+            query.clone()
+        };
+        let mut buf = String::new();
+        buf.push_str(&format!(
+            "\x1b[7m \u{1f50d} search \x1b[0m {}\u{2588}  \u{2502}  {}/{} match  \u{2502}  \u{2191}\u{2193} move \u{00b7} type to filter \u{00b7} enter select \u{00b7} esc cancel\r\n\r\n",
+            query_disp,
+            filtered.len(),
+            all_modes.len()
+        ));
+        for row in 0..list_h {
+            let fi = offset + row;
+            if fi >= filtered.len() {
+                buf.push_str("\r\n");
+                continue;
+            }
+            let name = all_modes[filtered[fi]];
+            if fi == sel {
+                let pad = tw.saturating_sub(name.chars().count() + 3);
+                buf.push_str(&format!("\x1b[7m \u{25b8} {}{} \x1b[0m\r\n", name, " ".repeat(pad)));
+            } else {
+                buf.push_str(&format!("   {}\r\n", name));
+            }
+        }
+
+        execute!(
+            io::stdout(),
+            terminal::Clear(ClearType::All),
+            cursor::MoveTo(0, 0)
+        )
+        .unwrap();
+        print!("{}", buf);
+        io::stdout().flush().unwrap();
+
+        if let Ok(Event::Key(key)) = event::read() {
+            match key.code {
+                KeyCode::Esc => return None,
+                KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => return None,
+                KeyCode::Enter => return filtered.get(sel).copied(),
+                KeyCode::Up => sel = sel.saturating_sub(1),
+                KeyCode::Down => {
+                    if sel + 1 < filtered.len() {
+                        sel += 1;
+                    }
+                }
+                KeyCode::Backspace => {
+                    query.pop();
+                    sel = 0;
+                }
+                KeyCode::Char(c) if !key.modifiers.contains(KeyModifiers::CONTROL) => {
+                    query.push(c);
+                    sel = 0;
+                }
+                _ => {}
+            }
+        }
+    }
+}
+
+/// Paint the options pane into the right region (columns >= `x0`). Shows the
+/// mode's declared animate kind and its tunable knobs as labelled sliders, with
+/// the selected knob highlighted. Positions every row with an absolute cursor
+/// escape so it never disturbs the mode render in the left columns.
+fn draw_options_pane(
+    x0: usize, // 0-based column where the pane region starts (== render_w)
+    th: u16,
+    mode: &str,
+    spec: &ModeSpec,
+    pvals: &[f32],
+    psel: usize,
+    seed: u64,
+    theme: &str,
+) {
+    use std::io::Write;
+    let col = x0 + 2; // 1-based content column (column x0+1 holds the divider)
+    let rows = th.saturating_sub(1) as usize; // last terminal row is the status bar
+    let mut out = String::new();
+    for r in 0..rows {
+        out.push_str(&format!("\x1b[{};{}H\x1b[90m\u{2502}\x1b[0m", r + 1, x0 + 1));
+    }
+    let mut line = |r: usize, text: &str| {
+        if r < rows {
+            out.push_str(&format!("\x1b[{};{}H{}", r + 1, col, text));
+        }
+    };
+    let kind = match spec.animate {
+        AnimKind::Iterate => "iterate (native T)",
+        AnimKind::Vflow => "vflow (voronoi)",
+        AnimKind::Morph => "morph (seeds)",
+    };
+    let theme_label = if theme.is_empty() { "auto" } else { theme };
+    line(0, "\x1b[1mANIM OPTIONS\x1b[0m");
+    line(1, &format!("mode  {}", mode));
+    line(2, &format!("anim  {}", kind));
+    line(3, &format!("seed  {}  theme {}", seed, theme_label));
+    line(4, "\x1b[90m\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\x1b[0m");
+    if spec.params.is_empty() {
+        line(6, "\x1b[90mno tunables for this mode\x1b[0m");
+        line(8, "press \x1b[1ma\x1b[0m to animate");
+    } else {
+        let bar_w = 12usize;
+        for (i, p) in spec.params.iter().enumerate() {
+            let v = pvals[i];
+            let frac = ((v - p.min) / (p.max - p.min)).clamp(0.0, 1.0);
+            let filled = (frac * bar_w as f32).round() as usize;
+            let bar: String = (0..bar_w)
+                .map(|k| if k < filled { '\u{2588}' } else { '\u{2591}' })
+                .collect();
+            let row = 6 + i * 2;
+            if i == psel {
+                line(row, &format!("\x1b[7m> {:<10}\x1b[0m", p.label));
+            } else {
+                line(row, &format!("  {:<10}", p.label));
+            }
+            line(row + 1, &format!("  {} {:>7.3}", bar, v));
+        }
+        let foot = 6 + spec.params.len() * 2 + 1;
+        line(foot, "\x1b[90m<>=adjust ^v=select r=reset\x1b[0m");
+        line(foot + 1, "press \x1b[1ma\x1b[0m to animate");
+    }
+    print!("{}", out);
+    io::stdout().flush().unwrap();
+}
+
 fn run_demo(initial_seed: u64) {
     use crossterm::{
         cursor,
@@ -129,6 +369,15 @@ fn run_demo(initial_seed: u64) {
         "circuit",
         "quilt",
         "patchwalk",
+        "eyes++",
+        "fullmetal-eyes++",
+        "trees++",
+        "forest++",
+        "phyllotaxis",
+        "moire",
+        "nebula",
+        "delta",
+        "stained",
     ];
     let all_themes: &[&str] = &[
         "",
@@ -149,12 +398,49 @@ fn run_demo(initial_seed: u64) {
     let mut mode_idx: usize = 0;
     let mut theme_idx: usize = 0;
 
+    // Options pane state. `spec`/`pvals` mirror the current mode's declared config;
+    // they reload whenever the mode changes. When the pane is open, the up/down/
+    // left/right keys edit knobs instead of seed/theme.
+    let mut pane_open = false;
+    let mut last_mode = "";
+    let mut spec = mode_spec(all_modes[mode_idx]);
+    let mut pvals: Vec<f32> = spec.params.iter().map(|p| p.default).collect();
+    let mut psel: usize = 0;
+
     let exe = std::env::current_exe().unwrap();
 
     terminal::enable_raw_mode().unwrap();
     execute!(io::stdout(), terminal::EnterAlternateScreen).unwrap();
 
     loop {
+        let current_mode = all_modes[mode_idx];
+        let current_theme = all_themes[theme_idx];
+
+        // Reload the declared config when the mode changes.
+        if current_mode != last_mode {
+            spec = mode_spec(current_mode);
+            pvals = spec.params.iter().map(|p| p.default).collect();
+            psel = 0;
+            last_mode = current_mode;
+        }
+
+        let (tw, th) = terminal::size().unwrap_or((80, 45));
+        // When the pane is open, reserve the right columns for it and render the
+        // mode narrower (ASCII_GRID_W). Closed -> full-screen, identical to before.
+        let pane_w: usize = if pane_open {
+            34.min((tw as usize) / 2)
+        } else {
+            0
+        };
+        let render_w = (tw as usize).saturating_sub(pane_w);
+
+        // Push the current knob values down to the render subprocess via env.
+        // Child processes (the preview and the iterate animator) inherit these.
+        // SAFETY: the demo loop is single-threaded.
+        for (p, v) in spec.params.iter().zip(pvals.iter()) {
+            unsafe { std::env::set_var(format!("ASCII_P_{}", p.key), format!("{}", v)) };
+        }
+
         // Disable raw mode so child process writes normal line endings
         terminal::disable_raw_mode().unwrap();
         execute!(
@@ -164,49 +450,117 @@ fn run_demo(initial_seed: u64) {
         )
         .unwrap();
 
-        let current_mode = all_modes[mode_idx];
-        let current_theme = all_themes[theme_idx];
-
         let mut cmd = Command::new(&exe);
         cmd.arg(seed.to_string()).arg(current_mode);
         if !current_theme.is_empty() {
             cmd.arg(current_theme);
+        }
+        if pane_open {
+            cmd.env("ASCII_GRID_W", render_w.to_string());
+            cmd.env("ASCII_GRID_H", th.saturating_sub(1).to_string());
+        } else {
+            // SAFETY: single-threaded demo loop.
+            unsafe {
+                std::env::remove_var("ASCII_GRID_W");
+                std::env::remove_var("ASCII_GRID_H");
+            }
         }
         let _ = cmd.status();
 
         // Re-enable raw mode for keyboard input
         terminal::enable_raw_mode().unwrap();
 
-        let (tw, _th) = terminal::size().unwrap_or((80, 45));
-        execute!(io::stdout(), cursor::MoveTo(0, _th.saturating_sub(1))).unwrap();
+        if pane_open {
+            draw_options_pane(
+                render_w, th, current_mode, &spec, &pvals, psel, seed, current_theme,
+            );
+        }
+
+        execute!(io::stdout(), cursor::MoveTo(0, th.saturating_sub(1))).unwrap();
         let theme_label = if current_theme.is_empty() {
             "auto"
         } else {
             current_theme
         };
-        let status = format!(
-            " {} | seed:{} | theme:{} | f/j=prev/next  \u{2191}\u{2193}=seed  \u{2190}\u{2192}=theme  enter=random  q=quit ",
-            current_mode, seed, theme_label
-        );
-        // Pad to terminal width, inverse video
-        let padded: String = if status.len() < tw as usize {
-            format!("{}{}", status, " ".repeat(tw as usize - status.len()))
+        let status = if pane_open {
+            format!(
+                " {} | o=close opts  \u{2191}\u{2193}=select  \u{2190}\u{2192}=adjust  r=reset  a=animate  q=quit ",
+                current_mode
+            )
         } else {
-            status[..tw as usize].to_string()
+            format!(
+                " {} | seed:{} | theme:{} | /=find  o=opts  a=animate  f/j=prev/next  \u{2191}\u{2193}=seed  \u{2190}\u{2192}=theme  enter=rand  q=quit ",
+                current_mode, seed, theme_label
+            )
+        };
+        // Pad to terminal width, inverse video (char-safe truncation)
+        let status_w = status.chars().count();
+        let padded: String = if status_w < tw as usize {
+            format!("{}{}", status, " ".repeat(tw as usize - status_w))
+        } else {
+            status.chars().take(tw as usize).collect()
         };
         print!("\x1b[7m{}\x1b[0m", padded);
         io::stdout().flush().unwrap();
 
+        let has_params = !spec.params.is_empty();
         if let Ok(Event::Key(key)) = event::read() {
             match key.code {
                 KeyCode::Char('q') => break,
                 KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => break,
+                KeyCode::Char('o') => pane_open = !pane_open,
                 KeyCode::Char('j') => mode_idx = (mode_idx + 1) % all_modes.len(),
                 KeyCode::Char('f') => mode_idx = (mode_idx + all_modes.len() - 1) % all_modes.len(),
-                KeyCode::Up => seed = seed.wrapping_add(1),
-                KeyCode::Down => seed = seed.wrapping_sub(1),
-                KeyCode::Right => theme_idx = (theme_idx + 1) % all_themes.len(),
-                KeyCode::Left => theme_idx = (theme_idx + all_themes.len() - 1) % all_themes.len(),
+                KeyCode::Char('/') | KeyCode::Char('m') => {
+                    if let Some(idx) = demo_pick_mode(all_modes, mode_idx) {
+                        mode_idx = idx;
+                    }
+                }
+                KeyCode::Char('r') if pane_open && has_params => {
+                    pvals[psel] = spec.params[psel].default;
+                }
+                KeyCode::Char('a') => {
+                    // Animate via the declared strategy. Knob env is already set, so
+                    // the iterate subprocess inherits the tuned values.
+                    morph_session(
+                        current_mode,
+                        seed,
+                        current_mode,
+                        seed.wrapping_add(1),
+                        anim_strat(spec.animate),
+                        current_theme,
+                    );
+                }
+                KeyCode::Up => {
+                    if pane_open && has_params {
+                        psel = (psel + spec.params.len() - 1) % spec.params.len();
+                    } else {
+                        seed = seed.wrapping_add(1);
+                    }
+                }
+                KeyCode::Down => {
+                    if pane_open && has_params {
+                        psel = (psel + 1) % spec.params.len();
+                    } else {
+                        seed = seed.wrapping_sub(1);
+                    }
+                }
+                KeyCode::Right => {
+                    if pane_open && has_params {
+                        let p = &spec.params[psel];
+                        pvals[psel] = (pvals[psel] + p.step).min(p.max);
+                    } else {
+                        theme_idx = (theme_idx + 1) % all_themes.len();
+                    }
+                }
+                KeyCode::Left => {
+                    if pane_open && has_params {
+                        let p = &spec.params[psel];
+                        pvals[psel] = (pvals[psel] - p.step).max(p.min);
+                    } else {
+                        theme_idx = (theme_idx + all_themes.len() - 1) % all_themes.len();
+                    }
+                }
                 KeyCode::Enter => {
                     seed = rand::rng().random_range(0..10000u64);
                 }
@@ -327,6 +681,16 @@ fn main() {
         eprintln!("  ascii-renderer 42 bsp nerv");
         eprintln!("  ascii-renderer 42 mondrian");
         eprintln!("  ascii-renderer 42 swatch");
+        eprintln!();
+        eprintln!("MORPH/ANIMATE (eases in/out, adapts to resize):");
+        eprintln!("  keys: space=play  \u{2190}\u{2192}=scrub  w=walk  n=next  q=quit");
+        eprintln!("  morph:  1 dissolve  2 field  3 transport  4 sdf");
+        eprintln!("  warp:   5 wind  6 vflow(voronoi)  7 swirl  8 ripple  9 breathe  0 drift");
+        eprintln!("  native: i = iterate (re-render the mode with a time T -- true motion)");
+        eprintln!("  ascii-renderer 1 morph forest            # forest seed 1 \u{2194} 2, walks seeds");
+        eprintln!("  ascii-renderer 1 morph forest 1 forest 1 wind   # sway one scene in the wind");
+        eprintln!("  ascii-renderer 1 morph stained           # voronoi cells flow (auto)");
+        eprintln!("  ascii-renderer 3 morph fullmetal-eyes2   # then press i -- the seal rotates");
         std::process::exit(0);
     }
 
@@ -340,9 +704,29 @@ fn main() {
         return;
     }
 
+    if mode == "morph" {
+        run_morph(&args, seed, theme_name);
+        return;
+    }
+
     let (term_w, term_h) = crossterm::terminal::size().unwrap_or((80, 45));
-    let width = term_w as usize;
-    let height = term_h as usize;
+    // ASCII_GRID_W/H override the render size (used by the morph driver to dump
+    // frames at a fixed size regardless of the child's piped terminal).
+    let width = std::env::var("ASCII_GRID_W")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(term_w as usize);
+    let height = std::env::var("ASCII_GRID_H")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(term_h as usize);
+    // Animation time for parametric modes (Tier A). Defaults to 0.0 so a normal
+    // render is identical to before; the morph player's "iterate" strategy sweeps
+    // it. Any inline mode branch can fold `t_anim` into its phase.
+    let t_anim: f32 = std::env::var("ASCII_T")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(0.0);
     let mut grid = vec![vec![Cell::blank(); width]; height];
     let mut rng = StdRng::seed_from_u64(seed);
 
@@ -418,7 +802,7 @@ fn main() {
                 }
             }
         }
-        render_grid(&swatch_grid);
+        emit_grid(&swatch_grid);
         return;
     } else if mode == "tree" {
         grow_tree(&mut grid, 20, 40, 5, 16, palette[1], &mut rng);
@@ -3583,7 +3967,7 @@ fn main() {
             );
         }
 
-        render_grid(&pg);
+        emit_grid(&pg);
         return;
     } else if mode == "trees4" {
         // trees4: showcase all TreeDrawer types including new ports
@@ -3656,7 +4040,7 @@ fn main() {
             }
         }
 
-        render_grid(&grid);
+        emit_grid(&grid);
         return;
     } else if mode == "trees8" {
         // trees8: [energy] [fruit] [branch]
@@ -3719,7 +4103,7 @@ fn main() {
             }
         }
 
-        render_grid(&pg);
+        emit_grid(&pg);
         return;
     } else if mode == "trees9" {
         // trees9: [energy] [fruit] [branch]
@@ -3785,7 +4169,7 @@ fn main() {
             }
         }
 
-        render_grid(&pg);
+        emit_grid(&pg);
         return;
     } else if mode == "bushes" {
         // bushes: showcase full-size bole patterns as standalone bush sprites
@@ -6656,7 +7040,7 @@ fn main() {
             );
         }
 
-        let center_phase = seed as f32 * 0.073;
+        let center_phase = seed as f32 * 0.073 + t_anim * 0.25;
         let center_x_ratio = (0.47 + center_phase.sin() * 0.12).clamp(0.34, 0.62);
         let center_y_ratio = (0.51 + (center_phase * 1.41).cos() * 0.14).clamp(0.34, 0.66);
         let cx = width as f32 * center_x_ratio;
@@ -8058,7 +8442,7 @@ fn main() {
         let cy = height as i32 / 2;
         let max_rx = (width as f32 / 2.0 - 1.0).max(10.0);
         let max_ry = (height as f32 / 2.0 - 1.0).max(5.0);
-        let phase = rng.random_range(0.0..std::f32::consts::TAU);
+        let phase = rng.random_range(0.0..std::f32::consts::TAU) + t_anim * 0.15;
 
         // radiating light rays from center (alternating long/short)
         for i in 0..ray_count {
@@ -8476,7 +8860,7 @@ fn main() {
         let cy = height as i32 / 2;
         let max_rx = (width as f32 / 2.0 - 4.0).max(12.0);
         let max_ry = (height as f32 / 2.0 - 2.0).max(5.0);
-        let phase = seed as f32 * 0.031 - std::f32::consts::FRAC_PI_2;
+        let phase = seed as f32 * 0.031 - std::f32::consts::FRAC_PI_2 + t_anim * 0.12;
 
         for i in 0..3 {
             let rx = max_rx * (0.92 - i as f32 * 0.16);
@@ -8711,7 +9095,7 @@ fn main() {
         let cy = height as i32 / 2;
         let max_rx = (width as f32 / 2.0 - 4.0).max(12.0);
         let max_ry = (height as f32 / 2.0 - 2.0).max(5.0);
-        let phase = seed as f32 * 0.031 - std::f32::consts::FRAC_PI_2;
+        let phase = seed as f32 * 0.031 - std::f32::consts::FRAC_PI_2 + t_anim * 0.12;
 
         // seeded focal lure: the lever that makes every eye gaze a different way per seed
         let lure_x = cx + (rng.random_range(-0.35..0.35) * max_rx * 0.9) as i32;
@@ -12569,6 +12953,24 @@ fn main() {
                 }
             }
         }
+    } else if mode == "eyes++" {
+        draw_eyes_pp(&mut grid, width, height, seed, &palette, &mut rng);
+    } else if mode == "fullmetal-eyes++" {
+        draw_fme_pp(&mut grid, width, height, seed, &palette, &mut rng);
+    } else if mode == "trees++" {
+        draw_trees_pp(&mut grid, width, height, seed, &palette, &mut rng);
+    } else if mode == "forest++" {
+        draw_forest_pp(&mut grid, width, height, seed, &palette, &mut rng);
+    } else if mode == "phyllotaxis" {
+        draw_phyllotaxis(&mut grid, width, height, seed, &palette, &mut rng);
+    } else if mode == "moire" {
+        draw_moire(&mut grid, width, height, seed, &palette, &mut rng);
+    } else if mode == "nebula" {
+        draw_nebula(&mut grid, width, height, seed, &palette, &mut rng);
+    } else if mode == "delta" {
+        draw_delta(&mut grid, width, height, seed, &palette, &mut rng, t_anim);
+    } else if mode == "stained" {
+        draw_stained(&mut grid, width, height, seed, &palette, &mut rng);
     } else {
         fill_truchet(&mut grid, width, height, darken(palette[1], 80), &mut rng);
 
@@ -12629,7 +13031,1711 @@ fn main() {
         draw_flower(&mut grid, 40, 38, rng.random_range(0..5), palette[3]);
     }
 
-    render_grid(&grid);
+    emit_grid(&grid);
+}
+
+// ============================================================================
+// "++" modes and dealer's-choice modes. Self-contained renderers; each tuned
+// to look good with demo defaults (no required args). Shared geometry helpers.
+// ============================================================================
+
+fn pp_put(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
+    if x >= 0 && y >= 0 && (y as usize) < grid.len() && (x as usize) < grid[0].len() {
+        grid[y as usize][x as usize] = Cell::new(ch, fg);
+    }
+}
+
+fn pp_point_on(cx: i32, cy: i32, rx: f32, ry: f32, a: f32) -> (i32, i32) {
+    (
+        cx + (a.cos() * rx).round() as i32,
+        cy + (a.sin() * ry).round() as i32,
+    )
+}
+
+fn pp_stroke(dx: i32, dy: i32) -> char {
+    if dx.abs() > dy.abs() * 2 {
+        '─'
+    } else if dy.abs() > dx.abs() * 2 {
+        '│'
+    } else if dx.signum() == dy.signum() {
+        '╲'
+    } else {
+        '╱'
+    }
+}
+
+fn pp_line(grid: &mut Grid, mut x0: i32, mut y0: i32, x1: i32, y1: i32, fg: Color) {
+    let ch = pp_stroke(x1 - x0, y1 - y0);
+    let dx = (x1 - x0).abs();
+    let sx = if x0 < x1 { 1 } else { -1 };
+    let dy = -(y1 - y0).abs();
+    let sy = if y0 < y1 { 1 } else { -1 };
+    let mut err = dx + dy;
+    loop {
+        pp_put(grid, x0, y0, ch, fg);
+        if x0 == x1 && y0 == y1 {
+            break;
+        }
+        let e2 = 2 * err;
+        if e2 >= dy {
+            err += dy;
+            x0 += sx;
+        }
+        if e2 <= dx {
+            err += dx;
+            y0 += sy;
+        }
+    }
+}
+
+fn pp_arc(grid: &mut Grid, cx: i32, cy: i32, rx: f32, ry: f32, start: f32, end: f32, fg: Color, gap: usize) {
+    let samples = ((rx + ry) * 16.0).max(90.0) as usize;
+    let mut prev: Option<(i32, i32)> = None;
+    for i in 0..=samples {
+        if gap > 0 && i % gap == gap - 1 {
+            prev = None;
+            continue;
+        }
+        let a = start + (end - start) * i as f32 / samples as f32;
+        let p = pp_point_on(cx, cy, rx, ry, a);
+        if let Some(q) = prev {
+            pp_line(grid, q.0, q.1, p.0, p.1, fg);
+        } else {
+            pp_put(grid, p.0, p.1, '·', fg);
+        }
+        prev = Some(p);
+    }
+}
+
+// --- eyes++ : an argus field. Hero eye + two orbital rings of gazing eyes,
+//     dense rays, halo arcs, every eye tracking a seeded lure. ---
+fn draw_eyes_pp(grid: &mut Grid, width: usize, height: usize, seed: u64, palette: &[Color; 5], rng: &mut StdRng) {
+    use std::f32::consts::TAU;
+    let bg = darken(palette[0], 14);
+    let chalk = lighten(palette[4], 14);
+    let gold = lighten(palette[1], 30);
+    let iris_outer = shift_hue(lighten(palette[3], 26), 18.0);
+    let iris_inner = lighten(palette[2], 20);
+    let lid_color = lighten(palette[1], 18);
+    let pupil = darken(palette[0], 2);
+    let sclera = lighten(palette[4], 6);
+    let ray_color = lighten(palette[4], 18);
+    let hush = darken(palette[2], 60);
+
+    for y in 0..height {
+        for x in 0..width {
+            let n = (x * 17 + y * 29 + seed as usize * 3) % 97;
+            let (ch, col) = match n {
+                0 => ('·', hush),
+                1 if (x + y) % 3 == 0 => ('∙', hush),
+                _ => (' ', bg),
+            };
+            grid[y][x] = Cell::new(ch, col);
+        }
+    }
+
+    let cx = width as i32 / 2;
+    let cy = height as i32 / 2;
+    let max_rx = (width as f32 / 2.0 - 1.0).max(10.0);
+    let max_ry = (height as f32 / 2.0 - 1.0).max(5.0);
+    let phase = rng.random_range(0.0f32..TAU);
+
+    let lure_x = (cx + rng.random_range(-(width as i32 / 6)..=(width as i32 / 6))).clamp(8, width as i32 - 8);
+    let lure_y = (cy + rng.random_range(-(height as i32 / 5)..=(height as i32 / 5))).clamp(6, height as i32 - 4);
+    let lure_col = shift_hue(lighten(iris_inner, 26), rng.random_range(-40..=40) as f64);
+
+    let gaze_for = |ex: i32, ey: i32, rx: i32, ry: i32| -> (i32, i32) {
+        let dx = (lure_x - ex) as f32;
+        let dy = (lure_y - ey) as f32;
+        let d = (dx * dx + dy * dy).sqrt().max(1.0);
+        let gx = ((dx / d) * (rx as f32 * 0.30)).round() as i32;
+        let gy = ((dy / d) * (ry as f32 * 0.55)).round() as i32;
+        (
+            gx.clamp(-(rx / 3).max(1), (rx / 3).max(1)),
+            gy.clamp(-(ry / 2).max(1), (ry / 2).max(1)),
+        )
+    };
+
+    let ray_count = 28 + (seed as usize % 16);
+    for i in 0..ray_count {
+        let a = phase + i as f32 * TAU / ray_count as f32;
+        let long = i % 2 == 0;
+        let r0 = if long { 7.0 } else { 5.0 };
+        let r1 = if long { 0.99 } else { 0.62 };
+        let p0 = pp_point_on(cx, cy, r0, r0 * 0.5, a);
+        let p1 = pp_point_on(cx, cy, max_rx * r1, max_ry * r1, a);
+        pp_line(grid, p0.0, p0.1, p1.0, p1.1, darken(ray_color, if long { 8 } else { 30 }));
+        if long {
+            pp_put(grid, p1.0, p1.1, '◇', darken(ray_color, 18));
+        }
+    }
+
+    for r in [0.42f32, 0.55, 0.70, 0.86] {
+        pp_arc(grid, cx, cy, max_rx * r, max_ry * r, 0.0, TAU, darken(gold, 24 + (r * 20.0) as u8), 0);
+    }
+
+    let draw_eye = |grid: &mut Grid, ex: i32, ey: i32, erx: i32, ery: i32, gx: i32, gy: i32, io: Color, ii: Color, lid: Color, fibers: usize| {
+        let iris_rx = (erx as f32 * 0.44).round().max(1.0) as i32;
+        let iris_ry = (ery as f32 * 0.92).round().max(1.0) as i32;
+        let pupil_rx = (iris_rx as f32 * 0.42).round().max(1.0) as i32;
+        let pupil_ry = (iris_ry as f32 * 0.62).round().max(1.0) as i32;
+        let icx = ex + gx;
+        let icy = ey + gy;
+        for dx in -erx - 1..=erx + 1 {
+            let nx = dx as f32 / erx.max(1) as f32;
+            if nx.abs() > 1.04 {
+                continue;
+            }
+            let curve = (1.0 - nx.abs().powf(1.8)).max(0.0).powf(0.6);
+            let top = (-ery as f32 * curve).round() as i32;
+            let bot = (ery as f32 * curve).round() as i32;
+            for dy in top..=bot {
+                let idx = dx - gx;
+                let idy = dy - gy;
+                let im = (idx as f32 / iris_rx as f32).powi(2) + (idy as f32 / iris_ry as f32).powi(2);
+                if im <= 1.0 {
+                    let pm = (idx as f32 / pupil_rx as f32).powi(2) + (idy as f32 / pupil_ry as f32).powi(2);
+                    if pm <= 1.0 {
+                        pp_put(grid, ex + dx, ey + dy, '●', pupil);
+                    } else {
+                        pp_put(grid, ex + dx, ey + dy, '·', darken(ii, 14));
+                    }
+                } else {
+                    pp_put(grid, ex + dx, ey + dy, ' ', sclera);
+                }
+            }
+        }
+        for i in 0..fibers {
+            let a = i as f32 * TAU / fibers as f32;
+            let p0 = pp_point_on(icx, icy, pupil_rx as f32 * 1.1, pupil_ry as f32 * 1.1, a);
+            let p1 = pp_point_on(icx, icy, iris_rx as f32 * 0.96, iris_ry as f32 * 0.96, a);
+            let col = if i % 2 == 0 { io } else { darken(ii, 6) };
+            pp_line(grid, p0.0, p0.1, p1.0, p1.1, col);
+        }
+        pp_arc(grid, icx, icy, pupil_rx as f32 * 1.1, pupil_ry as f32 * 1.1, 0.0, TAU, pupil, 0);
+        pp_put(grid, icx, icy, '◉', pupil);
+        pp_put(grid, icx - iris_rx / 2, icy - iris_ry / 2, '˙', chalk);
+        for dx in -erx - 1..=erx + 1 {
+            let nx = dx as f32 / erx.max(1) as f32;
+            if nx.abs() > 1.04 {
+                continue;
+            }
+            let curve = (1.0 - nx.abs().powf(1.8)).max(0.0).powf(0.6);
+            let top = (-ery as f32 * curve).round() as i32;
+            let bot = (ery as f32 * curve).round() as i32;
+            let cht = if dx < -erx / 2 { '╭' } else if dx > erx / 2 { '╮' } else { '─' };
+            let chb = if dx < -erx / 2 { '╰' } else if dx > erx / 2 { '╯' } else { '─' };
+            pp_put(grid, ex + dx, ey + top, cht, lighten(lid, 10));
+            pp_put(grid, ex + dx, ey + bot, chb, darken(lid, 4));
+        }
+        pp_put(grid, ex - erx, ey, '<', lighten(lid, 6));
+        pp_put(grid, ex + erx, ey, '>', lighten(lid, 6));
+    };
+
+    for ring in 0..2 {
+        let count = if ring == 0 { 6 + seed as usize % 3 } else { 9 + seed as usize % 4 };
+        let dist = if ring == 0 { 0.42 } else { 0.74 };
+        for i in 0..count {
+            let a = phase + i as f32 * TAU / count as f32 + ring as f32 * 0.3;
+            let ex = (cx as f32 + a.cos() * max_rx * dist).round() as i32;
+            let ey = (cy as f32 + a.sin() * max_ry * dist).round() as i32;
+            if ex < 6 || ey < 3 || ex >= width as i32 - 6 || ey >= height as i32 - 3 {
+                continue;
+            }
+            let (rx, ry) = if ring == 0 { (8, 4) } else { (5, 2) };
+            let (gx, gy) = gaze_for(ex, ey, rx, ry);
+            let io = shift_hue(iris_outer, (i as f64 * 47.0) % 160.0 - 80.0);
+            let ii = shift_hue(iris_inner, (i as f64 * 33.0) % 120.0 - 60.0);
+            let lid = shift_hue(lid_color, (i as f64 * 20.0) % 80.0 - 40.0);
+            draw_eye(grid, ex, ey, rx, ry, gx, gy, io, ii, lid, 10 + i % 4);
+        }
+    }
+
+    let hero_rx = ((width as f32 * 0.21).round() as i32).clamp(10, 24);
+    let hero_ry = ((height as f32 * 0.17).round() as i32).clamp(3, 8);
+    let hero_y = cy - (height as i32 / 14).max(1);
+    let (hgx, hgy) = gaze_for(cx, hero_y, hero_rx, hero_ry);
+    draw_eye(grid, cx, hero_y, hero_rx, hero_ry, hgx, hgy, iris_outer, iris_inner, lid_color, 20 + seed as usize % 8);
+    pp_line(grid, cx - (hero_rx - 1), hero_y - hero_ry - 1, cx, hero_y - hero_ry - 3, darken(lid_color, 6));
+    pp_line(grid, cx, hero_y - hero_ry - 3, cx + (hero_rx - 1), hero_y - hero_ry - 1, darken(lid_color, 6));
+
+    pp_put(grid, lure_x, lure_y, '◆', lighten(lure_col, 12));
+}
+
+// --- fullmetal-eyes++ : the multi-tier seal cranked. 4 arc bands, 3-4 star
+//     polygons, node eyes on EVERY tier vertex, twin rune bands, hero eye. ---
+fn draw_fme_pp(grid: &mut Grid, width: usize, height: usize, seed: u64, palette: &[Color; 5], rng: &mut StdRng) {
+    use std::f32::consts::{FRAC_PI_2, TAU};
+    let bg = darken(palette[0], 12);
+    let chalk = lighten(palette[4], 12);
+    let gold = lighten(palette[1], 30);
+    let iris = lighten(palette[3], 30);
+    let lid = lighten(palette[2], 18);
+    let pupil = darken(palette[0], 2);
+    let sclera = lighten(palette[4], 4);
+    let shadow = darken(palette[2], 60);
+
+    for y in 0..height {
+        for x in 0..width {
+            let n = (x * 19 + y * 43 + seed as usize * 5) % 151;
+            let (ch, col) = match n {
+                0 => ('·', shadow),
+                1 => ('∙', shadow),
+                _ => (' ', bg),
+            };
+            grid[y][x] = Cell::new(ch, col);
+        }
+    }
+
+    let cx = width as i32 / 2;
+    let cy = height as i32 / 2;
+    let max_rx = (width as f32 / 2.0 - 4.0).max(12.0);
+    let max_ry = (height as f32 / 2.0 - 2.0).max(5.0);
+    let phase = seed as f32 * 0.031 - FRAC_PI_2;
+
+    let lure_x = cx + (rng.random_range(-0.35f32..0.35) * max_rx * 0.9) as i32;
+    let lure_y = cy + (rng.random_range(-0.30f32..0.30) * max_ry * 0.9) as i32;
+
+    let gaze_for = |ex: i32, ey: i32, rx: i32, ry: i32| -> (i32, i32) {
+        let dx = (lure_x - ex) as f32;
+        let dy = (lure_y - ey) as f32;
+        let d = (dx * dx + dy * dy).sqrt().max(1.0);
+        let gx = ((dx / d) * (rx as f32 * 0.34)).round() as i32;
+        let gy = ((dy / d) * (ry as f32 * 0.6)).round() as i32;
+        (
+            gx.clamp(-(rx / 3).max(1), (rx / 3).max(1)),
+            gy.clamp(-(ry / 2).max(1), (ry / 2).max(1)),
+        )
+    };
+
+    let draw_hero_eye = |grid: &mut Grid, ex: i32, ey: i32, rx: i32, ry: i32, gx: i32, gy: i32, iris_c: Color, lid_c: Color| {
+        for dx in -rx..=rx {
+            let nx = dx as f32 / rx.max(1) as f32;
+            let curve = (1.0 - nx.abs().powf(1.6)).max(0.0).powf(0.55);
+            let top = (-(ry as f32) * curve).round() as i32;
+            let bottom = ((ry as f32) * 0.78 * curve).round() as i32;
+            for dy in top..=bottom {
+                if dy == top || dy == bottom {
+                    let ch = if dx < -rx / 2 {
+                        if dy == top { '╱' } else { '╲' }
+                    } else if dx > rx / 2 {
+                        if dy == top { '╲' } else { '╱' }
+                    } else {
+                        '─'
+                    };
+                    pp_put(grid, ex + dx, ey + dy, ch, lid_c);
+                } else {
+                    let ix = (dx - gx) as f32 / (rx as f32 * 0.42);
+                    let iy = (dy - gy) as f32 / ry.max(1) as f32;
+                    let im = ix * ix + iy * iy;
+                    if im <= 0.16 {
+                        pp_put(grid, ex + dx, ey + dy, '◉', pupil);
+                    } else if im <= 1.0 {
+                        let ang = (iy.atan2(ix) + TAU) % TAU;
+                        let fiber = ((ang / (TAU / 16.0)).round() as i32) % 2 == 0;
+                        let ch = if im > 0.78 { '○' } else if fiber { '╎' } else { '·' };
+                        pp_put(grid, ex + dx, ey + dy, ch, iris_c);
+                    } else {
+                        pp_put(grid, ex + dx, ey + dy, '·', sclera);
+                    }
+                }
+            }
+        }
+        pp_put(grid, ex + gx - 1, ey + gy - 1, '˙', chalk);
+        pp_put(grid, ex + gx, ey + gy - 1, '˙', chalk);
+    };
+
+    let draw_node_eye = |grid: &mut Grid, ncx: i32, ncy: i32, rx: i32, ry: i32, gx: i32, gy: i32, lid_c: Color, iris_c: Color| {
+        for dx in -rx..=rx {
+            let nx = dx as f32 / rx.max(1) as f32;
+            let curve = (1.0 - nx.abs().powf(1.65)).max(0.0).powf(0.55);
+            let top = (-(ry as f32) * curve).round() as i32;
+            let bottom = ((ry as f32) * 0.75 * curve).round() as i32;
+            for dy in top..=bottom {
+                if dy == top || dy == bottom {
+                    let ch = if dx < -rx / 2 {
+                        if dy == top { '╱' } else { '╲' }
+                    } else if dx > rx / 2 {
+                        if dy == top { '╲' } else { '╱' }
+                    } else {
+                        '─'
+                    };
+                    pp_put(grid, ncx + dx, ncy + dy, ch, lid_c);
+                } else {
+                    let ix = (dx - gx) as f32 / (rx as f32 * 0.5);
+                    let iy = (dy - gy) as f32 / ry.max(1) as f32;
+                    let im = ix * ix + iy * iy;
+                    if im <= 0.5 {
+                        pp_put(grid, ncx + dx, ncy + dy, '◉', pupil);
+                    } else if im <= 1.0 {
+                        pp_put(grid, ncx + dx, ncy + dy, '·', iris_c);
+                    }
+                }
+            }
+        }
+        pp_put(grid, ncx + gx - 1, ncy + gy - 1, '˙', chalk);
+    };
+
+    let runes = [
+        '△', '▽', '□', '◇', '☉', '☽', '☿', '♄', '♃', '✦', '∴', '∵', '⊕', '⊗', '✶', '◈',
+    ];
+
+    let band_count = 4;
+    for i in 0..band_count {
+        let t = i as f32 / (band_count - 1) as f32;
+        let r = 0.46 + t * 0.46;
+        let col = match i % 3 {
+            0 => chalk,
+            1 => gold,
+            _ => iris,
+        };
+        let gap = if i % 3 == 2 { 9 } else { 0 };
+        pp_arc(grid, cx, cy, max_rx * r, max_ry * r, phase, phase + TAU, col, gap);
+    }
+
+    let tier_count = 3 + seed as usize % 2;
+    let mut tier_verts: Vec<Vec<(i32, i32)>> = Vec::new();
+    for ti in 0..tier_count {
+        let rad = 0.40 + ti as f32 * 0.15;
+        let n = 5 + (seed as usize + ti * 7) % 6;
+        let rot = phase + ti as f32 * 0.4 + seed as f32 * 0.01 * ti as f32;
+        let mut verts: Vec<(i32, i32)> = Vec::with_capacity(n);
+        for i in 0..n {
+            let a = rot + i as f32 * TAU / n as f32;
+            verts.push(pp_point_on(cx, cy, max_rx * rad, max_ry * rad, a));
+        }
+        let max_k = ((n - 1) / 2).max(1);
+        let k = if max_k >= 2 { 2 + (seed as usize + ti) % (max_k - 1) } else { 1 };
+        let col = if ti % 2 == 0 { gold } else { chalk };
+        for i in 0..n {
+            let (ax, ay) = verts[i];
+            let (bx, by) = verts[(i + k.min(max_k)) % n];
+            pp_line(grid, ax, ay, bx, by, darken(col, 8));
+        }
+        for &v in &verts {
+            pp_put(grid, v.0, v.1, '◇', lighten(col, 8));
+        }
+        tier_verts.push(verts);
+    }
+
+    for (bi, &r) in [0.92f32, 0.62].iter().enumerate() {
+        let ins_n = ((max_rx + max_ry) * r * 0.5).round().clamp(14.0, 40.0) as usize;
+        for i in 0..ins_n {
+            let a = phase + i as f32 * TAU / ins_n as f32;
+            let p = pp_point_on(cx, cy, max_rx * r, max_ry * r, a);
+            pp_put(grid, p.0, p.1, runes[(i + seed as usize + bi * 3) % runes.len()], lighten(gold, 8));
+        }
+    }
+
+    for (ti, verts) in tier_verts.iter().enumerate() {
+        let (rx, ry) = if ti + 1 == tier_count { (5, 2) } else { (4, 2) };
+        for (i, &(nx, ny)) in verts.iter().enumerate() {
+            let (gx, gy) = gaze_for(nx, ny, rx, ry);
+            draw_node_eye(grid, nx, ny, rx, ry, gx, gy, darken(lid, 6), shift_hue(iris, (i as f64 * 40.0 + ti as f64 * 17.0) % 360.0));
+            pp_put(grid, nx, ny + ry + 1, runes[(i + ti) % runes.len()], lighten(gold, 12));
+        }
+    }
+
+    let hero_rx = (width as f32 * 0.13) as i32;
+    let hero_ry = (height as f32 * 0.15) as i32;
+    let (hgx, hgy) = gaze_for(cx, cy, hero_rx, hero_ry);
+    draw_hero_eye(grid, cx, cy, hero_rx, hero_ry, hgx, hgy, lighten(iris, 16), lighten(lid, 10));
+
+    pp_arc(grid, lure_x, lure_y, 3.0, 1.5, 0.0, TAU, shift_hue(gold, 40.0), 4);
+    pp_put(grid, lure_x, lure_y, '◆', lighten(gold, 20));
+
+    for _ in 0..(tier_count + 2) {
+        let a = phase + rng.random::<f32>() * TAU;
+        let p1 = pp_point_on(cx, cy, max_rx * rng.random_range(0.22..0.45), max_ry * rng.random_range(0.22..0.45), a);
+        let p2 = pp_point_on(cx, cy, max_rx * rng.random_range(0.60..0.90), max_ry * rng.random_range(0.60..0.90), a + rng.random_range(0.3..1.3));
+        pp_line(grid, p1.0, p1.1, p2.0, p2.1, darken(iris, 18));
+    }
+}
+
+// --- trees++ : a lush grounded gallery of tree variants on grassy hillocks,
+//     varied spreads + hues, fruit/flower accents, no debug labels. ---
+fn draw_trees_pp(grid: &mut Grid, width: usize, height: usize, seed: u64, palette: &[Color; 5], rng: &mut StdRng) {
+    let cols = (width / 18).clamp(3, 6);
+    let rows = (height / 14).clamp(2, 4);
+    let cell_w = width / cols;
+    let cell_h = height / rows;
+    let grass = darken(palette[2], 30);
+    let gc = ['v', 'w', '\u{2c4}', '\u{1d1b}'];
+
+    for row in 0..rows {
+        for col in 0..cols {
+            let kind = (row * cols + col + seed as usize) % 19;
+            let cx = col * cell_w + cell_w / 2;
+            let ground_y = (row + 1) * cell_h - 2;
+            let canopy_y = row * cell_h + 2;
+            let spread = (cell_w / 4).max(3);
+            // grass line under the tree
+            for x in (col * cell_w)..((col + 1) * cell_w).min(width) {
+                let gy = ground_y + 1;
+                if gy < height {
+                    grid[gy][x] = Cell::new(gc[(x + row) % gc.len()], grass);
+                }
+            }
+            let base = palette[1 + kind % 3];
+            let color = shift_hue(base, (kind as f64 * 23.0) % 120.0 - 60.0);
+            draw_tree(grid, cx, ground_y, canopy_y, spread, kind, color, rng);
+            // accent: fruit hanging in canopy or flower at the base
+            if (row + col + seed as usize) % 2 == 0 {
+                draw_flower(grid, (cx + spread).min(width.saturating_sub(1)), ground_y.saturating_sub(1), kind % 5, palette[3]);
+            } else {
+                draw_fruit(grid, cx.saturating_sub(spread / 2), (canopy_y + 3).min(height.saturating_sub(1)), kind % 5, lighten(palette[3], 10));
+            }
+        }
+    }
+}
+
+// --- forest++ : layered depth. star sky + disc, far dark pines, mid mix,
+//     foreground hero trees, grass band, scattered flowers/fruit. ---
+fn draw_forest_pp(grid: &mut Grid, width: usize, height: usize, seed: u64, palette: &[Color; 5], rng: &mut StdRng) {
+    let ground_y = height.saturating_sub(4);
+    let ground_color = darken(palette[1], 90);
+    let tiles = ['╱', '╲'];
+
+    // sky (sparse) + ground (truchet)
+    for y in 0..height {
+        for x in 0..width {
+            if y >= ground_y {
+                grid[y][x] = Cell::new(tiles[(x + y) % 2], ground_color);
+            } else {
+                grid[y][x] = Cell::blank();
+            }
+        }
+    }
+    // stars in upper sky
+    for _ in 0..(width / 2) {
+        let x = rng.random_range(0..width);
+        let y = rng.random_range(0..(ground_y / 2).max(1));
+        let ch = if rng.random_range(0..4) == 0 { '✦' } else { '·' };
+        grid[y][x] = Cell::new(ch, darken(palette[4], 60));
+    }
+    // sun / moon disc
+    let disc_cx = (width / 5 + seed as usize % (width / 2).max(1)) as i32;
+    let disc_cy = (2 + seed as usize % 3) as i32;
+    let disc_col = lighten(palette[3], 14);
+    for dy in -2i32..=2 {
+        for dx in -4i32..=4 {
+            let m = (dx as f32 / 4.0).powi(2) + (dy as f32 / 2.0).powi(2);
+            if m <= 1.0 {
+                pp_put(grid, disc_cx + dx, disc_cy + dy, '·', disc_col);
+            }
+        }
+    }
+    pp_arc(grid, disc_cx, disc_cy, 4.0, 2.0, 0.0, std::f32::consts::TAU, lighten(disc_col, 10), 0);
+
+    // far hills: small, desaturated, dark pines on the horizon
+    let far_color = darken(palette[2], 40);
+    let mut x = 2usize;
+    while x < width.saturating_sub(2) {
+        let h = 4 + (x + seed as usize) % 3;
+        draw_pine(grid, x, ground_y.saturating_sub(1), 3, h, far_color);
+        x += 4 + (x + seed as usize) % 3;
+    }
+
+    // mid trees: medium mixed, slightly darkened
+    let mid_color = darken(palette[1], 30);
+    let mid_xs = [width / 6, width / 3, width / 2, (width * 2) / 3, (width * 5) / 6];
+    for (i, &mx) in mid_xs.iter().enumerate() {
+        let canopy = ground_y.saturating_sub(8);
+        match (i + seed as usize) % 3 {
+            0 => draw_pine(grid, mx, ground_y.saturating_sub(1), 4, 8, mid_color),
+            1 => grow_tree(grid, mx, ground_y.saturating_sub(1), canopy, 4, mid_color, rng),
+            _ => draw_palm(grid, mx, ground_y.saturating_sub(1), 9, darken(palette[3], 20), rng),
+        }
+    }
+
+    // foreground hero trees (clear bounding boxes first; willow needs blanks)
+    let clear = |grid: &mut Grid, x0: usize, x1: usize, y0: usize, y1: usize| {
+        for yy in y0..y1.min(height) {
+            for xx in x0..x1.min(width) {
+                if yy < ground_y {
+                    grid[yy][xx] = Cell::blank();
+                }
+            }
+        }
+    };
+    let fg_a = width / 6;
+    clear(grid, fg_a.saturating_sub(8), fg_a + 8, ground_y.saturating_sub(14), ground_y);
+    grow_tree(grid, fg_a, ground_y.saturating_sub(1), ground_y.saturating_sub(13), 6, palette[1], rng);
+
+    let fg_b = width / 2;
+    draw_pine(grid, fg_b, ground_y.saturating_sub(1), 5, 12, palette[2]);
+
+    let fg_c = (width * 3) / 4;
+    clear(grid, fg_c.saturating_sub(9), fg_c + 9, ground_y.saturating_sub(16), ground_y);
+    draw_willow(grid, fg_c, ground_y.saturating_sub(1), ground_y.saturating_sub(14), 7, palette[1]);
+
+    let fg_d = width.saturating_sub(8);
+    draw_palm(grid, fg_d, ground_y.saturating_sub(1), 15, palette[3], rng);
+
+    // undergrowth: flowers + fallen fruit
+    for _ in 0..(width / 6) {
+        let fx = rng.random_range(1..width.saturating_sub(1));
+        let fy = ground_y.saturating_sub(1);
+        if rng.random_range(0..2) == 0 {
+            draw_flower(grid, fx, fy, rng.random_range(0..5), palette[3]);
+        } else {
+            draw_fruit(grid, fx, ground_y, rng.random_range(0..5), rgb(200, 60, 50));
+        }
+    }
+}
+
+// --- phyllotaxis : golden-angle sunflower spiral; glyph scales with radius,
+//     color ramps outward through the palette. ---
+fn draw_phyllotaxis(grid: &mut Grid, width: usize, height: usize, seed: u64, palette: &[Color; 5], rng: &mut StdRng) {
+    let bg = darken(palette[0], 6);
+    for y in 0..height {
+        for x in 0..width {
+            grid[y][x] = Cell::new(' ', bg);
+        }
+    }
+    let cx = width as f32 / 2.0;
+    let cy = height as f32 / 2.0;
+    let golden = std::f32::consts::PI * (3.0 - 5.0f32.sqrt());
+    let n = 520 + (seed as usize % 280);
+    let sx = width as f32 * 0.47 / (n as f32).sqrt();
+    let sy = height as f32 * 0.47 / (n as f32).sqrt();
+    let rot = (seed as f32 % 360.0).to_radians() + rng.random_range(0.0f32..0.5);
+    let glyphs = ['·', '∙', '•', '◦', '○', '◌', '✦', '◆', '❀', '✺'];
+    for i in 0..n {
+        let a = i as f32 * golden + rot;
+        let rr = (i as f32).sqrt();
+        let x = (cx + a.cos() * sx * rr).round() as i32;
+        let y = (cy + a.sin() * sy * rr).round() as i32;
+        let t = i as f32 / n as f32;
+        let mid = lerp_color(palette[3], palette[1], (t * 2.0).min(1.0));
+        let col = lerp_color(mid, palette[2], (t * 2.0 - 1.0).max(0.0));
+        let gi = ((1.0 - t) * (glyphs.len() - 1) as f32).round() as usize;
+        pp_put(grid, x, y, glyphs[gi.min(glyphs.len() - 1)], col);
+    }
+    pp_put(grid, cx as i32, cy as i32, '❁', lighten(palette[3], 20));
+}
+
+// --- moire : two radial sine gratings interfering; shade ramp + color blend. ---
+fn draw_moire(grid: &mut Grid, width: usize, height: usize, _seed: u64, palette: &[Color; 5], rng: &mut StdRng) {
+    let ramp = [' ', '·', ':', '-', '=', '+', '*', '#', '%', '@'];
+    let ax = width as f32 * rng.random_range(0.2..0.4);
+    let ay = height as f32 * rng.random_range(0.3..0.6);
+    let bx = width as f32 * rng.random_range(0.6..0.8);
+    let by = height as f32 * rng.random_range(0.4..0.7);
+    let f1 = rng.random_range(0.5f32..0.95);
+    let f2 = rng.random_range(0.5f32..0.95);
+    for y in 0..height {
+        for x in 0..width {
+            let dx1 = x as f32 - ax;
+            let dy1 = (y as f32 - ay) * 2.0;
+            let dx2 = x as f32 - bx;
+            let dy2 = (y as f32 - by) * 2.0;
+            let d1 = (dx1 * dx1 + dy1 * dy1).sqrt();
+            let d2 = (dx2 * dx2 + dy2 * dy2).sqrt();
+            let v = (d1 * f1 * 0.5).sin() + (d2 * f2 * 0.5).sin();
+            let t = (v + 2.0) / 4.0;
+            let idx = (t * (ramp.len() - 1) as f32).round() as usize;
+            let col = lerp_color(palette[1], palette[3], t);
+            grid[y][x] = Cell::new(ramp[idx.min(ramp.len() - 1)], col);
+        }
+    }
+}
+
+fn pp_hash2(x: i32, y: i32, seed: u64) -> f32 {
+    let mut h = (x as i64)
+        .wrapping_mul(374761393)
+        ^ (y as i64).wrapping_mul(668265263)
+        ^ (seed as i64).wrapping_mul(2246822519);
+    h = (h ^ (h >> 13)).wrapping_mul(1274126177);
+    ((h & 0xffff) as f32) / 65535.0
+}
+
+fn pp_vnoise(fx: f32, fy: f32, seed: u64) -> f32 {
+    let x0 = fx.floor() as i32;
+    let y0 = fy.floor() as i32;
+    let tx = fx - x0 as f32;
+    let ty = fy - y0 as f32;
+    let sx = tx * tx * (3.0 - 2.0 * tx);
+    let sy = ty * ty * (3.0 - 2.0 * ty);
+    let n00 = pp_hash2(x0, y0, seed);
+    let n10 = pp_hash2(x0 + 1, y0, seed);
+    let n01 = pp_hash2(x0, y0 + 1, seed);
+    let n11 = pp_hash2(x0 + 1, y0 + 1, seed);
+    let a = n00 + (n10 - n00) * sx;
+    let b = n01 + (n11 - n01) * sx;
+    a + (b - a) * sy
+}
+
+fn pp_fbm(fx: f32, fy: f32, seed: u64) -> f32 {
+    let mut v = 0.0;
+    let mut amp = 0.5;
+    let mut freq = 1.0;
+    for o in 0..4u64 {
+        v += amp * pp_vnoise(fx * freq, fy * freq, seed.wrapping_add(o * 101));
+        amp *= 0.5;
+        freq *= 2.0;
+    }
+    v
+}
+
+// --- nebula : fbm cloud field with a shade ramp, palette gradient, scattered
+//     stars in the dark voids. ---
+fn draw_nebula(grid: &mut Grid, width: usize, height: usize, seed: u64, palette: &[Color; 5], rng: &mut StdRng) {
+    let ramp = [' ', ' ', '·', '∙', ':', '*', '▒', '▓'];
+    for y in 0..height {
+        for x in 0..width {
+            let fx = x as f32 / 11.0;
+            let fy = y as f32 / 5.5;
+            let n = pp_fbm(fx, fy, seed);
+            let t = ((n - 0.25) * 1.7).clamp(0.0, 1.0);
+            let idx = (t * (ramp.len() - 1) as f32).round() as usize;
+            let body = lerp_color(darken(palette[0], 4), palette[2], t);
+            let col = lerp_color(body, palette[3], t * t);
+            grid[y][x] = Cell::new(ramp[idx.min(ramp.len() - 1)], col);
+        }
+    }
+    let star_count = (width * height) / 36;
+    for _ in 0..star_count {
+        let x = rng.random_range(0..width);
+        let y = rng.random_range(0..height);
+        let n = pp_fbm(x as f32 / 11.0, y as f32 / 5.5, seed);
+        if n < 0.42 {
+            let ch = match rng.random_range(0..3) {
+                0 => '✦',
+                1 => '✧',
+                _ => '·',
+            };
+            grid[y][x] = Cell::new(ch, lighten(palette[4], 0));
+        }
+    }
+}
+
+// --- delta : recursive branching river/lightning system fanning down-screen. ---
+fn draw_delta(grid: &mut Grid, width: usize, height: usize, _seed: u64, palette: &[Color; 5], rng: &mut StdRng, t: f32) {
+    use std::f32::consts::FRAC_PI_2;
+    let bg = darken(palette[0], 6);
+    for y in 0..height {
+        for x in 0..width {
+            grid[y][x] = Cell::new(' ', bg);
+        }
+    }
+    // Physics tree. Each branch is a torsional spring-damper at its joint: it has
+    // a rest angle relative to its parent, an angular deflection `theta`, and an
+    // angular velocity `omega`. A turbulent wind force field pushes on each
+    // segment; the spring pulls it back to rest; damping bleeds energy. Children
+    // hang off the parent's *current* tip and inherit its swayed world angle, so
+    // it's a kinematic chain -- trunk motion propagates to twigs, and lighter
+    // (shorter) tips have less inertia so they flutter faster than the trunk.
+    //
+    // Frames are stateless (each render gets a single time `t`), so we re-integrate
+    // from a bounded warm-up window each frame: start at rest at t0 = t - WARM and
+    // step to t. The artificial rest start's transient decays within WARM, leaving
+    // the true forced steady-state at t -- constant cost no matter how large t grows.
+    struct Node {
+        parent: i32,
+        rel: f32,  // rest angle relative to parent (absolute for roots)
+        len: f32,
+        depth: i32,
+        bx: f32,   // root base position (children derive base from parent tip)
+        by: f32,
+    }
+    // Build topology with the exact same rng call order as the static tree, so a
+    // t==0 render is byte-identical to the snapshot / plain mode.
+    let mut nodes: Vec<Node> = Vec::new();
+    struct Pending {
+        parent: i32,
+        rel: f32,
+        len: f32,
+        depth: i32,
+        bx: f32,
+        by: f32,
+    }
+    let roots = 3;
+    let mut stack: Vec<Pending> = Vec::new();
+    for r in 0..roots {
+        let x = width as f32 * (r as f32 + 1.0) / (roots as f32 + 1.0);
+        stack.push(Pending {
+            parent: -1,
+            rel: FRAC_PI_2 + rng.random_range(-0.25f32..0.25),
+            len: height as f32 * 0.30,
+            depth: 0,
+            bx: x,
+            by: 1.0,
+        });
+    }
+    while let Some(p) = stack.pop() {
+        if p.depth > 7 || p.len < 2.0 {
+            continue;
+        }
+        let idx = nodes.len() as i32;
+        nodes.push(Node {
+            parent: p.parent,
+            rel: p.rel,
+            len: p.len,
+            depth: p.depth,
+            bx: p.bx,
+            by: p.by,
+        });
+        let children = if p.depth < 2 { 3 } else { 2 };
+        for _ in 0..children {
+            let da = rng.random_range(-0.65f32..0.65);
+            let len = p.len * rng.random_range(0.6f32..0.78);
+            stack.push(Pending {
+                parent: idx,
+                rel: da,
+                len,
+                depth: p.depth + 1,
+                bx: 0.0,
+                by: 0.0,
+            });
+        }
+    }
+    let n = nodes.len();
+
+    // Per-joint physics constants, tunable from the demo options pane (env knobs;
+    // see DELTA_PARAMS). Stiffness scales with branch thickness (~len), inertia
+    // with mass*len^2 (~len^3 for a uniform rod). Natural frequency then goes as
+    // 1/len: the trunk sways slowly, twigs flutter fast.
+    let kk = param_f32("K", 4.0); // stiffness coefficient
+    let dd = param_f32("D", 0.0055); // inertia density
+    let zeta = param_f32("ZETA", 0.18); // damping ratio (underdamped -> lively)
+    let wind_amt = param_f32("WIND", 1.0); // gust strength multiplier
+    let turb_amt = param_f32("TURB", 1.0); // turbulence multiplier
+    let stiff = |len: f32| kk * len;
+    let inertia = |len: f32| (dd * len * len * len).max(1e-4);
+    let damp = |len: f32| 2.0 * zeta * (stiff(len) * inertia(len)).sqrt();
+
+    // Turbulent wind: a rightward gust that swells over time plus spatial chop.
+    let wind = |x: f32, y: f32, time: f32| -> (f32, f32) {
+        let gust = (0.6 + 0.5 * (time * 0.45).sin() + 0.25 * (time * 1.3 + 1.7).sin()) * wind_amt;
+        let turb =
+            turb_amt * (0.4 * (x * 0.15 + time * 1.1).sin() + 0.3 * (y * 0.2 - time * 0.9).sin());
+        let fx = gust + turb;
+        let fy = 0.15 * (x * 0.1 + time * 2.0).sin();
+        (fx, fy)
+    };
+
+    let mut theta = vec![0.0f32; n];
+    let mut omega = vec![0.0f32; n];
+    // scratch for the per-step kinematic forward pass
+    let mut wang = vec![0.0f32; n]; // world angle
+    let mut tipx = vec![0.0f32; n];
+    let mut tipy = vec![0.0f32; n];
+
+    let windy = t != 0.0; // t==0 -> rest tree, byte-identical to the static render
+    if windy {
+        const WARM: f32 = 6.0;
+        const DT: f32 = 0.08;
+        let t0 = (t - WARM).max(0.0);
+        let steps = (((t - t0) / DT).round() as i32).max(1);
+        let mut time = t0;
+        for _ in 0..steps {
+            // forward pass: world angle + tip position from current deflections.
+            for i in 0..n {
+                let nd = &nodes[i];
+                let (bx, by, pang) = if nd.parent < 0 {
+                    (nd.bx, nd.by, 0.0)
+                } else {
+                    let pi = nd.parent as usize;
+                    (tipx[pi], tipy[pi], wang[pi])
+                };
+                let a = pang + nd.rel + theta[i];
+                wang[i] = a;
+                tipx[i] = bx + a.cos() * nd.len * 1.8;
+                tipy[i] = by + a.sin() * nd.len;
+            }
+            // integrate each joint (semi-implicit Euler).
+            for i in 0..n {
+                let nd = &nodes[i];
+                let (bx, by) = if nd.parent < 0 {
+                    (nd.bx, nd.by)
+                } else {
+                    let pi = nd.parent as usize;
+                    (tipx[pi], tipy[pi])
+                };
+                let mx = (bx + tipx[i]) * 0.5; // segment midpoint (force sample point)
+                let my = (by + tipy[i]) * 0.5;
+                let (fx, fy) = wind(mx, my, time);
+                let a = wang[i];
+                // force component perpendicular to the branch -> bending torque.
+                let perp = fx * (-a.sin()) + fy * a.cos();
+                let exposure = 1.0 + 0.3 * nd.depth as f32; // tips catch more wind
+                let torque = perp * nd.len * exposure
+                    - stiff(nd.len) * theta[i]
+                    - damp(nd.len) * omega[i];
+                let alpha = torque / inertia(nd.len);
+                omega[i] += alpha * DT;
+                theta[i] += omega[i] * DT;
+                theta[i] = theta[i].clamp(-0.7, 0.7); // keep branches from folding over
+            }
+            time += DT;
+        }
+    }
+
+    // final forward pass + draw.
+    for i in 0..n {
+        let nd = &nodes[i];
+        let (bx, by, pang) = if nd.parent < 0 {
+            (nd.bx, nd.by, 0.0)
+        } else {
+            let pi = nd.parent as usize;
+            (tipx[pi], tipy[pi], wang[pi])
+        };
+        let a = pang + nd.rel + theta[i];
+        wang[i] = a;
+        let ex = bx + a.cos() * nd.len * 1.8;
+        let ey = by + a.sin() * nd.len;
+        tipx[i] = ex;
+        tipy[i] = ey;
+        let col = lerp_color(palette[1], palette[3], nd.depth as f32 / 7.0);
+        pp_line(grid, bx.round() as i32, by.round() as i32, ex.round() as i32, ey.round() as i32, col);
+        pp_put(grid, ex.round() as i32, ey.round() as i32, '◆', lighten(col, 10));
+    }
+}
+
+// --- stained : Voronoi glass cells with dark leading + jewel seeds. ---
+fn draw_stained(grid: &mut Grid, width: usize, height: usize, seed: u64, palette: &[Color; 5], rng: &mut StdRng) {
+    let nseeds = 10 + seed as usize % 12;
+    let mut sites: Vec<(i32, i32, Color)> = Vec::new();
+    for i in 0..nseeds {
+        let x = rng.random_range(0..width) as i32;
+        let y = rng.random_range(0..height) as i32;
+        let base = [palette[1], palette[2], palette[3]][i % 3];
+        let col = shift_hue(base, rng.random_range(-90..=90) as f64);
+        sites.push((x, y, col));
+    }
+    let mut id = vec![vec![0usize; width]; height];
+    for y in 0..height {
+        for x in 0..width {
+            let mut best = 0usize;
+            let mut bd = i64::MAX;
+            for (k, &(sx, sy, _)) in sites.iter().enumerate() {
+                let dx = (x as i32 - sx) as i64;
+                let dy = ((y as i32 - sy) * 2) as i64;
+                let d = dx * dx + dy * dy;
+                if d < bd {
+                    bd = d;
+                    best = k;
+                }
+            }
+            id[y][x] = best;
+            let glass = sites[best].2;
+            let ch = if (x + y) % 2 == 0 { '∙' } else { '·' };
+            grid[y][x] = Cell::new(ch, darken(glass, 8));
+        }
+    }
+    let lead = darken(palette[0], 0);
+    for y in 0..height {
+        for x in 0..width {
+            let here = id[y][x];
+            let right = x + 1 < width && id[y][x + 1] != here;
+            let down = y + 1 < height && id[y + 1][x] != here;
+            if right && down {
+                grid[y][x] = Cell::new('┼', lead);
+            } else if right {
+                grid[y][x] = Cell::new('│', lead);
+            } else if down {
+                grid[y][x] = Cell::new('─', lead);
+            }
+        }
+    }
+    for &(sx, sy, col) in &sites {
+        pp_put(grid, sx, sy, '◆', lighten(col, 40));
+    }
+}
+
+// ============================================================================
+// Grid morphing. Tween two finished grids (any modes/seeds) at the pixel layer.
+// Four strategies: dissolve, field, transport (glyphs travel), sdf (shapes melt).
+// emit_grid + ASCII_GRID_DUMP let the morph driver capture frames by re-running
+// the binary, so it works for every mode with no per-mode rewrite.
+// ============================================================================
+
+/// Render path used by every mode: dump a serialized grid when ASCII_GRID_DUMP
+/// is set (for the morph driver to capture), otherwise paint to the terminal.
+fn emit_grid(grid: &Grid) {
+    use std::io::Write;
+    if std::env::var("ASCII_GRID_DUMP").is_ok() {
+        let s = serialize_grid(grid);
+        let mut out = io::stdout().lock();
+        let _ = out.write_all(s.as_bytes());
+        let _ = out.flush();
+    } else {
+        render_grid(grid);
+    }
+}
+
+fn grid_color_code(c: Color) -> String {
+    match c {
+        Color::Rgb { r, g, b } => format!("{},{},{}", r, g, b),
+        _ => "x".to_string(),
+    }
+}
+
+fn parse_color_code(s: &str) -> Color {
+    if s == "x" {
+        return Color::Reset;
+    }
+    let mut it = s.split(',');
+    let r = it.next().and_then(|v| v.parse().ok()).unwrap_or(0);
+    let g = it.next().and_then(|v| v.parse().ok()).unwrap_or(0);
+    let b = it.next().and_then(|v| v.parse().ok()).unwrap_or(0);
+    Color::Rgb { r, g, b }
+}
+
+/// Lossless text serialization: "w h" header, then one "char_u32 fg bg" line per cell.
+fn serialize_grid(grid: &Grid) -> String {
+    let h = grid.len();
+    let w = if h > 0 { grid[0].len() } else { 0 };
+    let mut s = String::with_capacity(w * h * 12 + 16);
+    s.push_str(&format!("{} {}\n", w, h));
+    for row in grid {
+        for c in row {
+            s.push_str(&format!(
+                "{} {} {}\n",
+                c.ch as u32,
+                grid_color_code(c.fg),
+                grid_color_code(c.bg)
+            ));
+        }
+    }
+    s
+}
+
+fn parse_grid(s: &str) -> Grid {
+    let mut lines = s.lines();
+    let header = lines.next().unwrap_or("0 0");
+    let mut hi = header.split_whitespace();
+    let w: usize = hi.next().and_then(|v| v.parse().ok()).unwrap_or(0);
+    let h: usize = hi.next().and_then(|v| v.parse().ok()).unwrap_or(0);
+    let mut grid = vec![vec![Cell::blank(); w]; h];
+    for y in 0..h {
+        for x in 0..w {
+            if let Some(line) = lines.next() {
+                let mut p = line.split_whitespace();
+                let ch = p
+                    .next()
+                    .and_then(|v| v.parse::<u32>().ok())
+                    .and_then(char::from_u32)
+                    .unwrap_or(' ');
+                let fg = parse_color_code(p.next().unwrap_or("x"));
+                let bg = parse_color_code(p.next().unwrap_or("x"));
+                grid[y][x] = Cell::with_bg(ch, fg, bg);
+            }
+        }
+    }
+    grid
+}
+
+/// Force a grid to (w, h) by truncating / padding with blanks.
+fn fit_grid(g: Grid, w: usize, h: usize) -> Grid {
+    let mut out = vec![vec![Cell::blank(); w]; h];
+    for y in 0..h.min(g.len()) {
+        for x in 0..w.min(g[y].len()) {
+            out[y][x] = g[y][x];
+        }
+    }
+    out
+}
+
+const MORPH_RAMP: [char; 9] = [' ', '·', '∙', ':', '+', '*', '#', '%', '@'];
+
+fn morph_is_ink(c: &Cell) -> bool {
+    c.ch != ' '
+}
+
+/// Coerce any color to an Rgb so lerp_color interpolates instead of snapping.
+fn rgb_of(c: Color) -> Color {
+    match c {
+        Color::Rgb { .. } => c,
+        _ => Color::Rgb { r: 10, g: 10, b: 12 },
+    }
+}
+
+/// Approximate ink density of a glyph, for the `field` strategy.
+fn ink_weight(ch: char) -> f32 {
+    match ch {
+        ' ' => 0.0,
+        '·' | '˙' | '\'' | '°' | '`' => 0.15,
+        '∙' | ':' | '.' | ',' => 0.28,
+        '-' | '─' | '╌' | '│' | '╎' | '|' | '╵' | '╷' => 0.42,
+        '+' | '=' | '◦' | '○' | '╱' | '╲' | '╭' | '╮' | '╰' | '╯' => 0.55,
+        '*' | '◇' | '△' | '▽' | '□' | '◌' | '✦' | '✧' => 0.68,
+        '#' | '◆' | '●' | '◉' | '▪' | '▫' | '◐' | '◑' => 0.82,
+        '%' | '▒' | '▓' | '█' | '@' | '❀' | '❁' | '✺' => 0.95,
+        _ => 0.6,
+    }
+}
+
+struct Ink {
+    x: f32,
+    y: f32,
+    ch: char,
+    fg: Color,
+}
+
+fn ink_points(g: &Grid) -> Vec<Ink> {
+    let mut v = Vec::new();
+    for (y, row) in g.iter().enumerate() {
+        for (x, c) in row.iter().enumerate() {
+            if morph_is_ink(c) {
+                v.push(Ink {
+                    x: x as f32,
+                    y: y as f32,
+                    ch: c.ch,
+                    fg: rgb_of(c.fg),
+                });
+            }
+        }
+    }
+    v
+}
+
+/// 2-pass chamfer distance transform; vertical cost is doubled for the 2:1 cell
+/// aspect so distances are visually round.
+fn chamfer(mask: &[Vec<bool>], w: usize, h: usize) -> Vec<Vec<f32>> {
+    let big = 1.0e6_f32;
+    let (wh, wv, wd) = (1.0_f32, 2.0_f32, 2.236_f32);
+    let mut d = vec![vec![big; w]; h];
+    for y in 0..h {
+        for x in 0..w {
+            if mask[y][x] {
+                d[y][x] = 0.0;
+            }
+        }
+    }
+    for y in 0..h {
+        for x in 0..w {
+            let mut m = d[y][x];
+            if x > 0 {
+                m = m.min(d[y][x - 1] + wh);
+            }
+            if y > 0 {
+                m = m.min(d[y - 1][x] + wv);
+                if x > 0 {
+                    m = m.min(d[y - 1][x - 1] + wd);
+                }
+                if x + 1 < w {
+                    m = m.min(d[y - 1][x + 1] + wd);
+                }
+            }
+            d[y][x] = m;
+        }
+    }
+    for y in (0..h).rev() {
+        for x in (0..w).rev() {
+            let mut m = d[y][x];
+            if x + 1 < w {
+                m = m.min(d[y][x + 1] + wh);
+            }
+            if y + 1 < h {
+                m = m.min(d[y + 1][x] + wv);
+                if x + 1 < w {
+                    m = m.min(d[y + 1][x + 1] + wd);
+                }
+                if x > 0 {
+                    m = m.min(d[y + 1][x - 1] + wd);
+                }
+            }
+            d[y][x] = m;
+        }
+    }
+    d
+}
+
+/// Signed distance field: negative inside ink, positive outside, ~0 at the edge.
+fn signed_df(g: &Grid, w: usize, h: usize) -> Vec<Vec<f32>> {
+    let mut ink = vec![vec![false; w]; h];
+    let mut bg = vec![vec![false; w]; h];
+    for y in 0..h.min(g.len()) {
+        for x in 0..w.min(g[y].len()) {
+            let i = morph_is_ink(&g[y][x]);
+            ink[y][x] = i;
+            bg[y][x] = !i;
+        }
+    }
+    let din = chamfer(&ink, w, h);
+    let dbg = chamfer(&bg, w, h);
+    let mut s = vec![vec![0.0_f32; w]; h];
+    for y in 0..h {
+        for x in 0..w {
+            s[y][x] = din[y][x] - dbg[y][x];
+        }
+    }
+    s
+}
+
+/// Precomputed morph between two same-size grids. Build once, sample many `t`.
+struct MorphState {
+    w: usize,
+    h: usize,
+    a: Grid,
+    b: Grid,
+    ta: Vec<Ink>,
+    tb: Vec<Ink>,
+    sa: Vec<Vec<f32>>,
+    sb: Vec<Vec<f32>>,
+}
+
+impl MorphState {
+    fn new(a: Grid, b: Grid) -> Self {
+        let h = a.len();
+        let w = if h > 0 { a[0].len() } else { 0 };
+        let b = fit_grid(b, w, h);
+        let cx = w as f32 / 2.0;
+        let cy = h as f32 / 2.0;
+        // sort both point sets by the same space key (angle, then radius) so a
+        // modulo-zip pairing reads as a coherent swirl rather than noise.
+        let key = |p: &Ink| -> (f32, f32) {
+            let ang = (p.y - cy).atan2(p.x - cx);
+            let r = ((p.x - cx).powi(2) + (p.y - cy).powi(2)).sqrt();
+            (ang, r)
+        };
+        let mut ta = ink_points(&a);
+        let mut tb = ink_points(&b);
+        ta.sort_by(|p, q| key(p).partial_cmp(&key(q)).unwrap_or(std::cmp::Ordering::Equal));
+        tb.sort_by(|p, q| key(p).partial_cmp(&key(q)).unwrap_or(std::cmp::Ordering::Equal));
+        let sa = signed_df(&a, w, h);
+        let sb = signed_df(&b, w, h);
+        MorphState { w, h, a, b, ta, tb, sa, sb }
+    }
+
+    fn frame(&self, t: f32, strategy: &str) -> Grid {
+        let t = t.clamp(0.0, 1.0);
+        match strategy {
+            "transport" => {
+                if self.ta.is_empty() || self.tb.is_empty() {
+                    self.dissolve(t)
+                } else {
+                    self.transport(t)
+                }
+            }
+            "sdf" => self.sdf(t),
+            "field" => self.field(t),
+            _ => self.dissolve(t),
+        }
+    }
+
+    fn dissolve(&self, t: f32) -> Grid {
+        let mut g = vec![vec![Cell::blank(); self.w]; self.h];
+        for y in 0..self.h {
+            for x in 0..self.w {
+                let thr = pp_hash2(x as i32, y as i32, 1234);
+                let src = if t < thr { &self.a[y][x] } else { &self.b[y][x] };
+                g[y][x] = Cell::new(src.ch, rgb_of(src.fg));
+            }
+        }
+        g
+    }
+
+    fn field(&self, t: f32) -> Grid {
+        let mut g = vec![vec![Cell::blank(); self.w]; self.h];
+        for y in 0..self.h {
+            for x in 0..self.w {
+                let wa = ink_weight(self.a[y][x].ch);
+                let wb = ink_weight(self.b[y][x].ch);
+                let wt = wa + (wb - wa) * t;
+                let idx = (wt * (MORPH_RAMP.len() - 1) as f32).round() as usize;
+                let col = lerp_color(rgb_of(self.a[y][x].fg), rgb_of(self.b[y][x].fg), t);
+                g[y][x] = Cell::new(MORPH_RAMP[idx.min(MORPH_RAMP.len() - 1)], col);
+            }
+        }
+        g
+    }
+
+    fn transport(&self, t: f32) -> Grid {
+        let mut g = vec![vec![Cell::blank(); self.w]; self.h];
+        let la = self.ta.len();
+        let lb = self.tb.len();
+        let n = la.max(lb);
+        for i in 0..n {
+            let pa = &self.ta[i % la];
+            let pb = &self.tb[i % lb];
+            let x = (pa.x + (pb.x - pa.x) * t).round() as i32;
+            let y = (pa.y + (pb.y - pa.y) * t).round() as i32;
+            let ch = if t < 0.5 { pa.ch } else { pb.ch };
+            let fg = lerp_color(pa.fg, pb.fg, t);
+            pp_put(&mut g, x, y, ch, fg);
+        }
+        g
+    }
+
+    fn sdf(&self, t: f32) -> Grid {
+        let mut g = vec![vec![Cell::blank(); self.w]; self.h];
+        for y in 0..self.h {
+            for x in 0..self.w {
+                let d = (1.0 - t) * self.sa[y][x] + t * self.sb[y][x];
+                if d < 0.0 {
+                    let depth = (-d).min(8.0);
+                    let idx = ((depth / 8.0) * (MORPH_RAMP.len() - 1) as f32).round() as usize;
+                    let ch = MORPH_RAMP[idx.clamp(1, MORPH_RAMP.len() - 1)];
+                    let col = lerp_color(rgb_of(self.a[y][x].fg), rgb_of(self.b[y][x].fg), t);
+                    g[y][x] = Cell::new(ch, col);
+                }
+            }
+        }
+        g
+    }
+}
+
+/// Render any (mode, seed) to a Grid by re-running this binary with the dump flag.
+fn render_frame(exe: &std::path::Path, seed: u64, mode: &str, theme: &str, w: usize, h: usize) -> Option<Grid> {
+    render_frame_t(exe, seed, mode, theme, w, h, 0.0)
+}
+
+/// Same, but pass an animation time `t` (ASCII_T) so parametric modes that read
+/// it advance their phase -- the native "iterate" path.
+fn render_frame_t(exe: &std::path::Path, seed: u64, mode: &str, theme: &str, w: usize, h: usize, t: f32) -> Option<Grid> {
+    use std::process::Command;
+    let mut cmd = Command::new(exe);
+    cmd.arg(seed.to_string()).arg(mode);
+    if !theme.is_empty() {
+        cmd.arg(theme);
+    }
+    cmd.env("ASCII_GRID_DUMP", "1")
+        .env("ASCII_GRID_W", w.to_string())
+        .env("ASCII_GRID_H", h.to_string())
+        .env("ASCII_T", format!("{}", t));
+    let out = cmd.output().ok()?;
+    let s = String::from_utf8_lossy(&out.stdout);
+    let g = parse_grid(&s);
+    if g.is_empty() { None } else { Some(g) }
+}
+
+/// Paint a grid with each row positioned by an absolute cursor escape and NO
+/// newlines, so the terminal can never scroll (the definitive anti-scrollback
+/// measure for the morph player).
+fn grid_to_ansi(grid: &Grid) -> String {
+    use crossterm::style::{SetBackgroundColor, SetForegroundColor};
+    let mut s = String::new();
+    let mut cur_fg = Color::Reset;
+    let mut cur_bg = Color::Reset;
+    for (y, row) in grid.iter().enumerate() {
+        s.push_str(&format!("\x1b[{};1H", y + 1)); // home of this row (1-based)
+        let mut skip = false;
+        for cell in row {
+            if skip {
+                skip = false;
+                continue;
+            }
+            if cell.fg != cur_fg {
+                s.push_str(&SetForegroundColor(cell.fg).to_string());
+                cur_fg = cell.fg;
+            }
+            if cell.bg != cur_bg {
+                s.push_str(&SetBackgroundColor(cell.bg).to_string());
+                cur_bg = cell.bg;
+            }
+            s.push(cell.ch);
+            if char_width(cell.ch) == 2 {
+                skip = true;
+            }
+        }
+        if cur_bg != Color::Reset {
+            s.push_str(&SetBackgroundColor(Color::Reset).to_string());
+            cur_bg = Color::Reset;
+        }
+    }
+    s.push_str("\x1b[0m");
+    s
+}
+
+/// Smootherstep easing (6p^5 - 15p^4 + 10p^3): near-zero velocity at both ends,
+/// fast through the middle. Gives a pleasant ease-in / ease-out.
+fn ease_in_out(p: f32) -> f32 {
+    let p = p.clamp(0.0, 1.0);
+    p * p * p * (p * (p * 6.0 - 15.0) + 10.0)
+}
+
+/// Wind warp: horizontal shear of a single grid, strongest at the top (canopy
+/// sways, roots stay put) and oscillating + gusting over `time`. No second frame
+/// needed -- this animates one rendered scene "through the wind".
+fn warp_wind(src: &Grid, time: f32, amp: f32) -> Grid {
+    let h = src.len();
+    let w = if h > 0 { src[0].len() } else { 0 };
+    let mut g = vec![vec![Cell::blank(); w]; h];
+    for y in 0..h {
+        // height factor: 1 at the top, 0 at the bottom (squared for a whip feel).
+        let hf = if h > 1 { 1.0 - (y as f32 / (h as f32 - 1.0)) } else { 0.0 };
+        let gust = 0.5 * (time * 0.37).sin() + 0.5; // 0..1 slow swell
+        let sway = amp
+            * hf
+            * hf
+            * (1.0 + gust)
+            * ((time + y as f32 * 0.16).sin() + 0.45 * (time * 1.9 + y as f32 * 0.07).sin());
+        let dx = sway.round() as i32;
+        for x in 0..w {
+            let sx = x as i32 - dx;
+            if sx >= 0 && (sx as usize) < w {
+                g[y][x] = src[y][sx as usize];
+            }
+        }
+    }
+    g
+}
+
+/// Nearest-cell sample from a source grid (out of bounds -> blank).
+fn warp_sample(src: &Grid, sx: f32, sy: f32) -> Cell {
+    let xi = sx.round() as i32;
+    let yi = sy.round() as i32;
+    if xi >= 0 && yi >= 0 && (yi as usize) < src.len() && (xi as usize) < src[0].len() {
+        src[yi as usize][xi as usize]
+    } else {
+        Cell::blank()
+    }
+}
+
+/// Toroidal drift: scroll the whole grid diagonally over time, wrapping around.
+fn warp_drift(src: &Grid, time: f32, amp: f32) -> Grid {
+    let h = src.len();
+    let w = if h > 0 { src[0].len() } else { 0 };
+    let dx = (time * amp).round() as i32;
+    let dy = (time * amp * 0.4).round() as i32;
+    let mut g = vec![vec![Cell::blank(); w]; h];
+    for y in 0..h {
+        for x in 0..w {
+            let sx = (x as i32 - dx).rem_euclid(w as i32) as usize;
+            let sy = (y as i32 - dy).rem_euclid(h as i32) as usize;
+            g[y][x] = src[sy][sx];
+        }
+    }
+    g
+}
+
+/// Vortex swirl: rotate around the center, faster near the middle, spinning over time.
+fn warp_swirl(src: &Grid, time: f32, amp: f32) -> Grid {
+    let h = src.len();
+    let w = if h > 0 { src[0].len() } else { 0 };
+    let cx = w as f32 / 2.0;
+    let cy = h as f32 / 2.0;
+    let mut g = vec![vec![Cell::blank(); w]; h];
+    for y in 0..h {
+        for x in 0..w {
+            let dx = x as f32 - cx;
+            let dy = (y as f32 - cy) * 2.0; // square space
+            let r = (dx * dx + dy * dy).sqrt();
+            let ang = dy.atan2(dx) - time * amp * 0.3 / (1.0 + r * 0.05);
+            let sx = cx + ang.cos() * r;
+            let sy = cy + ang.sin() * r / 2.0; // undo aspect
+            g[y][x] = warp_sample(src, sx, sy);
+        }
+    }
+    g
+}
+
+/// Concentric ripple: radial sine displacement moving outward over time.
+fn warp_ripple(src: &Grid, time: f32, amp: f32) -> Grid {
+    let h = src.len();
+    let w = if h > 0 { src[0].len() } else { 0 };
+    let cx = w as f32 / 2.0;
+    let cy = h as f32 / 2.0;
+    let mut g = vec![vec![Cell::blank(); w]; h];
+    for y in 0..h {
+        for x in 0..w {
+            let dx = x as f32 - cx;
+            let dy = (y as f32 - cy) * 2.0;
+            let r = (dx * dx + dy * dy).sqrt().max(0.001);
+            let off = amp * (r * 0.4 - time * 1.2).sin();
+            let nx = dx / r;
+            let ny = dy / r;
+            g[y][x] = warp_sample(src, x as f32 - nx * off, y as f32 - ny * off / 2.0);
+        }
+    }
+    g
+}
+
+/// Breathe: gentle zoom pulse in/out around the center.
+fn warp_breathe(src: &Grid, time: f32, amp: f32) -> Grid {
+    let h = src.len();
+    let w = if h > 0 { src[0].len() } else { 0 };
+    let cx = w as f32 / 2.0;
+    let cy = h as f32 / 2.0;
+    let scale = 1.0 + amp * 0.06 * (time * 0.9).sin();
+    let mut g = vec![vec![Cell::blank(); w]; h];
+    for y in 0..h {
+        for x in 0..w {
+            let sx = cx + (x as f32 - cx) / scale;
+            let sy = cy + (y as f32 - cy) / scale;
+            g[y][x] = warp_sample(src, sx, sy);
+        }
+    }
+    g
+}
+
+/// Animated Voronoi: the `stained` tessellation with sites drifting on small
+/// orbits over `time`, so the glass cells flow and re-tile continuously. Site
+/// base positions/colors are deterministic from `seed`; only the orbit offset
+/// moves, so it loops smoothly.
+fn voronoi_flow_frame(w: usize, h: usize, seed: u64, time: f32, palette: &[Color; 5]) -> Grid {
+    let mut rng = StdRng::seed_from_u64(seed);
+    let nseeds = 10 + (seed as usize % 12);
+    struct Site {
+        bx: f32,
+        by: f32,
+        ox: f32,
+        oy: f32,
+        ph: f32,
+        sp: f32,
+        col: Color,
+    }
+    let mut sites: Vec<Site> = Vec::with_capacity(nseeds);
+    for i in 0..nseeds {
+        let bx = rng.random_range(0.0..w.max(1) as f32);
+        let by = rng.random_range(0.0..h.max(1) as f32);
+        let ox = rng.random_range(3.0..9.0);
+        let oy = rng.random_range(1.5..4.5);
+        let ph = rng.random_range(0.0..std::f32::consts::TAU);
+        let sp = rng.random_range(0.3..0.9) * if rng.random_range(0..2) == 0 { -1.0 } else { 1.0 };
+        let base = [palette[1], palette[2], palette[3]][i % 3];
+        let col = shift_hue(base, rng.random_range(-90..=90) as f64);
+        sites.push(Site { bx, by, ox, oy, ph, sp, col });
+    }
+    let pos: Vec<(f32, f32, Color)> = sites
+        .iter()
+        .map(|s| {
+            (
+                s.bx + (time * s.sp + s.ph).cos() * s.ox,
+                s.by + (time * s.sp * 1.3 + s.ph).sin() * s.oy,
+                s.col,
+            )
+        })
+        .collect();
+
+    let mut g = vec![vec![Cell::blank(); w]; h];
+    let mut id = vec![vec![0usize; w]; h];
+    for y in 0..h {
+        for x in 0..w {
+            let mut best = 0usize;
+            let mut bd = f32::MAX;
+            for (k, &(sx, sy, _)) in pos.iter().enumerate() {
+                let dx = x as f32 - sx;
+                let dy = (y as f32 - sy) * 2.0; // cell aspect
+                let d = dx * dx + dy * dy;
+                if d < bd {
+                    bd = d;
+                    best = k;
+                }
+            }
+            id[y][x] = best;
+            let glass = pos[best].2;
+            let ch = if (x + y) % 2 == 0 { '∙' } else { '·' };
+            g[y][x] = Cell::new(ch, darken(glass, 8));
+        }
+    }
+    let lead = darken(palette[0], 0);
+    for y in 0..h {
+        for x in 0..w {
+            let here = id[y][x];
+            let right = x + 1 < w && id[y][x + 1] != here;
+            let down = y + 1 < h && id[y + 1][x] != here;
+            if right && down {
+                g[y][x] = Cell::new('┼', lead);
+            } else if right {
+                g[y][x] = Cell::new('│', lead);
+            } else if down {
+                g[y][x] = Cell::new('─', lead);
+            }
+        }
+    }
+    for &(sx, sy, col) in &pos {
+        pp_put(&mut g, sx.round() as i32, sy.round() as i32, '◆', lighten(col, 40));
+    }
+    g
+}
+
+/// Interactive morph player (standalone CLI entry). Owns the alt-screen/raw-mode
+/// lifecycle, then delegates the loop to `morph_session`.
+///   morph <modeA> <seedA> <modeB> <seedB> [strategy]
+/// Keys: space play/pause · 1-4 strategy · ←/→ scrub · w walk seeds · n next · q quit
+fn run_morph(args: &[String], default_seed: u64, theme: &str) {
+    use crossterm::{cursor, execute, terminal};
+
+    let mode_a = args.get(4).map(|s| s.as_str()).unwrap_or("forest").to_string();
+    let seed_a: u64 = args.get(5).and_then(|s| s.parse().ok()).unwrap_or(default_seed);
+    let mode_b = args.get(6).map(|s| s.as_str()).unwrap_or(&mode_a).to_string();
+    let seed_b: u64 = args.get(7).and_then(|s| s.parse().ok()).unwrap_or(seed_a.wrapping_add(1));
+    let strat = args.get(8).map(|s| s.as_str()).unwrap_or("transport").to_string();
+
+    terminal::enable_raw_mode().unwrap();
+    execute!(io::stdout(), terminal::EnterAlternateScreen).unwrap();
+    morph_session(&mode_a, seed_a, &mode_b, seed_b, &strat, theme);
+    execute!(io::stdout(), cursor::Show, terminal::LeaveAlternateScreen).unwrap();
+    terminal::disable_raw_mode().unwrap();
+}
+
+/// The morph player loop. Assumes raw mode + alternate screen are already active
+/// (so it composes inside `demo`). Returns when the user presses q/esc.
+fn morph_session(mode_a: &str, seed_a: u64, mode_b: &str, seed_b: u64, strat0: &str, theme: &str) {
+    use crossterm::{
+        cursor,
+        event::{self, Event, KeyCode, KeyModifiers},
+        execute,
+        terminal,
+    };
+    use std::io::Write;
+    use std::time::Duration;
+
+    // stained morphs as Voronoi mush; flow its sites instead.
+    let mut strat = if mode_a == "stained" && mode_a == mode_b {
+        "vflow".to_string()
+    } else {
+        strat0.to_string()
+    };
+    let exe = std::env::current_exe().unwrap();
+    let (tw, mut th) = terminal::size().unwrap_or((80, 45));
+    let mut w = tw as usize;
+    let mut h = (th as usize).saturating_sub(1).max(1); // leave a status row
+
+    // palette for native animators (wind/vflow) that synthesize rather than morph.
+    let palette = if theme.is_empty() {
+        make_palette(seed_a)
+    } else {
+        named_theme(theme).unwrap_or_else(|| make_palette(seed_a))
+    };
+
+    let mut blank = vec![vec![Cell::blank(); w]; h];
+    let fa = render_frame(&exe, seed_a, mode_a, theme, w, h).unwrap_or_else(|| blank.clone());
+    let fb = render_frame(&exe, seed_b, mode_b, theme, w, h).unwrap_or_else(|| blank.clone());
+    let mut st = MorphState::new(fa, fb);
+
+    // walk state: when on, finishing 0->1 shifts B into A and loads the next seed.
+    let mut walk = mode_a == mode_b;
+    let mut walk_seed = seed_b;
+
+    execute!(io::stdout(), cursor::Hide).unwrap();
+
+    // `phase` is the linear clock; `t` is the eased morph position fed to the
+    // renderer. Easing the value (not the clock) is what makes playback slow at
+    // the ends and fast through the middle. `clock` free-runs for native
+    // animators (wind/vflow) that aren't an A->B sweep.
+    let mut phase = 0.0_f32;
+    let mut dir = 1.0_f32;
+    let mut playing = true;
+    let mut clock = 0.0_f32;
+    let speed = 0.022_f32;
+
+    loop {
+        if playing {
+            clock += 0.12;
+            phase += dir * speed;
+            if phase >= 1.0 {
+                if walk {
+                    walk_seed = walk_seed.wrapping_add(1);
+                    let next = render_frame(&exe, walk_seed, mode_a, theme, w, h)
+                        .unwrap_or_else(|| blank.clone());
+                    let prev_b = st.b.clone();
+                    st = MorphState::new(prev_b, next);
+                    phase = 0.0;
+                    dir = 1.0;
+                } else {
+                    phase = 1.0;
+                    dir = -1.0;
+                }
+            } else if phase <= 0.0 {
+                phase = 0.0;
+                dir = 1.0;
+            }
+        }
+
+        let t = ease_in_out(phase);
+        // native animators / warps ignore the A->B sweep; everything else morphs.
+        let g = match strat.as_str() {
+            "wind" => warp_wind(&st.a, clock, (h as f32 * 0.18).clamp(3.0, 8.0)),
+            "drift" => warp_drift(&st.a, clock, 1.4),
+            "swirl" => warp_swirl(&st.a, clock, 1.0),
+            "ripple" => warp_ripple(&st.a, clock, 2.2),
+            "breathe" => warp_breathe(&st.a, clock, 1.0),
+            "vflow" => voronoi_flow_frame(w, h, seed_a, clock, &palette),
+            "iterate" => render_frame_t(&exe, seed_a, mode_a, theme, w, h, clock)
+                .unwrap_or_else(|| st.a.clone()),
+            _ => st.frame(t, &strat),
+        };
+        let body = grid_to_ansi(&g);
+        // Overwrite in place: every grid row is full-width so it repaints every
+        // cell -- no Clear needed (Clear + full-width writes were causing the
+        // bottom-right autoscroll that spammed scrollback).
+        let status = format!(
+            " morph {}:{} \u{2192} {}:{} | {} | t={:.2} | {} | space 1-4=morph 5-0=warp i=iterate \u{2190}\u{2192} w n q ",
+            mode_a,
+            seed_a,
+            if walk { mode_a } else { mode_b },
+            if walk { walk_seed } else { seed_b },
+            strat,
+            t,
+            if playing { "\u{25b6}" } else { "\u{2161}" },
+        );
+        // Leave the last cell of the last row untouched to avoid corner autoscroll.
+        let status_w = w.saturating_sub(1);
+        let status: String = status.chars().take(status_w).collect();
+        let pad = status_w.saturating_sub(status.chars().count());
+        let mut buf = String::new();
+        buf.push_str(&body); // each row self-positions; no newlines
+        buf.push_str(&format!("\x1b[{};1H", th)); // status on last row (1-based)
+        buf.push_str(&format!("\x1b[7m{}{}\x1b[0m", status, " ".repeat(pad)));
+        print!("{}", buf);
+        io::stdout().flush().unwrap();
+
+        if event::poll(Duration::from_millis(33)).unwrap_or(false) {
+            match event::read() {
+                Ok(Event::Key(key)) => match key.code {
+                    KeyCode::Char('q') | KeyCode::Esc => break,
+                    KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => break,
+                    KeyCode::Char(' ') => playing = !playing,
+                    KeyCode::Char('1') => strat = "dissolve".to_string(),
+                    KeyCode::Char('2') => strat = "field".to_string(),
+                    KeyCode::Char('3') => strat = "transport".to_string(),
+                    KeyCode::Char('4') => strat = "sdf".to_string(),
+                    KeyCode::Char('5') => strat = "wind".to_string(),
+                    KeyCode::Char('6') => strat = "vflow".to_string(),
+                    KeyCode::Char('7') => strat = "swirl".to_string(),
+                    KeyCode::Char('8') => strat = "ripple".to_string(),
+                    KeyCode::Char('9') => strat = "breathe".to_string(),
+                    KeyCode::Char('0') => strat = "drift".to_string(),
+                    KeyCode::Char('i') => strat = "iterate".to_string(),
+                    KeyCode::Char('w') => walk = !walk,
+                    KeyCode::Left => {
+                        playing = false;
+                        phase = (phase - 0.02).max(0.0);
+                    }
+                    KeyCode::Right => {
+                        playing = false;
+                        phase = (phase + 0.02).min(1.0);
+                    }
+                    KeyCode::Char('n') => {
+                        // jump to next seed pair immediately
+                        walk_seed = walk_seed.wrapping_add(1);
+                        let next = render_frame(&exe, walk_seed, mode_a, theme, w, h)
+                            .unwrap_or_else(|| blank.clone());
+                        let prev_b = st.b.clone();
+                        st = MorphState::new(prev_b, next);
+                        phase = 0.0;
+                        dir = 1.0;
+                    }
+                    _ => {}
+                },
+                Ok(Event::Resize(nw, nh)) => {
+                    // re-render both frames at the new size and rebuild state.
+                    th = nh;
+                    w = nw as usize;
+                    h = (nh as usize).saturating_sub(1).max(1);
+                    blank = vec![vec![Cell::blank(); w]; h];
+                    let (b_seed, b_mode) = if walk { (walk_seed, mode_a) } else { (seed_b, mode_b) };
+                    let na = render_frame(&exe, seed_a, mode_a, theme, w, h)
+                        .unwrap_or_else(|| blank.clone());
+                    let nb = render_frame(&exe, b_seed, b_mode, theme, w, h)
+                        .unwrap_or_else(|| blank.clone());
+                    st = MorphState::new(na, nb);
+                    phase = 0.0;
+                    dir = 1.0;
+                    execute!(io::stdout(), terminal::Clear(terminal::ClearType::All)).unwrap();
+                }
+                _ => {}
+            }
+        }
+    }
+
+    // restore cursor; caller owns alt-screen/raw-mode teardown.
+    execute!(io::stdout(), cursor::Show).unwrap();
 }
 
 #[cfg(test)]
@@ -12654,6 +14760,212 @@ mod tests {
         let rng = StdRng::seed_from_u64(seed);
         let palette = make_palette(seed);
         (grid, rng, palette)
+    }
+
+    fn grid_to_string(grid: &Grid) -> String {
+        grid_to_plain(grid).join("\n")
+    }
+
+    #[test]
+    fn ease_in_out_shape() {
+        assert!((ease_in_out(0.0) - 0.0).abs() < 1e-6);
+        assert!((ease_in_out(1.0) - 1.0).abs() < 1e-6);
+        assert!((ease_in_out(0.5) - 0.5).abs() < 1e-6); // symmetric
+        // middle is faster than the ends: derivative (delta over equal step) bigger at 0.5
+        let d_end = ease_in_out(0.1) - ease_in_out(0.0);
+        let d_mid = ease_in_out(0.55) - ease_in_out(0.45);
+        assert!(d_mid > d_end, "middle should advance faster than the ends");
+        // monotonic non-decreasing
+        let mut prev = -1.0;
+        for i in 0..=20 {
+            let v = ease_in_out(i as f32 / 20.0);
+            assert!(v >= prev - 1e-6, "must be monotonic");
+            prev = v;
+        }
+    }
+
+    #[test]
+    fn warps_are_deterministic_and_animate() {
+        let (mut g, mut rng, pal) = make_grid(80, 24, 4);
+        draw_nebula(&mut g, 80, 24, 4, &pal, &mut rng);
+        for warp in [warp_drift, warp_swirl, warp_ripple, warp_breathe, warp_wind] {
+            let a = warp(&g, 1.0, 2.0);
+            assert_eq!(grid_to_string(&a), grid_to_string(&warp(&g, 1.0, 2.0)), "deterministic");
+            let b = warp(&g, 4.5, 2.0);
+            assert_ne!(grid_to_string(&a), grid_to_string(&b), "time should animate the warp");
+        }
+    }
+
+    #[test]
+    fn voronoi_flow_deterministic_and_moves() {
+        let pal = make_palette(3);
+        let f0 = voronoi_flow_frame(80, 24, 3, 0.0, &pal);
+        let f0b = voronoi_flow_frame(80, 24, 3, 0.0, &pal);
+        let f1 = voronoi_flow_frame(80, 24, 3, 5.0, &pal);
+        assert_eq!(grid_to_string(&f0), grid_to_string(&f0b), "same args -> same frame");
+        assert_ne!(grid_to_string(&f0), grid_to_string(&f1), "time should move the cells");
+    }
+
+    #[test]
+    fn voronoi_flow_snapshot() {
+        let pal = make_palette(3);
+        insta::assert_snapshot!("voronoi_flow_t2", grid_to_string(&voronoi_flow_frame(80, 24, 3, 2.0, &pal)));
+    }
+
+    #[test]
+    fn warp_wind_moves_and_zero_amp_identity() {
+        let (mut g, mut rng, pal) = make_grid(80, 24, 1);
+        draw_phyllotaxis(&mut g, 80, 24, 1, &pal, &mut rng);
+        // amplitude 0 -> no displacement -> identity
+        assert_eq!(grid_to_string(&warp_wind(&g, 5.0, 0.0)), grid_to_string(&g));
+        // deterministic, and different times differ
+        let a = warp_wind(&g, 0.3, 5.0);
+        assert_eq!(grid_to_string(&a), grid_to_string(&warp_wind(&g, 0.3, 5.0)));
+        assert_ne!(grid_to_string(&a), grid_to_string(&warp_wind(&g, 2.1, 5.0)));
+    }
+
+    #[test]
+    fn grid_serialize_roundtrip() {
+        let (mut grid, mut rng, palette) = make_grid(20, 6, 42);
+        draw_phyllotaxis(&mut grid, 20, 6, 42, &palette, &mut rng);
+        let restored = parse_grid(&serialize_grid(&grid));
+        assert_eq!(restored.len(), grid.len());
+        assert_eq!(restored[0].len(), grid[0].len());
+        for y in 0..grid.len() {
+            for x in 0..grid[0].len() {
+                assert_eq!(restored[y][x].ch, grid[y][x].ch, "ch at {},{}", x, y);
+                assert_eq!(restored[y][x].fg, grid[y][x].fg, "fg at {},{}", x, y);
+            }
+        }
+    }
+
+    fn morph_pair() -> MorphState {
+        let (mut a, mut ra, pa) = make_grid(80, 24, 1);
+        draw_phyllotaxis(&mut a, 80, 24, 1, &pa, &mut ra);
+        let (mut b, mut rb, pb) = make_grid(80, 24, 7);
+        draw_phyllotaxis(&mut b, 80, 24, 7, &pb, &mut rb);
+        MorphState::new(a, b)
+    }
+
+    #[test]
+    fn morph_dissolve_mid() {
+        insta::assert_snapshot!("morph_dissolve_mid", grid_to_string(&morph_pair().frame(0.5, "dissolve")));
+    }
+
+    #[test]
+    fn morph_field_mid() {
+        insta::assert_snapshot!("morph_field_mid", grid_to_string(&morph_pair().frame(0.5, "field")));
+    }
+
+    #[test]
+    fn morph_transport_mid() {
+        insta::assert_snapshot!("morph_transport_mid", grid_to_string(&morph_pair().frame(0.5, "transport")));
+    }
+
+    #[test]
+    fn morph_sdf_mid() {
+        insta::assert_snapshot!("morph_sdf_mid", grid_to_string(&morph_pair().frame(0.5, "sdf")));
+    }
+
+    #[test]
+    fn morph_endpoints_recover_inputs() {
+        // at t=0 dissolve should be ~grid A, at t=1 ~grid B (char identity).
+        let st = morph_pair();
+        let f0 = st.frame(0.0, "dissolve");
+        let f1 = st.frame(1.0, "dissolve");
+        let mut a_match = 0;
+        let mut b_match = 0;
+        for y in 0..st.h {
+            for x in 0..st.w {
+                if f0[y][x].ch == st.a[y][x].ch {
+                    a_match += 1;
+                }
+                if f1[y][x].ch == st.b[y][x].ch {
+                    b_match += 1;
+                }
+            }
+        }
+        let total = st.w * st.h;
+        assert_eq!(a_match, total, "t=0 should equal A");
+        assert_eq!(b_match, total, "t=1 should equal B");
+    }
+
+    #[test]
+    fn demo_filter_empty_matches_all() {
+        let modes = ["party", "soup", "tree"];
+        assert_eq!(demo_filter_modes(&modes, ""), vec![0, 1, 2]);
+    }
+
+    #[test]
+    fn demo_filter_substring_case_insensitive() {
+        let modes = ["forest", "forest++", "eyes++", "FullMetal"];
+        assert_eq!(demo_filter_modes(&modes, "forest"), vec![0, 1]);
+        assert_eq!(demo_filter_modes(&modes, "++"), vec![1, 2]);
+        assert_eq!(demo_filter_modes(&modes, "metal"), vec![3]);
+        assert!(demo_filter_modes(&modes, "zzz").is_empty());
+    }
+
+    #[test]
+    fn eyes_pp_42() {
+        let (mut grid, mut rng, palette) = make_grid(80, 24, 42);
+        draw_eyes_pp(&mut grid, 80, 24, 42, &palette, &mut rng);
+        insta::assert_snapshot!("eyes_pp_42", grid_to_string(&grid));
+    }
+
+    #[test]
+    fn fme_pp_42() {
+        let (mut grid, mut rng, palette) = make_grid(80, 24, 42);
+        draw_fme_pp(&mut grid, 80, 24, 42, &palette, &mut rng);
+        insta::assert_snapshot!("fme_pp_42", grid_to_string(&grid));
+    }
+
+    #[test]
+    fn trees_pp_42() {
+        let (mut grid, mut rng, palette) = make_grid(80, 24, 42);
+        draw_trees_pp(&mut grid, 80, 24, 42, &palette, &mut rng);
+        insta::assert_snapshot!("trees_pp_42", grid_to_string(&grid));
+    }
+
+    #[test]
+    fn forest_pp_42() {
+        let (mut grid, mut rng, palette) = make_grid(80, 24, 42);
+        draw_forest_pp(&mut grid, 80, 24, 42, &palette, &mut rng);
+        insta::assert_snapshot!("forest_pp_42", grid_to_string(&grid));
+    }
+
+    #[test]
+    fn phyllotaxis_42() {
+        let (mut grid, mut rng, palette) = make_grid(80, 24, 42);
+        draw_phyllotaxis(&mut grid, 80, 24, 42, &palette, &mut rng);
+        insta::assert_snapshot!("phyllotaxis_42", grid_to_string(&grid));
+    }
+
+    #[test]
+    fn moire_42() {
+        let (mut grid, mut rng, palette) = make_grid(80, 24, 42);
+        draw_moire(&mut grid, 80, 24, 42, &palette, &mut rng);
+        insta::assert_snapshot!("moire_42", grid_to_string(&grid));
+    }
+
+    #[test]
+    fn nebula_42() {
+        let (mut grid, mut rng, palette) = make_grid(80, 24, 42);
+        draw_nebula(&mut grid, 80, 24, 42, &palette, &mut rng);
+        insta::assert_snapshot!("nebula_42", grid_to_string(&grid));
+    }
+
+    #[test]
+    fn delta_42() {
+        let (mut grid, mut rng, palette) = make_grid(80, 24, 42);
+        draw_delta(&mut grid, 80, 24, 42, &palette, &mut rng, 0.0);
+        insta::assert_snapshot!("delta_42", grid_to_string(&grid));
+    }
+
+    #[test]
+    fn stained_42() {
+        let (mut grid, mut rng, palette) = make_grid(80, 24, 42);
+        draw_stained(&mut grid, 80, 24, 42, &palette, &mut rng);
+        insta::assert_snapshot!("stained_42", grid_to_string(&grid));
     }
 
     #[test]
