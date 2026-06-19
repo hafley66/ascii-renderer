@@ -10245,310 +10245,9 @@ fn main() {
         }
         put(&mut grid, cx, cy, '⊙', lighten(rose, 18));
     } else if mode == "spiro" {
-        // spiro [curves=0] [density=0] -- layered hypotrochoid / harmonograph curves
-        let curve_arg: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0);
-        let curve_count = if curve_arg == 0 {
-            2 + (seed as usize % 3)
-        } else {
-            curve_arg.clamp(1, 6)
-        };
-        let density_arg: usize = args.get(5).and_then(|s| s.parse().ok()).unwrap_or(0);
-        let density = if density_arg == 0 {
-            1400 + (seed as usize % 800)
-        } else {
-            density_arg.clamp(400, 6000)
-        };
-
-        let bg = darken(palette[0], 14);
-        let chalk = lighten(palette[4], 12);
-        let gold = lighten(palette[1], 30);
-        let cyan = shift_hue(lighten(palette[3], 34), 35.0);
-        let magenta = shift_hue(lighten(palette[2], 40), -42.0);
-        let lime = shift_hue(lighten(palette[1], 30), 90.0);
-        let curve_colors = [chalk, gold, cyan, magenta, lime, chalk];
-
-        for y in 0..height {
-            for x in 0..width {
-                grid[y][x] = Cell::new(' ', bg);
-            }
-        }
-        for _ in 0..(width * height / 90) {
-            let x = rng.random_range(0..width);
-            let y = rng.random_range(0..height);
-            grid[y][x] = Cell::new('·', darken(chalk, 60));
-        }
-
-        let put = |grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color| {
-            if x >= 0 && y >= 0 && (x as usize) < width && (y as usize) < height {
-                grid[y as usize][x as usize] = Cell::new(ch, fg);
-            }
-        };
-        let curve_char = |prev: (i32, i32), here: (i32, i32), next: (i32, i32)| {
-            let dx1 = (here.0 - prev.0).signum();
-            let dy1 = (here.1 - prev.1).signum();
-            let dx2 = (next.0 - here.0).signum();
-            let dy2 = (next.1 - here.1).signum();
-            if (dx1, dy1) == (dx2, dy2) {
-                if dy1 == 0 {
-                    '─'
-                } else if dx1 == 0 {
-                    '│'
-                } else if dx1 == dy1 {
-                    '╲'
-                } else {
-                    '╱'
-                }
-            } else if dy1 == 0 && dx2 == 0 {
-                match (dx1, dy2) {
-                    (1, 1) => '╮',
-                    (1, -1) => '╯',
-                    (-1, 1) => '╭',
-                    (-1, -1) => '╰',
-                    _ => '╮',
-                }
-            } else if dx1 == 0 && dy2 == 0 {
-                match (dy1, dx2) {
-                    (1, 1) => '╰',
-                    (1, -1) => '╯',
-                    (-1, 1) => '╭',
-                    (-1, -1) => '╮',
-                    _ => '╰',
-                }
-            } else if dx1 != dx2 && dy1 != dy2 {
-                match (dx1, dy1, dx2, dy2) {
-                    (1, 1, 1, -1) | (-1, -1, -1, 1) => '╯',
-                    (1, -1, 1, 1) | (-1, 1, -1, -1) => '╮',
-                    (1, 1, -1, 1) | (-1, -1, 1, -1) => '╰',
-                    (1, -1, -1, -1) | (-1, 1, 1, 1) => '╭',
-                    _ => '○',
-                }
-            } else if dx2 == 0 || dx1 == 0 {
-                '│'
-            } else if dy2 == 0 || dy1 == 0 {
-                '─'
-            } else if dx2 == dy2 {
-                '╲'
-            } else {
-                '╱'
-            }
-        };
-
-        let cx = width as f32 / 2.0;
-        let cy = height as f32 / 2.0;
-        let scale = ((width as f32 / 2.0) - 2.0).min(height as f32 - 2.0).max(8.0);
-
-        for ci in 0..curve_count {
-            let r_big = scale * rng.random_range(0.55..0.95);
-            let k = rng.random_range(2..9) as f32;
-            let r_small = r_big / k;
-            let d = r_small * rng.random_range(0.5..1.8);
-            let rot = rng.random_range(0.0..std::f32::consts::TAU);
-            let turns = (k as i32 + 1) * 2;
-            let samples = density;
-            let color = curve_colors[ci % curve_colors.len()];
-            let accent = lighten(color, 14);
-            let cosr = rot.cos();
-            let sinr = rot.sin();
-
-            let mut pts: Vec<(i32, i32)> = Vec::with_capacity(samples);
-            for i in 0..=samples {
-                let t = i as f32 / samples as f32 * std::f32::consts::TAU * turns as f32;
-                let xg = (r_big - r_small) * t.cos()
-                    + d * ((r_big - r_small) / r_small * t).cos();
-                let yg = (r_big - r_small) * t.sin()
-                    - d * ((r_big - r_small) / r_small * t).sin();
-                let xr = xg * cosr - yg * sinr;
-                let yr = xg * sinr + yg * cosr;
-                let px = (cx + xr).round() as i32;
-                let py = (cy + yr * 0.5).round() as i32;
-                if pts.last().copied() != Some((px, py)) {
-                    pts.push((px, py));
-                }
-            }
-            for i in 1..pts.len().saturating_sub(1) {
-                let ch = curve_char(pts[i - 1], pts[i], pts[i + 1]);
-                let col = if (i + ci * 5) % 11 == 0 {
-                    accent
-                } else {
-                    color
-                };
-                put(&mut grid, pts[i].0, pts[i].1, ch, col);
-            }
-        }
-        put(&mut grid, cx.round() as i32, cy.round() as i32, '⊙', lighten(chalk, 10));
+        grid = draw_spiro(grid, width, height, seed, palette, rng, t_anim, &args);
     } else if mode == "spiro-tile" {
-        // spiro-tile [cols=0] [rows=0] [vary=0] -- tessellated grid of small spiro motifs
-        let col_arg: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0);
-        let cols = if col_arg == 0 {
-            4 + (seed as usize % 3)
-        } else {
-            col_arg.clamp(2, 10)
-        };
-        let row_arg: usize = args.get(5).and_then(|s| s.parse().ok()).unwrap_or(0);
-        let rows = if row_arg == 0 {
-            2 + (seed as usize % 3)
-        } else {
-            row_arg.clamp(2, 8)
-        };
-        let vary_arg: usize = args.get(6).and_then(|s| s.parse().ok()).unwrap_or(0);
-        let vary = vary_arg != 0 || (seed as usize % 4 == 0);
-
-        let bg = darken(palette[0], 13);
-        let chalk = lighten(palette[4], 12);
-        let gold = lighten(palette[1], 28);
-        let cyan = shift_hue(lighten(palette[3], 32), 35.0);
-        let rose = shift_hue(lighten(palette[2], 38), -40.0);
-        let tile_colors = [chalk, gold, cyan, rose, chalk];
-        let border_color = darken(chalk, 50);
-
-        let base_k = (3 + seed as usize % 5) as f32;
-        let base_dp = 0.72 + (seed as f32 * 0.1).fract() * 0.6;
-        let turns_base = (base_k as i32 + 1) * 2;
-
-        for y in 0..height {
-            for x in 0..width {
-                grid[y][x] = Cell::new(' ', bg);
-            }
-        }
-
-        let put = |grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color| {
-            if x >= 0 && y >= 0 && (x as usize) < width && (y as usize) < height {
-                grid[y as usize][x as usize] = Cell::new(ch, fg);
-            }
-        };
-        let curve_char = |prev: (i32, i32), here: (i32, i32), next: (i32, i32)| {
-            let dx1 = (here.0 - prev.0).signum();
-            let dy1 = (here.1 - prev.1).signum();
-            let dx2 = (next.0 - here.0).signum();
-            let dy2 = (next.1 - here.1).signum();
-            if (dx1, dy1) == (dx2, dy2) {
-                if dy1 == 0 {
-                    '─'
-                } else if dx1 == 0 {
-                    '│'
-                } else if dx1 == dy1 {
-                    '╲'
-                } else {
-                    '╱'
-                }
-            } else if dy1 == 0 && dx2 == 0 {
-                match (dx1, dy2) {
-                    (1, 1) => '╮',
-                    (1, -1) => '╯',
-                    (-1, 1) => '╭',
-                    (-1, -1) => '╰',
-                    _ => '╮',
-                }
-            } else if dx1 == 0 && dy2 == 0 {
-                match (dy1, dx2) {
-                    (1, 1) => '╰',
-                    (1, -1) => '╯',
-                    (-1, 1) => '╭',
-                    (-1, -1) => '╮',
-                    _ => '╰',
-                }
-            } else if dx1 != dx2 && dy1 != dy2 {
-                match (dx1, dy1, dx2, dy2) {
-                    (1, 1, 1, -1) | (-1, -1, -1, 1) => '╯',
-                    (1, -1, 1, 1) | (-1, 1, -1, -1) => '╮',
-                    (1, 1, -1, 1) | (-1, -1, 1, -1) => '╰',
-                    (1, -1, -1, -1) | (-1, 1, 1, 1) => '╭',
-                    _ => '○',
-                }
-            } else if dx2 == 0 || dx1 == 0 {
-                '│'
-            } else if dy2 == 0 || dy1 == 0 {
-                '─'
-            } else if dx2 == dy2 {
-                '╲'
-            } else {
-                '╱'
-            }
-        };
-        let draw_box = |grid: &mut Grid, x0: i32, y0: i32, x1: i32, y1: i32, fg: Color| {
-            for x in x0 + 1..x1 {
-                put(grid, x, y0, '─', fg);
-                put(grid, x, y1, '─', fg);
-            }
-            for y in y0 + 1..y1 {
-                put(grid, x0, y, '│', fg);
-                put(grid, x1, y, '│', fg);
-            }
-            put(grid, x0, y0, '╭', fg);
-            put(grid, x1, y0, '╮', fg);
-            put(grid, x0, y1, '╰', fg);
-            put(grid, x1, y1, '╯', fg);
-        };
-
-        let tile_w = width / cols;
-        let tile_h = height / rows;
-
-        for ry in 0..rows {
-            for rx in 0..cols {
-                let x0 = (rx * tile_w) as i32;
-                let y0 = (ry * tile_h) as i32;
-                let x1 = (((rx + 1) * tile_w).min(width - 1)) as i32;
-                let y1 = (((ry + 1) * tile_h).min(height - 1)) as i32;
-                draw_box(&mut grid, x0, y0, x1, y1, border_color);
-
-                let tx = ((rx * tile_w + tile_w / 2) as f32).min(width as f32 - 1.5);
-                let ty = ((ry * tile_h + tile_h / 2) as f32).min(height as f32 - 1.0);
-                let hw = (tile_w as f32 / 2.0 - 1.5).max(2.0);
-                let hh = (tile_h as f32 / 2.0 - 1.0).max(1.5);
-                let scale = hw.min(hh * 2.0).max(2.0);
-
-                let (k, dp, rot, flip) = if vary {
-                    let k = (base_k + ((rx as i32 - ry as i32) as f32 * 0.16)).max(2.0);
-                    let dp = base_dp + (rx as f32 * 0.05).sin() * 0.30 + (ry as f32 * 0.07).cos() * 0.20;
-                    let rot = (rx as f32 + ry as f32 * 1.3) * 0.42;
-                    let flip = (rx + ry) % 2 == 0;
-                    (k, dp, rot, flip)
-                } else {
-                    (base_k, base_dp, 0.0_f32, (rx + ry) % 2 == 0)
-                };
-
-                let color = tile_colors[(rx + ry * 2) % tile_colors.len()];
-                let accent = shift_hue(color, 55.0);
-
-                for ci in 0..2usize {
-                    let r_big = scale * (0.88 - ci as f32 * 0.18);
-                    let r_small = r_big / k;
-                    let d = r_small * dp * if ci == 0 { 1.0 } else { 1.45 };
-                    let cosr = rot.cos();
-                    let sinr = rot.sin();
-                    let turns = turns_base + ci as i32;
-                    let samples = 420;
-                    let mut pts: Vec<(i32, i32)> = Vec::new();
-                    for i in 0..=samples {
-                        let t = i as f32 / samples as f32 * std::f32::consts::TAU * turns as f32;
-                        let xg = (r_big - r_small) * t.cos()
-                            + d * ((r_big - r_small) / r_small * t).cos();
-                        let yg = (r_big - r_small) * t.sin()
-                            - d * ((r_big - r_small) / r_small * t).sin();
-                        let (xg, yg) = if flip { (xg, -yg) } else { (xg, yg) };
-                        let xr = xg * cosr - yg * sinr;
-                        let yr = xg * sinr + yg * cosr;
-                        let px = (tx + xr).round() as i32;
-                        let py = (ty + yr * 0.5).round() as i32;
-                        if pts.last().copied() != Some((px, py)) {
-                            pts.push((px, py));
-                        }
-                    }
-                    let col = if ci == 0 { color } else { darken(accent, 4) };
-                    for i in 1..pts.len().saturating_sub(1) {
-                        let ch = curve_char(pts[i - 1], pts[i], pts[i + 1]);
-                        put(&mut grid, pts[i].0, pts[i].1, ch, col);
-                    }
-                }
-                put(
-                    &mut grid,
-                    tx.round() as i32,
-                    ty.round() as i32,
-                    '·',
-                    darken(color, 26),
-                );
-            }
-        }
+        grid = draw_spiro_tile(grid, width, height, seed, palette, rng, t_anim, &args);
     } else if mode == "weave" {
         // weave [horiz=0] [vert=0] -- interlaced wavy warp/weft strands
         let h_arg: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0);
@@ -13761,6 +13460,317 @@ fn draw_fullmetal_eyes2(mut grid: Grid, width: usize, height: usize, seed: u64, 
     grid
 }
 
+fn draw_spiro(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, args: &[String]) -> Grid {
+        // spiro [curves=0] [density=0] -- layered hypotrochoid / harmonograph curves
+        let curve_arg: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0);
+        let curve_count = if curve_arg == 0 {
+            2 + (seed as usize % 3)
+        } else {
+            curve_arg.clamp(1, 6)
+        };
+        let density_arg: usize = args.get(5).and_then(|s| s.parse().ok()).unwrap_or(0);
+        let density = if density_arg == 0 {
+            1400 + (seed as usize % 800)
+        } else {
+            density_arg.clamp(400, 6000)
+        };
+
+        let bg = darken(palette[0], 14);
+        let chalk = lighten(palette[4], 12);
+        let gold = lighten(palette[1], 30);
+        let cyan = shift_hue(lighten(palette[3], 34), 35.0);
+        let magenta = shift_hue(lighten(palette[2], 40), -42.0);
+        let lime = shift_hue(lighten(palette[1], 30), 90.0);
+        let curve_colors = [chalk, gold, cyan, magenta, lime, chalk];
+
+        for y in 0..height {
+            for x in 0..width {
+                grid[y][x] = Cell::new(' ', bg);
+            }
+        }
+        for _ in 0..(width * height / 90) {
+            let x = rng.random_range(0..width);
+            let y = rng.random_range(0..height);
+            grid[y][x] = Cell::new('·', darken(chalk, 60));
+        }
+
+        let put = |grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color| {
+            if x >= 0 && y >= 0 && (x as usize) < width && (y as usize) < height {
+                grid[y as usize][x as usize] = Cell::new(ch, fg);
+            }
+        };
+        let curve_char = |prev: (i32, i32), here: (i32, i32), next: (i32, i32)| {
+            let dx1 = (here.0 - prev.0).signum();
+            let dy1 = (here.1 - prev.1).signum();
+            let dx2 = (next.0 - here.0).signum();
+            let dy2 = (next.1 - here.1).signum();
+            if (dx1, dy1) == (dx2, dy2) {
+                if dy1 == 0 {
+                    '─'
+                } else if dx1 == 0 {
+                    '│'
+                } else if dx1 == dy1 {
+                    '╲'
+                } else {
+                    '╱'
+                }
+            } else if dy1 == 0 && dx2 == 0 {
+                match (dx1, dy2) {
+                    (1, 1) => '╮',
+                    (1, -1) => '╯',
+                    (-1, 1) => '╭',
+                    (-1, -1) => '╰',
+                    _ => '╮',
+                }
+            } else if dx1 == 0 && dy2 == 0 {
+                match (dy1, dx2) {
+                    (1, 1) => '╰',
+                    (1, -1) => '╯',
+                    (-1, 1) => '╭',
+                    (-1, -1) => '╮',
+                    _ => '╰',
+                }
+            } else if dx1 != dx2 && dy1 != dy2 {
+                match (dx1, dy1, dx2, dy2) {
+                    (1, 1, 1, -1) | (-1, -1, -1, 1) => '╯',
+                    (1, -1, 1, 1) | (-1, 1, -1, -1) => '╮',
+                    (1, 1, -1, 1) | (-1, -1, 1, -1) => '╰',
+                    (1, -1, -1, -1) | (-1, 1, 1, 1) => '╭',
+                    _ => '○',
+                }
+            } else if dx2 == 0 || dx1 == 0 {
+                '│'
+            } else if dy2 == 0 || dy1 == 0 {
+                '─'
+            } else if dx2 == dy2 {
+                '╲'
+            } else {
+                '╱'
+            }
+        };
+
+        let cx = width as f32 / 2.0;
+        let cy = height as f32 / 2.0;
+        let scale = ((width as f32 / 2.0) - 2.0).min(height as f32 - 2.0).max(8.0);
+
+        for ci in 0..curve_count {
+            let r_big = scale * rng.random_range(0.55..0.95);
+            let k = rng.random_range(2..9) as f32;
+            let r_small = r_big / k;
+            let d = r_small * rng.random_range(0.5..1.8);
+            let rot = rng.random_range(0.0..std::f32::consts::TAU) + t_anim * (0.1 + ci as f32 * 0.03);
+            let turns = (k as i32 + 1) * 2;
+            let samples = density;
+            let color = curve_colors[ci % curve_colors.len()];
+            let accent = lighten(color, 14);
+            let cosr = rot.cos();
+            let sinr = rot.sin();
+
+            let mut pts: Vec<(i32, i32)> = Vec::with_capacity(samples);
+            for i in 0..=samples {
+                let t = i as f32 / samples as f32 * std::f32::consts::TAU * turns as f32;
+                let xg = (r_big - r_small) * t.cos()
+                    + d * ((r_big - r_small) / r_small * t).cos();
+                let yg = (r_big - r_small) * t.sin()
+                    - d * ((r_big - r_small) / r_small * t).sin();
+                let xr = xg * cosr - yg * sinr;
+                let yr = xg * sinr + yg * cosr;
+                let px = (cx + xr).round() as i32;
+                let py = (cy + yr * 0.5).round() as i32;
+                if pts.last().copied() != Some((px, py)) {
+                    pts.push((px, py));
+                }
+            }
+            for i in 1..pts.len().saturating_sub(1) {
+                let ch = curve_char(pts[i - 1], pts[i], pts[i + 1]);
+                let col = if (i + ci * 5) % 11 == 0 {
+                    accent
+                } else {
+                    color
+                };
+                put(&mut grid, pts[i].0, pts[i].1, ch, col);
+            }
+        }
+        put(&mut grid, cx.round() as i32, cy.round() as i32, '⊙', lighten(chalk, 10));
+    grid
+}
+
+fn draw_spiro_tile(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, args: &[String]) -> Grid {
+        // spiro-tile [cols=0] [rows=0] [vary=0] -- tessellated grid of small spiro motifs
+        let col_arg: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0);
+        let cols = if col_arg == 0 {
+            4 + (seed as usize % 3)
+        } else {
+            col_arg.clamp(2, 10)
+        };
+        let row_arg: usize = args.get(5).and_then(|s| s.parse().ok()).unwrap_or(0);
+        let rows = if row_arg == 0 {
+            2 + (seed as usize % 3)
+        } else {
+            row_arg.clamp(2, 8)
+        };
+        let vary_arg: usize = args.get(6).and_then(|s| s.parse().ok()).unwrap_or(0);
+        let vary = vary_arg != 0 || (seed as usize % 4 == 0);
+
+        let bg = darken(palette[0], 13);
+        let chalk = lighten(palette[4], 12);
+        let gold = lighten(palette[1], 28);
+        let cyan = shift_hue(lighten(palette[3], 32), 35.0);
+        let rose = shift_hue(lighten(palette[2], 38), -40.0);
+        let tile_colors = [chalk, gold, cyan, rose, chalk];
+        let border_color = darken(chalk, 50);
+
+        let base_k = (3 + seed as usize % 5) as f32;
+        let base_dp = 0.72 + (seed as f32 * 0.1).fract() * 0.6;
+        let turns_base = (base_k as i32 + 1) * 2;
+
+        for y in 0..height {
+            for x in 0..width {
+                grid[y][x] = Cell::new(' ', bg);
+            }
+        }
+
+        let put = |grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color| {
+            if x >= 0 && y >= 0 && (x as usize) < width && (y as usize) < height {
+                grid[y as usize][x as usize] = Cell::new(ch, fg);
+            }
+        };
+        let curve_char = |prev: (i32, i32), here: (i32, i32), next: (i32, i32)| {
+            let dx1 = (here.0 - prev.0).signum();
+            let dy1 = (here.1 - prev.1).signum();
+            let dx2 = (next.0 - here.0).signum();
+            let dy2 = (next.1 - here.1).signum();
+            if (dx1, dy1) == (dx2, dy2) {
+                if dy1 == 0 {
+                    '─'
+                } else if dx1 == 0 {
+                    '│'
+                } else if dx1 == dy1 {
+                    '╲'
+                } else {
+                    '╱'
+                }
+            } else if dy1 == 0 && dx2 == 0 {
+                match (dx1, dy2) {
+                    (1, 1) => '╮',
+                    (1, -1) => '╯',
+                    (-1, 1) => '╭',
+                    (-1, -1) => '╰',
+                    _ => '╮',
+                }
+            } else if dx1 == 0 && dy2 == 0 {
+                match (dy1, dx2) {
+                    (1, 1) => '╰',
+                    (1, -1) => '╯',
+                    (-1, 1) => '╭',
+                    (-1, -1) => '╮',
+                    _ => '╰',
+                }
+            } else if dx1 != dx2 && dy1 != dy2 {
+                match (dx1, dy1, dx2, dy2) {
+                    (1, 1, 1, -1) | (-1, -1, -1, 1) => '╯',
+                    (1, -1, 1, 1) | (-1, 1, -1, -1) => '╮',
+                    (1, 1, -1, 1) | (-1, -1, 1, -1) => '╰',
+                    (1, -1, -1, -1) | (-1, 1, 1, 1) => '╭',
+                    _ => '○',
+                }
+            } else if dx2 == 0 || dx1 == 0 {
+                '│'
+            } else if dy2 == 0 || dy1 == 0 {
+                '─'
+            } else if dx2 == dy2 {
+                '╲'
+            } else {
+                '╱'
+            }
+        };
+        let draw_box = |grid: &mut Grid, x0: i32, y0: i32, x1: i32, y1: i32, fg: Color| {
+            for x in x0 + 1..x1 {
+                put(grid, x, y0, '─', fg);
+                put(grid, x, y1, '─', fg);
+            }
+            for y in y0 + 1..y1 {
+                put(grid, x0, y, '│', fg);
+                put(grid, x1, y, '│', fg);
+            }
+            put(grid, x0, y0, '╭', fg);
+            put(grid, x1, y0, '╮', fg);
+            put(grid, x0, y1, '╰', fg);
+            put(grid, x1, y1, '╯', fg);
+        };
+
+        let tile_w = width / cols;
+        let tile_h = height / rows;
+
+        for ry in 0..rows {
+            for rx in 0..cols {
+                let x0 = (rx * tile_w) as i32;
+                let y0 = (ry * tile_h) as i32;
+                let x1 = (((rx + 1) * tile_w).min(width - 1)) as i32;
+                let y1 = (((ry + 1) * tile_h).min(height - 1)) as i32;
+                draw_box(&mut grid, x0, y0, x1, y1, border_color);
+
+                let tx = ((rx * tile_w + tile_w / 2) as f32).min(width as f32 - 1.5);
+                let ty = ((ry * tile_h + tile_h / 2) as f32).min(height as f32 - 1.0);
+                let hw = (tile_w as f32 / 2.0 - 1.5).max(2.0);
+                let hh = (tile_h as f32 / 2.0 - 1.0).max(1.5);
+                let scale = hw.min(hh * 2.0).max(2.0);
+
+                let (k, dp, rot, flip) = if vary {
+                    let k = (base_k + ((rx as i32 - ry as i32) as f32 * 0.16)).max(2.0);
+                    let dp = base_dp + (rx as f32 * 0.05).sin() * 0.30 + (ry as f32 * 0.07).cos() * 0.20;
+                    let rot = (rx as f32 + ry as f32 * 1.3) * 0.42 + t_anim * 0.12;
+                    let flip = (rx + ry) % 2 == 0;
+                    (k, dp, rot, flip)
+                } else {
+                    (base_k, base_dp, t_anim * 0.12, (rx + ry) % 2 == 0)
+                };
+
+                let color = tile_colors[(rx + ry * 2) % tile_colors.len()];
+                let accent = shift_hue(color, 55.0);
+
+                for ci in 0..2usize {
+                    let r_big = scale * (0.88 - ci as f32 * 0.18);
+                    let r_small = r_big / k;
+                    let d = r_small * dp * if ci == 0 { 1.0 } else { 1.45 };
+                    let cosr = rot.cos();
+                    let sinr = rot.sin();
+                    let turns = turns_base + ci as i32;
+                    let samples = 420;
+                    let mut pts: Vec<(i32, i32)> = Vec::new();
+                    for i in 0..=samples {
+                        let t = i as f32 / samples as f32 * std::f32::consts::TAU * turns as f32;
+                        let xg = (r_big - r_small) * t.cos()
+                            + d * ((r_big - r_small) / r_small * t).cos();
+                        let yg = (r_big - r_small) * t.sin()
+                            - d * ((r_big - r_small) / r_small * t).sin();
+                        let (xg, yg) = if flip { (xg, -yg) } else { (xg, yg) };
+                        let xr = xg * cosr - yg * sinr;
+                        let yr = xg * sinr + yg * cosr;
+                        let px = (tx + xr).round() as i32;
+                        let py = (ty + yr * 0.5).round() as i32;
+                        if pts.last().copied() != Some((px, py)) {
+                            pts.push((px, py));
+                        }
+                    }
+                    let col = if ci == 0 { color } else { darken(accent, 4) };
+                    for i in 1..pts.len().saturating_sub(1) {
+                        let ch = curve_char(pts[i - 1], pts[i], pts[i + 1]);
+                        put(&mut grid, pts[i].0, pts[i].1, ch, col);
+                    }
+                }
+                put(
+                    &mut grid,
+                    tx.round() as i32,
+                    ty.round() as i32,
+                    '·',
+                    darken(color, 26),
+                );
+            }
+        }
+    grid
+}
+
 fn draw_delta(grid: &mut Grid, width: usize, height: usize, _seed: u64, palette: &[Color; 5], rng: &mut StdRng, t: f32) {
     use std::f32::consts::FRAC_PI_2;
     let bg = darken(palette[0], 6);
@@ -14368,6 +14378,8 @@ fn iterate_grid(mode: &str, seed: u64, theme: &str, w: usize, h: usize, t: f32) 
             draw_nebula(&mut grid, w, h, seed, &palette, &mut rng, t);
             Some(grid)
         }
+        "spiro" => Some(draw_spiro(grid, w, h, seed, palette, rng, t, &[])),
+        "spiro-tile" => Some(draw_spiro_tile(grid, w, h, seed, palette, rng, t, &[])),
         "solar-system" => Some(draw_solar_system(grid, w, h, seed, palette, rng, t, &[])),
         "eyes3" => Some(draw_eyes3(grid, w, h, seed, palette, rng, t, &[])),
         "fullmetal-eyes" => Some(draw_fullmetal_eyes(grid, w, h, seed, palette, rng, t, &[])),
