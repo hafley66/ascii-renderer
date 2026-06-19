@@ -88,7 +88,10 @@ fn mode_spec(name: &str) -> ModeSpec {
             ModeSpec { animate: AnimKind::Iterate, params: &[] }
         }
         "stained" => ModeSpec { animate: AnimKind::Vflow, params: &[] },
-        _ => ModeSpec { animate: AnimKind::Morph, params: &[] },
+        // Default: iterate. T animates the mode -- natively if the mode reads it
+        // (in-process via iterate_grid), otherwise the player warps the base frame
+        // over time, so every mode animates per seed with no per-frame re-render.
+        _ => ModeSpec { animate: AnimKind::Iterate, params: &[] },
     }
 }
 
@@ -14716,7 +14719,7 @@ fn morph_session(mode_a: &str, seed_a: u64, mode_b: &str, seed_b: u64, strat0: &
     let mut dir = 1.0_f32;
     let mut playing = true;
     let mut clock = 0.0_f32;
-    let speed = 0.022_f32;
+    let speed = 0.011_f32;
 
     // Live knob editing while animating: same declared config + pane as the demo
     // browser. Auto-open when the mode declares knobs so they're visible on entry.
@@ -14738,7 +14741,7 @@ fn morph_session(mode_a: &str, seed_a: u64, mode_b: &str, seed_b: u64, strat0: &
         let rw = w.saturating_sub(pane_w).max(1);
 
         if playing {
-            clock += 0.12;
+            clock += 0.06;
             phase += dir * speed;
             if phase >= 1.0 {
                 if walk {
@@ -14768,9 +14771,11 @@ fn morph_session(mode_a: &str, seed_a: u64, mode_b: &str, seed_b: u64, strat0: &
             "ripple" => warp_ripple(&st.a, clock, 2.2),
             "breathe" => warp_breathe(&st.a, clock, 1.0),
             "vflow" => voronoi_flow_frame(rw, h, seed_a, clock, &palette),
+            // Native T if the mode renders in-process; otherwise warp the base
+            // frame over time (no per-frame fork -- the old fallback re-ran the
+            // binary every frame and froze the player).
             "iterate" => iterate_grid(mode_a, seed_a, theme, rw, h, clock)
-                .or_else(|| render_frame_t(&exe, seed_a, mode_a, theme, rw, h, clock))
-                .unwrap_or_else(|| st.a.clone()),
+                .unwrap_or_else(|| warp_wind(&st.a, clock, (h as f32 * 0.12).clamp(2.0, 6.0))),
             _ => st.frame(t, &strat),
         };
         let body = grid_to_ansi(&g);
@@ -14809,7 +14814,7 @@ fn morph_session(mode_a: &str, seed_a: u64, mode_b: &str, seed_b: u64, strat0: &
             draw_options_pane(rw, th, mode_a, &spec, &pvals, psel, seed_a, theme);
         }
 
-        if event::poll(Duration::from_millis(33)).unwrap_or(false) {
+        if event::poll(Duration::from_millis(16)).unwrap_or(false) {
             match event::read() {
                 Ok(Event::Key(key)) => match key.code {
                     KeyCode::Char('q') | KeyCode::Esc => break,
