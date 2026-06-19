@@ -212,11 +212,6 @@ fn bushes_seed_42() {
 }
 
 #[test]
-fn forest7_seed_42() {
-    insta::assert_snapshot!(render(&["42", "forest7", "ember"]));
-}
-
-#[test]
 fn trees8_seed_42() {
     insta::assert_snapshot!(render(&["42", "trees8", "moss"]));
 }
@@ -234,6 +229,31 @@ fn boles4_seed_42() {
 #[test]
 fn boles5_seed_42() {
     insta::assert_snapshot!(render(&["42", "boles5", "ember"]));
+}
+
+#[test]
+fn forest8_seed_42() {
+    insta::assert_snapshot!(render(&["42", "forest8", "moss"]));
+}
+
+#[test]
+fn forest9_seed_42() {
+    insta::assert_snapshot!(render(&["42", "forest9", "deep"]));
+}
+
+#[test]
+fn boles6_seed_42() {
+    insta::assert_snapshot!(render(&["42", "boles6", "ember"]));
+}
+
+#[test]
+fn trees10_seed_42() {
+    insta::assert_snapshot!(render(&["42", "trees10"]));
+}
+
+#[test]
+fn fullmetal_eyes2_seed_42() {
+    insta::assert_snapshot!(render(&["42", "fullmetal-eyes2", "nerv"]));
 }
 
 #[test]
@@ -314,6 +334,51 @@ fn fullmetal_alchemist2_seed_42() {
 #[test]
 fn fa3_seed_42() {
     insta::assert_snapshot!(render(&["42", "fa3", "neon"]));
+}
+
+#[test]
+fn fa4_seed_42() {
+    insta::assert_snapshot!(render(&["42", "fa4", "neon"]));
+}
+
+#[test]
+fn fa5_seed_42() {
+    insta::assert_snapshot!(render(&["42", "fa5", "neon"]));
+}
+
+#[test]
+fn spiro_seed_42() {
+    insta::assert_snapshot!(render(&["42", "spiro", "deep"]));
+}
+
+#[test]
+fn weave_seed_42() {
+    insta::assert_snapshot!(render(&["42", "weave", "ember"]));
+}
+
+#[test]
+fn gears_seed_42() {
+    insta::assert_snapshot!(render(&["42", "gears", "silver"]));
+}
+
+#[test]
+fn kaleido_seed_42() {
+    insta::assert_snapshot!(render(&["42", "kaleido", "sakura"]));
+}
+
+#[test]
+fn contour_seed_42() {
+    insta::assert_snapshot!(render(&["42", "contour", "moss"]));
+}
+
+#[test]
+fn spiro_tile_seed_42() {
+    insta::assert_snapshot!(render(&["42", "spiro-tile", "deep"]));
+}
+
+#[test]
+fn eyes3_seed_42() {
+    insta::assert_snapshot!(render(&["42", "eyes3", "ember"]));
 }
 
 #[test]

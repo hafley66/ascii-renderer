@@ -48,12 +48,15 @@ fn grid_to_string(grid: &Grid) -> String {
 
 ## Modes
 
-party, soup, tree, trees, forest, forest2, forest3, forest4, aztec, fret, flowers, fruits, masks, shapes,
+party, soup, tree, trees, forest, forest2, forest3, forest4, forest8, forest9, aztec, fret, flowers, fruits, masks, shapes,
 tiles, tiles-rand, tiles-skew, mondrian, mondrian2, bsp, layout, md, terrain, flow, watershed,
 noise, ca, ca-layout, stem, scene-walk, scene-walk-2, scene-walk-3,
 aurora, aura2, solar-system, harbor, labyrinth, rainfall, meadow, world, world2,
-eyes, eyes2, fullmetal-eyes, fullmetal-alchemist, fullmetal-alchemist2, fa3, fullmetal-alchemist3,
-kintsugi, constellation, strata, circuit, quilt, patchwalk, trees8, trees9, boles4, boles5
+eyes, eyes2, fullmetal-eyes, fullmetal-eyes2, fullmetal-alchemist, fullmetal-alchemist2, fa3, fullmetal-alchemist3,
+fa4, fullmetal-alchemist4, fa5, fullmetal-alchemist5,
+spiro, spiro-tile, weave, gears, kaleido, contour,
+eyes3,
+kintsugi, constellation, strata, circuit, quilt, patchwalk, trees8, trees9, trees10, boles4, boles5, boles6
 
 ## Architecture
 

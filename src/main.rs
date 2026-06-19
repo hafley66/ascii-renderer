@@ -59,6 +59,8 @@ fn run_demo(initial_seed: u64) {
         "forest5",
         "forest6",
         "forest7",
+        "forest8",
+        "forest9",
         "aztec",
         "fret",
         "flowers",
@@ -89,9 +91,19 @@ fn run_demo(initial_seed: u64) {
         "eyes",
         "eyes2",
         "fullmetal-eyes",
+        "fullmetal-eyes2",
         "fullmetal-alchemist",
         "fullmetal-alchemist2",
         "fa3",
+        "fa4",
+        "fa5",
+        "spiro",
+        "spiro-tile",
+        "weave",
+        "gears",
+        "kaleido",
+        "contour",
+        "eyes3",
         "rainfall",
         "meadow",
         "world",
@@ -106,8 +118,10 @@ fn run_demo(initial_seed: u64) {
         "trees4",
         "trees8",
         "trees9",
+        "trees10",
         "boles4",
         "boles5",
+        "boles6",
         "bushes",
         "kintsugi",
         "constellation",
@@ -238,8 +252,12 @@ fn main() {
             "  terrain   Layered landscape: mountains, foothills, ground with contour boundaries"
         );
         eprintln!("  flow      Vertical flow: fills morph through tapered zones");
-        eprintln!("  watershed Contour landscape cut by tapered, dissolving flow channels [channels]");
-        eprintln!("  solar-system  3D-ish orbital diagram with planets, cubes, and space hardware [bodies]");
+        eprintln!(
+            "  watershed Contour landscape cut by tapered, dissolving flow channels [channels]"
+        );
+        eprintln!(
+            "  solar-system  3D-ish orbital diagram with planets, cubes, and space hardware [bodies]"
+        );
         eprintln!("  masks     All 4 mask/firework sprite styles");
         eprintln!("  ca        Cellular automata: life|cave|maze|coral [style] [primitives]");
         eprintln!("  ca-layout CA as organic layout engine (text in largest regions)");
@@ -1099,7 +1117,9 @@ fn main() {
         for ci in 0..channel_count {
             let slot_w = width / (channel_count + 1);
             let base_x = (slot_w * (ci + 1)
-                + rng.random_range(0..slot_w.max(1)).saturating_sub(slot_w / 2))
+                + rng
+                    .random_range(0..slot_w.max(1))
+                    .saturating_sub(slot_w / 2))
             .clamp(4, width.saturating_sub(5).max(4));
             let channel_w = rng.random_range(12..24usize).min(width.max(1)).max(6);
             let phase = rng.random::<f32>() * std::f32::consts::TAU;
@@ -1224,9 +1244,24 @@ fn main() {
             }
         }
 
-        draw_contour_ridge(&mut grid, &rect, &ctx.mountain_contour, lighten(palette[1], 35));
-        draw_contour_ridge(&mut grid, &rect, &ctx.foothill_contour, lighten(palette[2], 15));
-        draw_contour_ridge(&mut grid, &rect, &ctx.ground_contour, lighten(palette[3], 25));
+        draw_contour_ridge(
+            &mut grid,
+            &rect,
+            &ctx.mountain_contour,
+            lighten(palette[1], 35),
+        );
+        draw_contour_ridge(
+            &mut grid,
+            &rect,
+            &ctx.foothill_contour,
+            lighten(palette[2], 15),
+        );
+        draw_contour_ridge(
+            &mut grid,
+            &rect,
+            &ctx.ground_contour,
+            lighten(palette[3], 25),
+        );
     } else if mode == "masks" {
         // background: diamond lattice to recreate the emergent effect
         let bg_rect = Rect {
@@ -4174,6 +4209,532 @@ fn main() {
                 }
             }
         }
+    } else if mode == "forest8" {
+        // forest8 [layers=0] [density=0] -- high-entropy scene-walk forest: trees, bushes, flowers, fruit, grass
+        let layers_arg: u8 = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0);
+        let density_arg: f32 = args.get(5).and_then(|s| s.parse().ok()).unwrap_or(0.0);
+        let layer_count = if layers_arg == 0 {
+            (3 + seed % 2) as u8
+        } else {
+            layers_arg.clamp(2, 5)
+        };
+        let density = if density_arg == 0.0 {
+            0.4
+        } else {
+            density_arg.clamp(0.2, 1.0)
+        };
+
+        let opts = SceneOpts {
+            layer_count,
+            density,
+            tree_rate: 0.62,
+            bole_rate: 0.4,
+            ground_frac: 0.42,
+            kind_filter: None,
+            vines: true,
+            hue_range: 35.0,
+        };
+        let (ground_y, stops) = scene_walk(width, height, &mut rng, &opts);
+
+        // sky
+        let sky_color = darken(palette[0], 90);
+        for y in 0..ground_y {
+            for x in 0..width {
+                if rng.random_range(0..20u32) == 0 {
+                    grid[y][x] = Cell::new('·', sky_color);
+                }
+            }
+        }
+        let cloud_color = lighten(palette[0], 12);
+        for _ in 0..rng.random_range(0..3u32) {
+            let cx = rng.random_range(4..(width - 4) as u32) as usize;
+            let cy = rng.random_range(2..(ground_y / 3).max(3) as u32) as usize;
+            draw_cloud(
+                &mut grid,
+                cx,
+                cy,
+                rng.random_range(8..16u32) as usize,
+                cloud_color,
+                &mut rng,
+            );
+        }
+
+        // ground with depth hue gradient + grass
+        let ground_chars = ['╱', '╲', '·', '∿', '~', '˜'];
+        let grass_chars = ['"', '"', '\'', '·', '˙', '‚'];
+        let gdepth = (height - ground_y).max(1);
+        for x in 0..width {
+            for y in ground_y..height {
+                let depth = y - ground_y;
+                let t = depth as f64 / gdepth as f64;
+                let ch = ground_chars[rng.random_range(0..ground_chars.len() as u32) as usize];
+                grid[y][x] = Cell::new(ch, hsl_to_rgb(110.0, 0.35, (0.22 - t * 0.005).max(0.08)));
+            }
+        }
+        // grass tufts, denser near the horizon
+        for _ in 0..(width as u32) {
+            let gx = rng.random_range(0..width as u32) as usize;
+            let gy = ground_y + rng.random_range(0..(gdepth / 3).max(1) as u32) as usize;
+            if gy < height {
+                grid[gy][gx] = Cell::new(
+                    grass_chars[rng.random_range(0..grass_chars.len() as u32) as usize],
+                    lighten(palette[2], 14),
+                );
+            }
+        }
+
+        // draw stops back-to-front: trees, bushes, flowers, fruit vines, grass tufts
+        for s in &stops {
+            let color = hsl_to_rgb(s.hue, s.sat as f64, s.light as f64);
+            match s.el {
+                SceneEl::Tree {
+                    kind,
+                    energy,
+                    spread,
+                    tree_h,
+                    bole,
+                    taper,
+                } => {
+                    let canopy_y = s.root_y.saturating_sub(tree_h).max(1);
+                    let plot_w = (spread * 2 + 6).min(width);
+                    let plot = Rect {
+                        x: s.x.saturating_sub(plot_w / 2),
+                        y: canopy_y,
+                        w: plot_w,
+                        h: s.root_y.saturating_sub(canopy_y) + 2,
+                    };
+                    let tp = TreeParams {
+                        plot,
+                        energy,
+                        trunk_color: color,
+                        bark_color: darken(color, 18),
+                        branch_color: color,
+                        tip_color: lighten(color, 30),
+                        fruit_color: shift_hue(color, 60.0),
+                        fruit_factor: 0.3,
+                        branch_factor: 0.8,
+                        direction: GrowDir::Up,
+                        bole,
+                        taper,
+                    };
+                    grow_tree_by_index(kind, &mut grid, &tp, &mut rng);
+                }
+                SceneEl::Bush {
+                    style,
+                    bush_w,
+                    fade,
+                } => {
+                    let fadedir = match fade % 3 {
+                        0 => FadeDir::Down,
+                        1 => FadeDir::CenterOut,
+                        _ => FadeDir::Up,
+                    };
+                    BushSprite {
+                        style,
+                        x: s.x as i32,
+                        y: s.root_y as i32,
+                        width: bush_w,
+                        color,
+                        ground: color,
+                        fade: fadedir,
+                        energy: 0.7,
+                    }
+                    .draw(&mut grid, &mut rng);
+                }
+                SceneEl::Flowers => {
+                    for _ in 0..rng.random_range(3..7u32) {
+                        let angle = rng.random::<f32>() * std::f32::consts::TAU;
+                        let radius = rng.random_range(1..8u32) as f32;
+                        let fx = (s.x as f32 + angle.cos() * radius * 1.5) as i32;
+                        let fy = s.root_y as i32 + rng.random_range(0..3u32) as i32;
+                        if fx >= 1 && fy >= 1 && (fx as usize) < width - 1 && (fy as usize) < height - 1
+                        {
+                            grow_flower_spiral(&mut grid, fx as usize, fy as usize, color, &mut rng);
+                        }
+                    }
+                }
+                SceneEl::FruitVine => {
+                    for _ in 0..rng.random_range(2..5u32) {
+                        let angle = rng.random::<f32>() * std::f32::consts::TAU;
+                        let radius = rng.random_range(1..6u32) as f32;
+                        let fx = (s.x as f32 + angle.cos() * radius * 1.5) as i32;
+                        let fy = s.root_y as i32 + rng.random_range(0..2u32) as i32;
+                        if fx >= 1 && fy >= 1 && (fx as usize) < width - 1 && (fy as usize) < height - 1
+                        {
+                            grow_fruit_vine(
+                                &mut grid,
+                                fx as usize,
+                                fy as usize,
+                                shift_hue(color, rng.random_range(20..80u32) as f64),
+                                &mut rng,
+                            );
+                        }
+                    }
+                    for _ in 0..rng.random_range(1..4u32) {
+                        let fx = s.x as i32 + rng.random_range(-4..5i32);
+                        let fy = s.root_y as i32 + rng.random_range(-2..3i32);
+                        if fx >= 0 && fy >= 0 && (fx as usize) < width && (fy as usize) < height {
+                            draw_fruit(
+                                &mut grid,
+                                fx as usize,
+                                fy as usize,
+                                rng.random_range(0..5),
+                                shift_hue(color, 60.0),
+                            );
+                        }
+                    }
+                }
+                SceneEl::Grass => {
+                    for _ in 0..rng.random_range(2..6u32) {
+                        let gx = s.x as i32 + rng.random_range(-3..4i32);
+                        let gy = s.root_y as i32 + rng.random_range(0..2i32);
+                        if gx >= 0 && gy >= 0 && (gx as usize) < width && (gy as usize) < height {
+                            grid[gy as usize][gx as usize] = Cell::new(
+                                grass_chars[rng.random_range(0..grass_chars.len() as u32) as usize],
+                                lighten(color, 18),
+                            );
+                        }
+                    }
+                }
+                SceneEl::Gap => {}
+            }
+        }
+
+        // braille leaf clusters on branch tips
+        let leaf_color = hsl_to_rgb(rng.random_range(60..180u32) as f64, 0.5, 0.3);
+        sprout_leaves(&mut grid, leaf_color, 15, &mut rng);
+
+        // ground-level flower/fruit scatter near mid + front trees
+        for s in &stops {
+            if s.layer == 0 {
+                continue;
+            }
+            if let SceneEl::Tree { .. } = s.el {
+                for _ in 0..rng.random_range(0..3u32) {
+                    let angle = rng.random::<f32>() * std::f32::consts::TAU;
+                    let radius = rng.random_range(1..6u32) as f32;
+                    let fx = (s.x as f32 + angle.cos() * radius * 1.5) as i32;
+                    let fy = s.root_y as i32 + rng.random_range(1..3u32) as i32;
+                    if fx >= 1 && fy >= 1 && (fx as usize) < width - 1 && (fy as usize) < height - 1
+                    {
+                        let c = palette[rng.random_range(2..5)];
+                        match rng.random_range(0..3u32) {
+                            0 => grow_flower_spiral(&mut grid, fx as usize, fy as usize, c, &mut rng),
+                            1 => grow_fruit_vine(&mut grid, fx as usize, fy as usize, c, &mut rng),
+                            _ => draw_flower(
+                                &mut grid,
+                                fx as usize,
+                                fy as usize,
+                                rng.random_range(0..5),
+                                c,
+                            ),
+                        }
+                    }
+                }
+            }
+        }
+    } else if mode == "forest9" {
+        // forest9 [layers=0] [fog=0] -- misty high-entropy forest with fog drifts
+        let layers_arg: u8 = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0);
+        let fog_arg: u64 = args.get(5).and_then(|s| s.parse().ok()).unwrap_or(0);
+        let layer_count = if layers_arg == 0 {
+            (4 + seed % 2) as u8
+        } else {
+            layers_arg.clamp(3, 6)
+        };
+        let fog = if fog_arg == 0 {
+            6 + seed % 5
+        } else {
+            fog_arg.clamp(0, 16)
+        };
+
+        let opts = SceneOpts {
+            layer_count,
+            density: 0.42,
+            tree_rate: 0.58,
+            bole_rate: 0.5,
+            ground_frac: 0.5,
+            kind_filter: None,
+            vines: true,
+            hue_range: 30.0,
+        };
+        let (ground_y, stops) = scene_walk(width, height, &mut rng, &opts);
+
+        // dusky sky
+        let sky_color = darken(palette[0], 70);
+        for y in 0..ground_y {
+            for x in 0..width {
+                if rng.random_range(0..24u32) == 0 {
+                    grid[y][x] = Cell::new('·', sky_color);
+                }
+            }
+        }
+
+        // muted ground + grass
+        let ground_chars = ['·', '·', '∼', '˜', '╱'];
+        let grass_chars = ['"', '\'', '·', '˙', '‚'];
+        let gdepth = (height - ground_y).max(1);
+        for x in 0..width {
+            for y in ground_y..height {
+                let depth = y - ground_y;
+                let t = depth as f64 / gdepth as f64;
+                let ch = ground_chars[rng.random_range(0..ground_chars.len() as u32) as usize];
+                grid[y][x] = Cell::new(ch, hsl_to_rgb(95.0, 0.18, (0.16 - t * 0.004).max(0.07)));
+            }
+        }
+        for _ in 0..(width as u32 / 2) {
+            let gx = rng.random_range(0..width as u32) as usize;
+            let gy = ground_y + rng.random_range(0..(gdepth / 3).max(1) as u32) as usize;
+            if gy < height {
+                grid[gy][gx] = Cell::new(
+                    grass_chars[rng.random_range(0..grass_chars.len() as u32) as usize],
+                    lighten(palette[2], 8),
+                );
+            }
+        }
+
+        let mist_color = lighten(palette[0], 6);
+        // draw stops back-to-front, colors desaturated for the misty look
+        for s in &stops {
+            let color = hsl_to_rgb(s.hue, (s.sat * 0.5) as f64, (s.light * 0.9) as f64);
+            match s.el {
+                SceneEl::Tree {
+                    kind,
+                    energy,
+                    spread,
+                    tree_h,
+                    bole,
+                    taper,
+                } => {
+                    let canopy_y = s.root_y.saturating_sub(tree_h).max(1);
+                    let plot_w = (spread * 2 + 6).min(width);
+                    let plot = Rect {
+                        x: s.x.saturating_sub(plot_w / 2),
+                        y: canopy_y,
+                        w: plot_w,
+                        h: s.root_y.saturating_sub(canopy_y) + 2,
+                    };
+                    let tp = TreeParams {
+                        plot,
+                        energy,
+                        trunk_color: color,
+                        bark_color: darken(color, 22),
+                        branch_color: color,
+                        tip_color: lighten(color, 24),
+                        fruit_color: shift_hue(color, 40.0),
+                        fruit_factor: 0.15,
+                        branch_factor: 0.85,
+                        direction: GrowDir::Up,
+                        bole,
+                        taper,
+                    };
+                    grow_tree_by_index(kind, &mut grid, &tp, &mut rng);
+                }
+                SceneEl::Bush {
+                    style,
+                    bush_w,
+                    fade,
+                } => {
+                    let fadedir = match fade % 3 {
+                        0 => FadeDir::Down,
+                        1 => FadeDir::CenterOut,
+                        _ => FadeDir::Up,
+                    };
+                    BushSprite {
+                        style,
+                        x: s.x as i32,
+                        y: s.root_y as i32,
+                        width: bush_w,
+                        color,
+                        ground: color,
+                        fade: fadedir,
+                        energy: 0.6,
+                    }
+                    .draw(&mut grid, &mut rng);
+                }
+                SceneEl::Flowers => {
+                    for _ in 0..rng.random_range(2..6u32) {
+                        let angle = rng.random::<f32>() * std::f32::consts::TAU;
+                        let radius = rng.random_range(1..7u32) as f32;
+                        let fx = (s.x as f32 + angle.cos() * radius * 1.5) as i32;
+                        let fy = s.root_y as i32 + rng.random_range(0..3u32) as i32;
+                        if fx >= 1 && fy >= 1 && (fx as usize) < width - 1 && (fy as usize) < height - 1
+                        {
+                            grow_flower_spiral(&mut grid, fx as usize, fy as usize, color, &mut rng);
+                        }
+                    }
+                }
+                SceneEl::FruitVine => {
+                    for _ in 0..rng.random_range(2..4u32) {
+                        let angle = rng.random::<f32>() * std::f32::consts::TAU;
+                        let radius = rng.random_range(1..6u32) as f32;
+                        let fx = (s.x as f32 + angle.cos() * radius * 1.5) as i32;
+                        let fy = s.root_y as i32 + rng.random_range(0..2u32) as i32;
+                        if fx >= 1 && fy >= 1 && (fx as usize) < width - 1 && (fy as usize) < height - 1
+                        {
+                            grow_fruit_vine(
+                                &mut grid,
+                                fx as usize,
+                                fy as usize,
+                                shift_hue(color, rng.random_range(20..80u32) as f64),
+                                &mut rng,
+                            );
+                        }
+                    }
+                }
+                SceneEl::Grass => {
+                    for _ in 0..rng.random_range(2..5u32) {
+                        let gx = s.x as i32 + rng.random_range(-3..4i32);
+                        let gy = s.root_y as i32 + rng.random_range(0..2i32);
+                        if gx >= 0 && gy >= 0 && (gx as usize) < width && (gy as usize) < height {
+                            grid[gy as usize][gx as usize] = Cell::new(
+                                grass_chars[rng.random_range(0..grass_chars.len() as u32) as usize],
+                                lighten(color, 12),
+                            );
+                        }
+                    }
+                }
+                SceneEl::Gap => {}
+            }
+        }
+
+        // dim braille leaf clusters
+        let leaf_color = hsl_to_rgb(rng.random_range(80..160u32) as f64, 0.3, 0.26);
+        sprout_leaves(&mut grid, leaf_color, 12, &mut rng);
+
+        // mist veil across the canopy region
+        for _ in 0..(width as u32 / 3) {
+            let fx = rng.random_range(0..width as u32) as usize;
+            let fy = rng.random_range(2..ground_y as u32) as usize;
+            if rng.random_range(0..2u32) == 0 {
+                grid[fy][fx] = Cell::new('░', mist_color);
+            }
+        }
+
+        // drifting fog streaks
+        for _ in 0..fog {
+            let fy = rng.random_range(2..ground_y as u32) as usize;
+            let fx0 = rng.random_range(0..width as u32) as usize;
+            let len = rng.random_range(10..30u32) as usize;
+            for dx in 0..len {
+                let fx = (fx0 + dx) % width;
+                if rng.random_range(0..2u32) == 0 {
+                    grid[fy][fx] = Cell::new('░', mist_color);
+                }
+            }
+        }
+    } else if mode == "boles6" {
+        // boles6 [layers=0] -- close-packed bole forest, every trunk rooted in a bole
+        let layers_arg: u8 = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0);
+        let layer_count = if layers_arg == 0 {
+            (3 + seed % 2) as u8
+        } else {
+            layers_arg.clamp(2, 5)
+        };
+        let strong: &'static [usize] = &[0, 1, 3, 8, 6, 17, 22, 23];
+        let opts = PackOpts {
+            layer_count,
+            overlap: 0.18,
+            bole_rate: 1.0,
+            ground_frac: 0.4,
+            kind_filter: Some(strong),
+            ..Default::default()
+        };
+        let (ground_y, slots) = pack_forest(width, height, &mut rng, &opts);
+
+        // faint sky
+        let sky_color = darken(palette[0], 85);
+        for y in 0..ground_y {
+            for x in 0..width {
+                if rng.random_range(0..22u32) == 0 {
+                    grid[y][x] = Cell::new('·', sky_color);
+                }
+            }
+        }
+        // dim ground
+        for x in 0..width {
+            for y in ground_y..height {
+                let depth = y - ground_y;
+                grid[y][x] =
+                    Cell::new('·', hsl_to_rgb(30.0, 0.25, (0.18 - depth as f64 * 0.004).max(0.08)));
+            }
+        }
+
+        let lf_denom = (layer_count - 1).max(1) as f64;
+        for s in &slots {
+            let lfrac = s.layer as f64 / lf_denom;
+            let color = hsl_to_rgb(s.hue, 0.40 + lfrac * 0.20, 0.16 + lfrac * 0.16);
+            let tp = TreeParams {
+                plot: s.plot,
+                energy: s.energy,
+                trunk_color: lighten(color, 8),
+                bark_color: darken(color, 12),
+                branch_color: color,
+                tip_color: lighten(color, 26),
+                fruit_color: shift_hue(color, 50.0),
+                fruit_factor: 0.1,
+                branch_factor: 0.7,
+                direction: GrowDir::Up,
+                bole: s.bole,
+                taper: s.taper,
+            };
+            grow_tree_by_index(s.kind, &mut grid, &tp, &mut rng);
+        }
+    } else if mode == "trees10" {
+        // trees10 [count=0] -- specimen row, every archetype side by side
+        let count_arg: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0);
+        let count = if count_arg == 0 {
+            (width / 7).max(8)
+        } else {
+            count_arg.clamp(4, 48)
+        };
+        let ground_y = (height as f32 * 0.82) as usize;
+        for x in 0..width {
+            for y in ground_y..height {
+                grid[y][x] = Cell::new('·', darken(palette[1], 60));
+            }
+        }
+        let slot = (width / count).max(6);
+        let tapers = [
+            TaperKind::Diagonal,
+            TaperKind::Shelf,
+            TaperKind::Bracket,
+            TaperKind::Step,
+            TaperKind::Melt,
+        ];
+        for i in 0..count {
+            let kind = i % TREE_KIND_COUNT;
+            let cx = i * slot + slot / 2;
+            let plot_w = slot;
+            let canopy_top = 2usize;
+            let plot = Rect {
+                x: cx.saturating_sub(plot_w / 2),
+                y: canopy_top,
+                w: plot_w,
+                h: ground_y.saturating_sub(canopy_top) + 1,
+            };
+            let hue = (i as f64 * (360.0 / count as f64)) % 360.0;
+            let color = hsl_to_rgb(hue, 0.55, 0.32);
+            let tp = TreeParams {
+                plot,
+                energy: 0.92,
+                trunk_color: color,
+                bark_color: darken(color, 16),
+                branch_color: color,
+                tip_color: lighten(color, 30),
+                fruit_color: shift_hue(color, 60.0),
+                fruit_factor: 0.3,
+                branch_factor: 0.85,
+                direction: GrowDir::Up,
+                bole: if i % 2 == 0 {
+                    Some(Bole { style: i % 10 })
+                } else {
+                    None
+                },
+                taper: tapers[i % tapers.len()],
+            };
+            grow_tree_by_index(kind, &mut grid, &tp, &mut rng);
+        }
     } else if mode == "mondrian2" {
         let line_w = 2;
 
@@ -5213,7 +5774,8 @@ fn main() {
             let y = rng.random_range(0..horizon.max(1));
             let ch = star_chars[rng.random_range(0..star_chars.len())];
             if grid[y][x].ch == ' ' || rng.random_range(0..3u32) == 0 {
-                grid[y][x] = Cell::new(ch, darken(lighten(palette[4], 8), rng.random_range(35..75)));
+                grid[y][x] =
+                    Cell::new(ch, darken(lighten(palette[4], 8), rng.random_range(35..75)));
             }
         }
 
@@ -5304,8 +5866,12 @@ fn main() {
         let moon_y = (horizon / 3).max(2);
         let moon_rx = (width / 9).max(5) as i32;
         let moon_ry = (height / 7).max(3) as i32;
-        for y in moon_y.saturating_sub(moon_ry as usize)..=(moon_y + moon_ry as usize).min(height - 1) {
-            for x in moon_x.saturating_sub(moon_rx as usize)..=(moon_x + moon_rx as usize).min(width - 1) {
+        for y in
+            moon_y.saturating_sub(moon_ry as usize)..=(moon_y + moon_ry as usize).min(height - 1)
+        {
+            for x in
+                moon_x.saturating_sub(moon_rx as usize)..=(moon_x + moon_rx as usize).min(width - 1)
+            {
                 let dx = (x as i32 - moon_x as i32) as f32 / moon_rx as f32;
                 let dy = (y as i32 - moon_y as i32) as f32 / moon_ry as f32;
                 if dx * dx + dy * dy <= 1.0 {
@@ -5334,7 +5900,14 @@ fn main() {
                     let x = fx as i32 + dx;
                     let y = fy as i32 + dy;
                     if x >= 0 && y >= 0 && (x as usize) < width && (y as usize) < horizon {
-                        grid[y as usize][x as usize] = Cell::new(if r == 0 { burst[rng.random_range(0..burst.len())] } else { ch }, c);
+                        grid[y as usize][x as usize] = Cell::new(
+                            if r == 0 {
+                                burst[rng.random_range(0..burst.len())]
+                            } else {
+                                ch
+                            },
+                            c,
+                        );
                     }
                 }
             }
@@ -5357,7 +5930,10 @@ fn main() {
                 let x = wheel_cx as i32 + (a.cos() * r as f32 * 2.0).round() as i32;
                 let y = wheel_cy as i32 + (a.sin() * r as f32).round() as i32;
                 if x >= 0 && y >= 0 && (x as usize) < width && (y as usize) < horizon {
-                    grid[y as usize][x as usize] = Cell::new(if spoke % 2 == 0 { '─' } else { '╱' }, darken(palette[4], 15));
+                    grid[y as usize][x as usize] = Cell::new(
+                        if spoke % 2 == 0 { '─' } else { '╱' },
+                        darken(palette[4], 15),
+                    );
                 }
             }
         }
@@ -5374,8 +5950,18 @@ fn main() {
             for bx in x..(x + w).min(width) {
                 for by in top..horizon {
                     let lit = (bx + by + seed as usize) % 5 == 0;
-                    let ch = if by == top { '▄' } else if lit { '▪' } else { '█' };
-                    let c = if lit { lighten(palette[3], 20) } else { darken(color, 50) };
+                    let ch = if by == top {
+                        '▄'
+                    } else if lit {
+                        '▪'
+                    } else {
+                        '█'
+                    };
+                    let c = if lit {
+                        lighten(palette[3], 20)
+                    } else {
+                        darken(color, 50)
+                    };
                     grid[by][bx] = Cell::new(ch, c);
                 }
             }
@@ -5405,7 +5991,8 @@ fn main() {
         for y in horizon..height {
             for x in 0..width {
                 let drift = ((x as f32 / 5.0) + (y as f32 / 2.0)).sin();
-                let idx = ((x + y * 2 + seed as usize) % wave_chars.len()).min(wave_chars.len() - 1);
+                let idx =
+                    ((x + y * 2 + seed as usize) % wave_chars.len()).min(wave_chars.len() - 1);
                 let ch = if drift > 0.15 { '≈' } else { wave_chars[idx] };
                 if ch != ' ' {
                     let depth = y - horizon;
@@ -5510,7 +6097,8 @@ fn main() {
                     if x < 0 || y < 0 {
                         continue;
                     }
-                    let floor_noise = ((x as usize * 5 + y as usize * 13 + seed as usize) % 29) == 0;
+                    let floor_noise =
+                        ((x as usize * 5 + y as usize * 13 + seed as usize) % 29) == 0;
                     grid[y as usize][x as usize] = if floor_noise {
                         Cell::new('·', floor_color)
                     } else {
@@ -5556,30 +6144,27 @@ fn main() {
                 }
                 put_path(grid, x, y, step);
             };
-            let side_at = |side: usize, l: i32, t: i32, r: i32, b: i32, gx: i32, gy: i32| {
-                match side {
-                    0 => (gx.clamp(l + 2, r - 2), t),
-                    1 => (r, gy.clamp(t + 1, b - 1)),
-                    2 => (gx.clamp(l + 2, r - 2), b),
-                    _ => (l, gy.clamp(t + 1, b - 1)),
-                }
+            let side_at = |side: usize, l: i32, t: i32, r: i32, b: i32, gx: i32, gy: i32| match side
+            {
+                0 => (gx.clamp(l + 2, r - 2), t),
+                1 => (r, gy.clamp(t + 1, b - 1)),
+                2 => (gx.clamp(l + 2, r - 2), b),
+                _ => (l, gy.clamp(t + 1, b - 1)),
             };
-            let inside_gate = |side: usize, l: i32, t: i32, r: i32, b: i32, gx: i32, gy: i32| {
-                match side {
+            let inside_gate =
+                |side: usize, l: i32, t: i32, r: i32, b: i32, gx: i32, gy: i32| match side {
                     0 => (gx.clamp(l + 2, r - 2), t + 1),
                     1 => (r - 1, gy.clamp(t + 1, b - 1)),
                     2 => (gx.clamp(l + 2, r - 2), b - 1),
                     _ => (l + 1, gy.clamp(t + 1, b - 1)),
-                }
-            };
-            let outside_gate = |side: usize, l: i32, t: i32, r: i32, b: i32, gx: i32, gy: i32| {
-                match side {
+                };
+            let outside_gate =
+                |side: usize, l: i32, t: i32, r: i32, b: i32, gx: i32, gy: i32| match side {
                     0 => (gx.clamp(l + 2, r - 2), t - 1),
                     1 => (r + 1, gy.clamp(t + 1, b - 1)),
                     2 => (gx.clamp(l + 2, r - 2), b + 1),
                     _ => (l - 1, gy.clamp(t + 1, b - 1)),
-                }
-            };
+                };
             let perimeter_dist = |side: usize, x: i32, y: i32, l: i32, t: i32, r: i32, b: i32| {
                 let w = r - l;
                 let h = b - t;
@@ -5606,9 +6191,8 @@ fn main() {
                 }
             };
 
-            let max_layers = ((height.saturating_sub(10) / 4)
-                .min(width.saturating_sub(20) / 12))
-            .clamp(3, 8);
+            let max_layers =
+                ((height.saturating_sub(10) / 4).min(width.saturating_sub(20) / 12)).clamp(3, 8);
             let inset_x = ((right - left) as usize / (max_layers * 2 + 3)).clamp(4, 14) as i32;
             let inset_y = ((bottom - top) as usize / (max_layers * 2 + 3)).clamp(2, 5) as i32;
 
@@ -5629,8 +6213,8 @@ fn main() {
                 };
                 let x_span = (r - l - 8).max(1);
                 let y_span = (b - t - 4).max(1);
-                let x_wobble = ((seed as i32 + layer as i32 * 17).rem_euclid(11) - 5)
-                    * ((x_span / 18).max(1));
+                let x_wobble =
+                    ((seed as i32 + layer as i32 * 17).rem_euclid(11) - 5) * ((x_span / 18).max(1));
                 let y_wobble = ((seed as i32 / 3 + layer as i32 * 13).rem_euclid(9) - 4)
                     * ((y_span / 10).max(1));
                 let gx = (cx + x_wobble).clamp(l + 4, r - 4);
@@ -5694,13 +6278,37 @@ fn main() {
                 let (gate_x, gate_y) = side_at(side, l, t, r, b, gx, gy);
                 match side {
                     0 | 2 => {
-                        put(&mut grid, gate_x - half_gate_x - 1, gate_y, '█', wall_shadow);
-                        put(&mut grid, gate_x + half_gate_x + 1, gate_y, '█', wall_shadow);
+                        put(
+                            &mut grid,
+                            gate_x - half_gate_x - 1,
+                            gate_y,
+                            '█',
+                            wall_shadow,
+                        );
+                        put(
+                            &mut grid,
+                            gate_x + half_gate_x + 1,
+                            gate_y,
+                            '█',
+                            wall_shadow,
+                        );
                         put(&mut grid, gate_x, gate_y, '╬', relic_color);
                     }
                     _ => {
-                        put(&mut grid, gate_x, gate_y - half_gate_y - 1, '█', wall_shadow);
-                        put(&mut grid, gate_x, gate_y + half_gate_y + 1, '█', wall_shadow);
+                        put(
+                            &mut grid,
+                            gate_x,
+                            gate_y - half_gate_y - 1,
+                            '█',
+                            wall_shadow,
+                        );
+                        put(
+                            &mut grid,
+                            gate_x,
+                            gate_y + half_gate_y + 1,
+                            '█',
+                            wall_shadow,
+                        );
                         put(&mut grid, gate_x, gate_y, '╬', relic_color);
                     }
                 }
@@ -5745,15 +6353,17 @@ fn main() {
                         put_path(&mut grid, px, py, i * 131 + step as usize);
                     }
 
-                    let next_outside =
-                        outside_gate(next_side, nl, nt, nr, nb, next_gx, next_gy);
+                    let next_outside = outside_gate(next_side, nl, nt, nr, nb, next_gx, next_gy);
                     let next_inside = inside_gate(next_side, nl, nt, nr, nb, next_gx, next_gy);
                     draw_line(&mut grid, end, next_outside, i * 173);
                     draw_line(&mut grid, next_outside, next_inside, i * 211);
                     current = next_inside;
                 }
 
-                let inner = rings.last().copied().unwrap_or((l0, t0, r0, b0, side0, gx0, gy0));
+                let inner = rings
+                    .last()
+                    .copied()
+                    .unwrap_or((l0, t0, r0, b0, side0, gx0, gy0));
                 let chamber_w = ((inner.2 - inner.0) / 2).clamp(8, 22);
                 let chamber_h = ((inner.3 - inner.1) / 2).clamp(3, 7);
                 let cl = (cx - chamber_w / 2).clamp(inner.0 + 2, inner.2 - chamber_w - 1);
@@ -6040,7 +6650,10 @@ fn main() {
             let x = rng.random_range(0..width);
             let y = rng.random_range(0..height);
             let ch = ['·', '∙', '°', '*', '✦'][rng.random_range(0..5usize)];
-            grid[y][x] = Cell::new(ch, darken(lighten(palette[4], 10), rng.random_range(15..75)));
+            grid[y][x] = Cell::new(
+                ch,
+                darken(lighten(palette[4], 10), rng.random_range(15..75)),
+            );
         }
 
         let center_phase = seed as f32 * 0.073;
@@ -6145,7 +6758,12 @@ fn main() {
             let color = shift_hue(lighten(palette[1 + i % 3], 12), (i * 37) as f64);
 
             if radius == 1 {
-                set_cell!(px.round() as i32, py.round() as i32, planet_glyphs[i % planet_glyphs.len()], color);
+                set_cell!(
+                    px.round() as i32,
+                    py.round() as i32,
+                    planet_glyphs[i % planet_glyphs.len()],
+                    color
+                );
             } else {
                 for dy in -(radius as i32)..=(radius as i32) {
                     for dx in -(radius as i32 * 2)..=(radius as i32 * 2) {
@@ -6180,8 +6798,18 @@ fn main() {
                 let moon_angle = angle * 1.9 + 0.8;
                 let mx = px + moon_angle.cos() * (radius as f32 * 3.2 + 3.0);
                 let my = py + moon_angle.sin() * (radius as f32 * 1.3 + 1.4);
-                set_cell!(mx.round() as i32, my.round() as i32, '○', lighten(palette[4], 5));
-                set_cell!(((px + mx) * 0.5).round() as i32, ((py + my) * 0.5).round() as i32, '·', darken(palette[4], 45));
+                set_cell!(
+                    mx.round() as i32,
+                    my.round() as i32,
+                    '○',
+                    lighten(palette[4], 5)
+                );
+                set_cell!(
+                    ((px + mx) * 0.5).round() as i32,
+                    ((py + my) * 0.5).round() as i32,
+                    '·',
+                    darken(palette[4], 45)
+                );
             }
 
             if i % 4 == 2 {
@@ -6197,10 +6825,9 @@ fn main() {
         let station_count = 2 + (seed as usize % 2);
         for s in 0..station_count {
             let lane = (0.56 + s as f32 * 0.17).min(0.92);
-            let station_angle =
-                center_phase * (0.52 + s as f32 * 0.21)
-                    + s as f32 * std::f32::consts::TAU / station_count as f32
-                    + 0.85;
+            let station_angle = center_phase * (0.52 + s as f32 * 0.21)
+                + s as f32 * std::f32::consts::TAU / station_count as f32
+                + 0.85;
             let sx = cx + station_angle.cos() * max_rx * lane;
             let sy = cy + station_angle.sin() * max_ry * (0.66 + s as f32 * 0.08);
             let cube_w = (width as i32 / (10 + s as i32)).clamp(6, 13);
@@ -6246,8 +6873,18 @@ fn main() {
                 let dx = if off_x > 0 { k } else { -k };
                 let dy = off_y * k / off_x.abs();
                 set_cell!(cube_x + dx, cube_y + dy, connector, darken(cube_color, 5));
-                set_cell!(cube_x + cube_w + dx, cube_y + dy, connector, darken(cube_color, 5));
-                set_cell!(cube_x + dx, cube_y + cube_h + dy, connector, darken(cube_color, 5));
+                set_cell!(
+                    cube_x + cube_w + dx,
+                    cube_y + dy,
+                    connector,
+                    darken(cube_color, 5)
+                );
+                set_cell!(
+                    cube_x + dx,
+                    cube_y + cube_h + dy,
+                    connector,
+                    darken(cube_color, 5)
+                );
                 set_cell!(
                     cube_x + cube_w + dx,
                     cube_y + cube_h + dy,
@@ -6361,9 +6998,8 @@ fn main() {
         let mut cracks: Vec<Vec<i32>> = Vec::new();
         for i in 0..crack_count {
             let band = (width / shard_count).max(2) as i32;
-            let mut x = ((i + 1) as i32 * band
-                + rng.random_range(-band / 4..=band / 4))
-            .clamp(1, width as i32 - 2);
+            let mut x = ((i + 1) as i32 * band + rng.random_range(-band / 4..=band / 4))
+                .clamp(1, width as i32 - 2);
             let mut drift = 0i32;
             let mut path = Vec::with_capacity(height);
             for y in 0..height {
@@ -6410,11 +7046,7 @@ fn main() {
                     for side in [-1i32, 1i32] {
                         let tx = seam_x + side * spread;
                         let src = seam_x - side * rng.random_range(1..=7i32);
-                        if tx < 0
-                            || src < 0
-                            || tx as usize >= width
-                            || src as usize >= width
-                        {
+                        if tx < 0 || src < 0 || tx as usize >= width || src as usize >= width {
                             continue;
                         }
                         let leak_strength = 1.0 - spread as f32 / 6.0;
@@ -6444,8 +7076,7 @@ fn main() {
             let amp = rng.random_range(1..(height / 8).max(3) as u32) as f32;
             let phase = rng.random::<f32>() * std::f32::consts::TAU;
             for x in 0..width {
-                let y = base_y as i32
-                    + ((x as f32 / 13.0 + phase).sin() * amp).round() as i32;
+                let y = base_y as i32 + ((x as f32 / 13.0 + phase).sin() * amp).round() as i32;
                 if y <= 0 || y as usize >= height / 2 {
                     continue;
                 }
@@ -6503,7 +7134,10 @@ fn main() {
                 0 => FillGen::Tree(rng.random_range(0..12)),
                 1 => FillGen::Flower(rng.random_range(0..5)),
                 2 => FillGen::Fruit(rng.random_range(0..5)),
-                3 => FillGen::Mask(rng.random_range(2..5), rng.random_range(0..MASK_STYLE_COUNT)),
+                3 => FillGen::Mask(
+                    rng.random_range(2..5),
+                    rng.random_range(0..MASK_STYLE_COUNT),
+                ),
                 4 => FillGen::AztecDiamond(rng.random_range(2..6)),
                 5 => FillGen::Labyrinth,
                 6 => FillGen::Noise(NoiseVariant::Grass),
@@ -6620,34 +7254,29 @@ fn main() {
                 '╱'
             }
         };
-        let draw_line = |grid: &mut Grid,
-                         mut x0: i32,
-                         mut y0: i32,
-                         x1: i32,
-                         y1: i32,
-                         ch: char,
-                         fg: Color| {
-            let dx = (x1 - x0).abs();
-            let sx = if x0 < x1 { 1 } else { -1 };
-            let dy = -(y1 - y0).abs();
-            let sy = if y0 < y1 { 1 } else { -1 };
-            let mut err = dx + dy;
-            loop {
-                put(grid, x0, y0, ch, fg);
-                if x0 == x1 && y0 == y1 {
-                    break;
+        let draw_line =
+            |grid: &mut Grid, mut x0: i32, mut y0: i32, x1: i32, y1: i32, ch: char, fg: Color| {
+                let dx = (x1 - x0).abs();
+                let sx = if x0 < x1 { 1 } else { -1 };
+                let dy = -(y1 - y0).abs();
+                let sy = if y0 < y1 { 1 } else { -1 };
+                let mut err = dx + dy;
+                loop {
+                    put(grid, x0, y0, ch, fg);
+                    if x0 == x1 && y0 == y1 {
+                        break;
+                    }
+                    let e2 = 2 * err;
+                    if e2 >= dy {
+                        err += dy;
+                        x0 += sx;
+                    }
+                    if e2 <= dx {
+                        err += dx;
+                        y0 += sy;
+                    }
                 }
-                let e2 = 2 * err;
-                if e2 >= dy {
-                    err += dy;
-                    x0 += sx;
-                }
-                if e2 <= dx {
-                    err += dx;
-                    y0 += sy;
-                }
-            }
-        };
+            };
         let draw_eye = |grid: &mut Grid,
                         cx: i32,
                         cy: i32,
@@ -6664,7 +7293,11 @@ fn main() {
             let iris_rx = (rx / 3).max(1);
             let iris_ry = (ry / 2).max(1);
             let pupil_rx = (iris_rx / 2).max(1);
-            let pupil_ry = if style % 4 == 0 { iris_ry.max(2) } else { 1.max(iris_ry / 2) };
+            let pupil_ry = if style % 4 == 0 {
+                iris_ry.max(2)
+            } else {
+                1.max(iris_ry / 2)
+            };
             let blink_cut = if style % 9 == 3 { 0.28 } else { 1.0 };
 
             for dy in -ry - 1..=ry + 1 {
@@ -6726,7 +7359,11 @@ fn main() {
                             };
                             put(grid, x, y, ch, pupil);
                         } else {
-                            let ch = match (style + dx.unsigned_abs() as usize + dy.unsigned_abs() as usize) % 7 {
+                            let ch = match (style
+                                + dx.unsigned_abs() as usize
+                                + dy.unsigned_abs() as usize)
+                                % 7
+                            {
                                 0 => '◌',
                                 1 => '○',
                                 2 => '◍',
@@ -6738,21 +7375,47 @@ fn main() {
                             put(grid, x, y, ch, iris_color);
                         }
                     } else {
-                        let ch = match (style + dx.unsigned_abs() as usize * 2 + dy.unsigned_abs() as usize) % 9 {
+                        let ch = match (style
+                            + dx.unsigned_abs() as usize * 2
+                            + dy.unsigned_abs() as usize)
+                            % 9
+                        {
                             0 => '·',
                             1 => '∙',
                             2 if style % 5 == 0 => '╎',
                             3 if style % 7 == 0 => '◇',
                             _ => ' ',
                         };
-                        put(grid, x, y, ch, if ch == ' ' { sclera } else { darken(sclera, 35) });
+                        put(
+                            grid,
+                            x,
+                            y,
+                            ch,
+                            if ch == ' ' {
+                                sclera
+                            } else {
+                                darken(sclera, 35)
+                            },
+                        );
                     }
                 }
             }
 
-            put(grid, cx + gaze_x - iris_rx / 2, cy + gaze_y - iris_ry, '˙', glare);
+            put(
+                grid,
+                cx + gaze_x - iris_rx / 2,
+                cy + gaze_y - iris_ry,
+                '˙',
+                glare,
+            );
             if style % 3 == 0 {
-                put(grid, cx + gaze_x + iris_rx / 2, cy + gaze_y + iris_ry, '·', glare);
+                put(
+                    grid,
+                    cx + gaze_x + iris_rx / 2,
+                    cy + gaze_y + iris_ry,
+                    '·',
+                    glare,
+                );
             }
             if style % 5 == 0 {
                 put(grid, cx - rx, cy, '<', lid_color);
@@ -6773,13 +7436,27 @@ fn main() {
                     let len = rng.random_range(1..=3 + (mutation / 50) as i32);
                     let tx = lx + lean;
                     let ty = ly - len;
-                    draw_line(grid, lx, ly, tx, ty, line_char(tx - lx, ty - ly), darken(lid_color, 8));
+                    draw_line(
+                        grid,
+                        lx,
+                        ly,
+                        tx,
+                        ty,
+                        line_char(tx - lx, ty - ly),
+                        darken(lid_color, 8),
+                    );
                 }
             }
             if style % 6 == 1 {
                 for side in [-1, 1] {
                     for k in 1..=3 {
-                        put(grid, cx + side * (rx + k), cy + (k % 2) - 1, '·', darken(iris_color, 20));
+                        put(
+                            grid,
+                            cx + side * (rx + k),
+                            cy + (k % 2) - 1,
+                            '·',
+                            darken(iris_color, 20),
+                        );
                     }
                 }
             }
@@ -6796,7 +7473,9 @@ fn main() {
                 let gaze_y = rng.random_range(-(ry / 3).max(0)..=(ry / 3).max(0));
                 let lid = shift_hue(lid_base, rng.random_range(-45..=55) as f64);
                 let iris = shift_hue(iris_base, rng.random_range(-120..=120) as f64);
-                draw_eye(&mut grid, x, row_y, rx, ry, style, gaze_x, gaze_y, lid, iris, &mut rng);
+                draw_eye(
+                    &mut grid, x, row_y, rx, ry, style, gaze_x, gaze_y, lid, iris, &mut rng,
+                );
                 x += rng
                     .random_range(7i32..=13i32)
                     .saturating_sub(density as i32 / 24);
@@ -6815,7 +7494,9 @@ fn main() {
             let gaze_y = rng.random_range(-(ry / 3)..=(ry / 3));
             let lid = shift_hue(lighten(lid_base, 14), rng.random_range(-80..=80) as f64);
             let iris = shift_hue(lighten(iris_base, 18), rng.random_range(-160..=160) as f64);
-            draw_eye(&mut grid, cx, cy, rx, ry, style, gaze_x, gaze_y, lid, iris, &mut rng);
+            draw_eye(
+                &mut grid, cx, cy, rx, ry, style, gaze_x, gaze_y, lid, iris, &mut rng,
+            );
         }
 
         let sigils = ['◉', '◎', '◌', '◍', '◐', '◑', '●', '•', '˙'];
@@ -6869,34 +7550,29 @@ fn main() {
                 grid[y as usize][x as usize] = Cell::new(ch, fg);
             }
         };
-        let draw_line = |grid: &mut Grid,
-                         mut x0: i32,
-                         mut y0: i32,
-                         x1: i32,
-                         y1: i32,
-                         ch: char,
-                         fg: Color| {
-            let dx = (x1 - x0).abs();
-            let sx = if x0 < x1 { 1 } else { -1 };
-            let dy = -(y1 - y0).abs();
-            let sy = if y0 < y1 { 1 } else { -1 };
-            let mut err = dx + dy;
-            loop {
-                put(grid, x0, y0, ch, fg);
-                if x0 == x1 && y0 == y1 {
-                    break;
+        let draw_line =
+            |grid: &mut Grid, mut x0: i32, mut y0: i32, x1: i32, y1: i32, ch: char, fg: Color| {
+                let dx = (x1 - x0).abs();
+                let sx = if x0 < x1 { 1 } else { -1 };
+                let dy = -(y1 - y0).abs();
+                let sy = if y0 < y1 { 1 } else { -1 };
+                let mut err = dx + dy;
+                loop {
+                    put(grid, x0, y0, ch, fg);
+                    if x0 == x1 && y0 == y1 {
+                        break;
+                    }
+                    let e2 = 2 * err;
+                    if e2 >= dy {
+                        err += dy;
+                        x0 += sx;
+                    }
+                    if e2 <= dx {
+                        err += dx;
+                        y0 += sy;
+                    }
                 }
-                let e2 = 2 * err;
-                if e2 >= dy {
-                    err += dy;
-                    x0 += sx;
-                }
-                if e2 <= dx {
-                    err += dx;
-                    y0 += sy;
-                }
-            }
-        };
+            };
         let draw_eye = |grid: &mut Grid,
                         cx: i32,
                         cy: i32,
@@ -6915,7 +7591,11 @@ fn main() {
             let iris_rx = ((rx as f32 * 0.27).round() as i32).max(2);
             let iris_ry = ((ry as f32 * 0.72).round() as i32).max(2);
             let pupil_rx = ((iris_rx as f32 * 0.42).round() as i32).max(1);
-            let pupil_ry = if style % 4 == 0 { iris_ry.max(2) } else { ((iris_ry as f32 * 0.62).round() as i32).max(1) };
+            let pupil_ry = if style % 4 == 0 {
+                iris_ry.max(2)
+            } else {
+                ((iris_ry as f32 * 0.62).round() as i32).max(1)
+            };
 
             for dx in -rx - 2..=rx + 2 {
                 let nx = dx as f32 / rx as f32;
@@ -6970,7 +7650,11 @@ fn main() {
                             };
                             put(grid, x, y, ch, pupil);
                         } else if im > 0.72 {
-                            let ch = if (idx + idy + style as i32) % 3 == 0 { '◌' } else { '○' };
+                            let ch = if (idx + idy + style as i32) % 3 == 0 {
+                                '◌'
+                            } else {
+                                '○'
+                            };
                             put(grid, x, y, ch, darken(iris_color, 8));
                         } else {
                             let ch = match (idx.abs() + idy.abs() + style as i32) % 7 {
@@ -6991,15 +7675,30 @@ fn main() {
                 }
             }
 
-            put(grid, cx + gaze_x - iris_rx / 2, cy + gaze_y - iris_ry / 2, '˙', highlight);
+            put(
+                grid,
+                cx + gaze_x - iris_rx / 2,
+                cy + gaze_y - iris_ry / 2,
+                '˙',
+                highlight,
+            );
             if style % 5 == 0 {
                 let lid_y = cy + gaze_y - iris_ry / 2;
-                draw_line(grid, cx - iris_rx, lid_y, cx + iris_rx, lid_y, '─', darken(lid_color, 2));
+                draw_line(
+                    grid,
+                    cx - iris_rx,
+                    lid_y,
+                    cx + iris_rx,
+                    lid_y,
+                    '─',
+                    darken(lid_color, 2),
+                );
             }
         };
 
-        let focus_x = (width as i32 / 2 + rng.random_range(-(width as i32 / 12)..=(width as i32 / 12)))
-            .clamp(6, width as i32 - 7);
+        let focus_x = (width as i32 / 2
+            + rng.random_range(-(width as i32 / 12)..=(width as i32 / 12)))
+        .clamp(6, width as i32 - 7);
         let focus_y = ((height as f32 * 0.72).round() as i32
             + rng.random_range(-(height as i32 / 18)..=(height as i32 / 18)))
         .clamp(8, height as i32 - 5);
@@ -7008,16 +7707,50 @@ fn main() {
             for dx in -6i32..=6i32 {
                 let metric = (dx as f32 / 6.0).powi(2) + (dy as f32 / 3.0).powi(2);
                 if metric <= 1.0 && (dx.abs() + dy.abs()) % 2 == 0 {
-                    put(&mut grid, focus_x + dx, focus_y + dy, '·', darken(lure_color, 22));
+                    put(
+                        &mut grid,
+                        focus_x + dx,
+                        focus_y + dy,
+                        '·',
+                        darken(lure_color, 22),
+                    );
                 }
             }
         }
-        draw_line(&mut grid, focus_x, focus_y - 3, focus_x, focus_y + 2, '│', darken(lure_color, 8));
-        draw_line(&mut grid, focus_x - 3, focus_y, focus_x + 3, focus_y, '─', darken(lure_color, 8));
+        draw_line(
+            &mut grid,
+            focus_x,
+            focus_y - 3,
+            focus_x,
+            focus_y + 2,
+            '│',
+            darken(lure_color, 8),
+        );
+        draw_line(
+            &mut grid,
+            focus_x - 3,
+            focus_y,
+            focus_x + 3,
+            focus_y,
+            '─',
+            darken(lure_color, 8),
+        );
         put(&mut grid, focus_x, focus_y, '◆', lighten(lure_color, 12));
         put(&mut grid, focus_x, focus_y - 2, '◇', lighten(highlight, 4));
-        put(&mut grid, focus_x - 2, focus_y + 2, '╲', darken(lure_color, 2));
-        put(&mut grid, focus_x + 2, focus_y + 2, '╱', darken(lure_color, 2));
+        put(
+            &mut grid,
+            focus_x - 2,
+            focus_y + 2,
+            '╲',
+            darken(lure_color, 2),
+        );
+        put(
+            &mut grid,
+            focus_x + 2,
+            focus_y + 2,
+            '╱',
+            darken(lure_color, 2),
+        );
 
         let gaze_for = |ex: i32, ey: i32, rx: i32, ry: i32| {
             let dx = (focus_x - ex) as f32;
@@ -7030,45 +7763,45 @@ fn main() {
             let slant = (dx / dist * 1.35).clamp(-1.2, 1.2);
             (gx, gy, slant)
         };
-        let draw_dotted_line = |grid: &mut Grid, mut x0: i32, mut y0: i32, x1: i32, y1: i32, fg: Color| {
-            let dx = (x1 - x0).abs();
-            let sx = if x0 < x1 { 1 } else { -1 };
-            let dy = -(y1 - y0).abs();
-            let sy = if y0 < y1 { 1 } else { -1 };
-            let mut err = dx + dy;
-            let mut step = 0usize;
-            loop {
-                if step % 4 == 0
-                    && x0 >= 0
-                    && y0 >= 0
-                    && (x0 as usize) < width
-                    && (y0 as usize) < height
-                    && grid[y0 as usize][x0 as usize].ch == ' '
-                {
-                    put(grid, x0, y0, '·', fg);
+        let draw_dotted_line =
+            |grid: &mut Grid, mut x0: i32, mut y0: i32, x1: i32, y1: i32, fg: Color| {
+                let dx = (x1 - x0).abs();
+                let sx = if x0 < x1 { 1 } else { -1 };
+                let dy = -(y1 - y0).abs();
+                let sy = if y0 < y1 { 1 } else { -1 };
+                let mut err = dx + dy;
+                let mut step = 0usize;
+                loop {
+                    if step % 4 == 0
+                        && x0 >= 0
+                        && y0 >= 0
+                        && (x0 as usize) < width
+                        && (y0 as usize) < height
+                        && grid[y0 as usize][x0 as usize].ch == ' '
+                    {
+                        put(grid, x0, y0, '·', fg);
+                    }
+                    if x0 == x1 && y0 == y1 {
+                        break;
+                    }
+                    let e2 = 2 * err;
+                    if e2 >= dy {
+                        err += dy;
+                        x0 += sx;
+                    }
+                    if e2 <= dx {
+                        err += dx;
+                        y0 += sy;
+                    }
+                    step += 1;
                 }
-                if x0 == x1 && y0 == y1 {
-                    break;
-                }
-                let e2 = 2 * err;
-                if e2 >= dy {
-                    err += dy;
-                    x0 += sx;
-                }
-                if e2 <= dx {
-                    err += dx;
-                    y0 += sy;
-                }
-                step += 1;
-            }
-        };
+            };
 
         let mut eye_specs: Vec<(i32, i32, i32, i32, usize, usize)> = Vec::new();
         for i in 0..eye_count {
             let t = (i as f32 + 0.5) / eye_count as f32;
-            let angle = std::f32::consts::PI
-                + t * std::f32::consts::PI
-                + rng.random_range(-0.20..0.20);
+            let angle =
+                std::f32::consts::PI + t * std::f32::consts::PI + rng.random_range(-0.20..0.20);
             let arc_rx = width as f32 * rng.random_range(0.34..0.52);
             let arc_ry = height as f32 * rng.random_range(0.28..0.52);
             let mut ex = (focus_x as f32 + angle.cos() * arc_rx).round() as i32;
@@ -7078,13 +7811,15 @@ fn main() {
             if i == eye_count / 2 {
                 rx = ((width as f32 * 0.18).round() as i32).clamp(12, 20);
                 ry = ((height as f32 * 0.20).round() as i32).clamp(4, 7);
-                ex = (width as i32 / 2 + rng.random_range(-4..=4)).clamp(rx + 2, width as i32 - rx - 3);
+                ex = (width as i32 / 2 + rng.random_range(-4..=4))
+                    .clamp(rx + 2, width as i32 - rx - 3);
                 ey = (focus_y - (height as i32 / 3).max(6) + rng.random_range(-2..=2))
                     .clamp(ry + 3, height as i32 - ry - 4);
             }
             ex = ex.clamp(-rx / 2, width as i32 + rx / 2);
             ey = ey.clamp(ry + 2, height as i32 - ry - 3);
-            let visible = (pupil_visible as i32 + rng.random_range(-8..=14)).clamp(50, 100) as usize;
+            let visible =
+                (pupil_visible as i32 + rng.random_range(-8..=14)).clamp(50, 100) as usize;
             eye_specs.push((ex, ey, rx, ry, visible, i));
         }
 
@@ -7106,20 +7841,487 @@ fn main() {
             let lid = shift_hue(lid_base, rng.random_range(-34..=42) as f64);
             let iris = shift_hue(iris_base, rng.random_range(-120..=120) as f64);
             draw_eye(
-                &mut grid,
-                ex,
-                ey,
-                rx,
-                ry,
-                visible,
-                gaze_x,
-                gaze_y,
-                slant,
-                i,
-                lid,
-                iris,
+                &mut grid, ex, ey, rx, ry, visible, gaze_x, gaze_y, slant, i, lid, iris,
             );
         }
+    } else if mode == "eyes3" {
+        // eyes3 [rays=0] [satellites=0] -- radiant all-seeing eye in a stepped pyramid
+        let ray_arg: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0);
+        let ray_count = if ray_arg == 0 {
+            18 + (seed as usize % 14)
+        } else {
+            ray_arg.clamp(8, 48)
+        };
+        let sat_arg: usize = args.get(5).and_then(|s| s.parse().ok()).unwrap_or(0);
+        let sat_count = if sat_arg == 0 {
+            2 + (seed as usize % 3)
+        } else {
+            sat_arg.clamp(0, 6)
+        };
+
+        let bg = darken(palette[0], 14);
+        let chalk = lighten(palette[4], 14);
+        let gold = lighten(palette[1], 32);
+        let iris_outer = shift_hue(lighten(palette[3], 26), 18.0);
+        let iris_inner = lighten(palette[2], 20);
+        let lid_color = lighten(palette[1], 18);
+        let pupil = darken(palette[0], 2);
+        let sclera = lighten(palette[4], 6);
+        let ray_color = lighten(palette[4], 18);
+        let hush = darken(palette[2], 60);
+        let base_c = darken(gold, 8);
+
+        for y in 0..height {
+            for x in 0..width {
+                let n = (x * 17 + y * 29 + seed as usize * 3) % 97;
+                let ch = match n {
+                    0 => '·',
+                    1 if (x + y) % 3 == 0 => '∙',
+                    _ => ' ',
+                };
+                grid[y][x] = if ch == ' ' {
+                    Cell::new(' ', bg)
+                } else {
+                    Cell::new(ch, hush)
+                };
+            }
+        }
+
+        let put = |grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color| {
+            if x >= 0 && y >= 0 && (x as usize) < width && (y as usize) < height {
+                grid[y as usize][x as usize] = Cell::new(ch, fg);
+            }
+        };
+        let point_on = |cx: i32, cy: i32, rx: f32, ry: f32, angle: f32| {
+            (
+                cx + (angle.cos() * rx).round() as i32,
+                cy + (angle.sin() * ry).round() as i32,
+            )
+        };
+        let stroke_char = |x0: i32, y0: i32, x1: i32, y1: i32| {
+            let dx = x1 - x0;
+            let dy = y1 - y0;
+            if dx.abs() > dy.abs() * 2 {
+                '─'
+            } else if dy.abs() > dx.abs() * 2 {
+                '│'
+            } else if dx.signum() == dy.signum() {
+                '╲'
+            } else {
+                '╱'
+            }
+        };
+        let draw_line = |grid: &mut Grid,
+                         mut x0: i32,
+                         mut y0: i32,
+                         x1: i32,
+                         y1: i32,
+                         fg: Color| {
+            let ch = stroke_char(x0, y0, x1, y1);
+            let dx = (x1 - x0).abs();
+            let sx = if x0 < x1 { 1 } else { -1 };
+            let dy = -(y1 - y0).abs();
+            let sy = if y0 < y1 { 1 } else { -1 };
+            let mut err = dx + dy;
+            loop {
+                put(grid, x0, y0, ch, fg);
+                if x0 == x1 && y0 == y1 {
+                    break;
+                }
+                let e2 = 2 * err;
+                if e2 >= dy {
+                    err += dy;
+                    x0 += sx;
+                }
+                if e2 <= dx {
+                    err += dx;
+                    y0 += sy;
+                }
+            }
+        };
+        let curve_char = |prev: (i32, i32), here: (i32, i32), next: (i32, i32)| {
+            let dx1 = (here.0 - prev.0).signum();
+            let dy1 = (here.1 - prev.1).signum();
+            let dx2 = (next.0 - here.0).signum();
+            let dy2 = (next.1 - here.1).signum();
+            if (dx1, dy1) == (dx2, dy2) {
+                if dy1 == 0 {
+                    '─'
+                } else if dx1 == 0 {
+                    '│'
+                } else if dx1 == dy1 {
+                    '╲'
+                } else {
+                    '╱'
+                }
+            } else if dy1 == 0 && dx2 == 0 {
+                match (dx1, dy2) {
+                    (1, 1) => '╮',
+                    (1, -1) => '╯',
+                    (-1, 1) => '╭',
+                    (-1, -1) => '╰',
+                    _ => '╮',
+                }
+            } else if dx1 == 0 && dy2 == 0 {
+                match (dy1, dx2) {
+                    (1, 1) => '╰',
+                    (1, -1) => '╯',
+                    (-1, 1) => '╭',
+                    (-1, -1) => '╮',
+                    _ => '╰',
+                }
+            } else if dx2 == 0 || dx1 == 0 {
+                '│'
+            } else if dy2 == 0 || dy1 == 0 {
+                '─'
+            } else if dx2 == dy2 {
+                '╲'
+            } else {
+                '╱'
+            }
+        };
+        let draw_arc = |grid: &mut Grid,
+                        cx: i32,
+                        cy: i32,
+                        rx: f32,
+                        ry: f32,
+                        start: f32,
+                        end: f32,
+                        fg: Color| {
+            let span = (end - start).abs().max(0.05);
+            let samples = ((rx + ry) * span * 3.8).max(18.0) as usize;
+            let mut pts: Vec<(i32, i32)> = Vec::new();
+            for i in 0..=samples {
+                let a = start + (end - start) * i as f32 / samples as f32;
+                let p = point_on(cx, cy, rx, ry, a);
+                if pts.last().copied() != Some(p) {
+                    pts.push(p);
+                }
+            }
+            if pts.len() > 2 {
+                for p in 1..pts.len() - 1 {
+                    let ch = curve_char(pts[p - 1], pts[p], pts[p + 1]);
+                    put(grid, pts[p].0, pts[p].1, ch, fg);
+                }
+            }
+        };
+        let draw_small_eye = |grid: &mut Grid,
+                              ex: i32,
+                              ey: i32,
+                              rx: i32,
+                              ry: i32,
+                              iris_color: Color,
+                              lid: Color| {
+            let rx = rx.max(3);
+            let ry = ry.max(1);
+            let iris_rx = (rx / 3).max(1);
+            let iris_ry = (ry / 2).max(1);
+            for dy in -ry - 1..=ry + 1 {
+                for dx in -rx - 1..=rx + 1 {
+                    let nx = dx as f32 / rx as f32;
+                    let ny = dy as f32 / ry as f32;
+                    let metric = nx * nx + ny * ny;
+                    if metric > 1.30 {
+                        continue;
+                    }
+                    let edge = (metric - 1.0).abs();
+                    let x = ex + dx;
+                    let y = ey + dy;
+                    if edge < 0.24 {
+                        let ch = if dy < -ry / 3 {
+                            if dx < -rx / 2 { '╭' } else if dx > rx / 2 { '╮' } else { '─' }
+                        } else if dy > ry / 3 {
+                            if dx < -rx / 2 { '╰' } else if dx > rx / 2 { '╯' } else { '─' }
+                        } else if dx < 0 {
+                            '╱'
+                        } else if dx > 0 {
+                            '╲'
+                        } else {
+                            '│'
+                        };
+                        put(grid, x, y, ch, lid);
+                        continue;
+                    }
+                    let im = (dx as f32 / iris_rx as f32).powi(2)
+                        + (dy as f32 / iris_ry as f32).powi(2);
+                    if im <= 1.0 {
+                        put(grid, x, y, '●', pupil);
+                    } else {
+                        put(grid, x, y, ' ', sclera);
+                    }
+                }
+            }
+            put(grid, ex - iris_rx / 2, ey - iris_ry / 2, '˙', chalk);
+        };
+
+        let cx = width as i32 / 2;
+        let cy = height as i32 / 2;
+        let max_rx = (width as f32 / 2.0 - 1.0).max(10.0);
+        let max_ry = (height as f32 / 2.0 - 1.0).max(5.0);
+        let phase = rng.random_range(0.0..std::f32::consts::TAU);
+
+        // radiating light rays from center (alternating long/short)
+        for i in 0..ray_count {
+            let a = phase + i as f32 * std::f32::consts::TAU / ray_count as f32;
+            let long = i % 2 == 0;
+            let r0 = if long { 7.0 } else { 5.0 };
+            let r1 = if long { 0.98 } else { 0.66 };
+            let p0 = point_on(cx, cy, r0, r0 * 0.5, a);
+            let p1 = point_on(cx, cy, max_rx * r1, max_ry * r1, a);
+            draw_line(
+                &mut grid,
+                p0.0,
+                p0.1,
+                p1.0,
+                p1.1,
+                darken(ray_color, if long { 8 } else { 28 }),
+            );
+            if long {
+                put(&mut grid, p1.0, p1.1, '◇', darken(ray_color, 18));
+            }
+        }
+
+        // faint halo arcs behind the eye
+        for r in [0.46_f32, 0.58, 0.72] {
+            draw_arc(
+                &mut grid,
+                cx,
+                cy,
+                max_rx * r,
+                max_ry * r,
+                0.0,
+                std::f32::consts::TAU,
+                darken(gold, 28 + (r * 18.0) as u8),
+            );
+        }
+
+        // focal lure (seeded) -- eyes track it for per-seed variation
+        let lure_x = (cx + rng.random_range(-(width as i32 / 6)..=(width as i32 / 6)))
+            .clamp(8, width as i32 - 8);
+        let lure_y = (cy + rng.random_range(-(height as i32 / 5)..=(height as i32 / 5)))
+            .clamp(6, height as i32 - 4);
+        let lure_col = shift_hue(lighten(iris_inner, 26), rng.random_range(-40..=40) as f64);
+        for dy in -2i32..=2 {
+            for dx in -4i32..=4 {
+                let m = (dx as f32 / 4.0).powi(2) + (dy as f32 / 2.0).powi(2);
+                if m <= 1.0 && (dx.abs() + dy.abs()) % 2 == 0 {
+                    put(&mut grid, lure_x + dx, lure_y + dy, '·', darken(lure_col, 24));
+                }
+            }
+        }
+
+        // gaze helper: iris offset toward lure, clamped to eye size
+        let gaze_for = |ex: i32, ey: i32, rx: i32, ry: i32| -> (i32, i32) {
+            let dx = (lure_x - ex) as f32;
+            let dy = (lure_y - ey) as f32;
+            let d = (dx * dx + dy * dy).sqrt().max(1.0);
+            let gx = ((dx / d) * (rx as f32 * 0.30)).round() as i32;
+            let gy = ((dy / d) * (ry as f32 * 0.55)).round() as i32;
+            (
+                gx.clamp(-(rx / 3).max(1), (rx / 3).max(1)),
+                gy.clamp(-(ry / 2).max(1), (ry / 2).max(1)),
+            )
+        };
+        // equilateral triangle, drawn via 3 line edges (rotatable -> "angled")
+        let draw_equilateral = |grid: &mut Grid, tcx: i32, tcy: i32, r: f32, rot: f32, fg: Color| {
+            let mut verts = [(0i32, 0i32); 3];
+            for i in 0..3usize {
+                let a = rot + i as f32 * std::f32::consts::TAU / 3.0;
+                verts[i] = point_on(tcx, tcy, r, r * 0.5, a);
+            }
+            for i in 0..3usize {
+                let (ax, ay) = verts[i];
+                let (bx, by) = verts[(i + 1) % 3];
+                draw_line(grid, ax, ay, bx, by, fg);
+            }
+        };
+        // layered almond eye with radial-fiber iris, gaze-shifted toward lure
+        let draw_layered_eye = |grid: &mut Grid,
+                                ex: i32,
+                                ey: i32,
+                                erx: i32,
+                                ery: i32,
+                                gx: i32,
+                                gy: i32,
+                                io: Color,
+                                ii: Color,
+                                lid: Color,
+                                fibers: usize| {
+            let iris_rx = (erx as f32 * 0.44).round() as i32;
+            let iris_ry = (ery as f32 * 0.92).round() as i32;
+            let pupil_rx = (iris_rx as f32 * 0.42).round() as i32;
+            let pupil_ry = (iris_ry as f32 * 0.62).round() as i32;
+            let icx = ex + gx;
+            let icy = ey + gy;
+            for dx in -erx - 1..=erx + 1 {
+                let nx = dx as f32 / erx as f32;
+                if nx.abs() > 1.04 {
+                    continue;
+                }
+                let curve = (1.0 - nx.abs().powf(1.8)).max(0.0).powf(0.6);
+                let top = (-ery as f32 * curve).round() as i32;
+                let bot = (ery as f32 * curve).round() as i32;
+                for dy in top..=bot {
+                    let x = ex + dx;
+                    let y = ey + dy;
+                    let idx = dx - gx;
+                    let idy = dy - gy;
+                    let im = (idx as f32 / iris_rx as f32).powi(2)
+                        + (idy as f32 / iris_ry as f32).powi(2);
+                    if im <= 1.0 {
+                        let pm = (idx as f32 / pupil_rx as f32).powi(2)
+                            + (idy as f32 / pupil_ry as f32).powi(2);
+                        if pm <= 1.0 {
+                            put(grid, x, y, '●', pupil);
+                        } else {
+                            put(grid, x, y, '·', darken(ii, 14));
+                        }
+                    } else {
+                        put(grid, x, y, ' ', sclera);
+                    }
+                }
+            }
+            for i in 0..fibers {
+                let a = i as f32 * std::f32::consts::TAU / fibers as f32;
+                let p0 = point_on(icx, icy, pupil_rx as f32 * 1.1, pupil_ry as f32 * 1.1, a);
+                let p1 = point_on(icx, icy, iris_rx as f32 * 0.96, iris_ry as f32 * 0.96, a);
+                let col = if i % 2 == 0 { io } else { darken(ii, 6) };
+                draw_line(grid, p0.0, p0.1, p1.0, p1.1, col);
+            }
+            draw_arc(
+                grid,
+                icx,
+                icy,
+                pupil_rx as f32 * 1.1,
+                pupil_ry as f32 * 1.1,
+                0.0,
+                std::f32::consts::TAU,
+                pupil,
+            );
+            put(grid, icx, icy, '◉', pupil);
+            put(grid, icx - iris_rx / 2, icy - iris_ry / 2, '˙', chalk);
+            for dx in -erx - 1..=erx + 1 {
+                let nx = dx as f32 / erx as f32;
+                if nx.abs() > 1.04 {
+                    continue;
+                }
+                let curve = (1.0 - nx.abs().powf(1.8)).max(0.0).powf(0.6);
+                let top = (-ery as f32 * curve).round() as i32;
+                let bot = (ery as f32 * curve).round() as i32;
+                let cht = if dx < -erx / 2 { '╭' } else if dx > erx / 2 { '╮' } else { '─' };
+                let chb = if dx < -erx / 2 { '╰' } else if dx > erx / 2 { '╯' } else { '─' };
+                put(grid, ex + dx, ey + top, cht, lighten(lid, 10));
+                put(grid, ex + dx, ey + bot, chb, darken(lid, 4));
+            }
+            put(grid, ex - erx, ey, '<', lighten(lid, 6));
+            put(grid, ex + erx, ey, '>', lighten(lid, 6));
+        };
+
+        // TRIANGLE CLUSTER -- angled, numerous, overlapping (seeded rotation/count)
+        let tri_count = 4 + (seed as usize % 4);
+        for t in 0..tri_count {
+            let r = max_rx * rng.random_range(0.55..0.95);
+            let rot = phase * 0.4
+                + t as f32 * std::f32::consts::TAU / 3.0
+                + rng.random_range(-0.35..0.35);
+            let col = match t % 4 {
+                0 => darken(gold, 4),
+                1 => chalk,
+                2 => darken(gold, 18),
+                _ => darken(ray_color, 8),
+            };
+            draw_equilateral(&mut grid, cx, cy, r, rot, col);
+            for i in 0..3usize {
+                let a = rot + i as f32 * std::f32::consts::TAU / 3.0;
+                let v = point_on(cx, cy, r, r * 0.5, a);
+                let g = if (v.0 + v.1 + t as i32) % 2 == 0 { '△' } else { '◆' };
+                put(&mut grid, v.0, v.1, g, lighten(col, 8));
+            }
+        }
+
+        // LAYERED EYE CLUSTER -- secondary eyes behind, gazing at the lure
+        let extra = 2 + (seed as usize % 3);
+        for i in 0..extra {
+            let ang = phase
+                + i as f32 * std::f32::consts::TAU / extra as f32
+                + rng.random_range(-0.4..0.4);
+            let dist = rng.random_range(0.30..0.62);
+            let ex = (cx as f32 + ang.cos() * max_rx * dist * 0.8).round() as i32;
+            let ey = (cy as f32 + ang.sin() * max_ry * dist * 0.9).round() as i32;
+            if ex < 6 || ey < 3 || ex >= width as i32 - 6 || ey >= height as i32 - 3 {
+                continue;
+            }
+            let rx = rng.random_range(7..=12);
+            let ry = rng.random_range(3..=5);
+            let (gx, gy) = gaze_for(ex, ey, rx, ry);
+            let io = shift_hue(iris_outer, rng.random_range(-80..=80) as f64);
+            let ii = shift_hue(iris_inner, rng.random_range(-60..=60) as f64);
+            let lid = shift_hue(lid_color, rng.random_range(-40..=40) as f64);
+            let fibers = 12 + (i + seed as usize) % 5;
+            draw_layered_eye(&mut grid, ex, ey, rx, ry, gx, gy, io, ii, lid, fibers);
+        }
+
+        // HERO eye on top (biggest, fullest detail), gazing at the lure
+        let hero_rx = ((width as f32 * 0.205).round() as i32).clamp(10, 22);
+        let hero_ry = ((height as f32 * 0.16).round() as i32).clamp(3, 7);
+        let hero_x = cx;
+        let hero_y = cy - (height as i32 / 14).max(1);
+        let (hgx, hgy) = gaze_for(hero_x, hero_y, hero_rx, hero_ry);
+        draw_layered_eye(
+            &mut grid,
+            hero_x,
+            hero_y,
+            hero_rx,
+            hero_ry,
+            hgx,
+            hgy,
+            iris_outer,
+            iris_inner,
+            lid_color,
+            18 + (seed as usize % 8),
+        );
+        // hero brow chevron
+        let brow_y = hero_y - hero_ry - 2;
+        let brow_half = hero_rx - 1;
+        draw_line(
+            &mut grid,
+            hero_x - brow_half,
+            brow_y + 1,
+            hero_x,
+            brow_y - 1,
+            darken(lid_color, 6),
+        );
+        draw_line(
+            &mut grid,
+            hero_x,
+            brow_y - 1,
+            hero_x + brow_half,
+            brow_y + 1,
+            darken(lid_color, 6),
+        );
+
+        // tiny corner satellites, staring at the viewer (gaze 0,0)
+        let corners = [
+            (cx - max_rx as i32 + 3, cy - max_ry as i32 + 2),
+            (cx + max_rx as i32 - 3, cy - max_ry as i32 + 2),
+            (cx - max_rx as i32 + 4, cy + max_ry as i32 - 2),
+            (cx + max_rx as i32 - 4, cy + max_ry as i32 - 2),
+            (cx, cy + max_ry as i32 - 1),
+        ];
+        for i in 0..sat_count.min(corners.len()) {
+            let (sx, sy) = corners[i];
+            if sx < 3 || sy < 2 || sx >= width as i32 - 3 || sy >= height as i32 - 2 {
+                continue;
+            }
+            let srx = rng.random_range(3..=5);
+            let sry = rng.random_range(2..=3);
+            let iris = shift_hue(iris_outer, rng.random_range(-60..=60) as f64);
+            let lid = shift_hue(lid_color, rng.random_range(-40..=40) as f64);
+            draw_small_eye(&mut grid, sx, sy, srx, sry, iris, lid);
+        }
+
+        // lure core on top of everything so the focal point always reads
+        put(&mut grid, lure_x, lure_y, '◆', lighten(lure_col, 12));
     } else if mode == "fullmetal-eyes" {
         // fullmetal-eyes [nodes] [runes] -- alchemical eye seal with watching glyph nodes
         let node_count: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(8);
@@ -7298,14 +8500,30 @@ fn main() {
             let outer = point_on(cx, cy, max_rx * 0.82, max_ry * 0.82, a);
             let inner = point_on(cx, cy, max_rx * 0.45, max_ry * 0.45, a);
             nodes.push(outer);
-            draw_line(&mut grid, inner.0, inner.1, outer.0, outer.1, darken(gold, 8));
+            draw_line(
+                &mut grid,
+                inner.0,
+                inner.1,
+                outer.0,
+                outer.1,
+                darken(gold, 8),
+            );
         }
         for i in 0..nodes.len() {
             let j = (i + 2) % nodes.len();
-            draw_line(&mut grid, nodes[i].0, nodes[i].1, nodes[j].0, nodes[j].1, darken(chalk, 18));
+            draw_line(
+                &mut grid,
+                nodes[i].0,
+                nodes[i].1,
+                nodes[j].0,
+                nodes[j].1,
+                darken(chalk, 18),
+            );
         }
 
-        let runes = ['△', '▽', '□', '◇', '☉', '☽', '☿', '♄', '♃', '✦', '∴', '∵', '⊕', '⊗'];
+        let runes = [
+            '△', '▽', '□', '◇', '☉', '☽', '☿', '♄', '♃', '✦', '∴', '∵', '⊕', '⊗',
+        ];
         for i in 0..rune_count {
             let lane = match i % 4 {
                 0 => 0.92,
@@ -7347,13 +8565,413 @@ fn main() {
                 shift_hue(iris, i as f64 * 38.0),
                 i,
             );
-            put(&mut grid, nx, ny + 3, runes[i % runes.len()], lighten(gold, 12));
+            put(
+                &mut grid,
+                nx,
+                ny + 3,
+                runes[i % runes.len()],
+                lighten(gold, 12),
+            );
         }
 
         for _ in 0..node_count {
             let a = phase + rng.random::<f32>() * std::f32::consts::TAU;
-            let p1 = point_on(cx, cy, max_rx * rng.random_range(0.22..0.45), max_ry * rng.random_range(0.22..0.45), a);
-            let p2 = point_on(cx, cy, max_rx * rng.random_range(0.60..0.90), max_ry * rng.random_range(0.60..0.90), a + rng.random_range(0.3..1.3));
+            let p1 = point_on(
+                cx,
+                cy,
+                max_rx * rng.random_range(0.22..0.45),
+                max_ry * rng.random_range(0.22..0.45),
+                a,
+            );
+            let p2 = point_on(
+                cx,
+                cy,
+                max_rx * rng.random_range(0.60..0.90),
+                max_ry * rng.random_range(0.60..0.90),
+                a + rng.random_range(0.3..1.3),
+            );
+            draw_line(&mut grid, p1.0, p1.1, p2.0, p2.1, darken(iris, 18));
+        }
+    } else if mode == "fullmetal-eyes2" {
+        // fullmetal-eyes2 [tiers=0] [runes=0] -- multi-tier watching seal; every eye tracks a seeded lure
+        let tier_arg: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0);
+        let tier_count = if tier_arg == 0 {
+            2 + (seed as usize % 2) // 2..3
+        } else {
+            tier_arg.clamp(1, 4)
+        };
+        let rune_arg: usize = args.get(5).and_then(|s| s.parse().ok()).unwrap_or(0);
+        let rune_count = if rune_arg == 0 {
+            60 + (seed as usize % 60) // 60..119
+        } else {
+            rune_arg.clamp(16, 200)
+        };
+
+        let bg = darken(palette[0], 12);
+        let chalk = lighten(palette[4], 12);
+        let gold = lighten(palette[1], 30);
+        let iris = lighten(palette[3], 30);
+        let lid = lighten(palette[2], 18);
+        let pupil = darken(palette[0], 2);
+        let sclera = lighten(palette[4], 4);
+        let shadow = darken(palette[2], 60);
+
+        // bg haze
+        for y in 0..height {
+            for x in 0..width {
+                let n = (x * 19 + y * 43 + seed as usize * 5) % 151;
+                let ch = match n {
+                    0 => '·',
+                    1 => '∙',
+                    _ => ' ',
+                };
+                grid[y][x] = if ch == ' ' {
+                    Cell::new(' ', bg)
+                } else {
+                    Cell::new(ch, shadow)
+                };
+            }
+        }
+
+        let put = |grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color| {
+            if x >= 0 && y >= 0 && (x as usize) < width && (y as usize) < height {
+                grid[y as usize][x as usize] = Cell::new(ch, fg);
+            }
+        };
+        let stroke_char = |x0: i32, y0: i32, x1: i32, y1: i32| {
+            let dx = x1 - x0;
+            let dy = y1 - y0;
+            if dx.abs() > dy.abs() * 2 {
+                '─'
+            } else if dy.abs() > dx.abs() * 2 {
+                '│'
+            } else if dx.signum() == dy.signum() {
+                '╲'
+            } else {
+                '╱'
+            }
+        };
+        let draw_line = |grid: &mut Grid, mut x0: i32, mut y0: i32, x1: i32, y1: i32, fg: Color| {
+            let ch = stroke_char(x0, y0, x1, y1);
+            let dx = (x1 - x0).abs();
+            let sx = if x0 < x1 { 1 } else { -1 };
+            let dy = -(y1 - y0).abs();
+            let sy = if y0 < y1 { 1 } else { -1 };
+            let mut err = dx + dy;
+            loop {
+                put(grid, x0, y0, ch, fg);
+                if x0 == x1 && y0 == y1 {
+                    break;
+                }
+                let e2 = 2 * err;
+                if e2 >= dy {
+                    err += dy;
+                    x0 += sx;
+                }
+                if e2 <= dx {
+                    err += dx;
+                    y0 += sy;
+                }
+            }
+        };
+        let point_on = |cx: i32, cy: i32, rx: f32, ry: f32, angle: f32| {
+            (
+                cx + (angle.cos() * rx).round() as i32,
+                cy + (angle.sin() * ry).round() as i32,
+            )
+        };
+        let draw_arc = |grid: &mut Grid,
+                        cx: i32,
+                        cy: i32,
+                        rx: f32,
+                        ry: f32,
+                        start: f32,
+                        end: f32,
+                        fg: Color,
+                        gap: usize| {
+            let samples = ((rx + ry) * 16.0).max(90.0) as usize;
+            let mut prev: Option<(i32, i32)> = None;
+            for i in 0..=samples {
+                if gap > 0 && i % gap == gap - 1 {
+                    prev = None;
+                    continue;
+                }
+                let a = start + (end - start) * i as f32 / samples as f32;
+                let p = point_on(cx, cy, rx, ry, a);
+                if let Some(q) = prev {
+                    draw_line(grid, q.0, q.1, p.0, p.1, fg);
+                } else {
+                    put(grid, p.0, p.1, '·', fg);
+                }
+                prev = Some(p);
+            }
+        };
+
+        let cx = width as i32 / 2;
+        let cy = height as i32 / 2;
+        let max_rx = (width as f32 / 2.0 - 4.0).max(12.0);
+        let max_ry = (height as f32 / 2.0 - 2.0).max(5.0);
+        let phase = seed as f32 * 0.031 - std::f32::consts::FRAC_PI_2;
+
+        // seeded focal lure: the lever that makes every eye gaze a different way per seed
+        let lure_x = cx + (rng.random_range(-0.35..0.35) * max_rx * 0.9) as i32;
+        let lure_y = cy + (rng.random_range(-0.30..0.30) * max_ry * 0.9) as i32;
+        draw_arc(
+            &mut grid,
+            lure_x,
+            lure_y,
+            3.0,
+            1.5,
+            0.0,
+            std::f32::consts::TAU,
+            shift_hue(gold, 40.0),
+            4,
+        );
+        put(&mut grid, lure_x, lure_y, '◆', lighten(gold, 20));
+
+        // gaze helper: unit vector toward lure, scaled to eye radius
+        let gaze_for = |ex: i32, ey: i32, rx: i32, ry: i32| -> (i32, i32) {
+            let dx = (lure_x - ex) as f32;
+            let dy = (lure_y - ey) as f32;
+            let d = (dx * dx + dy * dy).sqrt().max(1.0);
+            let mx = rx as f32 * 0.34;
+            let my = ry as f32 * 0.6;
+            let gx = ((dx / d) * mx).round() as i32;
+            let gy = ((dy / d) * my).round() as i32;
+            (
+                gx.clamp(-(rx / 3).max(1), (rx / 3).max(1)),
+                gy.clamp(-(ry / 2).max(1), (ry / 2).max(1)),
+            )
+        };
+
+        // hero layered eye: almond sclera + lid rims + gaze-shifted radial-fiber iris + ◉ pupil
+        let draw_hero_eye = |grid: &mut Grid,
+                             ex: i32,
+                             ey: i32,
+                             rx: i32,
+                             ry: i32,
+                             gx: i32,
+                             gy: i32,
+                             iris_c: Color,
+                             lid_c: Color| {
+            for dx in -rx..=rx {
+                let nx = dx as f32 / rx as f32;
+                let curve = (1.0 - nx.abs().powf(1.6)).max(0.0).powf(0.55);
+                let top = (-(ry as f32) * curve).round() as i32;
+                let bottom = ((ry as f32) * 0.78 * curve).round() as i32;
+                for dy in top..=bottom {
+                    let x = ex + dx;
+                    let y = ey + dy;
+                    if dy == top || dy == bottom {
+                        let ch = if dx < -rx / 2 {
+                            if dy == top { '╱' } else { '╲' }
+                        } else if dx > rx / 2 {
+                            if dy == top { '╲' } else { '╱' }
+                        } else {
+                            '─'
+                        };
+                        put(grid, x, y, ch, lid_c);
+                    } else {
+                        let ix = (dx - gx) as f32 / (rx as f32 * 0.42);
+                        let iy = (dy - gy) as f32 / ry.max(1) as f32;
+                        let im = ix * ix + iy * iy;
+                        if im <= 0.16 {
+                            put(grid, x, y, '◉', pupil);
+                        } else if im <= 1.0 {
+                            let ang =
+                                (iy.atan2(ix) + std::f32::consts::TAU) % std::f32::consts::TAU;
+                            let fiber = ((ang / (std::f32::consts::TAU / 16.0)).round() as i32) % 2
+                                == 0;
+                            let ch = if im > 0.78 {
+                                '○'
+                            } else if fiber {
+                                '╎'
+                            } else {
+                                '·'
+                            };
+                            put(grid, x, y, ch, iris_c);
+                        } else {
+                            put(grid, x, y, '·', sclera);
+                        }
+                    }
+                }
+            }
+            put(grid, ex + gx - 1, ey + gy - 1, '˙', chalk);
+            put(grid, ex + gx, ey + gy - 1, '˙', chalk);
+        };
+
+        // small gazing node eye
+        let draw_node_eye = |grid: &mut Grid,
+                             ncx: i32,
+                             ncy: i32,
+                             rx: i32,
+                             ry: i32,
+                             gx: i32,
+                             gy: i32,
+                             lid_c: Color,
+                             iris_c: Color| {
+            for dx in -rx..=rx {
+                let nx = dx as f32 / rx as f32;
+                let curve = (1.0 - nx.abs().powf(1.65)).max(0.0).powf(0.55);
+                let top = (-(ry as f32) * curve).round() as i32;
+                let bottom = ((ry as f32) * 0.75 * curve).round() as i32;
+                for dy in top..=bottom {
+                    let x = ncx + dx;
+                    let y = ncy + dy;
+                    if dy == top || dy == bottom {
+                        let ch = if dx < -rx / 2 {
+                            if dy == top { '╱' } else { '╲' }
+                        } else if dx > rx / 2 {
+                            if dy == top { '╲' } else { '╱' }
+                        } else {
+                            '─'
+                        };
+                        put(grid, x, y, ch, lid_c);
+                    } else {
+                        let ix = (dx - gx) as f32 / (rx as f32 * 0.5);
+                        let iy = (dy - gy) as f32 / ry.max(1) as f32;
+                        let im = ix * ix + iy * iy;
+                        if im <= 0.5 {
+                            put(grid, x, y, '◉', pupil);
+                        } else if im <= 1.0 {
+                            put(grid, x, y, '·', iris_c);
+                        }
+                    }
+                }
+            }
+            put(grid, ncx + gx - 1, ncy + gy - 1, '˙', chalk);
+        };
+
+        let runes = [
+            '△', '▽', '□', '◇', '☉', '☽', '☿', '♄', '♃', '✦', '∴', '∵', '⊕', '⊗', '✶', '◈',
+        ];
+
+        // arc bands: 3 concentric, alternating chalk/gold/iris, iris dashed
+        let band_count = 3;
+        for i in 0..band_count {
+            let t = i as f32 / (band_count - 1).max(1) as f32;
+            let r = 0.50 + t * 0.40;
+            let col = match i % 3 {
+                0 => chalk,
+                1 => gold,
+                _ => iris,
+            };
+            let gap = if i % 3 == 2 { 9 } else { 0 };
+            draw_arc(
+                &mut grid,
+                cx,
+                cy,
+                max_rx * r,
+                max_ry * r,
+                phase,
+                phase + std::f32::consts::TAU,
+                col,
+                gap,
+            );
+        }
+
+        // multi-tier node web: each tier is a {n/k} star polygon, seeded n/k/rotation
+        let mut tier_verts: Vec<Vec<(i32, i32)>> = Vec::new();
+        for ti in 0..tier_count {
+            let rad = 0.42 + ti as f32 * 0.16;
+            let n = 5 + (seed as usize + ti * 7) % 6;
+            let rot = phase + ti as f32 * 0.4 + seed as f32 * 0.01 * ti as f32;
+            let mut verts: Vec<(i32, i32)> = Vec::with_capacity(n);
+            for i in 0..n {
+                let a = rot + i as f32 * std::f32::consts::TAU / n as f32;
+                verts.push(point_on(cx, cy, max_rx * rad, max_ry * rad, a));
+            }
+            let max_k = ((n - 1) / 2).max(1);
+            let k = if max_k >= 2 {
+                2 + (seed as usize + ti) % (max_k - 1)
+            } else {
+                1
+            };
+            let col = if ti % 2 == 0 { gold } else { chalk };
+            for i in 0..n {
+                let (ax, ay) = verts[i];
+                let (bx, by) = verts[(i + k.min(max_k)) % n];
+                draw_line(&mut grid, ax, ay, bx, by, darken(col, 8));
+            }
+            for &v in &verts {
+                put(&mut grid, v.0, v.1, '◇', lighten(col, 8));
+            }
+            tier_verts.push(verts);
+        }
+
+        // curved rune inscription band running around the outer ring
+        let inscribe_r = 0.92;
+        let ins_n = (rune_count / 4).clamp(14, 30);
+        for i in 0..ins_n {
+            let a = phase + i as f32 * std::f32::consts::TAU / ins_n as f32;
+            let p = point_on(cx, cy, max_rx * inscribe_r, max_ry * inscribe_r, a);
+            put(
+                &mut grid,
+                p.0,
+                p.1,
+                runes[(i + seed as usize) % runes.len()],
+                lighten(gold, 8),
+            );
+        }
+
+        // hero eye at center, gazing at lure
+        let hero_rx = (width as f32 * 0.12) as i32;
+        let hero_ry = (height as f32 * 0.14) as i32;
+        let (hgx, hgy) = gaze_for(cx, cy, hero_rx, hero_ry);
+        draw_hero_eye(
+            &mut grid,
+            cx,
+            cy,
+            hero_rx,
+            hero_ry,
+            hgx,
+            hgy,
+            lighten(iris, 16),
+            lighten(lid, 10),
+        );
+
+        // node eyes at outer tier, each gazing at the lure
+        if let Some(outer) = tier_verts.last() {
+            for (i, &(nx, ny)) in outer.iter().enumerate() {
+                let (ngx, ngy) = gaze_for(nx, ny, 5, 2);
+                draw_node_eye(
+                    &mut grid,
+                    nx,
+                    ny,
+                    5,
+                    2,
+                    ngx,
+                    ngy,
+                    darken(lid, 6),
+                    shift_hue(iris, i as f64 * 40.0),
+                );
+                put(
+                    &mut grid,
+                    nx,
+                    ny + 3,
+                    runes[i % runes.len()],
+                    lighten(gold, 12),
+                );
+            }
+        }
+
+        // a few seeded crossing chords for energy
+        for _ in 0..(tier_count + 1) {
+            let a = phase + rng.random::<f32>() * std::f32::consts::TAU;
+            let p1 = point_on(
+                cx,
+                cy,
+                max_rx * rng.random_range(0.22..0.45),
+                max_ry * rng.random_range(0.22..0.45),
+                a,
+            );
+            let p2 = point_on(
+                cx,
+                cy,
+                max_rx * rng.random_range(0.60..0.90),
+                max_ry * rng.random_range(0.60..0.90),
+                a + rng.random_range(0.3..1.3),
+            );
             draw_line(&mut grid, p1.0, p1.1, p2.0, p2.1, darken(iris, 18));
         }
     } else if mode == "fullmetal-alchemist" {
@@ -7502,7 +9120,17 @@ fn main() {
         }
 
         let phase = rng.random::<f32>() * std::f32::consts::TAU;
-        draw_poly(&mut grid, cx, cy, max_rx * 0.84, max_ry * 0.84, 3, phase, 1, ember);
+        draw_poly(
+            &mut grid,
+            cx,
+            cy,
+            max_rx * 0.84,
+            max_ry * 0.84,
+            3,
+            phase,
+            1,
+            ember,
+        );
         draw_poly(
             &mut grid,
             cx,
@@ -7528,9 +9156,7 @@ fn main() {
 
         for _ in 0..chord_count {
             let a = rng.random::<f32>() * std::f32::consts::TAU;
-            let b = a
-                + rng.random_range(2.0..5.2)
-                + rng.random_range(-0.35..0.35);
+            let b = a + rng.random_range(2.0..5.2) + rng.random_range(-0.35..0.35);
             let r = rng.random_range(0.34..0.96);
             let p1 = point_on(cx, cy, max_rx * r, max_ry * r, a);
             let p2 = point_on(cx, cy, max_rx * r, max_ry * r, b);
@@ -7543,8 +9169,8 @@ fn main() {
         }
 
         let runes = [
-            '△', '▽', '□', '◇', '○', '☉', '☽', '☿', '♄', '♃', '♁', '✶', '✦', '✧', '+', '×',
-            '≡', '∴', '∵',
+            '△', '▽', '□', '◇', '○', '☉', '☽', '☿', '♄', '♃', '♁', '✶', '✦', '✧', '+', '×', '≡',
+            '∴', '∵',
         ];
         for i in 0..glyph_count {
             let lane = match i % 4 {
@@ -7580,7 +9206,13 @@ fn main() {
                 let color = if s % 3 == 0 { ember } else { darken(chalk, 18) };
                 draw_line(&mut grid, prev.0, prev.1, next.0, next.1, color);
                 if rng.random::<f32>() < 0.42 {
-                    put(&mut grid, next.0, next.1, runes[rng.random_range(0..runes.len())], gold);
+                    put(
+                        &mut grid,
+                        next.0,
+                        next.1,
+                        runes[rng.random_range(0..runes.len())],
+                        gold,
+                    );
                 }
                 prev = next;
             }
@@ -7736,10 +9368,7 @@ fn main() {
                 prev = Some(p);
             }
         };
-        let draw_poly = |grid: &mut Grid,
-                         pts: &[(i32, i32)],
-                         skip: usize,
-                         fg: Color| {
+        let draw_poly = |grid: &mut Grid, pts: &[(i32, i32)], skip: usize, fg: Color| {
             if pts.len() < 2 {
                 return;
             }
@@ -7780,7 +9409,8 @@ fn main() {
             let gap = 0.16 + band as f32 * 0.035;
             for node in 0..node_count {
                 let a0 = phase + node as f32 * std::f32::consts::TAU / node_count as f32 + gap;
-                let a1 = phase + (node + 1) as f32 * std::f32::consts::TAU / node_count as f32 - gap;
+                let a1 =
+                    phase + (node + 1) as f32 * std::f32::consts::TAU / node_count as f32 - gap;
                 draw_arc(
                     &mut grid,
                     cx,
@@ -7807,7 +9437,14 @@ fn main() {
             let inner = point_on(cx, cy, max_rx * inner_scale, max_ry * inner_scale, a);
             nodes.push(outer);
             inner_nodes.push(inner);
-            draw_line(&mut grid, inner.0, inner.1, outer.0, outer.1, darken(gold, 6));
+            draw_line(
+                &mut grid,
+                inner.0,
+                inner.1,
+                outer.0,
+                outer.1,
+                darken(gold, 6),
+            );
             draw_line(
                 &mut grid,
                 outer.0 - 2,
@@ -7824,7 +9461,13 @@ fn main() {
                 outer.1 + 1,
                 lighten(chalk, 8),
             );
-            put(&mut grid, outer.0, outer.1, node_glyphs[i % node_glyphs.len()], ether);
+            put(
+                &mut grid,
+                outer.0,
+                outer.1,
+                node_glyphs[i % node_glyphs.len()],
+                ether,
+            );
             put(&mut grid, outer.0 - 3, outer.1, '╴', darken(ether, 20));
             put(&mut grid, outer.0 + 3, outer.1, '╶', darken(ether, 20));
         }
@@ -7832,15 +9475,16 @@ fn main() {
         let mut core = Vec::new();
         let core_count = 5 + (seed as usize % 2);
         for i in 0..core_count {
-            let a = phase + std::f32::consts::PI / core_count as f32
+            let a = phase
+                + std::f32::consts::PI / core_count as f32
                 + i as f32 * std::f32::consts::TAU / core_count as f32;
             core.push(point_on(cx, cy, max_rx * 0.24, max_ry * 0.24, a));
         }
         draw_poly(&mut grid, &core, 1, darken(chalk, 4));
 
         let runes = [
-            '△', '▽', '□', '◇', '○', '☉', '☽', '☿', '♄', '♃', '♁', '✶', '✦', '✧', '+', '×',
-            '≡', '∴', '∵', '⌬', '⊕', '⊗',
+            '△', '▽', '□', '◇', '○', '☉', '☽', '☿', '♄', '♃', '♁', '✶', '✦', '✧', '+', '×', '≡',
+            '∴', '∵', '⌬', '⊕', '⊗',
         ];
         for i in 0..rune_count {
             let lane = match i % 5 {
@@ -7875,11 +9519,16 @@ fn main() {
             let node = rng.random_range(0..node_count);
             let from = nodes[node];
             let target_angle = phase
-                + (node as f32 + rng.random_range(1.5..4.5))
-                    * std::f32::consts::TAU
+                + (node as f32 + rng.random_range(1.5..4.5)) * std::f32::consts::TAU
                     / node_count as f32;
             let target_radius = rng.random_range(0.68..0.94);
-            let to = point_on(cx, cy, max_rx * target_radius, max_ry * target_radius, target_angle);
+            let to = point_on(
+                cx,
+                cy,
+                max_rx * target_radius,
+                max_ry * target_radius,
+                target_angle,
+            );
             let mid = (
                 ((from.0 + to.0) / 2) + rng.random_range(-5..=5),
                 ((from.1 + to.1) / 2) + rng.random_range(-2..=2),
@@ -7932,8 +9581,22 @@ fn main() {
 
         let vertical = (max_ry * 0.24) as i32;
         let horizontal = (max_rx * 0.10) as i32;
-        draw_line(&mut grid, cx, cy - vertical, cx, cy + vertical, lighten(chalk, 10));
-        draw_line(&mut grid, cx - horizontal, cy, cx + horizontal, cy, lighten(chalk, 10));
+        draw_line(
+            &mut grid,
+            cx,
+            cy - vertical,
+            cx,
+            cy + vertical,
+            lighten(chalk, 10),
+        );
+        draw_line(
+            &mut grid,
+            cx - horizontal,
+            cy,
+            cx + horizontal,
+            cy,
+            lighten(chalk, 10),
+        );
         for dy in -2i32..=2i32 {
             for dx in -5i32..=5i32 {
                 let metric = (dx as f32 / 5.0).powi(2) + (dy as f32 / 2.0).powi(2);
@@ -8093,56 +9756,54 @@ fn main() {
                 prev = Some(p);
             }
         };
-        let draw_shape = |grid: &mut Grid, x: i32, y: i32, kind: usize, fg: Color| {
-            match kind % 7 {
-                0 => {
-                    put(grid, x, y, '◇', fg);
-                    put(grid, x - 1, y, '╴', darken(fg, 18));
-                    put(grid, x + 1, y, '╶', darken(fg, 18));
+        let draw_shape = |grid: &mut Grid, x: i32, y: i32, kind: usize, fg: Color| match kind % 7 {
+            0 => {
+                put(grid, x, y, '◇', fg);
+                put(grid, x - 1, y, '╴', darken(fg, 18));
+                put(grid, x + 1, y, '╶', darken(fg, 18));
+            }
+            1 => {
+                for dx in -1..=1 {
+                    put(grid, x + dx, y - 1, '─', fg);
+                    put(grid, x + dx, y + 1, '─', fg);
                 }
-                1 => {
-                    for dx in -1..=1 {
-                        put(grid, x + dx, y - 1, '─', fg);
-                        put(grid, x + dx, y + 1, '─', fg);
-                    }
-                    put(grid, x - 2, y, '│', fg);
-                    put(grid, x + 2, y, '│', fg);
-                    put(grid, x, y, '□', lighten(fg, 10));
-                }
-                2 => {
-                    put(grid, x, y - 1, '△', lighten(fg, 8));
-                    put(grid, x - 1, y, '╱', fg);
-                    put(grid, x + 1, y, '╲', fg);
-                    put(grid, x, y + 1, '─', darken(fg, 12));
-                }
-                3 => {
-                    put(grid, x, y - 1, '○', fg);
-                    put(grid, x - 1, y, '◌', darken(fg, 10));
-                    put(grid, x, y, '☉', lighten(fg, 10));
-                    put(grid, x + 1, y, '◌', darken(fg, 10));
-                    put(grid, x, y + 1, '○', fg);
-                }
-                4 => {
-                    put(grid, x, y, '⊕', lighten(fg, 12));
-                    put(grid, x - 1, y, '─', fg);
-                    put(grid, x + 1, y, '─', fg);
-                    put(grid, x, y - 1, '│', fg);
-                    put(grid, x, y + 1, '│', fg);
-                }
-                5 => {
-                    put(grid, x, y, '⌬', lighten(fg, 8));
-                    put(grid, x - 1, y - 1, '╲', fg);
-                    put(grid, x + 1, y - 1, '╱', fg);
-                    put(grid, x - 1, y + 1, '╱', fg);
-                    put(grid, x + 1, y + 1, '╲', fg);
-                }
-                _ => {
-                    put(grid, x, y, '✦', lighten(fg, 14));
-                    put(grid, x - 1, y, '·', fg);
-                    put(grid, x + 1, y, '·', fg);
-                    put(grid, x, y - 1, '·', fg);
-                    put(grid, x, y + 1, '·', fg);
-                }
+                put(grid, x - 2, y, '│', fg);
+                put(grid, x + 2, y, '│', fg);
+                put(grid, x, y, '□', lighten(fg, 10));
+            }
+            2 => {
+                put(grid, x, y - 1, '△', lighten(fg, 8));
+                put(grid, x - 1, y, '╱', fg);
+                put(grid, x + 1, y, '╲', fg);
+                put(grid, x, y + 1, '─', darken(fg, 12));
+            }
+            3 => {
+                put(grid, x, y - 1, '○', fg);
+                put(grid, x - 1, y, '◌', darken(fg, 10));
+                put(grid, x, y, '☉', lighten(fg, 10));
+                put(grid, x + 1, y, '◌', darken(fg, 10));
+                put(grid, x, y + 1, '○', fg);
+            }
+            4 => {
+                put(grid, x, y, '⊕', lighten(fg, 12));
+                put(grid, x - 1, y, '─', fg);
+                put(grid, x + 1, y, '─', fg);
+                put(grid, x, y - 1, '│', fg);
+                put(grid, x, y + 1, '│', fg);
+            }
+            5 => {
+                put(grid, x, y, '⌬', lighten(fg, 8));
+                put(grid, x - 1, y - 1, '╲', fg);
+                put(grid, x + 1, y - 1, '╱', fg);
+                put(grid, x - 1, y + 1, '╱', fg);
+                put(grid, x + 1, y + 1, '╲', fg);
+            }
+            _ => {
+                put(grid, x, y, '✦', lighten(fg, 14));
+                put(grid, x - 1, y, '·', fg);
+                put(grid, x + 1, y, '·', fg);
+                put(grid, x, y - 1, '·', fg);
+                put(grid, x, y + 1, '·', fg);
             }
         };
 
@@ -8257,9 +9918,28 @@ fn main() {
                 }
                 prev = p;
             }
-            let outer = point_on(cx, cy, max_rx * 0.96, max_ry * 0.96, base_a + rng.random_range(-0.05..0.05));
-            draw_line(&mut grid, prev.0, prev.1, outer.0, outer.1, darken(path_color, 8));
-            draw_shape(&mut grid, outer.0, outer.1, path + 3, lighten(path_color, 8));
+            let outer = point_on(
+                cx,
+                cy,
+                max_rx * 0.96,
+                max_ry * 0.96,
+                base_a + rng.random_range(-0.05..0.05),
+            );
+            draw_line(
+                &mut grid,
+                prev.0,
+                prev.1,
+                outer.0,
+                outer.1,
+                darken(path_color, 8),
+            );
+            draw_shape(
+                &mut grid,
+                outer.0,
+                outer.1,
+                path + 3,
+                lighten(path_color, 8),
+            );
         }
 
         let core_rx = (max_rx * 0.17).round() as i32;
@@ -8291,9 +9971,2580 @@ fn main() {
         for n in 0..core_nodes {
             let a = phase + n as f32 * std::f32::consts::TAU / core_nodes as f32;
             let p = point_on(cx, cy, max_rx * 0.13, max_ry * 0.13, a);
-            draw_shape(&mut grid, p.0, p.1, n + 4, if n % 2 == 0 { gold } else { ether });
+            draw_shape(
+                &mut grid,
+                p.0,
+                p.1,
+                n + 4,
+                if n % 2 == 0 { gold } else { ether },
+            );
         }
         put(&mut grid, cx, cy, '⊙', lighten(rose, 16));
+    } else if mode == "fa4" || mode == "fullmetal-alchemist4" {
+        // fa4 [paths=0] [rings] [nodes=0] [ornaments] [stations=0] -- airy curved ritual lattice
+        let path_arg: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0);
+        let path_count = if path_arg == 0 {
+            0
+        } else {
+            path_arg.clamp(1, 6)
+        };
+        let ring_count: usize = args.get(5).and_then(|s| s.parse().ok()).unwrap_or(2);
+        let ring_count = ring_count.clamp(2, 5);
+        let node_arg: usize = args.get(6).and_then(|s| s.parse().ok()).unwrap_or(0);
+        let base_nodes = if node_arg == 0 {
+            3 + ((seed as usize * 41 + 9) % 3)
+        } else {
+            node_arg.clamp(3, 8)
+        };
+        let ornament_step: usize = args.get(7).and_then(|s| s.parse().ok()).unwrap_or(32);
+        let ornament_step = ornament_step.clamp(18, 48);
+        let station_arg: usize = args.get(8).and_then(|s| s.parse().ok()).unwrap_or(0);
+        let station_base = if station_arg == 0 {
+            6
+        } else {
+            station_arg.clamp(4, 16)
+        };
+
+        let bg = darken(palette[0], 13);
+        let chalk = lighten(palette[4], 14);
+        let gold = lighten(palette[1], 34);
+        let ether = shift_hue(lighten(palette[3], 38), 32.0);
+        let rose = shift_hue(lighten(palette[2], 44), -36.0);
+        let verdigris = shift_hue(lighten(palette[1], 28), 92.0);
+        let hush = darken(palette[2], 70);
+
+        for y in 0..height {
+            for x in 0..width {
+                let n = (x * 31 + y * 43 + seed as usize * 13) % 353;
+                let ch = match n {
+                    0 => '·',
+                    1 if (x + y + seed as usize) % 9 == 0 => '°',
+                    _ => ' ',
+                };
+                grid[y][x] = if ch == ' ' {
+                    Cell::new(' ', bg)
+                } else {
+                    Cell::new(ch, hush)
+                };
+            }
+        }
+
+        let put = |grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color| {
+            if x >= 0 && y >= 0 && (x as usize) < width && (y as usize) < height {
+                grid[y as usize][x as usize] = Cell::new(ch, fg);
+            }
+        };
+        let blank = |grid: &mut Grid, x: i32, y: i32| {
+            if x >= 0 && y >= 0 && (x as usize) < width && (y as usize) < height {
+                grid[y as usize][x as usize] = Cell::blank();
+            }
+        };
+        let point_on = |cx: i32, cy: i32, rx: f32, ry: f32, angle: f32| {
+            (
+                cx + (angle.cos() * rx).round() as i32,
+                cy + (angle.sin() * ry).round() as i32,
+            )
+        };
+        let curve_char = |prev: (i32, i32), here: (i32, i32), next: (i32, i32)| {
+            let dx1 = (here.0 - prev.0).signum();
+            let dy1 = (here.1 - prev.1).signum();
+            let dx2 = (next.0 - here.0).signum();
+            let dy2 = (next.1 - here.1).signum();
+            if (dx1, dy1) == (dx2, dy2) {
+                if dy1 == 0 {
+                    '─'
+                } else if dx1 == 0 {
+                    '│'
+                } else if dx1 == dy1 {
+                    '╲'
+                } else {
+                    '╱'
+                }
+            } else if dy1 == 0 && dx2 == 0 {
+                match (dx1, dy2) {
+                    (1, 1) => '╮',
+                    (1, -1) => '╯',
+                    (-1, 1) => '╭',
+                    (-1, -1) => '╰',
+                    _ => '╮',
+                }
+            } else if dx1 == 0 && dy2 == 0 {
+                match (dy1, dx2) {
+                    (1, 1) => '╰',
+                    (1, -1) => '╯',
+                    (-1, 1) => '╭',
+                    (-1, -1) => '╮',
+                    _ => '╰',
+                }
+            } else if dx1 != dx2 && dy1 != dy2 {
+                match (dx1, dy1, dx2, dy2) {
+                    (1, 1, 1, -1) | (-1, -1, -1, 1) => '╯',
+                    (1, -1, 1, 1) | (-1, 1, -1, -1) => '╮',
+                    (1, 1, -1, 1) | (-1, -1, 1, -1) => '╰',
+                    (1, -1, -1, -1) | (-1, 1, 1, 1) => '╭',
+                    _ => '○',
+                }
+            } else if dx2 == 0 || dx1 == 0 {
+                '│'
+            } else if dy2 == 0 || dy1 == 0 {
+                '─'
+            } else if dx2 == dy2 {
+                '╲'
+            } else {
+                '╱'
+            }
+        };
+        let draw_line = |grid: &mut Grid, mut x0: i32, mut y0: i32, x1: i32, y1: i32, fg: Color| {
+            let dx = (x1 - x0).abs();
+            let sx = if x0 < x1 { 1 } else { -1 };
+            let dy = -(y1 - y0).abs();
+            let sy = if y0 < y1 { 1 } else { -1 };
+            let ch = if dx > (-dy) * 2 {
+                '─'
+            } else if -dy > dx * 2 {
+                '│'
+            } else if (x1 - x0).signum() == (y1 - y0).signum() {
+                '╲'
+            } else {
+                '╱'
+            };
+            let mut err = dx + dy;
+            loop {
+                put(grid, x0, y0, ch, fg);
+                if x0 == x1 && y0 == y1 {
+                    break;
+                }
+                let e2 = 2 * err;
+                if e2 >= dy {
+                    err += dy;
+                    x0 += sx;
+                }
+                if e2 <= dx {
+                    err += dx;
+                    y0 += sy;
+                }
+            }
+        };
+        let draw_micro_shape =
+            |grid: &mut Grid, x: i32, y: i32, kind: usize, fg: Color| match kind % 10 {
+                0 => {
+                    put(grid, x, y, '○', lighten(fg, 10));
+                    put(grid, x - 1, y, '╴', darken(fg, 12));
+                    put(grid, x + 1, y, '╶', darken(fg, 12));
+                }
+                1 => {
+                    put(grid, x, y, '◇', lighten(fg, 12));
+                    put(grid, x, y - 1, '╭', fg);
+                    put(grid, x, y + 1, '╯', fg);
+                }
+                2 => {
+                    put(grid, x - 1, y - 1, '╭', fg);
+                    put(grid, x + 1, y - 1, '╮', fg);
+                    put(grid, x - 1, y + 1, '╰', fg);
+                    put(grid, x + 1, y + 1, '╯', fg);
+                    put(grid, x, y, '⊙', lighten(fg, 10));
+                }
+                3 => {
+                    put(grid, x, y - 1, '△', lighten(fg, 8));
+                    put(grid, x - 1, y, '╰', fg);
+                    put(grid, x + 1, y, '╯', fg);
+                    put(grid, x, y + 1, '╰', darken(fg, 8));
+                }
+                4 => {
+                    put(grid, x, y, '☉', lighten(fg, 14));
+                    put(grid, x - 1, y - 1, '╭', darken(fg, 4));
+                    put(grid, x + 1, y - 1, '╮', darken(fg, 4));
+                    put(grid, x - 1, y + 1, '╰', darken(fg, 4));
+                    put(grid, x + 1, y + 1, '╯', darken(fg, 4));
+                }
+                5 => {
+                    put(grid, x, y, '⌬', lighten(fg, 8));
+                    put(grid, x - 1, y, '╭', fg);
+                    put(grid, x + 1, y, '╮', fg);
+                }
+                6 => {
+                    put(grid, x, y, '□', lighten(fg, 8));
+                    put(grid, x - 1, y, '◜', fg);
+                    put(grid, x + 1, y, '◝', fg);
+                    put(grid, x, y + 1, '╯', darken(fg, 10));
+                }
+                7 => {
+                    put(grid, x, y, '⊕', lighten(fg, 10));
+                    put(grid, x - 1, y, '─', fg);
+                    put(grid, x + 1, y, '─', fg);
+                    put(grid, x, y - 1, '│', fg);
+                    put(grid, x, y + 1, '│', fg);
+                }
+                8 => {
+                    put(grid, x, y, '✦', lighten(fg, 16));
+                    put(grid, x - 1, y, '◌', fg);
+                    put(grid, x + 1, y, '◌', fg);
+                }
+                _ => {
+                    put(grid, x, y, '∴', lighten(fg, 10));
+                    put(grid, x - 1, y - 1, '·', fg);
+                    put(grid, x + 1, y + 1, '·', fg);
+                    put(grid, x + 1, y - 1, '·', darken(fg, 10));
+                }
+            };
+        let draw_curve = |grid: &mut Grid,
+                          p0: (i32, i32),
+                          p1: (i32, i32),
+                          p2: (i32, i32),
+                          fg: Color,
+                          accent: Color,
+                          shape_offset: usize,
+                          ornament_step: usize|
+         -> Vec<(i32, i32)> {
+            let d0 = ((p1.0 - p0.0).abs() + (p1.1 - p0.1).abs()) as f32;
+            let d1 = ((p2.0 - p1.0).abs() + (p2.1 - p1.1).abs()) as f32;
+            let samples = ((d0 + d1) * 1.7).clamp(18.0, 240.0) as usize;
+            let mut pts = Vec::new();
+            for i in 0..=samples {
+                let t = i as f32 / samples as f32;
+                let u = 1.0 - t;
+                let x = (u * u * p0.0 as f32 + 2.0 * u * t * p1.0 as f32 + t * t * p2.0 as f32)
+                    .round() as i32;
+                let y = (u * u * p0.1 as f32 + 2.0 * u * t * p1.1 as f32 + t * t * p2.1 as f32)
+                    .round() as i32;
+                if pts.last().copied() != Some((x, y)) {
+                    pts.push((x, y));
+                }
+            }
+            if pts.len() < 3 {
+                draw_line(grid, p0.0, p0.1, p2.0, p2.1, fg);
+                return pts;
+            }
+            for i in 0..pts.len() {
+                let (x, y) = pts[i];
+                if i == 0 || i + 1 == pts.len() {
+                    if shape_offset % 3 != 1 {
+                        put(grid, x, y, '○', darken(accent, 8));
+                    }
+                } else {
+                    let ch = curve_char(pts[i - 1], pts[i], pts[i + 1]);
+                    put(grid, x, y, ch, fg);
+                    if i % ornament_step == shape_offset % ornament_step {
+                        draw_micro_shape(grid, x, y, i + shape_offset, accent);
+                    }
+                }
+            }
+            pts
+        };
+        let draw_arc = |grid: &mut Grid,
+                        cx: i32,
+                        cy: i32,
+                        rx: f32,
+                        ry: f32,
+                        start: f32,
+                        end: f32,
+                        fg: Color,
+                        accent: Color,
+                        gap: usize,
+                        ornament_step: usize| {
+            let span = (end - start).abs().max(0.04);
+            let samples = ((rx + ry) * span * 4.2).max(20.0) as usize;
+            let mut pts = Vec::new();
+            for i in 0..=samples {
+                if gap > 0 && i % gap == gap - 1 {
+                    if pts.len() > 2 {
+                        for p in 1..pts.len() - 1 {
+                            let ch = curve_char(pts[p - 1], pts[p], pts[p + 1]);
+                            put(grid, pts[p].0, pts[p].1, ch, fg);
+                            if p % (ornament_step * 2) == 0 {
+                                draw_micro_shape(grid, pts[p].0, pts[p].1, p, accent);
+                            }
+                        }
+                    }
+                    pts.clear();
+                    continue;
+                }
+                let a = start + (end - start) * i as f32 / samples as f32;
+                let p = point_on(cx, cy, rx, ry, a);
+                if pts.last().copied() != Some(p) {
+                    pts.push(p);
+                }
+            }
+            if pts.len() > 2 {
+                for p in 1..pts.len() - 1 {
+                    let ch = curve_char(pts[p - 1], pts[p], pts[p + 1]);
+                    put(grid, pts[p].0, pts[p].1, ch, fg);
+                    if p % (ornament_step * 2) == 0 {
+                        draw_micro_shape(grid, pts[p].0, pts[p].1, p + 3, accent);
+                    }
+                }
+            }
+        };
+        let draw_box_frame = |grid: &mut Grid, cx: i32, cy: i32, hw: i32, hh: i32, fg: Color| {
+            for x in cx - hw + 1..=cx + hw - 1 {
+                put(grid, x, cy - hh, '─', fg);
+                put(grid, x, cy + hh, '─', fg);
+            }
+            for y in cy - hh + 1..=cy + hh - 1 {
+                put(grid, cx - hw, y, '│', fg);
+                put(grid, cx + hw, y, '│', fg);
+            }
+            put(grid, cx - hw, cy - hh, '╭', fg);
+            put(grid, cx + hw, cy - hh, '╮', fg);
+            put(grid, cx - hw, cy + hh, '╰', fg);
+            put(grid, cx + hw, cy + hh, '╯', fg);
+        };
+        let draw_diamond_frame =
+            |grid: &mut Grid, cx: i32, cy: i32, rx: i32, ry: i32, fg: Color| {
+                let top = (cx, cy - ry);
+                let right = (cx + rx, cy);
+                let bottom = (cx, cy + ry);
+                let left = (cx - rx, cy);
+                draw_line(grid, top.0, top.1, right.0, right.1, fg);
+                draw_line(grid, right.0, right.1, bottom.0, bottom.1, fg);
+                draw_line(grid, bottom.0, bottom.1, left.0, left.1, fg);
+                draw_line(grid, left.0, left.1, top.0, top.1, fg);
+                put(grid, top.0, top.1, '△', lighten(fg, 8));
+                put(grid, right.0, right.1, '◇', lighten(fg, 8));
+                put(grid, bottom.0, bottom.1, '▽', lighten(fg, 8));
+                put(grid, left.0, left.1, '◇', lighten(fg, 8));
+            };
+        let draw_ring_ticks = |grid: &mut Grid,
+                               cx: i32,
+                               cy: i32,
+                               rx: f32,
+                               ry: f32,
+                               count: usize,
+                               phase: f32,
+                               fg: Color| {
+            for i in 0..count {
+                let a = phase + i as f32 * std::f32::consts::TAU / count as f32;
+                let p = point_on(cx, cy, rx, ry, a);
+                if a.sin().abs() > a.cos().abs() {
+                    put(grid, p.0 - 1, p.1, '─', fg);
+                    put(grid, p.0, p.1, '┼', lighten(fg, 8));
+                    put(grid, p.0 + 1, p.1, '─', fg);
+                } else {
+                    put(grid, p.0, p.1 - 1, '│', fg);
+                    put(grid, p.0, p.1, '┼', lighten(fg, 8));
+                    put(grid, p.0, p.1 + 1, '│', fg);
+                }
+            }
+        };
+        let draw_geo_station = |grid: &mut Grid, x: i32, y: i32, kind: usize, fg: Color| {
+            for dy in -1i32..=1 {
+                for dx in -3i32..=3 {
+                    blank(grid, x + dx, y + dy);
+                }
+            }
+            match kind % 8 {
+                0 => {
+                    put(grid, x, y - 1, '╱', fg);
+                    put(grid, x + 1, y - 1, '╲', fg);
+                    put(grid, x - 1, y, '◇', lighten(fg, 16));
+                    put(grid, x, y, '◆', lighten(fg, 20));
+                    put(grid, x + 1, y, '◇', lighten(fg, 16));
+                    put(grid, x, y + 1, '╲', fg);
+                    put(grid, x + 1, y + 1, '╱', fg);
+                }
+                1 => {
+                    put(grid, x - 2, y - 1, '╭', fg);
+                    put(grid, x - 1, y - 1, '─', fg);
+                    put(grid, x, y - 1, '□', lighten(fg, 14));
+                    put(grid, x + 1, y - 1, '─', fg);
+                    put(grid, x + 2, y - 1, '╮', fg);
+                    put(grid, x - 2, y, '│', fg);
+                    put(grid, x, y, '⊙', lighten(fg, 20));
+                    put(grid, x + 2, y, '│', fg);
+                    put(grid, x - 2, y + 1, '╰', fg);
+                    put(grid, x - 1, y + 1, '─', fg);
+                    put(grid, x, y + 1, '□', lighten(fg, 14));
+                    put(grid, x + 1, y + 1, '─', fg);
+                    put(grid, x + 2, y + 1, '╯', fg);
+                }
+                2 => {
+                    put(grid, x, y - 1, '△', lighten(fg, 18));
+                    put(grid, x - 2, y, '╱', fg);
+                    put(grid, x - 1, y, '─', darken(fg, 4));
+                    put(grid, x, y, '☉', lighten(fg, 18));
+                    put(grid, x + 1, y, '─', darken(fg, 4));
+                    put(grid, x + 2, y, '╲', fg);
+                    put(grid, x - 1, y + 1, '╰', fg);
+                    put(grid, x, y + 1, '─', fg);
+                    put(grid, x + 1, y + 1, '╯', fg);
+                }
+                3 => {
+                    put(grid, x, y, '⊕', lighten(fg, 20));
+                    put(grid, x - 2, y, '╴', fg);
+                    put(grid, x - 1, y, '○', lighten(fg, 12));
+                    put(grid, x + 1, y, '○', lighten(fg, 12));
+                    put(grid, x + 2, y, '╶', fg);
+                    put(grid, x, y - 1, '│', fg);
+                    put(grid, x, y + 1, '│', fg);
+                }
+                4 => {
+                    put(grid, x, y, '✦', lighten(fg, 22));
+                    put(grid, x - 2, y, '◇', fg);
+                    put(grid, x + 2, y, '◇', fg);
+                    put(grid, x, y - 1, '△', fg);
+                    put(grid, x, y + 1, '▽', fg);
+                    put(grid, x - 1, y - 1, '╲', darken(fg, 6));
+                    put(grid, x + 1, y - 1, '╱', darken(fg, 6));
+                }
+                5 => {
+                    put(grid, x - 2, y, '╭', fg);
+                    put(grid, x - 1, y, '─', fg);
+                    put(grid, x, y, '⌬', lighten(fg, 18));
+                    put(grid, x + 1, y, '─', fg);
+                    put(grid, x + 2, y, '╮', fg);
+                    put(grid, x - 1, y + 1, '╰', darken(fg, 8));
+                    put(grid, x, y + 1, '─', darken(fg, 8));
+                    put(grid, x + 1, y + 1, '╯', darken(fg, 8));
+                }
+                6 => {
+                    put(grid, x - 2, y - 1, '╭', fg);
+                    put(grid, x, y - 1, '┬', fg);
+                    put(grid, x + 2, y - 1, '╮', fg);
+                    put(grid, x - 1, y, '□', lighten(fg, 14));
+                    put(grid, x, y, '┼', lighten(fg, 20));
+                    put(grid, x + 1, y, '□', lighten(fg, 14));
+                    put(grid, x - 2, y + 1, '╰', fg);
+                    put(grid, x, y + 1, '┴', fg);
+                    put(grid, x + 2, y + 1, '╯', fg);
+                }
+                _ => {
+                    put(grid, x, y + 1, '▽', lighten(fg, 16));
+                    put(grid, x - 2, y, '╲', fg);
+                    put(grid, x - 1, y, '─', fg);
+                    put(grid, x, y, '⊙', lighten(fg, 18));
+                    put(grid, x + 1, y, '─', fg);
+                    put(grid, x + 2, y, '╱', fg);
+                    put(grid, x, y - 1, '╭', darken(fg, 8));
+                }
+            }
+        };
+        let draw_ring_stations = |grid: &mut Grid,
+                                  cx: i32,
+                                  cy: i32,
+                                  rx: f32,
+                                  ry: f32,
+                                  count: usize,
+                                  phase: f32,
+                                  rung: usize,
+                                  fg: Color| {
+            let mut count = count.clamp(4, 16);
+            if count % 2 == 1 {
+                count += 1;
+            }
+            for i in 0..count {
+                let sector = (i * 8 / count) % 8;
+                let kind = match (rung + sector) % 8 {
+                    0 => 2,
+                    1 => 3,
+                    2 => 1,
+                    3 => 0,
+                    4 => 7,
+                    5 => 4,
+                    6 => 6,
+                    _ => 5,
+                };
+                let a = phase + i as f32 * std::f32::consts::TAU / count as f32;
+                let wobble = if (i + rung) % 2 == 0 { 1.006 } else { 0.994 };
+                let p = point_on(cx, cy, rx * wobble, ry * wobble, a);
+                let color = if sector % 2 == 0 {
+                    lighten(fg, 8)
+                } else {
+                    darken(fg, 4)
+                };
+                draw_geo_station(grid, p.0, p.1, kind + rung * 3 + i, color);
+            }
+        };
+
+        let cx = width as i32 / 2;
+        let cy = height as i32 / 2;
+        let max_rx = (width as f32 / 2.0 - 3.0).max(10.0);
+        let max_ry = (height as f32 / 2.0 - 2.0).max(5.0);
+        let phase = -std::f32::consts::FRAC_PI_2 + rng.random_range(-0.16..0.16);
+
+        for y in 0..height {
+            for x in 0..width {
+                let dx = (x as i32 - cx) as f32 / (max_rx * 0.98);
+                let dy = (y as i32 - cy) as f32 / (max_ry * 0.98);
+                let metric = dx * dx + dy * dy;
+                if metric < 0.90 {
+                    blank(&mut grid, x as i32, y as i32);
+                } else if metric < 1.08 && (x + y + seed as usize) % 4 == 0 {
+                    grid[y][x] = Cell::new('·', darken(chalk, 55));
+                }
+            }
+        }
+
+        for band in 0..1 {
+            let rx = max_rx - band as f32 * 4.8;
+            let ry = max_ry - band as f32 * 1.95;
+            let fg = match band {
+                0 => ether,
+                _ => chalk,
+            };
+            let segments = (ring_count + band * 2 + 2).max(5);
+            let gap = 0.16 + band as f32 * 0.045;
+            for seg in 0..segments {
+                let a0 = phase + seg as f32 * std::f32::consts::TAU / segments as f32 + gap;
+                let a1 = phase + (seg + 1) as f32 * std::f32::consts::TAU / segments as f32 - gap;
+                draw_arc(
+                    &mut grid,
+                    cx,
+                    cy,
+                    rx,
+                    ry,
+                    a0,
+                    a1,
+                    darken(fg, (band * 5) as u8),
+                    lighten(fg, 12),
+                    if band == 1 { 24 } else { 0 },
+                    ornament_step + band * 3,
+                );
+            }
+        }
+
+        let mut ring_specs = Vec::new();
+        for r in 0..ring_count {
+            let t = (r + 1) as f32 / (ring_count + 1) as f32;
+            let scale = 0.24 + t * 0.52 + rng.random_range(-0.012..0.016);
+            let nodes = (base_nodes + r + (seed as usize % 2)).clamp(4, 10);
+            let ring_phase = phase + r as f32 * 0.29 + rng.random_range(-0.13..0.13);
+            let fg = match r % 5 {
+                0 => gold,
+                1 => ether,
+                2 => chalk,
+                3 => verdigris,
+                _ => rose,
+            };
+            ring_specs.push((scale, nodes, ring_phase, fg));
+            draw_arc(
+                &mut grid,
+                cx,
+                cy,
+                max_rx * scale,
+                max_ry * scale,
+                ring_phase,
+                ring_phase + std::f32::consts::TAU,
+                darken(fg, 7),
+                lighten(fg, 12),
+                if r % 2 == 0 { 21 } else { 0 },
+                ornament_step + r * 3,
+            );
+
+            for n in 0..nodes {
+                let a = ring_phase + n as f32 * std::f32::consts::TAU / nodes as f32;
+                let p = point_on(cx, cy, max_rx * scale, max_ry * scale, a);
+                draw_micro_shape(&mut grid, p.0, p.1, n + r * 5, fg);
+                if n % 3 == 0 {
+                    let inner = point_on(
+                        cx,
+                        cy,
+                        max_rx * (scale - 0.035).max(0.05),
+                        max_ry * (scale - 0.035).max(0.04),
+                        a + 0.025,
+                    );
+                    let outer = point_on(
+                        cx,
+                        cy,
+                        max_rx * (scale + 0.035).min(0.98),
+                        max_ry * (scale + 0.035).min(0.98),
+                        a - 0.025,
+                    );
+                    let control = point_on(cx, cy, max_rx * scale, max_ry * scale, a + 0.10);
+                    draw_curve(
+                        &mut grid,
+                        inner,
+                        control,
+                        outer,
+                        darken(fg, 8),
+                        lighten(fg, 10),
+                        n + r,
+                        ornament_step + 8,
+                    );
+                }
+            }
+        }
+
+        for path in 0..path_count {
+            let base_a = phase
+                + path as f32 * std::f32::consts::TAU / path_count as f32
+                + rng.random_range(-0.10..0.10);
+            let path_color = match path % 5 {
+                0 => ether,
+                1 => gold,
+                2 => chalk,
+                3 => verdigris,
+                _ => rose,
+            };
+            let mut prev = point_on(cx, cy, max_rx * 0.42, max_ry * 0.36, base_a);
+            for (ri, &(scale, _, ring_phase, ring_color)) in ring_specs.iter().enumerate() {
+                let wobble =
+                    (path as f32 * 0.73 + ri as f32 * 1.11 + seed as f32 * 0.013).sin() * 0.22;
+                let a = base_a + (ring_phase - phase) * 0.22 + wobble;
+                let target = point_on(cx, cy, max_rx * scale, max_ry * scale, a);
+                let mid_scale = (scale + 0.06).min(0.98);
+                let bend = if (path + ri) % 2 == 0 { 0.48 } else { -0.48 };
+                let control = point_on(
+                    cx,
+                    cy,
+                    max_rx * mid_scale,
+                    max_ry * mid_scale,
+                    a + bend + rng.random_range(-0.08..0.08),
+                );
+                draw_curve(
+                    &mut grid,
+                    prev,
+                    control,
+                    target,
+                    darken(path_color, (ri * 4) as u8),
+                    lighten(ring_color, 10),
+                    path + ri * 3,
+                    ornament_step + 3 + (path + ri) % 5,
+                );
+                if (path + ri) % 5 == 0 {
+                    let hook = point_on(
+                        cx,
+                        cy,
+                        max_rx * (scale + 0.045).min(0.98),
+                        max_ry * (scale + 0.045).min(0.98),
+                        a + 0.18,
+                    );
+                    let hook_control = point_on(cx, cy, max_rx * scale, max_ry * scale, a + 0.34);
+                    draw_curve(
+                        &mut grid,
+                        target,
+                        hook_control,
+                        hook,
+                        darken(ring_color, 10),
+                        path_color,
+                        path + ri + 5,
+                        ornament_step + 10,
+                    );
+                }
+                draw_micro_shape(
+                    &mut grid,
+                    target.0,
+                    target.1,
+                    path + ri + seed as usize,
+                    shift_hue(lighten(path_color, 5), (ri * 18) as f64),
+                );
+                prev = target;
+            }
+            let outer_a = base_a + rng.random_range(-0.08..0.08);
+            let outer = point_on(cx, cy, max_rx * 0.98, max_ry * 0.98, outer_a);
+            let control = point_on(
+                cx,
+                cy,
+                max_rx * 0.86,
+                max_ry * 0.86,
+                outer_a + rng.random_range(-0.55..0.55),
+            );
+            draw_curve(
+                &mut grid,
+                prev,
+                control,
+                outer,
+                darken(path_color, 6),
+                lighten(path_color, 12),
+                path + 11,
+                ornament_step,
+            );
+            draw_micro_shape(
+                &mut grid,
+                outer.0,
+                outer.1,
+                path + 7,
+                lighten(path_color, 12),
+            );
+        }
+
+        let bridge_count = (path_count / 2).min(2);
+        for bridge in 0..bridge_count {
+            let scale = rng.random_range(0.52..0.86);
+            let a0 = phase
+                + bridge as f32 * std::f32::consts::TAU / bridge_count as f32
+                + rng.random_range(-0.10..0.10);
+            let a2 = a0 + rng.random_range(0.30..0.92);
+            let p0 = point_on(cx, cy, max_rx * scale, max_ry * scale, a0);
+            let p2 = point_on(cx, cy, max_rx * scale, max_ry * scale, a2);
+            let ctrl_scale = (scale + rng.random_range(-0.10..0.13)).clamp(0.16, 0.98);
+            let p1 = point_on(
+                cx,
+                cy,
+                max_rx * ctrl_scale,
+                max_ry * ctrl_scale,
+                (a0 + a2) * 0.5 + rng.random_range(-0.45..0.45),
+            );
+            let color = match bridge % 5 {
+                0 => darken(ether, 12),
+                1 => darken(gold, 10),
+                2 => darken(rose, 8),
+                3 => darken(verdigris, 8),
+                _ => darken(chalk, 18),
+            };
+            draw_curve(
+                &mut grid,
+                p0,
+                p1,
+                p2,
+                color,
+                lighten(color, 16),
+                bridge,
+                ornament_step + 8 + bridge % 7,
+            );
+        }
+
+        let outer_belts = [
+            (0.935_f32, 0.925_f32, darken(ether, 14)),
+            (0.960_f32, 0.955_f32, lighten(ether, 5)),
+            (0.985_f32, 0.982_f32, darken(chalk, 2)),
+        ];
+        for (i, &(sx, sy, color)) in outer_belts.iter().enumerate() {
+            draw_arc(
+                &mut grid,
+                cx,
+                cy,
+                max_rx * sx,
+                max_ry * sy,
+                phase + i as f32 * 0.035,
+                phase + i as f32 * 0.035 + std::f32::consts::TAU,
+                color,
+                lighten(color, 10),
+                0,
+                96,
+            );
+            draw_ring_stations(
+                &mut grid,
+                cx,
+                cy,
+                max_rx * sx,
+                max_ry * sy,
+                station_base + i * 2,
+                phase + i as f32 * 0.29,
+                i,
+                color,
+            );
+        }
+        draw_ring_ticks(
+            &mut grid,
+            cx,
+            cy,
+            max_rx * 0.960,
+            max_ry * 0.955,
+            10,
+            phase + std::f32::consts::PI / 10.0,
+            darken(gold, 4),
+        );
+
+        let core_rx = (max_rx * 0.43).round() as i32;
+        let core_ry = (max_ry * 0.37).round() as i32;
+        for dy in -core_ry..=core_ry {
+            for dx in -core_rx..=core_rx {
+                let metric = (dx as f32 / core_rx.max(1) as f32).powi(2)
+                    + (dy as f32 / core_ry.max(1) as f32).powi(2);
+                if metric <= 1.0 {
+                    blank(&mut grid, cx + dx, cy + dy);
+                }
+            }
+        }
+        let thick_rings = [(0.34, 0.29, ether)];
+        for (i, &(rxs, rys, color)) in thick_rings.iter().enumerate() {
+            for belt in [0.0_f32] {
+                draw_arc(
+                    &mut grid,
+                    cx,
+                    cy,
+                    max_rx * (rxs + belt),
+                    max_ry * (rys + belt * 0.8),
+                    phase + i as f32 * 0.08,
+                    phase + i as f32 * 0.08 + std::f32::consts::TAU,
+                    darken(color, 10),
+                    lighten(color, 8),
+                    0,
+                    64,
+                );
+            }
+            draw_ring_stations(
+                &mut grid,
+                cx,
+                cy,
+                max_rx * rxs,
+                max_ry * rys,
+                station_base,
+                phase + i as f32 * 0.41 + 0.17,
+                i + 10,
+                color,
+            );
+        }
+        let seal_nodes = 6;
+        let mut outer_nodes = Vec::new();
+        let mut inner_nodes = Vec::new();
+        for n in 0..seal_nodes {
+            let a = phase + n as f32 * std::f32::consts::TAU / seal_nodes as f32;
+            let outer = point_on(cx, cy, max_rx * 0.36, max_ry * 0.31, a);
+            let inner = point_on(
+                cx,
+                cy,
+                max_rx * 0.18,
+                max_ry * 0.16,
+                a + std::f32::consts::PI / 6.0,
+            );
+            outer_nodes.push(outer);
+            inner_nodes.push(inner);
+        }
+        for n in 0..seal_nodes {
+            draw_micro_shape(
+                &mut grid,
+                outer_nodes[n].0,
+                outer_nodes[n].1,
+                n + 2,
+                if n % 2 == 0 { gold } else { ether },
+            );
+            put(
+                &mut grid,
+                inner_nodes[n].0,
+                inner_nodes[n].1,
+                ['△', '□', '◇', '○', '▽', '⊕'][n],
+                lighten(chalk, 8),
+            );
+        }
+
+        for dy in -3i32..=3i32 {
+            for dx in -9i32..=9i32 {
+                let metric = (dx as f32 / 9.0).powi(2) + (dy as f32 / 3.0).powi(2);
+                if metric <= 1.0 {
+                    blank(&mut grid, cx + dx, cy + dy);
+                }
+            }
+        }
+        draw_diamond_frame(&mut grid, cx, cy, 8, 3, darken(ether, 6));
+        draw_box_frame(&mut grid, cx, cy, 5, 2, lighten(gold, 8));
+        draw_line(&mut grid, cx - 7, cy, cx + 7, cy, lighten(chalk, 10));
+        draw_line(&mut grid, cx, cy - 4, cx, cy + 4, lighten(chalk, 10));
+        put(&mut grid, cx - 2, cy - 1, '╭', lighten(gold, 10));
+        put(&mut grid, cx + 2, cy - 1, '╮', lighten(gold, 10));
+        put(&mut grid, cx - 2, cy + 1, '╰', lighten(gold, 10));
+        put(&mut grid, cx + 2, cy + 1, '╯', lighten(gold, 10));
+        put(&mut grid, cx - 1, cy - 1, '─', lighten(gold, 10));
+        put(&mut grid, cx, cy - 1, '⊛', lighten(rose, 18));
+        put(&mut grid, cx + 1, cy - 1, '─', lighten(gold, 10));
+        put(&mut grid, cx - 1, cy + 1, '─', lighten(gold, 10));
+        put(&mut grid, cx, cy + 1, '☉', lighten(ether, 16));
+        put(&mut grid, cx + 1, cy + 1, '─', lighten(gold, 10));
+    } else if mode == "fa5" || mode == "fullmetal-alchemist5" {
+        // fa5 [polys=0] [skew=0] [chords=0] [stations=0] -- inscribed polygon star array
+        let poly_arg: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0);
+        let poly_count = if poly_arg == 0 {
+            3 + ((seed as usize * 23 + 5) % 4)
+        } else {
+            poly_arg.clamp(2, 7)
+        };
+        let skew_arg: usize = args.get(5).and_then(|s| s.parse().ok()).unwrap_or(0);
+        let skew_override = if skew_arg == 0 {
+            None
+        } else {
+            Some(skew_arg.clamp(1, 4))
+        };
+        let chord_arg: usize = args.get(6).and_then(|s| s.parse().ok()).unwrap_or(0);
+        let chord_pairs = if chord_arg == 0 {
+            2 + (seed as usize % 4)
+        } else {
+            chord_arg.clamp(0, 8)
+        };
+        let station_arg: usize = args.get(7).and_then(|s| s.parse().ok()).unwrap_or(0);
+        let station_base = if station_arg == 0 {
+            6 + (seed as usize % 5)
+        } else {
+            station_arg.clamp(4, 16)
+        };
+
+        let bg = darken(palette[0], 12);
+        let chalk = lighten(palette[4], 14);
+        let gold = lighten(palette[1], 32);
+        let ether = shift_hue(lighten(palette[3], 36), 35.0);
+        let rose = shift_hue(lighten(palette[2], 42), -38.0);
+        let verdigris = shift_hue(lighten(palette[1], 26), 92.0);
+        let hush = darken(palette[2], 66);
+        let ring_colors = [chalk, gold, ether, rose, verdigris, chalk, gold];
+
+        for y in 0..height {
+            for x in 0..width {
+                let n = (x * 31 + y * 43 + seed as usize * 13) % 353;
+                let ch = match n {
+                    0 => '·',
+                    1 if (x + y + seed as usize) % 9 == 0 => '°',
+                    _ => ' ',
+                };
+                grid[y][x] = if ch == ' ' {
+                    Cell::new(' ', bg)
+                } else {
+                    Cell::new(ch, hush)
+                };
+            }
+        }
+
+        let put = |grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color| {
+            if x >= 0 && y >= 0 && (x as usize) < width && (y as usize) < height {
+                grid[y as usize][x as usize] = Cell::new(ch, fg);
+            }
+        };
+        let blank = |grid: &mut Grid, x: i32, y: i32| {
+            if x >= 0 && y >= 0 && (x as usize) < width && (y as usize) < height {
+                grid[y as usize][x as usize] = Cell::blank();
+            }
+        };
+        let point_on = |cx: i32, cy: i32, rx: f32, ry: f32, angle: f32| {
+            (
+                cx + (angle.cos() * rx).round() as i32,
+                cy + (angle.sin() * ry).round() as i32,
+            )
+        };
+        let stroke_char = |x0: i32, y0: i32, x1: i32, y1: i32| {
+            let dx = x1 - x0;
+            let dy = y1 - y0;
+            if dx.abs() > dy.abs() * 2 {
+                '─'
+            } else if dy.abs() > dx.abs() * 2 {
+                '│'
+            } else if dx.signum() == dy.signum() {
+                '╲'
+            } else {
+                '╱'
+            }
+        };
+        let draw_line = |grid: &mut Grid, mut x0: i32, mut y0: i32, x1: i32, y1: i32, fg: Color| {
+            let ch = stroke_char(x0, y0, x1, y1);
+            let dx = (x1 - x0).abs();
+            let sx = if x0 < x1 { 1 } else { -1 };
+            let dy = -(y1 - y0).abs();
+            let sy = if y0 < y1 { 1 } else { -1 };
+            let mut err = dx + dy;
+            loop {
+                put(grid, x0, y0, ch, fg);
+                if x0 == x1 && y0 == y1 {
+                    break;
+                }
+                let e2 = 2 * err;
+                if e2 >= dy {
+                    err += dy;
+                    x0 += sx;
+                }
+                if e2 <= dx {
+                    err += dx;
+                    y0 += sy;
+                }
+            }
+        };
+        let curve_char = |prev: (i32, i32), here: (i32, i32), next: (i32, i32)| {
+            let dx1 = (here.0 - prev.0).signum();
+            let dy1 = (here.1 - prev.1).signum();
+            let dx2 = (next.0 - here.0).signum();
+            let dy2 = (next.1 - here.1).signum();
+            if (dx1, dy1) == (dx2, dy2) {
+                if dy1 == 0 {
+                    '─'
+                } else if dx1 == 0 {
+                    '│'
+                } else if dx1 == dy1 {
+                    '╲'
+                } else {
+                    '╱'
+                }
+            } else if dy1 == 0 && dx2 == 0 {
+                match (dx1, dy2) {
+                    (1, 1) => '╮',
+                    (1, -1) => '╯',
+                    (-1, 1) => '╭',
+                    (-1, -1) => '╰',
+                    _ => '╮',
+                }
+            } else if dx1 == 0 && dy2 == 0 {
+                match (dy1, dx2) {
+                    (1, 1) => '╰',
+                    (1, -1) => '╯',
+                    (-1, 1) => '╭',
+                    (-1, -1) => '╮',
+                    _ => '╰',
+                }
+            } else if dx1 != dx2 && dy1 != dy2 {
+                match (dx1, dy1, dx2, dy2) {
+                    (1, 1, 1, -1) | (-1, -1, -1, 1) => '╯',
+                    (1, -1, 1, 1) | (-1, 1, -1, -1) => '╮',
+                    (1, 1, -1, 1) | (-1, -1, 1, -1) => '╰',
+                    (1, -1, -1, -1) | (-1, 1, 1, 1) => '╭',
+                    _ => '○',
+                }
+            } else if dx2 == 0 || dx1 == 0 {
+                '│'
+            } else if dy2 == 0 || dy1 == 0 {
+                '─'
+            } else if dx2 == dy2 {
+                '╲'
+            } else {
+                '╱'
+            }
+        };
+        let draw_arc = |grid: &mut Grid,
+                        cx: i32,
+                        cy: i32,
+                        rx: f32,
+                        ry: f32,
+                        start: f32,
+                        end: f32,
+                        fg: Color,
+                        gap: usize| {
+            let span = (end - start).abs().max(0.05);
+            let samples = ((rx + ry) * span * 3.8).max(20.0) as usize;
+            let mut pts: Vec<(i32, i32)> = Vec::new();
+            let mut flush = |pts: &mut Vec<(i32, i32)>| {
+                if pts.len() > 2 {
+                    for p in 1..pts.len() - 1 {
+                        let ch = curve_char(pts[p - 1], pts[p], pts[p + 1]);
+                        put(grid, pts[p].0, pts[p].1, ch, fg);
+                    }
+                }
+                pts.clear();
+            };
+            for i in 0..=samples {
+                if gap > 0 && i % gap == gap - 1 {
+                    flush(&mut pts);
+                    continue;
+                }
+                let a = start + (end - start) * i as f32 / samples as f32;
+                let p = point_on(cx, cy, rx, ry, a);
+                if pts.last().copied() != Some(p) {
+                    pts.push(p);
+                }
+            }
+            flush(&mut pts);
+        };
+        let draw_micro_shape = |grid: &mut Grid, x: i32, y: i32, kind: usize, fg: Color| match kind % 10 {
+            0 => {
+                put(grid, x, y, '○', lighten(fg, 10));
+                put(grid, x - 1, y, '╴', darken(fg, 12));
+                put(grid, x + 1, y, '╶', darken(fg, 12));
+            }
+            1 => {
+                put(grid, x, y, '◇', lighten(fg, 12));
+                put(grid, x, y - 1, '╭', fg);
+                put(grid, x, y + 1, '╯', fg);
+            }
+            2 => {
+                put(grid, x - 1, y - 1, '╭', fg);
+                put(grid, x + 1, y - 1, '╮', fg);
+                put(grid, x - 1, y + 1, '╰', fg);
+                put(grid, x + 1, y + 1, '╯', fg);
+                put(grid, x, y, '⊙', lighten(fg, 10));
+            }
+            3 => {
+                put(grid, x, y - 1, '△', lighten(fg, 8));
+                put(grid, x - 1, y, '╰', fg);
+                put(grid, x + 1, y, '╯', fg);
+                put(grid, x, y + 1, '╰', darken(fg, 8));
+            }
+            4 => {
+                put(grid, x, y, '☉', lighten(fg, 14));
+                put(grid, x - 1, y - 1, '╭', darken(fg, 4));
+                put(grid, x + 1, y - 1, '╮', darken(fg, 4));
+                put(grid, x - 1, y + 1, '╰', darken(fg, 4));
+                put(grid, x + 1, y + 1, '╯', darken(fg, 4));
+            }
+            5 => {
+                put(grid, x, y, '⌬', lighten(fg, 8));
+                put(grid, x - 1, y, '╭', fg);
+                put(grid, x + 1, y, '╮', fg);
+            }
+            6 => {
+                put(grid, x, y, '□', lighten(fg, 8));
+                put(grid, x - 1, y, '◜', fg);
+                put(grid, x + 1, y, '◝', fg);
+                put(grid, x, y + 1, '╯', darken(fg, 10));
+            }
+            7 => {
+                put(grid, x, y, '⊕', lighten(fg, 10));
+                put(grid, x - 1, y, '─', fg);
+                put(grid, x + 1, y, '─', fg);
+                put(grid, x, y - 1, '│', fg);
+                put(grid, x, y + 1, '│', fg);
+            }
+            8 => {
+                put(grid, x, y, '✦', lighten(fg, 16));
+                put(grid, x - 1, y, '◌', fg);
+                put(grid, x + 1, y, '◌', fg);
+            }
+            _ => {
+                put(grid, x, y, '∴', lighten(fg, 10));
+                put(grid, x - 1, y - 1, '·', fg);
+                put(grid, x + 1, y + 1, '·', fg);
+                put(grid, x + 1, y - 1, '·', darken(fg, 10));
+            }
+        };
+        let draw_ring_ticks = |grid: &mut Grid,
+                               cx: i32,
+                               cy: i32,
+                               rx: f32,
+                               ry: f32,
+                               count: usize,
+                               phase: f32,
+                               fg: Color| {
+            for i in 0..count {
+                let a = phase + i as f32 * std::f32::consts::TAU / count as f32;
+                let p = point_on(cx, cy, rx, ry, a);
+                if a.sin().abs() > a.cos().abs() {
+                    put(grid, p.0 - 1, p.1, '─', fg);
+                    put(grid, p.0, p.1, '┼', lighten(fg, 8));
+                    put(grid, p.0 + 1, p.1, '─', fg);
+                } else {
+                    put(grid, p.0, p.1 - 1, '│', fg);
+                    put(grid, p.0, p.1, '┼', lighten(fg, 8));
+                    put(grid, p.0, p.1 + 1, '│', fg);
+                }
+            }
+        };
+        let draw_polygon = |grid: &mut Grid,
+                            cx: i32,
+                            cy: i32,
+                            rx: f32,
+                            ry: f32,
+                            n: usize,
+                            phase: f32,
+                            fg: Color|
+         -> Vec<(i32, i32)> {
+            let n = n.max(3);
+            let mut verts = Vec::with_capacity(n);
+            for i in 0..n {
+                let a = phase + i as f32 * std::f32::consts::TAU / n as f32;
+                verts.push(point_on(cx, cy, rx, ry, a));
+            }
+            for i in 0..n {
+                let (ax, ay) = verts[i];
+                let (bx, by) = verts[(i + 1) % n];
+                draw_line(grid, ax, ay, bx, by, fg);
+            }
+            verts
+        };
+        let draw_star = |grid: &mut Grid, verts: &[(i32, i32)], k: usize, fg: Color| {
+            let n = verts.len();
+            if k == 0 || n < 3 {
+                return;
+            }
+            for i in 0..n {
+                let j = (i + k) % n;
+                if j != i {
+                    let (ax, ay) = verts[i];
+                    let (bx, by) = verts[j];
+                    draw_line(grid, ax, ay, bx, by, fg);
+                }
+            }
+        };
+
+        let cx = width as i32 / 2;
+        let cy = height as i32 / 2;
+        let max_rx = (width as f32 / 2.0 - 3.0).max(10.0);
+        let max_ry = (height as f32 / 2.0 - 2.0).max(5.0);
+        let base_phase = -std::f32::consts::FRAC_PI_2 + rng.random_range(-0.12..0.12);
+
+        for y in 0..height {
+            for x in 0..width {
+                let dx = (x as i32 - cx) as f32 / (max_rx * 0.96);
+                let dy = (y as i32 - cy) as f32 / (max_ry * 0.96);
+                let metric = dx * dx + dy * dy;
+                if metric < 0.92 {
+                    blank(&mut grid, x as i32, y as i32);
+                } else if metric < 1.08 && (x + y + seed as usize) % 4 == 0 {
+                    grid[y][x] = Cell::new('·', darken(chalk, 55));
+                }
+            }
+        }
+
+        for &(sx, sy, color) in [
+            (0.965_f32, 0.955_f32, darken(ether, 12)),
+            (0.985_f32, 0.978_f32, lighten(chalk, 4)),
+        ]
+        .iter()
+        {
+            draw_arc(
+                &mut grid,
+                cx,
+                cy,
+                max_rx * sx,
+                max_ry * sy,
+                base_phase,
+                base_phase + std::f32::consts::TAU,
+                color,
+                0,
+            );
+        }
+        draw_ring_ticks(
+            &mut grid,
+            cx,
+            cy,
+            max_rx * 0.975,
+            max_ry * 0.965,
+            station_base,
+            base_phase,
+            darken(gold, 6),
+        );
+
+        let scale_lo = 0.30_f32;
+        let scale_hi = 0.86_f32;
+        let mut ring_specs: Vec<(usize, f32, f32, Color)> = Vec::new();
+        for r in 0..poly_count {
+            let t = if poly_count > 1 {
+                r as f32 / (poly_count - 1) as f32
+            } else {
+                0.5
+            };
+            let scale = scale_lo + t * (scale_hi - scale_lo) + rng.random_range(-0.014..0.014);
+            let n = 3 + ((seed as usize * (r * 7 + 3) + 11) % 6);
+            let phase = base_phase
+                + r as f32 * 0.41
+                + rng.random_range(-0.20..0.20);
+            let color = ring_colors[r % ring_colors.len()];
+            ring_specs.push((n, scale, phase, color));
+        }
+
+        let mut all_verts: Vec<Vec<(i32, i32)>> = Vec::new();
+        for &(n, scale, phase, color) in ring_specs.iter() {
+            let rx = max_rx * scale;
+            let ry = max_ry * scale;
+            let verts = draw_polygon(&mut grid, cx, cy, rx, ry, n, phase, darken(color, 6));
+            if n >= 5 {
+                let max_k = (n - 1) / 2;
+                let k = skew_override
+                    .unwrap_or_else(|| 2 + (seed as usize + n) % (max_k - 1).max(1))
+                    .min(max_k)
+                    .max(2);
+                draw_star(&mut grid, &verts, k, lighten(color, 10));
+            } else {
+                let twin_phase = phase + std::f32::consts::TAU / (2 * n) as f32;
+                draw_polygon(&mut grid, cx, cy, rx, ry, n, twin_phase, darken(color, 14));
+            }
+            for (i, &(vx, vy)) in verts.iter().enumerate() {
+                draw_micro_shape(&mut grid, vx, vy, i + n + (seed as usize % 5), color);
+            }
+            all_verts.push(verts);
+        }
+
+        for r in 1..all_verts.len() {
+            let outer = &all_verts[r];
+            let inner = &all_verts[r - 1];
+            if outer.is_empty() || inner.is_empty() {
+                continue;
+            }
+            let chord_color = match r % 5 {
+                0 => darken(verdigris, 8),
+                1 => darken(rose, 6),
+                2 => darken(ether, 10),
+                3 => darken(gold, 6),
+                _ => darken(chalk, 14),
+            };
+            let offset = (seed as usize + r * 3) % inner.len();
+            let steps = chord_pairs.min(outer.len());
+            for c in 0..steps {
+                let oi = if steps > 0 {
+                    (c * outer.len()) / steps
+                } else {
+                    c
+                };
+                let ii = (oi + offset) % inner.len();
+                let (ox, oy) = outer[oi];
+                let (ix, iy) = inner[ii];
+                draw_line(&mut grid, ox, oy, ix, iy, chord_color);
+            }
+        }
+
+        let core_rx = (max_rx * 0.22).round() as i32;
+        let core_ry = (max_ry * 0.22).round() as i32;
+        for dy in -core_ry..=core_ry {
+            for dx in -core_rx..=core_rx {
+                let metric = (dx as f32 / core_rx.max(1) as f32).powi(2)
+                    + (dy as f32 / core_ry.max(1) as f32).powi(2);
+                if metric <= 1.0 {
+                    blank(&mut grid, cx + dx, cy + dy);
+                }
+            }
+        }
+        draw_arc(
+            &mut grid,
+            cx,
+            cy,
+            max_rx * 0.205,
+            max_ry * 0.205,
+            base_phase,
+            base_phase + std::f32::consts::TAU,
+            darken(ether, 8),
+            0,
+        );
+        let core_n = 3 + (seed as usize % 4);
+        let core_verts = draw_polygon(
+            &mut grid,
+            cx,
+            cy,
+            max_rx * 0.16,
+            max_ry * 0.16,
+            core_n,
+            base_phase,
+            lighten(gold, 8),
+        );
+        if core_n >= 5 {
+            draw_star(&mut grid, &core_verts, 2, lighten(ether, 12));
+        } else {
+            let twin_phase = base_phase + std::f32::consts::TAU / (2 * core_n) as f32;
+            draw_polygon(
+                &mut grid,
+                cx,
+                cy,
+                max_rx * 0.16,
+                max_ry * 0.16,
+                core_n,
+                twin_phase,
+                darken(ether, 10),
+            );
+        }
+        let core_ring_n = 6;
+        for i in 0..core_ring_n {
+            let a = base_phase + i as f32 * std::f32::consts::TAU / core_ring_n as f32;
+            let p = point_on(cx, cy, max_rx * 0.10, max_ry * 0.10, a);
+            put(
+                &mut grid,
+                p.0,
+                p.1,
+                ['△', '◇', '○', '□', '▽', '⊕'][i],
+                lighten(chalk, 8),
+            );
+        }
+        put(&mut grid, cx, cy, '⊙', lighten(rose, 18));
+    } else if mode == "spiro" {
+        // spiro [curves=0] [density=0] -- layered hypotrochoid / harmonograph curves
+        let curve_arg: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0);
+        let curve_count = if curve_arg == 0 {
+            2 + (seed as usize % 3)
+        } else {
+            curve_arg.clamp(1, 6)
+        };
+        let density_arg: usize = args.get(5).and_then(|s| s.parse().ok()).unwrap_or(0);
+        let density = if density_arg == 0 {
+            1400 + (seed as usize % 800)
+        } else {
+            density_arg.clamp(400, 6000)
+        };
+
+        let bg = darken(palette[0], 14);
+        let chalk = lighten(palette[4], 12);
+        let gold = lighten(palette[1], 30);
+        let cyan = shift_hue(lighten(palette[3], 34), 35.0);
+        let magenta = shift_hue(lighten(palette[2], 40), -42.0);
+        let lime = shift_hue(lighten(palette[1], 30), 90.0);
+        let curve_colors = [chalk, gold, cyan, magenta, lime, chalk];
+
+        for y in 0..height {
+            for x in 0..width {
+                grid[y][x] = Cell::new(' ', bg);
+            }
+        }
+        for _ in 0..(width * height / 90) {
+            let x = rng.random_range(0..width);
+            let y = rng.random_range(0..height);
+            grid[y][x] = Cell::new('·', darken(chalk, 60));
+        }
+
+        let put = |grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color| {
+            if x >= 0 && y >= 0 && (x as usize) < width && (y as usize) < height {
+                grid[y as usize][x as usize] = Cell::new(ch, fg);
+            }
+        };
+        let curve_char = |prev: (i32, i32), here: (i32, i32), next: (i32, i32)| {
+            let dx1 = (here.0 - prev.0).signum();
+            let dy1 = (here.1 - prev.1).signum();
+            let dx2 = (next.0 - here.0).signum();
+            let dy2 = (next.1 - here.1).signum();
+            if (dx1, dy1) == (dx2, dy2) {
+                if dy1 == 0 {
+                    '─'
+                } else if dx1 == 0 {
+                    '│'
+                } else if dx1 == dy1 {
+                    '╲'
+                } else {
+                    '╱'
+                }
+            } else if dy1 == 0 && dx2 == 0 {
+                match (dx1, dy2) {
+                    (1, 1) => '╮',
+                    (1, -1) => '╯',
+                    (-1, 1) => '╭',
+                    (-1, -1) => '╰',
+                    _ => '╮',
+                }
+            } else if dx1 == 0 && dy2 == 0 {
+                match (dy1, dx2) {
+                    (1, 1) => '╰',
+                    (1, -1) => '╯',
+                    (-1, 1) => '╭',
+                    (-1, -1) => '╮',
+                    _ => '╰',
+                }
+            } else if dx1 != dx2 && dy1 != dy2 {
+                match (dx1, dy1, dx2, dy2) {
+                    (1, 1, 1, -1) | (-1, -1, -1, 1) => '╯',
+                    (1, -1, 1, 1) | (-1, 1, -1, -1) => '╮',
+                    (1, 1, -1, 1) | (-1, -1, 1, -1) => '╰',
+                    (1, -1, -1, -1) | (-1, 1, 1, 1) => '╭',
+                    _ => '○',
+                }
+            } else if dx2 == 0 || dx1 == 0 {
+                '│'
+            } else if dy2 == 0 || dy1 == 0 {
+                '─'
+            } else if dx2 == dy2 {
+                '╲'
+            } else {
+                '╱'
+            }
+        };
+
+        let cx = width as f32 / 2.0;
+        let cy = height as f32 / 2.0;
+        let scale = ((width as f32 / 2.0) - 2.0).min(height as f32 - 2.0).max(8.0);
+
+        for ci in 0..curve_count {
+            let r_big = scale * rng.random_range(0.55..0.95);
+            let k = rng.random_range(2..9) as f32;
+            let r_small = r_big / k;
+            let d = r_small * rng.random_range(0.5..1.8);
+            let rot = rng.random_range(0.0..std::f32::consts::TAU);
+            let turns = (k as i32 + 1) * 2;
+            let samples = density;
+            let color = curve_colors[ci % curve_colors.len()];
+            let accent = lighten(color, 14);
+            let cosr = rot.cos();
+            let sinr = rot.sin();
+
+            let mut pts: Vec<(i32, i32)> = Vec::with_capacity(samples);
+            for i in 0..=samples {
+                let t = i as f32 / samples as f32 * std::f32::consts::TAU * turns as f32;
+                let xg = (r_big - r_small) * t.cos()
+                    + d * ((r_big - r_small) / r_small * t).cos();
+                let yg = (r_big - r_small) * t.sin()
+                    - d * ((r_big - r_small) / r_small * t).sin();
+                let xr = xg * cosr - yg * sinr;
+                let yr = xg * sinr + yg * cosr;
+                let px = (cx + xr).round() as i32;
+                let py = (cy + yr * 0.5).round() as i32;
+                if pts.last().copied() != Some((px, py)) {
+                    pts.push((px, py));
+                }
+            }
+            for i in 1..pts.len().saturating_sub(1) {
+                let ch = curve_char(pts[i - 1], pts[i], pts[i + 1]);
+                let col = if (i + ci * 5) % 11 == 0 {
+                    accent
+                } else {
+                    color
+                };
+                put(&mut grid, pts[i].0, pts[i].1, ch, col);
+            }
+        }
+        put(&mut grid, cx.round() as i32, cy.round() as i32, '⊙', lighten(chalk, 10));
+    } else if mode == "spiro-tile" {
+        // spiro-tile [cols=0] [rows=0] [vary=0] -- tessellated grid of small spiro motifs
+        let col_arg: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0);
+        let cols = if col_arg == 0 {
+            4 + (seed as usize % 3)
+        } else {
+            col_arg.clamp(2, 10)
+        };
+        let row_arg: usize = args.get(5).and_then(|s| s.parse().ok()).unwrap_or(0);
+        let rows = if row_arg == 0 {
+            2 + (seed as usize % 3)
+        } else {
+            row_arg.clamp(2, 8)
+        };
+        let vary_arg: usize = args.get(6).and_then(|s| s.parse().ok()).unwrap_or(0);
+        let vary = vary_arg != 0 || (seed as usize % 4 == 0);
+
+        let bg = darken(palette[0], 13);
+        let chalk = lighten(palette[4], 12);
+        let gold = lighten(palette[1], 28);
+        let cyan = shift_hue(lighten(palette[3], 32), 35.0);
+        let rose = shift_hue(lighten(palette[2], 38), -40.0);
+        let tile_colors = [chalk, gold, cyan, rose, chalk];
+        let border_color = darken(chalk, 50);
+
+        let base_k = (3 + seed as usize % 5) as f32;
+        let base_dp = 0.72 + (seed as f32 * 0.1).fract() * 0.6;
+        let turns_base = (base_k as i32 + 1) * 2;
+
+        for y in 0..height {
+            for x in 0..width {
+                grid[y][x] = Cell::new(' ', bg);
+            }
+        }
+
+        let put = |grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color| {
+            if x >= 0 && y >= 0 && (x as usize) < width && (y as usize) < height {
+                grid[y as usize][x as usize] = Cell::new(ch, fg);
+            }
+        };
+        let curve_char = |prev: (i32, i32), here: (i32, i32), next: (i32, i32)| {
+            let dx1 = (here.0 - prev.0).signum();
+            let dy1 = (here.1 - prev.1).signum();
+            let dx2 = (next.0 - here.0).signum();
+            let dy2 = (next.1 - here.1).signum();
+            if (dx1, dy1) == (dx2, dy2) {
+                if dy1 == 0 {
+                    '─'
+                } else if dx1 == 0 {
+                    '│'
+                } else if dx1 == dy1 {
+                    '╲'
+                } else {
+                    '╱'
+                }
+            } else if dy1 == 0 && dx2 == 0 {
+                match (dx1, dy2) {
+                    (1, 1) => '╮',
+                    (1, -1) => '╯',
+                    (-1, 1) => '╭',
+                    (-1, -1) => '╰',
+                    _ => '╮',
+                }
+            } else if dx1 == 0 && dy2 == 0 {
+                match (dy1, dx2) {
+                    (1, 1) => '╰',
+                    (1, -1) => '╯',
+                    (-1, 1) => '╭',
+                    (-1, -1) => '╮',
+                    _ => '╰',
+                }
+            } else if dx1 != dx2 && dy1 != dy2 {
+                match (dx1, dy1, dx2, dy2) {
+                    (1, 1, 1, -1) | (-1, -1, -1, 1) => '╯',
+                    (1, -1, 1, 1) | (-1, 1, -1, -1) => '╮',
+                    (1, 1, -1, 1) | (-1, -1, 1, -1) => '╰',
+                    (1, -1, -1, -1) | (-1, 1, 1, 1) => '╭',
+                    _ => '○',
+                }
+            } else if dx2 == 0 || dx1 == 0 {
+                '│'
+            } else if dy2 == 0 || dy1 == 0 {
+                '─'
+            } else if dx2 == dy2 {
+                '╲'
+            } else {
+                '╱'
+            }
+        };
+        let draw_box = |grid: &mut Grid, x0: i32, y0: i32, x1: i32, y1: i32, fg: Color| {
+            for x in x0 + 1..x1 {
+                put(grid, x, y0, '─', fg);
+                put(grid, x, y1, '─', fg);
+            }
+            for y in y0 + 1..y1 {
+                put(grid, x0, y, '│', fg);
+                put(grid, x1, y, '│', fg);
+            }
+            put(grid, x0, y0, '╭', fg);
+            put(grid, x1, y0, '╮', fg);
+            put(grid, x0, y1, '╰', fg);
+            put(grid, x1, y1, '╯', fg);
+        };
+
+        let tile_w = width / cols;
+        let tile_h = height / rows;
+
+        for ry in 0..rows {
+            for rx in 0..cols {
+                let x0 = (rx * tile_w) as i32;
+                let y0 = (ry * tile_h) as i32;
+                let x1 = (((rx + 1) * tile_w).min(width - 1)) as i32;
+                let y1 = (((ry + 1) * tile_h).min(height - 1)) as i32;
+                draw_box(&mut grid, x0, y0, x1, y1, border_color);
+
+                let tx = ((rx * tile_w + tile_w / 2) as f32).min(width as f32 - 1.5);
+                let ty = ((ry * tile_h + tile_h / 2) as f32).min(height as f32 - 1.0);
+                let hw = (tile_w as f32 / 2.0 - 1.5).max(2.0);
+                let hh = (tile_h as f32 / 2.0 - 1.0).max(1.5);
+                let scale = hw.min(hh * 2.0).max(2.0);
+
+                let (k, dp, rot, flip) = if vary {
+                    let k = (base_k + ((rx as i32 - ry as i32) as f32 * 0.16)).max(2.0);
+                    let dp = base_dp + (rx as f32 * 0.05).sin() * 0.30 + (ry as f32 * 0.07).cos() * 0.20;
+                    let rot = (rx as f32 + ry as f32 * 1.3) * 0.42;
+                    let flip = (rx + ry) % 2 == 0;
+                    (k, dp, rot, flip)
+                } else {
+                    (base_k, base_dp, 0.0_f32, (rx + ry) % 2 == 0)
+                };
+
+                let color = tile_colors[(rx + ry * 2) % tile_colors.len()];
+                let accent = shift_hue(color, 55.0);
+
+                for ci in 0..2usize {
+                    let r_big = scale * (0.88 - ci as f32 * 0.18);
+                    let r_small = r_big / k;
+                    let d = r_small * dp * if ci == 0 { 1.0 } else { 1.45 };
+                    let cosr = rot.cos();
+                    let sinr = rot.sin();
+                    let turns = turns_base + ci as i32;
+                    let samples = 420;
+                    let mut pts: Vec<(i32, i32)> = Vec::new();
+                    for i in 0..=samples {
+                        let t = i as f32 / samples as f32 * std::f32::consts::TAU * turns as f32;
+                        let xg = (r_big - r_small) * t.cos()
+                            + d * ((r_big - r_small) / r_small * t).cos();
+                        let yg = (r_big - r_small) * t.sin()
+                            - d * ((r_big - r_small) / r_small * t).sin();
+                        let (xg, yg) = if flip { (xg, -yg) } else { (xg, yg) };
+                        let xr = xg * cosr - yg * sinr;
+                        let yr = xg * sinr + yg * cosr;
+                        let px = (tx + xr).round() as i32;
+                        let py = (ty + yr * 0.5).round() as i32;
+                        if pts.last().copied() != Some((px, py)) {
+                            pts.push((px, py));
+                        }
+                    }
+                    let col = if ci == 0 { color } else { darken(accent, 4) };
+                    for i in 1..pts.len().saturating_sub(1) {
+                        let ch = curve_char(pts[i - 1], pts[i], pts[i + 1]);
+                        put(&mut grid, pts[i].0, pts[i].1, ch, col);
+                    }
+                }
+                put(
+                    &mut grid,
+                    tx.round() as i32,
+                    ty.round() as i32,
+                    '·',
+                    darken(color, 26),
+                );
+            }
+        }
+    } else if mode == "weave" {
+        // weave [horiz=0] [vert=0] -- interlaced wavy warp/weft strands
+        let h_arg: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0);
+        let h_count = if h_arg == 0 {
+            3 + (seed as usize % 3)
+        } else {
+            h_arg.clamp(2, 8)
+        };
+        let v_arg: usize = args.get(5).and_then(|s| s.parse().ok()).unwrap_or(0);
+        let v_count = if v_arg == 0 {
+            3 + (seed as usize % 4)
+        } else {
+            v_arg.clamp(2, 8)
+        };
+
+        let bg = darken(palette[0], 10);
+        let chalk = lighten(palette[4], 12);
+        let gold = lighten(palette[1], 28);
+        let cyan = shift_hue(lighten(palette[3], 32), 35.0);
+        let rose = shift_hue(lighten(palette[2], 38), -40.0);
+        let lime = shift_hue(lighten(palette[1], 26), 90.0);
+        let h_colors = [chalk, gold, cyan, rose, lime, chalk, gold, cyan];
+        let v_colors = [gold, rose, lime, chalk, cyan, gold, rose, lime];
+
+        for y in 0..height {
+            for x in 0..width {
+                grid[y][x] = Cell::new(' ', bg);
+            }
+        }
+
+        let put = |grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color| {
+            if x >= 0 && y >= 0 && (x as usize) < width && (y as usize) < height {
+                grid[y as usize][x as usize] = Cell::new(ch, fg);
+            }
+        };
+        let curve_char = |prev: (i32, i32), here: (i32, i32), next: (i32, i32)| {
+            let dx1 = (here.0 - prev.0).signum();
+            let dy1 = (here.1 - prev.1).signum();
+            let dx2 = (next.0 - here.0).signum();
+            let dy2 = (next.1 - here.1).signum();
+            if (dx1, dy1) == (dx2, dy2) {
+                if dy1 == 0 {
+                    '─'
+                } else if dx1 == 0 {
+                    '│'
+                } else if dx1 == dy1 {
+                    '╲'
+                } else {
+                    '╱'
+                }
+            } else if dy1 == 0 && dx2 == 0 {
+                match (dx1, dy2) {
+                    (1, 1) => '╮',
+                    (1, -1) => '╯',
+                    (-1, 1) => '╭',
+                    (-1, -1) => '╰',
+                    _ => '╮',
+                }
+            } else if dx1 == 0 && dy2 == 0 {
+                match (dy1, dx2) {
+                    (1, 1) => '╰',
+                    (1, -1) => '╯',
+                    (-1, 1) => '╭',
+                    (-1, -1) => '╮',
+                    _ => '╰',
+                }
+            } else if dx2 == 0 || dx1 == 0 {
+                '│'
+            } else if dy2 == 0 || dy1 == 0 {
+                '─'
+            } else {
+                '┼'
+            }
+        };
+
+        let mut h_spec: Vec<(f32, f32, f32, f32, Color)> = Vec::new();
+        let mut v_spec: Vec<(f32, f32, f32, f32, Color)> = Vec::new();
+        for i in 0..h_count {
+            let base = (i as f32 + 0.5) * (height as f32 / h_count as f32);
+            let amp = (height as f32 / (h_count as f32 + 1.0)) * rng.random_range(0.35..0.7);
+            let freq = rng.random_range(0.06..0.16);
+            let phase = rng.random_range(0.0..std::f32::consts::TAU);
+            h_spec.push((base, amp, freq, phase, h_colors[i % h_colors.len()]));
+        }
+        for i in 0..v_count {
+            let base = (i as f32 + 0.5) * (width as f32 / v_count as f32);
+            let amp = (width as f32 / (v_count as f32 + 1.0)) * rng.random_range(0.30..0.62);
+            let freq = rng.random_range(0.06..0.16);
+            let phase = rng.random_range(0.0..std::f32::consts::TAU);
+            v_spec.push((base, amp, freq, phase, v_colors[i % v_colors.len()]));
+        }
+
+        let y_h = |i: usize, x: i32| -> i32 {
+            let (base, amp, freq, phase, _) = h_spec[i];
+            (base + amp * (freq * x as f32 + phase).sin()).round() as i32
+        };
+        let x_v = |i: usize, y: i32| -> i32 {
+            let (base, amp, freq, phase, _) = v_spec[i];
+            (base + amp * (freq * y as f32 + phase).sin()).round() as i32
+        };
+
+        // occupancy: which strand ids pass through a cell
+        let mut occ_h: Vec<Vec<Vec<u8>>> = vec![vec![Vec::new(); width]; height];
+        let mut occ_v: Vec<Vec<Vec<u8>>> = vec![vec![Vec::new(); width]; height];
+        for i in 0..h_count {
+            for x in 0..width {
+                let y = y_h(i, x as i32);
+                if y >= 0 && (y as usize) < height {
+                    occ_h[y as usize][x].push(i as u8);
+                }
+            }
+        }
+        for i in 0..v_count {
+            for y in 0..height {
+                let x = x_v(i, y as i32);
+                if x >= 0 && (x as usize) < width {
+                    occ_v[y][x as usize].push(i as u8);
+                }
+            }
+        }
+
+        // draw horizontal strands
+        for i in 0..h_count {
+            let color = h_spec[i].4;
+            let mut prev = (0, y_h(i, 0));
+            let mut here = prev;
+            for x in 0..width {
+                let next = ((x + 1) as i32, y_h(i, (x + 1) as i32));
+                if x > 0 {
+                    prev = ((x - 1) as i32, y_h(i, (x - 1) as i32));
+                }
+                here = (x as i32, y_h(i, x as i32));
+                let y = here.1;
+                if y < 0 || (y as usize) >= height {
+                    continue;
+                }
+                // over/under: skip if a vertical dominates here
+                let vs = &occ_v[y as usize][x];
+                let mut under = false;
+                if !vs.is_empty() {
+                    let v0 = vs[0] as usize;
+                    if (i + v0) % 2 != 0 {
+                        under = true;
+                    }
+                }
+                if !under {
+                    let ch = if x == 0 || x == width - 1 {
+                        '─'
+                    } else {
+                        curve_char(prev, here, next)
+                    };
+                    put(&mut grid, here.0, here.1, ch, color);
+                }
+            }
+        }
+        // draw vertical strands
+        for i in 0..v_count {
+            let color = v_spec[i].4;
+            let mut prev = (x_v(i, 0), 0);
+            let mut here = prev;
+            for y in 0..height {
+                let next = (x_v(i, (y + 1) as i32), (y + 1) as i32);
+                if y > 0 {
+                    prev = (x_v(i, (y - 1) as i32), (y - 1) as i32);
+                }
+                here = (x_v(i, y as i32), y as i32);
+                let x = here.0;
+                if x < 0 || (x as usize) >= width {
+                    continue;
+                }
+                let hs = &occ_h[y][x as usize];
+                let mut under = false;
+                if !hs.is_empty() {
+                    let h0 = hs[0] as usize;
+                    if (h0 + i) % 2 == 0 {
+                        under = true;
+                    }
+                }
+                if !under {
+                    let ch = if y == 0 || y == height - 1 {
+                        '│'
+                    } else {
+                        curve_char(prev, here, next)
+                    };
+                    put(&mut grid, here.0, here.1, ch, color);
+                }
+            }
+        }
+    } else if mode == "gears" {
+        // gears [count=0] [teeth=0] -- interlocking clockwork mechanism
+        let count_arg: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0);
+        let gear_count = if count_arg == 0 {
+            2 + (seed as usize % 3)
+        } else {
+            count_arg.clamp(2, 4)
+        };
+        let teeth_arg: usize = args.get(5).and_then(|s| s.parse().ok()).unwrap_or(0);
+        let base_teeth = if teeth_arg == 0 {
+            8 + (seed as usize % 9)
+        } else {
+            teeth_arg.clamp(6, 24)
+        };
+
+        let bg = darken(palette[0], 12);
+        let chalk = lighten(palette[4], 14);
+        let brass = lighten(palette[1], 30);
+        let steel = lighten(palette[3], 28);
+        let copper = shift_hue(lighten(palette[2], 36), -22.0);
+        let patina = shift_hue(lighten(palette[1], 24), 92.0);
+        let gear_colors = [chalk, brass, steel, copper, patina, brass];
+        let hush = darken(palette[2], 66);
+
+        for y in 0..height {
+            for x in 0..width {
+                let n = (x * 17 + y * 23 + seed as usize * 7) % 149;
+                let ch = if n == 0 { '·' } else { ' ' };
+                grid[y][x] = if ch == ' ' {
+                    Cell::new(' ', bg)
+                } else {
+                    Cell::new(ch, hush)
+                };
+            }
+        }
+
+        let put = |grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color| {
+            if x >= 0 && y >= 0 && (x as usize) < width && (y as usize) < height {
+                grid[y as usize][x as usize] = Cell::new(ch, fg);
+            }
+        };
+        let point_on = |cx: i32, cy: i32, rx: f32, ry: f32, angle: f32| {
+            (
+                cx + (angle.cos() * rx).round() as i32,
+                cy + (angle.sin() * ry).round() as i32,
+            )
+        };
+        let stroke_char = |x0: i32, y0: i32, x1: i32, y1: i32| {
+            let dx = x1 - x0;
+            let dy = y1 - y0;
+            if dx.abs() > dy.abs() * 2 {
+                '─'
+            } else if dy.abs() > dx.abs() * 2 {
+                '│'
+            } else if dx.signum() == dy.signum() {
+                '╲'
+            } else {
+                '╱'
+            }
+        };
+        let draw_line = |grid: &mut Grid,
+                         mut x0: i32,
+                         mut y0: i32,
+                         x1: i32,
+                         y1: i32,
+                         fg: Color| {
+            let ch = stroke_char(x0, y0, x1, y1);
+            let dx = (x1 - x0).abs();
+            let sx = if x0 < x1 { 1 } else { -1 };
+            let dy = -(y1 - y0).abs();
+            let sy = if y0 < y1 { 1 } else { -1 };
+            let mut err = dx + dy;
+            loop {
+                put(grid, x0, y0, ch, fg);
+                if x0 == x1 && y0 == y1 {
+                    break;
+                }
+                let e2 = 2 * err;
+                if e2 >= dy {
+                    err += dy;
+                    x0 += sx;
+                }
+                if e2 <= dx {
+                    err += dx;
+                    y0 += sy;
+                }
+            }
+        };
+        let curve_char = |prev: (i32, i32), here: (i32, i32), next: (i32, i32)| {
+            let dx1 = (here.0 - prev.0).signum();
+            let dy1 = (here.1 - prev.1).signum();
+            let dx2 = (next.0 - here.0).signum();
+            let dy2 = (next.1 - here.1).signum();
+            if (dx1, dy1) == (dx2, dy2) {
+                if dy1 == 0 {
+                    '─'
+                } else if dx1 == 0 {
+                    '│'
+                } else if dx1 == dy1 {
+                    '╲'
+                } else {
+                    '╱'
+                }
+            } else if dy1 == 0 && dx2 == 0 {
+                match (dx1, dy2) {
+                    (1, 1) => '╮',
+                    (1, -1) => '╯',
+                    (-1, 1) => '╭',
+                    (-1, -1) => '╰',
+                    _ => '╮',
+                }
+            } else if dx1 == 0 && dy2 == 0 {
+                match (dy1, dx2) {
+                    (1, 1) => '╰',
+                    (1, -1) => '╯',
+                    (-1, 1) => '╭',
+                    (-1, -1) => '╮',
+                    _ => '╰',
+                }
+            } else if dx2 == 0 || dx1 == 0 {
+                '│'
+            } else if dy2 == 0 || dy1 == 0 {
+                '─'
+            } else if dx2 == dy2 {
+                '╲'
+            } else {
+                '╱'
+            }
+        };
+        let draw_arc = |grid: &mut Grid,
+                        cx: i32,
+                        cy: i32,
+                        rx: f32,
+                        ry: f32,
+                        start: f32,
+                        end: f32,
+                        fg: Color| {
+            let span = (end - start).abs().max(0.05);
+            let samples = ((rx + ry) * span * 3.8).max(18.0) as usize;
+            let mut pts: Vec<(i32, i32)> = Vec::new();
+            for i in 0..=samples {
+                let a = start + (end - start) * i as f32 / samples as f32;
+                let p = point_on(cx, cy, rx, ry, a);
+                if pts.last().copied() != Some(p) {
+                    pts.push(p);
+                }
+            }
+            if pts.len() > 2 {
+                for p in 1..pts.len() - 1 {
+                    let ch = curve_char(pts[p - 1], pts[p], pts[p + 1]);
+                    put(grid, pts[p].0, pts[p].1, ch, fg);
+                }
+            }
+        };
+        let draw_gear = |grid: &mut Grid,
+                         cx: i32,
+                         cy: i32,
+                         r: i32,
+                         teeth: usize,
+                         phase: f32,
+                         fg: Color,
+                         accent: Color| {
+            let rf = r as f32;
+            let rx = rf;
+            let ry = rf * 0.5;
+            // teeth: radial bars from rim to tip
+            for i in 0..teeth {
+                let a = phase + i as f32 * std::f32::consts::TAU / teeth as f32;
+                let inner = point_on(cx, cy, rx * 0.92, ry * 0.92, a);
+                let outer = point_on(cx, cy, rx + 1.4, ry + 0.7, a);
+                draw_line(grid, inner.0, inner.1, outer.0, outer.1, accent);
+                let tip = point_on(cx, cy, rx + 1.4, ry + 0.7, a);
+                put(grid, tip.0, tip.1, '◆', lighten(accent, 10));
+            }
+            // rim
+            draw_arc(grid, cx, cy, rx, ry, 0.0, std::f32::consts::TAU, fg);
+            draw_arc(grid, cx, cy, rx * 0.82, ry * 0.82, 0.0, std::f32::consts::TAU, darken(fg, 8));
+            // spokes
+            let spokes = (teeth / 2).clamp(3, 6);
+            for s in 0..spokes {
+                let a = phase + s as f32 * std::f32::consts::TAU / spokes as f32;
+                let p_in = point_on(cx, cy, rx * 0.30, ry * 0.30, a);
+                let p_out = point_on(cx, cy, rx * 0.80, ry * 0.80, a);
+                draw_line(grid, p_in.0, p_in.1, p_out.0, p_out.1, darken(fg, 6));
+                put(grid, p_out.0, p_out.1, '○', darken(accent, 6));
+            }
+            // hub
+            draw_arc(grid, cx, cy, rx * 0.30, ry * 0.30, 0.0, std::f32::consts::TAU, accent);
+            put(grid, cx, cy, '⊙', lighten(accent, 14));
+        };
+
+        // layout: place gears, each tangent to an existing one
+        let cx0 = (width as f32 / 2.0).round() as i32;
+        let cy0 = (height as f32 / 2.0).round() as i32;
+        let r0 = (width.min(height * 2) as f32 / 7.0).round() as i32;
+        let mut placed: Vec<(i32, i32, i32, usize, f32, Color)> = Vec::new();
+        placed.push((
+            cx0,
+            cy0,
+            r0,
+            base_teeth,
+            rng.random_range(0.0..std::f32::consts::TAU),
+            gear_colors[0],
+        ));
+        let mut attempts = 0;
+        while placed.len() < gear_count && attempts < 60 {
+            attempts += 1;
+            let anchor = placed[rng.random_range(0..placed.len())];
+            let (ax, ay, ar, _, _, _) = anchor;
+            let new_r = ((ar as f32) * rng.random_range(0.6..1.1))
+                .clamp(4.0, (width.min(height * 2) as f32 / 5.0));
+            let new_ri = new_r.round() as i32;
+            let ang = rng.random_range(0.0..std::f32::consts::TAU);
+            let dist = (ar + new_ri) as f32;
+            let nx = ax + (dist * ang.cos()).round() as i32;
+            let ny = ay + (dist * ang.sin() * 0.5).round() as i32;
+            let margin = new_ri + 2;
+            if nx < margin
+                || ny < margin / 2
+                || nx >= width as i32 - margin
+                || ny >= height as i32 - margin / 2
+            {
+                continue;
+            }
+            // reject overlap
+            let mut overlap = false;
+            for (ox, oy, or_, _, _, _) in &placed {
+                let dx = nx - ox;
+                let dy = (ny - oy) * 2;
+                let d = ((dx * dx + dy * dy) as f32).sqrt();
+                if d < (new_ri + or_) as f32 * 0.92 {
+                    overlap = true;
+                    break;
+                }
+            }
+            if overlap {
+                continue;
+            }
+            let teeth = (base_teeth as f32 * new_r / r0 as f32)
+                .round()
+                .max(6.0) as usize;
+            // mesh tooth phase: half-tooth offset relative to anchor
+            let anchor_teeth = anchor.3;
+            let anchor_phase = anchor.4;
+            let mesh_angle = ang + std::f32::consts::PI;
+            let off = std::f32::consts::TAU / anchor_teeth as f32 / 2.0;
+            let phase = mesh_angle
+                + off
+                - (std::f32::consts::TAU / teeth as f32)
+                * ((mesh_angle - anchor_phase) / (std::f32::consts::TAU / teeth as f32)).round();
+            let color = gear_colors[placed.len() % gear_colors.len()];
+            placed.push((nx, ny, new_ri, teeth, phase, color));
+        }
+
+        for &(_, _, _, _, _, color) in &placed {
+            // shadow lines: none; gears drawn next
+        }
+        for &(gx, gy, gr, gteeth, gphase, color) in &placed {
+            draw_gear(
+                &mut grid,
+                gx,
+                gy,
+                gr,
+                gteeth,
+                gphase,
+                darken(color, 6),
+                lighten(color, 12),
+            );
+        }
+    } else if mode == "kaleido" {
+        // kaleido [folds=0] [strokes=0] [mirror=0] -- N-fold symmetric mandala
+        let fold_arg: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0);
+        let folds = if fold_arg == 0 {
+            [6, 8, 12, 5, 7][(seed as usize) % 5]
+        } else {
+            fold_arg.clamp(3, 16)
+        };
+        let stroke_arg: usize = args.get(5).and_then(|s| s.parse().ok()).unwrap_or(0);
+        let stroke_count = if stroke_arg == 0 {
+            8 + (seed as usize % 7)
+        } else {
+            stroke_arg.clamp(3, 24)
+        };
+        let mirror_arg: usize = args.get(6).and_then(|s| s.parse().ok()).unwrap_or(0);
+        let mirror = mirror_arg != 0 || (seed as usize % 3 == 0);
+
+        let bg = darken(palette[0], 14);
+        let chalk = lighten(palette[4], 12);
+        let gold = lighten(palette[1], 30);
+        let cyan = shift_hue(lighten(palette[3], 34), 35.0);
+        let magenta = shift_hue(lighten(palette[2], 40), -42.0);
+        let lime = shift_hue(lighten(palette[1], 28), 90.0);
+        let violet = shift_hue(lighten(palette[3], 30), 150.0);
+        let stroke_colors = [chalk, gold, cyan, magenta, lime, violet, chalk, gold];
+
+        for y in 0..height {
+            for x in 0..width {
+                grid[y][x] = Cell::new(' ', bg);
+            }
+        }
+        for _ in 0..(width * height / 120) {
+            let x = rng.random_range(0..width);
+            let y = rng.random_range(0..height);
+            grid[y][x] = Cell::new('·', darken(chalk, 62));
+        }
+
+        let put = |grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color| {
+            if x >= 0 && y >= 0 && (x as usize) < width && (y as usize) < height {
+                grid[y as usize][x as usize] = Cell::new(ch, fg);
+            }
+        };
+        let stroke_char = |x0: i32, y0: i32, x1: i32, y1: i32| {
+            let dx = x1 - x0;
+            let dy = y1 - y0;
+            if dx.abs() > dy.abs() * 2 {
+                '─'
+            } else if dy.abs() > dx.abs() * 2 {
+                '│'
+            } else if dx.signum() == dy.signum() {
+                '╲'
+            } else {
+                '╱'
+            }
+        };
+        let draw_line = |grid: &mut Grid,
+                         mut x0: i32,
+                         mut y0: i32,
+                         x1: i32,
+                         y1: i32,
+                         fg: Color| {
+            let ch = stroke_char(x0, y0, x1, y1);
+            let dx = (x1 - x0).abs();
+            let sx = if x0 < x1 { 1 } else { -1 };
+            let dy = -(y1 - y0).abs();
+            let sy = if y0 < y1 { 1 } else { -1 };
+            let mut err = dx + dy;
+            loop {
+                put(grid, x0, y0, ch, fg);
+                if x0 == x1 && y0 == y1 {
+                    break;
+                }
+                let e2 = 2 * err;
+                if e2 >= dy {
+                    err += dy;
+                    x0 += sx;
+                }
+                if e2 <= dx {
+                    err += dx;
+                    y0 += sy;
+                }
+            }
+        };
+        let curve_char = |prev: (i32, i32), here: (i32, i32), next: (i32, i32)| {
+            let dx1 = (here.0 - prev.0).signum();
+            let dy1 = (here.1 - prev.1).signum();
+            let dx2 = (next.0 - here.0).signum();
+            let dy2 = (next.1 - here.1).signum();
+            if (dx1, dy1) == (dx2, dy2) {
+                if dy1 == 0 {
+                    '─'
+                } else if dx1 == 0 {
+                    '│'
+                } else if dx1 == dy1 {
+                    '╲'
+                } else {
+                    '╱'
+                }
+            } else if dy1 == 0 && dx2 == 0 {
+                match (dx1, dy2) {
+                    (1, 1) => '╮',
+                    (1, -1) => '╯',
+                    (-1, 1) => '╭',
+                    (-1, -1) => '╰',
+                    _ => '╮',
+                }
+            } else if dx1 == 0 && dy2 == 0 {
+                match (dy1, dx2) {
+                    (1, 1) => '╰',
+                    (1, -1) => '╯',
+                    (-1, 1) => '╭',
+                    (-1, -1) => '╮',
+                    _ => '╰',
+                }
+            } else if dx2 == 0 || dx1 == 0 {
+                '│'
+            } else if dy2 == 0 || dy1 == 0 {
+                '─'
+            } else if dx2 == dy2 {
+                '╲'
+            } else {
+                '╱'
+            }
+        };
+
+        let cx = width as f32 / 2.0;
+        let cy = height as f32 / 2.0;
+        let max_r = (width.min(height * 2) as f32 / 2.0 - 2.0).max(8.0);
+        let wedge = std::f32::consts::TAU / folds as f32;
+
+        // generate strokes within wedge [0, wedge] as (kind, p1, p2, r, a0, a1, color_idx, ch)
+        enum SK {
+            Seg((f32, f32), (f32, f32)),
+            Arc((f32, f32), f32, f32, f32),
+            Dot((f32, f32)),
+        }
+        let polar = |rad: f32, ang: f32| -> (f32, f32) {
+            (rad * ang.cos(), rad * ang.sin() * 0.5)
+        };
+        let mut strokes: Vec<(SK, usize, char)> = Vec::new();
+        for s in 0..stroke_count {
+            let color_idx = s % stroke_colors.len();
+            let kind = seed as usize + s;
+            match kind % 4 {
+                0 => {
+                    let r1 = rng.random_range(0.15..0.95) * max_r;
+                    let r2 = rng.random_range(0.15..0.95) * max_r;
+                    let a1 = rng.random_range(0.0..wedge);
+                    let a2 = rng.random_range(0.0..wedge);
+                    strokes.push((SK::Seg(polar(r1, a1), polar(r2, a2)), color_idx, '─'));
+                }
+                1 => {
+                    let rc = rng.random_range(0.2..0.85) * max_r;
+                    let ac = rng.random_range(0.05..wedge - 0.05);
+                    let ar = rng.random_range(0.06..0.22) * max_r;
+                    let a0 = rng.random_range(0.0..std::f32::consts::TAU);
+                    let a1 = a0 + rng.random_range(0.6..2.4);
+                    let center = polar(rc, ac);
+                    strokes.push((SK::Arc(center, ar, a0, a1), color_idx, '○'));
+                }
+                2 => {
+                    let r1 = rng.random_range(0.2..0.9) * max_r;
+                    let a1 = rng.random_range(0.0..wedge);
+                    let glyphs = ['◇', '△', '▽', '○', '✦', '⊕', '⊙', '⌬', '□'];
+                    strokes.push((
+                        SK::Dot(polar(r1, a1)),
+                        color_idx,
+                        glyphs[(s + seed as usize) % glyphs.len()],
+                    ));
+                }
+                _ => {
+                    // short chord cluster: two segments sharing an endpoint
+                    let r0 = rng.random_range(0.3..0.9) * max_r;
+                    let a0 = rng.random_range(0.0..wedge);
+                    let pivot = polar(r0, a0);
+                    let r1 = rng.random_range(0.15..0.95) * max_r;
+                    let a1 = rng.random_range(0.0..wedge);
+                    let r2 = rng.random_range(0.15..0.95) * max_r;
+                    let a2 = rng.random_range(0.0..wedge);
+                    strokes.push((SK::Seg(pivot, polar(r1, a1)), color_idx, '─'));
+                    strokes.push((SK::Seg(pivot, polar(r2, a2)), color_idx, '─'));
+                }
+            }
+        }
+
+        let rotate = |p: (f32, f32), ang: f32| -> (f32, f32) {
+            (p.0 * ang.cos() - p.1 * ang.sin(), p.0 * ang.sin() + p.1 * ang.cos())
+        };
+        let _ = rotate;
+
+        let to_screen = |lp: (f32, f32), ox: f32, oy: f32| -> (i32, i32) {
+            ((ox + lp.0).round() as i32, (oy + lp.1).round() as i32)
+        };
+
+        let mut pass = |sign: f32| {
+            for k in 0..folds {
+                let ang = k as f32 * wedge;
+                let cosr = ang.cos();
+                let sinr = ang.sin();
+                let rot = |p: (f32, f32)| -> (f32, f32) {
+                    // p.y already aspect-compressed (×0.5); rotate in that space
+                    (p.0 * cosr - p.1 * sinr, p.0 * sinr + p.1 * cosr)
+                };
+                let rot_m = |p: (f32, f32)| -> (f32, f32) {
+                    let q = (p.0, sign * p.1);
+                    (q.0 * cosr - q.1 * sinr, q.0 * sinr + q.1 * cosr)
+                };
+                for (sk, cidx, glyph) in &strokes {
+                    let color = stroke_colors[*cidx % stroke_colors.len()];
+                    match sk {
+                        SK::Seg(a, b) => {
+                            let (a2, b2) = if sign != 0.0 {
+                                (rot_m(*a), rot_m(*b))
+                            } else {
+                                (rot(*a), rot(*b))
+                            };
+                            let pa = to_screen(a2, cx, cy);
+                            let pb = to_screen(b2, cx, cy);
+                            draw_line(&mut grid, pa.0, pa.1, pb.0, pb.1, color);
+                        }
+                        SK::Arc(center, r, a0, a1) => {
+                            let c2 = if sign != 0.0 { rot_m(*center) } else { rot(*center) };
+                            let cs = to_screen(c2, cx, cy);
+                            let samples = ((*r + *r) * (*a1 - *a0).abs() * 3.8).max(12.0) as usize;
+                            let mut pts: Vec<(i32, i32)> = Vec::new();
+                            for i in 0..=samples {
+                                let a = *a0 + (*a1 - *a0) * i as f32 / samples as f32;
+                                let lp = (*r * a.cos(), *r * a.sin() * 0.5);
+                                let p = to_screen(lp, cs.0 as f32, cs.1 as f32);
+                                if pts.last().copied() != Some(p) {
+                                    pts.push(p);
+                                }
+                            }
+                            for i in 1..pts.len().saturating_sub(1) {
+                                let ch = curve_char(pts[i - 1], pts[i], pts[i + 1]);
+                                put(&mut grid, pts[i].0, pts[i].1, ch, color);
+                            }
+                        }
+                        SK::Dot(p) => {
+                            let p2 = if sign != 0.0 { rot_m(*p) } else { rot(*p) };
+                            let ps = to_screen(p2, cx, cy);
+                            put(&mut grid, ps.0, ps.1, *glyph, lighten(color, 12));
+                        }
+                    }
+                }
+            }
+        };
+        pass(0.0);
+        if mirror {
+            pass(1.0);
+        }
+        put(&mut grid, cx.round() as i32, cy.round() as i32, '⊙', lighten(chalk, 12));
+    } else if mode == "contour" {
+        // contour [levels=0] [scale=0] -- topographic iso-lines over procedural heightmap
+        let level_arg: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0);
+        let level_count = if level_arg == 0 {
+            6 + (seed as usize % 5)
+        } else {
+            level_arg.clamp(3, 14)
+        };
+        let scale_arg: usize = args.get(5).and_then(|s| s.parse().ok()).unwrap_or(0);
+        let hscale = if scale_arg == 0 {
+            0.16 + (seed as f32 * 0.013).fract() * 0.10
+        } else {
+            (scale_arg as f32 / 100.0).clamp(0.05, 0.5)
+        };
+
+        let bg = darken(palette[0], 8);
+        let deep_c = darken(palette[1], 30);
+        let mid_c = lighten(palette[3], 10);
+        let high_c = lighten(palette[4], 16);
+        let snow = lighten(palette[4], 30);
+        let hush = darken(palette[2], 60);
+
+        for y in 0..height {
+            for x in 0..width {
+                grid[y][x] = Cell::new(' ', bg);
+            }
+        }
+
+        let put = |grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color| {
+            if x >= 0 && y >= 0 && (x as usize) < width && (y as usize) < height {
+                grid[y as usize][x as usize] = Cell::new(ch, fg);
+            }
+        };
+        let stroke_char = |x0: i32, y0: i32, x1: i32, y1: i32| {
+            let dx = x1 - x0;
+            let dy = y1 - y0;
+            if dx.abs() > dy.abs() * 2 {
+                '─'
+            } else if dy.abs() > dx.abs() * 2 {
+                '│'
+            } else if dx.signum() == dy.signum() {
+                '╲'
+            } else {
+                '╱'
+            }
+        };
+        let draw_line = |grid: &mut Grid,
+                         mut x0: i32,
+                         mut y0: i32,
+                         x1: i32,
+                         y1: i32,
+                         fg: Color| {
+            let ch = stroke_char(x0, y0, x1, y1);
+            let dx = (x1 - x0).abs();
+            let sx = if x0 < x1 { 1 } else { -1 };
+            let dy = -(y1 - y0).abs();
+            let sy = if y0 < y1 { 1 } else { -1 };
+            let mut err = dx + dy;
+            loop {
+                put(grid, x0, y0, ch, fg);
+                if x0 == x1 && y0 == y1 {
+                    break;
+                }
+                let e2 = 2 * err;
+                if e2 >= dy {
+                    err += dy;
+                    x0 += sx;
+                }
+                if e2 <= dx {
+                    err += dx;
+                    y0 += sy;
+                }
+            }
+        };
+
+        // heightmap with sines + random gaussian bumps
+        let bump_n = 1 + (seed as usize % 3);
+        let mut bumps: Vec<(f32, f32, f32, f32)> = Vec::new();
+        for _ in 0..bump_n {
+            let bx = rng.random_range(0.1..0.9) * width as f32;
+            let by = rng.random_range(0.1..0.9) * height as f32;
+            let br = rng.random_range(3.0..9.0);
+            let ba = rng.random_range(0.5..1.4) * if rng.random_range(0..2) == 0 { -1.0 } else { 1.0 };
+            bumps.push((bx, by, br, ba));
+        }
+        let hfield = |xf: f32, yf: f32| -> f32 {
+            let mut v = (hscale * xf).sin() * (hscale * 1.1 * yf).cos();
+            v += 0.6 * (hscale * 1.8 * xf + 0.4).sin() * (hscale * 1.3 * yf - 0.2).sin();
+            v += 0.4 * (hscale * 0.7 * xf - 0.1).cos() * (hscale * 2.1 * yf + 0.5).cos();
+            for &(bx, by, br, ba) in &bumps {
+                let dx = xf - bx;
+                let dy = yf - by;
+                v += ba * (-(dx * dx + dy * dy) / (br * br)).exp();
+            }
+            v
+        };
+
+        let cols = width + 1;
+        let rows = height + 1;
+        let mut h = vec![vec![0.0f32; cols]; rows];
+        let mut hmin = f32::INFINITY;
+        let mut hmax = f32::NEG_INFINITY;
+        for yy in 0..rows {
+            for xx in 0..cols {
+                let v = hfield(xx as f32, yy as f32);
+                h[yy][xx] = v;
+                if v < hmin {
+                    hmin = v;
+                }
+                if v > hmax {
+                    hmax = v;
+                }
+            }
+        }
+
+        let level_color = |frac: f32| -> Color {
+            if frac < 0.33 {
+                let t = frac / 0.33;
+                lerp_color(deep_c, mid_c, t)
+            } else if frac < 0.7 {
+                let t = (frac - 0.33) / 0.37;
+                lerp_color(mid_c, high_c, t)
+            } else {
+                let t = (frac - 0.7) / 0.3;
+                lerp_color(high_c, snow, t)
+            }
+        };
+
+        for li in 0..level_count {
+            let frac = (li as f32 + 0.5) / level_count as f32;
+            let level = hmin + (hmax - hmin) * frac;
+            let color = level_color(frac);
+            let major = li % 3 == 0;
+            let line_color = if major { lighten(color, 8) } else { darken(color, 10) };
+
+            for yy in 0..height {
+                for xx in 0..width {
+                    let c00 = h[yy][xx];
+                    let c10 = h[yy][xx + 1];
+                    let c11 = h[yy + 1][xx + 1];
+                    let c01 = h[yy + 1][xx];
+                    let mut code = 0u8;
+                    if c00 > level {
+                        code |= 1;
+                    }
+                    if c10 > level {
+                        code |= 2;
+                    }
+                    if c11 > level {
+                        code |= 4;
+                    }
+                    if c01 > level {
+                        code |= 8;
+                    }
+                    if code == 0 || code == 15 {
+                        continue;
+                    }
+                    let xf = xx as f32;
+                    let yf = yy as f32;
+                    let edge_pt = |e: u8| -> (f32, f32) {
+                        match e {
+                            1 => {
+                                // bottom edge: (xf,yf)-(xf+1,yf)
+                                let t = (level - c00) / (c10 - c00);
+                                (xf + t, yf)
+                            }
+                            2 => {
+                                // right edge: (xf+1,yf)-(xf+1,yf+1)
+                                let t = (level - c10) / (c11 - c10);
+                                (xf + 1.0, yf + t)
+                            }
+                            4 => {
+                                // top edge: (xf,yf+1)-(xf+1,yf+1)
+                                let t = (level - c01) / (c11 - c01);
+                                (xf + t, yf + 1.0)
+                            }
+                            8 => {
+                                // left edge: (xf,yf)-(xf,yf+1)
+                                let t = (level - c00) / (c01 - c00);
+                                (xf, yf + t)
+                            }
+                            _ => (xf, yf),
+                        }
+                    };
+                    let pairs: &[(u8, u8)] = match code {
+                        1 | 14 => &[(8, 1)],
+                        2 | 13 => &[(1, 2)],
+                        3 | 12 => &[(8, 2)],
+                        4 | 11 => &[(2, 4)],
+                        5 => &[(8, 4), (1, 2)],
+                        6 | 9 => &[(1, 4)],
+                        7 | 8 => &[(8, 4)],
+                        10 => &[(8, 1), (2, 4)],
+                        _ => &[],
+                    };
+                    for &(ea, eb) in pairs {
+                        let pa = edge_pt(ea);
+                        let pb = edge_pt(eb);
+                        let ax = pa.0.round() as i32;
+                        let ay = pa.1.round() as i32;
+                        let bx = pb.0.round() as i32;
+                        let by = pb.1.round() as i32;
+                        if major {
+                            draw_line(&mut grid, ax, ay, bx, by, line_color);
+                        } else {
+                            // minor contour: sparse char along the segment midpoint
+                            let mx = ((pa.0 + pb.0) * 0.5).round() as i32;
+                            let my = ((pa.1 + pb.1) * 0.5).round() as i32;
+                            let glyph = if (xx + yy) % 3 == 0 { '·' } else { '∙' };
+                            put(&mut grid, mx, my, glyph, line_color);
+                        }
+                    }
+                }
+            }
+        }
+        // sparse summit markers
+        let _ = hush;
     } else if mode == "world" {
         render_world(&mut grid, width, height, &palette, &mut rng);
     } else if mode == "noise" {
