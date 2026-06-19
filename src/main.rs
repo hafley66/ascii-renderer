@@ -10253,474 +10253,9 @@ fn main() {
     } else if mode == "gears" {
         grid = draw_gears(grid, width, height, seed, palette, rng, t_anim, &args);
     } else if mode == "kaleido" {
-        // kaleido [folds=0] [strokes=0] [mirror=0] -- N-fold symmetric mandala
-        let fold_arg: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0);
-        let folds = if fold_arg == 0 {
-            [6, 8, 12, 5, 7][(seed as usize) % 5]
-        } else {
-            fold_arg.clamp(3, 16)
-        };
-        let stroke_arg: usize = args.get(5).and_then(|s| s.parse().ok()).unwrap_or(0);
-        let stroke_count = if stroke_arg == 0 {
-            8 + (seed as usize % 7)
-        } else {
-            stroke_arg.clamp(3, 24)
-        };
-        let mirror_arg: usize = args.get(6).and_then(|s| s.parse().ok()).unwrap_or(0);
-        let mirror = mirror_arg != 0 || (seed as usize % 3 == 0);
-
-        let bg = darken(palette[0], 14);
-        let chalk = lighten(palette[4], 12);
-        let gold = lighten(palette[1], 30);
-        let cyan = shift_hue(lighten(palette[3], 34), 35.0);
-        let magenta = shift_hue(lighten(palette[2], 40), -42.0);
-        let lime = shift_hue(lighten(palette[1], 28), 90.0);
-        let violet = shift_hue(lighten(palette[3], 30), 150.0);
-        let stroke_colors = [chalk, gold, cyan, magenta, lime, violet, chalk, gold];
-
-        for y in 0..height {
-            for x in 0..width {
-                grid[y][x] = Cell::new(' ', bg);
-            }
-        }
-        for _ in 0..(width * height / 120) {
-            let x = rng.random_range(0..width);
-            let y = rng.random_range(0..height);
-            grid[y][x] = Cell::new('·', darken(chalk, 62));
-        }
-
-        let put = |grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color| {
-            if x >= 0 && y >= 0 && (x as usize) < width && (y as usize) < height {
-                grid[y as usize][x as usize] = Cell::new(ch, fg);
-            }
-        };
-        let stroke_char = |x0: i32, y0: i32, x1: i32, y1: i32| {
-            let dx = x1 - x0;
-            let dy = y1 - y0;
-            if dx.abs() > dy.abs() * 2 {
-                '─'
-            } else if dy.abs() > dx.abs() * 2 {
-                '│'
-            } else if dx.signum() == dy.signum() {
-                '╲'
-            } else {
-                '╱'
-            }
-        };
-        let draw_line = |grid: &mut Grid,
-                         mut x0: i32,
-                         mut y0: i32,
-                         x1: i32,
-                         y1: i32,
-                         fg: Color| {
-            let ch = stroke_char(x0, y0, x1, y1);
-            let dx = (x1 - x0).abs();
-            let sx = if x0 < x1 { 1 } else { -1 };
-            let dy = -(y1 - y0).abs();
-            let sy = if y0 < y1 { 1 } else { -1 };
-            let mut err = dx + dy;
-            loop {
-                put(grid, x0, y0, ch, fg);
-                if x0 == x1 && y0 == y1 {
-                    break;
-                }
-                let e2 = 2 * err;
-                if e2 >= dy {
-                    err += dy;
-                    x0 += sx;
-                }
-                if e2 <= dx {
-                    err += dx;
-                    y0 += sy;
-                }
-            }
-        };
-        let curve_char = |prev: (i32, i32), here: (i32, i32), next: (i32, i32)| {
-            let dx1 = (here.0 - prev.0).signum();
-            let dy1 = (here.1 - prev.1).signum();
-            let dx2 = (next.0 - here.0).signum();
-            let dy2 = (next.1 - here.1).signum();
-            if (dx1, dy1) == (dx2, dy2) {
-                if dy1 == 0 {
-                    '─'
-                } else if dx1 == 0 {
-                    '│'
-                } else if dx1 == dy1 {
-                    '╲'
-                } else {
-                    '╱'
-                }
-            } else if dy1 == 0 && dx2 == 0 {
-                match (dx1, dy2) {
-                    (1, 1) => '╮',
-                    (1, -1) => '╯',
-                    (-1, 1) => '╭',
-                    (-1, -1) => '╰',
-                    _ => '╮',
-                }
-            } else if dx1 == 0 && dy2 == 0 {
-                match (dy1, dx2) {
-                    (1, 1) => '╰',
-                    (1, -1) => '╯',
-                    (-1, 1) => '╭',
-                    (-1, -1) => '╮',
-                    _ => '╰',
-                }
-            } else if dx2 == 0 || dx1 == 0 {
-                '│'
-            } else if dy2 == 0 || dy1 == 0 {
-                '─'
-            } else if dx2 == dy2 {
-                '╲'
-            } else {
-                '╱'
-            }
-        };
-
-        let cx = width as f32 / 2.0;
-        let cy = height as f32 / 2.0;
-        let max_r = (width.min(height * 2) as f32 / 2.0 - 2.0).max(8.0);
-        let wedge = std::f32::consts::TAU / folds as f32;
-
-        // generate strokes within wedge [0, wedge] as (kind, p1, p2, r, a0, a1, color_idx, ch)
-        enum SK {
-            Seg((f32, f32), (f32, f32)),
-            Arc((f32, f32), f32, f32, f32),
-            Dot((f32, f32)),
-        }
-        let polar = |rad: f32, ang: f32| -> (f32, f32) {
-            (rad * ang.cos(), rad * ang.sin() * 0.5)
-        };
-        let mut strokes: Vec<(SK, usize, char)> = Vec::new();
-        for s in 0..stroke_count {
-            let color_idx = s % stroke_colors.len();
-            let kind = seed as usize + s;
-            match kind % 4 {
-                0 => {
-                    let r1 = rng.random_range(0.15..0.95) * max_r;
-                    let r2 = rng.random_range(0.15..0.95) * max_r;
-                    let a1 = rng.random_range(0.0..wedge);
-                    let a2 = rng.random_range(0.0..wedge);
-                    strokes.push((SK::Seg(polar(r1, a1), polar(r2, a2)), color_idx, '─'));
-                }
-                1 => {
-                    let rc = rng.random_range(0.2..0.85) * max_r;
-                    let ac = rng.random_range(0.05..wedge - 0.05);
-                    let ar = rng.random_range(0.06..0.22) * max_r;
-                    let a0 = rng.random_range(0.0..std::f32::consts::TAU);
-                    let a1 = a0 + rng.random_range(0.6..2.4);
-                    let center = polar(rc, ac);
-                    strokes.push((SK::Arc(center, ar, a0, a1), color_idx, '○'));
-                }
-                2 => {
-                    let r1 = rng.random_range(0.2..0.9) * max_r;
-                    let a1 = rng.random_range(0.0..wedge);
-                    let glyphs = ['◇', '△', '▽', '○', '✦', '⊕', '⊙', '⌬', '□'];
-                    strokes.push((
-                        SK::Dot(polar(r1, a1)),
-                        color_idx,
-                        glyphs[(s + seed as usize) % glyphs.len()],
-                    ));
-                }
-                _ => {
-                    // short chord cluster: two segments sharing an endpoint
-                    let r0 = rng.random_range(0.3..0.9) * max_r;
-                    let a0 = rng.random_range(0.0..wedge);
-                    let pivot = polar(r0, a0);
-                    let r1 = rng.random_range(0.15..0.95) * max_r;
-                    let a1 = rng.random_range(0.0..wedge);
-                    let r2 = rng.random_range(0.15..0.95) * max_r;
-                    let a2 = rng.random_range(0.0..wedge);
-                    strokes.push((SK::Seg(pivot, polar(r1, a1)), color_idx, '─'));
-                    strokes.push((SK::Seg(pivot, polar(r2, a2)), color_idx, '─'));
-                }
-            }
-        }
-
-        let rotate = |p: (f32, f32), ang: f32| -> (f32, f32) {
-            (p.0 * ang.cos() - p.1 * ang.sin(), p.0 * ang.sin() + p.1 * ang.cos())
-        };
-        let _ = rotate;
-
-        let to_screen = |lp: (f32, f32), ox: f32, oy: f32| -> (i32, i32) {
-            ((ox + lp.0).round() as i32, (oy + lp.1).round() as i32)
-        };
-
-        let mut pass = |sign: f32| {
-            for k in 0..folds {
-                let ang = k as f32 * wedge;
-                let cosr = ang.cos();
-                let sinr = ang.sin();
-                let rot = |p: (f32, f32)| -> (f32, f32) {
-                    // p.y already aspect-compressed (×0.5); rotate in that space
-                    (p.0 * cosr - p.1 * sinr, p.0 * sinr + p.1 * cosr)
-                };
-                let rot_m = |p: (f32, f32)| -> (f32, f32) {
-                    let q = (p.0, sign * p.1);
-                    (q.0 * cosr - q.1 * sinr, q.0 * sinr + q.1 * cosr)
-                };
-                for (sk, cidx, glyph) in &strokes {
-                    let color = stroke_colors[*cidx % stroke_colors.len()];
-                    match sk {
-                        SK::Seg(a, b) => {
-                            let (a2, b2) = if sign != 0.0 {
-                                (rot_m(*a), rot_m(*b))
-                            } else {
-                                (rot(*a), rot(*b))
-                            };
-                            let pa = to_screen(a2, cx, cy);
-                            let pb = to_screen(b2, cx, cy);
-                            draw_line(&mut grid, pa.0, pa.1, pb.0, pb.1, color);
-                        }
-                        SK::Arc(center, r, a0, a1) => {
-                            let c2 = if sign != 0.0 { rot_m(*center) } else { rot(*center) };
-                            let cs = to_screen(c2, cx, cy);
-                            let samples = ((*r + *r) * (*a1 - *a0).abs() * 3.8).max(12.0) as usize;
-                            let mut pts: Vec<(i32, i32)> = Vec::new();
-                            for i in 0..=samples {
-                                let a = *a0 + (*a1 - *a0) * i as f32 / samples as f32;
-                                let lp = (*r * a.cos(), *r * a.sin() * 0.5);
-                                let p = to_screen(lp, cs.0 as f32, cs.1 as f32);
-                                if pts.last().copied() != Some(p) {
-                                    pts.push(p);
-                                }
-                            }
-                            for i in 1..pts.len().saturating_sub(1) {
-                                let ch = curve_char(pts[i - 1], pts[i], pts[i + 1]);
-                                put(&mut grid, pts[i].0, pts[i].1, ch, color);
-                            }
-                        }
-                        SK::Dot(p) => {
-                            let p2 = if sign != 0.0 { rot_m(*p) } else { rot(*p) };
-                            let ps = to_screen(p2, cx, cy);
-                            put(&mut grid, ps.0, ps.1, *glyph, lighten(color, 12));
-                        }
-                    }
-                }
-            }
-        };
-        pass(0.0);
-        if mirror {
-            pass(1.0);
-        }
-        put(&mut grid, cx.round() as i32, cy.round() as i32, '⊙', lighten(chalk, 12));
+        grid = draw_kaleido(grid, width, height, seed, palette, rng, t_anim, &args);
     } else if mode == "contour" {
-        // contour [levels=0] [scale=0] -- topographic iso-lines over procedural heightmap
-        let level_arg: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0);
-        let level_count = if level_arg == 0 {
-            6 + (seed as usize % 5)
-        } else {
-            level_arg.clamp(3, 14)
-        };
-        let scale_arg: usize = args.get(5).and_then(|s| s.parse().ok()).unwrap_or(0);
-        let hscale = if scale_arg == 0 {
-            0.16 + (seed as f32 * 0.013).fract() * 0.10
-        } else {
-            (scale_arg as f32 / 100.0).clamp(0.05, 0.5)
-        };
-
-        let bg = darken(palette[0], 8);
-        let deep_c = darken(palette[1], 30);
-        let mid_c = lighten(palette[3], 10);
-        let high_c = lighten(palette[4], 16);
-        let snow = lighten(palette[4], 30);
-        let hush = darken(palette[2], 60);
-
-        for y in 0..height {
-            for x in 0..width {
-                grid[y][x] = Cell::new(' ', bg);
-            }
-        }
-
-        let put = |grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color| {
-            if x >= 0 && y >= 0 && (x as usize) < width && (y as usize) < height {
-                grid[y as usize][x as usize] = Cell::new(ch, fg);
-            }
-        };
-        let stroke_char = |x0: i32, y0: i32, x1: i32, y1: i32| {
-            let dx = x1 - x0;
-            let dy = y1 - y0;
-            if dx.abs() > dy.abs() * 2 {
-                '─'
-            } else if dy.abs() > dx.abs() * 2 {
-                '│'
-            } else if dx.signum() == dy.signum() {
-                '╲'
-            } else {
-                '╱'
-            }
-        };
-        let draw_line = |grid: &mut Grid,
-                         mut x0: i32,
-                         mut y0: i32,
-                         x1: i32,
-                         y1: i32,
-                         fg: Color| {
-            let ch = stroke_char(x0, y0, x1, y1);
-            let dx = (x1 - x0).abs();
-            let sx = if x0 < x1 { 1 } else { -1 };
-            let dy = -(y1 - y0).abs();
-            let sy = if y0 < y1 { 1 } else { -1 };
-            let mut err = dx + dy;
-            loop {
-                put(grid, x0, y0, ch, fg);
-                if x0 == x1 && y0 == y1 {
-                    break;
-                }
-                let e2 = 2 * err;
-                if e2 >= dy {
-                    err += dy;
-                    x0 += sx;
-                }
-                if e2 <= dx {
-                    err += dx;
-                    y0 += sy;
-                }
-            }
-        };
-
-        // heightmap with sines + random gaussian bumps
-        let bump_n = 1 + (seed as usize % 3);
-        let mut bumps: Vec<(f32, f32, f32, f32)> = Vec::new();
-        for _ in 0..bump_n {
-            let bx = rng.random_range(0.1..0.9) * width as f32;
-            let by = rng.random_range(0.1..0.9) * height as f32;
-            let br = rng.random_range(3.0..9.0);
-            let ba = rng.random_range(0.5..1.4) * if rng.random_range(0..2) == 0 { -1.0 } else { 1.0 };
-            bumps.push((bx, by, br, ba));
-        }
-        let hfield = |xf: f32, yf: f32| -> f32 {
-            let mut v = (hscale * xf).sin() * (hscale * 1.1 * yf).cos();
-            v += 0.6 * (hscale * 1.8 * xf + 0.4).sin() * (hscale * 1.3 * yf - 0.2).sin();
-            v += 0.4 * (hscale * 0.7 * xf - 0.1).cos() * (hscale * 2.1 * yf + 0.5).cos();
-            for &(bx, by, br, ba) in &bumps {
-                let dx = xf - bx;
-                let dy = yf - by;
-                v += ba * (-(dx * dx + dy * dy) / (br * br)).exp();
-            }
-            v
-        };
-
-        let cols = width + 1;
-        let rows = height + 1;
-        let mut h = vec![vec![0.0f32; cols]; rows];
-        let mut hmin = f32::INFINITY;
-        let mut hmax = f32::NEG_INFINITY;
-        for yy in 0..rows {
-            for xx in 0..cols {
-                let v = hfield(xx as f32, yy as f32);
-                h[yy][xx] = v;
-                if v < hmin {
-                    hmin = v;
-                }
-                if v > hmax {
-                    hmax = v;
-                }
-            }
-        }
-
-        let level_color = |frac: f32| -> Color {
-            if frac < 0.33 {
-                let t = frac / 0.33;
-                lerp_color(deep_c, mid_c, t)
-            } else if frac < 0.7 {
-                let t = (frac - 0.33) / 0.37;
-                lerp_color(mid_c, high_c, t)
-            } else {
-                let t = (frac - 0.7) / 0.3;
-                lerp_color(high_c, snow, t)
-            }
-        };
-
-        for li in 0..level_count {
-            let frac = (li as f32 + 0.5) / level_count as f32;
-            let level = hmin + (hmax - hmin) * frac;
-            let color = level_color(frac);
-            let major = li % 3 == 0;
-            let line_color = if major { lighten(color, 8) } else { darken(color, 10) };
-
-            for yy in 0..height {
-                for xx in 0..width {
-                    let c00 = h[yy][xx];
-                    let c10 = h[yy][xx + 1];
-                    let c11 = h[yy + 1][xx + 1];
-                    let c01 = h[yy + 1][xx];
-                    let mut code = 0u8;
-                    if c00 > level {
-                        code |= 1;
-                    }
-                    if c10 > level {
-                        code |= 2;
-                    }
-                    if c11 > level {
-                        code |= 4;
-                    }
-                    if c01 > level {
-                        code |= 8;
-                    }
-                    if code == 0 || code == 15 {
-                        continue;
-                    }
-                    let xf = xx as f32;
-                    let yf = yy as f32;
-                    let edge_pt = |e: u8| -> (f32, f32) {
-                        match e {
-                            1 => {
-                                // bottom edge: (xf,yf)-(xf+1,yf)
-                                let t = (level - c00) / (c10 - c00);
-                                (xf + t, yf)
-                            }
-                            2 => {
-                                // right edge: (xf+1,yf)-(xf+1,yf+1)
-                                let t = (level - c10) / (c11 - c10);
-                                (xf + 1.0, yf + t)
-                            }
-                            4 => {
-                                // top edge: (xf,yf+1)-(xf+1,yf+1)
-                                let t = (level - c01) / (c11 - c01);
-                                (xf + t, yf + 1.0)
-                            }
-                            8 => {
-                                // left edge: (xf,yf)-(xf,yf+1)
-                                let t = (level - c00) / (c01 - c00);
-                                (xf, yf + t)
-                            }
-                            _ => (xf, yf),
-                        }
-                    };
-                    let pairs: &[(u8, u8)] = match code {
-                        1 | 14 => &[(8, 1)],
-                        2 | 13 => &[(1, 2)],
-                        3 | 12 => &[(8, 2)],
-                        4 | 11 => &[(2, 4)],
-                        5 => &[(8, 4), (1, 2)],
-                        6 | 9 => &[(1, 4)],
-                        7 | 8 => &[(8, 4)],
-                        10 => &[(8, 1), (2, 4)],
-                        _ => &[],
-                    };
-                    for &(ea, eb) in pairs {
-                        let pa = edge_pt(ea);
-                        let pb = edge_pt(eb);
-                        let ax = pa.0.round() as i32;
-                        let ay = pa.1.round() as i32;
-                        let bx = pb.0.round() as i32;
-                        let by = pb.1.round() as i32;
-                        if major {
-                            draw_line(&mut grid, ax, ay, bx, by, line_color);
-                        } else {
-                            // minor contour: sparse char along the segment midpoint
-                            let mx = ((pa.0 + pb.0) * 0.5).round() as i32;
-                            let my = ((pa.1 + pb.1) * 0.5).round() as i32;
-                            let glyph = if (xx + yy) % 3 == 0 { '·' } else { '∙' };
-                            put(&mut grid, mx, my, glyph, line_color);
-                        }
-                    }
-                }
-            }
-        }
-        // sparse summit markers
-        let _ = hush;
+        grid = draw_contour(grid, width, height, seed, palette, rng, t_anim, &args);
     } else if mode == "world" {
         render_world(&mut grid, width, height, &palette, &mut rng);
     } else if mode == "noise" {
@@ -13784,6 +13319,481 @@ fn draw_gears(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [
     grid
 }
 
+fn draw_kaleido(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, args: &[String]) -> Grid {
+        // kaleido [folds=0] [strokes=0] [mirror=0] -- N-fold symmetric mandala
+        let fold_arg: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0);
+        let folds = if fold_arg == 0 {
+            [6, 8, 12, 5, 7][(seed as usize) % 5]
+        } else {
+            fold_arg.clamp(3, 16)
+        };
+        let stroke_arg: usize = args.get(5).and_then(|s| s.parse().ok()).unwrap_or(0);
+        let stroke_count = if stroke_arg == 0 {
+            8 + (seed as usize % 7)
+        } else {
+            stroke_arg.clamp(3, 24)
+        };
+        let mirror_arg: usize = args.get(6).and_then(|s| s.parse().ok()).unwrap_or(0);
+        let mirror = mirror_arg != 0 || (seed as usize % 3 == 0);
+
+        let bg = darken(palette[0], 14);
+        let chalk = lighten(palette[4], 12);
+        let gold = lighten(palette[1], 30);
+        let cyan = shift_hue(lighten(palette[3], 34), 35.0);
+        let magenta = shift_hue(lighten(palette[2], 40), -42.0);
+        let lime = shift_hue(lighten(palette[1], 28), 90.0);
+        let violet = shift_hue(lighten(palette[3], 30), 150.0);
+        let stroke_colors = [chalk, gold, cyan, magenta, lime, violet, chalk, gold];
+
+        for y in 0..height {
+            for x in 0..width {
+                grid[y][x] = Cell::new(' ', bg);
+            }
+        }
+        for _ in 0..(width * height / 120) {
+            let x = rng.random_range(0..width);
+            let y = rng.random_range(0..height);
+            grid[y][x] = Cell::new('·', darken(chalk, 62));
+        }
+
+        let put = |grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color| {
+            if x >= 0 && y >= 0 && (x as usize) < width && (y as usize) < height {
+                grid[y as usize][x as usize] = Cell::new(ch, fg);
+            }
+        };
+        let stroke_char = |x0: i32, y0: i32, x1: i32, y1: i32| {
+            let dx = x1 - x0;
+            let dy = y1 - y0;
+            if dx.abs() > dy.abs() * 2 {
+                '─'
+            } else if dy.abs() > dx.abs() * 2 {
+                '│'
+            } else if dx.signum() == dy.signum() {
+                '╲'
+            } else {
+                '╱'
+            }
+        };
+        let draw_line = |grid: &mut Grid,
+                         mut x0: i32,
+                         mut y0: i32,
+                         x1: i32,
+                         y1: i32,
+                         fg: Color| {
+            let ch = stroke_char(x0, y0, x1, y1);
+            let dx = (x1 - x0).abs();
+            let sx = if x0 < x1 { 1 } else { -1 };
+            let dy = -(y1 - y0).abs();
+            let sy = if y0 < y1 { 1 } else { -1 };
+            let mut err = dx + dy;
+            loop {
+                put(grid, x0, y0, ch, fg);
+                if x0 == x1 && y0 == y1 {
+                    break;
+                }
+                let e2 = 2 * err;
+                if e2 >= dy {
+                    err += dy;
+                    x0 += sx;
+                }
+                if e2 <= dx {
+                    err += dx;
+                    y0 += sy;
+                }
+            }
+        };
+        let curve_char = |prev: (i32, i32), here: (i32, i32), next: (i32, i32)| {
+            let dx1 = (here.0 - prev.0).signum();
+            let dy1 = (here.1 - prev.1).signum();
+            let dx2 = (next.0 - here.0).signum();
+            let dy2 = (next.1 - here.1).signum();
+            if (dx1, dy1) == (dx2, dy2) {
+                if dy1 == 0 {
+                    '─'
+                } else if dx1 == 0 {
+                    '│'
+                } else if dx1 == dy1 {
+                    '╲'
+                } else {
+                    '╱'
+                }
+            } else if dy1 == 0 && dx2 == 0 {
+                match (dx1, dy2) {
+                    (1, 1) => '╮',
+                    (1, -1) => '╯',
+                    (-1, 1) => '╭',
+                    (-1, -1) => '╰',
+                    _ => '╮',
+                }
+            } else if dx1 == 0 && dy2 == 0 {
+                match (dy1, dx2) {
+                    (1, 1) => '╰',
+                    (1, -1) => '╯',
+                    (-1, 1) => '╭',
+                    (-1, -1) => '╮',
+                    _ => '╰',
+                }
+            } else if dx2 == 0 || dx1 == 0 {
+                '│'
+            } else if dy2 == 0 || dy1 == 0 {
+                '─'
+            } else if dx2 == dy2 {
+                '╲'
+            } else {
+                '╱'
+            }
+        };
+
+        let cx = width as f32 / 2.0;
+        let cy = height as f32 / 2.0;
+        let max_r = (width.min(height * 2) as f32 / 2.0 - 2.0).max(8.0);
+        let wedge = std::f32::consts::TAU / folds as f32;
+
+        // generate strokes within wedge [0, wedge] as (kind, p1, p2, r, a0, a1, color_idx, ch)
+        enum SK {
+            Seg((f32, f32), (f32, f32)),
+            Arc((f32, f32), f32, f32, f32),
+            Dot((f32, f32)),
+        }
+        let polar = |rad: f32, ang: f32| -> (f32, f32) {
+            (rad * ang.cos(), rad * ang.sin() * 0.5)
+        };
+        let mut strokes: Vec<(SK, usize, char)> = Vec::new();
+        for s in 0..stroke_count {
+            let color_idx = s % stroke_colors.len();
+            let kind = seed as usize + s;
+            match kind % 4 {
+                0 => {
+                    let r1 = rng.random_range(0.15..0.95) * max_r;
+                    let r2 = rng.random_range(0.15..0.95) * max_r;
+                    let a1 = rng.random_range(0.0..wedge);
+                    let a2 = rng.random_range(0.0..wedge);
+                    strokes.push((SK::Seg(polar(r1, a1), polar(r2, a2)), color_idx, '─'));
+                }
+                1 => {
+                    let rc = rng.random_range(0.2..0.85) * max_r;
+                    let ac = rng.random_range(0.05..wedge - 0.05);
+                    let ar = rng.random_range(0.06..0.22) * max_r;
+                    let a0 = rng.random_range(0.0..std::f32::consts::TAU);
+                    let a1 = a0 + rng.random_range(0.6..2.4);
+                    let center = polar(rc, ac);
+                    strokes.push((SK::Arc(center, ar, a0, a1), color_idx, '○'));
+                }
+                2 => {
+                    let r1 = rng.random_range(0.2..0.9) * max_r;
+                    let a1 = rng.random_range(0.0..wedge);
+                    let glyphs = ['◇', '△', '▽', '○', '✦', '⊕', '⊙', '⌬', '□'];
+                    strokes.push((
+                        SK::Dot(polar(r1, a1)),
+                        color_idx,
+                        glyphs[(s + seed as usize) % glyphs.len()],
+                    ));
+                }
+                _ => {
+                    // short chord cluster: two segments sharing an endpoint
+                    let r0 = rng.random_range(0.3..0.9) * max_r;
+                    let a0 = rng.random_range(0.0..wedge);
+                    let pivot = polar(r0, a0);
+                    let r1 = rng.random_range(0.15..0.95) * max_r;
+                    let a1 = rng.random_range(0.0..wedge);
+                    let r2 = rng.random_range(0.15..0.95) * max_r;
+                    let a2 = rng.random_range(0.0..wedge);
+                    strokes.push((SK::Seg(pivot, polar(r1, a1)), color_idx, '─'));
+                    strokes.push((SK::Seg(pivot, polar(r2, a2)), color_idx, '─'));
+                }
+            }
+        }
+
+        let rotate = |p: (f32, f32), ang: f32| -> (f32, f32) {
+            (p.0 * ang.cos() - p.1 * ang.sin(), p.0 * ang.sin() + p.1 * ang.cos())
+        };
+        let _ = rotate;
+
+        let to_screen = |lp: (f32, f32), ox: f32, oy: f32| -> (i32, i32) {
+            ((ox + lp.0).round() as i32, (oy + lp.1).round() as i32)
+        };
+
+        let mut pass = |sign: f32| {
+            for k in 0..folds {
+                let ang = k as f32 * wedge + t_anim * 0.1; // T spins the mandala
+                let cosr = ang.cos();
+                let sinr = ang.sin();
+                let rot = |p: (f32, f32)| -> (f32, f32) {
+                    // p.y already aspect-compressed (×0.5); rotate in that space
+                    (p.0 * cosr - p.1 * sinr, p.0 * sinr + p.1 * cosr)
+                };
+                let rot_m = |p: (f32, f32)| -> (f32, f32) {
+                    let q = (p.0, sign * p.1);
+                    (q.0 * cosr - q.1 * sinr, q.0 * sinr + q.1 * cosr)
+                };
+                for (sk, cidx, glyph) in &strokes {
+                    let color = stroke_colors[*cidx % stroke_colors.len()];
+                    match sk {
+                        SK::Seg(a, b) => {
+                            let (a2, b2) = if sign != 0.0 {
+                                (rot_m(*a), rot_m(*b))
+                            } else {
+                                (rot(*a), rot(*b))
+                            };
+                            let pa = to_screen(a2, cx, cy);
+                            let pb = to_screen(b2, cx, cy);
+                            draw_line(&mut grid, pa.0, pa.1, pb.0, pb.1, color);
+                        }
+                        SK::Arc(center, r, a0, a1) => {
+                            let c2 = if sign != 0.0 { rot_m(*center) } else { rot(*center) };
+                            let cs = to_screen(c2, cx, cy);
+                            let samples = ((*r + *r) * (*a1 - *a0).abs() * 3.8).max(12.0) as usize;
+                            let mut pts: Vec<(i32, i32)> = Vec::new();
+                            for i in 0..=samples {
+                                let a = *a0 + (*a1 - *a0) * i as f32 / samples as f32;
+                                let lp = (*r * a.cos(), *r * a.sin() * 0.5);
+                                let p = to_screen(lp, cs.0 as f32, cs.1 as f32);
+                                if pts.last().copied() != Some(p) {
+                                    pts.push(p);
+                                }
+                            }
+                            for i in 1..pts.len().saturating_sub(1) {
+                                let ch = curve_char(pts[i - 1], pts[i], pts[i + 1]);
+                                put(&mut grid, pts[i].0, pts[i].1, ch, color);
+                            }
+                        }
+                        SK::Dot(p) => {
+                            let p2 = if sign != 0.0 { rot_m(*p) } else { rot(*p) };
+                            let ps = to_screen(p2, cx, cy);
+                            put(&mut grid, ps.0, ps.1, *glyph, lighten(color, 12));
+                        }
+                    }
+                }
+            }
+        };
+        pass(0.0);
+        if mirror {
+            pass(1.0);
+        }
+        put(&mut grid, cx.round() as i32, cy.round() as i32, '⊙', lighten(chalk, 12));
+    grid
+}
+
+fn draw_contour(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, args: &[String]) -> Grid {
+        // contour [levels=0] [scale=0] -- topographic iso-lines over procedural heightmap
+        let level_arg: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0);
+        let level_count = if level_arg == 0 {
+            6 + (seed as usize % 5)
+        } else {
+            level_arg.clamp(3, 14)
+        };
+        let scale_arg: usize = args.get(5).and_then(|s| s.parse().ok()).unwrap_or(0);
+        let hscale = if scale_arg == 0 {
+            0.16 + (seed as f32 * 0.013).fract() * 0.10
+        } else {
+            (scale_arg as f32 / 100.0).clamp(0.05, 0.5)
+        };
+
+        let bg = darken(palette[0], 8);
+        let deep_c = darken(palette[1], 30);
+        let mid_c = lighten(palette[3], 10);
+        let high_c = lighten(palette[4], 16);
+        let snow = lighten(palette[4], 30);
+        let hush = darken(palette[2], 60);
+
+        for y in 0..height {
+            for x in 0..width {
+                grid[y][x] = Cell::new(' ', bg);
+            }
+        }
+
+        let put = |grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color| {
+            if x >= 0 && y >= 0 && (x as usize) < width && (y as usize) < height {
+                grid[y as usize][x as usize] = Cell::new(ch, fg);
+            }
+        };
+        let stroke_char = |x0: i32, y0: i32, x1: i32, y1: i32| {
+            let dx = x1 - x0;
+            let dy = y1 - y0;
+            if dx.abs() > dy.abs() * 2 {
+                '─'
+            } else if dy.abs() > dx.abs() * 2 {
+                '│'
+            } else if dx.signum() == dy.signum() {
+                '╲'
+            } else {
+                '╱'
+            }
+        };
+        let draw_line = |grid: &mut Grid,
+                         mut x0: i32,
+                         mut y0: i32,
+                         x1: i32,
+                         y1: i32,
+                         fg: Color| {
+            let ch = stroke_char(x0, y0, x1, y1);
+            let dx = (x1 - x0).abs();
+            let sx = if x0 < x1 { 1 } else { -1 };
+            let dy = -(y1 - y0).abs();
+            let sy = if y0 < y1 { 1 } else { -1 };
+            let mut err = dx + dy;
+            loop {
+                put(grid, x0, y0, ch, fg);
+                if x0 == x1 && y0 == y1 {
+                    break;
+                }
+                let e2 = 2 * err;
+                if e2 >= dy {
+                    err += dy;
+                    x0 += sx;
+                }
+                if e2 <= dx {
+                    err += dx;
+                    y0 += sy;
+                }
+            }
+        };
+
+        // heightmap with sines + random gaussian bumps
+        let bump_n = 1 + (seed as usize % 3);
+        let mut bumps: Vec<(f32, f32, f32, f32)> = Vec::new();
+        for _ in 0..bump_n {
+            let bx = rng.random_range(0.1..0.9) * width as f32;
+            let by = rng.random_range(0.1..0.9) * height as f32;
+            let br = rng.random_range(3.0..9.0);
+            let ba = rng.random_range(0.5..1.4) * if rng.random_range(0..2) == 0 { -1.0 } else { 1.0 };
+            bumps.push((bx, by, br, ba));
+        }
+        let hfield = |xf: f32, yf: f32| -> f32 {
+            let mut v = (hscale * xf + t_anim * 0.3).sin() * (hscale * 1.1 * yf).cos();
+            v += 0.6 * (hscale * 1.8 * xf + 0.4 - t_anim * 0.2).sin() * (hscale * 1.3 * yf - 0.2).sin();
+            v += 0.4 * (hscale * 0.7 * xf - 0.1).cos() * (hscale * 2.1 * yf + 0.5 + t_anim * 0.25).cos();
+            for &(bx, by, br, ba) in &bumps {
+                let dx = xf - bx;
+                let dy = yf - by;
+                v += ba * (-(dx * dx + dy * dy) / (br * br)).exp();
+            }
+            v
+        };
+
+        let cols = width + 1;
+        let rows = height + 1;
+        let mut h = vec![vec![0.0f32; cols]; rows];
+        let mut hmin = f32::INFINITY;
+        let mut hmax = f32::NEG_INFINITY;
+        for yy in 0..rows {
+            for xx in 0..cols {
+                let v = hfield(xx as f32, yy as f32);
+                h[yy][xx] = v;
+                if v < hmin {
+                    hmin = v;
+                }
+                if v > hmax {
+                    hmax = v;
+                }
+            }
+        }
+
+        let level_color = |frac: f32| -> Color {
+            if frac < 0.33 {
+                let t = frac / 0.33;
+                lerp_color(deep_c, mid_c, t)
+            } else if frac < 0.7 {
+                let t = (frac - 0.33) / 0.37;
+                lerp_color(mid_c, high_c, t)
+            } else {
+                let t = (frac - 0.7) / 0.3;
+                lerp_color(high_c, snow, t)
+            }
+        };
+
+        for li in 0..level_count {
+            let frac = (li as f32 + 0.5) / level_count as f32;
+            let level = hmin + (hmax - hmin) * frac;
+            let color = level_color(frac);
+            let major = li % 3 == 0;
+            let line_color = if major { lighten(color, 8) } else { darken(color, 10) };
+
+            for yy in 0..height {
+                for xx in 0..width {
+                    let c00 = h[yy][xx];
+                    let c10 = h[yy][xx + 1];
+                    let c11 = h[yy + 1][xx + 1];
+                    let c01 = h[yy + 1][xx];
+                    let mut code = 0u8;
+                    if c00 > level {
+                        code |= 1;
+                    }
+                    if c10 > level {
+                        code |= 2;
+                    }
+                    if c11 > level {
+                        code |= 4;
+                    }
+                    if c01 > level {
+                        code |= 8;
+                    }
+                    if code == 0 || code == 15 {
+                        continue;
+                    }
+                    let xf = xx as f32;
+                    let yf = yy as f32;
+                    let edge_pt = |e: u8| -> (f32, f32) {
+                        match e {
+                            1 => {
+                                // bottom edge: (xf,yf)-(xf+1,yf)
+                                let t = (level - c00) / (c10 - c00);
+                                (xf + t, yf)
+                            }
+                            2 => {
+                                // right edge: (xf+1,yf)-(xf+1,yf+1)
+                                let t = (level - c10) / (c11 - c10);
+                                (xf + 1.0, yf + t)
+                            }
+                            4 => {
+                                // top edge: (xf,yf+1)-(xf+1,yf+1)
+                                let t = (level - c01) / (c11 - c01);
+                                (xf + t, yf + 1.0)
+                            }
+                            8 => {
+                                // left edge: (xf,yf)-(xf,yf+1)
+                                let t = (level - c00) / (c01 - c00);
+                                (xf, yf + t)
+                            }
+                            _ => (xf, yf),
+                        }
+                    };
+                    let pairs: &[(u8, u8)] = match code {
+                        1 | 14 => &[(8, 1)],
+                        2 | 13 => &[(1, 2)],
+                        3 | 12 => &[(8, 2)],
+                        4 | 11 => &[(2, 4)],
+                        5 => &[(8, 4), (1, 2)],
+                        6 | 9 => &[(1, 4)],
+                        7 | 8 => &[(8, 4)],
+                        10 => &[(8, 1), (2, 4)],
+                        _ => &[],
+                    };
+                    for &(ea, eb) in pairs {
+                        let pa = edge_pt(ea);
+                        let pb = edge_pt(eb);
+                        let ax = pa.0.round() as i32;
+                        let ay = pa.1.round() as i32;
+                        let bx = pb.0.round() as i32;
+                        let by = pb.1.round() as i32;
+                        if major {
+                            draw_line(&mut grid, ax, ay, bx, by, line_color);
+                        } else {
+                            // minor contour: sparse char along the segment midpoint
+                            let mx = ((pa.0 + pb.0) * 0.5).round() as i32;
+                            let my = ((pa.1 + pb.1) * 0.5).round() as i32;
+                            let glyph = if (xx + yy) % 3 == 0 { '·' } else { '∙' };
+                            put(&mut grid, mx, my, glyph, line_color);
+                        }
+                    }
+                }
+            }
+        }
+        // sparse summit markers
+        let _ = hush;
+    grid
+}
+
 fn draw_delta(grid: &mut Grid, width: usize, height: usize, _seed: u64, palette: &[Color; 5], rng: &mut StdRng, t: f32) {
     use std::f32::consts::FRAC_PI_2;
     let bg = darken(palette[0], 6);
@@ -14395,6 +14405,8 @@ fn iterate_grid(mode: &str, seed: u64, theme: &str, w: usize, h: usize, t: f32) 
         "spiro-tile" => Some(draw_spiro_tile(grid, w, h, seed, palette, rng, t, &[])),
         "weave" => Some(draw_weave(grid, w, h, seed, palette, rng, t, &[])),
         "gears" => Some(draw_gears(grid, w, h, seed, palette, rng, t, &[])),
+        "kaleido" => Some(draw_kaleido(grid, w, h, seed, palette, rng, t, &[])),
+        "contour" => Some(draw_contour(grid, w, h, seed, palette, rng, t, &[])),
         "solar-system" => Some(draw_solar_system(grid, w, h, seed, palette, rng, t, &[])),
         "eyes3" => Some(draw_eyes3(grid, w, h, seed, palette, rng, t, &[])),
         "fullmetal-eyes" => Some(draw_fullmetal_eyes(grid, w, h, seed, palette, rng, t, &[])),
