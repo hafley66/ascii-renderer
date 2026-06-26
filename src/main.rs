@@ -112,6 +112,9 @@ static MODE_FORMS: &[ModeForm] = &[
             param!("TURN", "turn", 0.0, 0.9, 0.35, 0.05),
             param!("SPEED", "speed", 1.0, 10.0, 4.0, 0.5),
             param!("LEN", "length", 4.0, 40.0, 22.0, 2.0),
+            param!("HOP", "hop", 0.0, 1.0, 0.0, 0.05),
+            param!("HOPC", "hopx", 0.2, 1.5, 0.4, 0.1),
+            param!("RBOW", "rainbow", 0.0, 1.0, 0.0, 0.25),
         ],
     },
     ModeForm {
@@ -149,6 +152,140 @@ fn param_f32(key: &str, default: f32) -> f32 {
         .ok()
         .and_then(|v| v.parse().ok())
         .unwrap_or(default)
+}
+
+// ============================================================================
+// Knob persistence. The demo panel's tuned knob values are saved to a small TSV
+// (`mode<TAB>KEY<TAB>value` per line) under the user's config dir, so they
+// survive across runs. run_demo and morph_session both load on entry and write
+// on every change.
+// ============================================================================
+
+/// Path to the persisted-options file (`~/.config/ascii-renderer/options.tsv`),
+/// or None if HOME is unset.
+fn options_path() -> Option<std::path::PathBuf> {
+    let home = std::env::var_os("HOME")?;
+    let mut p = std::path::PathBuf::from(home);
+    p.push(".config");
+    p.push("ascii-renderer");
+    p.push("options.tsv");
+    Some(p)
+}
+
+type OptMap = std::collections::HashMap<String, std::collections::HashMap<String, f32>>;
+
+/// Parse the TSV at `path` into mode -> (KEY -> value). Missing/unreadable -> empty.
+fn load_options_from(path: &std::path::Path) -> OptMap {
+    let mut map: OptMap = std::collections::HashMap::new();
+    if let Ok(s) = std::fs::read_to_string(path) {
+        for line in s.lines() {
+            let mut it = line.splitn(3, '\t');
+            if let (Some(m), Some(k), Some(v)) = (it.next(), it.next(), it.next()) {
+                if let Ok(val) = v.parse::<f32>() {
+                    map.entry(m.to_string()).or_default().insert(k.to_string(), val);
+                }
+            }
+        }
+    }
+    map
+}
+
+/// Write the whole option map to `path` (creates parent dirs as needed).
+fn save_options_to(path: &std::path::Path, map: &OptMap) {
+    if let Some(dir) = path.parent() {
+        let _ = std::fs::create_dir_all(dir);
+    }
+    let mut s = String::new();
+    for (m, ks) in map {
+        for (k, v) in ks {
+            s.push_str(&format!("{}\t{}\t{}\n", m, k, v));
+        }
+    }
+    let _ = std::fs::write(path, s);
+}
+
+/// Load all saved knob values from the default options file.
+fn load_options() -> OptMap {
+    match options_path() {
+        Some(p) => load_options_from(&p),
+        None => std::collections::HashMap::new(),
+    }
+}
+
+/// Persist the whole option map to the default options file.
+fn save_options(map: &OptMap) {
+    if let Some(p) = options_path() {
+        save_options_to(&p, map);
+    }
+}
+
+/// Initial knob values for `mode`: saved value (clamped to range) if present,
+/// else the param default.
+fn pvals_for(
+    spec: &ModeSpec,
+    mode: &str,
+    saved: &std::collections::HashMap<String, std::collections::HashMap<String, f32>>,
+) -> Vec<f32> {
+    spec.params
+        .iter()
+        .map(|p| {
+            saved
+                .get(mode)
+                .and_then(|m| m.get(p.key))
+                .map(|v| v.clamp(p.min, p.max))
+                .unwrap_or(p.default)
+        })
+        .collect()
+}
+
+/// A deterministic-but-random value for knob `p`, hashed from (seed, key) into the
+/// param's range and snapped to its step. Stable for a given seed; re-rolls when
+/// the seed changes -- "controlled randomness" rather than per-frame jitter.
+fn rand_knob(seed: u64, p: &Param) -> f32 {
+    let mut h = seed ^ 0x9E37_79B9_7F4A_7C15;
+    for b in p.key.bytes() {
+        h = h.wrapping_mul(0x0000_0100_0000_01B3).wrapping_add(b as u64);
+    }
+    let u = ((h >> 11) as f64 / (1u64 << 53) as f64) as f32; // 0..1
+    let raw = p.min + u * (p.max - p.min);
+    let snapped = p.min + ((raw - p.min) / p.step).round() * p.step;
+    snapped.clamp(p.min, p.max)
+}
+
+/// The values actually pushed to the renderer: the tuned `pvals` (deterministic),
+/// or per-seed random samples for every knob when `randomize` is on.
+fn effective_pvals(spec: &ModeSpec, pvals: &[f32], seed: u64, randomize: bool) -> Vec<f32> {
+    if randomize {
+        spec.params.iter().map(|p| rand_knob(seed, p)).collect()
+    } else {
+        pvals.to_vec()
+    }
+}
+
+/// The global deterministic-vs-random toggle, stored under a reserved pseudo-mode.
+fn load_randomize(saved: &OptMap) -> bool {
+    saved.get("__global").and_then(|m| m.get("RAND")).copied().unwrap_or(0.0) > 0.5
+}
+fn store_randomize(saved: &mut OptMap, on: bool) {
+    saved
+        .entry("__global".to_string())
+        .or_default()
+        .insert("RAND".to_string(), if on { 1.0 } else { 0.0 });
+    save_options(saved);
+}
+
+/// Record `mode`'s current knob values into `saved` and flush to disk.
+fn store_pvals(
+    mode: &str,
+    spec: &ModeSpec,
+    pvals: &[f32],
+    saved: &mut std::collections::HashMap<String, std::collections::HashMap<String, f32>>,
+) {
+    let m = saved.entry(mode.to_string()).or_default();
+    for (p, v) in spec.params.iter().zip(pvals.iter()) {
+        m.insert(p.key.to_string(), *v);
+    }
+    save_options(saved);
 }
 
 /// Indices of modes whose name contains `query` (case-insensitive). Empty query
@@ -287,6 +424,7 @@ fn draw_options_pane(
     psel: usize,
     seed: u64,
     theme: &str,
+    randomize: bool,
 ) {
     use std::io::Write;
     let col = x0 + 2; // 1-based content column (column x0+1 holds the divider)
@@ -306,10 +444,16 @@ fn draw_options_pane(
         AnimKind::Morph => "morph (seeds)",
     };
     let theme_label = if theme.is_empty() { "auto" } else { theme };
+    let knobs_mode = if randomize {
+        "\x1b[1mRANDOM\x1b[0m \x1b[90m(g)\x1b[0m"
+    } else {
+        "manual \x1b[90m(g)\x1b[0m"
+    };
     line(0, "\x1b[1mANIM OPTIONS\x1b[0m");
     line(1, &format!("mode  {}", mode));
     line(2, &format!("anim  {}", kind));
     line(3, &format!("seed  {}  theme {}", seed, theme_label));
+    line(5, &format!("knobs {}", knobs_mode));
     line(4, "\x1b[90m\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\x1b[0m");
     if spec.params.is_empty() {
         line(6, "\x1b[90mno tunables for this mode\x1b[0m");
@@ -467,7 +611,9 @@ fn run_demo(initial_seed: u64) {
     let mut pane_open = false;
     let mut last_mode = "";
     let mut spec = mode_spec(all_modes[mode_idx]);
-    let mut pvals: Vec<f32> = spec.params.iter().map(|p| p.default).collect();
+    let mut saved = load_options();
+    let mut randomize = load_randomize(&saved);
+    let mut pvals: Vec<f32> = pvals_for(&spec, all_modes[mode_idx], &saved);
     let mut psel: usize = 0;
 
     let exe = std::env::current_exe().unwrap();
@@ -479,10 +625,10 @@ fn run_demo(initial_seed: u64) {
         let current_mode = all_modes[mode_idx];
         let current_theme = all_themes[theme_idx];
 
-        // Reload the declared config when the mode changes.
+        // Reload the declared config + saved knob values when the mode changes.
         if current_mode != last_mode {
             spec = mode_spec(current_mode);
-            pvals = spec.params.iter().map(|p| p.default).collect();
+            pvals = pvals_for(&spec, current_mode, &saved);
             psel = 0;
             last_mode = current_mode;
         }
@@ -497,10 +643,12 @@ fn run_demo(initial_seed: u64) {
         };
         let render_w = (tw as usize).saturating_sub(pane_w);
 
-        // Push the current knob values down to the render subprocess via env.
-        // Child processes (the preview and the iterate animator) inherit these.
+        // Push the current knob values down to the render subprocess via env. In
+        // randomize mode these are per-seed random samples instead of the tuned
+        // pvals. Child processes (preview + iterate animator) inherit them.
         // SAFETY: the demo loop is single-threaded.
-        for (p, v) in spec.params.iter().zip(pvals.iter()) {
+        let eff = effective_pvals(&spec, &pvals, seed, randomize);
+        for (p, v) in spec.params.iter().zip(eff.iter()) {
             unsafe { std::env::set_var(format!("ASCII_P_{}", p.key), format!("{}", v)) };
         }
 
@@ -535,7 +683,7 @@ fn run_demo(initial_seed: u64) {
 
         if pane_open {
             draw_options_pane(
-                render_w, th, current_mode, &spec, &pvals, psel, seed, current_theme,
+                render_w, th, current_mode, &spec, &eff, psel, seed, current_theme, randomize,
             );
         }
 
@@ -545,15 +693,16 @@ fn run_demo(initial_seed: u64) {
         } else {
             current_theme
         };
+        let knob_tag = if randomize { "knobs:RANDOM " } else { "" };
         let status = if pane_open {
             format!(
-                " {} | o=close opts  \u{2191}\u{2193}=select  \u{2190}\u{2192}=adjust  r=reset  a=animate  q=quit ",
-                current_mode
+                " {} | {}o=close opts  \u{2191}\u{2193}=select  \u{2190}\u{2192}=adjust  r=reset  g=rand-knobs  a=animate  q=quit ",
+                current_mode, knob_tag
             )
         } else {
             format!(
-                " {} | seed:{} | theme:{} | /=find  o=opts  a=animate  f/j=prev/next  \u{2191}\u{2193}=seed  \u{2190}\u{2192}=theme  enter=rand  q=quit ",
-                current_mode, seed, theme_label
+                " {} | seed:{} | theme:{} | {}/=find  o=opts  g=rand  a=animate  f/j=prev/next  \u{2191}\u{2193}=seed  \u{2190}\u{2192}=theme  enter=reseed  q=quit ",
+                current_mode, seed, theme_label, knob_tag
             )
         };
         // Pad to terminal width, inverse video (char-safe truncation)
@@ -572,6 +721,10 @@ fn run_demo(initial_seed: u64) {
                 KeyCode::Char('q') => break,
                 KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => break,
                 KeyCode::Char('o') => pane_open = !pane_open,
+                KeyCode::Char('g') => {
+                    randomize = !randomize;
+                    store_randomize(&mut saved, randomize);
+                }
                 KeyCode::Char('j') => mode_idx = (mode_idx + 1) % all_modes.len(),
                 KeyCode::Char('f') => mode_idx = (mode_idx + all_modes.len() - 1) % all_modes.len(),
                 KeyCode::Char('/') | KeyCode::Char('m') => {
@@ -581,6 +734,7 @@ fn run_demo(initial_seed: u64) {
                 }
                 KeyCode::Char('r') if pane_open && has_params => {
                     pvals[psel] = spec.params[psel].default;
+                    store_pvals(current_mode, &spec, &pvals, &mut saved);
                 }
                 KeyCode::Char('a') => {
                     // Animate via the declared strategy. Knob env is already set, so
@@ -612,6 +766,7 @@ fn run_demo(initial_seed: u64) {
                     if pane_open && has_params {
                         let p = &spec.params[psel];
                         pvals[psel] = (pvals[psel] + p.step).min(p.max);
+                        store_pvals(current_mode, &spec, &pvals, &mut saved);
                     } else {
                         theme_idx = (theme_idx + 1) % all_themes.len();
                     }
@@ -620,6 +775,7 @@ fn run_demo(initial_seed: u64) {
                     if pane_open && has_params {
                         let p = &spec.params[psel];
                         pvals[psel] = (pvals[psel] - p.step).max(p.min);
+                        store_pvals(current_mode, &spec, &pvals, &mut saved);
                     } else {
                         theme_idx = (theme_idx + all_themes.len() - 1) % all_themes.len();
                     }
@@ -11026,20 +11182,61 @@ fn snake_seg(din: (i32, i32), dout: (i32, i32)) -> (char, bool, bool) {
 
 /// Build a random-walking, wrap-around (toroidal) closed loop for a snake. The
 /// walk meanders -- mostly continuing straight, sometimes turning 90 degrees,
-/// never reversing -- then a short Manhattan return leg closes it back to the
-/// exact start so the cycle is seamless (the body window slides forever with no
-/// teleport). Cells are already wrapped into [0,w) x [0,h); the per-cell step
-/// direction is returned too, so glyphs (and the wrap seam) render as continuous
-/// box-drawing lines and corners.
-fn snake_walk(w: i32, h: i32, rng: &mut StdRng, turn_prob: f32) -> (Vec<(i32, i32)>, Vec<(i32, i32)>) {
+/// never reversing -- with an occasional "hop": it picks a fresh direction and
+/// shoots `hop_len` cells in a straight line (rendered as solid blocks). A short
+/// Manhattan return leg closes it back to the start so the cycle is seamless (the
+/// body window slides forever with no teleport). Cells are already wrapped into
+/// [0,w) x [0,h); the per-cell step direction and a per-cell "is this a hop block"
+/// flag are returned too, so glyphs (and the wrap seam) render correctly.
+fn snake_walk(
+    w: i32,
+    h: i32,
+    rng: &mut StdRng,
+    turn_prob: f32,
+    hop_chance: f32,
+    hop_len: i32,
+) -> (Vec<(i32, i32)>, Vec<(i32, i32)>, Vec<bool>) {
     if w < 4 || h < 4 {
-        return (Vec::new(), Vec::new());
+        return (Vec::new(), Vec::new(), Vec::new());
     }
     let dirs4 = [(1, 0), (-1, 0), (0, 1), (0, -1)];
     let steps = rng.random_range(40..90);
     let mut moves: Vec<(i32, i32)> = Vec::with_capacity(steps as usize + 32);
+    let mut block: Vec<bool> = Vec::with_capacity(steps as usize + 32);
     let mut dir = dirs4[rng.random_range(0..4)];
+    let mut cooldown = 0i32; // steps before another hop is allowed (no chaining)
     for _ in 0..steps {
+        if cooldown > 0 {
+            cooldown -= 1;
+        }
+        // chance to hop: pick a new (non-reversing) direction and shoot a fast
+        // displacement that bends once partway, so it reads as a dash rather than a
+        // dead-straight ruler. A cooldown keeps hops from chaining into one long bar.
+        if cooldown == 0 && hop_chance > 0.0 && hop_len >= 2 && rng.random::<f32>() < hop_chance {
+            let rev = (-dir.0, -dir.1);
+            loop {
+                let d = dirs4[rng.random_range(0..4)];
+                if d != rev {
+                    dir = d;
+                    break;
+                }
+            }
+            // the hop wanders as it goes (each cell may kink 90 deg), so it reads as
+            // a short curvy block-dash rather than a dead-straight ruler.
+            for _ in 0..hop_len {
+                if rng.random::<f32>() < 0.30 {
+                    dir = if rng.random::<bool>() {
+                        (dir.1, -dir.0)
+                    } else {
+                        (-dir.1, dir.0)
+                    };
+                }
+                moves.push(dir);
+                block.push(true);
+            }
+            cooldown = hop_len + rng.random_range(3..8);
+            continue;
+        }
         // mostly go straight (flowing lines); otherwise turn left/right 90 deg.
         if rng.random::<f32>() < turn_prob {
             dir = if rng.random::<bool>() {
@@ -11049,6 +11246,7 @@ fn snake_walk(w: i32, h: i32, rng: &mut StdRng, turn_prob: f32) -> (Vec<(i32, i3
             };
         }
         moves.push(dir);
+        block.push(false);
     }
 
     // Close the loop: walk straight back to the start cell (net displacement 0).
@@ -11058,10 +11256,10 @@ fn snake_walk(w: i32, h: i32, rng: &mut StdRng, turn_prob: f32) -> (Vec<(i32, i3
         nx += dx;
         ny += dy;
     }
-    while nx > 0 { moves.push((-1, 0)); nx -= 1; }
-    while nx < 0 { moves.push((1, 0)); nx += 1; }
-    while ny > 0 { moves.push((0, -1)); ny -= 1; }
-    while ny < 0 { moves.push((0, 1)); ny += 1; }
+    while nx > 0 { moves.push((-1, 0)); block.push(false); nx -= 1; }
+    while nx < 0 { moves.push((1, 0)); block.push(false); nx += 1; }
+    while ny > 0 { moves.push((0, -1)); block.push(false); ny -= 1; }
+    while ny < 0 { moves.push((0, 1)); block.push(false); ny += 1; }
 
     let start = (rng.random_range(0..w), rng.random_range(0..h));
     let (mut cx, mut cy) = start;
@@ -11073,7 +11271,7 @@ fn snake_walk(w: i32, h: i32, rng: &mut StdRng, turn_prob: f32) -> (Vec<(i32, i3
         cells.push((cx, cy));
         dirs.push((dx, dy));
     }
-    (cells, dirs)
+    (cells, dirs, block)
 }
 
 fn draw_snakes(
@@ -11105,10 +11303,16 @@ fn draw_snakes(
     let turn_prob = param_f32("TURN", 0.35).clamp(0.0, 0.9);
     let speed_base = param_f32("SPEED", 4.0);
     let body_len = param_f32("LEN", 22.0).round().clamp(4.0, 40.0) as usize;
+    let hop_chance = param_f32("HOP", 0.0).clamp(0.0, 1.0);
+    let hop_coef = param_f32("HOPC", 0.4).clamp(0.2, 1.5);
+    let rbow = param_f32("RBOW", 0.0).clamp(0.0, 1.0);
+    // hop displacement = body length * coefficient, in cells.
+    let hop_len = ((body_len as f32 * hop_coef).round() as i32).max(2);
 
     struct Snake {
         cells: Vec<(i32, i32)>,
         dirs: Vec<(i32, i32)>,
+        block: Vec<bool>,
         color: Color,
         speed: f32,
         phase: f32,
@@ -11118,16 +11322,24 @@ fn draw_snakes(
     let mut attempts = 0;
     while snakes.len() < count && attempts < count * 8 {
         attempts += 1;
-        let (cells, dirs) = snake_walk(w, h, rng, turn_prob);
+        let (cells, dirs, block) = snake_walk(w, h, rng, turn_prob, hop_chance, hop_len);
         if cells.len() < 8 {
             continue;
         }
         let n = cells.len();
-        let color = colors[snakes.len() % colors.len()];
+        let base = colors[snakes.len() % colors.len()];
+        // rainbow: each snake gets a hue spread around the wheel, blended over the
+        // palette color by `rbow` (0 = palette, 1 = full rainbow).
+        let color = if rbow > 0.0 {
+            let hue = (snakes.len() as f32 / count.max(1) as f32) * 360.0;
+            lerp_color(base, hsl_to_rgb(hue as f64, 0.85, 0.55), rbow)
+        } else {
+            base
+        };
         let speed = (speed_base * (0.8 + rng.random::<f32>() * 0.4)).max(0.5);
         let phase = rng.random_range(0.0..n as f32);
         let body = body_len.clamp(4, 40).min(n.saturating_sub(1));
-        snakes.push(Snake { cells, dirs, color, speed, phase, body });
+        snakes.push(Snake { cells, dirs, block, color, speed, phase, body });
     }
 
     // Pass 1: collect every visible body cell. claim = (ch, color, hbit, vbit, head)
@@ -11144,7 +11356,11 @@ fn draw_snakes(
             // not coordinate deltas, so the wrap seam stays a continuous line.
             let din = s.dirs[idx as usize];
             let dout = s.dirs[(idx + 1).rem_euclid(n) as usize];
-            let (ch, hb, vb) = snake_seg(din, dout);
+            let (mut ch, hb, vb) = snake_seg(din, dout);
+            // hop cells render as solid blocks instead of thin box-drawing lines.
+            if s.block[idx as usize] {
+                ch = '\u{2588}'; // full block
+            }
             let fade = 1.0 - k as f32 / bl as f32; // 1 at head -> ~0 at tail
             let amt = (25.0 + 70.0 * fade) as u8;
             claims
@@ -15055,15 +15271,19 @@ fn morph_session(mode_a: &str, seed_a: u64, mode_b: &str, seed_b: u64, strat0: &
     // Live knob editing while animating: same declared config + pane as the demo
     // browser. Auto-open when the mode declares knobs so they're visible on entry.
     let spec = mode_spec(mode_a);
-    let mut pvals: Vec<f32> = spec.params.iter().map(|p| p.default).collect();
+    let mut saved = load_options();
+    let mut randomize = load_randomize(&saved);
+    let mut pvals: Vec<f32> = pvals_for(&spec, mode_a, &saved);
     let mut psel: usize = 0;
     let mut pane_open = !spec.params.is_empty();
     let has_params = !spec.params.is_empty();
 
     loop {
         // Push knob values to env so the iterate subprocess picks up live edits.
+        // Randomize -> per-seed random samples instead of the tuned pvals.
         // SAFETY: morph_session runs on the single demo thread.
-        for (p, v) in spec.params.iter().zip(pvals.iter()) {
+        let eff = effective_pvals(&spec, &pvals, seed_a, randomize);
+        for (p, v) in spec.params.iter().zip(eff.iter()) {
             unsafe { std::env::set_var(format!("ASCII_P_{}", p.key), format!("{}", v)) };
         }
         // When the pane is open, render the animation narrower so the tree isn't
@@ -15142,7 +15362,7 @@ fn morph_session(mode_a: &str, seed_a: u64, mode_b: &str, seed_b: u64, strat0: &
         io::stdout().flush().unwrap();
         if pane_open {
             // overlay the knob pane on the right; covers columns rw..w each frame.
-            draw_options_pane(rw, th, mode_a, &spec, &pvals, psel, seed_a, theme);
+            draw_options_pane(rw, th, mode_a, &spec, &eff, psel, seed_a, theme, randomize);
         }
 
         if event::poll(Duration::from_millis(16)).unwrap_or(false) {
@@ -15150,6 +15370,10 @@ fn morph_session(mode_a: &str, seed_a: u64, mode_b: &str, seed_b: u64, strat0: &
                 Ok(Event::Key(key)) => match key.code {
                     KeyCode::Char('q') | KeyCode::Esc => break,
                     KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => break,
+                    KeyCode::Char('g') => {
+                        randomize = !randomize;
+                        store_randomize(&mut saved, randomize);
+                    }
                     KeyCode::Char(' ') => playing = !playing,
                     KeyCode::Char('1') => strat = "dissolve".to_string(),
                     KeyCode::Char('2') => strat = "field".to_string(),
@@ -15173,21 +15397,26 @@ fn morph_session(mode_a: &str, seed_a: u64, mode_b: &str, seed_b: u64, strat0: &
                     KeyCode::Char('-') | KeyCode::Char('_') if pane_open && has_params => {
                         let p = &spec.params[psel];
                         pvals[psel] = (pvals[psel] - p.step).max(p.min);
+                        store_pvals(mode_a, &spec, &pvals, &mut saved);
                     }
                     KeyCode::Char('+') | KeyCode::Char('=') if pane_open && has_params => {
                         let p = &spec.params[psel];
                         pvals[psel] = (pvals[psel] + p.step).min(p.max);
+                        store_pvals(mode_a, &spec, &pvals, &mut saved);
                     }
                     KeyCode::Char('r') if pane_open && has_params => {
                         pvals[psel] = spec.params[psel].default;
+                        store_pvals(mode_a, &spec, &pvals, &mut saved);
                     }
                     KeyCode::Left if pane_open && has_params => {
                         let p = &spec.params[psel];
                         pvals[psel] = (pvals[psel] - p.step).max(p.min);
+                        store_pvals(mode_a, &spec, &pvals, &mut saved);
                     }
                     KeyCode::Right if pane_open && has_params => {
                         let p = &spec.params[psel];
                         pvals[psel] = (pvals[psel] + p.step).min(p.max);
+                        store_pvals(mode_a, &spec, &pvals, &mut saved);
                     }
                     KeyCode::Left => {
                         playing = false;
@@ -15469,6 +15698,50 @@ mod tests {
         let (mut grid, mut rng, palette) = make_grid(80, 24, 42);
         draw_snakes(&mut grid, 80, 24, 42, &palette, &mut rng, 0.0, 7);
         insta::assert_snapshot!("snakes_42", grid_to_string(&grid));
+    }
+
+    #[test]
+    fn options_persist_roundtrip() {
+        let dir = std::env::temp_dir().join(format!("ascii-opt-test-{}", std::process::id()));
+        let path = dir.join("options.tsv");
+        let mut map: OptMap = std::collections::HashMap::new();
+        {
+            let m = map.entry("snakes".to_string()).or_default();
+            m.insert("COUNT".to_string(), 30.0);
+            m.insert("RBOW".to_string(), 1.0);
+            m.insert("HOP".to_string(), 5.0); // out of range -> clamped on load via pvals_for
+        }
+        save_options_to(&path, &map);
+        let back = load_options_from(&path);
+        assert_eq!(back.get("snakes").and_then(|m| m.get("COUNT")).copied(), Some(30.0));
+
+        // pvals_for applies saved values, clamped to each param's range.
+        let spec = mode_spec("snakes");
+        let pv = pvals_for(&spec, "snakes", &back);
+        let count_i = spec.params.iter().position(|p| p.key == "COUNT").unwrap();
+        let hop_i = spec.params.iter().position(|p| p.key == "HOP").unwrap();
+        let turn_i = spec.params.iter().position(|p| p.key == "TURN").unwrap();
+        assert_eq!(pv[count_i], 30.0, "saved value applied");
+        assert_eq!(pv[hop_i], spec.params[hop_i].max, "out-of-range clamped to max");
+        assert_eq!(pv[turn_i], spec.params[turn_i].default, "unset falls back to default");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn randomize_knobs_per_seed() {
+        let spec = mode_spec("snakes");
+        let zeros = vec![0.0f32; spec.params.len()];
+        let a = effective_pvals(&spec, &zeros, 7, true);
+        let a2 = effective_pvals(&spec, &zeros, 7, true);
+        let b = effective_pvals(&spec, &zeros, 8, true);
+        assert_eq!(a, a2, "randomize is deterministic for a given seed");
+        assert_ne!(a, b, "randomize re-rolls when the seed changes");
+        for (p, v) in spec.params.iter().zip(a.iter()) {
+            assert!(*v >= p.min && *v <= p.max, "{} sampled in range", p.key);
+        }
+        // toggled off -> passes the tuned values straight through.
+        let pv = vec![1.0f32; spec.params.len()];
+        assert_eq!(effective_pvals(&spec, &pv, 7, false), pv);
     }
 
     #[test]
