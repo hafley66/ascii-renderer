@@ -71,28 +71,67 @@ struct ModeSpec {
     params: &'static [Param],
 }
 
-static DELTA_PARAMS: &[Param] = &[
-    Param { key: "K",    label: "stiffness",  min: 0.5,   max: 12.0, default: 4.0,    step: 0.5 },
-    Param { key: "D",    label: "inertia",    min: 0.001, max: 0.03, default: 0.0055, step: 0.001 },
-    Param { key: "ZETA", label: "damping",    min: 0.02,  max: 1.0,  default: 0.18,   step: 0.02 },
-    Param { key: "WIND", label: "wind",       min: 0.0,   max: 3.0,  default: 1.0,    step: 0.1 },
-    Param { key: "TURB", label: "turbulence", min: 0.0,   max: 3.0,  default: 1.0,    step: 0.1 },
-    Param { key: "RBOW", label: "rainbow",    min: 0.0,   max: 1.0,  default: 0.0,    step: 0.25 },
+/// One knob: `param!(KEY, label, min, max, default, step)`. KEY is the env suffix
+/// (ASCII_P_<KEY>); the renderer reads it via `param_f32(KEY, default)`.
+macro_rules! param {
+    ($key:literal, $label:literal, $min:expr, $max:expr, $default:expr, $step:expr) => {
+        Param { key: $key, label: $label, min: $min, max: $max, default: $default, step: $step }
+    };
+}
+
+/// A reusable config form: the mode name(s) it applies to, how they animate, and
+/// their tunable knobs. The demo panel renders the knobs and the `a` key picks the
+/// animate strategy. One row here is all a mode needs -- no per-mode wiring.
+struct ModeForm {
+    names: &'static [&'static str],
+    animate: AnimKind,
+    params: &'static [Param],
+}
+
+/// The form registry. To give a mode a config form, add ONE row: list its name(s),
+/// the animate kind, and its knobs (inline via `param!`). Modes absent here get the
+/// default form (iterate, no knobs).
+static MODE_FORMS: &[ModeForm] = &[
+    ModeForm {
+        names: &["delta"],
+        animate: AnimKind::Iterate,
+        params: &[
+            param!("K", "stiffness", 0.5, 12.0, 4.0, 0.5),
+            param!("D", "inertia", 0.001, 0.03, 0.0055, 0.001),
+            param!("ZETA", "damping", 0.02, 1.0, 0.18, 0.02),
+            param!("WIND", "wind", 0.0, 3.0, 1.0, 0.1),
+            param!("TURB", "turbulence", 0.0, 3.0, 1.0, 0.1),
+            param!("RBOW", "rainbow", 0.0, 1.0, 0.0, 0.25),
+        ],
+    },
+    ModeForm {
+        names: &["snakes"],
+        animate: AnimKind::Iterate,
+        params: &[
+            param!("COUNT", "count", 1.0, 60.0, 8.0, 1.0),
+            param!("TURN", "turn", 0.0, 0.9, 0.35, 0.05),
+            param!("SPEED", "speed", 1.0, 10.0, 4.0, 0.5),
+            param!("LEN", "length", 4.0, 40.0, 22.0, 2.0),
+        ],
+    },
+    ModeForm {
+        names: &["fullmetal-eyes", "fullmetal-eyes2", "eyes3", "solar-system"],
+        animate: AnimKind::Iterate,
+        params: &[],
+    },
+    ModeForm { names: &["stained"], animate: AnimKind::Vflow, params: &[] },
 ];
 
-/// Look up a mode's declared config. Unlisted modes default to seed-morph, no knobs.
+/// Look up a mode's declared config. Unlisted modes default to iterate, no knobs:
+/// T animates the mode natively if it reads it (in-process via iterate_grid),
+/// otherwise the player warps the base frame over time.
 fn mode_spec(name: &str) -> ModeSpec {
-    match name {
-        "delta" => ModeSpec { animate: AnimKind::Iterate, params: DELTA_PARAMS },
-        "fullmetal-eyes" | "fullmetal-eyes2" | "eyes3" | "solar-system" => {
-            ModeSpec { animate: AnimKind::Iterate, params: &[] }
+    for f in MODE_FORMS {
+        if f.names.contains(&name) {
+            return ModeSpec { animate: f.animate, params: f.params };
         }
-        "stained" => ModeSpec { animate: AnimKind::Vflow, params: &[] },
-        // Default: iterate. T animates the mode -- natively if the mode reads it
-        // (in-process via iterate_grid), otherwise the player warps the base frame
-        // over time, so every mode animates per seed with no per-frame re-render.
-        _ => ModeSpec { animate: AnimKind::Iterate, params: &[] },
     }
+    ModeSpec { animate: AnimKind::Iterate, params: &[] }
 }
 
 /// Strategy string the morph player understands for a given animate kind.
@@ -218,12 +257,9 @@ fn demo_pick_mode(all_modes: &[&str], current: usize) -> Option<usize> {
                     }
                     return filtered.get(sel).copied();
                 }
-                KeyCode::Up => sel = sel.saturating_sub(1),
-                KeyCode::Down => {
-                    if sel < filtered.len() {
-                        sel += 1; // can land on the cancel entry
-                    }
-                }
+                // wrap around top<->bottom; cancel_idx is the bottom-most entry.
+                KeyCode::Up => sel = if sel == 0 { cancel_idx } else { sel - 1 },
+                KeyCode::Down => sel = if sel >= cancel_idx { 0 } else { sel + 1 },
                 KeyCode::Backspace => {
                     query.pop();
                     sel = 0;
@@ -393,6 +429,7 @@ fn run_demo(initial_seed: u64) {
         "constellation",
         "strata",
         "circuit",
+        "snakes",
         "quilt",
         "patchwalk",
         "eyes++",
@@ -673,6 +710,7 @@ fn main() {
         eprintln!("  constellation  Night sky with named, line-connected star clusters [count]");
         eprintln!("  strata    Geological cross-section with fossils [layers]");
         eprintln!("  circuit   PCB traces with pads, Manhattan routing [traces]");
+        eprintln!("  snakes    Circuit traces slithering around hidden loops, crossover knots [count]");
         eprintln!("  quilt     Stitched patchwork of tile patterns [min_patch] [max_patch]");
         eprintln!("  patchwalk Quilted mondrian crossed by a waypoint trail [stops] [line_w]");
         eprintln!("  aurora    Layered night-sky ribbons over a snowy horizon [bands]");
@@ -5591,100 +5629,17 @@ fn main() {
             }
         }
     } else if mode == "circuit" {
-        // circuit [traces] -- PCB traces with pads, Manhattan routing
+        // circuit [traces] -- PCB traces with pads, Manhattan routing.
+        // Native time T: current pulses flow along each trace (see draw_circuit).
         let trace_count: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(14);
         let trace_count = trace_count.clamp(1, 60);
-
-        // board: faint dot grid
-        for y in 0..height {
-            for x in 0..width {
-                if x % 4 == 0 && y % 2 == 0 {
-                    grid[y][x] = Cell::new('·', darken(palette[1], 90));
-                }
-            }
-        }
-
-        let free = |g: &Grid, x: i32, y: i32| -> bool {
-            let c = g[y as usize][x as usize].ch;
-            c == ' ' || c == '·'
-        };
-
-        let trace_colors = [palette[1], palette[2], palette[3]];
-        let mut placed = 0;
-        let mut attempts = 0;
-        while placed < trace_count && attempts < trace_count * 8 {
-            attempts += 1;
-            let mut x = rng.random_range(2..width as i32 - 2);
-            let mut y = rng.random_range(1..height as i32 - 1);
-            if !free(&grid, x, y) {
-                continue;
-            }
-
-            let mut pts: Vec<(i32, i32)> = vec![(x, y)];
-            let dirs = [(1i32, 0i32), (-1, 0), (0, 1), (0, -1)];
-            let mut dir = dirs[rng.random_range(0..4)];
-            let segs = rng.random_range(2..5);
-            'seg: for _ in 0..segs {
-                let len = rng.random_range(4..13);
-                for _ in 0..len {
-                    let nx = x + dir.0;
-                    let ny = y + dir.1;
-                    if nx < 1 || ny < 1 || nx >= width as i32 - 1 || ny >= height as i32 - 1 {
-                        break 'seg;
-                    }
-                    if !free(&grid, nx, ny) || pts.contains(&(nx, ny)) {
-                        break 'seg;
-                    }
-                    x = nx;
-                    y = ny;
-                    pts.push((x, y));
-                }
-                dir = if dir.0 != 0 {
-                    if rng.random::<f32>() < 0.5 {
-                        (0, 1)
-                    } else {
-                        (0, -1)
-                    }
-                } else {
-                    if rng.random::<f32>() < 0.5 {
-                        (1, 0)
-                    } else {
-                        (-1, 0)
-                    }
-                };
-            }
-            if pts.len() < 4 {
-                continue;
-            }
-
-            let color = trace_colors[placed % trace_colors.len()];
-            let pad_color = lighten(color, 30);
-            for i in 0..pts.len() {
-                let (px, py) = pts[i];
-                let ch = if i == 0 || i == pts.len() - 1 {
-                    '◉'
-                } else {
-                    let din = (pts[i].0 - pts[i - 1].0, pts[i].1 - pts[i - 1].1);
-                    let dout = (pts[i + 1].0 - pts[i].0, pts[i + 1].1 - pts[i].1);
-                    match (din, dout) {
-                        ((1, 0), (1, 0)) | ((-1, 0), (-1, 0)) => '─',
-                        ((0, 1), (0, 1)) | ((0, -1), (0, -1)) => '│',
-                        ((1, 0), (0, 1)) | ((0, -1), (-1, 0)) => '╮',
-                        ((1, 0), (0, -1)) | ((0, 1), (-1, 0)) => '╯',
-                        ((-1, 0), (0, 1)) | ((0, -1), (1, 0)) => '╭',
-                        ((-1, 0), (0, -1)) | ((0, 1), (1, 0)) => '╰',
-                        _ => '·',
-                    }
-                };
-                let c = if i == 0 || i == pts.len() - 1 {
-                    pad_color
-                } else {
-                    color
-                };
-                grid[py as usize][px as usize] = Cell::new(ch, c);
-            }
-            placed += 1;
-        }
+        draw_circuit(&mut grid, width, height, seed, &palette, &mut rng, t_anim, trace_count);
+    } else if mode == "snakes" {
+        // snakes [count] -- PCB traces that slither around hidden loops; where two
+        // cross, a bright crossover knot. Native time T (see draw_snakes).
+        let snake_count: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(8);
+        let snake_count = snake_count.clamp(1, 80);
+        draw_snakes(&mut grid, width, height, seed, &palette, &mut rng, t_anim, snake_count);
     } else if mode == "quilt" {
         // quilt [min_patch] [max_patch] -- stitched patchwork of tile patterns
         let min_p: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(10);
@@ -10911,6 +10866,319 @@ fn draw_forest_pp(grid: &mut Grid, width: usize, height: usize, seed: u64, palet
     }
 }
 
+// --- circuit : PCB traces with Manhattan routing and pads. Static topology is
+// fully determined by `seed` (so a snapshot at any t shows the same board); the
+// time `t` only drives a bright "current" pulse that flows along every trace,
+// looping continuously. A native iterate mode -- smooth motion, no seed morph.
+fn draw_circuit(
+    grid: &mut Grid,
+    width: usize,
+    height: usize,
+    _seed: u64,
+    palette: &[Color; 5],
+    rng: &mut StdRng,
+    t: f32,
+    trace_count: usize,
+) {
+    // board: faint dot grid
+    for y in 0..height {
+        for x in 0..width {
+            if x % 4 == 0 && y % 2 == 0 {
+                grid[y][x] = Cell::new('·', darken(palette[1], 90));
+            }
+        }
+    }
+
+    let free = |g: &Grid, x: i32, y: i32| -> bool {
+        let c = g[y as usize][x as usize].ch;
+        c == ' ' || c == '·'
+    };
+
+    let trace_colors = [palette[1], palette[2], palette[3]];
+    // Keep each trace's polyline + color so the pulse pass can re-walk it.
+    let mut traces: Vec<(Vec<(i32, i32)>, Color)> = Vec::new();
+    let mut placed = 0;
+    let mut attempts = 0;
+    while placed < trace_count && attempts < trace_count * 8 {
+        attempts += 1;
+        let mut x = rng.random_range(2..width as i32 - 2);
+        let mut y = rng.random_range(1..height as i32 - 1);
+        if !free(grid, x, y) {
+            continue;
+        }
+
+        let mut pts: Vec<(i32, i32)> = vec![(x, y)];
+        let dirs = [(1i32, 0i32), (-1, 0), (0, 1), (0, -1)];
+        let mut dir = dirs[rng.random_range(0..4)];
+        let segs = rng.random_range(2..5);
+        'seg: for _ in 0..segs {
+            let len = rng.random_range(4..13);
+            for _ in 0..len {
+                let nx = x + dir.0;
+                let ny = y + dir.1;
+                if nx < 1 || ny < 1 || nx >= width as i32 - 1 || ny >= height as i32 - 1 {
+                    break 'seg;
+                }
+                if !free(grid, nx, ny) || pts.contains(&(nx, ny)) {
+                    break 'seg;
+                }
+                x = nx;
+                y = ny;
+                pts.push((x, y));
+            }
+            dir = if dir.0 != 0 {
+                if rng.random::<f32>() < 0.5 {
+                    (0, 1)
+                } else {
+                    (0, -1)
+                }
+            } else {
+                if rng.random::<f32>() < 0.5 {
+                    (1, 0)
+                } else {
+                    (-1, 0)
+                }
+            };
+        }
+        if pts.len() < 4 {
+            continue;
+        }
+
+        let color = trace_colors[placed % trace_colors.len()];
+        let pad_color = lighten(color, 30);
+        for i in 0..pts.len() {
+            let (px, py) = pts[i];
+            let ch = if i == 0 || i == pts.len() - 1 {
+                '◉'
+            } else {
+                let din = (pts[i].0 - pts[i - 1].0, pts[i].1 - pts[i - 1].1);
+                let dout = (pts[i + 1].0 - pts[i].0, pts[i + 1].1 - pts[i].1);
+                match (din, dout) {
+                    ((1, 0), (1, 0)) | ((-1, 0), (-1, 0)) => '─',
+                    ((0, 1), (0, 1)) | ((0, -1), (0, -1)) => '│',
+                    ((1, 0), (0, 1)) | ((0, -1), (-1, 0)) => '╮',
+                    ((1, 0), (0, -1)) | ((0, 1), (-1, 0)) => '╯',
+                    ((-1, 0), (0, 1)) | ((0, -1), (1, 0)) => '╭',
+                    ((-1, 0), (0, -1)) | ((0, 1), (1, 0)) => '╰',
+                    _ => '·',
+                }
+            };
+            let c = if i == 0 || i == pts.len() - 1 {
+                pad_color
+            } else {
+                color
+            };
+            grid[py as usize][px as usize] = Cell::new(ch, c);
+        }
+        traces.push((pts, color));
+        placed += 1;
+    }
+
+    // Current pulse: a bright comet head with a fading tail walks each trace,
+    // its head index = t * SPEED + per-trace phase, wrapped over the path length.
+    // Cells per t-unit (clock advances ~0.06/frame, so ~0.18 cells/frame).
+    const SPEED: f32 = 3.0;
+    const TAIL: i32 = 5;
+    for (ti, (pts, color)) in traces.iter().enumerate() {
+        let len = pts.len() as i32;
+        if len < 2 {
+            continue;
+        }
+        // Distinct phase + slight speed spread so traces don't pulse in lockstep.
+        let phase = ti as f32 * 0.73;
+        let speed = SPEED * (1.0 + ((ti % 5) as f32) * 0.12);
+        let head = (t * speed + phase).rem_euclid(len as f32);
+        let head_i = head as i32;
+        for k in 0..=TAIL {
+            let idx = (head_i - k).rem_euclid(len);
+            let (px, py) = pts[idx as usize];
+            let cur = grid[py as usize][px as usize];
+            // brightness fades along the tail; head is brightest
+            let fade = 1.0 - k as f32 / (TAIL as f32 + 1.0);
+            let amt = (90.0 * fade) as u8;
+            grid[py as usize][px as usize] = Cell::new(cur.ch, lighten(*color, amt));
+        }
+    }
+}
+
+// --- snakes : circuit traces that slither. Each snake rides a hidden, fixed
+// Manhattan loop (fully determined by `seed`); only a body-window of length L is
+// drawn, and the window slides along the loop by `t`, so the trace crawls forever
+// with no teleport. Two snakes meeting at perpendicular cells form a bright
+// crossover knot. Native iterate mode -- smooth, deterministic in (seed, t).
+
+/// Box-drawing glyph for a cell given the in/out step directions, plus axis bits
+/// (h = horizontal travel, v = vertical travel) used for crossover detection.
+fn snake_seg(din: (i32, i32), dout: (i32, i32)) -> (char, bool, bool) {
+    let ch = match (din, dout) {
+        ((1, 0), (1, 0)) | ((-1, 0), (-1, 0)) => '─',
+        ((0, 1), (0, 1)) | ((0, -1), (0, -1)) => '│',
+        ((1, 0), (0, 1)) | ((0, -1), (-1, 0)) => '╮',
+        ((1, 0), (0, -1)) | ((0, 1), (-1, 0)) => '╯',
+        ((-1, 0), (0, 1)) | ((0, -1), (1, 0)) => '╭',
+        ((-1, 0), (0, -1)) | ((0, 1), (1, 0)) => '╰',
+        _ => '·',
+    };
+    let h = din.0 != 0 || dout.0 != 0;
+    let v = din.1 != 0 || dout.1 != 0;
+    (ch, h, v)
+}
+
+/// Build a random-walking, wrap-around (toroidal) closed loop for a snake. The
+/// walk meanders -- mostly continuing straight, sometimes turning 90 degrees,
+/// never reversing -- then a short Manhattan return leg closes it back to the
+/// exact start so the cycle is seamless (the body window slides forever with no
+/// teleport). Cells are already wrapped into [0,w) x [0,h); the per-cell step
+/// direction is returned too, so glyphs (and the wrap seam) render as continuous
+/// box-drawing lines and corners.
+fn snake_walk(w: i32, h: i32, rng: &mut StdRng, turn_prob: f32) -> (Vec<(i32, i32)>, Vec<(i32, i32)>) {
+    if w < 4 || h < 4 {
+        return (Vec::new(), Vec::new());
+    }
+    let dirs4 = [(1, 0), (-1, 0), (0, 1), (0, -1)];
+    let steps = rng.random_range(40..90);
+    let mut moves: Vec<(i32, i32)> = Vec::with_capacity(steps as usize + 32);
+    let mut dir = dirs4[rng.random_range(0..4)];
+    for _ in 0..steps {
+        // mostly go straight (flowing lines); otherwise turn left/right 90 deg.
+        if rng.random::<f32>() < turn_prob {
+            dir = if rng.random::<bool>() {
+                (dir.1, -dir.0) // turn left
+            } else {
+                (-dir.1, dir.0) // turn right
+            };
+        }
+        moves.push(dir);
+    }
+
+    // Close the loop: walk straight back to the start cell (net displacement 0).
+    // Random-walk drift is ~sqrt(steps), so these return legs stay short.
+    let (mut nx, mut ny) = (0i32, 0i32);
+    for &(dx, dy) in &moves {
+        nx += dx;
+        ny += dy;
+    }
+    while nx > 0 { moves.push((-1, 0)); nx -= 1; }
+    while nx < 0 { moves.push((1, 0)); nx += 1; }
+    while ny > 0 { moves.push((0, -1)); ny -= 1; }
+    while ny < 0 { moves.push((0, 1)); ny += 1; }
+
+    let start = (rng.random_range(0..w), rng.random_range(0..h));
+    let (mut cx, mut cy) = start;
+    let mut cells = Vec::with_capacity(moves.len());
+    let mut dirs = Vec::with_capacity(moves.len());
+    for &(dx, dy) in &moves {
+        cx = (cx + dx).rem_euclid(w);
+        cy = (cy + dy).rem_euclid(h);
+        cells.push((cx, cy));
+        dirs.push((dx, dy));
+    }
+    (cells, dirs)
+}
+
+fn draw_snakes(
+    grid: &mut Grid,
+    width: usize,
+    height: usize,
+    _seed: u64,
+    palette: &[Color; 5],
+    rng: &mut StdRng,
+    t: f32,
+    snake_count: usize,
+) {
+    use std::collections::HashMap;
+    // faint board dot grid, same as circuit
+    for y in 0..height {
+        for x in 0..width {
+            if x % 4 == 0 && y % 2 == 0 {
+                grid[y][x] = Cell::new('·', darken(palette[1], 90));
+            }
+        }
+    }
+
+    let w = width as i32;
+    let h = height as i32;
+    let colors = [palette[1], palette[2], palette[3], lighten(palette[2], 25)];
+
+    // Live knobs (demo panel via ASCII_P_*); fall back to the CLI-arg count.
+    let count = param_f32("COUNT", snake_count as f32).round().clamp(1.0, 80.0) as usize;
+    let turn_prob = param_f32("TURN", 0.35).clamp(0.0, 0.9);
+    let speed_base = param_f32("SPEED", 4.0);
+    let body_len = param_f32("LEN", 22.0).round().clamp(4.0, 40.0) as usize;
+
+    struct Snake {
+        cells: Vec<(i32, i32)>,
+        dirs: Vec<(i32, i32)>,
+        color: Color,
+        speed: f32,
+        phase: f32,
+        body: usize,
+    }
+    let mut snakes: Vec<Snake> = Vec::new();
+    let mut attempts = 0;
+    while snakes.len() < count && attempts < count * 8 {
+        attempts += 1;
+        let (cells, dirs) = snake_walk(w, h, rng, turn_prob);
+        if cells.len() < 8 {
+            continue;
+        }
+        let n = cells.len();
+        let color = colors[snakes.len() % colors.len()];
+        let speed = (speed_base * (0.8 + rng.random::<f32>() * 0.4)).max(0.5);
+        let phase = rng.random_range(0.0..n as f32);
+        let body = body_len.clamp(4, 40).min(n.saturating_sub(1));
+        snakes.push(Snake { cells, dirs, color, speed, phase, body });
+    }
+
+    // Pass 1: collect every visible body cell. claim = (ch, color, hbit, vbit, head)
+    let mut claims: HashMap<(i32, i32), Vec<(char, Color, bool, bool, bool)>> = HashMap::new();
+    for s in &snakes {
+        let n = s.cells.len() as i32;
+        let head = (t * s.speed + s.phase).rem_euclid(n as f32);
+        let head_i = head as i32;
+        let bl = s.body as i32;
+        for k in 0..bl {
+            let idx = (head_i - k).rem_euclid(n);
+            let (px, py) = s.cells[idx as usize];
+            // dir into this cell, and dir out (into the next) -- from stored steps,
+            // not coordinate deltas, so the wrap seam stays a continuous line.
+            let din = s.dirs[idx as usize];
+            let dout = s.dirs[(idx + 1).rem_euclid(n) as usize];
+            let (ch, hb, vb) = snake_seg(din, dout);
+            let fade = 1.0 - k as f32 / bl as f32; // 1 at head -> ~0 at tail
+            let amt = (25.0 + 70.0 * fade) as u8;
+            claims
+                .entry((px, py))
+                .or_default()
+                .push((ch, lighten(s.color, amt), hb, vb, k == 0));
+        }
+    }
+
+    // Pass 2: resolve. Single claim -> draw it (head -> pad glyph). Multiple claims
+    // spanning both axes -> bright crossover knot. Otherwise (parallel overlap) the
+    // head, else the first claim, wins.
+    let knot_color = lighten(palette[4], 80);
+    for ((px, py), v) in claims {
+        if px < 0 || py < 0 || px >= w || py >= h {
+            continue;
+        }
+        let (gx, gy) = (px as usize, py as usize);
+        if v.len() == 1 {
+            let (ch, col, _, _, head) = v[0];
+            grid[gy][gx] = Cell::new(if head { '◉' } else { ch }, col);
+        } else {
+            let has_h = v.iter().any(|e| e.2);
+            let has_v = v.iter().any(|e| e.3);
+            if has_h && has_v {
+                grid[gy][gx] = Cell::new('╬', knot_color);
+            } else {
+                let e = v.iter().find(|e| e.4).unwrap_or(&v[0]);
+                grid[gy][gx] = Cell::new(if e.4 { '◉' } else { e.0 }, e.1);
+            }
+        }
+    }
+}
+
 // --- phyllotaxis : golden-angle sunflower spiral; glyph scales with radius,
 //     color ramps outward through the palette. ---
 fn draw_phyllotaxis(grid: &mut Grid, width: usize, height: usize, seed: u64, palette: &[Color; 5], rng: &mut StdRng, t: f32) {
@@ -13876,7 +14144,7 @@ fn draw_delta(grid: &mut Grid, width: usize, height: usize, _seed: u64, palette:
     let n = nodes.len();
 
     // Per-joint physics constants, tunable from the demo options pane (env knobs;
-    // see DELTA_PARAMS). Stiffness scales with branch thickness (~len), inertia
+    // see the "delta" form in MODE_FORMS). Stiffness scales with branch thickness (~len), inertia
     // with mass*len^2 (~len^3 for a uniform rod). Natural frequency then goes as
     // 1/len: the trunk sways slowly, twigs flutter fast.
     let kk = param_f32("K", 4.0); // stiffness coefficient
@@ -14395,6 +14663,14 @@ fn iterate_grid(mode: &str, seed: u64, theme: &str, w: usize, h: usize, t: f32) 
         }
         "moire" => {
             draw_moire(&mut grid, w, h, seed, &palette, &mut rng, t);
+            Some(grid)
+        }
+        "circuit" => {
+            draw_circuit(&mut grid, w, h, seed, &palette, &mut rng, t, 14);
+            Some(grid)
+        }
+        "snakes" => {
+            draw_snakes(&mut grid, w, h, seed, &palette, &mut rng, t, 7);
             Some(grid)
         }
         "nebula" => {
@@ -15179,6 +15455,42 @@ mod tests {
         let (mut grid, mut rng, palette) = make_grid(80, 24, 42);
         draw_delta(&mut grid, 80, 24, 42, &palette, &mut rng, 0.0);
         insta::assert_snapshot!("delta_42", grid_to_string(&grid));
+    }
+
+    #[test]
+    fn circuit_42() {
+        let (mut grid, mut rng, palette) = make_grid(80, 24, 42);
+        draw_circuit(&mut grid, 80, 24, 42, &palette, &mut rng, 0.0, 14);
+        insta::assert_snapshot!("circuit_42", grid_to_string(&grid));
+    }
+
+    #[test]
+    fn snakes_42() {
+        let (mut grid, mut rng, palette) = make_grid(80, 24, 42);
+        draw_snakes(&mut grid, 80, 24, 42, &palette, &mut rng, 0.0, 7);
+        insta::assert_snapshot!("snakes_42", grid_to_string(&grid));
+    }
+
+    #[test]
+    fn snakes_animate_and_deterministic() {
+        let frame = |t: f32| {
+            let (mut g, mut r, p) = make_grid(80, 24, 42);
+            draw_snakes(&mut g, 80, 24, 42, &p, &mut r, t, 7);
+            grid_to_string(&g)
+        };
+        assert_eq!(frame(1.3), frame(1.3), "same t -> same frame");
+        assert_ne!(frame(0.0), frame(4.0), "t should slither the snakes");
+    }
+
+    #[test]
+    fn circuit_topology_stable_across_time() {
+        // The current pulse only recolors cells; the trace topology (chars) must
+        // be identical at every t.
+        let (mut g0, mut r0, p0) = make_grid(80, 24, 42);
+        draw_circuit(&mut g0, 80, 24, 42, &p0, &mut r0, 0.0, 14);
+        let (mut g1, mut r1, p1) = make_grid(80, 24, 42);
+        draw_circuit(&mut g1, 80, 24, 42, &p1, &mut r1, 2.5, 14);
+        assert_eq!(grid_to_string(&g0), grid_to_string(&g1), "chars stable over t");
     }
 
     #[test]
