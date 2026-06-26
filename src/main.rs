@@ -253,10 +253,12 @@ fn rand_knob(seed: u64, p: &Param) -> f32 {
 }
 
 /// The values actually pushed to the renderer: the tuned `pvals` (deterministic),
-/// or per-seed random samples for every knob when `randomize` is on.
-fn effective_pvals(spec: &ModeSpec, pvals: &[f32], seed: u64, randomize: bool) -> Vec<f32> {
+/// or random samples for every knob when `randomize` is on. `roll` is a nonce the
+/// UI bumps with left/right to re-roll a fresh random set without changing seed.
+fn effective_pvals(spec: &ModeSpec, pvals: &[f32], seed: u64, randomize: bool, roll: u64) -> Vec<f32> {
     if randomize {
-        spec.params.iter().map(|p| rand_knob(seed, p)).collect()
+        let s = seed ^ roll.wrapping_mul(0x9E37_79B9_7F4A_7C15);
+        spec.params.iter().map(|p| rand_knob(s, p)).collect()
     } else {
         pvals.to_vec()
     }
@@ -613,6 +615,7 @@ fn run_demo(initial_seed: u64) {
     let mut spec = mode_spec(all_modes[mode_idx]);
     let mut saved = load_options();
     let mut randomize = load_randomize(&saved);
+    let mut roll: u64 = 0; // re-roll nonce for randomize mode
     let mut pvals: Vec<f32> = pvals_for(&spec, all_modes[mode_idx], &saved);
     let mut psel: usize = 0;
 
@@ -647,7 +650,7 @@ fn run_demo(initial_seed: u64) {
         // randomize mode these are per-seed random samples instead of the tuned
         // pvals. Child processes (preview + iterate animator) inherit them.
         // SAFETY: the demo loop is single-threaded.
-        let eff = effective_pvals(&spec, &pvals, seed, randomize);
+        let eff = effective_pvals(&spec, &pvals, seed, randomize, roll);
         for (p, v) in spec.params.iter().zip(eff.iter()) {
             unsafe { std::env::set_var(format!("ASCII_P_{}", p.key), format!("{}", v)) };
         }
@@ -694,10 +697,11 @@ fn run_demo(initial_seed: u64) {
             current_theme
         };
         let knob_tag = if randomize { "knobs:RANDOM " } else { "" };
+        let lr_hint = if randomize { "\u{2190}\u{2192}=reroll" } else { "\u{2190}\u{2192}=adjust" };
         let status = if pane_open {
             format!(
-                " {} | {}o=close opts  \u{2191}\u{2193}=select  \u{2190}\u{2192}=adjust  r=reset  g=rand-knobs  a=animate  q=quit ",
-                current_mode, knob_tag
+                " {} | {}o=close opts  \u{2191}\u{2193}=select  {}  r=reset  g=rand-knobs  a=animate  q=quit ",
+                current_mode, knob_tag, lr_hint
             )
         } else {
             format!(
@@ -763,7 +767,9 @@ fn run_demo(initial_seed: u64) {
                     }
                 }
                 KeyCode::Right => {
-                    if pane_open && has_params {
+                    if pane_open && has_params && randomize {
+                        roll = roll.wrapping_add(1); // re-roll the random set
+                    } else if pane_open && has_params {
                         let p = &spec.params[psel];
                         pvals[psel] = (pvals[psel] + p.step).min(p.max);
                         store_pvals(current_mode, &spec, &pvals, &mut saved);
@@ -772,7 +778,9 @@ fn run_demo(initial_seed: u64) {
                     }
                 }
                 KeyCode::Left => {
-                    if pane_open && has_params {
+                    if pane_open && has_params && randomize {
+                        roll = roll.wrapping_sub(1);
+                    } else if pane_open && has_params {
                         let p = &spec.params[psel];
                         pvals[psel] = (pvals[psel] - p.step).max(p.min);
                         store_pvals(current_mode, &spec, &pvals, &mut saved);
@@ -15273,6 +15281,7 @@ fn morph_session(mode_a: &str, seed_a: u64, mode_b: &str, seed_b: u64, strat0: &
     let spec = mode_spec(mode_a);
     let mut saved = load_options();
     let mut randomize = load_randomize(&saved);
+    let mut roll: u64 = 0; // re-roll nonce for randomize mode
     let mut pvals: Vec<f32> = pvals_for(&spec, mode_a, &saved);
     let mut psel: usize = 0;
     let mut pane_open = !spec.params.is_empty();
@@ -15282,7 +15291,7 @@ fn morph_session(mode_a: &str, seed_a: u64, mode_b: &str, seed_b: u64, strat0: &
         // Push knob values to env so the iterate subprocess picks up live edits.
         // Randomize -> per-seed random samples instead of the tuned pvals.
         // SAFETY: morph_session runs on the single demo thread.
-        let eff = effective_pvals(&spec, &pvals, seed_a, randomize);
+        let eff = effective_pvals(&spec, &pvals, seed_a, randomize, roll);
         for (p, v) in spec.params.iter().zip(eff.iter()) {
             unsafe { std::env::set_var(format!("ASCII_P_{}", p.key), format!("{}", v)) };
         }
@@ -15394,6 +15403,12 @@ fn morph_session(mode_a: &str, seed_a: u64, mode_b: &str, seed_b: u64, strat0: &
                     KeyCode::Down if pane_open && has_params => {
                         psel = (psel + 1) % spec.params.len();
                     }
+                    KeyCode::Char('-') | KeyCode::Char('_') if pane_open && has_params && randomize => {
+                        roll = roll.wrapping_sub(1);
+                    }
+                    KeyCode::Char('+') | KeyCode::Char('=') if pane_open && has_params && randomize => {
+                        roll = roll.wrapping_add(1);
+                    }
                     KeyCode::Char('-') | KeyCode::Char('_') if pane_open && has_params => {
                         let p = &spec.params[psel];
                         pvals[psel] = (pvals[psel] - p.step).max(p.min);
@@ -15407,6 +15422,12 @@ fn morph_session(mode_a: &str, seed_a: u64, mode_b: &str, seed_b: u64, strat0: &
                     KeyCode::Char('r') if pane_open && has_params => {
                         pvals[psel] = spec.params[psel].default;
                         store_pvals(mode_a, &spec, &pvals, &mut saved);
+                    }
+                    KeyCode::Left if pane_open && has_params && randomize => {
+                        roll = roll.wrapping_sub(1);
+                    }
+                    KeyCode::Right if pane_open && has_params && randomize => {
+                        roll = roll.wrapping_add(1);
                     }
                     KeyCode::Left if pane_open && has_params => {
                         let p = &spec.params[psel];
@@ -15731,17 +15752,19 @@ mod tests {
     fn randomize_knobs_per_seed() {
         let spec = mode_spec("snakes");
         let zeros = vec![0.0f32; spec.params.len()];
-        let a = effective_pvals(&spec, &zeros, 7, true);
-        let a2 = effective_pvals(&spec, &zeros, 7, true);
-        let b = effective_pvals(&spec, &zeros, 8, true);
-        assert_eq!(a, a2, "randomize is deterministic for a given seed");
+        let a = effective_pvals(&spec, &zeros, 7, true, 0);
+        let a2 = effective_pvals(&spec, &zeros, 7, true, 0);
+        let b = effective_pvals(&spec, &zeros, 8, true, 0);
+        let rolled = effective_pvals(&spec, &zeros, 7, true, 1);
+        assert_eq!(a, a2, "randomize is deterministic for a given seed+roll");
         assert_ne!(a, b, "randomize re-rolls when the seed changes");
+        assert_ne!(a, rolled, "bumping the roll nonce re-rolls the set");
         for (p, v) in spec.params.iter().zip(a.iter()) {
             assert!(*v >= p.min && *v <= p.max, "{} sampled in range", p.key);
         }
         // toggled off -> passes the tuned values straight through.
         let pv = vec![1.0f32; spec.params.len()];
-        assert_eq!(effective_pvals(&spec, &pv, 7, false), pv);
+        assert_eq!(effective_pvals(&spec, &pv, 7, false, 0), pv);
     }
 
     #[test]
