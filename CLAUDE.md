@@ -52,7 +52,8 @@ party, soup, tree, trees, forest, forest2, forest3, forest4, aztec, fret, flower
 tiles, tiles-rand, tiles-skew, mondrian, mondrian2, bsp, layout, md, terrain, flow,
 noise, ca, ca-layout, stem, scene-walk, scene-walk-2, scene-walk-3, world,
 kintsugi, constellation, strata, circuit, quilt, patchwalk, trees8, trees9, boles4, boles5,
-eyes++, fullmetal-eyes++, trees++, forest++, phyllotaxis, moire, nebula, delta, stained
+eyes++, fullmetal-eyes++, trees++, forest++, phyllotaxis, moire, nebula, delta, stained,
+metro, koi, skyline, hive, jelly
 
 ## Architecture
 

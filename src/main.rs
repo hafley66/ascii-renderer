@@ -587,6 +587,11 @@ fn run_demo(initial_seed: u64) {
         "nebula",
         "delta",
         "stained",
+        "metro",
+        "koi",
+        "skyline",
+        "hive",
+        "jelly",
     ];
     let all_themes: &[&str] = &[
         "",
@@ -10375,6 +10380,440 @@ fn main() {
         grid = draw_kaleido(grid, width, height, seed, palette, rng, t_anim, &args);
     } else if mode == "contour" {
         grid = draw_contour(grid, width, height, seed, palette, rng, t_anim, &args);
+    } else if mode == "metro" {
+        // metro [lines] -- transit map: orthogonal routes with rounded bends,
+        // stations along each run, interchange rings where routes cross
+        let line_count: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(5);
+        let line_count = line_count.clamp(2, 9);
+
+        let grid_dot = darken(palette[1], 82);
+        for y in (0..height).step_by(3) {
+            for x in (0..width).step_by(6) {
+                grid[y][x] = Cell::new('·', grid_dot);
+            }
+        }
+
+        // per-cell line ids by orientation (id = line index + 1); an interchange
+        // is where two different lines meet in different orientations, so
+        // parallel overlapping runs don't smear into rings and a line never
+        // rings against its own bends
+        let mut occ_h = vec![vec![0u8; width]; height];
+        let mut occ_v = vec![vec![0u8; width]; height];
+        macro_rules! rail {
+            ($x:expr, $y:expr, $ch:expr, $col:expr, $id:expr, $dirbits:expr) => {{
+                let sx = $x;
+                let sy = $y;
+                if sx >= 0 && sy >= 0 && (sx as usize) < width && (sy as usize) < height {
+                    grid[sy as usize][sx as usize] = Cell::new($ch, $col);
+                    if $dirbits & 1 != 0 {
+                        occ_h[sy as usize][sx as usize] = $id;
+                    }
+                    if $dirbits & 2 != 0 {
+                        occ_v[sy as usize][sx as usize] = $id;
+                    }
+                }
+            }};
+        }
+
+        for li in 0..line_count {
+            let id = (li + 1) as u8;
+            let base = [palette[1], palette[2], palette[3]][li % 3];
+            let col = shift_hue(lighten(base, 8), li as f64 * 37.0);
+            let mut y: i32 = rng.random_range(2..(height as i32 - 3).max(3));
+            let mut x: i32 = 0;
+            let mut until_station: i32 = rng.random_range(4..9);
+            while x < width as i32 {
+                let run: i32 = rng.random_range(7..16);
+                for _ in 0..run {
+                    if x >= width as i32 {
+                        break;
+                    }
+                    until_station -= 1;
+                    if until_station <= 0 {
+                        rail!(x, y, '○', lighten(col, 30), id, 1);
+                        until_station = rng.random_range(6..13);
+                    } else {
+                        rail!(x, y, '─', col, id, 1);
+                    }
+                    x += 1;
+                }
+                if x >= width as i32 - 2 {
+                    while x < width as i32 {
+                        rail!(x, y, '─', col, id, 1);
+                        x += 1;
+                    }
+                    break;
+                }
+                let jog: i32 =
+                    rng.random_range(2..6) * if rng.random_range(0..2) == 0 { 1 } else { -1 };
+                let jog = if y + jog < 1 {
+                    jog.abs()
+                } else if y + jog > height as i32 - 2 {
+                    -jog.abs()
+                } else {
+                    jog
+                };
+                let step = jog.signum();
+                rail!(x, y, if step > 0 { '╮' } else { '╯' }, col, id, 3);
+                for _ in 0..jog.abs() - 1 {
+                    y += step;
+                    rail!(x, y, '│', col, id, 2);
+                }
+                y += step;
+                rail!(x, y, if step > 0 { '╰' } else { '╭' }, col, id, 3);
+                x += 1;
+            }
+        }
+
+        for y in 0..height {
+            for x in 0..width {
+                if occ_h[y][x] > 0 && occ_v[y][x] > 0 && occ_h[y][x] != occ_v[y][x] {
+                    grid[y][x] = Cell::new('◉', lighten(palette[4], 15));
+                }
+            }
+        }
+    } else if mode == "koi" {
+        // koi [fish] -- pond seen from above: still water, ripple rings, lily
+        // pads, koi gliding with curled tails
+        let fish_count: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(7);
+        let fish_count = fish_count.clamp(1, 24);
+
+        let pond = Rect {
+            x: 0,
+            y: 0,
+            w: width,
+            h: height,
+        };
+        fill_noise(
+            &mut grid,
+            &pond,
+            NoiseVariant::Dot,
+            darken(palette[1], 80),
+            darken(palette[2], 86),
+            &mut rng,
+        );
+
+        // ripple rings, squashed to ellipses
+        for _ in 0..(width / 25).max(2) {
+            let cx = rng.random_range(0..width) as f32;
+            let cy = rng.random_range(0..height) as f32;
+            let rings = rng.random_range(1..3usize);
+            for ring in 0..rings {
+                let r = 1.5 + ring as f32 * 2.0;
+                let steps = (r * 9.0) as usize;
+                let col = darken(lighten(palette[1], 8), 25 + (ring * 18) as u8);
+                for s in 0..steps {
+                    let a = s as f32 / steps as f32 * std::f32::consts::TAU;
+                    let x = (cx + a.cos() * r * 2.0).round() as i32;
+                    let y = (cy + a.sin() * r).round() as i32;
+                    if x < 0 || y < 0 || x as usize >= width || y as usize >= height {
+                        continue;
+                    }
+                    let sy = a.sin();
+                    let ch = if sy < -0.55 {
+                        '‾'
+                    } else if sy > 0.55 {
+                        '_'
+                    } else if a.cos() < 0.0 {
+                        '('
+                    } else {
+                        ')'
+                    };
+                    grid[y as usize][x as usize] = Cell::new(ch, col);
+                }
+            }
+        }
+
+        // lily pads, some flowering
+        for _ in 0..(width / 16).max(3) {
+            let px = rng.random_range(2..width.saturating_sub(2).max(3));
+            let py = rng.random_range(1..height.saturating_sub(1).max(2));
+            let pad = lighten(palette[2], rng.random_range(0..18));
+            grid[py][px - 1] = Cell::new('(', darken(pad, 20));
+            grid[py][px] = Cell::new('◍', pad);
+            grid[py][px + 1] = Cell::new(')', darken(pad, 20));
+            if py > 0 && rng.random_range(0..3) == 0 {
+                grid[py - 1][px] = Cell::new('✿', lighten(palette[3], 25));
+            }
+        }
+
+        // koi: bright head, body fading into the water, sine-curled tail
+        let body = ['◉', '◎', '○', '∘', '·'];
+        for _ in 0..fish_count {
+            let dir: i32 = if rng.random_range(0..2) == 0 { 1 } else { -1 };
+            let x0 = rng.random_range(6..width.saturating_sub(6).max(7)) as i32;
+            let y0 = rng.random_range(1..height.saturating_sub(1).max(2)) as i32;
+            let hue = if rng.random_range(0..3) == 0 {
+                lighten(palette[4], 10)
+            } else {
+                lighten(palette[3], 15)
+            };
+            let phase = rng.random_range(0.0f32..6.28);
+            let sway0 = phase.sin();
+            for (i, &ch) in body.iter().enumerate() {
+                let x = x0 - dir * i as i32;
+                let y = y0 + (((i as f32) * 0.7 + phase).sin() - sway0).round() as i32;
+                if x < 0 || y < 0 || x as usize >= width || y as usize >= height {
+                    continue;
+                }
+                let col = lerp_color(hue, darken(palette[1], 60), i as f32 / 4.0);
+                grid[y as usize][x as usize] = Cell::new(ch, col);
+            }
+        }
+    } else if mode == "skyline" {
+        // skyline [lit] -- night city: two building layers, glowing windows,
+        // rooftop antennas, moon and stars. lit = percent of windows glowing.
+        let lit: u32 = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(35);
+        let lit = lit.clamp(0, 100);
+
+        let horizon = height.saturating_sub(2);
+
+        for _ in 0..(width * height / 40).max(10) {
+            let x = rng.random_range(0..width);
+            let y = rng.random_range(0..horizon.max(1));
+            let ch = match rng.random_range(0..8) {
+                0 => '✦',
+                1 => '+',
+                _ => '·',
+            };
+            grid[y][x] = Cell::new(ch, darken(palette[4], rng.random_range(30..70)));
+        }
+
+        let mx = rng.random_range(width / 8..(width / 3).max(width / 8 + 1)) as i32;
+        let my = rng.random_range(2..(height / 4).max(3)) as i32;
+        for dy in -1..=1i32 {
+            for dx in -2..=2i32 {
+                let e = (dx as f32 / 2.2).powi(2) + (dy as f32 / 1.2).powi(2);
+                if e <= 1.0 {
+                    let x = mx + dx;
+                    let y = my + dy;
+                    if x >= 0 && y >= 0 && (x as usize) < width && (y as usize) < height {
+                        let ch = if dx == 1 && dy == 0 { '▒' } else { '▓' };
+                        grid[y as usize][x as usize] = Cell::new(ch, lighten(palette[4], 20));
+                    }
+                }
+            }
+        }
+
+        // back layer: distant textured slabs
+        let back = darken(palette[1], 62);
+        let mut x = 0usize;
+        while x < width {
+            let w = rng.random_range(5..12usize).min(width - x);
+            let h = rng.random_range((height / 5).max(2)..(height / 2).max(3));
+            let top = horizon.saturating_sub(h);
+            for bx in x..x + w {
+                grid[top][bx] = Cell::new('▄', back);
+                for by in top + 1..horizon {
+                    grid[by][bx] = Cell::new('▓', back);
+                }
+            }
+            x += w + rng.random_range(0..3usize);
+        }
+
+        // front layer: solid towers with window grids and antennas
+        let wall = darken(palette[1], 42);
+        let win_on = lighten(palette[3], 30);
+        let win_off = darken(palette[1], 15);
+        let mut x = 0usize;
+        while x < width {
+            let w = rng.random_range(6..14usize).min(width - x);
+            let h = rng.random_range((height / 4).max(3)..(height * 7 / 10).max(4));
+            let top = horizon.saturating_sub(h);
+            for bx in x..x + w {
+                grid[top][bx] = Cell::new('▄', wall);
+                for by in top + 1..horizon {
+                    grid[by][bx] = Cell::new('█', wall);
+                }
+            }
+            for by in (top + 2..horizon.saturating_sub(1)).step_by(2) {
+                for bx in (x + 1..(x + w).saturating_sub(1)).step_by(3) {
+                    let on = rng.random_range(0..100) < lit;
+                    let col = if on { win_on } else { win_off };
+                    grid[by][bx] = Cell::new('▪', col);
+                }
+            }
+            if w >= 8 && rng.random_range(0..2) == 0 {
+                let ax = x + w / 2;
+                let ah = rng.random_range(2..5usize).min(top);
+                for i in 1..=ah {
+                    grid[top - i][ax] = Cell::new('│', wall);
+                }
+                if ah > 0 {
+                    grid[top - ah][ax] = Cell::new('✦', lighten(palette[3], 45));
+                }
+            }
+            x += w + rng.random_range(1..5usize);
+        }
+
+        for gx in 0..width {
+            if horizon < height {
+                grid[horizon][gx] = Cell::new('─', darken(palette[4], 65));
+            }
+            if horizon + 1 < height && gx % 3 == 0 {
+                grid[horizon + 1][gx] = Cell::new('·', darken(palette[1], 70));
+            }
+        }
+    } else if mode == "hive" {
+        // hive [fill] -- honeycomb lattice; each cell holds open honey, capped
+        // honey, brood, or nothing. fill = percent of cells holding honey.
+        let fill: u32 = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(45);
+        let fill_f = fill.clamp(0, 100) as f32 / 100.0;
+
+        let comb = darken(palette[3], 25);
+        let honey = lighten(palette[3], 12);
+        for y in 0..height {
+            let a_row = y % 2 == 0;
+            for x in 0..width {
+                let ph = x % 6;
+                let ch = if a_row {
+                    match ph {
+                        0 => '/',
+                        3 => '\\',
+                        4 | 5 => '_',
+                        _ => ' ',
+                    }
+                } else {
+                    match ph {
+                        0 => '\\',
+                        1 | 2 => '_',
+                        3 => '/',
+                        _ => ' ',
+                    }
+                };
+                if ch != ' ' {
+                    grid[y][x] = Cell::new(ch, comb);
+                } else {
+                    // per-hex content, keyed on the hex so both interior cells agree
+                    let r = pp_hash2((x / 6) as i32, y as i32, seed);
+                    grid[y][x] = if r < fill_f * 0.7 {
+                        Cell::new('▒', honey)
+                    } else if r < fill_f {
+                        Cell::new('▓', darken(honey, 25))
+                    } else if r < fill_f + 0.12 && (ph == 1 || ph == 4) {
+                        Cell::new('·', lighten(palette[4], 5))
+                    } else {
+                        Cell::blank()
+                    };
+                }
+            }
+        }
+
+        // workers, each trailing flight dots
+        for _ in 0..(width / 14).max(3) {
+            let bx = rng.random_range(1..width.saturating_sub(1).max(2)) as i32;
+            let by = rng.random_range(0..height) as i32;
+            for i in 1..4i32 {
+                let tx = bx - i * 2;
+                let ty = by + (i % 2);
+                if tx >= 0 && ty >= 0 && (tx as usize) < width && (ty as usize) < height {
+                    grid[ty as usize][tx as usize] = Cell::new('·', darken(palette[4], 45));
+                }
+            }
+            grid[by as usize][bx as usize] = Cell::new('ø', lighten(palette[3], 35));
+        }
+    } else if mode == "jelly" {
+        // jelly [count] -- deep-sea drift: translucent bells with swaying
+        // tentacles, rising bubbles, light shafts from the surface
+        let count: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(4);
+        let count = count.clamp(1, 12);
+
+        macro_rules! jput {
+            ($x:expr, $y:expr, $ch:expr, $col:expr) => {{
+                let sx = $x;
+                let sy = $y;
+                if sx >= 0 && sy >= 0 && (sx as usize) < width && (sy as usize) < height {
+                    grid[sy as usize][sx as usize] = Cell::new($ch, $col);
+                }
+            }};
+        }
+
+        // depth-graded plankton
+        for y in 0..height {
+            let depth = y as f32 / height.max(1) as f32;
+            let wc = lerp_color(darken(palette[1], 65), darken(palette[0], 30), depth);
+            for x in 0..width {
+                if rng.random_range(0..100) < 3 {
+                    grid[y][x] = Cell::new('·', wc);
+                }
+            }
+        }
+
+        // broken light shafts slanting down from the surface
+        for _ in 0..3 {
+            let mut sx = rng.random_range(0..width as i32);
+            let depth = rng.random_range(height / 3..(height * 3 / 4).max(height / 3 + 1));
+            for y in 0..depth {
+                if y % 3 == 2 {
+                    sx += 1;
+                }
+                if rng.random_range(0..5) < 3 {
+                    let ch = if y % 3 == 2 { '╲' } else { '│' };
+                    let fade = 55 + (y * 30 / depth.max(1)) as u8;
+                    jput!(sx, y as i32, ch, darken(palette[4], fade));
+                }
+            }
+        }
+
+        for _ in 0..(width * height / 90).max(6) {
+            let x = rng.random_range(0..width);
+            let y = rng.random_range(0..height);
+            let ch = ['°', 'º', '∘', '·'][rng.random_range(0..4usize)];
+            grid[y][x] = Cell::new(ch, darken(palette[4], rng.random_range(25..60)));
+        }
+
+        for _ in 0..count {
+            let r: i32 = rng.random_range(2..5);
+            let cx = rng.random_range(4..(width as i32 - 4).max(5));
+            let cy = rng.random_range(2..(height as i32 * 2 / 3).max(3));
+            let hue = shift_hue(lighten(palette[2], 18), rng.random_range(-40.0..40.0));
+
+            for dx in -r..=r {
+                let ch = if dx == -r {
+                    '▗'
+                } else if dx == r {
+                    '▖'
+                } else {
+                    '▄'
+                };
+                jput!(cx + dx, cy - 1, ch, hue);
+            }
+            for dx in -r - 1..=r + 1 {
+                let ch = if dx == -r - 1 {
+                    '▐'
+                } else if dx == r + 1 {
+                    '▌'
+                } else if (dx + r).rem_euclid(3) == 0 {
+                    '░'
+                } else {
+                    '▒'
+                };
+                jput!(cx + dx, cy, ch, hue);
+            }
+            jput!(cx, cy, '✦', lighten(hue, 25));
+
+            for dx in (-r..=r).step_by(2) {
+                let len: i32 = rng.random_range(3..(height as i32 / 3).max(4));
+                let phase = rng.random_range(0.0f32..6.3);
+                let sway0 = phase.sin();
+                let mut prev_off = 0i32;
+                for j in 1..=len {
+                    let sway = (j as f32 * 0.55 + phase).sin();
+                    let off = ((sway - sway0) * 1.6).round() as i32;
+                    let slope = off - prev_off;
+                    prev_off = off;
+                    let ch = if slope > 0 {
+                        ')'
+                    } else if slope < 0 {
+                        '('
+                    } else {
+                        '|'
+                    };
+                    let fade = darken(hue, (j * 90 / len.max(1)).min(80) as u8);
+                    jput!(cx + dx + off, cy + j, ch, fade);
+                }
+            }
+        }
     } else if mode == "world" {
         render_world(&mut grid, width, height, &palette, &mut rng);
     } else if mode == "noise" {

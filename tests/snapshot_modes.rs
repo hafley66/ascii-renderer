@@ -405,3 +405,28 @@ fn solar_system_seed_42() {
 fn world2_seed_42() {
     insta::assert_snapshot!(render(&["42", "world2", "ember"]));
 }
+
+#[test]
+fn metro_seed_42() {
+    insta::assert_snapshot!(render(&["42", "metro", "neon"]));
+}
+
+#[test]
+fn koi_seed_42() {
+    insta::assert_snapshot!(render(&["42", "koi", "terracotta"]));
+}
+
+#[test]
+fn skyline_seed_42() {
+    insta::assert_snapshot!(render(&["42", "skyline", "deep"]));
+}
+
+#[test]
+fn hive_seed_42() {
+    insta::assert_snapshot!(render(&["42", "hive", "ember"]));
+}
+
+#[test]
+fn jelly_seed_42() {
+    insta::assert_snapshot!(render(&["42", "jelly", "deep"]));
+}
