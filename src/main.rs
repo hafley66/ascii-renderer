@@ -592,6 +592,7 @@ fn run_demo(initial_seed: u64) {
         "skyline",
         "hive",
         "jelly",
+        "jelly2",
     ];
     let all_themes: &[&str] = &[
         "",
@@ -10648,8 +10649,10 @@ fn main() {
             }
         }
     } else if mode == "skyline" {
-        // skyline [lit] -- night city: two building layers, glowing windows,
-        // rooftop antennas, moon and stars. lit = percent of windows glowing.
+        // skyline [lit] -- night city in four depth layers: far slabs, mid
+        // backdrop, near towers built from facade archetypes (glass curtain,
+        // masonry, ziggurat, banded slab, spire, dome), and foreground hulks
+        // cropped by the frame. lit = percent of windows glowing.
         let lit: u32 = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(35);
         let lit = lit.clamp(0, 100);
 
@@ -10747,8 +10750,9 @@ fn main() {
             x += w + rng.random_range(2..7usize);
         }
 
-        // near layer: randomly placed towers that overlap into clusters,
-        // varied roofs and window styles; gaps left over become parks
+        // near layer: randomly placed towers that overlap into clusters.
+        // each rolls a facade archetype, so the variety is in the pattern
+        // language of the building, never just its size
         let near = darken(palette[1], 40);
         let win_on = lighten(palette[3], 30);
         let win_off = darken(palette[1], 12);
@@ -10760,60 +10764,195 @@ fn main() {
             ($x:expr, $y:expr, $ch:expr, $col:expr) => {{
                 let dx = $x;
                 let dy = $y;
-                if !matches!(grid[dy][dx].ch, '█' | '▓' | '▄' | '▪' | '▮' | '□') {
+                if !matches!(
+                    grid[dy][dx].ch,
+                    '█' | '▓' | '▄' | '▀' | '▪' | '▮' | '□' | '║' | '▐' | '▬' | '╥'
+                ) {
                     grid[dy][dx] = Cell::new($ch, $col);
                 }
             }};
         }
-        for _ in 0..(width / 11).max(3) {
-            let w = rng.random_range(6..13usize);
+        for _ in 0..(width / 14).max(3) {
+            let kind = rng.random_range(0..6usize);
+            let w = match kind {
+                0 => rng.random_range(6..11usize),
+                1 => rng.random_range(7..13usize),
+                2 => rng.random_range(9..15usize),
+                3 => rng.random_range(8..13usize),
+                4 => rng.random_range(3..5usize),
+                _ => rng.random_range(7..12usize),
+            };
+            let w = w.min(width);
             let x = rng.random_range(0..width.saturating_sub(w).max(1));
-            let h = rng.random_range((height / 3).max(4)..(height * 3 / 4).max(5));
-            let top = horizon.saturating_sub(h);
             for bx in x..x + w {
-                grid[top][bx] = Cell::new('▄', near);
-                for by in top + 1..horizon {
-                    grid[by][bx] = Cell::new('█', near);
-                }
                 street_free[bx] = false;
             }
-            match rng.random_range(0..4usize) {
-                1 if w >= 6 && top >= 1 => {
-                    for bx in x + 2..x + w - 2 {
-                        deco!(bx, top - 1, '▄', near);
+            let btop = match kind {
+                0 => {
+                    // glass curtain: whole mullion strips light at once
+                    let h = rng.random_range((height / 2).max(5)..(height * 3 / 4).max(6));
+                    let top = horizon.saturating_sub(h);
+                    for bx in x..x + w {
+                        grid[top][bx] = Cell::new('▄', near);
+                        for by in top + 1..horizon {
+                            let ch = if (bx - x) % 2 == 0 { '█' } else { '▐' };
+                            grid[by][bx] = Cell::new(ch, near);
+                        }
                     }
+                    let mstep = rng.random_range(2..4usize);
+                    for bx in (x + 1..(x + w).saturating_sub(1)).step_by(mstep) {
+                        let on = rng.random_range(0..100) < lit;
+                        let col = if on { win_on } else { darken(palette[1], 22) };
+                        for by in top + 1..horizon.saturating_sub(1) {
+                            grid[by][bx] = Cell::new('║', col);
+                        }
+                    }
+                    top
                 }
-                2 if top >= 4 => {
-                    let ax = x + w / 2;
-                    let ah = rng.random_range(2..5usize).min(top);
+                1 => {
+                    // masonry: pale cornice, string courses, square windows
+                    let h = rng.random_range((height / 3).max(4)..(height / 2).max(5));
+                    let top = horizon.saturating_sub(h);
+                    for bx in x..x + w {
+                        grid[top][bx] = Cell::new('▀', lighten(near, 14));
+                        for by in top + 1..horizon {
+                            grid[by][bx] = Cell::new('▓', near);
+                        }
+                    }
+                    for by in (top + 2..horizon.saturating_sub(1)).step_by(2) {
+                        for bx in (x + 1..(x + w).saturating_sub(1)).step_by(3) {
+                            let on = rng.random_range(0..100) < lit;
+                            grid[by][bx] = Cell::new('□', if on { win_on } else { win_off });
+                        }
+                    }
+                    top
+                }
+                2 => {
+                    // art-deco ziggurat: tiers stepping in, spire on the crown
+                    let mut tx = x;
+                    let mut tw = w;
+                    let mut bottom = horizon;
+                    let mut top = horizon;
+                    while tw >= 3 && bottom > 3 {
+                        let th = rng.random_range(3..6usize).min(bottom - 1);
+                        let t_top = bottom - th;
+                        for bx in tx..(tx + tw).min(width) {
+                            grid[t_top][bx] = Cell::new('▄', near);
+                            for by in t_top + 1..bottom {
+                                grid[by][bx] = Cell::new('█', near);
+                            }
+                        }
+                        for by in (t_top + 1..bottom).step_by(2) {
+                            for bx in
+                                (tx + 1..(tx + tw).min(width).saturating_sub(1)).step_by(2)
+                            {
+                                let on = rng.random_range(0..100) < lit;
+                                grid[by][bx] =
+                                    Cell::new('▪', if on { win_on } else { win_off });
+                            }
+                        }
+                        top = t_top;
+                        bottom = t_top;
+                        tx += 2;
+                        tw = tw.saturating_sub(4);
+                    }
+                    let sx = (x + w / 2).min(width - 1);
+                    if top >= 3 {
+                        deco!(sx, top - 1, '│', near);
+                        deco!(sx, top - 2, '│', near);
+                        deco!(sx, top - 3, '✦', lighten(palette[3], 45));
+                    }
+                    top
+                }
+                3 => {
+                    // banded slab: dark floor stripes, wide lit slots between
+                    let h = rng.random_range((height / 3).max(4)..(height * 2 / 3).max(5));
+                    let top = horizon.saturating_sub(h);
+                    for bx in x..x + w {
+                        grid[top][bx] = Cell::new('▄', near);
+                        for by in top + 1..horizon {
+                            let floor = (by - top) % 3 == 0;
+                            let (ch, col) =
+                                if floor { ('▄', darken(near, 14)) } else { ('█', near) };
+                            grid[by][bx] = Cell::new(ch, col);
+                        }
+                    }
+                    for by in top + 1..horizon.saturating_sub(1) {
+                        if (by - top) % 3 != 2 {
+                            continue;
+                        }
+                        for bx in (x + 1..(x + w).saturating_sub(1)).step_by(2) {
+                            if rng.random_range(0..100) < lit {
+                                grid[by][bx] = Cell::new('▬', win_on);
+                            }
+                        }
+                    }
+                    top
+                }
+                4 => {
+                    // needle: thin, very tall, single window column, long mast
+                    let h =
+                        rng.random_range((height * 3 / 5).max(5)..(height * 5 / 6).max(6));
+                    let top = horizon.saturating_sub(h);
+                    for bx in x..x + w {
+                        grid[top][bx] = Cell::new('▄', near);
+                        for by in top + 1..horizon {
+                            grid[by][bx] = Cell::new('▓', near);
+                        }
+                    }
+                    let bx = x + w / 2;
+                    for by in (top + 2..horizon.saturating_sub(1)).step_by(2) {
+                        let on = rng.random_range(0..100) < lit;
+                        grid[by][bx] = Cell::new('▪', if on { win_on } else { win_off });
+                    }
+                    let ah = rng.random_range(3..6usize).min(top);
                     for i in 1..=ah {
-                        deco!(ax, top - i, '│', near);
+                        deco!(bx, top - i, '│', near);
                     }
                     if ah > 0 {
-                        deco!(ax, top - ah, '✦', lighten(palette[3], 45));
+                        deco!(bx, top - ah, '✦', lighten(palette[3], 45));
                     }
+                    top
                 }
-                3 if w >= 8 && top >= 2 => {
-                    for ax in [x + 2, x + w - 3] {
-                        deco!(ax, top - 1, '│', near);
-                        deco!(ax, top - 2, '·', lighten(palette[3], 30));
+                _ => {
+                    // civic dome: squat block, rounded cap, finial
+                    let h = rng.random_range((height / 4).max(3)..(height / 2).max(4));
+                    let top = horizon.saturating_sub(h);
+                    for bx in x..x + w {
+                        for by in top..horizon {
+                            grid[by][bx] = Cell::new('█', near);
+                        }
                     }
+                    for by in (top + 1..horizon.saturating_sub(1)).step_by(3) {
+                        for bx in (x + 1..(x + w).saturating_sub(1)).step_by(3) {
+                            let on = rng.random_range(0..100) < lit;
+                            grid[by][bx] = Cell::new('□', if on { win_on } else { win_off });
+                        }
+                    }
+                    if top >= 2 {
+                        for bx in x + 1..(x + w).saturating_sub(1) {
+                            deco!(bx, top - 1, '▄', lighten(near, 8));
+                        }
+                        for bx in x + w / 3..(x + w - w / 3).min(width) {
+                            deco!(bx, top - 2, '▄', lighten(near, 8));
+                        }
+                        if top >= 3 {
+                            deco!(x + w / 2, top - 3, '+', lighten(palette[3], 35));
+                        }
+                    }
+                    top
                 }
-                _ => {}
-            }
-            let (row_step, col_step, wch) = match rng.random_range(0..3usize) {
-                0 => (2usize, 3usize, '▪'),
-                1 => (2, 4, '▮'),
-                _ => (3, 3, '□'),
             };
-            for by in (top + 2..horizon.saturating_sub(1)).step_by(row_step) {
-                for bx in (x + 1..(x + w).saturating_sub(1)).step_by(col_step) {
-                    let on = rng.random_range(0..100) < lit;
-                    grid[by][bx] = Cell::new(wch, if on { win_on } else { win_off });
-                }
+            // rooftop water tank on the flat-roofed kinds
+            if matches!(kind, 1 | 3) && w >= 7 && btop >= 2 && rng.random_range(0..3) == 0 {
+                let wx = x + rng.random_range(1..w - 2);
+                deco!(wx, btop - 2, '▄', darken(near, 10));
+                deco!(wx + 1, btop - 2, '▄', darken(near, 10));
+                deco!(wx, btop - 1, '╥', near);
+                deco!(wx + 1, btop - 1, '╥', near);
             }
-            if top < tall_top {
-                tall_top = top;
+            if btop < tall_top {
+                tall_top = btop;
                 tall_x = x + w / 2;
             }
         }
@@ -10871,6 +11010,32 @@ fn main() {
             }
             if horizon + 1 < height && gx % 3 == 0 {
                 grid[horizon + 1][gx] = Cell::new('·', darken(palette[1], 70));
+            }
+        }
+
+        // foreground hulks: this side of the street, near-black, cropped by
+        // the bottom of the frame so they read as closest
+        let fg = darken(palette[1], 80);
+        let fg_win = lighten(palette[3], 40);
+        for _ in 0..rng.random_range(1..3usize) {
+            let w = rng.random_range(12..22usize).min(width);
+            let x = rng.random_range(0..width.saturating_sub(w).max(1));
+            let top = rng.random_range((height * 3 / 5).max(2)..(height * 7 / 8).max(3));
+            for bx in x..x + w {
+                grid[top][bx] = Cell::new('▄', fg);
+                for by in top + 1..height {
+                    grid[by][bx] = Cell::new('█', fg);
+                }
+            }
+            for by in (top + 2..height.saturating_sub(1)).step_by(3) {
+                for bx in (x + 2..(x + w).saturating_sub(2)).step_by(4) {
+                    if rng.random_range(0..100) < lit {
+                        grid[by][bx] = Cell::new('▮', fg_win);
+                        if bx + 1 + 2 < x + w {
+                            grid[by][bx + 1] = Cell::new('▮', fg_win);
+                        }
+                    }
+                }
             }
         }
     } else if mode == "hive" {
@@ -11084,6 +11249,281 @@ fn main() {
                     jput!(cx + dx + off, cy + j, ch, fade);
                 }
             }
+        }
+    } else if mode == "jelly2" {
+        // jelly2 [count] -- generative jellies. every jelly rolls a species
+        // from independent parts: bell shape (shaded dome, moon jelly, box
+        // jelly, tall bulb, sideways swimmer), tentacle style (curtain,
+        // ribbon, stingers, frill), and an orientation: the bell shears with
+        // tilt and the tails lean against it with drift, so no two hang at
+        // the same angle. test bed for the parts-generator the aquarium needs.
+        let count: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(5);
+        let count = count.clamp(1, 14);
+
+        macro_rules! jput {
+            ($x:expr, $y:expr, $ch:expr, $col:expr) => {{
+                let sx = $x;
+                let sy = $y;
+                if sx >= 0 && sy >= 0 && (sx as usize) < width && (sy as usize) < height {
+                    grid[sy as usize][sx as usize] = Cell::new($ch, $col);
+                }
+            }};
+        }
+
+        // marine snow, dimmer with depth
+        for y in 0..height {
+            let depth = y as f32 / height.max(1) as f32;
+            let wc = lerp_color(darken(palette[1], 60), darken(palette[0], 30), depth);
+            for x in 0..width {
+                if rng.random_range(0..100) < 3 {
+                    let ch = ['·', '˚', '.'][rng.random_range(0..3usize)];
+                    grid[y][x] = Cell::new(ch, wc);
+                }
+            }
+        }
+
+        // faint current ribbons
+        for _ in 0..2 {
+            let ry0 = rng.random_range((height / 5).max(1)..(height * 4 / 5).max(2)) as i32;
+            let ph = rng.random_range(0.0f32..6.3);
+            let mut x = 0i32;
+            while (x as usize) < width {
+                let y = ry0 + ((x as f32 * 0.3 + ph).sin() * 1.4).round() as i32;
+                if rng.random_range(0..3) < 2 {
+                    jput!(x, y, '~', darken(palette[1], 52));
+                }
+                x += rng.random_range(1..3);
+            }
+        }
+
+        for _ in 0..(width * height / 110).max(5) {
+            let x = rng.random_range(0..width);
+            let y = rng.random_range(0..height);
+            let ch = ['°', 'º', '∘', '·'][rng.random_range(0..4usize)];
+            grid[y][x] = Cell::new(ch, darken(palette[4], rng.random_range(28..60)));
+        }
+
+        for _ in 0..count {
+            let r: i32 = rng.random_range(2..6);
+            let cx = rng.random_range(4..(width as i32 - 4).max(5));
+            let cy = rng.random_range(3..(height as i32 * 2 / 3).max(4));
+            let base_hue = shift_hue(lighten(palette[2], 18), rng.random_range(-60.0..60.0));
+            let hue = darken(base_hue, (cy * 22 / height.max(1) as i32).max(0) as u8);
+            let bell = rng.random_range(0..5usize);
+            let tilt = rng.random_range(-1.6f32..1.6);
+            let ti = tilt.round() as i32;
+            // tails trail against the lean
+            let drift = -tilt * rng.random_range(0.25..0.6);
+            let tstyle = rng.random_range(0..4usize);
+
+            if bell == 4 {
+                // sideways swimmer: bell opens along x, tentacles stream behind
+                let dir: i32 = if rng.random_range(0..2) == 0 { 1 } else { -1 };
+                jput!(cx, cy - 1, if dir > 0 { '▗' } else { '▖' }, darken(hue, 12));
+                jput!(cx, cy + 1, if dir > 0 { '▝' } else { '▘' }, darken(hue, 12));
+                jput!(cx + dir, cy - 1, if dir > 0 { '\\' } else { '/' }, hue);
+                jput!(cx + dir, cy + 1, if dir > 0 { '/' } else { '\\' }, hue);
+                jput!(cx, cy, '▒', hue);
+                jput!(cx + dir, cy, '▒', hue);
+                jput!(cx + 2 * dir, cy, if dir > 0 { ')' } else { '(' }, hue);
+                let len: i32 = rng.random_range(5..(width as i32 / 5).max(6));
+                for ty in [cy - 1, cy, cy + 1] {
+                    let phase = rng.random_range(0.0f32..6.3);
+                    let amp = rng.random_range(0.8f32..1.6);
+                    let mut prev = 0i32;
+                    for j in 1..=len {
+                        let sway =
+                            ((j as f32 * 0.5 + phase).sin() - phase.sin()) * amp;
+                        let off = sway.round() as i32;
+                        let slope = (off - prev) * dir;
+                        prev = off;
+                        let ch = if slope > 0 {
+                            '/'
+                        } else if slope < 0 {
+                            '\\'
+                        } else {
+                            '~'
+                        };
+                        let fade = darken(hue, (j * 80 / len.max(1)).min(80) as u8);
+                        jput!(cx - dir * (1 + j), ty + off, ch, fade);
+                    }
+                }
+                continue;
+            }
+
+            // upright bells: crown row sheared by tilt, body row on cx
+            let crown_x = cx + ti;
+            match bell {
+                0 => {
+                    // shaded dome
+                    for dx in -r + 1..=r - 1 {
+                        let ch = if dx == -r + 1 {
+                            '▗'
+                        } else if dx == r - 1 {
+                            '▖'
+                        } else {
+                            '▄'
+                        };
+                        jput!(crown_x + dx, cy - 1, ch, hue);
+                    }
+                    for dx in -r..=r {
+                        let ch = if dx == -r {
+                            '▐'
+                        } else if dx == r {
+                            '▌'
+                        } else if (dx + r).rem_euclid(3) == 0 {
+                            '░'
+                        } else {
+                            '▒'
+                        };
+                        jput!(cx + dx, cy, ch, hue);
+                    }
+                    jput!(cx, cy, '✦', lighten(hue, 25));
+                }
+                1 => {
+                    // moon jelly: scalloped crown over a clear bell, gonad rings
+                    for dx in -r + 1..=r - 1 {
+                        jput!(crown_x + dx, cy - 1, '∩', hue);
+                    }
+                    jput!(cx - r, cy, '(', hue);
+                    jput!(cx + r, cy, ')', hue);
+                    jput!(cx - 1, cy, '∘', lighten(hue, 20));
+                    jput!(cx + 1, cy, '∘', lighten(hue, 20));
+                }
+                2 => {
+                    // box jelly, angular
+                    for dx in -r..=r {
+                        let ch = if dx == -r {
+                            '┌'
+                        } else if dx == r {
+                            '┐'
+                        } else {
+                            '─'
+                        };
+                        jput!(crown_x + dx, cy - 1, ch, hue);
+                    }
+                    for dx in -r..=r {
+                        let ch = if dx.abs() == r { '│' } else { '▒' };
+                        jput!(cx + dx, cy, ch, hue);
+                    }
+                }
+                _ => {
+                    // tall bulb, two body rows, shear splits across them
+                    let midx = cx + ti / 2;
+                    for dx in -r + 1..=r - 1 {
+                        jput!(crown_x + dx, cy - 2, '▄', hue);
+                    }
+                    for dx in -r..=r {
+                        let ch = if dx == -r {
+                            '▐'
+                        } else if dx == r {
+                            '▌'
+                        } else if (dx + r) % 2 == 0 {
+                            '▒'
+                        } else {
+                            '░'
+                        };
+                        jput!(midx + dx, cy - 1, ch, hue);
+                    }
+                    for dx in -r + 1..=r - 1 {
+                        let ch = if dx == -r + 1 {
+                            '('
+                        } else if dx == r - 1 {
+                            ')'
+                        } else {
+                            '░'
+                        };
+                        jput!(cx + dx, cy, ch, hue);
+                    }
+                    jput!(midx, cy - 1, '✦', lighten(hue, 25));
+                }
+            }
+
+            let (step, base_len, amp) = match tstyle {
+                0 => (2usize, height as i32 / 4, 1.6f32),
+                1 => (3, height as i32 / 3, 2.6),
+                2 => (2, height as i32 / 4, 0.0),
+                _ => (1, 3, 0.9),
+            };
+            for (k, dx) in (-r + 1..=r - 1).step_by(step).enumerate() {
+                let len: i32 = (base_len + rng.random_range(-2..3)).max(2);
+                let phase = rng.random_range(0.0f32..6.3);
+                let mut prev = 0i32;
+                for j in 1..=len {
+                    let sway = ((j as f32 * 0.55 + phase).sin() - phase.sin()) * amp;
+                    let off = (sway + drift * j as f32).round() as i32;
+                    let slope = off - prev;
+                    prev = off;
+                    if tstyle == 2 && j % 2 == 0 {
+                        continue; // gappy stingers
+                    }
+                    let ch = match tstyle {
+                        2 => ['¦', ':', '·'][(j % 3) as usize],
+                        1 => {
+                            if slope > 0 {
+                                ')'
+                            } else if slope < 0 {
+                                '('
+                            } else {
+                                '~'
+                            }
+                        }
+                        3 => {
+                            if (k + j as usize) % 2 == 0 {
+                                '}'
+                            } else {
+                                '{'
+                            }
+                        }
+                        _ => {
+                            if slope > 0 {
+                                ')'
+                            } else if slope < 0 {
+                                '('
+                            } else {
+                                '|'
+                            }
+                        }
+                    };
+                    let fade = darken(hue, (j * 85 / len.max(1)).min(80) as u8);
+                    jput!(cx + dx + off, cy + j, ch, fade);
+                }
+            }
+            // frill species still get a long trailing pair at the bell edges
+            if tstyle == 3 {
+                for dx in [-r + 1, r - 1] {
+                    let len: i32 = rng.random_range(
+                        (height as i32 / 4).max(3)..(height as i32 / 2).max(4),
+                    );
+                    let phase = rng.random_range(0.0f32..6.3);
+                    let mut prev = 0i32;
+                    for j in 1..=len {
+                        let sway = ((j as f32 * 0.5 + phase).sin() - phase.sin()) * 1.8;
+                        let off = (sway + drift * j as f32).round() as i32;
+                        let slope = off - prev;
+                        prev = off;
+                        let ch = if slope > 0 {
+                            ')'
+                        } else if slope < 0 {
+                            '('
+                        } else {
+                            '|'
+                        };
+                        let fade = darken(hue, (j * 85 / len.max(1)).min(80) as u8);
+                        jput!(cx + dx + off, cy + j, ch, fade);
+                    }
+                }
+            }
+        }
+
+        // small fry drifting in the back
+        for _ in 0..count / 2 + 1 {
+            let x = rng.random_range(1..(width as i32 - 1).max(2));
+            let y = rng.random_range(1..(height as i32 - 2).max(2));
+            let dim = darken(palette[2], 42);
+            jput!(x, y, '∩', dim);
+            let tail = if rng.random_range(0..2) == 0 { '¦' } else { '\'' };
+            jput!(x, y + 1, tail, darken(dim, 15));
         }
     } else if mode == "world" {
         render_world(&mut grid, width, height, &palette, &mut rng);

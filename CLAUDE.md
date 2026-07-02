@@ -53,7 +53,7 @@ tiles, tiles-rand, tiles-skew, mondrian, mondrian2, bsp, layout, md, terrain, fl
 noise, ca, ca-layout, stem, scene-walk, scene-walk-2, scene-walk-3, world,
 kintsugi, constellation, strata, circuit, quilt, patchwalk, trees8, trees9, boles4, boles5,
 eyes++, fullmetal-eyes++, trees++, forest++, phyllotaxis, moire, nebula, delta, stained,
-metro, koi, skyline, hive, jelly
+metro, koi, skyline, hive, jelly, jelly2
 
 ## Architecture
 

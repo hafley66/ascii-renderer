@@ -430,3 +430,8 @@ fn hive_seed_42() {
 fn jelly_seed_42() {
     insta::assert_snapshot!(render(&["42", "jelly", "deep"]));
 }
+
+#[test]
+fn jelly2_seed_42() {
+    insta::assert_snapshot!(render(&["42", "jelly2", "deep"]));
+}
