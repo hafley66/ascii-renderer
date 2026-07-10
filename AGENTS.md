@@ -56,7 +56,8 @@ eyes, eyes2, fullmetal-eyes, fullmetal-eyes2, fullmetal-alchemist, fullmetal-alc
 fa4, fullmetal-alchemist4, fa5, fullmetal-alchemist5,
 spiro, spiro-tile, weave, gears, kaleido, contour,
 eyes3,
-kintsugi, constellation, strata, circuit, quilt, patchwalk, trees8, trees9, trees10, boles4, boles5, boles6
+kintsugi, constellation, strata, circuit, quilt, patchwalk, trees8, trees9, trees10, boles4, boles5, boles6,
+hypercube, flux, fireworks
 
 ## Architecture
 

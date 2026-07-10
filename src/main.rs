@@ -122,6 +122,33 @@ static MODE_FORMS: &[ModeForm] = &[
         animate: AnimKind::Iterate,
         params: &[],
     },
+    ModeForm {
+        names: &["hypercube"],
+        animate: AnimKind::Iterate,
+        params: &[
+            param!("COPIES", "copies", 1.0, 5.0, 3.0, 1.0),
+            param!("SPEED", "speed", 0.1, 3.0, 1.0, 0.1),
+            param!("GHOSTS", "afterimage", 0.0, 5.0, 2.0, 1.0),
+        ],
+    },
+    ModeForm {
+        names: &["flux"],
+        animate: AnimKind::Iterate,
+        params: &[
+            param!("COUNT", "particles", 8.0, 140.0, 58.0, 4.0),
+            param!("TRAIL", "trail", 1.0, 18.0, 8.0, 1.0),
+            param!("SPEED", "speed", 0.1, 3.0, 1.0, 0.1),
+        ],
+    },
+    ModeForm {
+        names: &["fireworks"],
+        animate: AnimKind::Iterate,
+        params: &[
+            param!("BURSTS", "bursts", 1.0, 12.0, 6.0, 1.0),
+            param!("SPARKS", "sparks", 6.0, 48.0, 22.0, 2.0),
+            param!("SPEED", "speed", 0.1, 3.0, 1.0, 0.1),
+        ],
+    },
     ModeForm { names: &["stained"], animate: AnimKind::Vflow, params: &[] },
 ];
 
@@ -603,6 +630,9 @@ fn run_demo(initial_seed: u64) {
         "deep",
         "moss",
         "bone",
+        "hypercube",
+        "flux",
+        "fireworks",
         "silver",
         "neon",
         "nerv",
@@ -883,6 +913,15 @@ fn main() {
         eprintln!("  snakes    Circuit traces slithering around hidden loops, crossover knots [count]");
         eprintln!("  quilt     Stitched patchwork of tile patterns [min_patch] [max_patch]");
         eprintln!("  patchwalk Quilted mondrian crossed by a waypoint trail [stops] [line_w]");
+        eprintln!(
+            "  hypercube Seeded 4D wireframes rotating through space [copies] [speed] [ghosts]"
+        );
+        eprintln!(
+            "  flux      Curling particle currents with persistent trails [particles] [trail] [speed]"
+        );
+        eprintln!(
+            "  fireworks Looping launches and gravity-bent starbursts [bursts] [sparks] [speed]"
+        );
         eprintln!("  aurora    Layered night-sky ribbons over a snowy horizon [bands]");
         eprintln!("  aura2     Sparse rain behind aurora ribbons and snowfields [rain]");
         eprintln!("  harbor    Moonlit harbor with boats, piers, and blocky shoreline [boats]");
@@ -11545,6 +11584,81 @@ fn main() {
             fill_noise(&mut grid, &r, variant, c1, c2, &mut rng);
             for (j, ch) in names[i].chars().enumerate() {
                 if x0 + j < width {
+    } else if mode == "hypercube" {
+        let copies: usize = args
+            .get(4)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("COPIES", 3.0) as usize);
+        let speed: f32 = args
+            .get(5)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("SPEED", 1.0));
+        let ghosts: usize = args
+            .get(6)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("GHOSTS", 2.0) as usize);
+        draw_hypercube(
+            &mut grid,
+            width,
+            height,
+            seed,
+            &palette,
+            &mut rng,
+            t_anim,
+            copies,
+            speed,
+            ghosts,
+        );
+    } else if mode == "flux" {
+        let count: usize = args
+            .get(4)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("COUNT", 58.0) as usize);
+        let trail: usize = args
+            .get(5)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("TRAIL", 8.0) as usize);
+        let speed: f32 = args
+            .get(6)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("SPEED", 1.0));
+        draw_flux(
+            &mut grid,
+            width,
+            height,
+            seed,
+            &palette,
+            &mut rng,
+            t_anim,
+            count,
+            trail,
+            speed,
+        );
+    } else if mode == "fireworks" {
+        let bursts: usize = args
+            .get(4)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("BURSTS", 6.0) as usize);
+        let sparks: usize = args
+            .get(5)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("SPARKS", 22.0) as usize);
+        let speed: f32 = args
+            .get(6)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("SPEED", 1.0));
+        draw_fireworks(
+            &mut grid,
+            width,
+            height,
+            seed,
+            &palette,
+            &mut rng,
+            t_anim,
+            bursts,
+            sparks,
+            speed,
+        );
                     grid[0][x0 + j] = Cell::new(ch, palette[4]);
                 }
             }
@@ -15436,6 +15550,387 @@ fn draw_contour(mut grid: Grid, width: usize, height: usize, seed: u64, palette:
     grid
 }
 
+// --- hypercube : multiple seeded 4D cubes projected into terminal space. ---
+fn draw_hypercube(
+    grid: &mut Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: &[Color; 5],
+    rng: &mut StdRng,
+    t: f32,
+    copies: usize,
+    speed: f32,
+    ghosts: usize,
+) {
+    use std::f32::consts::TAU;
+
+    if width == 0 || height == 0 {
+        return;
+    }
+    let copies = copies.clamp(1, 5);
+    let ghosts = ghosts.min(5);
+    let speed = speed.clamp(0.05, 4.0);
+    let bg = darken(palette[0], 12);
+    let star = darken(palette[4], 62);
+    for row in grid.iter_mut() {
+        for cell in row.iter_mut() {
+            *cell = Cell::new(' ', bg);
+        }
+    }
+    for _ in 0..(width * height / 70).max(3) {
+        let x = rng.random_range(0..width);
+        let y = rng.random_range(0..height);
+        let ch = if rng.random_range(0..5) == 0 { '∙' } else { '·' };
+        grid[y][x] = Cell::new(ch, star);
+    }
+
+    let phases: Vec<(f32, f32, f32)> = (0..copies)
+        .map(|_| {
+            (
+                rng.random_range(0.0..TAU),
+                rng.random_range(0.0..TAU),
+                rng.random_range(0.0..TAU),
+            )
+        })
+        .collect();
+    let slot_w = width as f32 / copies as f32;
+    let edge_colors = [
+        lighten(palette[1], 28),
+        shift_hue(lighten(palette[2], 30), 42.0),
+        shift_hue(lighten(palette[3], 34), -38.0),
+        lighten(palette[4], 18),
+    ];
+
+    for copy in 0..copies {
+        let cx = slot_w * (copy as f32 + 0.5);
+        let cy = height as f32 * (0.48 + 0.05 * phases[copy].2.sin());
+        let sx = (slot_w * 0.28).clamp(3.0, 17.0);
+        let sy = (height as f32 * 0.24).clamp(2.5, 8.0);
+
+        for ghost in (0..=ghosts).rev() {
+            let gt = t * speed - ghost as f32 * 0.16;
+            let axw = phases[copy].0 + gt * (0.47 + copy as f32 * 0.03);
+            let ayz = phases[copy].1 - gt * 0.31;
+            let azw = phases[copy].2 + gt * 0.23;
+            let axy = phases[copy].1 * 0.35 + gt * 0.17;
+            let mut projected = Vec::with_capacity(16);
+
+            for bits in 0..16usize {
+                let mut x = if bits & 1 == 0 { -1.0 } else { 1.0 };
+                let mut y = if bits & 2 == 0 { -1.0 } else { 1.0 };
+                let mut z = if bits & 4 == 0 { -1.0 } else { 1.0 };
+                let mut w = if bits & 8 == 0 { -1.0 } else { 1.0 };
+
+                let (c, s) = (axw.cos(), axw.sin());
+                (x, w) = (x * c - w * s, x * s + w * c);
+                let (c, s) = (ayz.cos(), ayz.sin());
+                (y, z) = (y * c - z * s, y * s + z * c);
+                let (c, s) = (azw.cos(), azw.sin());
+                (z, w) = (z * c - w * s, z * s + w * c);
+                let (c, s) = (axy.cos(), axy.sin());
+                (x, y) = (x * c - y * s, x * s + y * c);
+
+                let four_d = 1.8 / (2.9 - w * 0.42);
+                x *= four_d;
+                y *= four_d;
+                z *= four_d;
+                let three_d = 2.4 / (3.5 - z * 0.34);
+                projected.push((
+                    (cx + x * three_d * sx).round() as i32,
+                    (cy + y * three_d * sy).round() as i32,
+                    z,
+                ));
+            }
+
+            for vertex in 0..16usize {
+                for dim in 0..4usize {
+                    if vertex & (1 << dim) != 0 {
+                        continue;
+                    }
+                    let other = vertex | (1 << dim);
+                    let a = projected[vertex];
+                    let b = projected[other];
+                    let depth_shade = if (a.2 + b.2) * 0.5 < 0.0 { 20 } else { 0 };
+                    let ghost_shade = (ghost * 15 + depth_shade).min(78) as u8;
+                    pp_line(
+                        grid,
+                        a.0,
+                        a.1,
+                        b.0,
+                        b.1,
+                        darken(edge_colors[dim], ghost_shade),
+                    );
+                }
+            }
+
+            if ghost == 0 {
+                for (i, &(x, y, z)) in projected.iter().enumerate() {
+                    let ch = if i == 0 || i == 15 { '◆' } else { '◇' };
+                    let color = if z > 0.0 {
+                        lighten(palette[4], 26)
+                    } else {
+                        darken(palette[4], 18)
+                    };
+                    pp_put(grid, x, y, ch, color);
+                }
+                pp_put(
+                    grid,
+                    cx.round() as i32,
+                    cy.round() as i32,
+                    '⊹',
+                    darken(palette[4], 28),
+                );
+            }
+        }
+    }
+}
+
+// --- flux : seed-stable particles advected through a looping vector field. ---
+fn draw_flux(
+    grid: &mut Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: &[Color; 5],
+    rng: &mut StdRng,
+    t: f32,
+    count: usize,
+    trail: usize,
+    speed: f32,
+) {
+    if width == 0 || height == 0 {
+        return;
+    }
+    let count = count.clamp(1, 180);
+    let trail = trail.clamp(1, 24);
+    let speed = speed.clamp(0.05, 4.0);
+    let bg = darken(palette[0], 14);
+    for row in grid.iter_mut() {
+        for cell in row.iter_mut() {
+            *cell = Cell::new(' ', bg);
+        }
+    }
+
+    // A quiet seeded vector-field lattice makes the flow legible without
+    // competing with the bright particle heads.
+    for y in (1..height).step_by(4) {
+        for x in (2..width).step_by(8) {
+            let a = (x as f32 * 0.071 + y as f32 * 0.19 + seed as f32 * 0.013).sin();
+            let ch = if a < -0.45 {
+                '╲'
+            } else if a > 0.45 {
+                '╱'
+            } else {
+                '─'
+            };
+            grid[y][x] = Cell::new(ch, darken(palette[2], 68));
+        }
+    }
+
+    for i in 0..count {
+        let x0 = rng.random_range(0.0..width as f32);
+        let y0 = rng.random_range(0.0..height as f32);
+        let phase = rng.random_range(0.0..std::f32::consts::TAU);
+        let velocity = rng.random_range(0.72..1.32);
+        let curl = rng.random_range(0.65..1.55);
+        let base = match i % 4 {
+            0 => lighten(palette[1], 24),
+            1 => shift_hue(lighten(palette[2], 30), 32.0),
+            2 => shift_hue(lighten(palette[3], 34), -36.0),
+            _ => lighten(palette[4], 14),
+        };
+        let position = |time: f32| -> (f32, f32) {
+            let flow = time * velocity * 5.2;
+            let x = x0
+                + flow
+                + (y0 * 0.22 + phase + time * 0.63).sin() * 5.5 * curl
+                + (phase * 1.7 - time * 0.31).cos() * 1.8;
+            let y = y0
+                + (x0 * 0.08 - time * 0.71 + phase).sin() * 2.6 * curl
+                + (y0 * 0.17 + time * 0.39).cos() * 1.2;
+            (x.rem_euclid(width as f32), y.rem_euclid(height as f32))
+        };
+
+        for step in (0..=trail).rev() {
+            let tau = t * speed - step as f32 * 0.065;
+            let p = position(tau);
+            let prev = position(tau - 0.025);
+            let dx = p.0 - prev.0;
+            let dy = p.1 - prev.1;
+            let ch = if step == 0 {
+                if dx.abs() > dy.abs() {
+                    if dx >= 0.0 { '▶' } else { '◀' }
+                } else if dy >= 0.0 {
+                    '▼'
+                } else {
+                    '▲'
+                }
+            } else if step < 3 {
+                '•'
+            } else if step % 2 == 0 {
+                '∙'
+            } else {
+                '·'
+            };
+            let shade = if step == 0 {
+                0
+            } else {
+                (10 + step * 66 / trail).min(78) as u8
+            };
+            pp_put(
+                grid,
+                p.0.round() as i32,
+                p.1.round() as i32,
+                ch,
+                darken(base, shade),
+            );
+        }
+    }
+}
+
+// --- fireworks : phased rockets and ballistic sparks in a seamless loop. ---
+fn draw_fireworks(
+    grid: &mut Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: &[Color; 5],
+    rng: &mut StdRng,
+    t: f32,
+    bursts: usize,
+    sparks: usize,
+    speed: f32,
+) {
+    use std::f32::consts::TAU;
+
+    if width == 0 || height == 0 {
+        return;
+    }
+    let bursts = bursts.clamp(1, 14);
+    let sparks = sparks.clamp(4, 64);
+    let speed = speed.clamp(0.05, 4.0);
+    let bg = darken(palette[0], 18);
+    for row in grid.iter_mut() {
+        for cell in row.iter_mut() {
+            *cell = Cell::new(' ', bg);
+        }
+    }
+
+    for _ in 0..(width * height / 55).max(4) {
+        let x = rng.random_range(0..width);
+        let y = rng.random_range(0..height.saturating_sub(2).max(1));
+        let phase = rng.random_range(0.0..TAU);
+        let glow = (t * 0.8 + phase).sin();
+        let ch = if glow > 0.72 { '✦' } else if glow > 0.0 { '∙' } else { '·' };
+        let col = if glow > 0.72 {
+            darken(palette[4], 28)
+        } else {
+            darken(palette[4], 62)
+        };
+        grid[y][x] = Cell::new(ch, col);
+    }
+
+    // A low, irregular horizon gives the launches a physical origin.
+    if height >= 2 {
+        for x in 0..width {
+            let n = ((x as u64 * 17 + seed * 13) % 11) as usize;
+            let y = height - 1 - usize::from(n == 0);
+            grid[y][x] = Cell::new(if n == 0 { '▆' } else { '▂' }, darken(palette[1], 64));
+        }
+    }
+
+    let cycle = 6.2f32;
+    let colors = [
+        lighten(palette[1], 34),
+        shift_hue(lighten(palette[2], 36), 38.0),
+        shift_hue(lighten(palette[3], 40), -44.0),
+        lighten(palette[4], 22),
+    ];
+    for burst in 0..bursts {
+        let launch_x = rng.random_range(2.0..(width as f32 - 2.0).max(2.1));
+        let apex_x = (launch_x + rng.random_range(-7.0..7.0)).clamp(1.0, width as f32 - 2.0);
+        let apex_y = rng.random_range(2.0..(height as f32 * 0.48).max(2.1));
+        let phase = rng.random_range(0.0..cycle);
+        let wind = rng.random_range(-0.34..0.34);
+        let gravity = rng.random_range(0.38..0.62);
+        let color = colors[burst % colors.len()];
+        let spark_specs: Vec<(f32, f32, f32)> = (0..sparks)
+            .map(|s| {
+                let spoke = s as f32 / sparks as f32 * TAU;
+                (
+                    spoke + rng.random_range(-0.10..0.10),
+                    rng.random_range(3.2..7.4),
+                    rng.random_range(0.82..1.18),
+                )
+            })
+            .collect();
+        let age = (t * speed + phase).rem_euclid(cycle);
+
+        if age < 1.0 {
+            let q = age * age * (3.0 - 2.0 * age);
+            let x = launch_x + (apex_x - launch_x) * q;
+            let y = (height as f32 - 2.0) + (apex_y - (height as f32 - 2.0)) * q;
+            for tail in 1..=5 {
+                let ty = y + tail as f32;
+                let tx = x - wind * tail as f32 * 0.35;
+                pp_put(
+                    grid,
+                    tx.round() as i32,
+                    ty.round() as i32,
+                    if tail < 3 { '│' } else { '·' },
+                    darken(color, (tail * 12).min(70) as u8),
+                );
+            }
+            pp_put(grid, x.round() as i32, y.round() as i32, '▲', lighten(color, 12));
+            continue;
+        }
+
+        let explosion_t = age - 1.0;
+        if explosion_t < 0.16 {
+            pp_put(
+                grid,
+                apex_x.round() as i32,
+                apex_y.round() as i32,
+                '✺',
+                lighten(color, 18),
+            );
+        }
+        for &(angle, velocity, wobble) in &spark_specs {
+            for tail in (0..=3).rev() {
+                let et = explosion_t - tail as f32 * 0.11;
+                if et < 0.0 {
+                    continue;
+                }
+                let radial = velocity * (1.0 - (-et * 0.55).exp()) / 0.55;
+                let x = apex_x + angle.cos() * radial + wind * et * et * 1.8;
+                let y = apex_y + angle.sin() * radial * 0.48 * wobble + gravity * et * et;
+                let fade = ((explosion_t / 5.2) * 62.0) as usize + tail * 13;
+                let ch = if tail == 0 {
+                    if angle.cos().abs() > angle.sin().abs() {
+                        '━'
+                    } else if angle.sin() > 0.0 {
+                        '╻'
+                    } else {
+                        '╹'
+                    }
+                } else if tail == 1 {
+                    '•'
+                } else {
+                    '·'
+                };
+                pp_put(
+                    grid,
+                    x.round() as i32,
+                    y.round() as i32,
+                    ch,
+                    darken(color, fade.min(82) as u8),
+                );
+            }
+        }
+    }
+}
+
 fn draw_delta(grid: &mut Grid, width: usize, height: usize, _seed: u64, palette: &[Color; 5], rng: &mut StdRng, t: f32) {
     use std::f32::consts::FRAC_PI_2;
     let bg = darken(palette[0], 6);
@@ -16061,6 +16556,51 @@ fn iterate_grid(mode: &str, seed: u64, theme: &str, w: usize, h: usize, t: f32) 
         "eyes3" => Some(draw_eyes3(grid, w, h, seed, palette, rng, t, &[])),
         "fullmetal-eyes" => Some(draw_fullmetal_eyes(grid, w, h, seed, palette, rng, t, &[])),
         "fullmetal-eyes2" => Some(draw_fullmetal_eyes2(grid, w, h, seed, palette, rng, t, &[])),
+        "hypercube" => {
+            draw_hypercube(
+                &mut grid,
+                w,
+                h,
+                seed,
+                &palette,
+                &mut rng,
+                t,
+                param_f32("COPIES", 3.0) as usize,
+                param_f32("SPEED", 1.0),
+                param_f32("GHOSTS", 2.0) as usize,
+            );
+            Some(grid)
+        }
+        "flux" => {
+            draw_flux(
+                &mut grid,
+                w,
+                h,
+                seed,
+                &palette,
+                &mut rng,
+                t,
+                param_f32("COUNT", 58.0) as usize,
+                param_f32("TRAIL", 8.0) as usize,
+                param_f32("SPEED", 1.0),
+            );
+            Some(grid)
+        }
+        "fireworks" => {
+            draw_fireworks(
+                &mut grid,
+                w,
+                h,
+                seed,
+                &palette,
+                &mut rng,
+                t,
+                param_f32("BURSTS", 6.0) as usize,
+                param_f32("SPARKS", 22.0) as usize,
+                param_f32("SPEED", 1.0),
+            );
+            Some(grid)
+        }
         _ => None,
     }
 }
@@ -16926,6 +17466,42 @@ mod tests {
         };
         assert_eq!(frame(1.3), frame(1.3), "same t -> same frame");
         assert_ne!(frame(0.0), frame(4.0), "t should slither the snakes");
+    }
+
+    #[test]
+    fn hypercube_uses_seed_and_time_deterministically() {
+        let frame = |seed: u64, t: f32| {
+            let (mut g, mut r, p) = make_grid(80, 24, seed);
+            draw_hypercube(&mut g, 80, 24, seed, &p, &mut r, t, 3, 1.0, 2);
+            grid_to_string(&g)
+        };
+        assert_eq!(frame(42, 1.25), frame(42, 1.25));
+        assert_ne!(frame(42, 0.0), frame(42, 2.0), "T should rotate the projection");
+        assert_ne!(frame(42, 0.0), frame(43, 0.0), "seed should change the projection");
+    }
+
+    #[test]
+    fn flux_uses_seed_and_time_deterministically() {
+        let frame = |seed: u64, t: f32| {
+            let (mut g, mut r, p) = make_grid(80, 24, seed);
+            draw_flux(&mut g, 80, 24, seed, &p, &mut r, t, 58, 8, 1.0);
+            grid_to_string(&g)
+        };
+        assert_eq!(frame(42, 1.25), frame(42, 1.25));
+        assert_ne!(frame(42, 0.0), frame(42, 1.0), "T should advect the particles");
+        assert_ne!(frame(42, 0.0), frame(43, 0.0), "seed should change the currents");
+    }
+
+    #[test]
+    fn fireworks_use_seed_and_time_deterministically() {
+        let frame = |seed: u64, t: f32| {
+            let (mut g, mut r, p) = make_grid(80, 24, seed);
+            draw_fireworks(&mut g, 80, 24, seed, &p, &mut r, t, 6, 22, 1.0);
+            grid_to_string(&g)
+        };
+        assert_eq!(frame(42, 1.25), frame(42, 1.25));
+        assert_ne!(frame(42, 0.0), frame(42, 1.0), "T should advance the bursts");
+        assert_ne!(frame(42, 0.0), frame(43, 0.0), "seed should change the show");
     }
 
     #[test]

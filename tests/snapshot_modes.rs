@@ -435,3 +435,25 @@ fn jelly_seed_42() {
 fn jelly2_seed_42() {
     insta::assert_snapshot!(render(&["42", "jelly2", "deep"]));
 }
+
+#[test]
+fn hypercube_seed_42() {
+    insta::assert_snapshot!(render(&["42", "hypercube", "neon", "3", "1", "2"]));
+}
+
+#[test]
+fn flux_seed_42() {
+    insta::assert_snapshot!(render(&["42", "flux", "arctic", "58", "8", "1"]));
+}
+
+#[test]
+fn fireworks_seed_42() {
+    insta::assert_snapshot!(render(&[
+        "42",
+        "fireworks",
+        "ember",
+        "6",
+        "22",
+        "1",
+    ]));
+}
