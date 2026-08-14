@@ -149,6 +149,16 @@ static MODE_FORMS: &[ModeForm] = &[
             param!("SPEED", "speed", 0.1, 3.0, 1.0, 0.1),
         ],
     },
+    ModeForm {
+        names: &["fa6", "fullmetal-alchemist6"],
+        animate: AnimKind::Iterate,
+        params: &[
+            param!("CELLS", "chambers", 3.0, 16.0, 8.0, 1.0),
+            param!("DENS", "inscriptions", 0.0, 100.0, 55.0, 5.0),
+            param!("SPEED", "speed", 0.1, 3.0, 0.8, 0.1),
+            param!("CHAOS", "asymmetry", 0.0, 100.0, 42.0, 5.0),
+        ],
+    },
     ModeForm { names: &["stained"], animate: AnimKind::Vflow, params: &[] },
 ];
 
@@ -572,6 +582,7 @@ fn run_demo(initial_seed: u64) {
         "fa3",
         "fa4",
         "fa5",
+        "fa6",
         "spiro",
         "spiro-tile",
         "weave",
@@ -921,6 +932,9 @@ fn main() {
         );
         eprintln!(
             "  fireworks Looping launches and gravity-bent starbursts [bursts] [sparks] [speed]"
+        );
+        eprintln!(
+            "  fa6       Spatial transmutation engine [chambers] [inscriptions] [speed] [asymmetry%]"
         );
         eprintln!("  aurora    Layered night-sky ribbons over a snowy horizon [bands]");
         eprintln!("  aura2     Sparse rain behind aurora ribbons and snowfields [rain]");
@@ -11564,26 +11578,37 @@ fn main() {
             let tail = if rng.random_range(0..2) == 0 { '¦' } else { '\'' };
             jput!(x, y + 1, tail, darken(dim, 15));
         }
-    } else if mode == "world" {
-        render_world(&mut grid, width, height, &palette, &mut rng);
-    } else if mode == "noise" {
-        let names = ["truchet", "higaki", "higaki-s", "grass", "static", "dot"];
-        let cols = NOISE_VARIANT_COUNT;
-        let cell_w = width / cols;
-        for i in 0..NOISE_VARIANT_COUNT {
-            let x0 = i * cell_w;
-            let r = Rect {
-                x: x0,
-                y: 1,
-                w: cell_w,
-                h: height - 1,
-            };
-            let variant = noise_variant_from_index(i);
-            let c1 = palette[(i % 3) + 1];
-            let c2 = darken(c1, 30);
-            fill_noise(&mut grid, &r, variant, c1, c2, &mut rng);
-            for (j, ch) in names[i].chars().enumerate() {
-                if x0 + j < width {
+    } else if mode == "fa6" || mode == "fullmetal-alchemist6" {
+        let chambers: usize = args
+            .get(4)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("CELLS", 8.0) as usize);
+        let inscriptions: u32 = args
+            .get(5)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("DENS", 55.0) as u32);
+        let speed: f32 = args
+            .get(6)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("SPEED", 0.8));
+        let asymmetry: f32 = args
+            .get(7)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("CHAOS", 42.0))
+            / 100.0;
+        draw_fa6(
+            &mut grid,
+            width,
+            height,
+            seed,
+            &palette,
+            &mut rng,
+            t_anim,
+            chambers,
+            inscriptions,
+            speed,
+            asymmetry,
+        );
     } else if mode == "hypercube" {
         let copies: usize = args
             .get(4)
@@ -11679,6 +11704,26 @@ fn main() {
         draw_nebula(&mut grid, width, height, seed, &palette, &mut rng, t_anim);
     } else if mode == "delta" {
         draw_delta(&mut grid, width, height, seed, &palette, &mut rng, t_anim);
+    } else if mode == "world" {
+        render_world(&mut grid, width, height, &palette, &mut rng);
+    } else if mode == "noise" {
+        let names = ["truchet", "higaki", "higaki-s", "grass", "static", "dot"];
+        let cols = NOISE_VARIANT_COUNT;
+        let cell_w = width / cols;
+        for i in 0..NOISE_VARIANT_COUNT {
+            let x0 = i * cell_w;
+            let r = Rect {
+                x: x0,
+                y: 1,
+                w: cell_w,
+                h: height - 1,
+            };
+            let variant = noise_variant_from_index(i);
+            let c1 = palette[(i % 3) + 1];
+            let c2 = darken(c1, 30);
+            fill_noise(&mut grid, &r, variant, c1, c2, &mut rng);
+            for (j, ch) in names[i].chars().enumerate() {
+                if x0 + j < width {
     } else if mode == "stained" {
         draw_stained(&mut grid, width, height, seed, &palette, &mut rng);
     } else {
@@ -15931,6 +15976,442 @@ fn draw_fireworks(
     }
 }
 
+// --- fa6 : an animated spatial transmutation engine. Seed builds the chambers;
+// T rotates the sealwork and moves current through a fixed ritual topology. ---
+fn draw_fa6(
+    grid: &mut Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: &[Color; 5],
+    rng: &mut StdRng,
+    t: f32,
+    chamber_count: usize,
+    density: u32,
+    speed: f32,
+    asymmetry: f32,
+) {
+    use std::f32::consts::{FRAC_PI_2, TAU};
+
+    if width < 4 || height < 4 {
+        return;
+    }
+    let chamber_count = chamber_count.clamp(3, 18);
+    let density = density.min(100);
+    let speed = speed.clamp(0.05, 4.0);
+    let asymmetry = asymmetry.clamp(0.0, 1.0);
+    let bg = darken(palette[0], 16);
+    let chalk = lighten(palette[4], 18);
+    let gold = lighten(palette[1], 36);
+    let ether = shift_hue(lighten(palette[3], 38), 38.0);
+    let rose = shift_hue(lighten(palette[2], 42), -42.0);
+    let verdigris = shift_hue(lighten(palette[1], 30), 96.0);
+    let hush = darken(palette[2], 68);
+    let colors = [gold, ether, rose, verdigris, chalk];
+
+    for y in 0..height {
+        for x in 0..width {
+            let field = pp_hash2(x as i32, y as i32, seed ^ 0xFA60_FA60);
+            let ch = if field > 0.994 {
+                '°'
+            } else if field > 0.982 {
+                '·'
+            } else {
+                ' '
+            };
+            grid[y][x] = Cell::new(ch, if ch == ' ' { bg } else { hush });
+        }
+    }
+
+    let core_rx = (width as f32 * 0.235).clamp(10.0, 29.0);
+    let core_ry = (height as f32 * 0.34).clamp(4.0, 12.0);
+    let cx = (width as i32 / 2
+        + rng.random_range(-((width as i32 / 18).max(1))..=(width as i32 / 18).max(1)))
+        .clamp(2, width as i32 - 3);
+    let cy = (height as i32 / 2 + rng.random_range(-1..=1)).clamp(2, height as i32 - 3);
+    let seed_phase = rng.random_range(0.0..TAU);
+
+    #[derive(Clone)]
+    struct Chamber {
+        x0: usize,
+        y0: usize,
+        x1: usize,
+        y1: usize,
+        depth: usize,
+    }
+    let mut chambers = vec![Chamber {
+        x0: 1,
+        y0: 1,
+        x1: width.saturating_sub(2).max(1),
+        y1: height.saturating_sub(2).max(1),
+        depth: 0,
+    }];
+
+    while chambers.len() < chamber_count {
+        let split_idx = chambers
+            .iter()
+            .enumerate()
+            .filter(|(_, c)| c.x1.saturating_sub(c.x0) >= 10 || c.y1.saturating_sub(c.y0) >= 6)
+            .max_by_key(|(_, c)| {
+                c.x1.saturating_sub(c.x0) * c.y1.saturating_sub(c.y0)
+            })
+            .map(|(i, _)| i);
+        let Some(split_idx) = split_idx else { break };
+        let cell = chambers.remove(split_idx);
+        let cw = cell.x1.saturating_sub(cell.x0);
+        let ch = cell.y1.saturating_sub(cell.y0);
+        let can_v = cw >= 10;
+        let can_h = ch >= 6;
+        let vertical = if can_v && can_h {
+            if cw as f32 > ch as f32 * 2.2 {
+                true
+            } else if ch as f32 > cw as f32 * 0.72 {
+                false
+            } else {
+                rng.random_range(0..2) == 0
+            }
+        } else {
+            can_v
+        };
+        let next_depth = cell.depth + 1;
+        if vertical {
+            let lo = cell.x0 + 4;
+            let hi = cell.x1.saturating_sub(4);
+            if lo >= hi {
+                chambers.push(cell);
+                break;
+            }
+            let cut = rng.random_range(lo..=hi);
+            chambers.push(Chamber {
+                x0: cell.x0,
+                y0: cell.y0,
+                x1: cut,
+                y1: cell.y1,
+                depth: next_depth,
+            });
+            chambers.push(Chamber {
+                x0: cut,
+                y0: cell.y0,
+                x1: cell.x1,
+                y1: cell.y1,
+                depth: next_depth,
+            });
+        } else {
+            let lo = cell.y0 + 2;
+            let hi = cell.y1.saturating_sub(2);
+            if lo >= hi {
+                chambers.push(cell);
+                break;
+            }
+            let cut = rng.random_range(lo..=hi);
+            chambers.push(Chamber {
+                x0: cell.x0,
+                y0: cell.y0,
+                x1: cell.x1,
+                y1: cut,
+                depth: next_depth,
+            });
+            chambers.push(Chamber {
+                x0: cell.x0,
+                y0: cut,
+                x1: cell.x1,
+                y1: cell.y1,
+                depth: next_depth,
+            });
+        }
+    }
+
+    let inside_core = |x: f32, y: f32, margin: f32| -> bool {
+        let dx = (x - cx as f32) / (core_rx * margin);
+        let dy = (y - cy as f32) / (core_ry * margin);
+        dx * dx + dy * dy < 1.0
+    };
+
+    // Each recursive chamber is a rational container, but its edges are
+    // selectively erased. The missing segments are as important as the frame.
+    for (ci, chamber) in chambers.iter().enumerate() {
+        let frame_color = darken(colors[ci % colors.len()], 48);
+        for x in chamber.x0..=chamber.x1.min(width - 1) {
+            if (x + chamber.depth * 3 + seed as usize) % 7 != 0 {
+                pp_put(grid, x as i32, chamber.y0 as i32, '┄', frame_color);
+            }
+            if (x + chamber.depth * 5 + seed as usize) % 6 != 0 {
+                pp_put(grid, x as i32, chamber.y1 as i32, '┄', frame_color);
+            }
+        }
+        for y in chamber.y0..=chamber.y1.min(height - 1) {
+            if (y + chamber.depth * 3 + seed as usize) % 5 != 0 {
+                pp_put(grid, chamber.x0 as i32, y as i32, '┊', frame_color);
+            }
+            if (y + chamber.depth * 7 + seed as usize) % 6 != 0 {
+                pp_put(grid, chamber.x1 as i32, y as i32, '┊', frame_color);
+            }
+        }
+        for &(x, y, ch) in &[
+            (chamber.x0, chamber.y0, '╭'),
+            (chamber.x1, chamber.y0, '╮'),
+            (chamber.x0, chamber.y1, '╰'),
+            (chamber.x1, chamber.y1, '╯'),
+        ] {
+            pp_put(grid, x as i32, y as i32, ch, darken(frame_color, 4));
+        }
+
+        let area = chamber.x1.saturating_sub(chamber.x0) * chamber.y1.saturating_sub(chamber.y0);
+        let marks = if density == 0 {
+            0
+        } else {
+            ((area * density as usize) / 2600).clamp(1, 14)
+        };
+        let runes = ['∴', '∵', '△', '▽', '☉', '☿', '⊕', '⌬', '◇', '○', '×', '·'];
+        for mark in 0..marks {
+            if chamber.x1 <= chamber.x0 + 1 || chamber.y1 <= chamber.y0 + 1 {
+                continue;
+            }
+            let x = rng.random_range(chamber.x0 + 1..chamber.x1) as i32;
+            let y = rng.random_range(chamber.y0 + 1..chamber.y1) as i32;
+            if !inside_core(x as f32, y as f32, 1.16) {
+                pp_put(
+                    grid,
+                    x,
+                    y,
+                    runes[(mark + ci * 3 + seed as usize) % runes.len()],
+                    darken(colors[(ci + mark) % colors.len()], 42),
+                );
+            }
+        }
+        let tag = format!("{:02X}", (seed as usize + ci * 29 + chamber.depth * 11) & 0xff);
+        for (j, glyph) in tag.chars().enumerate() {
+            pp_put(
+                grid,
+                chamber.x0 as i32 + 2 + j as i32,
+                chamber.y0 as i32,
+                glyph,
+                darken(chalk, 36),
+            );
+        }
+    }
+
+    // Seeded rupture rays ignore the chamber hierarchy. They are still
+    // deterministic and broken by a spatial hash, so they feel torn, not noisy.
+    let fracture_count = 2 + (asymmetry * 7.0).round() as usize;
+    for fi in 0..fracture_count {
+        let angle = seed_phase + rng.random_range(0.0..TAU) + fi as f32 * 0.37;
+        let start = pp_point_on(cx, cy, core_rx * 0.92, core_ry * 0.92, angle);
+        let ray_len = width.max(height * 2) as f32;
+        let end = (
+            cx + (angle.cos() * ray_len).round() as i32,
+            cy + (angle.sin() * ray_len * 0.52).round() as i32,
+        );
+        let steps = (end.0 - start.0).abs().max((end.1 - start.1).abs()).max(1);
+        for s in 0..=steps {
+            let q = s as f32 / steps as f32;
+            let x = (start.0 as f32 + (end.0 - start.0) as f32 * q).round() as i32;
+            let y = (start.1 as f32 + (end.1 - start.1) as f32 * q).round() as i32;
+            if pp_hash2(x, y, seed ^ fi as u64 * 0x9E37) > 0.26 {
+                pp_put(
+                    grid,
+                    x,
+                    y,
+                    pp_stroke(end.0 - start.0, end.1 - start.1),
+                    darken(rose, 34),
+                );
+            }
+        }
+        let pulse = (t * speed * 0.22 + fi as f32 / fracture_count as f32).rem_euclid(1.0);
+        pp_put(
+            grid,
+            (start.0 as f32 + (end.0 - start.0) as f32 * pulse).round() as i32,
+            (start.1 as f32 + (end.1 - start.1) as f32 * pulse).round() as i32,
+            '✦',
+            lighten(rose, 12),
+        );
+    }
+
+    struct Node {
+        x: f32,
+        y: f32,
+        phase: f32,
+        radius: f32,
+        kind: usize,
+        color: Color,
+    }
+    let mut nodes = Vec::with_capacity(chambers.len());
+    for (ci, chamber) in chambers.iter().enumerate() {
+        let mut x = (chamber.x0 + chamber.x1) as f32 * 0.5;
+        let mut y = (chamber.y0 + chamber.y1) as f32 * 0.5;
+        x += rng.random_range(-1.0..1.0) * asymmetry * 3.5;
+        y += rng.random_range(-1.0..1.0) * asymmetry * 1.5;
+        let mut dx = x - cx as f32;
+        let mut dy = y - cy as f32;
+        let metric = (dx / (core_rx * 1.28)).powi(2) + (dy / (core_ry * 1.28)).powi(2);
+        if metric < 1.0 {
+            if metric < 0.01 {
+                let a = seed_phase + ci as f32 * TAU / chambers.len().max(1) as f32;
+                dx = a.cos() * core_rx;
+                dy = a.sin() * core_ry;
+            }
+            let scale = 1.08 / metric.max(0.02).sqrt();
+            x = cx as f32 + dx * scale;
+            y = cy as f32 + dy * scale;
+        }
+        nodes.push(Node {
+            x: x.clamp(2.0, width as f32 - 3.0),
+            y: y.clamp(2.0, height as f32 - 3.0),
+            phase: rng.random_range(0.0..TAU),
+            radius: rng.random_range(2.2..4.5),
+            kind: (ci * 7 + seed as usize) % 9,
+            color: colors[ci % colors.len()],
+        });
+    }
+
+    let node_pos = |node: &Node| -> (i32, i32) {
+        (
+            (node.x + (t * speed * 0.43 + node.phase).sin() * asymmetry * 2.2).round() as i32,
+            (node.y + (t * speed * 0.31 + node.phase * 1.7).cos() * asymmetry * 0.9).round()
+                as i32,
+        )
+    };
+    let positions: Vec<(i32, i32)> = nodes.iter().map(node_pos).collect();
+
+    for (i, node) in nodes.iter().enumerate() {
+        let here = positions[i];
+        let target = if i > 0 && i % 3 != 0 {
+            positions[(i + nodes.len() - 1) % nodes.len()]
+        } else {
+            (cx, cy)
+        };
+        pp_line(grid, here.0, here.1, target.0, target.1, darken(node.color, 56));
+        let pulse = (t * speed * (0.16 + i as f32 * 0.007) + node.phase / TAU).rem_euclid(1.0);
+        pp_put(
+            grid,
+            (here.0 as f32 + (target.0 - here.0) as f32 * pulse).round() as i32,
+            (here.1 as f32 + (target.1 - here.1) as f32 * pulse).round() as i32,
+            if i % 2 == 0 { '◆' } else { '◇' },
+            lighten(node.color, 14),
+        );
+    }
+
+    // Carve the central void after drawing the network so every conduit appears
+    // to terminate cleanly at the transmutation boundary.
+    for y in 0..height {
+        for x in 0..width {
+            if inside_core(x as f32, y as f32, 1.08) {
+                grid[y][x] = Cell::new(' ', bg);
+            }
+        }
+    }
+
+    // Satellite seals sit at chamber centroids. Their orbiting marks are driven
+    // by T, but the chamber assignment and iconography remain seed-stable.
+    let sigils = ['☉', '☿', '♄', '♃', '△', '▽', '⊕', '⌬', '◉'];
+    for (i, node) in nodes.iter().enumerate() {
+        let (nx, ny) = positions[i];
+        let r = node.radius;
+        let phase = node.phase - t * speed * (0.11 + i as f32 * 0.004);
+        pp_arc(
+            grid,
+            nx,
+            ny,
+            r,
+            (r * 0.48).max(1.2),
+            phase,
+            phase + TAU,
+            darken(node.color, 16),
+            9,
+        );
+        let arm = pp_point_on(nx, ny, r + 1.0, (r * 0.48 + 0.8).max(1.5), phase);
+        pp_line(grid, nx, ny, arm.0, arm.1, darken(node.color, 8));
+        pp_put(grid, nx, ny, sigils[node.kind], lighten(node.color, 18));
+        pp_put(grid, arm.0, arm.1, '○', lighten(chalk, 2));
+    }
+
+    let phase = seed_phase + t * speed * 0.18;
+    pp_arc(
+        grid,
+        cx,
+        cy,
+        core_rx,
+        core_ry,
+        phase,
+        phase + TAU,
+        lighten(chalk, 2),
+        0,
+    );
+    pp_arc(
+        grid,
+        cx,
+        cy,
+        core_rx * 0.89,
+        core_ry * 0.87,
+        -phase,
+        -phase + TAU,
+        darken(ether, 4),
+        13,
+    );
+
+    let polygon = |n: usize, rx: f32, ry: f32, a0: f32| -> Vec<(i32, i32)> {
+        (0..n)
+            .map(|i| pp_point_on(cx, cy, rx, ry, a0 + i as f32 * TAU / n as f32))
+            .collect()
+    };
+    let outer = polygon(7, core_rx * 0.78, core_ry * 0.76, phase * 1.31 - FRAC_PI_2);
+    for i in 0..outer.len() {
+        pp_line(
+            grid,
+            outer[i].0,
+            outer[i].1,
+            outer[(i + 3) % outer.len()].0,
+            outer[(i + 3) % outer.len()].1,
+            darken(gold, 4),
+        );
+    }
+    let inner = polygon(5, core_rx * 0.49, core_ry * 0.46, -phase * 1.73 + seed_phase);
+    for i in 0..inner.len() {
+        pp_line(
+            grid,
+            inner[i].0,
+            inner[i].1,
+            inner[(i + 2) % inner.len()].0,
+            inner[(i + 2) % inner.len()].1,
+            lighten(rose, 4),
+        );
+    }
+
+    let tick_count = 12 + chamber_count.min(12);
+    let ring_runes = ['△', '▽', '□', '◇', '○', '⊕', '∴', '∵'];
+    for i in 0..tick_count {
+        let a = phase * if i % 2 == 0 { 1.0 } else { -0.7 }
+            + i as f32 * TAU / tick_count as f32;
+        let p0 = pp_point_on(cx, cy, core_rx * 0.88, core_ry * 0.86, a);
+        let p1 = pp_point_on(cx, cy, core_rx * 1.02, core_ry * 1.02, a);
+        pp_line(grid, p0.0, p0.1, p1.0, p1.1, darken(gold, 10));
+        if i % 3 == 0 {
+            pp_put(
+                grid,
+                p0.0,
+                p0.1,
+                ring_runes[(i + seed as usize) % ring_runes.len()],
+                lighten(colors[i % colors.len()], 10),
+            );
+        }
+    }
+
+    // The impossible balance at the center is intentionally compact: opposing
+    // triangles, a material axis, and an eye-like witness glyph.
+    let top = (cx, cy - (core_ry * 0.27).round() as i32);
+    let left = (cx - (core_rx * 0.17).round() as i32, cy + (core_ry * 0.20).round() as i32);
+    let right = (cx + (core_rx * 0.17).round() as i32, left.1);
+    pp_line(grid, top.0, top.1, left.0, left.1, lighten(gold, 12));
+    pp_line(grid, left.0, left.1, right.0, right.1, lighten(gold, 12));
+    pp_line(grid, right.0, right.1, top.0, top.1, lighten(gold, 12));
+    pp_line(grid, cx, top.1 - 1, cx, left.1 + 1, lighten(ether, 10));
+    pp_put(grid, cx, cy, '◉', lighten(chalk, 24));
+    pp_put(grid, cx - 1, cy, '╴', rose);
+    pp_put(grid, cx + 1, cy, '╶', rose);
+    pp_put(grid, cx, top.1 - 1, '☉', lighten(gold, 16));
+    pp_put(grid, cx, left.1 + 1, '▽', lighten(ether, 12));
+}
+
 fn draw_delta(grid: &mut Grid, width: usize, height: usize, _seed: u64, palette: &[Color; 5], rng: &mut StdRng, t: f32) {
     use std::f32::consts::FRAC_PI_2;
     let bg = darken(palette[0], 6);
@@ -16598,6 +17079,22 @@ fn iterate_grid(mode: &str, seed: u64, theme: &str, w: usize, h: usize, t: f32) 
                 param_f32("BURSTS", 6.0) as usize,
                 param_f32("SPARKS", 22.0) as usize,
                 param_f32("SPEED", 1.0),
+            );
+            Some(grid)
+        }
+        "fa6" | "fullmetal-alchemist6" => {
+            draw_fa6(
+                &mut grid,
+                w,
+                h,
+                seed,
+                &palette,
+                &mut rng,
+                t,
+                param_f32("CELLS", 8.0) as usize,
+                param_f32("DENS", 55.0) as u32,
+                param_f32("SPEED", 0.8),
+                param_f32("CHAOS", 42.0) / 100.0,
             );
             Some(grid)
         }
@@ -17502,6 +17999,18 @@ mod tests {
         assert_eq!(frame(42, 1.25), frame(42, 1.25));
         assert_ne!(frame(42, 0.0), frame(42, 1.0), "T should advance the bursts");
         assert_ne!(frame(42, 0.0), frame(43, 0.0), "seed should change the show");
+    }
+
+    #[test]
+    fn fa6_uses_seed_and_time_deterministically() {
+        let frame = |seed: u64, t: f32| {
+            let (mut g, mut r, p) = make_grid(80, 24, seed);
+            draw_fa6(&mut g, 80, 24, seed, &p, &mut r, t, 8, 55, 0.8, 0.42);
+            grid_to_string(&g)
+        };
+        assert_eq!(frame(42, 1.25), frame(42, 1.25));
+        assert_ne!(frame(42, 0.0), frame(42, 1.5), "T should animate the ritual field");
+        assert_ne!(frame(42, 0.0), frame(43, 0.0), "seed should restructure the chambers");
     }
 
     #[test]
