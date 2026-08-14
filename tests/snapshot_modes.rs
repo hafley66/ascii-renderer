@@ -347,6 +347,13 @@ fn fa5_seed_42() {
 }
 
 #[test]
+fn fa6_seed_42() {
+    insta::assert_snapshot!(render(&[
+        "42", "fa6", "nerv", "8", "55", "0.8", "42"
+    ]));
+}
+
+#[test]
 fn spiro_seed_42() {
     insta::assert_snapshot!(render(&["42", "spiro", "deep"]));
 }
@@ -437,6 +444,31 @@ fn jelly2_seed_42() {
 }
 
 #[test]
+fn rhizome_seed_42() {
+    insta::assert_snapshot!(render(&["42", "rhizome", "ember"]));
+}
+
+#[test]
+fn effigy_seed_42() {
+    insta::assert_snapshot!(render(&["42", "effigy", "ember"]));
+}
+
+#[test]
+fn dendrite_seed_42() {
+    insta::assert_snapshot!(render(&["42", "dendrite", "ember"]));
+}
+
+#[test]
+fn totem_seed_42() {
+    insta::assert_snapshot!(render(&["42", "totem", "ember"]));
+}
+
+#[test]
+fn chimera_seed_42() {
+    insta::assert_snapshot!(render(&["42", "chimera", "ember"]));
+}
+
+#[test]
 fn hypercube_seed_42() {
     insta::assert_snapshot!(render(&["42", "hypercube", "neon", "3", "1", "2"]));
 }
@@ -456,4 +488,19 @@ fn fireworks_seed_42() {
         "22",
         "1",
     ]));
+}
+
+#[test]
+fn murmuration_seed_42() {
+    insta::assert_snapshot!(render(&["42", "murmuration", "ember", "140", "3", "1"]));
+}
+
+#[test]
+fn lanterns_seed_42() {
+    insta::assert_snapshot!(render(&["42", "lanterns", "deep", "7", "1", "1"]));
+}
+
+#[test]
+fn tide_seed_42() {
+    insta::assert_snapshot!(render(&["42", "tide", "arctic", "2", "1", "1"]));
 }

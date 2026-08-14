@@ -15,6 +15,7 @@ mod sprites;
 mod tree_draw;
 mod types;
 mod walker;
+mod avant;
 
 use crossterm::style::Color;
 use rand::RngExt;
@@ -36,6 +37,7 @@ use sprites::*;
 use tree_draw::*;
 use types::*;
 use walker::*;
+use avant::*;
 
 // ============================================================================
 // Declarative mode config. A mode declares how it animates and which runtime
@@ -150,6 +152,33 @@ static MODE_FORMS: &[ModeForm] = &[
         ],
     },
     ModeForm {
+        names: &["murmuration"],
+        animate: AnimKind::Iterate,
+        params: &[
+            param!("BIRDS", "birds", 8.0, 500.0, 140.0, 8.0),
+            param!("FLOCKS", "flocks", 1.0, 9.0, 3.0, 1.0),
+            param!("SPEED", "speed", 0.1, 3.0, 1.0, 0.1),
+        ],
+    },
+    ModeForm {
+        names: &["lanterns"],
+        animate: AnimKind::Iterate,
+        params: &[
+            param!("COUNT", "lanterns", 1.0, 24.0, 7.0, 1.0),
+            param!("RISE", "rise", 0.1, 3.0, 1.0, 0.1),
+            param!("SWAY", "sway", 0.0, 3.0, 1.0, 0.1),
+        ],
+    },
+    ModeForm {
+        names: &["tide"],
+        animate: AnimKind::Iterate,
+        params: &[
+            param!("WAVES", "waves", 1.0, 4.0, 2.0, 1.0),
+            param!("AMP", "amplitude", 0.2, 2.5, 1.0, 0.1),
+            param!("SPEED", "speed", 0.1, 3.0, 1.0, 0.1),
+        ],
+    },
+    ModeForm {
         names: &["fa6", "fullmetal-alchemist6"],
         animate: AnimKind::Iterate,
         params: &[
@@ -160,6 +189,14 @@ static MODE_FORMS: &[ModeForm] = &[
         ],
     },
     ModeForm { names: &["stained"], animate: AnimKind::Vflow, params: &[] },
+    ModeForm {
+        names: &["chimera"],
+        animate: AnimKind::Iterate,
+        params: &[
+            param!("DENS", "density", 10.0, 100.0, 50.0, 5.0),
+            param!("DRIFT", "drift", 0.0, 10.0, 2.0, 0.5),
+        ],
+    },
 ];
 
 /// Look up a mode's declared config. Unlisted modes default to iterate, no knobs:
@@ -631,6 +668,17 @@ fn run_demo(initial_seed: u64) {
         "hive",
         "jelly",
         "jelly2",
+        "hypercube",
+        "flux",
+        "fireworks",
+        "rhizome",
+        "effigy",
+        "dendrite",
+        "totem",
+        "chimera",
+        "murmuration",
+        "lanterns",
+        "tide",
     ];
     let all_themes: &[&str] = &[
         "",
@@ -641,9 +689,6 @@ fn run_demo(initial_seed: u64) {
         "deep",
         "moss",
         "bone",
-        "hypercube",
-        "flux",
-        "fireworks",
         "silver",
         "neon",
         "nerv",
@@ -946,6 +991,20 @@ fn main() {
         eprintln!("  meadow    Windy wildflower field with stems, seed heads, and grass [density]");
         eprintln!(
             "  world2    Cracked/leaking biome shards with aurora and scene-walk islands [shards]"
+        );
+        eprintln!("  rhizome   Avant-garde tree-root network [count] [depth]");
+        eprintln!("  effigy    Scattered algorithmic face masks [count]");
+        eprintln!("  dendrite  Neuronal binary tree growth [seeds] [depth]");
+        eprintln!("  totem     Stacked face poles [poles]");
+        eprintln!("  chimera   Special tree+face hybrid scene [density]");
+        eprintln!(
+            "  murmuration  Wheeling starling flocks over a dusk gradient [birds] [flocks] [speed]"
+        );
+        eprintln!(
+            "  lanterns  Paper lanterns rising off dark water, halo + reflection [count] [rise] [sway]"
+        );
+        eprintln!(
+            "  tide      Superposed wave fronts washing a seeded shore, wet-sand recall [waves] [amp] [speed]"
         );
         eprintln!("  swatch    Color swatches for all named themes");
         eprintln!();
@@ -11684,26 +11743,75 @@ fn main() {
             sparks,
             speed,
         );
-                    grid[0][x0 + j] = Cell::new(ch, palette[4]);
-                }
-            }
-        }
-    } else if mode == "eyes++" {
-        draw_eyes_pp(&mut grid, width, height, seed, &palette, &mut rng);
-    } else if mode == "fullmetal-eyes++" {
-        draw_fme_pp(&mut grid, width, height, seed, &palette, &mut rng);
-    } else if mode == "trees++" {
-        draw_trees_pp(&mut grid, width, height, seed, &palette, &mut rng);
-    } else if mode == "forest++" {
-        draw_forest_pp(&mut grid, width, height, seed, &palette, &mut rng);
-    } else if mode == "phyllotaxis" {
-        draw_phyllotaxis(&mut grid, width, height, seed, &palette, &mut rng, t_anim);
-    } else if mode == "moire" {
-        draw_moire(&mut grid, width, height, seed, &palette, &mut rng, t_anim);
-    } else if mode == "nebula" {
-        draw_nebula(&mut grid, width, height, seed, &palette, &mut rng, t_anim);
-    } else if mode == "delta" {
-        draw_delta(&mut grid, width, height, seed, &palette, &mut rng, t_anim);
+    } else if mode == "rhizome" {
+        let count: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(5);
+        let depth: u32 = args.get(5).and_then(|s| s.parse().ok()).unwrap_or(3);
+        draw_rhizome(&mut grid, width, height, seed, &palette, &mut rng, t_anim, count, depth);
+    } else if mode == "effigy" {
+        let count: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(6);
+        draw_effigy(&mut grid, width, height, seed, &palette, &mut rng, t_anim, count);
+    } else if mode == "dendrite" {
+        let seeds: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(3);
+        let depth: u32 = args.get(5).and_then(|s| s.parse().ok()).unwrap_or(4);
+        draw_dendrite(&mut grid, width, height, seed, &palette, &mut rng, t_anim, seeds, depth);
+    } else if mode == "totem" {
+        let poles: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(2);
+        draw_totem(&mut grid, width, height, seed, &palette, &mut rng, t_anim, poles);
+    } else if mode == "chimera" {
+        let density: u32 = args
+            .get(4)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("DENS", 50.0) as u32);
+        let drift: f32 = param_f32("DRIFT", 2.0);
+        draw_chimera(&mut grid, width, height, seed, &palette, &mut rng, t_anim, density, drift);
+    } else if mode == "murmuration" {
+        let birds: usize = args
+            .get(4)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("BIRDS", 140.0) as usize);
+        let flocks: usize = args
+            .get(5)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("FLOCKS", 3.0) as usize);
+        let speed: f32 = args
+            .get(6)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("SPEED", 1.0));
+        draw_murmuration(
+            &mut grid, width, height, seed, &palette, &mut rng, t_anim, birds, flocks, speed,
+        );
+    } else if mode == "lanterns" {
+        let count: usize = args
+            .get(4)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("COUNT", 7.0) as usize);
+        let rise: f32 = args
+            .get(5)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("RISE", 1.0));
+        let sway: f32 = args
+            .get(6)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("SWAY", 1.0));
+        draw_lanterns(
+            &mut grid, width, height, seed, &palette, &mut rng, t_anim, count, rise, sway,
+        );
+    } else if mode == "tide" {
+        let waves: usize = args
+            .get(4)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("WAVES", 2.0) as usize);
+        let amp: f32 = args
+            .get(5)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("AMP", 1.0));
+        let speed: f32 = args
+            .get(6)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("SPEED", 1.0));
+        draw_tide(
+            &mut grid, width, height, seed, &palette, &mut rng, t_anim, waves, amp, speed,
+        );
     } else if mode == "world" {
         render_world(&mut grid, width, height, &palette, &mut rng);
     } else if mode == "noise" {
@@ -11724,6 +11832,26 @@ fn main() {
             fill_noise(&mut grid, &r, variant, c1, c2, &mut rng);
             for (j, ch) in names[i].chars().enumerate() {
                 if x0 + j < width {
+                    grid[0][x0 + j] = Cell::new(ch, palette[4]);
+                }
+            }
+        }
+    } else if mode == "eyes++" {
+        draw_eyes_pp(&mut grid, width, height, seed, &palette, &mut rng);
+    } else if mode == "fullmetal-eyes++" {
+        draw_fme_pp(&mut grid, width, height, seed, &palette, &mut rng);
+    } else if mode == "trees++" {
+        draw_trees_pp(&mut grid, width, height, seed, &palette, &mut rng);
+    } else if mode == "forest++" {
+        draw_forest_pp(&mut grid, width, height, seed, &palette, &mut rng);
+    } else if mode == "phyllotaxis" {
+        draw_phyllotaxis(&mut grid, width, height, seed, &palette, &mut rng, t_anim);
+    } else if mode == "moire" {
+        draw_moire(&mut grid, width, height, seed, &palette, &mut rng, t_anim);
+    } else if mode == "nebula" {
+        draw_nebula(&mut grid, width, height, seed, &palette, &mut rng, t_anim);
+    } else if mode == "delta" {
+        draw_delta(&mut grid, width, height, seed, &palette, &mut rng, t_anim);
     } else if mode == "stained" {
         draw_stained(&mut grid, width, height, seed, &palette, &mut rng);
     } else {
@@ -16412,6 +16540,365 @@ fn draw_fa6(
     pp_put(grid, cx, left.1 + 1, '▽', lighten(ether, 12));
 }
 
+/// murmuration: starling flocks pouring across a banded dusk sky. Every bird
+/// is a pure function of (seed, t): flock centers wander wide slow loops while
+/// members ride faster local swirls around them, so the mass knots, splits,
+/// and re-forms with no per-frame state. Density picks the glyph -- lone
+/// scouts are specks, the packed heart of the flock reads as a solid knot.
+fn draw_murmuration(
+    grid: &mut Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: &[Color; 5],
+    rng: &mut StdRng,
+    t: f32,
+    birds: usize,
+    flocks: usize,
+    speed: f32,
+) {
+    use std::f32::consts::TAU;
+
+    if width < 4 || height < 4 {
+        return;
+    }
+    let birds = birds.clamp(8, 600);
+    let flocks = flocks.clamp(1, 9);
+    let t = t * speed.clamp(0.05, 4.0);
+
+    let zenith = darken(palette[0], 12);
+    let horizon = shift_hue(lighten(palette[1], 22), -16.0);
+    let span = (height - 1).max(1) as f32;
+    let sky_at = |y: usize| {
+        let d = y as f32 / span;
+        lerp_color(zenith, horizon, d * d * 0.9)
+    };
+    for y in 0..height {
+        let band = sky_at(y);
+        for x in 0..width {
+            grid[y][x] = Cell::with_bg(' ', band, band);
+        }
+    }
+
+    // Seeded stars prick through the upper sky; they twinkle but never move.
+    for _ in 0..(width * height / 70).max(6) {
+        let x = rng.random_range(0..width);
+        let y = rng.random_range(0..(height / 2).max(1));
+        let phase = rng.random_range(0.0..TAU);
+        let tw = (t * 0.9 + phase).sin();
+        let ch = if tw > 0.75 {
+            '✦'
+        } else if tw > 0.0 {
+            '∙'
+        } else {
+            '·'
+        };
+        grid[y][x] = Cell::with_bg(ch, darken(palette[4], 35), sky_at(y));
+    }
+
+    // Flock loops are sized in fractions of the grid so the choreography
+    // survives a resize; member swirls are in cells. Flock params are drawn
+    // once per flock, then shared by every member.
+    struct Flock {
+        phase: f32,
+        cy0: f32,
+        rx: f32,
+        ry: f32,
+        wx: f32,
+        wy: f32,
+    }
+    let mut specs = Vec::with_capacity(flocks);
+    for _ in 0..flocks {
+        specs.push(Flock {
+            phase: rng.random_range(0.0..TAU),
+            cy0: rng.random_range(0.30..0.62),
+            rx: rng.random_range(0.16..0.34),
+            ry: rng.random_range(0.10..0.20),
+            wx: rng.random_range(0.05..0.11),
+            wy: rng.random_range(0.04..0.09),
+        });
+    }
+
+    let mut pos: Vec<(f32, f32)> = Vec::with_capacity(birds);
+    for i in 0..birds {
+        let f = &specs[i % flocks];
+        let cx = width as f32 * (0.5 + f.rx * (t * f.wx + f.phase).cos());
+        let cy = height as f32 * (f.cy0 + f.ry * (t * f.wy + f.phase * 1.7).sin());
+
+        let phase = rng.random_range(0.0..TAU);
+        let w = rng.random_range(0.5..1.6);
+        let rx = rng.random_range(2.0..9.0);
+        let ry = rng.random_range(0.8..2.4);
+        let a = t * w + phase;
+        let x = cx + a.cos() * rx + (a * 2.7).cos() * 1.3;
+        let y = cy + a.sin() * ry + (a * 1.9 + phase).sin() * 1.1;
+        pos.push((x, y));
+    }
+
+    // Density pass: O(n^2) is fine at a few hundred birds.
+    for i in 0..birds {
+        let (x, y) = pos[i];
+        let mut near = 0usize;
+        for (j, &(ox, oy)) in pos.iter().enumerate() {
+            if i != j && (ox - x).abs() <= 2.5 && (oy - y).abs() <= 1.5 {
+                near += 1;
+            }
+        }
+        let ch = if near >= 6 {
+            '▓'
+        } else if near >= 3 {
+            '▒'
+        } else if near >= 1 {
+            'ˇ'
+        } else {
+            '·'
+        };
+        // Silhouettes: pale against the dark zenith, dark against the horizon.
+        let d = (y / span).clamp(0.0, 1.0);
+        let mut col = lerp_color(lighten(palette[4], 18), darken(palette[4], 46), d);
+        if near >= 6 {
+            col = darken(col, 20);
+        }
+        let (xi, yi) = (x.round() as i32, y.round() as i32);
+        if xi >= 0 && yi >= 0 && (yi as usize) < height && (xi as usize) < width {
+            grid[yi as usize][xi as usize] = Cell::with_bg(ch, col, sky_at(yi as usize));
+        }
+    }
+}
+
+/// lanterns: paper lanterns lifting off dark water. Each lantern rises on its
+/// own wrapped cycle with a swaying two-ring halo, a flicker, and a squashed
+/// jittered reflection; spawn, drift, and fade are all pure (seed, t).
+fn draw_lanterns(
+    grid: &mut Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: &[Color; 5],
+    rng: &mut StdRng,
+    t: f32,
+    count: usize,
+    rise: f32,
+    sway: f32,
+) {
+    use std::f32::consts::TAU;
+
+    if width < 6 || height < 6 {
+        return;
+    }
+    let count = count.clamp(1, 30);
+    let rise = rise.clamp(0.1, 4.0);
+    let sway = sway.clamp(0.0, 3.0);
+
+    let sky = darken(palette[0], 14);
+    for row in grid.iter_mut() {
+        for cell in row.iter_mut() {
+            *cell = Cell::with_bg(' ', sky, sky);
+        }
+    }
+    let lput = |grid: &mut Grid, x: i32, y: i32, ch: char, col: Color| {
+        if x >= 0 && y >= 0 && (y as usize) < height && (x as usize) < width {
+            grid[y as usize][x as usize] = Cell::with_bg(ch, col, sky);
+        }
+    };
+
+    // Sparse high stars with a slow twinkle.
+    for _ in 0..(width * height / 90).max(5) {
+        let x = rng.random_range(0..width);
+        let y = rng.random_range(0..(height * 2 / 3).max(1));
+        let phase = rng.random_range(0.0..TAU);
+        let ch = if (t * 0.6 + phase).sin() > 0.8 { '✦' } else { '·' };
+        lput(grid, x as i32, y as i32, ch, darken(palette[4], 45));
+    }
+
+    // Water: horizontal ripple bands, darkening with depth.
+    let water_y = (height * 3 / 4).max(1);
+    let shallow = darken(palette[1], 48);
+    let deep = darken(palette[1], 68);
+    for y in water_y..height {
+        let d = (y - water_y) as f32 / (height - water_y).max(1) as f32;
+        let base = lerp_color(shallow, deep, d);
+        for x in 0..width {
+            let ripple = (x as f32 * 0.35 + t * 1.2 + y as f32 * 0.9).sin();
+            let (ch, col) = if ripple > 0.55 {
+                ('≈', lighten(base, 16))
+            } else if ripple > 0.10 {
+                ('~', base)
+            } else {
+                (' ', base)
+            };
+            grid[y][x] = Cell::with_bg(ch, col, sky);
+        }
+    }
+
+    let cycle = 16.0f32; // seconds for one full ascent
+    for i in 0..count {
+        let phase = rng.random_range(0.0..cycle);
+        let base_x =
+            (i as f32 + 0.5) / count as f32 * width as f32 + rng.random_range(-3.0..3.0);
+        let sway_amp = rng.random_range(1.5..4.0) * sway;
+        let sway_w = rng.random_range(0.4..0.9);
+        let sway_ph = rng.random_range(0.0..TAU);
+        let flick_w = rng.random_range(5.0..8.0);
+        let hue_jit = rng.random_range(-22.0..22.0);
+
+        let age = (t * rise + phase).rem_euclid(cycle);
+        let prog = age / cycle;
+        // Fade in over the first 8% of the rise, out over the last 12%.
+        let vis = (prog / 0.08)
+            .clamp(0.0, 1.0)
+            .min(((1.0 - prog) / 0.12).clamp(0.0, 1.0));
+        let y = water_y as f32 + 1.0 - prog * (water_y as f32 + 3.0);
+        let x = base_x + (t * sway_w + sway_ph).sin() * sway_amp;
+
+        let glow = vis * (0.72 + 0.28 * (t * flick_w + sway_ph * 3.0).sin());
+        let warm = shift_hue(lighten(palette[1], 28), hue_jit);
+        let core = lerp_color(darken(warm, 72), lighten(warm, 32), glow);
+        let halo1 = lerp_color(darken(warm, 84), warm, glow * 0.8);
+        let halo2 = lerp_color(sky, darken(warm, 55), glow * 0.5);
+
+        let (xi, yi) = (x.round() as i32, y.round() as i32);
+        for dy in -2i32..=2 {
+            for dx in -2i32..=2 {
+                let ring = dx.abs().max(dy.abs());
+                if ring == 1 {
+                    lput(grid, xi + dx, yi + dy, '∘', halo1);
+                } else if ring == 2 && (dx + dy) % 2 == 0 {
+                    lput(grid, xi + dx, yi + dy, '·', halo2);
+                }
+            }
+        }
+        lput(grid, xi, yi, '◉', core);
+
+        // Reflection: squashed, dimmed, wobbling on the water.
+        if y < water_y as f32 {
+            let ry = water_y as f32 + ((water_y as f32 - y) * 0.30);
+            let rx = x + (t * 2.2 + y).sin() * 1.3;
+            let rcol = darken(warm, 58);
+            lput(grid, rx.round() as i32, ry.round() as i32, '∘', rcol);
+            lput(
+                grid,
+                (rx + 1.0).round() as i32,
+                (ry + 1.0).round() as i32,
+                '·',
+                darken(rcol, 18),
+            );
+        }
+    }
+}
+
+/// tide: surf washing a seeded shore. Sand, speckle, and shells are hashed
+/// structure; the waterline is up to four superposed sines of t around a
+/// seeded shoreline, and freshly exposed sand stays dark and "wet" by sampling
+/// where the front was a beat ago. Pure (seed, t) like every native-T mode.
+fn draw_tide(
+    grid: &mut Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: &[Color; 5],
+    rng: &mut StdRng,
+    t: f32,
+    waves: usize,
+    amp: f32,
+    speed: f32,
+) {
+    use std::f32::consts::TAU;
+
+    if width < 6 || height < 6 {
+        return;
+    }
+    let waves = waves.clamp(1, 4);
+    let amp = amp.clamp(0.1, 3.0);
+    let t = t * speed.clamp(0.05, 4.0);
+
+    // Seeded shoreline and wave set. Wave params are drawn once per front, so
+    // the whole seascape replays identically for a given seed.
+    let shore_base = height as f32 * 0.42;
+    let shore_a1 = rng.random_range(1.0..2.5);
+    let shore_a2 = rng.random_range(0.5..1.4);
+    let shore_p1 = rng.random_range(0.0..TAU);
+    let shore_p2 = rng.random_range(0.0..TAU);
+    let shore_at = |x: f32| {
+        shore_base + shore_a1 * (x * 0.045 + shore_p1).sin() + shore_a2 * (x * 0.11 + shore_p2).sin()
+    };
+    let mut wp = [(0.0f32, 0.0f32, 0.0f32); 4];
+    for k in 0..waves {
+        wp[k] = (
+            rng.random_range(1.2..3.2) * amp,
+            rng.random_range(0.35..0.80),
+            rng.random_range(0.0..TAU),
+        );
+    }
+    let front_at = |x: f32, tt: f32| {
+        let mut y = shore_at(x);
+        for &(a, w, p) in wp.iter().take(waves) {
+            y += a * (tt * w + x * 0.05 + p).sin();
+        }
+        y
+    };
+
+    let sea_deep = darken(palette[1], 74);
+    let sea_shallow = darken(palette[1], 58);
+    let sea_ink = lighten(palette[1], 10);
+    let foam_col = lighten(palette[4], 22);
+    let sand_bg = darken(palette[2], 66);
+    let sand_wet_bg = darken(palette[2], 78);
+    let sand_col = darken(palette[2], 30);
+    let shell_col = lighten(palette[3], 18);
+
+    for y in 0..height {
+        for x in 0..width {
+            let fx = x as f32;
+            let dy = y as f32 - front_at(fx, t); // <0 under water, >=0 exposed
+            let h = pp_hash2(x as i32, y as i32, seed ^ 0x71DE_71DE);
+            let (ch, col, zbg) = if dy < -0.8 {
+                // Open water: darker with distance from the front, slow shimmer.
+                let depth = (-dy / (height as f32 * 0.35)).clamp(0.0, 1.0);
+                let zbg = lerp_color(sea_shallow, sea_deep, depth);
+                let shimmer = (fx * 0.30 + t * 1.4 + y as f32 * 0.8).sin();
+                if shimmer > 0.45 {
+                    ('~', sea_ink, zbg)
+                } else if h > 0.90 {
+                    ('≈', darken(sea_ink, 30), zbg)
+                } else {
+                    (' ', zbg, zbg)
+                }
+            } else if dy < 0.8 {
+                // Surf line: bright tumbling foam over a wash-lit bed.
+                let tumble = (fx * 0.7 + t * 2.6 + y as f32).sin();
+                let zbg = darken(palette[4], 58);
+                if tumble > -0.2 {
+                    ('≈', foam_col, zbg)
+                } else {
+                    ('~', darken(foam_col, 18), zbg)
+                }
+            } else {
+                // Sand: wet if the front covered this cell in the last beats.
+                let covered_then = front_at(fx, t - 1.1) - y as f32 > -0.8;
+                let covered_earlier = front_at(fx, t - 2.2) - y as f32 > -0.8;
+                let zbg = if covered_then {
+                    sand_wet_bg
+                } else if covered_earlier {
+                    lerp_color(sand_wet_bg, sand_bg, 0.5)
+                } else {
+                    sand_bg
+                };
+                if h > 0.9965 {
+                    ('✶', shell_col, zbg)
+                } else if h > 0.965 {
+                    ('∙', sand_col, zbg)
+                } else if h > 0.90 {
+                    ('·', darken(sand_col, 18), zbg)
+                } else {
+                    (' ', zbg, zbg)
+                }
+            };
+            grid[y][x] = Cell::with_bg(ch, col, zbg);
+        }
+    }
+}
+
 fn draw_delta(grid: &mut Grid, width: usize, height: usize, _seed: u64, palette: &[Color; 5], rng: &mut StdRng, t: f32) {
     use std::f32::consts::FRAC_PI_2;
     let bg = darken(palette[0], 6);
@@ -17078,6 +17565,51 @@ fn iterate_grid(mode: &str, seed: u64, theme: &str, w: usize, h: usize, t: f32) 
                 t,
                 param_f32("BURSTS", 6.0) as usize,
                 param_f32("SPARKS", 22.0) as usize,
+                param_f32("SPEED", 1.0),
+            );
+            Some(grid)
+        }
+        "murmuration" => {
+            draw_murmuration(
+                &mut grid,
+                w,
+                h,
+                seed,
+                &palette,
+                &mut rng,
+                t,
+                param_f32("BIRDS", 140.0) as usize,
+                param_f32("FLOCKS", 3.0) as usize,
+                param_f32("SPEED", 1.0),
+            );
+            Some(grid)
+        }
+        "lanterns" => {
+            draw_lanterns(
+                &mut grid,
+                w,
+                h,
+                seed,
+                &palette,
+                &mut rng,
+                t,
+                param_f32("COUNT", 7.0) as usize,
+                param_f32("RISE", 1.0),
+                param_f32("SWAY", 1.0),
+            );
+            Some(grid)
+        }
+        "tide" => {
+            draw_tide(
+                &mut grid,
+                w,
+                h,
+                seed,
+                &palette,
+                &mut rng,
+                t,
+                param_f32("WAVES", 2.0) as usize,
+                param_f32("AMP", 1.0),
                 param_f32("SPEED", 1.0),
             );
             Some(grid)
@@ -18011,6 +18543,42 @@ mod tests {
         assert_eq!(frame(42, 1.25), frame(42, 1.25));
         assert_ne!(frame(42, 0.0), frame(42, 1.5), "T should animate the ritual field");
         assert_ne!(frame(42, 0.0), frame(43, 0.0), "seed should restructure the chambers");
+    }
+
+    #[test]
+    fn murmuration_uses_seed_and_time_deterministically() {
+        let frame = |seed: u64, t: f32| {
+            let (mut g, mut r, p) = make_grid(80, 24, seed);
+            draw_murmuration(&mut g, 80, 24, seed, &p, &mut r, t, 140, 3, 1.0);
+            grid_to_string(&g)
+        };
+        assert_eq!(frame(42, 1.25), frame(42, 1.25));
+        assert_ne!(frame(42, 0.0), frame(42, 2.0), "T should wheel the flocks");
+        assert_ne!(frame(42, 0.0), frame(43, 0.0), "seed should reshape the murmuration");
+    }
+
+    #[test]
+    fn lanterns_use_seed_and_time_deterministically() {
+        let frame = |seed: u64, t: f32| {
+            let (mut g, mut r, p) = make_grid(80, 24, seed);
+            draw_lanterns(&mut g, 80, 24, seed, &p, &mut r, t, 7, 1.0, 1.0);
+            grid_to_string(&g)
+        };
+        assert_eq!(frame(42, 1.25), frame(42, 1.25));
+        assert_ne!(frame(42, 0.0), frame(42, 2.0), "T should lift the lanterns");
+        assert_ne!(frame(42, 0.0), frame(43, 0.0), "seed should relayout the launch");
+    }
+
+    #[test]
+    fn tide_uses_seed_and_time_deterministically() {
+        let frame = |seed: u64, t: f32| {
+            let (mut g, mut r, p) = make_grid(80, 24, seed);
+            draw_tide(&mut g, 80, 24, seed, &p, &mut r, t, 2, 1.0, 1.0);
+            grid_to_string(&g)
+        };
+        assert_eq!(frame(42, 1.25), frame(42, 1.25));
+        assert_ne!(frame(42, 0.0), frame(42, 2.0), "T should move the surf");
+        assert_ne!(frame(42, 0.0), frame(43, 0.0), "seed should reshape the shoreline");
     }
 
     #[test]

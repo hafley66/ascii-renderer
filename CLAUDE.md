@@ -53,7 +53,9 @@ tiles, tiles-rand, tiles-skew, mondrian, mondrian2, bsp, layout, md, terrain, fl
 noise, ca, ca-layout, stem, scene-walk, scene-walk-2, scene-walk-3, world,
 kintsugi, constellation, strata, circuit, quilt, patchwalk, trees8, trees9, boles4, boles5,
 eyes++, fullmetal-eyes++, trees++, forest++, phyllotaxis, moire, nebula, delta, stained,
-metro, koi, skyline, hive, jelly, jelly2
+metro, koi, skyline, hive, jelly, jelly2,
+rhizome, effigy, dendrite, totem, chimera,
+murmuration, lanterns, tide
 
 ## Architecture
 
@@ -67,6 +69,7 @@ Numbered-file convention per user prefs. Key modules:
 - `walker.rs` -- walk modes (party, soup, stem, scene-walk), atmosphere, path styles
 - `mondrian.rs` -- BSP layout + mondrian grid
 - `automata.rs` -- cellular automata
+- `avant.rs` -- avant-garde tree/face algorithmic modes
 
 ## Skills & Agents
 

@@ -32,7 +32,7 @@ cargo insta accept            # accept all pending changes (use after visual rev
 - When adding a new mode: add a snapshot test before committing
 - When modifying a mode: run `cargo test` first. If snapshots break, visually verify the new output before accepting
 - Never `cargo insta accept` blindly -- the whole point is to catch unintended visual regressions
-- Snapshot files live in `src/snapshots/` (insta default)
+- Snapshot files live next to their test file: `src/snapshots/` for unit tests, `tests/snapshots/` for integration tests
 - Test grid size should be small enough to produce readable snapshots (e.g. 80x24) but large enough to exercise the mode
 
 ### Grid-to-string helper
@@ -53,11 +53,12 @@ tiles, tiles-rand, tiles-skew, mondrian, mondrian2, bsp, layout, md, terrain, fl
 noise, ca, ca-layout, stem, scene-walk, scene-walk-2, scene-walk-3,
 aurora, aura2, solar-system, harbor, labyrinth, rainfall, meadow, world, world2,
 eyes, eyes2, fullmetal-eyes, fullmetal-eyes2, fullmetal-alchemist, fullmetal-alchemist2, fa3, fullmetal-alchemist3,
-fa4, fullmetal-alchemist4, fa5, fullmetal-alchemist5,
+fa4, fullmetal-alchemist4, fa5, fullmetal-alchemist5, fa6, fullmetal-alchemist6,
 spiro, spiro-tile, weave, gears, kaleido, contour,
 eyes3,
 kintsugi, constellation, strata, circuit, quilt, patchwalk, trees8, trees9, trees10, boles4, boles5, boles6,
-hypercube, flux, fireworks
+hypercube, flux, fireworks, rhizome, effigy, dendrite, totem, chimera,
+murmuration, lanterns, tide
 
 ## Architecture
 
@@ -71,6 +72,7 @@ Numbered-file convention per user prefs. Key modules:
 - `walker.rs` -- walk modes (party, soup, stem, scene-walk), atmosphere, path styles
 - `mondrian.rs` -- BSP layout + mondrian grid
 - `automata.rs` -- cellular automata
+- `avant.rs` -- avant-garde tree/face algorithmic modes
 
 ## Skills & Agents
 
