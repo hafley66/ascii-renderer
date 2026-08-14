@@ -333,10 +333,10 @@ CHAR_CONNECTIONS_README.md  (START HERE)
 
 ## Related Files in Codebase
 
-- `src/sprites.rs` — Tree rendering functions, contains char_exits(), connect_glyph()
-- `src/main.rs` — Mode dispatch, forest3/forest4 mode definitions
-- `src/color.rs` — Color utilities (lighten/darken for depth)
-- `tests/snapshot_modes.rs` — Snapshot tests (add pattern tests here)
+- `../src/sprites.rs` — Tree rendering functions, contains char_exits(), connect_glyph()
+- `../src/main.rs` — Mode dispatch, forest3/forest4 mode definitions
+- `../src/color.rs` — Color utilities (lighten/darken for depth)
+- `../tests/snapshot_modes.rs` — Snapshot tests (add pattern tests here)
 
 ---
 
