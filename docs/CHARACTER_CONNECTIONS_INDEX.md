@@ -322,10 +322,10 @@ Characters with no exits: `· • ● ◆ ◇`
 
 ## Quick Links to Code Locations
 
-- **char_exits()** — src/sprites.rs line ~488
-- **connect_glyph()** — src/sprites.rs line ~443
-- **TreePen** — src/sprites.rs line ~585
-- **Snapshot tests** — tests/snapshot_modes.rs
+- **char_exits()** — ../src/sprites.rs line ~488
+- **connect_glyph()** — ../src/sprites.rs line ~443
+- **TreePen** — ../src/sprites.rs line ~585
+- **Snapshot tests** — ../tests/snapshot_modes.rs
 
 ---
 
