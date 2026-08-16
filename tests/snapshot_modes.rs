@@ -504,3 +504,18 @@ fn lanterns_seed_42() {
 fn tide_seed_42() {
     insta::assert_snapshot!(render(&["42", "tide", "arctic", "2", "1", "1"]));
 }
+
+#[test]
+fn fireflies_seed_42() {
+    insta::assert_snapshot!(render(&["42", "fireflies", "ember", "14", "1", "1"]));
+}
+
+#[test]
+fn ink_seed_42() {
+    insta::assert_snapshot!(render(&["42", "ink", "deep", "5", "1", "1"]));
+}
+
+#[test]
+fn meteors_seed_42() {
+    insta::assert_snapshot!(render(&["42", "meteors", "arctic", "90", "1", "1"]));
+}

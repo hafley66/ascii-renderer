@@ -179,6 +179,33 @@ static MODE_FORMS: &[ModeForm] = &[
         ],
     },
     ModeForm {
+        names: &["fireflies"],
+        animate: AnimKind::Iterate,
+        params: &[
+            param!("COUNT", "fireflies", 2.0, 60.0, 14.0, 1.0),
+            param!("GLOW", "glow", 0.2, 3.0, 1.0, 0.1),
+            param!("SPEED", "speed", 0.1, 3.0, 1.0, 0.1),
+        ],
+    },
+    ModeForm {
+        names: &["ink"],
+        animate: AnimKind::Iterate,
+        params: &[
+            param!("DROPS", "drops", 1.0, 9.0, 5.0, 1.0),
+            param!("SWIRL", "swirl", 0.0, 3.0, 1.0, 0.1),
+            param!("SPEED", "speed", 0.1, 3.0, 1.0, 0.1),
+        ],
+    },
+    ModeForm {
+        names: &["meteors"],
+        animate: AnimKind::Iterate,
+        params: &[
+            param!("STARS", "stars", 20.0, 300.0, 90.0, 10.0),
+            param!("RATE", "rate", 0.2, 4.0, 1.0, 0.1),
+            param!("SPEED", "speed", 0.1, 3.0, 1.0, 0.1),
+        ],
+    },
+    ModeForm {
         names: &["fa6", "fullmetal-alchemist6"],
         animate: AnimKind::Iterate,
         params: &[
@@ -679,6 +706,9 @@ fn run_demo(initial_seed: u64) {
         "murmuration",
         "lanterns",
         "tide",
+        "fireflies",
+        "ink",
+        "meteors",
     ];
     let all_themes: &[&str] = &[
         "",
@@ -1005,6 +1035,15 @@ fn main() {
         );
         eprintln!(
             "  tide      Superposed wave fronts washing a seeded shore, wet-sand recall [waves] [amp] [speed]"
+        );
+        eprintln!(
+            "  fireflies Dusk meadow: drifting glow moths, blink cycles, swaying grass [count] [glow] [speed]"
+        );
+        eprintln!(
+            "  ink       Ink drops blooming in still water, tendrils + differential swirl [drops] [swirl] [speed]"
+        );
+        eprintln!(
+            "  meteors   Night sky: twinkle field, milky band, scheduled shooting stars [stars] [rate] [speed]"
         );
         eprintln!("  swatch    Color swatches for all named themes");
         eprintln!();
@@ -11812,6 +11851,54 @@ fn main() {
         draw_tide(
             &mut grid, width, height, seed, &palette, &mut rng, t_anim, waves, amp, speed,
         );
+    } else if mode == "fireflies" {
+        let count: usize = args
+            .get(4)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("COUNT", 14.0) as usize);
+        let glow: f32 = args
+            .get(5)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("GLOW", 1.0));
+        let speed: f32 = args
+            .get(6)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("SPEED", 1.0));
+        draw_fireflies(
+            &mut grid, width, height, seed, &palette, &mut rng, t_anim, count, glow, speed,
+        );
+    } else if mode == "ink" {
+        let drops: usize = args
+            .get(4)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("DROPS", 5.0) as usize);
+        let swirl: f32 = args
+            .get(5)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("SWIRL", 1.0));
+        let speed: f32 = args
+            .get(6)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("SPEED", 1.0));
+        draw_ink(
+            &mut grid, width, height, seed, &palette, &mut rng, t_anim, drops, swirl, speed,
+        );
+    } else if mode == "meteors" {
+        let stars: usize = args
+            .get(4)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("STARS", 90.0) as usize);
+        let rate: f32 = args
+            .get(5)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("RATE", 1.0));
+        let speed: f32 = args
+            .get(6)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("SPEED", 1.0));
+        draw_meteors(
+            &mut grid, width, height, seed, &palette, &mut rng, t_anim, stars, rate, speed,
+        );
     } else if mode == "world" {
         render_world(&mut grid, width, height, &palette, &mut rng);
     } else if mode == "noise" {
@@ -18201,6 +18288,509 @@ fn morph_session(mode_a: &str, seed_a: u64, mode_b: &str, seed_b: u64, strat0: &
 
     // restore cursor; caller owns alt-screen/raw-mode teardown.
     execute!(io::stdout(), cursor::Show).unwrap();
+}
+
+fn draw_fireflies(
+    grid: &mut Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: &[Color; 5],
+    rng: &mut StdRng,
+    t: f32,
+    count: usize,
+    glow: f32,
+    speed: f32,
+) {
+    use std::f32::consts::TAU;
+
+    if width < 8 || height < 8 {
+        return;
+    }
+    let count = count.clamp(1, 80);
+    let glow_r = glow.clamp(0.2, 3.0) * 2.2;
+    let t = t * speed.clamp(0.05, 4.0);
+
+    // Dusk sky: vertical gradient from near-black zenith to a warm horizon.
+    let sky_top = darken(palette[0], 78);
+    let sky_horizon = darken(palette[0], 42);
+    let horizon_y = height as f32 * 0.72;
+
+    // Seeded fly set. Each fly owns a home point, a Lissajous drift, and a blink
+    // cycle with its own rate and duty, so the meadow never synchronizes.
+    struct Fly {
+        bx: f32,
+        by: f32,
+        ax: f32,
+        ay: f32,
+        wx: f32,
+        wy: f32,
+        px: f32,
+        py: f32,
+        blink: f32,
+        phase: f32,
+        duty: f32,
+    }
+    let mut flies: Vec<Fly> = Vec::new();
+    for _ in 0..count {
+        flies.push(Fly {
+            bx: rng.random_range(0.05..0.95) * width as f32,
+            by: rng.random_range(0.30..0.70) * height as f32,
+            ax: rng.random_range(2.0..9.0),
+            ay: rng.random_range(1.5..6.0),
+            wx: rng.random_range(0.15..0.5),
+            wy: rng.random_range(0.2..0.6),
+            px: rng.random_range(0.0..TAU),
+            py: rng.random_range(0.0..TAU),
+            blink: rng.random_range(0.4..1.1),
+            phase: rng.random_range(0.0..TAU),
+            duty: rng.random_range(0.25..0.55),
+        });
+    }
+
+    // Glow field: each lit fly splats a radial falloff into a per-cell buffer;
+    // overlapping flies pool additively into brighter patches.
+    let mut field = vec![vec![0.0f32; width]; height];
+    let mut cores: Vec<(usize, usize, f32)> = Vec::new();
+    for f in &flies {
+        let x = (f.bx + f.ax * (t * f.wx + f.px).sin()).clamp(1.0, (width - 2) as f32);
+        let y = (f.by + f.ay * (t * f.wy + f.py).sin()).clamp(1.0, (height - 3) as f32);
+        let s = (t * f.blink + f.phase).sin();
+        let on = if s > 0.0 {
+            ((s - (1.0 - f.duty)) / f.duty).clamp(0.0, 1.0)
+        } else {
+            0.0
+        };
+        let g = on * on;
+        if g < 0.02 {
+            continue;
+        }
+        let cx = x as i32;
+        let cy = y as i32;
+        for dy in -3..=3 {
+            for dx in -3..=3 {
+                let xx = cx + dx;
+                let yy = cy + dy;
+                if xx < 0 || yy < 0 || xx >= width as i32 || yy >= height as i32 {
+                    continue;
+                }
+                let d = (dx * dx + dy * dy) as f32;
+                let fall = (1.0 - (d.sqrt() / glow_r).min(1.0)).max(0.0);
+                field[yy as usize][xx as usize] += g * fall * fall;
+            }
+        }
+        cores.push((cy as usize, cx as usize, g));
+    }
+
+    let fly_col = lighten(palette[4], 18);
+    let fly_dim = lighten(palette[3], 6);
+    let grass_col = darken(palette[2], 52);
+    let grass_hi = darken(palette[2], 34);
+    let moon_col = lighten(palette[4], 26);
+    let star_col = lighten(palette[4], 10);
+
+    // Moon: small seeded disc with a soft halo, upper third of the sky.
+    let mx = (rng.random_range(0.15..0.85) * width as f32) as i32;
+    let my = (rng.random_range(0.10..0.30) * height as f32) as i32;
+
+    for y in 0..height {
+        for x in 0..width {
+            let fx = x as f32;
+            let fy = y as f32;
+            let mut zbg = lerp_color(sky_top, sky_horizon, (fy / horizon_y).clamp(0.0, 1.0));
+            if fy > horizon_y {
+                zbg = darken(sky_horizon, 14);
+            }
+            let h = pp_hash2(x as i32, y as i32, seed ^ 0xF1EF_1111);
+            let mut ch = ' ';
+            let mut col = zbg;
+
+            // Stars: sparse, above the horizon, each twinkling on its own clock.
+            if fy < horizon_y - 2.0 && h > 0.9955 {
+                let tw = 0.5 + 0.5 * (t * (0.4 + h) + h * TAU).sin();
+                if tw > 0.35 {
+                    ch = if h > 0.9993 { '✦' } else { '·' };
+                    col = lerp_color(darken(star_col, 40), star_col, tw);
+                }
+            }
+
+            // Moon disc + halo.
+            let mdx = fx - mx as f32;
+            let mdy = fy - my as f32;
+            let md = (mdx * mdx + mdy * mdy).sqrt();
+            if md < 2.2 {
+                ch = '◉';
+                col = moon_col;
+            } else if md < 4.5 && ch == ' ' {
+                ch = '·';
+                col = darken(moon_col, 55);
+            }
+
+            // Firefly glow: threshold the pooled field into a char ramp.
+            let g = field[y][x];
+            if g > 0.06 {
+                let step = (g * 4.0).min(3.0) as usize;
+                ch = ['·', '∙', '◦', '✦'][step];
+                col = if step >= 2 { fly_col } else { fly_dim };
+            }
+
+            // Grass silhouette: bottom rows, blades sway on a traveling phase.
+            let grass_line = (height - 5) as f32;
+            if fy >= grass_line {
+                let depth = (fy - grass_line) / 5.0;
+                zbg = lerp_color(darken(sky_horizon, 14), darken(palette[2], 70), depth);
+                let sway = (fx * 0.35 + t * 1.2).sin() * 0.5 + (fx * 0.13 - t * 0.7).sin() * 0.5;
+                let hb = pp_hash2(x as i32, y as i32, seed ^ 0x60A5_5A60);
+                let blade = hb + sway * 0.18;
+                if blade > 0.78 {
+                    ch = if hb > 0.93 { 'ʌ' } else if hb > 0.85 { '|' } else { '/' };
+                    col = if hb > 0.90 { grass_hi } else { grass_col };
+                } else if blade > 0.62 {
+                    ch = '·';
+                    col = darken(grass_col, 12);
+                } else {
+                    ch = ' ';
+                    col = zbg;
+                }
+            }
+
+            grid[y][x] = Cell::with_bg(ch, col, zbg);
+        }
+    }
+
+    // Fly cores on top: the brightest dot of each lit fly.
+    for &(cy, cx, g) in &cores {
+        if cy >= height || cx >= width || g < 0.1 {
+            continue;
+        }
+        grid[cy][cx] = Cell::with_bg('✦', lighten(fly_col, 12), grid[cy][cx].bg);
+    }
+}
+
+fn draw_ink(
+    grid: &mut Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: &[Color; 5],
+    rng: &mut StdRng,
+    t: f32,
+    drops: usize,
+    swirl: f32,
+    speed: f32,
+) {
+    use std::f32::consts::TAU;
+
+    if width < 8 || height < 8 {
+        return;
+    }
+    let drops = drops.clamp(1, 9);
+    let swirl = swirl.clamp(0.0, 3.0);
+    let t = t * speed.clamp(0.05, 4.0);
+
+    // Still water: near-black with a faint vertical light shaft.
+    let water_deep = darken(palette[0], 82);
+    let water_lit = darken(palette[0], 66);
+
+    // Seeded drop set. Each drop blooms on its own long cycle: the stain swells,
+    // tendrils sharpen as it spreads, then the whole thing fades before it
+    // re-drops. Phase offsets stagger the drops so the pool never empties.
+    struct Drop {
+        cx: f32,
+        cy: f32,
+        rmax: f32,
+        col: Color,
+        period: f32,
+        phase: f32,
+        p1: f32,
+        p2: f32,
+        p3: f32,
+        spin: f32,
+    }
+    let mut drop_list: Vec<Drop> = Vec::new();
+    for i in 0..drops {
+        drop_list.push(Drop {
+            cx: rng.random_range(0.15..0.85) * width as f32,
+            cy: rng.random_range(0.18..0.82) * height as f32,
+            rmax: rng.random_range(0.16..0.34) * (width as f32).min(height as f32),
+            col: [palette[1], palette[2], palette[3]][i % 3],
+            period: rng.random_range(9.0..16.0),
+            phase: rng.random_range(0.0..1.0),
+            p1: rng.random_range(0.0..TAU),
+            p2: rng.random_range(0.0..TAU),
+            p3: rng.random_range(0.0..TAU),
+            spin: if rng.random_bool(0.5) { 1.0 } else { -1.0 },
+        });
+    }
+
+    for y in 0..height {
+        for x in 0..width {
+            let fx = x as f32;
+            let fy = y as f32;
+            let shaft = (fx * 0.02 + 0.5).sin();
+            let zbg = lerp_color(water_deep, water_lit, (0.5 + 0.5 * shaft) * 0.35);
+
+            let mut best_d = 0.0f32;
+            let mut best_col = zbg;
+            for d in &drop_list {
+                // Cycle position 0..1; the stain is always present but breathes,
+                // peaking mid-cycle, so the pool is never empty.
+                let u = (t / d.period + d.phase).fract();
+                let env = 0.45 + 0.55 * (0.5 + 0.5 * (u * TAU).sin());
+                let r = d.rmax * (0.15 + 0.85 * u);
+                let dx = fx - d.cx;
+                let dy = (fy - d.cy) * 1.6; // anisotropy: ink spreads wider than deep
+                let rad = (dx * dx + dy * dy).sqrt();
+                if rad > r * 1.6 {
+                    continue;
+                }
+                // Differential swirl: inner angles rotate faster than outer, so
+                // tendrils curl into spirals as the drop ages.
+                let ang0 = dy.atan2(dx);
+                let ang = ang0 + d.spin * swirl * t * 0.12 * (1.0 / (rad / d.rmax + 0.35));
+                let n = 0.62
+                    + 0.20 * (ang * 3.0 + d.p1 + t * 0.25 * d.spin).sin()
+                    + 0.13 * (ang * 5.0 - d.p2 - t * 0.18 * d.spin).sin()
+                    + 0.07 * (ang * 9.0 + d.p3 + t * 0.31 * d.spin).sin();
+                let reff = r * n;
+                if rad < reff {
+                    let dens = (1.0 - rad / reff).min(1.0) * env;
+                    if dens > best_d {
+                        best_d = dens;
+                        best_col = d.col;
+                    }
+                }
+            }
+
+            let (ch, col) = if best_d > 0.92 {
+                ('█', lighten(best_col, 16))
+            } else if best_d > 0.72 {
+                ('▓', lighten(best_col, 8))
+            } else if best_d > 0.5 {
+                ('░', best_col)
+            } else if best_d > 0.3 {
+                ('∙', darken(best_col, 14))
+            } else if best_d > 0.14 {
+                ('·', darken(best_col, 30))
+            } else if best_d > 0.04 {
+                ('·', darken(best_col, 48))
+            } else {
+                (' ', zbg)
+            };
+            grid[y][x] = Cell::with_bg(ch, col, zbg);
+        }
+    }
+}
+
+fn draw_meteors(
+    grid: &mut Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: &[Color; 5],
+    rng: &mut StdRng,
+    t: f32,
+    stars: usize,
+    rate: f32,
+    speed: f32,
+) {
+    use std::f32::consts::TAU;
+
+    if width < 8 || height < 8 {
+        return;
+    }
+    let stars = stars.clamp(10, 400);
+    let rate = rate.clamp(0.2, 4.0);
+    let t = t * speed.clamp(0.05, 4.0);
+
+    let sky_top = darken(palette[0], 84);
+    let sky_low = darken(palette[0], 62);
+
+    // Starfield: seeded positions, each with its own twinkle clock.
+    struct Star {
+        x: usize,
+        y: usize,
+        big: bool,
+        ws: f32,
+        ph: f32,
+    }
+    let mut star_list: Vec<Star> = Vec::new();
+    for _ in 0..stars {
+        star_list.push(Star {
+            x: rng.random_range(0..width),
+            y: rng.random_range(0..(height * 3 / 5)),
+            big: rng.random_bool(0.08),
+            ws: rng.random_range(0.3..1.4),
+            ph: rng.random_range(0.0..TAU),
+        });
+    }
+
+    // Mountain silhouettes: two seeded ridgelines, the near one darker.
+    let ridge = |amp: f32, base: f32, s1: f32, s2: f32, x: f32| {
+        base + amp * (x * 0.021 + s1).sin() + amp * 0.5 * (x * 0.047 + s2).sin()
+    };
+    let (r1a, r1b, r1p1, r1p2) = (
+        rng.random_range(1.5..3.5),
+        rng.random_range(0.5..1.6),
+        rng.random_range(0.0..TAU),
+        rng.random_range(0.0..TAU),
+    );
+    let (r2a, r2b, r2p1, r2p2) = (
+        rng.random_range(2.0..4.5),
+        rng.random_range(0.6..2.0),
+        rng.random_range(0.0..TAU),
+        rng.random_range(0.0..TAU),
+    );
+    let far_base = height as f32 * 0.78;
+    let near_base = height as f32 * 0.88;
+
+    // Meteor schedule: fixed slots, each with its own cycle start, entry point,
+    // and fall slope. A slot is live for the first `dur` beats of its cycle, so
+    // the sky replays identically for a given seed.
+    const SLOTS: usize = 4;
+    let cycle = 7.0 / rate;
+    let dur = 1.15;
+    let mut slots: Vec<(f32, f32, f32, f32, f32)> = Vec::new();
+    for i in 0..SLOTS {
+        let start = if i == 0 {
+            0.0 // the sky always opens mid-streak
+        } else {
+            rng.random_range(0.0..cycle)
+        };
+        slots.push((
+            start,
+            rng.random_range(0.05..0.95) * width as f32,
+            rng.random_range(0.05..0.45) * height as f32,
+            rng.random_range(0.5..1.1),
+            if rng.random_bool(0.5) { 1.0 } else { -1.0 },
+        ));
+    }
+
+    let star_col = lighten(palette[4], 14);
+    let dust_col = darken(palette[4], 46);
+    let far_col = darken(palette[2], 68);
+    let near_col = darken(palette[2], 78);
+    let hot_col = lighten(palette[4], 30);
+    let tail_col = lighten(palette[3], 10);
+
+    for y in 0..height {
+        for x in 0..width {
+            let fx = x as f32;
+            let fy = y as f32;
+            let mut zbg = lerp_color(sky_top, sky_low, fy / height as f32);
+
+            // Milky way: a diagonal band of dim dust.
+            let band_d =
+                ((fy / height as f32) - 0.35 - 0.25 * (fx / width as f32)).abs();
+            let h = pp_hash2(x as i32, y as i32, seed ^ 0x5E10_5E10);
+            let mut ch = ' ';
+            let mut col = zbg;
+            if band_d < 0.16 && h > 1.0 - 0.05 * (1.0 - band_d / 0.16) {
+                ch = '·';
+                col = dust_col;
+            }
+
+            // Mountains: solid silhouettes, near ridge textured with speckle.
+            let far_y = ridge(r1a, far_base, r1p1, r1p2, fx);
+            let near_y = ridge(r2a, near_base, r2p1, r2p2, fx);
+            if fy >= near_y {
+                zbg = darken(near_col, 10);
+                col = near_col;
+                if h > 0.985 {
+                    ch = '·';
+                    col = lighten(near_col, 16);
+                }
+            } else if fy >= far_y {
+                zbg = darken(far_col, 8);
+                col = far_col;
+            }
+
+            grid[y][x] = Cell::with_bg(ch, col, zbg);
+        }
+    }
+
+    // Stars on top, skipped where a ridge would cover them.
+    for s in &star_list {
+        if s.y >= height || s.x >= width {
+            continue;
+        }
+        let fy = s.y as f32;
+        let fx = s.x as f32;
+        if fy >= ridge(r2a, near_base, r2p1, r2p2, fx) {
+            continue;
+        }
+        let tw = 0.5 + 0.5 * (t * s.ws + s.ph).sin();
+        let (ch, col) = if s.big {
+            ('✦', lerp_color(darken(star_col, 30), star_col, tw))
+        } else if tw > 0.25 {
+            ('·', lerp_color(darken(star_col, 45), darken(star_col, 10), tw))
+        } else {
+            continue;
+        };
+        grid[s.y][s.x] = Cell::with_bg(ch, col, grid[s.y][s.x].bg);
+    }
+
+    // Meteors: head + fading tail sampled back along the fall line.
+    for &(start, ex, ey, slope, dirx) in &slots {
+        let local = (t + start).rem_euclid(cycle);
+        if local > dur {
+            continue;
+        }
+        let p = local / dur;
+        let fade = 1.0 - p;
+        let travel = width as f32 * 0.55;
+        let hx = ex + dirx * travel * p;
+        let hy = ey + slope * travel * p;
+        if hx < -4.0 || hx > (width + 4) as f32 || hy > height as f32 * 0.8 {
+            continue;
+        }
+        let tail_len = (14.0 * fade + 4.0).min(24.0);
+        for k in 0..(tail_len as usize) {
+            let back = k as f32 / 10.0;
+            let txi = (hx - dirx * back) as i32;
+            let tyi = (hy - slope * back) as i32;
+            if txi < 0 || tyi < 0 || txi >= width as i32 || tyi >= height as i32 {
+                continue;
+            }
+            let f = 1.0 - k as f32 / tail_len;
+            if f < 0.05 {
+                continue;
+            }
+            let (ch, col) = if f > 0.85 {
+                ('✦', hot_col)
+            } else if f > 0.55 {
+                ('∙', tail_col)
+            } else if f > 0.3 {
+                ('·', darken(tail_col, 24))
+            } else {
+                ('·', darken(tail_col, 44))
+            };
+            let cur = &mut grid[tyi as usize][txi as usize];
+            if cur.ch == ' ' || (cur.ch == '·' && f > 0.5) {
+                *cur = Cell::with_bg(ch, col, cur.bg);
+            }
+        }
+        // Head halo: a 3x3 wash around the head, then the hot core.
+        let hxi = hx as i32;
+        let hyi = hy as i32;
+        for dy in -1..=1 {
+            for dx in -1..=1 {
+                let xx = hxi + dx;
+                let yy = hyi + dy;
+                if xx < 0 || yy < 0 || xx >= width as i32 || yy >= height as i32 {
+                    continue;
+                }
+                let cur = &mut grid[yy as usize][xx as usize];
+                if cur.ch == ' ' {
+                    *cur = Cell::with_bg('·', darken(hot_col, 40), cur.bg);
+                }
+            }
+        }
+        if hxi >= 0 && hyi >= 0 && hxi < width as i32 && hyi < height as i32 {
+            grid[hyi as usize][hxi as usize] =
+                Cell::with_bg('✦', lighten(hot_col, 8), grid[hyi as usize][hxi as usize].bg);
+        }
+    }
 }
 
 #[cfg(test)]
