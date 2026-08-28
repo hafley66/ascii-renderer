@@ -34,6 +34,8 @@ use crate::pp::*;
 use crate::registry::*;
 use crate::warps::*;
 use crate::modes_geo::draw_weave;
+use crate::cli_city::draw_elevator;
+use crate::cli_city::draw_ferris;
 
 pub(crate) const MORPH_RAMP: [char; 9] = [' ', '·', '∙', ':', '+', '*', '#', '%', '@'];
 
@@ -196,6 +198,11 @@ pub(crate) fn iterate_grid(mode: &str, seed: u64, theme: &str, w: usize, h: usiz
             draw_nebula(&mut grid, w, h, seed, &palette, &mut rng, t);
             Some(grid)
         }
+        "arboretum" => {
+            let knobs = crate::arboretum::ForestKnobs::from_env();
+            crate::arboretum::draw_arboretum(&mut grid, w, h, seed, &palette, &mut rng, t, &knobs);
+            Some(grid)
+        }
         "spiro" => Some(draw_spiro(grid, w, h, seed, palette, rng, t, &[])),
         "spiro-tile" => Some(draw_spiro_tile(grid, w, h, seed, palette, rng, t, &[])),
         "weave" => Some(draw_weave(grid, w, h, seed, palette, rng, t, &[])),
@@ -247,6 +254,36 @@ pub(crate) fn iterate_grid(mode: &str, seed: u64, theme: &str, w: usize, h: usiz
                 t,
                 param_f32("BURSTS", 6.0) as usize,
                 param_f32("SPARKS", 22.0) as usize,
+                param_f32("SPEED", 1.0),
+            );
+            Some(grid)
+        }
+        "elevator" => {
+            draw_elevator(
+                &mut grid,
+                w,
+                h,
+                seed,
+                &palette,
+                &mut rng,
+                t,
+                param_f32("LIFTS", 3.0) as usize,
+                param_f32("SPEED", 1.0),
+                param_f32("CROWD", 1.0),
+            );
+            Some(grid)
+        }
+        "ferris" => {
+            draw_ferris(
+                &mut grid,
+                w,
+                h,
+                seed,
+                &palette,
+                &mut rng,
+                t,
+                param_f32("RADIUS", 8.0) as usize,
+                param_f32("GONDOLAS", 10.0) as usize,
                 param_f32("SPEED", 1.0),
             );
             Some(grid)

@@ -33,6 +33,7 @@ use crate::opts::*;
 use crate::pp::*;
 use crate::registry::*;
 use crate::warps::*;
+use crate::arboretum::cli_arboretum;
 use crate::cli_basic::*;
 use crate::cli_catalog::*;
 use crate::cli_city::*;
@@ -163,6 +164,15 @@ pub(crate) fn run() {
         );
         eprintln!(
             "  meteors   Night sky: twinkle field, milky band, scheduled shooting stars [stars] [rate] [speed]"
+        );
+        eprintln!(
+            "  elevator  Building cross-section: cab banks run seeded loops, doors + counterweights [lifts] [speed] [crowd]"
+        );
+        eprintln!(
+            "  ferris    Night carnival wheel: per-rev rider swaps, chase lights, boarding walks [radius] [gondolas] [speed]"
+        );
+        eprintln!(
+            "  arboretum Genome-driven grove: 10 tree knobs x 10 forest knobs, sapling to ancient [strata] [density]"
         );
         eprintln!("  swatch    Color swatches for all named themes");
         eprintln!();
@@ -880,6 +890,24 @@ pub(crate) fn run() {
         }
     } else if mode == "meteors" {
         let (g, done) = cli_meteors(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        grid = g;
+        if done {
+            return;
+        }
+    } else if mode == "elevator" {
+        let (g, done) = cli_elevator(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        grid = g;
+        if done {
+            return;
+        }
+    } else if mode == "ferris" {
+        let (g, done) = cli_ferris(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        grid = g;
+        if done {
+            return;
+        }
+    } else if mode == "arboretum" {
+        let (g, done) = cli_arboretum(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
         grid = g;
         if done {
             return;

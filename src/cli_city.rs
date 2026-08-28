@@ -34,6 +34,489 @@ use crate::warps::*;
 use crate::automata; use crate::avant; use crate::biomes; use crate::borders; use crate::color; use crate::content; use crate::fills; use crate::layout; use crate::markdown; use crate::mondrian; use crate::render; use crate::scene; use crate::sprites; use crate::tree_draw; use crate::types; use crate::walker;
 
 
+// --- elevator: cab banks running seeded service loops in a building shaft. ---
+// Motion is a piecewise schedule (eased travel, then a dwell whose doors cycle
+// closed -> opening -> open -> closing), evaluated as a pure function of
+// (seed, t). Counterweights mirror the cars, cables pay out above them, call
+// lamps light while tenants wait and go dark once a cab services the floor.
+
+/// splitmix-style mix for per-floor/per-cycle tenant rolls.
+fn emix(mut z: u64) -> u64 {
+    z = z.wrapping_add(0x9E37_79B9_7F4A_7C15);
+    z = (z ^ (z >> 30)).wrapping_mul(0xBF58_476D_1CE4_E5B9);
+    z = (z ^ (z >> 27)).wrapping_mul(0x94D0_49BB_1331_11EB);
+    z ^ (z >> 31)
+}
+
+/// How many tenants wait at `floor` during passenger-cycle `pc`.
+fn elevator_waiting(seed: u64, floor: u64, pc: u64, crowd: f32) -> usize {
+    let h = emix(seed ^ floor.wrapping_mul(0x517C_C1B7).wrapping_add(pc.wrapping_mul(0x2722_0A95)));
+    let roll = (h % 1000) as f32 / 1000.0;
+    if roll < 0.24 * crowd.clamp(0.0, 3.0) {
+        1 + ((h >> 24) as usize) % 2
+    } else {
+        0
+    }
+}
+
+pub(crate) fn draw_elevator(
+    grid: &mut Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: &[Color; 5],
+    rng: &mut StdRng,
+    t: f32,
+    lifts: usize,
+    speed: f32,
+    crowd: f32,
+) {
+    if width < 10 || height < 6 {
+        return;
+    }
+    let speed = speed.clamp(0.05, 4.0);
+    let crowd = crowd.clamp(0.0, 3.0);
+    let lifts = lifts.clamp(1, ((width - 7) / 5).max(1));
+
+    let bg = darken(palette[0], 12);
+    for row in grid.iter_mut() {
+        for cell in row.iter_mut() {
+            *cell = Cell::new(' ', bg);
+        }
+    }
+
+    // Layout: sky band on top (stars, moon, antenna, water tower), then a setback
+    // tower: shaft core full height on the right (5 cols per lift, shared walls),
+    // offices stepping in toward the top on the left. floor_h = 2 rows: odd row
+    // = slab, even row = room/cab row. Floor 0 is the lobby at the bottom.
+    let block_w = lifts * 4 + 1;
+    let x0 = (width - block_w - 1).max(1);
+    let ground_y = height - 1;
+    let sky_max = (height.saturating_sub(6)) / 2;
+    let sky_h = ((height - 8) / 6).clamp(0, 4).min(sky_max);
+    let floors = (height - 2 - sky_h) / 2;
+    if floors < 2 {
+        return;
+    }
+    let row_y = |f: usize| sky_h as f32 + 2.0 + 2.0 * (floors - 1 - f) as f32;
+    // Setback tiers: the top 20% of floors sit on the mid 20% sit on the base.
+    let tier2 = floors * 3 / 5;
+    let tier3 = floors * 4 / 5;
+    let inset = |f: usize| if f >= tier3.max(tier2 + 1) { 6 } else if f >= tier2 { 3 } else { 0 };
+    let roof_y = sky_h;
+
+    let wall_c = darken(palette[1], 34);
+    let slab_c = darken(palette[1], 52);
+    let roof_c = darken(palette[1], 18);
+    let ground_c = darken(palette[1], 62);
+    let cab_c = lighten(palette[2], 8);
+    let inner_c = darken(palette[1], 58);
+    let rider_c = lighten(palette[4], 10);
+    let wait_c = lighten(palette[3], 12);
+    let lamp_c = lighten(palette[4], 20);
+    let win_lit = lighten(palette[3], 18);
+    let win_dark = darken(palette[1], 48);
+    let cable_c = darken(palette[1], 58);
+    let cw_c = darken(palette[1], 22);
+    let spill_c = lighten(palette[3], 8);
+    let star_c = lighten(palette[1], 26);
+    let moon_c = lighten(palette[1], 58);
+
+    // Sky band: star field, then moon disc with a halo.
+    for y in 0..sky_h {
+        for x in 1..width - 1 {
+            let h = emix(seed ^ 0x5EED ^ (y as u64 * 331).wrapping_add(x as u64 * 7));
+            if h % 1000 < 8 {
+                pp_put(grid, x as i32, y as i32, '·', star_c);
+            } else if h % 1000 < 12 {
+                pp_put(grid, x as i32, y as i32, '✦', star_c);
+            }
+        }
+    }
+    if sky_h >= 2 {
+        let mh = emix(seed ^ 0xA0AA);
+        let mcx = 4 + (mh % ((x0 / 2).max(3) as u64)) as usize;
+        let mcy = sky_h / 2;
+        for (dx, dy, ch) in
+            [(0i32, 0i32, '●'), (-1, 0, '∙'), (0, -1, '∙'), (0, 1, '∙'), (2, 0, '·'), (1, 1, '·')]
+        {
+            pp_put(grid, mcx as i32 + dx, mcy as i32 + dy, ch, moon_c);
+        }
+    }
+
+    // Setback facade: left wall per floor band, roofline, stepped slabs,
+    // terraces with parapets where the tower steps in.
+    for f in 0..floors {
+        let sy = row_y(f) as usize - 1; // slab above this floor's room row
+        let ins = inset(f);
+        for x in 1 + ins..x0 - 1 {
+            grid[sy][x] = Cell::new('─', slab_c);
+        }
+        // terrace where the tier above steps back (this slab is its floor)
+        if f + 1 < floors {
+            let ins_next = inset(f + 1);
+            if ins_next > ins {
+                for x in 1 + ins_next..1 + ins + 3 {
+                    grid[sy][x] = Cell::new('═', slab_c);
+                }
+                let ry = sy - 1;
+                grid[ry][1 + ins] = Cell::new('┌', wall_c);
+                for x in 1 + ins + 1..ins + 3 {
+                    grid[ry][x] = Cell::new('─', wall_c);
+                }
+                grid[ry][3 + ins] = Cell::new('┐', wall_c);
+                let h = emix(seed ^ 0x1E5A ^ (sy as u64 * 41));
+                if h % 3 == 0 {
+                    grid[sy][2 + ins] = Cell::new('♣', win_lit);
+                }
+            }
+        }
+        // facade wall on the room rows of this band
+        let ry = sy + 1;
+        grid[ry][1 + ins] = Cell::new('▐', wall_c);
+    }
+    if x0 + block_w + 2 < width {
+        for sy in (row_y(floors - 1) as usize - 1..ground_y).step_by(2) {
+            for x in x0 + block_w + 1..width - 1 {
+                grid[sy][x] = Cell::new('─', slab_c);
+            }
+        }
+    }
+
+    // Rooftop: roofline, AC units on the top tier, water tower + beacon antenna.
+    for x in 1..width - 1 {
+        grid[roof_y][x] = Cell::new('▄', roof_c);
+    }
+    for x in (2 + inset(floors - 1)..x0 - 3).step_by(7) {
+        let h = emix(seed ^ 0xAC1D ^ (x as u64 * 29));
+        if h % 100 < 45 {
+            grid[roof_y][x] = Cell::new('▤', roof_c);
+        }
+    }
+    if sky_h >= 2 {
+        let th = emix(seed ^ 0x70E3);
+        let tx = 1 + inset(floors - 1) + 3 + (th % 7) as usize;
+        grid[roof_y - 2][tx] = Cell::new('▛', roof_c);
+        grid[roof_y - 2][tx + 1] = Cell::new('▜', roof_c);
+        grid[roof_y - 1][tx] = Cell::new('¦', roof_c);
+        grid[roof_y - 1][tx + 1] = Cell::new('¦', roof_c);
+    }
+    let ax = 2 + inset(floors - 1);
+    for y in 0..sky_h {
+        grid[y][ax] = Cell::new('¦', wall_c);
+    }
+
+    // Ground line + storefront + shaft lobby doors.
+    for x in 1..width - 1 {
+        pp_put(grid, x as i32, ground_y as i32, '▂', ground_c);
+    }
+    {
+        let ry = row_y(0) as usize;
+        let dh = emix(seed ^ 0x570E3);
+        let dx = 3 + (dh % ((x0 / 3).max(2) as u64)) as usize;
+        if dx + 4 < x0 - 2 {
+            grid[ry][dx] = Cell::new('▤', win_lit);
+            grid[ry][dx + 1] = Cell::new('▤', win_lit);
+            let sy = ry - 1;
+            for x in dx - 1..dx + 3 {
+                grid[sy][x] = Cell::new('▄', win_lit);
+            }
+            grid[ry][dx + 3] = Cell::new('♣', win_lit);
+        }
+    }
+    for i in 0..lifts {
+        let sx = x0 + i * 4;
+        for y in roof_y + 1..ground_y {
+            grid[y][sx] = Cell::new('│', wall_c);
+            grid[y][sx + 4] = Cell::new('│', wall_c);
+        }
+        // lobby doors at the shaft base
+        pp_put(grid, (sx + 1) as i32, ground_y as i32, '∙', wall_c);
+        pp_put(grid, (sx + 2) as i32, ground_y as i32, '◉', lamp_c);
+        pp_put(grid, (sx + 3) as i32, ground_y as i32, '∙', wall_c);
+    }
+
+    // Office windows: seeded mix, with a slow tenant-churn flicker driven by
+    // the same clock that re-rolls the waiting crowds. Some windows toggle
+    // on/off between tenant cycles; nobody home in the top two floors.
+    let pc_pre = ((t * speed) / 7.5).floor().max(0.0) as u64;
+    for f in 1..floors.saturating_sub(2) {
+        let ry = row_y(f) as usize;
+        let ins = inset(f);
+        let mut x = 3 + ins;
+        while x + 1 < x0 - 3 {
+            let h = emix(seed ^ 0x51ED ^ (ry as u64 * 97).wrapping_add(x as u64 * 13));
+            let h2 = emix(h ^ pc_pre.wrapping_mul(0x9E37_79B9));
+            let lit = (h % 100 < 30) ^ (h2 % 100 < 9);
+            let (ch, col) = if lit {
+                ('☼', win_lit)
+            } else {
+                ('□', win_dark)
+            };
+            grid[ry][x] = Cell::new(ch, col);
+            x += 3;
+        }
+        let xr0 = x0 + block_w + 2;
+        if xr0 + 2 < width - 1 {
+            let mut x = xr0;
+            while x < width - 2 {
+                let h = emix(seed ^ 0x77AA ^ (ry as u64 * 89).wrapping_add(x as u64 * 17));
+                let (ch, col) = if h % 100 < 26 {
+                    ('☼', win_lit)
+                } else {
+                    ('□', win_dark)
+                };
+                grid[ry][x] = Cell::new(ch, col);
+                x += 3;
+            }
+        }
+    }
+
+    // Per-lift service loop: seeded floor sequence, eased travel, doored dwell.
+    let mut serviced_until = vec![f32::NEG_INFINITY; floors];
+
+    struct Lift {
+        seq: Vec<usize>,
+        trav: Vec<f32>,
+        dwell: f32,
+        cycle: f32,
+        sx: usize,
+        cab_col: Color,
+    }
+    let mut lift_setups: Vec<Lift> = Vec::new();
+    for i in 0..lifts {
+        let mut lcg = seed ^ (i as u64 + 1).wrapping_mul(0xD1B5_4A32_D192_ED03);
+        let mut next = || {
+            lcg = lcg
+                .wrapping_mul(6364136223846793005)
+                .wrapping_add(1442695040888963407);
+            lcg
+        };
+        let mut seq = vec![0usize];
+        for _ in 0..(floors * 2).max(4) {
+            let mut f = (next() % floors as u64) as usize;
+            while f == *seq.last().unwrap() {
+                f = (next() % floors as u64) as usize;
+            }
+            seq.push(f);
+        }
+        let dwell = 1.15f32;
+        let mut trav = Vec::new();
+        for k in 0..seq.len() - 1 {
+            let d = seq[k].max(seq[k + 1]) - seq[k].min(seq[k + 1]);
+            trav.push(0.22 + 0.16 * d as f32);
+        }
+        let cycle: f32 = trav.iter().sum::<f32>() + dwell * (seq.len() - 1) as f32;
+        let hue_jitter = rng.random_range(-14.0..14.0);
+        let cab_col = shift_hue(cab_c, hue_jitter);
+        lift_setups.push(Lift {
+            seq,
+            trav,
+            dwell,
+            cycle,
+            sx: x0 + i * 4,
+            cab_col,
+        });
+    }
+
+    let t_abs = t * speed;
+    // Tenant clock: waiting crowds re-roll every P seconds; a floor stays
+    // "serviced" (no crowd drawn) for one window after a cab doors closed there.
+    let window = 7.5f32;
+    let pc = (t_abs / window).floor().max(0.0) as u64;
+
+    struct Frame {
+        y: f32,
+        dir: char,
+        open_floor: Option<usize>,
+        open_q: f32,
+        arriving: Option<(usize, bool)>, // (floor, has rider about to board/exit)
+    }
+    let mut frames = Vec::new();
+    for lift in &lift_setups {
+        let rep0 = (t_abs / lift.cycle).floor();
+        let tau = t_abs - rep0 * lift.cycle;
+        let mut y = row_y(lift.seq[0]);
+        let mut dir = '◇';
+        let mut dwell_state: Option<(usize, f32)> = None;
+        let mut arriving = None;
+        let mut acc = 0.0f32;
+        for k in 0..lift.seq.len() - 1 {
+            let (a, b) = (lift.seq[k], lift.seq[k + 1]);
+            let trav = lift.trav[k];
+            let travel_end = acc + trav;
+            let dwell_end = travel_end + lift.dwell;
+            if tau < travel_end {
+                let p = (tau - acc) / trav;
+                let mut yy = row_y(a) + (row_y(b) - row_y(a)) * ease_in_out(p);
+                // arrival settle: the car overshoots the floor by under half a
+                // row in the last stretch and eases back onto the landing
+                if p >= 0.82 {
+                    let s = (p - 0.82) / 0.18;
+                    let bump = if s < 0.5 { s * 2.0 } else { 2.0 - 2.0 * s };
+                    let sign_row = (row_y(b) - row_y(a)).signum();
+                    yy += 0.45 * bump * sign_row;
+                }
+                y = yy;
+                dir = if b > a { '▲' } else { '▼' };
+                // arrival time in absolute clock decides the tenant wave boarding
+                let arr_abs = t_abs + (travel_end - tau);
+                let pc_arr = (arr_abs / window).floor().max(0.0) as u64;
+                arriving = Some((b, elevator_waiting(seed, b as u64, pc_arr, crowd) > 0));
+                acc = dwell_end;
+                break;
+            } else if tau < dwell_end {
+                let q = (tau - travel_end) / lift.dwell;
+                y = row_y(b);
+                dwell_state = Some((b, q));
+                let arr_abs = t_abs - q * lift.dwell;
+                let pc_arr = (arr_abs / window).floor().max(0.0) as u64;
+                arriving = Some((b, elevator_waiting(seed, b as u64, pc_arr, crowd) > 0 && q < 0.55));
+                acc = dwell_end;
+                break;
+            }
+            acc = dwell_end;
+        }
+        // Mark floors this cab has serviced inside the current tenant window.
+        let mut acc2 = 0.0f32;
+        for k in 0..lift.seq.len() - 1 {
+            let dwell_end = acc2 + lift.trav[k] + lift.dwell;
+            acc2 = dwell_end;
+            let b = lift.seq[k + 1];
+            let r = ((t_abs - dwell_end) / lift.cycle).floor();
+            let last_end = dwell_end + r * lift.cycle;
+            if t_abs - last_end < window {
+                serviced_until[b] = serviced_until[b].max(last_end + window);
+            }
+        }
+        let open_floor = match dwell_state {
+            Some((f, q)) if q > 0.12 && q < 0.9 => Some(f),
+            _ => None,
+        };
+        let open_q = dwell_state.map(|(_, q)| q).unwrap_or(0.0);
+        frames.push(Frame {
+            y,
+            dir,
+            open_floor,
+            open_q,
+            arriving,
+        });
+    }
+
+    // Waiting tenants, boarding/exiting pedestrians, and call lamps on the
+    // walkway left of the shaft block. A door open at the floor turns the
+    // queue into a walk-in, then releases one rider who wanders off.
+    for f in 0..floors {
+        let ry = row_y(f) as usize;
+        let open_here = frames.iter().find_map(|fr| {
+            fr.open_floor.filter(|&ff| ff == f).map(|_| fr)
+        });
+        match open_here {
+            Some(fr) => {
+                let q = fr.open_q;
+                let has = fr.arriving.map(|(_, b)| b).unwrap_or(false);
+                if q < 0.5 {
+                    let t_in = q / 0.5;
+                    let n = elevator_waiting(seed, f as u64, pc, crowd);
+                    for j in 0..n {
+                        let xs = (x0 - 2 - j) as f32;
+                        pp_put(
+                            grid,
+                            (xs + ((x0 - 1) as f32 - xs) * t_in).round() as i32,
+                            ry as i32,
+                            '☻',
+                            if j == 0 { wait_c } else { darken(wait_c, 22) },
+                        );
+                    }
+                } else if has {
+                    let t_out = ((q - 0.5) / 0.4).min(1.0);
+                    let x = (x0 - 1) as f32 - 2.0 * t_out;
+                    pp_put(grid, x.round() as i32, ry as i32, '☻', rider_c);
+                }
+                if q > 0.2 && q < 0.8 {
+                    pp_put(grid, (x0 - 1) as i32, ry as i32, '░', spill_c);
+                }
+            }
+            None => {
+                if serviced_until[f] > t_abs {
+                    continue;
+                }
+                let n = elevator_waiting(seed, f as u64, pc, crowd);
+                for j in 0..n {
+                    pp_put(
+                        grid,
+                        (x0 - 2 - j) as i32,
+                        ry as i32,
+                        '☻',
+                        if j == 0 { wait_c } else { darken(wait_c, 22) },
+                    );
+                    pp_put(grid, (x0 - 1) as i32, ry as i32, '◆', lamp_c);
+                }
+            }
+        }
+    }
+
+    // Cabs: cable above, mirrored counterweight, doored cabin, direction lamp.
+    for (lift, fr) in lift_setups.iter().zip(frames.iter()) {
+        let sx = lift.sx;
+        let cy = fr.y.round() as i32;
+        // hoist cable from the shaft roof down to the car
+        for y in (roof_y as i32 + 1)..cy {
+            pp_put(grid, (sx + 2) as i32, y, '¦', cable_c);
+        }
+        // counterweight mirrors the car around the shaft midpoint
+        let mid = 1.0 + floors as f32;
+        let cw_row = 2.0 * mid - fr.y;
+        let cw_q = (cw_row.round() as i32 / 2 * 2).max(2);
+        if (cw_row - fr.y).abs() > 1.6 && (cw_q as usize) < ground_y {
+            pp_put(grid, (sx + 4) as i32, cw_q, '▚', cw_c);
+        }
+        // cabin face by door phase
+        let cells: [char; 3] = if fr.open_floor.is_some() {
+            let q = fr.open_q;
+            if q < 0.25 {
+                ['▓', '▓', '·']
+            } else if q < 0.75 {
+                ['·', if fr.arriving.map(|(_, b)| b).unwrap_or(false) { '☻' } else { '·' }, '·']
+            } else if q < 0.88 {
+                ['·', '·', '▓']
+            } else {
+                ['▓', '▓', '▓']
+            }
+        } else if fr.dir != '◇' {
+            ['▓', if fr.arriving.map(|(_, b)| b).unwrap_or(false) { '☻' } else { '▓' }, '▓']
+        } else {
+            ['▓', '▓', '▓']
+        };
+        for (j, ch) in cells.iter().enumerate() {
+            let col = if *ch == '▓' {
+                lift.cab_col
+            } else if *ch == '☻' {
+                rider_c
+            } else if fr.open_floor.is_some() {
+                lighten(palette[3], 6)
+            } else {
+                inner_c
+            };
+            pp_put(grid, (sx + 1 + j) as i32, cy, *ch, col);
+        }
+        if fr.dir != '◇' {
+            pp_put(grid, (sx + 2) as i32, cy - 1, fr.dir, lighten(lift.cab_col, 14));
+        }
+    }
+
+    // Antenna beacon: square-wave blink (no sine phase, plain on/off duty cycle).
+    let bx = 2 + inset(floors - 1);
+    let on = (t_abs * 1.6) % 2.0 < 1.0;
+    pp_put(
+        grid,
+        bx as i32,
+        0,
+        if on { '✦' } else { '·' },
+        if on { lighten(palette[4], 25) } else { darken(palette[1], 40) },
+    );
+}
+
 /// Dispatch arm for mode(s): eyes (moved verbatim from run()).
 pub(crate) fn cli_eyes(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         // eyes [density] [mutation] -- maximalist field of varied staring forms
@@ -1846,5 +2329,271 @@ pub(crate) fn cli_jelly2(mut grid: Grid, width: usize, height: usize, seed: u64,
             let tail = if rng.random_range(0..2) == 0 { '¦' } else { '\'' };
             jput!(x, y + 1, tail, darken(dim, 15));
         }
+    (grid, false)
+}
+
+/// Dispatch arm for mode(s): elevator.
+pub(crate) fn cli_elevator(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
+        // elevator [lifts] [speed] [crowd] -- building cross-section, cab banks
+        // running seeded service loops with doored dwells and mirrored weights
+        let lifts: usize = args
+            .get(4)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("LIFTS", 3.0) as usize);
+        let speed: f32 = args
+            .get(5)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("SPEED", 1.0));
+        let crowd: f32 = args
+            .get(6)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("CROWD", 1.0));
+        draw_elevator(
+            &mut grid,
+            width,
+            height,
+            seed,
+            &palette,
+            &mut rng,
+            t_anim,
+            lifts,
+            speed,
+            crowd,
+        );
+    (grid, false)
+}
+
+// --- ferris: a night carnival wheel running a boarding cycle. ---
+// The wheel angle is linear in t (a real rotation, not a phase wobble). The
+// custom machinery rides on top: each gondola's rider manifest re-rolls from
+// (seed, gondola, revolution count) at the instant it passes the loading
+// dock, the chase lights step around the rim on a discrete tick, the whole
+// rim double-flashes at each full revolution, and the queue/exit pedestrians
+// are walk interpolations keyed to exact pass times.
+
+pub(crate) fn draw_ferris(
+    grid: &mut Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: &[Color; 5],
+    rng: &mut StdRng,
+    t: f32,
+    radius: usize,
+    gondolas: usize,
+    speed: f32,
+) {
+    use std::f32::consts::TAU;
+
+    if width < 14 || height < 8 {
+        return;
+    }
+    let speed = speed.clamp(0.05, 3.0);
+    let gondolas = gondolas.clamp(4, 14);
+    let ground_y = height - 1;
+    let max_ry = ((ground_y - 4) / 2).max(2);
+    let mut ry = (radius as f32).clamp(2.0, max_ry as f32);
+    let mut rx = ry * 2.0;
+    let rx_cap = ((width - 12) / 2).max(3) as f32;
+    if rx > rx_cap {
+        rx = rx_cap;
+        ry = rx / 2.0;
+    }
+    let cx = (width / 2) as f32;
+    let cy = ground_y as f32 - 4.0 - ry;
+
+    let bg = darken(palette[0], 16);
+    for row in grid.iter_mut() {
+        for cell in row.iter_mut() {
+            *cell = Cell::new(' ', bg);
+        }
+    }
+
+    let rim_c = darken(palette[1], 42);
+    let spoke_c = darken(palette[1], 55);
+    let strut_c = darken(palette[1], 30);
+    let ground_c = darken(palette[1], 62);
+    let light_dim = darken(palette[4], 30);
+    let light_lit = lighten(palette[4], 22);
+    let booth_c = lighten(palette[3], 14);
+    let wait_c = lighten(palette[3], 12);
+    let cab_c = lighten(palette[2], 10);
+    let rider_c = lighten(palette[4], 10);
+    let star_c = lighten(palette[1], 26);
+
+    let omega = 0.55 * speed;
+    let theta = t * omega;
+    let hue_jitter = rng.random_range(-10.0..10.0);
+
+    // Night sky: sparse stars above the wheel crown.
+    let crown = (cy - ry).max(0.0) as usize;
+    for y in 0..crown {
+        for x in 1..width - 1 {
+            let h = emix(seed ^ 0x5EED ^ (y as u64 * 331).wrapping_add(x as u64 * 7));
+            if h % 1000 < 7 {
+                pp_put(grid, x as i32, y as i32, '·', star_c);
+            } else if h % 1000 < 10 {
+                pp_put(grid, x as i32, y as i32, '✦', star_c);
+            }
+        }
+    }
+
+    // Ground, A-frame struts from hub to grade, cross-brace.
+    for x in 1..width - 1 {
+        pp_put(grid, x as i32, ground_y as i32, '▂', ground_c);
+    }
+    for side in [-1.0f32, 1.0] {
+        let fx = cx + side * rx * 0.55;
+        let steps = (ground_y as i32 - cy as i32).max(1);
+        let per_step = (fx - cx) / steps as f32;
+        for s in 0..=steps {
+            let q = s as f32 / steps as f32;
+            let px = cx + (fx - cx) * q;
+            let py = cy + (ground_y as f32 - cy) * q;
+            let ch = pp_stroke(per_step.round() as i32, 1);
+            pp_put(grid, px.round() as i32, py.round() as i32, ch, strut_c);
+        }
+        // foot pads
+        pp_put(grid, fx.round() as i32, ground_y as i32, '▆', strut_c);
+    }
+    let brace_y = (cy + (ground_y as f32 - cy) * 0.55).round() as i32;
+    let lx = (cx - rx * 0.55 * 0.55).round() as i32;
+    let rxx = (cx + rx * 0.55 * 0.55).round() as i32;
+    for x in lx..=rxx {
+        pp_put(grid, x, brace_y, '─', strut_c);
+    }
+
+    // Spokes (under everything), then the rim, then the chase lights.
+    for s in 0..8 {
+        let a = theta + s as f32 * (TAU / 8.0);
+        for q in [0.2f32, 0.35, 0.5, 0.65, 0.8, 0.93] {
+            let px = cx + a.cos() * rx * q;
+            let py = cy + a.sin() * ry * q;
+            pp_put(grid, px.round() as i32, py.round() as i32, '∙', spoke_c);
+        }
+    }
+    let rim_n = 120;
+    for i in 0..rim_n {
+        let a = i as f32 / rim_n as f32 * TAU;
+        let px = cx + a.cos() * rx;
+        let py = cy + a.sin() * ry;
+        pp_put(grid, px.round() as i32, py.round() as i32, '·', rim_c);
+    }
+    // Chase lights: 24 sockets stepping a 3-cell pattern; double-flash on the
+    // revolution boundary (discrete tick, no phase wobble).
+    let flash = (theta % TAU) < 0.28;
+    for i in 0..24 {
+        let a = i as f32 / 24.0 * TAU;
+        let px = cx + a.cos() * rx;
+        let py = cy + a.sin() * ry;
+        let lit = flash || (i + (theta * 1.2) as usize) % 3 == 0;
+        pp_put(
+            grid,
+            px.round() as i32,
+            py.round() as i32,
+            if lit { '•' } else { '·' },
+            if lit { light_lit } else { light_dim },
+        );
+    }
+
+    // Gondolas: pivot on the rim, cabin hangs upright one row below. Rider
+    // manifest re-rolls per revolution, timed so the swap lands at the dock.
+    let n = gondolas;
+    for k in 0..n {
+        let ang = theta + k as f32 * (TAU / n as f32);
+        let px = cx + ang.cos() * rx;
+        let py = cy + ang.sin() * ry;
+        let phi = theta - k as f32 * (TAU / n as f32) - std::f32::consts::FRAC_PI_2;
+        let rev = (phi / TAU).floor();
+        let occupied = emix(seed ^ (k as u64).wrapping_mul(0x9E37).wrapping_add((rev as i64 as u64).wrapping_mul(0xBF58))) % 100 < 72;
+        let col = shift_hue(cab_c, hue_jitter + k as f64 * 23.0);
+        pp_put(grid, px.round() as i32, py.round() as i32 + 1, '¦', strut_c);
+        let cy2 = py.round() as i32 + 2;
+        pp_put(grid, px.round() as i32 - 1, cy2, '▐', col);
+        pp_put(grid, px.round() as i32, cy2, if occupied { '☻' } else { '·' }, if occupied { rider_c } else { darken(col, 40) });
+        pp_put(grid, px.round() as i32 + 1, cy2, '▌', col);
+    }
+
+    // Hub on top of the spokes.
+    pp_put(grid, cx.round() as i32, cy.round() as i32, '◉', light_lit);
+
+    // Loading dock: platform, ticket booth, waiting queue, walking riders.
+    let dock_y = (ground_y - 1) as i32;
+    for x in (cx as i32 - 4)..=(cx as i32 + 4) {
+        pp_put(grid, x, dock_y, '▄', booth_c);
+    }
+    // ticket booth, clear of the wheel's widest gondolas
+    let bx = cx as i32 + 11;
+    if bx + 1 < width as i32 - 1 {
+        pp_put(grid, bx - 1, dock_y - 1, '╔', booth_c);
+        pp_put(grid, bx, dock_y - 1, '⚑', lighten(palette[4], 18));
+        pp_put(grid, bx + 1, dock_y - 1, '╗', booth_c);
+        pp_put(grid, bx - 1, dock_y, '▐', booth_c);
+        pp_put(grid, bx, dock_y, '☰', lighten(booth_c, 12));
+        pp_put(grid, bx + 1, dock_y, '▌', booth_c);
+    }
+    // queue re-rolls on a slow tenant clock, docked left of the platform
+    let pc = (t / 6.0).floor().max(0.0) as u64;
+    let n_wait = (emix(seed ^ 0xCAFE ^ pc.wrapping_mul(0x9E37_79B9)) % 4) as usize;
+    for j in 0..n_wait {
+        pp_put(
+            grid,
+            cx as i32 - 6 - j as i32,
+            dock_y,
+            '☻',
+            if j == 0 { wait_c } else { darken(wait_c, 22) },
+        );
+    }
+    // board/exit walks keyed to each gondola's exact bottom-pass time
+    for k in 0..n {
+        let ang0 = k as f32 * (TAU / n as f32);
+        let phi = theta - ang0 - std::f32::consts::FRAC_PI_2;
+        let rev = (phi / TAU).floor();
+        let t_pass = (rev * TAU + ang0 + std::f32::consts::FRAC_PI_2) / omega;
+        let since = t - t_pass;
+        if since >= 0.0 && since < 0.4 {
+            // a rider walks in from the queue head to the bottom cabin
+            let q = since / 0.4;
+            let x = cx - 5.0 + (cx - (cx - 5.0)) * q;
+            pp_put(grid, x.round() as i32, dock_y, '☻', wait_c);
+        }
+        let since_exit = t - t_pass - 0.5;
+        if since_exit >= 0.0 && since_exit < 0.4 {
+            // the previous rider strolls off to the right
+            let q = since_exit / 0.4;
+            let x = cx + 1.0 + 4.0 * q;
+            pp_put(grid, x.round() as i32, dock_y, '☻', rider_c);
+        }
+    }
+}
+
+/// Dispatch arm for mode(s): ferris.
+pub(crate) fn cli_ferris(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
+        // ferris [radius] [gondolas] [speed] -- carnival wheel: linear hub
+        // rotation, per-revolution rider swaps, chase lights, boarding walks
+        let radius: usize = args
+            .get(4)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("RADIUS", 8.0) as usize);
+        let gondolas: usize = args
+            .get(5)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("GONDOLAS", 10.0) as usize);
+        let speed: f32 = args
+            .get(6)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("SPEED", 1.0));
+        draw_ferris(
+            &mut grid,
+            width,
+            height,
+            seed,
+            &palette,
+            &mut rng,
+            t_anim,
+            radius,
+            gondolas,
+            speed,
+        );
     (grid, false)
 }

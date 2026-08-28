@@ -438,6 +438,9 @@ pub(crate) fn run_demo(initial_seed: u64) {
         "fireflies",
         "ink",
         "meteors",
+        "elevator",
+        "ferris",
+        "arboretum",
     ];
     let all_themes: &[&str] = &[
         "",

@@ -519,3 +519,23 @@ fn ink_seed_42() {
 fn meteors_seed_42() {
     insta::assert_snapshot!(render(&["42", "meteors", "arctic", "90", "1", "1"]));
 }
+
+#[test]
+fn elevator_seed_42() {
+    insta::assert_snapshot!(render(&["42", "elevator", "nerv", "3", "1", "1"]));
+}
+
+#[test]
+fn ferris_seed_42() {
+    insta::assert_snapshot!(render(&["42", "ferris", "deep", "8", "10", "1"]));
+}
+
+#[test]
+fn arboretum_seed_42() {
+    insta::assert_snapshot!(render(&["42", "arboretum", "moss"]));
+}
+
+#[test]
+fn arboretum_dense_1_layer() {
+    insta::assert_snapshot!(render(&["42", "arboretum", "ember", "1", "40"]));
+}

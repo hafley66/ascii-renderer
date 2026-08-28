@@ -32,7 +32,7 @@ cargo insta accept            # accept all pending changes (use after visual rev
 - When adding a new mode: add a snapshot test before committing
 - When modifying a mode: run `cargo test` first. If snapshots break, visually verify the new output before accepting
 - Never `cargo insta accept` blindly -- the whole point is to catch unintended visual regressions
-- Snapshot files live in `src/snapshots/` (insta default)
+- Snapshot files land in `src/snapshots/` (in-module tests) and `tests/snapshots/` (integration tests); `cargo insta` may not be installed -- accept with `mv *.snap.new *.snap` after visual inspection
 - Test grid size should be small enough to produce readable snapshots (e.g. 80x24) but large enough to exercise the mode
 
 ### Grid-to-string helper
@@ -55,7 +55,8 @@ kintsugi, constellation, strata, circuit, quilt, patchwalk, trees8, trees9, bole
 eyes++, fullmetal-eyes++, trees++, forest++, phyllotaxis, moire, nebula, delta, stained,
 metro, koi, skyline, hive, jelly, jelly2,
 rhizome, effigy, dendrite, totem, chimera,
-murmuration, lanterns, tide
+murmuration, lanterns, tide,
+arboretum
 
 ## Architecture
 

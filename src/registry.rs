@@ -198,6 +198,24 @@ pub(crate) static MODE_FORMS: &[ModeForm] = &[
         ],
     },
     ModeForm {
+        names: &["elevator"],
+        animate: AnimKind::Iterate,
+        params: &[
+            param!("LIFTS", "lifts", 1.0, 6.0, 3.0, 1.0),
+            param!("SPEED", "speed", 0.1, 3.0, 1.0, 0.1),
+            param!("CROWD", "crowd", 0.0, 3.0, 1.0, 0.1),
+        ],
+    },
+    ModeForm {
+        names: &["ferris"],
+        animate: AnimKind::Iterate,
+        params: &[
+            param!("RADIUS", "radius", 4.0, 12.0, 8.0, 1.0),
+            param!("GONDOLAS", "gondolas", 4.0, 14.0, 10.0, 1.0),
+            param!("SPEED", "speed", 0.1, 3.0, 1.0, 0.1),
+        ],
+    },
+    ModeForm {
         names: &["fa6", "fullmetal-alchemist6"],
         animate: AnimKind::Iterate,
         params: &[
@@ -205,6 +223,23 @@ pub(crate) static MODE_FORMS: &[ModeForm] = &[
             param!("DENS", "inscriptions", 0.0, 100.0, 55.0, 5.0),
             param!("SPEED", "speed", 0.1, 3.0, 0.8, 0.1),
             param!("CHAOS", "asymmetry", 0.0, 100.0, 42.0, 5.0),
+        ],
+    },
+    ModeForm {
+        names: &["arboretum"],
+        animate: AnimKind::Iterate,
+        params: &[
+            param!("DENS", "density", 2.0, 60.0, 16.0, 1.0),
+            param!("STRATA", "layers", 1.0, 4.0, 3.0, 1.0),
+            param!("GIRTH", "size span", 0.3, 3.0, 1.2, 0.1),
+            param!("CLUMP", "clumping", 0.0, 1.0, 0.5, 0.05),
+            param!("FERNS", "undergrowth", 0.0, 1.0, 0.5, 0.05),
+            param!("RELIEF", "relief", 0.0, 1.0, 0.5, 0.05),
+            param!("GALE", "wind", -1.0, 1.0, 0.15, 0.05),
+            param!("DRIFT", "hue drift", -180.0, 180.0, 60.0, 10.0),
+            param!("HAZE", "haze", 0.0, 1.0, 0.45, 0.05),
+            param!("CLEAR", "clearings", 0.0, 1.0, 0.25, 0.05),
+            param!("SPEED", "anim speed", 0.1, 3.0, 1.0, 0.1),
         ],
     },
     ModeForm { names: &["stained"], animate: AnimKind::Vflow, params: &[] },

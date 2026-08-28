@@ -3,6 +3,7 @@
 #[macro_use]
 mod registry;
 
+mod arboretum;
 mod automata;
 mod avant;
 mod biomes;
@@ -43,6 +44,7 @@ use rand::SeedableRng;
 use rand::rngs::StdRng;
 use std::io::{self, IsTerminal, Read as _};
 
+use arboretum::*;
 use automata::*;
 use avant::*;
 use biomes::*;
@@ -154,6 +156,30 @@ mod tests {
     fn voronoi_flow_snapshot() {
         let pal = make_palette(3);
         insta::assert_snapshot!("voronoi_flow_t2", grid_to_string(&voronoi_flow_frame(80, 24, 3, 2.0, &pal)));
+    }
+
+    #[test]
+    fn elevator_animates_and_deterministic() {
+        let (mut a, mut ra, pal) = make_grid(80, 24, 9);
+        draw_elevator(&mut a, 80, 24, 9, &pal, &mut ra, 0.0, 3, 1.0, 1.0);
+        let (mut b, mut rb, _) = make_grid(80, 24, 9);
+        draw_elevator(&mut b, 80, 24, 9, &pal, &mut rb, 0.0, 3, 1.0, 1.0);
+        assert_eq!(grid_to_string(&a), grid_to_string(&b), "same args -> same frame");
+        let (mut c, mut rc, _) = make_grid(80, 24, 9);
+        draw_elevator(&mut c, 80, 24, 9, &pal, &mut rc, 2.0, 3, 1.0, 1.0);
+        assert_ne!(grid_to_string(&a), grid_to_string(&c), "T should move the cabs");
+    }
+
+    #[test]
+    fn ferris_animates_and_deterministic() {
+        let (mut a, mut ra, pal) = make_grid(80, 24, 5);
+        draw_ferris(&mut a, 80, 24, 5, &pal, &mut ra, 1.3, 8, 10, 1.0);
+        let (mut b, mut rb, _) = make_grid(80, 24, 5);
+        draw_ferris(&mut b, 80, 24, 5, &pal, &mut rb, 1.3, 8, 10, 1.0);
+        assert_eq!(grid_to_string(&a), grid_to_string(&b), "same args -> same frame");
+        let (mut c, mut rc, _) = make_grid(80, 24, 5);
+        draw_ferris(&mut c, 80, 24, 5, &pal, &mut rc, 2.9, 8, 10, 1.0);
+        assert_ne!(grid_to_string(&a), grid_to_string(&c), "T should turn the wheel");
     }
 
     #[test]

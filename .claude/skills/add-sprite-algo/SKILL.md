@@ -46,6 +46,8 @@ Terminal cells are ~1:2 aspect ratio (taller than wide). Adjust horizontal dista
 **Dense fill chars**: `█ ▓ ▒ ░ ⣿ ⡇ ⢸`
 **Organic chars**: `~ ≈ ∿ ⌇ ⌒`
 
+**Glyph safety**: reuse chars from these pools or from `src/sprites.rs` / `src/tree_draw/species*.rs` (all width-1 verified). New exotic glyphs risk unicode-width assertion failures in main.rs display-width tests.
+
 ## Steps
 
 1. **Pick the algorithm family** based on what visual you're targeting
