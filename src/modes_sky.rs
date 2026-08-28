@@ -1563,3 +1563,268 @@ pub(crate) fn draw_meteors(
     }
 }
 
+/// Dispatch arm for mode(s): solar-system (moved verbatim from run()).
+pub(crate) fn cli_solar_system(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
+        grid = draw_solar_system(grid, width, height, seed, palette, rng, t_anim, &args);
+    (grid, false)
+}
+
+/// Dispatch arm for mode(s): hypercube (moved verbatim from run()).
+pub(crate) fn cli_hypercube(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
+        let copies: usize = args
+            .get(4)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("COPIES", 3.0) as usize);
+        let speed: f32 = args
+            .get(5)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("SPEED", 1.0));
+        let ghosts: usize = args
+            .get(6)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("GHOSTS", 2.0) as usize);
+        draw_hypercube(
+            &mut grid,
+            width,
+            height,
+            seed,
+            &palette,
+            &mut rng,
+            t_anim,
+            copies,
+            speed,
+            ghosts,
+        );
+    (grid, false)
+}
+
+/// Dispatch arm for mode(s): flux (moved verbatim from run()).
+pub(crate) fn cli_flux(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
+        let count: usize = args
+            .get(4)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("COUNT", 58.0) as usize);
+        let trail: usize = args
+            .get(5)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("TRAIL", 8.0) as usize);
+        let speed: f32 = args
+            .get(6)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("SPEED", 1.0));
+        draw_flux(
+            &mut grid,
+            width,
+            height,
+            seed,
+            &palette,
+            &mut rng,
+            t_anim,
+            count,
+            trail,
+            speed,
+        );
+    (grid, false)
+}
+
+/// Dispatch arm for mode(s): fireworks (moved verbatim from run()).
+pub(crate) fn cli_fireworks(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
+        let bursts: usize = args
+            .get(4)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("BURSTS", 6.0) as usize);
+        let sparks: usize = args
+            .get(5)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("SPARKS", 22.0) as usize);
+        let speed: f32 = args
+            .get(6)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("SPEED", 1.0));
+        draw_fireworks(
+            &mut grid,
+            width,
+            height,
+            seed,
+            &palette,
+            &mut rng,
+            t_anim,
+            bursts,
+            sparks,
+            speed,
+        );
+    (grid, false)
+}
+
+/// Dispatch arm for mode(s): rhizome (moved verbatim from run()).
+pub(crate) fn cli_rhizome(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
+        let count: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(5);
+        let depth: u32 = args.get(5).and_then(|s| s.parse().ok()).unwrap_or(3);
+        draw_rhizome(&mut grid, width, height, seed, &palette, &mut rng, t_anim, count, depth);
+    (grid, false)
+}
+
+/// Dispatch arm for mode(s): effigy (moved verbatim from run()).
+pub(crate) fn cli_effigy(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
+        let count: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(6);
+        draw_effigy(&mut grid, width, height, seed, &palette, &mut rng, t_anim, count);
+    (grid, false)
+}
+
+/// Dispatch arm for mode(s): dendrite (moved verbatim from run()).
+pub(crate) fn cli_dendrite(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
+        let seeds: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(3);
+        let depth: u32 = args.get(5).and_then(|s| s.parse().ok()).unwrap_or(4);
+        draw_dendrite(&mut grid, width, height, seed, &palette, &mut rng, t_anim, seeds, depth);
+    (grid, false)
+}
+
+/// Dispatch arm for mode(s): totem (moved verbatim from run()).
+pub(crate) fn cli_totem(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
+        let poles: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(2);
+        draw_totem(&mut grid, width, height, seed, &palette, &mut rng, t_anim, poles);
+    (grid, false)
+}
+
+/// Dispatch arm for mode(s): chimera (moved verbatim from run()).
+pub(crate) fn cli_chimera(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
+        let density: u32 = args
+            .get(4)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("DENS", 50.0) as u32);
+        let drift: f32 = param_f32("DRIFT", 2.0);
+        draw_chimera(&mut grid, width, height, seed, &palette, &mut rng, t_anim, density, drift);
+    (grid, false)
+}
+
+/// Dispatch arm for mode(s): murmuration (moved verbatim from run()).
+pub(crate) fn cli_murmuration(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
+        let birds: usize = args
+            .get(4)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("BIRDS", 140.0) as usize);
+        let flocks: usize = args
+            .get(5)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("FLOCKS", 3.0) as usize);
+        let speed: f32 = args
+            .get(6)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("SPEED", 1.0));
+        draw_murmuration(
+            &mut grid, width, height, seed, &palette, &mut rng, t_anim, birds, flocks, speed,
+        );
+    (grid, false)
+}
+
+/// Dispatch arm for mode(s): lanterns (moved verbatim from run()).
+pub(crate) fn cli_lanterns(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
+        let count: usize = args
+            .get(4)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("COUNT", 7.0) as usize);
+        let rise: f32 = args
+            .get(5)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("RISE", 1.0));
+        let sway: f32 = args
+            .get(6)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("SWAY", 1.0));
+        draw_lanterns(
+            &mut grid, width, height, seed, &palette, &mut rng, t_anim, count, rise, sway,
+        );
+    (grid, false)
+}
+
+/// Dispatch arm for mode(s): tide (moved verbatim from run()).
+pub(crate) fn cli_tide(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
+        let waves: usize = args
+            .get(4)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("WAVES", 2.0) as usize);
+        let amp: f32 = args
+            .get(5)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("AMP", 1.0));
+        let speed: f32 = args
+            .get(6)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("SPEED", 1.0));
+        draw_tide(
+            &mut grid, width, height, seed, &palette, &mut rng, t_anim, waves, amp, speed,
+        );
+    (grid, false)
+}
+
+/// Dispatch arm for mode(s): fireflies (moved verbatim from run()).
+pub(crate) fn cli_fireflies(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
+        let count: usize = args
+            .get(4)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("COUNT", 14.0) as usize);
+        let glow: f32 = args
+            .get(5)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("GLOW", 1.0));
+        let speed: f32 = args
+            .get(6)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("SPEED", 1.0));
+        draw_fireflies(
+            &mut grid, width, height, seed, &palette, &mut rng, t_anim, count, glow, speed,
+        );
+    (grid, false)
+}
+
+/// Dispatch arm for mode(s): meteors (moved verbatim from run()).
+pub(crate) fn cli_meteors(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
+        let stars: usize = args
+            .get(4)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("STARS", 90.0) as usize);
+        let rate: f32 = args
+            .get(5)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("RATE", 1.0));
+        let speed: f32 = args
+            .get(6)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("SPEED", 1.0));
+        draw_meteors(
+            &mut grid, width, height, seed, &palette, &mut rng, t_anim, stars, rate, speed,
+        );
+    (grid, false)
+}
+
+/// Dispatch arm for mode(s): noise (moved verbatim from run()).
+pub(crate) fn cli_noise(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
+        let names = ["truchet", "higaki", "higaki-s", "grass", "static", "dot"];
+        let cols = NOISE_VARIANT_COUNT;
+        let cell_w = width / cols;
+        for i in 0..NOISE_VARIANT_COUNT {
+            let x0 = i * cell_w;
+            let r = Rect {
+                x: x0,
+                y: 1,
+                w: cell_w,
+                h: height - 1,
+            };
+            let variant = noise_variant_from_index(i);
+            let c1 = palette[(i % 3) + 1];
+            let c2 = darken(c1, 30);
+            fill_noise(&mut grid, &r, variant, c1, c2, &mut rng);
+            for (j, ch) in names[i].chars().enumerate() {
+                if x0 + j < width {
+                    grid[0][x0 + j] = Cell::new(ch, palette[4]);
+                }
+            }
+        }
+    (grid, false)
+}
+
+/// Dispatch arm for mode(s): nebula (moved verbatim from run()).
+pub(crate) fn cli_nebula(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
+        draw_nebula(&mut grid, width, height, seed, &palette, &mut rng, t_anim);
+    (grid, false)
+}

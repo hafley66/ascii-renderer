@@ -2185,3 +2185,73 @@ pub(crate) fn draw_stained(grid: &mut Grid, width: usize, height: usize, seed: u
 // the binary, so it works for every mode with no per-mode rewrite.
 // ============================================================================
 
+/// Dispatch arm for mode(s): circuit (moved verbatim from run()).
+pub(crate) fn cli_circuit(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
+        // circuit [traces] -- PCB traces with pads, Manhattan routing.
+        // Native time T: current pulses flow along each trace (see draw_circuit).
+        let trace_count: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(14);
+        let trace_count = trace_count.clamp(1, 60);
+        draw_circuit(&mut grid, width, height, seed, &palette, &mut rng, t_anim, trace_count);
+    (grid, false)
+}
+
+/// Dispatch arm for mode(s): eyes3 (moved verbatim from run()).
+pub(crate) fn cli_eyes3(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
+        grid = draw_eyes3(grid, width, height, seed, palette, rng, t_anim, &args);
+    (grid, false)
+}
+
+/// Dispatch arm for mode(s): spiro (moved verbatim from run()).
+pub(crate) fn cli_spiro(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
+        grid = draw_spiro(grid, width, height, seed, palette, rng, t_anim, &args);
+    (grid, false)
+}
+
+/// Dispatch arm for mode(s): spiro-tile (moved verbatim from run()).
+pub(crate) fn cli_spiro_tile(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
+        grid = draw_spiro_tile(grid, width, height, seed, palette, rng, t_anim, &args);
+    (grid, false)
+}
+
+/// Dispatch arm for mode(s): weave (moved verbatim from run()).
+pub(crate) fn cli_weave(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
+        grid = draw_weave(grid, width, height, seed, palette, rng, t_anim, &args);
+    (grid, false)
+}
+
+/// Dispatch arm for mode(s): gears (moved verbatim from run()).
+pub(crate) fn cli_gears(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
+        grid = draw_gears(grid, width, height, seed, palette, rng, t_anim, &args);
+    (grid, false)
+}
+
+/// Dispatch arm for mode(s): kaleido (moved verbatim from run()).
+pub(crate) fn cli_kaleido(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
+        grid = draw_kaleido(grid, width, height, seed, palette, rng, t_anim, &args);
+    (grid, false)
+}
+
+/// Dispatch arm for mode(s): contour (moved verbatim from run()).
+pub(crate) fn cli_contour(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
+        grid = draw_contour(grid, width, height, seed, palette, rng, t_anim, &args);
+    (grid, false)
+}
+
+
+/// Dispatch arm for mode(s): phyllotaxis (moved verbatim from run()).
+pub(crate) fn cli_phyllotaxis(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
+        draw_phyllotaxis(&mut grid, width, height, seed, &palette, &mut rng, t_anim);
+    (grid, false)
+}
+
+/// Dispatch arm for mode(s): moire (moved verbatim from run()).
+pub(crate) fn cli_moire(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
+        draw_moire(&mut grid, width, height, seed, &palette, &mut rng, t_anim);
+    (grid, false)
+}
+
+/// Dispatch arm for mode(s): stained (moved verbatim from run()).
+pub(crate) fn cli_stained(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
+        draw_stained(&mut grid, width, height, seed, &palette, &mut rng);
+    (grid, false)
+}

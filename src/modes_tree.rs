@@ -1644,3 +1644,46 @@ pub(crate) fn draw_delta(grid: &mut Grid, width: usize, height: usize, _seed: u6
     }
 }
 
+/// Dispatch arm for mode(s): fa6, fullmetal-alchemist6 (moved verbatim from run()).
+pub(crate) fn cli_fa6_fullmetal_alchemist6(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
+        let chambers: usize = args
+            .get(4)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("CELLS", 8.0) as usize);
+        let inscriptions: u32 = args
+            .get(5)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("DENS", 55.0) as u32);
+        let speed: f32 = args
+            .get(6)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("SPEED", 0.8));
+        let asymmetry: f32 = args
+            .get(7)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("CHAOS", 42.0))
+            / 100.0;
+        draw_fa6(
+            &mut grid,
+            width,
+            height,
+            seed,
+            &palette,
+            &mut rng,
+            t_anim,
+            chambers,
+            inscriptions,
+            speed,
+            asymmetry,
+        );
+    (grid, false)
+}
+
+
+
+
+/// Dispatch arm for mode(s): delta (moved verbatim from run()).
+pub(crate) fn cli_delta(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
+        draw_delta(&mut grid, width, height, seed, &palette, &mut rng, t_anim);
+    (grid, false)
+}

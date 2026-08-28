@@ -267,3 +267,32 @@ pub(crate) fn draw_snakes(
     }
 }
 
+/// Dispatch arm for mode(s): snakes (moved verbatim from run()).
+pub(crate) fn cli_snakes(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
+        // snakes [count] -- PCB traces that slither around hidden loops; where two
+        // cross, a bright crossover knot. Native time T (see draw_snakes).
+        let snake_count: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(8);
+        let snake_count = snake_count.clamp(1, 80);
+        draw_snakes(&mut grid, width, height, seed, &palette, &mut rng, t_anim, snake_count);
+    (grid, false)
+}
+
+/// Dispatch arm for mode(s): ink (moved verbatim from run()).
+pub(crate) fn cli_ink(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
+        let drops: usize = args
+            .get(4)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("DROPS", 5.0) as usize);
+        let swirl: f32 = args
+            .get(5)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("SWIRL", 1.0));
+        let speed: f32 = args
+            .get(6)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| param_f32("SPEED", 1.0));
+        draw_ink(
+            &mut grid, width, height, seed, &palette, &mut rng, t_anim, drops, swirl, speed,
+        );
+    (grid, false)
+}
