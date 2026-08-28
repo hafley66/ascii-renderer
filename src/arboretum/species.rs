@@ -21,6 +21,7 @@ pub(super) fn grow_species(
         TreeStyle::Broadleaf => broadleaf(grid, rx, ry, budget, genome, cols, rng, foliage, sway),
         TreeStyle::Willow => willow(grid, rx, ry, budget, genome, cols, rng, foliage, sway),
         TreeStyle::Cypress => cypress(grid, rx, ry, budget, genome, cols, rng, foliage, sway),
+        TreeStyle::Babel => babel(grid, rx, ry, budget, genome, cols, rng, foliage, sway),
         TreeStyle::Classic => {}
     }
 }
@@ -284,6 +285,228 @@ fn willow(grid: &mut Grid, rx: i32, ry: i32, budget: i32, genome: &TreeGenome, c
     }
 }
 
+// ── Babel: sane trunk that loses its mind as it climbs ──────────────
+
+fn babel(grid: &mut Grid, rx: i32, ry: i32, budget: i32, genome: &TreeGenome, cols: &TreeColors, rng: &mut StdRng, foliage: f32, sway: f32) {
+    let (tx, ty) = base_start(grid, rx, ry, budget, genome, cols, rng);
+    let trunk_h = ((budget as f32) * (0.55 + 0.4 * genome.vigor)).max(6.0) as i32;
+    let helix = rng.random::<f32>() * std::f32::consts::TAU;
+    let lean = genome.lean + sway;
+
+    let mut pen = TreePen::new(tx, ty, cols.trunk);
+    pen.last_dir = Some(MoveDir::Up);
+    let mut nodes: Vec<(i32, i32, f32)> = Vec::new();
+    for k in 0..trunk_h {
+        let f = k as f32 / trunk_h.max(1) as f32;
+        let wood = lighten(cols.trunk, (f * 55.0) as u8);
+        pen.color = wood;
+        let dir = if f < 0.35 {
+            if rng.random::<f32>() < genome.gnarl * 0.15 {
+                if lean >= 0.0 { MoveDir::UpRight } else { MoveDir::UpLeft }
+            } else {
+                MoveDir::Up
+            }
+        } else if f < 0.55 {
+            let s = (k as f32 * 0.55 + helix + sway * 2.0).sin();
+            if s > 0.4 {
+                MoveDir::UpRight
+            } else if s < -0.4 {
+                MoveDir::UpLeft
+            } else {
+                MoveDir::Up
+            }
+        } else {
+            match rng.random_range(0..5u32) {
+                0 => MoveDir::Up,
+                1 => MoveDir::UpRight,
+                2 => MoveDir::UpLeft,
+                3 => MoveDir::Right,
+                _ => MoveDir::Left,
+            }
+        };
+        let broken = f >= 0.75;
+        if broken && k % 2 == 1 {
+            // gap: ascend without drawing -- the trunk stops being continuous
+            pen.x += dir.dx();
+            pen.y += dir.dy();
+            pen.last_dir = Some(dir);
+        } else {
+            let prev = pen.last_dir;
+            pen.step(grid, dir);
+            if f >= 0.55 && prev != pen.last_dir && rng.random::<f32>() < 0.5 {
+                set(grid, pen.x, pen.y, if rng.random::<f32>() < 0.5 { '┼' } else { '╋' }, wood);
+            }
+        }
+        nodes.push((pen.x, pen.y, f));
+    }
+
+    // Zone 1 boughs: sane alternating diagonals.
+    let mut side: i32 = if rng.random::<f32>() < 0.5 { 1 } else { -1 };
+    for (i, &(nx, ny, f)) in nodes.iter().enumerate() {
+        if f >= 0.35 || i < 2 {
+            continue;
+        }
+        if i % 3 == 0 && rng.random::<f32>() < genome.boughs {
+            let mut bp = TreePen::new(nx, ny, cols.branch);
+            bp.last_dir = Some(MoveDir::Up);
+            let len = ((budget as f32) * 0.14 * genome.spread).max(2.0) as i32;
+            for s in 0..len {
+                bp.step(grid, if s < len - 1 {
+                    if side > 0 { MoveDir::UpRight } else { MoveDir::UpLeft }
+                } else if side > 0 { MoveDir::Right } else { MoveDir::Left });
+            }
+            set(grid, bp.x, bp.y, '╷', lighten(cols.branch, 25));
+            if rng.random::<f32>() < genome.leafage * foliage {
+                set(grid, bp.x, bp.y - 1, '⠿', cols.leaf);
+            }
+            side = -side;
+        }
+    }
+
+    // Zone 2 boughs: hooks that curl out, down, and back toward the trunk.
+    for &(nx, ny, f) in nodes.iter() {
+        if !(0.35..0.55).contains(&f) || rng.random::<f32>() > 0.45 {
+            continue;
+        }
+        let side = if rng.random::<f32>() < 0.5 { 1 } else { -1 };
+        let mut hx = nx;
+        let mut hy = ny;
+        let out = rng.random_range(2..5);
+        for _ in 0..out {
+            hx += side;
+            if blank_at(grid, hx, hy) {
+                set(grid, hx, hy, '─', cols.branch);
+            }
+        }
+        for _ in 0..rng.random_range(1..3) {
+            hy += 1;
+            if blank_at(grid, hx, hy) {
+                set(grid, hx, hy, '╯', cols.branch);
+            }
+        }
+        for _ in 0..out - 1 {
+            hx -= side;
+            if blank_at(grid, hx, hy) {
+                set(grid, hx, hy, '╶', cols.branch);
+            }
+        }
+        if rng.random::<f32>() < genome.leafage * foliage {
+            set(grid, hx, hy, '❉', lighten(cols.leaf, 12));
+        }
+    }
+
+    // Zone 3: fork bombs off chaos nodes.
+    let mut used = 0usize;
+    let chaos: Vec<(i32, i32)> = nodes
+        .iter()
+        .filter(|&&(_, _, f)| (0.55..0.75).contains(&f))
+        .step_by(3)
+        .map(|&(x, y, _)| (x, y))
+        .collect();
+    for &(cx, cy) in chaos.iter().take(4) {
+        madness(grid, cx, cy, 0, cols, rng, genome, foliage, &mut used);
+    }
+
+    // Crown + floating islands above the broken tip.
+    if let Some(&(ax, ay, _)) = nodes.last() {
+        crown(grid, ax, ay, cols, rng, genome, foliage);
+    }
+    let islands = rng.random_range(2..5u32);
+    let (lx, ly) = (ax_of(&nodes), ay_of(&nodes));
+    for _ in 0..islands {
+        let ix = lx + rng.random_range(-7..8);
+        let iy = ly - rng.random_range(1..7);
+        island(grid, ix, iy, cols, rng, foliage);
+    }
+}
+
+fn ax_of(nodes: &[(i32, i32, f32)]) -> i32 {
+    nodes.last().map(|&(x, _, _)| x).unwrap_or(0)
+}
+
+fn ay_of(nodes: &[(i32, i32, f32)]) -> i32 {
+    nodes.last().map(|&(_, y, _)| y).unwrap_or(0)
+}
+
+const MADNESS_CAP: usize = 240;
+
+fn madness(grid: &mut Grid, x: i32, y: i32, order: u8, cols: &TreeColors, rng: &mut StdRng, genome: &TreeGenome, foliage: f32, used: &mut usize) {
+    if *used >= MADNESS_CAP || order > 3 {
+        return;
+    }
+    let dirs = [
+        MoveDir::Up,
+        MoveDir::UpRight,
+        MoveDir::UpLeft,
+        MoveDir::Right,
+        MoveDir::Left,
+        MoveDir::DownRight,
+        MoveDir::DownLeft,
+    ];
+    let mut pen = TreePen::new(x, y, lighten(cols.branch, order as u8 * 15));
+    pen.last_dir = Some(dirs[rng.random_range(0..dirs.len() as u32) as usize]);
+    let run = rng.random_range(1..4);
+    for _ in 0..run {
+        let dir = if rng.random::<f32>() < 0.4 {
+            dirs[rng.random_range(0..dirs.len() as u32) as usize]
+        } else {
+            pen.last_dir.unwrap()
+        };
+        pen.step(grid, dir);
+        *used += 1;
+    }
+    if rng.random::<f32>() < genome.leafage * foliage {
+        let g = ['⠿', '❀', '✳', '✶', '❉'][rng.random_range(0..5) as usize];
+        set(grid, pen.x, pen.y - 1, g, lighten(cols.leaf, rng.random_range(0..30)));
+    }
+    if rng.random::<f32>() < genome.fruition * foliage * 0.4 {
+        set(grid, pen.x, pen.y + 1, '◆', cols.fruit);
+    }
+    let kids = if order < 2 { 3 } else { 2 };
+    for _ in 0..kids {
+        madness(grid, pen.x, pen.y, order + 1, cols, rng, genome, foliage, used);
+    }
+}
+
+fn crown(grid: &mut Grid, cx: i32, cy: i32, cols: &TreeColors, rng: &mut StdRng, genome: &TreeGenome, foliage: f32) {
+    for r in [3i32, 5] {
+        let pts = (r as f32 * 4.0) as i32;
+        for p in 0..pts {
+            let a = p as f32 / pts as f32 * std::f32::consts::TAU;
+            let x = cx + (a.cos() * r as f32).round() as i32;
+            let y = cy - (a.sin() * r as f32 * 0.8).round() as i32;
+            if rng.random::<f32>() < 0.8 {
+                set(grid, x, y, '◌', lighten(cols.leaf, 20));
+            }
+        }
+    }
+    set(grid, cx, cy, '✦', lighten(cols.fruit, 20));
+    if rng.random::<f32>() < genome.leafage * foliage {
+        set(grid, cx - 2, cy, '⣿', cols.leaf);
+        set(grid, cx + 2, cy, '⣿', cols.leaf);
+    }
+    for dy in [2i32, 4] {
+        if rng.random::<f32>() < genome.fruition * foliage {
+            set(grid, cx + rng.random_range(-2..3), cy + dy, '◆', cols.fruit);
+        }
+    }
+}
+
+fn island(grid: &mut Grid, cx: i32, cy: i32, cols: &TreeColors, rng: &mut StdRng, foliage: f32) {
+    let r = rng.random_range(1..3);
+    let pts = (r as f32 * 6.0).max(6.0) as i32;
+    for p in 0..pts {
+        let a = p as f32 / pts as f32 * std::f32::consts::TAU;
+        let x = cx + (a.cos() * r as f32).round() as i32;
+        let y = cy - (a.sin() * r as f32 * 0.7).round() as i32;
+        set(grid, x, y, if p % 2 == 0 { '·' } else { '◌' }, lighten(cols.leaf, 30));
+    }
+    set(grid, cx, cy, '❉', lighten(cols.leaf, 10));
+    if rng.random::<f32>() < foliage * 0.6 {
+        set(grid, cx, cy + r + 1 + rng.random_range(0..2), '◆', cols.fruit);
+    }
+}
+
 // ── Cypress: tight flame column, swaying tip ────────────────────────
 
 fn cypress(grid: &mut Grid, rx: i32, ry: i32, budget: i32, genome: &TreeGenome, cols: &TreeColors, rng: &mut StdRng, foliage: f32, sway: f32) {
@@ -363,5 +586,30 @@ mod tests {
     #[test]
     fn snapshot_cypress() {
         insta::assert_snapshot!("arboretum_cypress", species_grid(TreeStyle::Cypress));
+    }
+
+    #[test]
+    fn snapshot_babel() {
+        insta::assert_snapshot!("arboretum_babel", species_grid(TreeStyle::Babel));
+    }
+
+    #[test]
+    fn babel_grows_sane_then_crazy() {
+        // low rows must hold ordinary trunk wood; upper rows must break it
+        let mut g = vec![vec![Cell::blank(); 30]; 26];
+        let mut r = StdRng::seed_from_u64(42);
+        let genome = TreeGenome { style: TreeStyle::Babel, ..TreeGenome::roll(&mut r) };
+        grow_tree(&mut g, 15, 24, 22, &genome, &cols(), &mut r, 1.0, 1.0, 0.0);
+        let rows: Vec<String> = g
+            .iter()
+            .map(|row| row.iter().map(|c| c.ch).collect())
+            .collect();
+        let sane = rows[18..23].concat();
+        assert!(sane.contains('│'), "lower trunk should be ordinary wood: {:?}", sane);
+        let crazy = rows[2..9].concat();
+        assert!(
+            crazy.contains('◌') || crazy.contains('❉') || crazy.contains('◆') || crazy.contains('✦'),
+            "crown zone should hold impossible things: {:?}", crazy
+        );
     }
 }

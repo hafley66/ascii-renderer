@@ -24,6 +24,7 @@ pub enum TreeStyle {
     Broadleaf, // short trunk, wide dome of clustered leaves
     Willow,    // crown of falling strands
     Cypress,   // tight flame column
+    Babel,     // sane trunk that loses its mind as it climbs
 }
 
 pub struct TreeGenome {
@@ -45,11 +46,12 @@ pub fn roll_style(rng: &mut StdRng, mix: f32) -> TreeStyle {
     if rng.random::<f32>() > mix {
         return TreeStyle::Classic;
     }
-    match rng.random_range(0..4u32) {
+    match rng.random_range(0..5u32) {
         0 => TreeStyle::Conifer,
         1 => TreeStyle::Broadleaf,
         2 => TreeStyle::Willow,
-        _ => TreeStyle::Cypress,
+        3 => TreeStyle::Cypress,
+        _ => TreeStyle::Babel,
     }
 }
 
