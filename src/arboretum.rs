@@ -341,6 +341,7 @@ fn draw_taper_pub(grid: &mut Grid, exit: &BoleExit, color: Color, kind: TaperKin
 
 // ── Forest knobs (env-tunable) ──────────────────────────────────────
 
+#[derive(Clone, PartialEq)]
 pub struct ForestKnobs {
     pub density: f32,   // tree stops across the screen
     pub strata: u8,     // depth planes 1..=4
@@ -375,20 +376,118 @@ impl ForestKnobs {
 
 // ── Grove renderer ──────────────────────────────────────────────────
 
-pub fn draw_arboretum(
-    grid: &mut Grid,
+/// Cache key for the static base layer: every t-independent draw_arboretum
+/// input (stars, clouds, ground line, ground fill, fog all hang off these).
+#[derive(Clone, PartialEq)]
+struct CacheKey {
+    seed: u64,
+    width: usize,
+    height: usize,
+    palette: [Color; 5],
+    knobs: ForestKnobs,
+}
+
+/// One recorded dynamic-pass rng draw, in call order. StdRng in rand 0.10
+/// cannot be cloned: a miss records the t-independent dynamic draw sequence.
+#[derive(Clone, Copy)]
+enum Draw {
+    F32(f32),
+    F64(f64),
+    U32(u32),
+    I32(i32),
+}
+
+/// Rng source for the dynamic passes: live StdRng (recording on miss) or
+/// replay of the recorded log (cache hit).
+enum FrameRng<'a> {
+    Live(&'a mut StdRng, &'a mut Vec<Draw>),
+    Replay(std::vec::IntoIter<Draw>),
+}
+
+impl FrameRng<'_> {
+    fn f32(&mut self) -> f32 {
+        match self {
+            FrameRng::Live(r, log) => {
+                let v = r.random::<f32>();
+                log.push(Draw::F32(v));
+                v
+            }
+            FrameRng::Replay(it) => match it.next() {
+                Some(Draw::F32(v)) => v,
+                _ => panic!("arboretum frame rng replay underflow"),
+            },
+        }
+    }
+    fn f64(&mut self) -> f64 {
+        match self {
+            FrameRng::Live(r, log) => {
+                let v = r.random::<f64>();
+                log.push(Draw::F64(v));
+                v
+            }
+            FrameRng::Replay(it) => match it.next() {
+                Some(Draw::F64(v)) => v,
+                _ => panic!("arboretum frame rng replay underflow"),
+            },
+        }
+    }
+    fn range_u32(&mut self, lo: u32, hi: u32) -> u32 {
+        match self {
+            FrameRng::Live(r, log) => {
+                let v = r.random_range(lo..hi);
+                log.push(Draw::U32(v));
+                v
+            }
+            FrameRng::Replay(it) => match it.next() {
+                Some(Draw::U32(v)) => v,
+                _ => panic!("arboretum frame rng replay underflow"),
+            },
+        }
+    }
+    fn range_i32(&mut self, lo: i32, hi: i32) -> i32 {
+        match self {
+            FrameRng::Live(r, log) => {
+                let v = r.random_range(lo..hi);
+                log.push(Draw::I32(v));
+                v
+            }
+            FrameRng::Replay(it) => match it.next() {
+                Some(Draw::I32(v)) => v,
+                _ => panic!("arboretum frame rng replay underflow"),
+            },
+        }
+    }
+}
+
+/// Static base + the replay log for the dynamic passes.
+struct StaticBase {
+    key: CacheKey,
+    grid: Grid,
+    ground: Vec<usize>,
+    horizon: usize,
+    ground_hue: f64,
+    tree_base_hue: f64,
+    log: Vec<Draw>,
+}
+
+thread_local! {
+    static STATIC_BASE: std::cell::RefCell<Option<StaticBase>> = const { std::cell::RefCell::new(None) };
+}
+
+/// Sky stars, clouds, ground line walk, ground fill, fog band. Consumes rng
+/// through the fog; output is identical every frame for a fixed key.
+fn render_static(
     width: usize,
     height: usize,
     seed: u64,
     palette: &[Color; 5],
     rng: &mut StdRng,
-    t: f32,
     knobs: &ForestKnobs,
-) {
-    let strata = knobs.strata.max(1) as usize;
+) -> (Grid, Vec<usize>, usize, f64) {
     // horizon: somewhere in the lower two-fifths
     let horizon = (height as f32 * (0.55 + rng.random::<f32>() * 0.15)) as usize;
     let sky_color = darken(palette[0], 95);
+    let mut grid = vec![vec![Cell::blank(); width]; height];
 
     // Sky: sparse stars
     for y in 0..horizon {
@@ -404,7 +503,7 @@ pub fn draw_arboretum(
         let cx = rng.random_range(5..(width as u32 - 5).max(6)) as usize;
         let cy = rng.random_range(2..(horizon / 2).max(3) as u32) as usize;
         let cw = rng.random_range(8..20u32) as usize;
-        crate::sprites::draw_cloud(grid, cx, cy, cw, cloud_color, rng);
+        crate::sprites::draw_cloud(&mut grid, cx, cy, cw, cloud_color, rng);
     }
 
     // Per-column ground line: random walk scaled by relief
@@ -451,12 +550,27 @@ pub fn draw_arboretum(
             }
         }
     }
+    (grid, ground, horizon, ground_hue)
+}
 
-    // Per-layer tree pass: far strata first (smaller, dimmer), near last.
-    // t drives per-tree life cycle (sprout -> hold -> wither) + sway; t==0 is static.
+/// Tree strata pass + undergrowth, drawn over the cached static base. All rng
+/// draws here match the original in-order sequence.
+fn draw_dynamic(
+    grid: &mut Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    ground: &[usize],
+    horizon: usize,
+    ground_hue: f64,
+    tree_base_hue: f64,
+    frame_rng: &mut FrameRng,
+    t: f32,
+    knobs: &ForestKnobs,
+) {
+    let strata = knobs.strata.max(1) as usize;
     let speed = param_f32("SPEED", 1.0).clamp(0.1, 3.0);
     let animating = t > 0.0;
-    let tree_base_hue = ground_hue + rng.random_range(-25..25) as f64;
     for layer in 0..strata {
         let lfrac = if strata == 1 { 1.0 } else { layer as f32 / (strata - 1) as f32 };
         let depth_step = ((height - horizon) / strata.max(1)).max(1);
@@ -464,13 +578,13 @@ pub fn draw_arboretum(
         // Stops for this layer
         let stop_count = ((knobs.density / strata as f32).ceil() as usize).max(2);
         let base_hop = width as f32 / stop_count as f32;
-        let mut wx = rng.random_range(3..(width as u32 - 3).max(4)) as usize;
+        let mut wx = frame_rng.range_u32(3, (width as u32 - 3).max(4)) as usize;
         for si in 0..stop_count {
             if si > 0 {
-                let hop = if rng.random::<f32>() < knobs.clumping * 0.45 {
-                    rng.random_range(2..5u32) as usize // cluster tight
+                let hop = if frame_rng.f32() < knobs.clumping * 0.45 {
+                    frame_rng.range_u32(2, 5) as usize // cluster tight
                 } else {
-                    (base_hop as f64 * rng.random_range(70..170) as f64 / 100.0) as usize
+                    (base_hop as f64 * frame_rng.range_i32(70, 170) as f64 / 100.0) as usize
                 };
                 wx = (wx + hop.max(1)) % width.max(1);
                 wx = wx.clamp(3, width.saturating_sub(4).max(3));
@@ -480,16 +594,16 @@ pub fn draw_arboretum(
             let root_y = (col + layer * depth_step).min(height - 2);
 
             // Clearing: skip the tree, scatter ground flora instead.
-            if rng.random::<f32>() < knobs.clearings {
-                for _ in 0..rng.random_range(2..6u32) {
-                    let fx = wx as i32 + rng.random_range(-4..5i32);
-                    let fy = root_y as i32 - rng.random_range(0..2i32);
+            if frame_rng.f32() < knobs.clearings {
+                for _ in 0..frame_rng.range_u32(2, 6) {
+                    let fx = wx as i32 + frame_rng.range_i32(-4, 5);
+                    let fy = root_y as i32 - frame_rng.range_i32(0, 2);
                     let c = hsl_to_rgb(
-                        (tree_base_hue + rng.random_range(-30..60) as f64).rem_euclid(360.0),
+                        (tree_base_hue + frame_rng.range_i32(-30, 60) as f64).rem_euclid(360.0),
                         0.5,
                         0.3,
                     );
-                    let g = ['✿', '❀', '*', '❉'][rng.random_range(0..4) as usize];
+                    let g = ['✿', '❀', '*', '❉'][frame_rng.range_i32(0, 4) as usize];
                     if blank_at(grid, fx, fy) {
                         set(grid, fx, fy, g, c);
                     }
@@ -499,7 +613,7 @@ pub fn draw_arboretum(
 
             // Size roll: girth biases the distribution toward ancients or saplings.
             let s_max = (((root_y - 1) as f32) * (0.35 + 0.65 * lfrac)).max(3.0) as i32;
-            let u: f32 = rng.random::<f32>();
+            let u: f32 = frame_rng.f32();
             let shape = 1.0 / knobs.girth.clamp(0.3, 3.0);
             let mut size = 3.0 + (s_max as f32 - 3.0) * u.powf(shape);
             // One champion per near layer, when there is room for an ancient.
@@ -568,13 +682,13 @@ pub fn draw_arboretum(
     };
     let mut x = 0usize;
     while x < width {
-        if rng.random::<f32>() < knobs.ferns * 0.22 {
+        if frame_rng.f32() < knobs.ferns * 0.22 {
             let y = ground[x].saturating_sub(1);
-            let h = (ground_hue + rng.random_range(-20..40) as f64).rem_euclid(360.0);
-            let c = hsl_to_rgb(h, 0.5, 0.22 + rng.random::<f64>() * 0.1);
-            let bushy = knobs.ferns > 0.55 && rng.random::<f32>() < 0.35 && x + 4 < width;
+            let h = (ground_hue + frame_rng.range_i32(-20, 40) as f64).rem_euclid(360.0);
+            let c = hsl_to_rgb(h, 0.5, 0.22 + frame_rng.f64() * 0.1);
+            let bushy = knobs.ferns > 0.55 && frame_rng.f32() < 0.35 && x + 4 < width;
             if bushy {
-                let n = 3 + rng.random_range(0..3) as usize;
+                let n = 3 + frame_rng.range_i32(0, 3) as usize;
                 for dx in 0..n {
                     let bx = x + dx;
                     let peak = (n as i32 / 2) - (dx as i32 - n as i32 / 2).abs();
@@ -597,6 +711,95 @@ pub fn draw_arboretum(
         }
         x += 1;
     }
+}
+
+/// Cached static layer parts a frame needs on a hit.
+struct BaseHit {
+    grid: Grid,
+    ground: Vec<usize>,
+    horizon: usize,
+    ground_hue: f64,
+    tree_base_hue: f64,
+    log: Vec<Draw>,
+}
+
+fn take_base(key: &CacheKey) -> Option<BaseHit> {
+    STATIC_BASE.with(|c| {
+        let b = c.borrow();
+        let b = b.as_ref()?;
+        if b.key != *key {
+            return None;
+        }
+        Some(BaseHit {
+            grid: b.grid.clone(),
+            ground: b.ground.clone(),
+            horizon: b.horizon,
+            ground_hue: b.ground_hue,
+            tree_base_hue: b.tree_base_hue,
+            log: b.log.clone(),
+        })
+    })
+}
+
+/// Rebuild or reuse the static base for this key, then draw the dynamic
+/// passes into `grid`. Hits replay the recorded draw log, byte-identical.
+pub fn draw_arboretum(
+    grid: &mut Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: &[Color; 5],
+    rng: &mut StdRng,
+    t: f32,
+    knobs: &ForestKnobs,
+) {
+    let key = CacheKey { seed, width, height, palette: *palette, knobs: knobs.clone() };
+    if let Some(hit) = take_base(&key) {
+        for (row, brow) in grid.iter_mut().zip(hit.grid.iter()) {
+            row.clone_from(brow);
+        }
+        let mut frame_rng = FrameRng::Replay(hit.log.into_iter());
+        draw_dynamic(grid, width, height, seed, &hit.ground, hit.horizon, hit.ground_hue, hit.tree_base_hue, &mut frame_rng, t, knobs);
+        return;
+    }
+    let (bg, ground, horizon, ground_hue) =
+        render_static(width, height, seed, palette, rng, knobs);
+    let tree_base_hue = ground_hue + rng.random_range(-25..25) as f64;
+    for (row, brow) in grid.iter_mut().zip(bg.iter()) {
+        row.clone_from(brow);
+    }
+    let mut log = Vec::new();
+    {
+        let mut frame_rng = FrameRng::Live(rng, &mut log);
+        draw_dynamic(grid, width, height, seed, &ground, horizon, ground_hue, tree_base_hue, &mut frame_rng, t, knobs);
+    }
+    STATIC_BASE.with(|c| {
+        *c.borrow_mut() = Some(StaticBase {
+            key,
+            grid: bg,
+            ground,
+            horizon,
+            ground_hue,
+            tree_base_hue,
+            log,
+        });
+    });
+}
+
+/// Frame entry for the in-process player: returns a fresh grid without a
+/// caller-side pre-alloc. A hit is one base clone plus the dynamic passes.
+pub fn render_arboretum_frame(
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: &[Color; 5],
+    mut rng: StdRng,
+    t: f32,
+    knobs: &ForestKnobs,
+) -> Grid {
+    let mut grid = vec![vec![Cell::blank(); width]; height];
+    draw_arboretum(&mut grid, width, height, seed, palette, &mut rng, t, knobs);
+    grid
 }
 
 // ── CLI dispatch arm ────────────────────────────────────────────────
@@ -719,6 +922,66 @@ mod tests {
             changed,
             total
         );
+    }
+
+    #[test]
+    fn cache_hit_matches_from_scratch() {
+        // replay path must be byte-identical to the recording path, for
+        // several t values and across repeated hits
+        let knobs = ForestKnobs::from_env();
+        let frame = |t: f32, fresh: bool| {
+            if fresh {
+                STATIC_BASE.with(|c| *c.borrow_mut() = None);
+            }
+            let (mut g, _, p) = make(80, 24, 42);
+            let mut r = StdRng::seed_from_u64(42);
+            draw_arboretum(&mut g, 80, 24, 42, &p, &mut r, t, &knobs);
+            plain(&g)
+        };
+        assert_eq!(frame(0.0, true), frame(0.0, false), "hit == miss");
+        assert_eq!(frame(3.0, true), frame(3.0, false), "hit == miss");
+        assert_eq!(frame(7.5, true), frame(7.5, false), "hit == miss");
+        assert_eq!(frame(17.0, true), frame(17.0, false), "hit == miss");
+        assert_eq!(frame(3.0, true), frame(3.0, false), "replay is stable");
+    }
+
+    #[test]
+    #[ignore]
+    fn perf_arboretum_frames() {
+        for (w, h) in [(80usize, 24usize), (150usize, 50usize)] {
+            let (mut g, _, p) = make(w, h, 42);
+            let knobs = ForestKnobs::from_env();
+            let start = std::time::Instant::now();
+            let frames = 300u32;
+            for i in 0..frames {
+                let t = (i as f32 / frames as f32) * 18.0;
+                let mut r = StdRng::seed_from_u64(42);
+                for row in g.iter_mut() {
+                    for c in row.iter_mut() {
+                        *c = Cell::blank();
+                    }
+                }
+                draw_arboretum(&mut g, w, h, 42, &p, &mut r, t, &knobs);
+            }
+            let elapsed = start.elapsed();
+            println!(
+                "{}x{}: {:.3} ms/frame over {} frames",
+                w,
+                h,
+                elapsed.as_secs_f64() * 1000.0 / frames as f64,
+                frames
+            );
+            // component split: static rebuild vs cached-frame render
+            let mut s = StdRng::seed_from_u64(42);
+            let sstart = std::time::Instant::now();
+            for _ in 0..frames {
+                let _ = render_static(w, h, 42, &p, &mut s, &knobs);
+            }
+            println!(
+                "  static rebuild: {:.3} ms/frame",
+                sstart.elapsed().as_secs_f64() * 1000.0 / frames as f64
+            );
+        }
     }
 
     #[test]
