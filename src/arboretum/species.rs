@@ -6,7 +6,7 @@ pub(super) fn grow_species(
     grid: &mut Grid,
     rx: i32,
     ry: i32,
-    budget: i32,
+    budget_full: i32,
     genome: &TreeGenome,
     cols: &TreeColors,
     rng: &mut StdRng,
@@ -14,16 +14,18 @@ pub(super) fn grow_species(
     foliage: f32,
     sway: f32,
 ) {
-    let budget = (3.0 + (budget.max(2) as f32 - 3.0) * ease_in_out(grow.clamp(0.0, 1.0))) as i32;
+    // eff scales extents with the life cycle; budget_full anchors every
+    // zone/width denominator so growth appends and never re-zones.
+    let budget = (3.0 + (budget_full.max(2) as f32 - 3.0) * ease_in_out(grow.clamp(0.0, 1.0))) as i32;
     let budget = budget.max(2);
     match genome.style {
-        TreeStyle::Conifer => conifer(grid, rx, ry, budget, genome, cols, rng, foliage, sway),
-        TreeStyle::Broadleaf => broadleaf(grid, rx, ry, budget, genome, cols, rng, foliage, sway),
-        TreeStyle::Willow => willow(grid, rx, ry, budget, genome, cols, rng, foliage, sway),
-        TreeStyle::Cypress => cypress(grid, rx, ry, budget, genome, cols, rng, foliage, sway),
-        TreeStyle::Babel => babel(grid, rx, ry, budget, genome, cols, rng, foliage, sway),
-        TreeStyle::Pleach => pleach(grid, rx, ry, budget, genome, cols, rng, foliage, sway),
-        TreeStyle::Uzumaki => uzumaki(grid, rx, ry, budget, genome, cols, rng, foliage, sway),
+        TreeStyle::Conifer => conifer(grid, rx, ry, budget, budget_full, genome, cols, rng, foliage, sway),
+        TreeStyle::Broadleaf => broadleaf(grid, rx, ry, budget, budget_full, genome, cols, rng, foliage, sway),
+        TreeStyle::Willow => willow(grid, rx, ry, budget, budget_full, genome, cols, rng, foliage, sway),
+        TreeStyle::Cypress => cypress(grid, rx, ry, budget, budget_full, genome, cols, rng, foliage, sway),
+        TreeStyle::Babel => babel(grid, rx, ry, budget, budget_full, genome, cols, rng, foliage, sway),
+        TreeStyle::Pleach => pleach(grid, rx, ry, budget, budget_full, genome, cols, rng, foliage, sway),
+        TreeStyle::Uzumaki => uzumaki(grid, rx, ry, budget, budget_full, genome, cols, rng, foliage, sway),
         TreeStyle::Classic => {}
     }
 }
@@ -72,9 +74,10 @@ fn base_start(grid: &mut Grid, rx: i32, ry: i32, budget: i32, genome: &TreeGenom
 
 // ── Conifer: straight spire, tiered needle whorls, cones ────────────
 
-fn conifer(grid: &mut Grid, rx: i32, ry: i32, budget: i32, genome: &TreeGenome, cols: &TreeColors, rng: &mut StdRng, foliage: f32, sway: f32) {
+fn conifer(grid: &mut Grid, rx: i32, ry: i32, budget: i32, budget_full: i32, genome: &TreeGenome, cols: &TreeColors, rng: &mut StdRng, foliage: f32, sway: f32) {
     let (tx, ty) = base_start(grid, rx, ry, budget, genome, cols, rng);
     let trunk_h = ((budget as f32) * (0.5 + 0.4 * genome.vigor)).max(2.0) as i32;
+    let full_n = ((budget_full as f32) * (0.5 + 0.4 * genome.vigor)).max(2.0) as i32;
     let lean_dx = (genome.lean + sway) * 0.4;
 
     let mut pen = TreePen::new(tx, ty, cols.trunk);
@@ -97,8 +100,8 @@ fn conifer(grid: &mut Grid, rx: i32, ry: i32, budget: i32, genome: &TreeGenome, 
         if i % step != 0 {
             continue;
         }
-        let from_top = (n - i) as f32 / n.max(1) as f32; // 0 top .. 1 bottom
-        let half = (1.0 + from_top * from_top * budget as f32 * 0.28 * genome.spread)
+        let from_top = (full_n as usize).saturating_sub(i) as f32 / full_n.max(1) as f32; // 0 top .. 1 bottom
+        let half = (1.0 + from_top * from_top * budget_full as f32 * 0.28 * genome.spread)
             .floor()
             .max(0.0) as i32;
         for dx in -half..=half {
@@ -132,7 +135,7 @@ fn conifer(grid: &mut Grid, rx: i32, ry: i32, budget: i32, genome: &TreeGenome, 
 
 // ── Broadleaf: short trunk, boughs flatten into a leafy dome ────────
 
-fn broadleaf(grid: &mut Grid, rx: i32, ry: i32, budget: i32, genome: &TreeGenome, cols: &TreeColors, rng: &mut StdRng, foliage: f32, sway: f32) {
+fn broadleaf(grid: &mut Grid, rx: i32, ry: i32, budget: i32, budget_full: i32, genome: &TreeGenome, cols: &TreeColors, rng: &mut StdRng, foliage: f32, sway: f32) {
     let (tx, ty) = base_start(grid, rx, ry, budget, genome, cols, rng);
     let trunk_h = ((budget as f32) * (0.2 + 0.18 * genome.vigor)).max(2.0) as i32;
 
@@ -185,7 +188,7 @@ fn broadleaf(grid: &mut Grid, rx: i32, ry: i32, budget: i32, genome: &TreeGenome
     }
 
     let leaf_glyphs = ['⠿', '⣿', '❀', '✿', '✳', '✶'];
-    let radius = 2.5 + genome.spread * 2.0 + budget as f32 * 0.08;
+    let radius = 2.5 + genome.spread * 2.0 + budget_full as f32 * 0.08;
     for &(cx, cy) in &crown_pts {
         let r = radius + rng.random::<f32>() * 1.5;
         let r2 = r * r;
@@ -214,7 +217,7 @@ fn broadleaf(grid: &mut Grid, rx: i32, ry: i32, budget: i32, genome: &TreeGenome
 
 // ── Willow: S-curved trunk, crown of falling strands ────────────────
 
-fn willow(grid: &mut Grid, rx: i32, ry: i32, budget: i32, genome: &TreeGenome, cols: &TreeColors, rng: &mut StdRng, foliage: f32, sway: f32) {
+fn willow(grid: &mut Grid, rx: i32, ry: i32, budget: i32, budget_full: i32, genome: &TreeGenome, cols: &TreeColors, rng: &mut StdRng, foliage: f32, sway: f32) {
     let (tx, ty) = base_start(grid, rx, ry, budget, genome, cols, rng);
     let trunk_h = ((budget as f32) * (0.3 + 0.25 * genome.vigor)).max(2.0) as i32;
 
@@ -240,12 +243,12 @@ fn willow(grid: &mut Grid, rx: i32, ry: i32, budget: i32, genome: &TreeGenome, c
     }
 
     let strand_n = (4.0 + genome.spread * 7.0) as usize;
-    let max_len = (budget as f32 * 0.5) as i32;
+    let max_len = (budget_full as f32 * 0.5) as i32;
     let strand_ch = ['╎', '┆'];
     let mut seeds_rng = StdRng::seed_from_u64(rx as u64 * 31 + ry as u64 * 17);
     for s in 0..strand_n {
         let srng = &mut seeds_rng;
-        let spread_w = (genome.spread * budget as f32 * 0.35).max(2.0) as i32;
+        let spread_w = (genome.spread * budget_full as f32 * 0.35).max(2.0) as i32;
         let sx = nodes
             .last()
             .map(|&(ax, _)| ax)
@@ -289,9 +292,10 @@ fn willow(grid: &mut Grid, rx: i32, ry: i32, budget: i32, genome: &TreeGenome, c
 
 // ── Babel: sane trunk that loses its mind as it climbs ──────────────
 
-fn babel(grid: &mut Grid, rx: i32, ry: i32, budget: i32, genome: &TreeGenome, cols: &TreeColors, rng: &mut StdRng, foliage: f32, sway: f32) {
+fn babel(grid: &mut Grid, rx: i32, ry: i32, budget: i32, budget_full: i32, genome: &TreeGenome, cols: &TreeColors, rng: &mut StdRng, foliage: f32, sway: f32) {
     let (tx, ty) = base_start(grid, rx, ry, budget, genome, cols, rng);
     let trunk_h = ((budget as f32) * (0.55 + 0.4 * genome.vigor)).max(6.0) as i32;
+    let trunk_full = ((budget_full as f32) * (0.55 + 0.4 * genome.vigor)).max(6.0) as i32;
     let helix = rng.random::<f32>() * std::f32::consts::TAU;
     let lean = genome.lean + sway;
 
@@ -299,7 +303,7 @@ fn babel(grid: &mut Grid, rx: i32, ry: i32, budget: i32, genome: &TreeGenome, co
     pen.last_dir = Some(MoveDir::Up);
     let mut nodes: Vec<(i32, i32, f32)> = Vec::new();
     for k in 0..trunk_h {
-        let f = k as f32 / trunk_h.max(1) as f32;
+        let f = k as f32 / trunk_full.max(1) as f32;
         let wood = lighten(cols.trunk, (f * 55.0) as u8);
         pen.color = wood;
         let dir = if f < 0.35 {
@@ -511,9 +515,10 @@ fn island(grid: &mut Grid, cx: i32, cy: i32, cols: &TreeColors, rng: &mut StdRng
 
 // ── Pleach: trained to one ceiling -- every tip lands on the same row ──
 
-fn pleach(grid: &mut Grid, rx: i32, ry: i32, budget: i32, genome: &TreeGenome, cols: &TreeColors, rng: &mut StdRng, foliage: f32, sway: f32) {
+fn pleach(grid: &mut Grid, rx: i32, ry: i32, budget: i32, budget_full: i32, genome: &TreeGenome, cols: &TreeColors, rng: &mut StdRng, foliage: f32, sway: f32) {
     let (tx, ty) = base_start(grid, rx, ry, budget, genome, cols, rng);
     let trunk_h = ((budget as f32) * (0.4 + 0.35 * genome.vigor)).max(4.0) as i32;
+    let full_n = ((budget_full as f32) * (0.4 + 0.35 * genome.vigor)).max(4.0) as i32;
     let ceiling = ty - trunk_h;
     let lean = genome.lean + sway;
 
@@ -537,14 +542,14 @@ fn pleach(grid: &mut Grid, rx: i32, ry: i32, budget: i32, genome: &TreeGenome, c
     let mut xmax = tx;
     for i in 0..arm_n {
         for side in [1i32, -1] {
-            let start_i = (n as f32 * (0.25 + 0.55 * (i as f32 + 1.0) / arm_n as f32)) as usize;
+            let start_i = (full_n as f32 * (0.25 + 0.55 * (i as f32 + 1.0) / arm_n as f32)) as usize;
             if start_i >= n {
                 continue;
             }
             let (sx, sy) = nodes[start_i];
             let mut ap = TreePen::new(sx, sy, cols.branch);
             ap.last_dir = Some(MoveDir::Up);
-            let reach = ((budget as f32) * 0.16 * (i as f32 + 1.0) / arm_n as f32 * genome.spread)
+            let reach = ((budget_full as f32) * 0.16 * (i as f32 + 1.0) / arm_n as f32 * genome.spread)
                 .max(2.0) as i32;
             let out_steps = reach / 2;
             for _ in 0..out_steps {
@@ -654,9 +659,10 @@ fn plot_spiral(grid: &mut Grid, cx: i32, cy: i32, r0: f32, turns: f32, cols: &Tr
     set(grid, cx, cy, '◉', cols.fruit);
 }
 
-fn uzumaki(grid: &mut Grid, rx: i32, ry: i32, budget: i32, genome: &TreeGenome, cols: &TreeColors, rng: &mut StdRng, foliage: f32, sway: f32) {
+fn uzumaki(grid: &mut Grid, rx: i32, ry: i32, budget: i32, budget_full: i32, genome: &TreeGenome, cols: &TreeColors, rng: &mut StdRng, foliage: f32, sway: f32) {
     let (tx, ty) = base_start(grid, rx, ry, budget, genome, cols, rng);
     let trunk_h = ((budget as f32) * (0.45 + 0.35 * genome.vigor)).max(5.0) as i32;
+    let trunk_full = ((budget_full as f32) * (0.45 + 0.35 * genome.vigor)).max(5.0) as i32;
     let phase = rng.random::<f32>() * std::f32::consts::TAU;
     let amp0 = 1.0 + genome.spread * 2.0;
     let spin = if rng.random::<f32>() < 0.5 { 1.0 } else { -1.0 };
@@ -665,7 +671,7 @@ fn uzumaki(grid: &mut Grid, rx: i32, ry: i32, budget: i32, genome: &TreeGenome, 
     pen.last_dir = Some(MoveDir::Up);
     let mut nodes: Vec<(i32, i32)> = Vec::new();
     for k in 0..trunk_h {
-        let f = k as f32 / trunk_h.max(1) as f32;
+        let f = k as f32 / trunk_full.max(1) as f32;
         let amp = (amp0 * (1.0 - f * 0.8)).max(0.0);
         let target = tx + (spin * (k as f32 * 0.7 + phase + sway * 3.0).sin() * amp).round() as i32;
         while pen.x != target {
@@ -702,7 +708,7 @@ fn uzumaki(grid: &mut Grid, rx: i32, ry: i32, budget: i32, genome: &TreeGenome, 
         let side = if t % 2 == 0 { 1 } else { -1 };
         let mut tp = TreePen::new(sx, sy, cols.branch);
         let mut dir = if side > 0 { MoveDir::UpRight } else { MoveDir::UpLeft };
-        let len = rng.random_range(3..((budget as f32 * 0.16) as i32).max(5));
+        let len = rng.random_range(3..((budget_full as f32 * 0.16) as i32).max(5));
         let curl = if rng.random::<f32>() < 0.5 { 1 } else { -1 };
         for s in 0..len {
             if s % 2 == 0 {
@@ -720,7 +726,7 @@ fn uzumaki(grid: &mut Grid, rx: i32, ry: i32, budget: i32, genome: &TreeGenome, 
 
     // vortex crown
     if let Some(&(ax, ay)) = nodes.last() {
-        let r0 = 2.0 + genome.spread * 2.5 + budget as f32 * 0.07;
+        let r0 = 2.0 + genome.spread * 2.5 + budget_full as f32 * 0.07;
         plot_spiral(grid, ax, ay - 1, r0, 2.2 + genome.spread, cols, rng, foliage);
         let offshoots = rng.random_range(1..3u32);
         for _ in 0..offshoots {
@@ -733,14 +739,15 @@ fn uzumaki(grid: &mut Grid, rx: i32, ry: i32, budget: i32, genome: &TreeGenome, 
 
 // ── Cypress: tight flame column, swaying tip ────────────────────────
 
-fn cypress(grid: &mut Grid, rx: i32, ry: i32, budget: i32, genome: &TreeGenome, cols: &TreeColors, rng: &mut StdRng, foliage: f32, sway: f32) {
+fn cypress(grid: &mut Grid, rx: i32, ry: i32, budget: i32, budget_full: i32, genome: &TreeGenome, cols: &TreeColors, rng: &mut StdRng, foliage: f32, sway: f32) {
     let (tx, ty) = base_start(grid, rx, ry, budget, genome, cols, rng);
     let h = ((budget as f32) * (0.65 + 0.3 * genome.vigor)).max(3.0) as i32;
-    let max_w = (1.0 + genome.spread * budget as f32 * 0.09).max(1.0) as i32;
+    let h_full = ((budget_full as f32) * (0.65 + 0.3 * genome.vigor)).max(3.0) as i32;
+    let max_w = (1.0 + genome.spread * budget_full as f32 * 0.09).max(1.0) as i32;
     let lean = genome.lean + sway;
 
     for k in 0..h {
-        let frac = k as f32 / h.max(1) as f32; // 0 base .. 1 tip
+        let frac = k as f32 / h_full.max(1) as f32; // 0 base .. 1 tip
         let y = ty - k;
         // width swells mid-column, narrows to the tip
         let bulge = (1.0 - (frac - 0.55).abs() / 0.55).max(0.0);

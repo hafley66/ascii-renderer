@@ -508,8 +508,8 @@ pub fn draw_arboretum(
             }
             let budget = size.round().clamp(3.0, (root_y - 1).max(3) as f32) as i32;
 
-            // Genome + colors for this tree; life-cycle phase from a side rng
-            // so the main stream (and the t=0 render) stays untouched.
+            // Per-tree rng: genome + growth draw from a stream keyed to
+            // (seed, layer, si), so one tree's growth never re-rolls its neighbors.
             let mut trng = StdRng::seed_from_u64(
                 seed ^ (layer as u64).wrapping_mul(0x9E37_79B9)
                     ^ (si as u64).wrapping_mul(0x85EB_CA6B),
@@ -541,8 +541,8 @@ pub fn draw_arboretum(
             } else {
                 0.0
             };
-            let mut genome = TreeGenome::roll(rng);
-            genome.style = roll_style(rng, knobs.species_mix);
+            let mut genome = TreeGenome::roll(&mut trng);
+            genome.style = roll_style(&mut trng, knobs.species_mix);
             genome.lean = (genome.lean + knobs.gale).clamp(-1.0, 1.0);
             let hue = (tree_base_hue
                 + wx as f64 / width as f64 * knobs.drift as f64
@@ -556,7 +556,7 @@ pub fn draw_arboretum(
             let leaf = hsl_to_rgb((hue + 25.0).rem_euclid(360.0), (sat * 1.2).min(0.85), (light + 0.08).min(0.5));
             let fruit = hsl_to_rgb((hue + 120.0).rem_euclid(360.0), (sat * 1.3).min(0.9), (light + 0.14).min(0.55));
             let cols = TreeColors { trunk, branch, leaf, fruit };
-            grow_tree(grid, wx as i32, root_y as i32, budget, &genome, &cols, rng, grow, foliage, sway);
+            grow_tree(grid, wx as i32, root_y as i32, budget, &genome, &cols, &mut trng, grow, foliage, sway);
         }
     }
 
@@ -688,6 +688,37 @@ mod tests {
         assert_eq!(run(0.0), run(0.0), "t=0 deterministic");
         assert_ne!(run(0.0), run(2.5), "t should move the life cycle");
         assert_ne!(run(2.5), run(4.0), "cycle keeps advancing");
+    }
+
+    #[test]
+    fn animation_frames_are_locally_stable() {
+        // one player tick must nudge the scene, not re-roll it: per-tree rng
+        // streams are keyed to (seed, layer, si) and never shift neighbors.
+        let frame = |t: f32| {
+            let (mut g, mut r, p) = make(80, 24, 42);
+            let knobs = ForestKnobs::from_env();
+            draw_arboretum(&mut g, 80, 24, 42, &p, &mut r, t, &knobs);
+            g
+        };
+        let a = frame(30.0);
+        let b = frame(30.6);
+        let mut changed = 0usize;
+        let mut total = 0usize;
+        for (ra, rb) in a.iter().zip(b.iter()) {
+            for (ca, cb) in ra.iter().zip(rb.iter()) {
+                total += 1;
+                if ca.ch != cb.ch {
+                    changed += 1;
+                }
+            }
+        }
+        assert!(changed > 0, "a tick must move something");
+        assert!(
+            (changed as f64) / (total as f64) < 0.08,
+            "tick changed {}/{} cells -- trees are re-rolling, not growing",
+            changed,
+            total
+        );
     }
 
     #[test]
