@@ -14,6 +14,18 @@ use rand::rngs::StdRng;
 
 // ── Tree genome: the 10 per-tree knobs ──────────────────────────────
 
+mod species;
+pub use species::*;
+
+#[derive(Clone, Copy, PartialEq)]
+pub enum TreeStyle {
+    Classic,   // original alternating-bough grower (grow_tree body)
+    Conifer,   // tiered whorls, needles, cones
+    Broadleaf, // short trunk, wide dome of clustered leaves
+    Willow,    // crown of falling strands
+    Cypress,   // tight flame column
+}
+
 pub struct TreeGenome {
     pub vigor: f32,          // 0.15..1.0 -- energy: trunk fraction, tip count
     pub bole: Option<usize>, // root style 0..34 -- initial conditions
@@ -25,6 +37,20 @@ pub struct TreeGenome {
     pub orders: u8,          // 1..=4 -- branching recursion (venation)
     pub leafage: f32,        // 0..1 -- leaf density on outer twigs
     pub fruition: f32,       // 0..1 -- fruit chance per tip
+    pub style: TreeStyle,    // growth habit (picks the renderer)
+}
+
+/// Roll a style: `mix` 0 = all Classic, 1 = never Classic.
+pub fn roll_style(rng: &mut StdRng, mix: f32) -> TreeStyle {
+    if rng.random::<f32>() > mix {
+        return TreeStyle::Classic;
+    }
+    match rng.random_range(0..4u32) {
+        0 => TreeStyle::Conifer,
+        1 => TreeStyle::Broadleaf,
+        2 => TreeStyle::Willow,
+        _ => TreeStyle::Cypress,
+    }
 }
 
 impl TreeGenome {
@@ -51,6 +77,7 @@ impl TreeGenome {
             orders: rng.random_range(1..=4),
             leafage: rng.random::<f32>(),
             fruition: rng.random::<f32>() * 0.8,
+            style: TreeStyle::Classic,
         }
     }
 }
@@ -90,6 +117,10 @@ struct GrowCtx<'a> {
 /// Grow one tree rooted at (rx, ry) with `budget` rows of vertical space
 /// (3 = sapling, full height = ancient); grow=1, foliage=1, sway=0 is the static tree.
 pub fn grow_tree(grid: &mut Grid, rx: i32, ry: i32, budget: i32, genome: &TreeGenome, cols: &TreeColors, rng: &mut StdRng, grow: f32, foliage: f32, sway: f32) {
+    if genome.style != TreeStyle::Classic {
+        species::grow_species(grid, rx, ry, budget, genome, cols, rng, grow, foliage, sway);
+        return;
+    }
     let mut genome = TreeGenome {
         vigor: genome.vigor,
         bole: genome.bole,
@@ -101,6 +132,7 @@ pub fn grow_tree(grid: &mut Grid, rx: i32, ry: i32, budget: i32, genome: &TreeGe
         orders: genome.orders,
         leafage: genome.leafage * foliage,
         fruition: genome.fruition * foliage,
+        style: TreeStyle::Classic,
     };
     let budget = (3.0 + (budget.max(2) as f32 - 3.0) * ease_in_out(grow.clamp(0.0, 1.0))) as i32;
     let budget = budget.max(2);
@@ -314,6 +346,7 @@ pub struct ForestKnobs {
     pub drift: f32,     // hue drift across the grove (degrees)
     pub haze: f32,      // atmospheric depth fade
     pub clearings: f32, // fraction of stops left open
+    pub species_mix: f32, // 0 = classic only, 1 = no classic
 }
 
 impl ForestKnobs {
@@ -329,6 +362,7 @@ impl ForestKnobs {
             drift: param_f32("DRIFT", 60.0).clamp(-180.0, 180.0),
             haze: param_f32("HAZE", 0.45).clamp(0.0, 1.0),
             clearings: param_f32("CLEAR", 0.25).clamp(0.0, 1.0),
+            species_mix: param_f32("SPECIES", 0.7).clamp(0.0, 1.0),
         }
     }
 }
@@ -475,33 +509,34 @@ pub fn draw_arboretum(
                     ^ (si as u64).wrapping_mul(0x85EB_CA6B),
             );
             let phase = trng.random::<f32>();
-            let cycle = 7.0 + trng.random::<f32>() * 5.0;
+            let cycle = 70.0 + trng.random::<f32>() * 40.0;
             let (grow, foliage) = if animating {
                 let p = ((t * speed) / cycle + phase).fract();
-                let g = if p < 0.62 {
-                    ease_in_out(p / 0.62)
-                } else if p < 0.86 {
+                let g = if p < 0.45 {
+                    ease_in_out(p / 0.45)
+                } else if p < 0.92 {
                     1.0
                 } else {
-                    1.0 - ease_in_out((p - 0.86) / 0.14)
+                    1.0 - ease_in_out((p - 0.92) / 0.08)
                 };
-                let f = if p < 0.5 {
-                    ease_in_out(p / 0.5)
-                } else if p < 0.78 {
+                let f = if p < 0.35 {
+                    ease_in_out(p / 0.35)
+                } else if p < 0.85 {
                     1.0
                 } else {
-                    1.0 - ease_in_out((p - 0.78) / 0.22)
+                    1.0 - ease_in_out((p - 0.85) / 0.15)
                 };
                 (g, f)
             } else {
                 (1.0, 1.0)
             };
             let sway = if animating {
-                knobs.gale * 0.3 * (t * speed * 1.3 + phase * std::f32::consts::TAU).sin()
+                knobs.gale * 0.3 * (t * speed * 0.5 + phase * std::f32::consts::TAU).sin()
             } else {
                 0.0
             };
             let mut genome = TreeGenome::roll(rng);
+            genome.style = roll_style(rng, knobs.species_mix);
             genome.lean = (genome.lean + knobs.gale).clamp(-1.0, 1.0);
             let hue = (tree_base_hue
                 + wx as f64 / width as f64 * knobs.drift as f64
@@ -519,18 +554,42 @@ pub fn draw_arboretum(
         }
     }
 
-    // Undergrowth: tufts and fern curls along the ground line
-    let tufts = [',', '"', ';', 'w', 'W', '༊'];
-    for x in 0..width {
+    // Undergrowth: swaying tufts + bush clusters along the ground line
+    let tufts = [',', '"', ';', 'w', 'W', '⋏'];
+    let bush_glyphs = ['⠿', '⣿', '❀', '✿', '✳'];
+    let sway_idx = |x: usize, tt: f32, n: usize| {
+        (((tt * 2.0 + x as f32 * 0.8).sin() * 0.5 + 0.5) * n as f32) as usize % n
+    };
+    let mut x = 0usize;
+    while x < width {
         if rng.random::<f32>() < knobs.ferns * 0.22 {
             let y = ground[x].saturating_sub(1);
             let h = (ground_hue + rng.random_range(-20..40) as f64).rem_euclid(360.0);
             let c = hsl_to_rgb(h, 0.5, 0.22 + rng.random::<f64>() * 0.1);
-            let g = tufts[rng.random_range(0..tufts.len() as u32) as usize];
-            if blank_at(grid, x as i32, y as i32) {
-                grid[y][x] = Cell::new(g, c);
+            let bushy = knobs.ferns > 0.55 && rng.random::<f32>() < 0.35 && x + 4 < width;
+            if bushy {
+                let n = 3 + rng.random_range(0..3) as usize;
+                for dx in 0..n {
+                    let bx = x + dx;
+                    let peak = (n as i32 / 2) - (dx as i32 - n as i32 / 2).abs();
+                    let hgt = (peak + 1).clamp(1, 3) as usize;
+                    for dy in 0..hgt {
+                        let by = ground[bx].saturating_sub(1 + dy);
+                        let g = bush_glyphs[sway_idx(bx, t, bush_glyphs.len())];
+                        if blank_at(grid, bx as i32, by as i32) {
+                            grid[by][bx] = Cell::new(g, c);
+                        }
+                    }
+                }
+                x += 4;
+            } else {
+                let g = tufts[sway_idx(x, t, tufts.len())];
+                if blank_at(grid, x as i32, y as i32) {
+                    grid[y][x] = Cell::new(g, c);
+                }
             }
         }
+        x += 1;
     }
 }
 

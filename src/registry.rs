@@ -240,6 +240,7 @@ pub(crate) static MODE_FORMS: &[ModeForm] = &[
             param!("HAZE", "haze", 0.0, 1.0, 0.45, 0.05),
             param!("CLEAR", "clearings", 0.0, 1.0, 0.25, 0.05),
             param!("SPEED", "anim speed", 0.1, 3.0, 1.0, 0.1),
+            param!("SPECIES", "species mix", 0.0, 1.0, 0.7, 0.05),
         ],
     },
     ModeForm { names: &["stained"], animate: AnimKind::Vflow, params: &[] },

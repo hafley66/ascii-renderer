@@ -1,0 +1,20 @@
+---
+source: src/arboretum/species.rs
+expression: "species_grid(TreeStyle::Conifer)"
+---
+                                  
+                ╲▲╱               
+                 │                
+                 │╱               
+                 │                
+                ╲│╱               
+                 │                
+               ╲∧│∧╱              
+               ◆ │                
+               ╲∧│∧               
+                 │                
+              ╲ ∧│∧∧╱             
+                 │                
+                ╱│╲               
+               ╱─│─╲              
+             ╘◆══╨══◇╛
