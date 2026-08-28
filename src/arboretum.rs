@@ -25,6 +25,7 @@ pub enum TreeStyle {
     Willow,    // crown of falling strands
     Cypress,   // tight flame column
     Babel,     // sane trunk that loses its mind as it climbs
+    Pleach,    // trained to one ceiling: every tip meets the same row
 }
 
 pub struct TreeGenome {
@@ -46,12 +47,13 @@ pub fn roll_style(rng: &mut StdRng, mix: f32) -> TreeStyle {
     if rng.random::<f32>() > mix {
         return TreeStyle::Classic;
     }
-    match rng.random_range(0..5u32) {
+    match rng.random_range(0..6u32) {
         0 => TreeStyle::Conifer,
         1 => TreeStyle::Broadleaf,
         2 => TreeStyle::Willow,
         3 => TreeStyle::Cypress,
-        _ => TreeStyle::Babel,
+        4 => TreeStyle::Babel,
+        _ => TreeStyle::Pleach,
     }
 }
 

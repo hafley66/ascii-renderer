@@ -22,6 +22,7 @@ pub(super) fn grow_species(
         TreeStyle::Willow => willow(grid, rx, ry, budget, genome, cols, rng, foliage, sway),
         TreeStyle::Cypress => cypress(grid, rx, ry, budget, genome, cols, rng, foliage, sway),
         TreeStyle::Babel => babel(grid, rx, ry, budget, genome, cols, rng, foliage, sway),
+        TreeStyle::Pleach => pleach(grid, rx, ry, budget, genome, cols, rng, foliage, sway),
         TreeStyle::Classic => {}
     }
 }
@@ -507,6 +508,105 @@ fn island(grid: &mut Grid, cx: i32, cy: i32, cols: &TreeColors, rng: &mut StdRng
     }
 }
 
+// ── Pleach: trained to one ceiling -- every tip lands on the same row ──
+
+fn pleach(grid: &mut Grid, rx: i32, ry: i32, budget: i32, genome: &TreeGenome, cols: &TreeColors, rng: &mut StdRng, foliage: f32, sway: f32) {
+    let (tx, ty) = base_start(grid, rx, ry, budget, genome, cols, rng);
+    let trunk_h = ((budget as f32) * (0.4 + 0.35 * genome.vigor)).max(4.0) as i32;
+    let ceiling = ty - trunk_h;
+    let lean = genome.lean + sway;
+
+    let mut pen = TreePen::new(tx, ty, cols.trunk);
+    pen.last_dir = Some(MoveDir::Up);
+    let mut nodes: Vec<(i32, i32)> = Vec::new();
+    while pen.y > ceiling {
+        let dir = if pen.y - ceiling > trunk_h * 2 / 3 && lean.abs() > 0.5 {
+            if lean > 0.0 { MoveDir::UpRight } else { MoveDir::UpLeft }
+        } else {
+            MoveDir::Up
+        };
+        pen.step(grid, dir);
+        nodes.push((pen.x, pen.y));
+    }
+
+    // Candelabra arms: start low on the trunk, arc out and up, tip exactly on the ceiling.
+    let arm_n = 2 + (genome.spread * 3.0) as i32;
+    let n = nodes.len();
+    let mut xmin = tx;
+    let mut xmax = tx;
+    for i in 0..arm_n {
+        for side in [1i32, -1] {
+            let start_i = (n as f32 * (0.25 + 0.55 * (i as f32 + 1.0) / arm_n as f32)) as usize;
+            if start_i >= n {
+                continue;
+            }
+            let (sx, sy) = nodes[start_i];
+            let mut ap = TreePen::new(sx, sy, cols.branch);
+            ap.last_dir = Some(MoveDir::Up);
+            let reach = ((budget as f32) * 0.16 * (i as f32 + 1.0) / arm_n as f32 * genome.spread)
+                .max(2.0) as i32;
+            let out_steps = reach / 2;
+            for _ in 0..out_steps {
+                ap.step(grid, if side > 0 { MoveDir::UpRight } else { MoveDir::UpLeft });
+            }
+            while ap.y > ceiling {
+                let climb = if ap.y - ceiling > 2 {
+                    if side > 0 { MoveDir::Right } else { MoveDir::Left }
+                } else {
+                    MoveDir::Up
+                };
+                let d = if ap.y - ceiling > 2 && rng.random::<f32>() < 0.4 {
+                    MoveDir::Up
+                } else {
+                    climb
+                };
+                ap.step(grid, d);
+            }
+            set(grid, ap.x, ap.y, '╷', lighten(cols.branch, 30));
+            xmin = xmin.min(ap.x);
+            xmax = xmax.max(ap.x);
+        }
+    }
+
+    // Ceiling band: the trained line itself, leaves knuckling on it, pendants below.
+    let mut x = xmin;
+    while x <= xmax {
+        let inb = ceiling >= 0 && x >= 0 && (ceiling as usize) < grid.len() && (x as usize) < grid[0].len();
+        let on_line = if inb { grid[ceiling as usize][x as usize].ch } else { ' ' };
+        if on_line == ' ' || on_line == '│' {
+            set(grid, x, ceiling, '─', cols.branch);
+        }
+        if rng.random::<f32>() < genome.leafage * foliage * 0.5 {
+            let g = ['⠿', '❀', '✿'][rng.random_range(0..3) as usize];
+            if on_line == ' ' {
+                set(grid, x, ceiling, g, lighten(cols.leaf, 15));
+            }
+        }
+        if x % 3 == 1 {
+            let plen = rng.random_range(1..=(budget / 4).max(2)) as i32;
+            let mut py = ceiling + 1;
+            let mut px = x;
+            let ch = if rng.random::<f32>() < 0.5 { '╎' } else { '┆' };
+            for _ in 0..plen {
+                if py > ry {
+                    break;
+                }
+                if blank_at(grid, px, py) {
+                    set(grid, px, py, ch, cols.branch);
+                }
+                if rng.random::<f32>() < sway.abs() * 0.4 {
+                    px += if sway > 0.0 { 1 } else { -1 };
+                }
+                py += 1;
+            }
+            if rng.random::<f32>() < genome.fruition * foliage * 0.5 && py <= ry {
+                set(grid, px, py.saturating_sub(1), '◆', cols.fruit);
+            }
+        }
+        x += 1;
+    }
+}
+
 // ── Cypress: tight flame column, swaying tip ────────────────────────
 
 fn cypress(grid: &mut Grid, rx: i32, ry: i32, budget: i32, genome: &TreeGenome, cols: &TreeColors, rng: &mut StdRng, foliage: f32, sway: f32) {
@@ -591,6 +691,35 @@ mod tests {
     #[test]
     fn snapshot_babel() {
         insta::assert_snapshot!("arboretum_babel", species_grid(TreeStyle::Babel));
+    }
+
+    #[test]
+    fn snapshot_pleach() {
+        insta::assert_snapshot!("arboretum_pleach", species_grid(TreeStyle::Pleach));
+    }
+
+    #[test]
+    fn pleach_tips_meet_one_row() {
+        let mut g = vec![vec![Cell::blank(); 40]; 20];
+        let mut r = StdRng::seed_from_u64(42);
+        let genome = TreeGenome { style: TreeStyle::Pleach, ..TreeGenome::roll(&mut r) };
+        grow_tree(&mut g, 20, 18, 16, &genome, &cols(), &mut r, 1.0, 1.0, 0.0);
+        // every arm tip '╷' must sit on a single row, and nothing may sit above it
+        let mut tip_rows: Vec<usize> = Vec::new();
+        let mut topmost = g.len();
+        for (y, row) in g.iter().enumerate() {
+            for c in row {
+                if c.ch != ' ' {
+                    topmost = topmost.min(y);
+                }
+                if c.ch == '╷' {
+                    tip_rows.push(y);
+                }
+            }
+        }
+        assert!(tip_rows.len() >= 2, "expected several trained tips, got {}", tip_rows.len());
+        assert_eq!(tip_rows[0], tip_rows[tip_rows.len() - 1], "tips must share one row: {:?}", tip_rows);
+        assert_eq!(topmost, tip_rows[0], "nothing may rise above the shared ceiling");
     }
 
     #[test]
