@@ -23,6 +23,7 @@ pub(super) fn grow_species(
         TreeStyle::Cypress => cypress(grid, rx, ry, budget, genome, cols, rng, foliage, sway),
         TreeStyle::Babel => babel(grid, rx, ry, budget, genome, cols, rng, foliage, sway),
         TreeStyle::Pleach => pleach(grid, rx, ry, budget, genome, cols, rng, foliage, sway),
+        TreeStyle::Uzumaki => uzumaki(grid, rx, ry, budget, genome, cols, rng, foliage, sway),
         TreeStyle::Classic => {}
     }
 }
@@ -607,6 +608,129 @@ fn pleach(grid: &mut Grid, rx: i32, ry: i32, budget: i32, genome: &TreeGenome, c
     }
 }
 
+// ── Uzumaki: spiral horror -- helix trunk tightening into a vortex ──
+
+const DIR_CYCLE: [MoveDir; 8] = [
+    MoveDir::Up,
+    MoveDir::UpRight,
+    MoveDir::Right,
+    MoveDir::DownRight,
+    MoveDir::Down,
+    MoveDir::DownLeft,
+    MoveDir::Left,
+    MoveDir::UpLeft,
+];
+
+fn turn(dir: MoveDir, by: i32) -> MoveDir {
+    let i = DIR_CYCLE.iter().position(|&d| d == dir).unwrap_or(0) as i32;
+    DIR_CYCLE[((i + by).rem_euclid(8)) as usize]
+}
+
+fn plot_spiral(grid: &mut Grid, cx: i32, cy: i32, r0: f32, turns: f32, cols: &TreeColors, rng: &mut StdRng, foliage: f32) {
+    let theta_max = turns * std::f32::consts::TAU;
+    let mut theta = 0.0;
+    while theta < theta_max {
+        let r = r0 * (1.0 - theta / theta_max);
+        let x = cx + (theta.cos() * r * 1.6).round() as i32; // widen: cells are tall
+        let y = cy - (theta.sin() * r * 0.8).round() as i32;
+        let frac = theta / theta_max;
+        let ch = if frac > 0.75 {
+            '◌'
+        } else if frac > 0.45 {
+            '∘'
+        } else if rng.random::<f32>() < 0.85 {
+            '·'
+        } else {
+            '○'
+        };
+        if rng.random::<f32>() < 0.9 * foliage.max(0.35) {
+            let c = lighten(cols.leaf, (frac * 35.0) as u8);
+            if blank_at(grid, x, y) {
+                set(grid, x, y, ch, c);
+            }
+        }
+        theta += 0.45;
+    }
+    set(grid, cx, cy, '◉', cols.fruit);
+}
+
+fn uzumaki(grid: &mut Grid, rx: i32, ry: i32, budget: i32, genome: &TreeGenome, cols: &TreeColors, rng: &mut StdRng, foliage: f32, sway: f32) {
+    let (tx, ty) = base_start(grid, rx, ry, budget, genome, cols, rng);
+    let trunk_h = ((budget as f32) * (0.45 + 0.35 * genome.vigor)).max(5.0) as i32;
+    let phase = rng.random::<f32>() * std::f32::consts::TAU;
+    let amp0 = 1.0 + genome.spread * 2.0;
+    let spin = if rng.random::<f32>() < 0.5 { 1.0 } else { -1.0 };
+
+    let mut pen = TreePen::new(tx, ty, cols.trunk);
+    pen.last_dir = Some(MoveDir::Up);
+    let mut nodes: Vec<(i32, i32)> = Vec::new();
+    for k in 0..trunk_h {
+        let f = k as f32 / trunk_h.max(1) as f32;
+        let amp = (amp0 * (1.0 - f * 0.8)).max(0.0);
+        let target = tx + (spin * (k as f32 * 0.7 + phase + sway * 3.0).sin() * amp).round() as i32;
+        while pen.x != target {
+            pen.step(grid, if pen.x < target { MoveDir::Right } else { MoveDir::Left });
+        }
+        pen.step(grid, MoveDir::Up);
+        nodes.push((pen.x, pen.y));
+        // ghost strand: the far side of the helix, drawn dim
+        let gx = tx + (spin * (k as f32 * 0.7 + phase + std::f32::consts::PI + sway * 3.0).sin() * amp).round() as i32;
+        if (gx - pen.x).abs() > 1 && blank_at(grid, gx, pen.y) {
+            set(grid, gx, pen.y, '┆', darken(cols.trunk, 12));
+        }
+        // whorls knotting up the trunk
+        if k % 5 == 2 && rng.random::<f32>() < 0.7 {
+            let w = if spin > 0.0 { '◠' } else { '◡' };
+            if blank_at(grid, pen.x + 1, pen.y) {
+                set(grid, pen.x + 1, pen.y, w, darken(cols.branch, 8));
+            }
+        }
+    }
+    // the eye, mid-trunk: it watches
+    let (ex, ey) = nodes[trunk_h as usize / 2];
+    set(grid, ex, ey, '◉', cols.fruit);
+    for d in [(0i32, -1), (0, 1), (-1, 0), (1, 0)] {
+        if blank_at(grid, ex + d.0, ey + d.1) {
+            set(grid, ex + d.0, ey + d.1, '·', darken(cols.fruit, 20));
+        }
+    }
+
+    // coiling tendrils: constant-turn turtles that wind themselves up
+    let tendril_n = 3 + (genome.boughs * 3.0) as u32;
+    for t in 0..tendril_n {
+        let (sx, sy) = nodes[((t as f32 / tendril_n as f32 * nodes.len() as f32 * 0.7) as usize).min(nodes.len() - 1)];
+        let side = if t % 2 == 0 { 1 } else { -1 };
+        let mut tp = TreePen::new(sx, sy, cols.branch);
+        let mut dir = if side > 0 { MoveDir::UpRight } else { MoveDir::UpLeft };
+        let len = rng.random_range(3..((budget as f32 * 0.16) as i32).max(5));
+        let curl = if rng.random::<f32>() < 0.5 { 1 } else { -1 };
+        for s in 0..len {
+            if s % 2 == 0 {
+                dir = turn(dir, curl);
+            }
+            tp.step(grid, dir);
+            if rng.random::<f32>() < genome.leafage * foliage * 0.35 && blank_at(grid, tp.x, tp.y - 1) {
+                set(grid, tp.x, tp.y - 1, '∘', lighten(cols.leaf, 10));
+            }
+        }
+        if rng.random::<f32>() < genome.fruition * foliage {
+            set(grid, tp.x, tp.y, '◌', cols.fruit);
+        }
+    }
+
+    // vortex crown
+    if let Some(&(ax, ay)) = nodes.last() {
+        let r0 = 2.0 + genome.spread * 2.5 + budget as f32 * 0.07;
+        plot_spiral(grid, ax, ay - 1, r0, 2.2 + genome.spread, cols, rng, foliage);
+        let offshoots = rng.random_range(1..3u32);
+        for _ in 0..offshoots {
+            let ox = ax + rng.random_range(-6..7);
+            let oy = ay - rng.random_range(1..5);
+            plot_spiral(grid, ox, oy, r0 * 0.5, 1.6, cols, rng, foliage);
+        }
+    }
+}
+
 // ── Cypress: tight flame column, swaying tip ────────────────────────
 
 fn cypress(grid: &mut Grid, rx: i32, ry: i32, budget: i32, genome: &TreeGenome, cols: &TreeColors, rng: &mut StdRng, foliage: f32, sway: f32) {
@@ -696,6 +820,37 @@ mod tests {
     #[test]
     fn snapshot_pleach() {
         insta::assert_snapshot!("arboretum_pleach", species_grid(TreeStyle::Pleach));
+    }
+
+    #[test]
+    fn snapshot_uzumaki() {
+        insta::assert_snapshot!("arboretum_uzumaki", species_grid(TreeStyle::Uzumaki));
+    }
+
+    #[test]
+    fn uzumaki_trunk_coils_and_crown_vortexes() {
+        let mut g = vec![vec![Cell::blank(); 40]; 20];
+        let mut r = StdRng::seed_from_u64(42);
+        let genome = TreeGenome { style: TreeStyle::Uzumaki, ..TreeGenome::roll(&mut r) };
+        grow_tree(&mut g, 20, 18, 16, &genome, &cols(), &mut r, 1.0, 1.0, 0.0);
+        let rows: Vec<String> = g
+            .iter()
+            .map(|row| row.iter().map(|c| c.ch).collect())
+            .collect();
+        // trunk zone must wander: not all wood in one column
+        let mut cols_with_wood = std::collections::HashSet::new();
+        for row in rows.iter().take(16).skip(2) {
+            for (x, ch) in row.char_indices() {
+                if ch == '│' || ch == '╱' || ch == '╲' {
+                    cols_with_wood.insert(x);
+                }
+            }
+        }
+        assert!(cols_with_wood.len() >= 2, "helix trunk should span columns: {:?}", cols_with_wood);
+        // crown must hold spiral glyphs and an eye
+        let crown: String = rows[1..8].concat();
+        assert!(crown.contains('◌'), "crown needs inner spiral marks");
+        assert!(crown.contains('◉'), "crown needs a vortex eye");
     }
 
     #[test]
