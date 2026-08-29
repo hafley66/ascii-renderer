@@ -256,6 +256,18 @@ pub(crate) static MODE_FORMS: &[ModeForm] = &[
             param!("ZOD", "ecliptic", 0.0, 1.0, 1.0, 0.05),
         ],
     },
+    ModeForm {
+        names: &["sauron"],
+        animate: AnimKind::Iterate,
+        params: &[
+            param!("BLAZE", "blaze", 0.0, 2.0, 1.0, 0.1),
+            param!("GAZE", "gaze", 0.0, 1.0, 0.8, 0.05),
+            param!("SLIT", "slit width", 1.0, 5.0, 2.0, 1.0),
+            param!("IRIS", "iris size", 0.15, 0.95, 0.7, 0.05),
+            param!("EMBERS", "embers", 0.0, 90.0, 26.0, 2.0),
+            param!("TURB", "turbulence", 0.0, 3.0, 1.0, 0.1),
+        ],
+    },
     ModeForm { names: &["stained"], animate: AnimKind::Vflow, params: &[] },
     ModeForm {
         names: &["chimera"],

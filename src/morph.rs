@@ -206,6 +206,10 @@ pub(crate) fn iterate_grid(mode: &str, seed: u64, theme: &str, w: usize, h: usiz
             crate::astrolabe::draw_astrolabe(&mut grid, w, h, seed, &palette, t);
             Some(grid)
         }
+        "sauron" => {
+            crate::sauron::draw_sauron(&mut grid, w, h, seed, &palette, t);
+            Some(grid)
+        }
         "spiro" => Some(draw_spiro(grid, w, h, seed, palette, rng, t, &[])),
         "spiro-tile" => Some(draw_spiro_tile(grid, w, h, seed, palette, rng, t, &[])),
         "weave" => Some(draw_weave(grid, w, h, seed, palette, rng, t, &[])),

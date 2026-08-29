@@ -35,6 +35,7 @@ use crate::registry::*;
 use crate::warps::*;
 use crate::arboretum::cli_arboretum;
 use crate::astrolabe::cli_astrolabe;
+use crate::sauron::cli_sauron;
 use crate::cli_basic::*;
 use crate::cli_catalog::*;
 use crate::cli_city::*;
@@ -177,6 +178,9 @@ pub(crate) fn run() {
         );
         eprintln!(
             "  astrolabe Brass instrument: limb, tympan, precessing star rete, sweeping rule (a=animate)"
+        );
+        eprintln!(
+            "  sauron    The great eye: slit pupil wandering in a fire wall, embers, smoke (a=animate)"
         );
         eprintln!("  swatch    Color swatches for all named themes");
         eprintln!();
@@ -918,6 +922,12 @@ pub(crate) fn run() {
         }
     } else if mode == "astrolabe" {
         let (g, done) = cli_astrolabe(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        grid = g;
+        if done {
+            return;
+        }
+    } else if mode == "sauron" {
+        let (g, done) = cli_sauron(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
         grid = g;
         if done {
             return;
