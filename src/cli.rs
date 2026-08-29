@@ -34,6 +34,7 @@ use crate::pp::*;
 use crate::registry::*;
 use crate::warps::*;
 use crate::arboretum::cli_arboretum;
+use crate::astrolabe::cli_astrolabe;
 use crate::cli_basic::*;
 use crate::cli_catalog::*;
 use crate::cli_city::*;
@@ -173,6 +174,9 @@ pub(crate) fn run() {
         );
         eprintln!(
             "  arboretum Genome-driven grove: 10 tree knobs x 10 forest knobs, sapling to ancient [strata] [density]"
+        );
+        eprintln!(
+            "  astrolabe Brass instrument: limb, tympan, precessing star rete, sweeping rule (a=animate)"
         );
         eprintln!("  swatch    Color swatches for all named themes");
         eprintln!();
@@ -908,6 +912,12 @@ pub(crate) fn run() {
         }
     } else if mode == "arboretum" {
         let (g, done) = cli_arboretum(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        grid = g;
+        if done {
+            return;
+        }
+    } else if mode == "astrolabe" {
+        let (g, done) = cli_astrolabe(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
         grid = g;
         if done {
             return;

@@ -539,3 +539,8 @@ fn arboretum_seed_42() {
 fn arboretum_dense_1_layer() {
     insta::assert_snapshot!(render(&["42", "arboretum", "ember", "1", "40"]));
 }
+
+#[test]
+fn astrolabe_seed_42() {
+    insta::assert_snapshot!(render(&["42", "astrolabe", "ember"]));
+}

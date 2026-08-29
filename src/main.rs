@@ -4,6 +4,7 @@
 mod registry;
 
 mod arboretum;
+mod astrolabe;
 mod automata;
 mod avant;
 mod biomes;
@@ -45,6 +46,7 @@ use rand::rngs::StdRng;
 use std::io::{self, IsTerminal, Read as _};
 
 use arboretum::*;
+use astrolabe::*;
 use automata::*;
 use avant::*;
 use biomes::*;

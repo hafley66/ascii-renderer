@@ -202,6 +202,10 @@ pub(crate) fn iterate_grid(mode: &str, seed: u64, theme: &str, w: usize, h: usiz
             let knobs = crate::arboretum::ForestKnobs::from_env();
             Some(crate::arboretum::render_arboretum_frame(w, h, seed, &palette, rng, t, &knobs))
         }
+        "astrolabe" => {
+            crate::astrolabe::draw_astrolabe(&mut grid, w, h, seed, &palette, t);
+            Some(grid)
+        }
         "spiro" => Some(draw_spiro(grid, w, h, seed, palette, rng, t, &[])),
         "spiro-tile" => Some(draw_spiro_tile(grid, w, h, seed, palette, rng, t, &[])),
         "weave" => Some(draw_weave(grid, w, h, seed, palette, rng, t, &[])),

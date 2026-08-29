@@ -243,6 +243,19 @@ pub(crate) static MODE_FORMS: &[ModeForm] = &[
             param!("SPECIES", "species mix", 0.0, 1.0, 0.7, 0.05),
         ],
     },
+    ModeForm {
+        names: &["astrolabe"],
+        animate: AnimKind::Iterate,
+        params: &[
+            param!("STARS", "stars", 10.0, 110.0, 42.0, 2.0),
+            param!("RINGS", "almucantars", 2.0, 9.0, 5.0, 1.0),
+            param!("SPOKES", "azimuths", 4.0, 16.0, 8.0, 1.0),
+            param!("RATE", "rete rate", 0.0, 0.5, 0.08, 0.01),
+            param!("RULEV", "rule rate", 0.0, 0.5, 0.05, 0.01),
+            param!("TWINK", "twinkle", 0.0, 1.0, 0.6, 0.05),
+            param!("ZOD", "ecliptic", 0.0, 1.0, 1.0, 0.05),
+        ],
+    },
     ModeForm { names: &["stained"], animate: AnimKind::Vflow, params: &[] },
     ModeForm {
         names: &["chimera"],
