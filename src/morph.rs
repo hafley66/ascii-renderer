@@ -210,6 +210,20 @@ pub(crate) fn iterate_grid(mode: &str, seed: u64, theme: &str, w: usize, h: usiz
             crate::sauron::draw_sauron(&mut grid, w, h, seed, &palette, t);
             Some(grid)
         }
+        "illuminarium" => {
+            let params = crate::illuminarium::IlluminariumParams::from_args(&[]);
+            crate::illuminarium::draw_illuminarium(
+                &mut grid,
+                w,
+                h,
+                seed,
+                &palette,
+                &mut rng,
+                t,
+                &params,
+            );
+            Some(grid)
+        }
         "spiro" => Some(draw_spiro(grid, w, h, seed, palette, rng, t, &[])),
         "spiro-tile" => Some(draw_spiro_tile(grid, w, h, seed, palette, rng, t, &[])),
         "weave" => Some(draw_weave(grid, w, h, seed, palette, rng, t, &[])),

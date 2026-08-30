@@ -268,6 +268,22 @@ pub(crate) static MODE_FORMS: &[ModeForm] = &[
             param!("TURB", "turbulence", 0.0, 3.0, 1.0, 0.1),
         ],
     },
+    ModeForm {
+        names: &["illuminarium"],
+        animate: AnimKind::Iterate,
+        params: &[
+            param!("SYMM", "symmetry", 4.0, 28.0, 12.0, 1.0),
+            param!("RINGS", "rose rings", 3.0, 14.0, 7.0, 1.0),
+            param!("FILI", "filigree", 0.0, 1.0, 0.72, 0.04),
+            param!("ORBITS", "orbiters", 1.0, 24.0, 9.0, 1.0),
+            param!("SPEED", "rotation", 0.05, 3.0, 0.65, 0.05),
+            param!("WARP", "rose warp", 0.0, 1.0, 0.35, 0.05),
+            param!("TRAIL", "comet trail", 0.0, 18.0, 7.0, 1.0),
+            param!("SPARKS", "light motes", 0.0, 320.0, 90.0, 10.0),
+            param!("DEPTH", "branch depth", 1.0, 6.0, 4.0, 1.0),
+            param!("BLOOM", "bloom", 0.0, 1.5, 0.72, 0.05),
+        ],
+    },
     ModeForm { names: &["stained"], animate: AnimKind::Vflow, params: &[] },
     ModeForm {
         names: &["chimera"],

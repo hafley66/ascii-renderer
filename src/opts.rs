@@ -443,6 +443,7 @@ pub(crate) fn run_demo(initial_seed: u64) {
         "arboretum",
         "astrolabe",
         "sauron",
+        "illuminarium",
     ];
     let all_themes: &[&str] = &[
         "",

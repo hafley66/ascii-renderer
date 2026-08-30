@@ -549,3 +549,22 @@ fn astrolabe_seed_42() {
 fn sauron_seed_42() {
     insta::assert_snapshot!(render(&["42", "sauron", "ember"]));
 }
+
+#[test]
+fn illuminarium_seed_42() {
+    insta::assert_snapshot!(render(&[
+        "42",
+        "illuminarium",
+        "deep",
+        "12",
+        "7",
+        "0.72",
+        "9",
+        "0.65",
+        "0.35",
+        "7",
+        "90",
+        "4",
+        "0.72",
+    ]));
+}

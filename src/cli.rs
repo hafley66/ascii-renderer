@@ -182,6 +182,9 @@ pub(crate) fn run() {
         eprintln!(
             "  sauron    The great eye: slit pupil wandering in a fire wall, embers, smoke (a=animate)"
         );
+        eprintln!(
+            "  illuminarium  Rotating rose vault, guilloche, recursive filigree, comet jewels [symm] [rings] [fili] [orbits] [speed] [warp] [trail] [sparks] [depth] [bloom]"
+        );
         eprintln!("  swatch    Color swatches for all named themes");
         eprintln!();
         eprintln!("THEMES:");
@@ -932,6 +935,12 @@ pub(crate) fn run() {
         if done {
             return;
         }
+    } else if mode == "illuminarium" {
+        let (g, done) = cli_illuminarium(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        grid = g;
+        if done {
+            return;
+        }
     } else if mode == "world" {
         let (g, done) = cli_world(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
         grid = g;
@@ -1008,4 +1017,3 @@ pub(crate) fn run() {
 
     emit_grid(&grid);
 }
-

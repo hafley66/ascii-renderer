@@ -5,6 +5,8 @@ mod registry;
 
 mod arboretum;
 mod astrolabe;
+#[path = "30_illuminarium.rs"]
+mod illuminarium;
 mod automata;
 mod avant;
 mod biomes;
@@ -48,6 +50,7 @@ use std::io::{self, IsTerminal, Read as _};
 
 use arboretum::*;
 use astrolabe::*;
+use illuminarium::*;
 use automata::*;
 use avant::*;
 use biomes::*;

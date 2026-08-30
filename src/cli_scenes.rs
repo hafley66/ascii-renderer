@@ -22,6 +22,7 @@ use crate::avant::*;
 use crate::cli::*;
 use crate::gridio::*;
 use crate::ink::*;
+use crate::illuminarium::*;
 use crate::modes_creatures::*;
 use crate::modes_geo::*;
 use crate::modes_sky::*;
@@ -32,6 +33,22 @@ use crate::pp::*;
 use crate::registry::*;
 use crate::warps::*;
 use crate::automata; use crate::avant; use crate::biomes; use crate::borders; use crate::color; use crate::content; use crate::fills; use crate::layout; use crate::markdown; use crate::mondrian; use crate::render; use crate::scene; use crate::sprites; use crate::tree_draw; use crate::types; use crate::walker;
+
+/// Dispatch arm for the animated illuminarium mode.
+pub(crate) fn cli_illuminarium(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, _term_w: u16, _term_h: u16, args: &[String], _mode: &str, _theme_name: &str) -> (Grid, bool) {
+    let params = IlluminariumParams::from_args(args);
+    draw_illuminarium(
+        &mut grid,
+        width,
+        height,
+        seed,
+        &palette,
+        &mut rng,
+        t_anim,
+        &params,
+    );
+    (grid, false)
+}
 
 
 /// Dispatch arm for mode(s): party (moved verbatim from run()).
