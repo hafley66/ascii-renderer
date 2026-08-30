@@ -1,0 +1,4 @@
+interface:
+  display_name: "Animate ASCII Renderer Mode"
+  short_description: "Add deterministic motion and live mode controls"
+  default_prompt: "Use $add-animation to make an ascii-renderer mode time-aware and tunable."

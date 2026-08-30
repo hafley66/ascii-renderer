@@ -48,40 +48,51 @@ fn grid_to_string(grid: &Grid) -> String {
 
 ## Modes
 
-party, soup, tree, trees, forest, forest2, forest3, forest4, forest8, forest9, aztec, fret, flowers, fruits, masks, shapes,
-tiles, tiles-rand, tiles-skew, mondrian, mondrian2, bsp, layout, md, terrain, flow, watershed,
-noise, ca, ca-layout, stem, scene-walk, scene-walk-2, scene-walk-3,
-aurora, aura2, solar-system, harbor, labyrinth, rainfall, meadow, world, world2,
-eyes, eyes2, fullmetal-eyes, fullmetal-eyes2, fullmetal-alchemist, fullmetal-alchemist2, fa3, fullmetal-alchemist3,
-fa4, fullmetal-alchemist4, fa5, fullmetal-alchemist5, fa6, fullmetal-alchemist6,
-spiro, spiro-tile, weave, gears, kaleido, contour,
-eyes3,
-kintsugi, constellation, strata, circuit, quilt, patchwalk, trees8, trees9, trees10, boles4, boles5, boles6,
-hypercube, flux, fireworks, rhizome, effigy, dendrite, totem, chimera,
-murmuration, lanterns, tide, fireflies, ink, meteors, elevator, ferris
+Runtime mode names and aliases are dispatched in `src/cli.rs`. The interactive demo subset is declared in `src/opts.rs`. Query the current code instead of maintaining another copied list:
+
+```bash
+rg -o 'mode == "[^"]+"' src/cli.rs | sort -u
+```
 
 ## Architecture
 
-Numbered-file convention per user prefs. Key modules:
-- `main.rs` -- CLI dispatch, mode wiring
+Numbered-file convention per user prefs. Existing Rust modules predate that convention. New numeric Rust filenames require a stable module identifier through `#[path = "N_name.rs"] mod name;`.
+
+Key modules:
+
+- `main.rs` -- module declarations, imports, thin binary entry, legacy unit tests
+- `cli.rs` -- CLI parsing and per-mode dispatch
+- `cli_basic.rs`, `cli_scenes.rs`, `cli_forest.rs`, `cli_catalog.rs`, `cli_fa.rs`, `cli_city.rs` -- mode-family CLI handlers
+- `registry.rs` -- mode parameter forms and animation kinds
+- `opts.rs` -- demo browser and persisted live parameter values
+- `morph.rs` -- morphing, native frame iteration, and subprocess frame fallback
+- Native animation currently recreates `Grid` and `StdRng` for every time value; no per-mode simulation state persists between frames
+- `gridio.rs` -- serialized grid I/O and final output selection
+- `render.rs` -- plain and ANSI grid rendering
 - `types.rs` -- Cell, Grid, Rect
 - `color.rs` -- palette, darken/lighten/shift
 - `fills.rs` -- tile/noise pattern renderers
 - `scene.rs` -- FillGen enum, Layer, Scene, render_scene
-- `sprites.rs` -- trees, flowers, fruits, masks, aztec diamonds, frets
-- `walker.rs` -- walk modes (party, soup, stem, scene-walk), atmosphere, path styles
+- `sprites.rs`, `sprites/` -- generic sprites, pen-grown trees, and flora
+- `tree_draw.rs`, `tree_draw/` -- trait-based tree species, boles, packing, and scene walks
+- `walker.rs`, `walker/` -- walk modes, atmosphere, paths, and scene construction
 - `mondrian.rs` -- BSP layout + mondrian grid
 - `automata.rs` -- cellular automata
 - `avant.rs` -- avant-garde tree/face algorithmic modes
+- `modes_geo.rs`, `modes_sky.rs`, `modes_tree.rs`, `modes_creatures.rs` -- renderer families
+- `arboretum.rs`, `astrolabe.rs`, `sauron.rs`, `ink.rs` -- standalone themed systems
 
 ## Skills & Agents
 
 - **add-mode** skill: Scaffold new rendering modes with snapshot tests
-- **add-sprite-algo** skill: Design algorithmic sprites (turtle walks, L-systems, fractals)
+- **add-animation** skill: Add deterministic time motion, native playback, and live knobs
+- **add-sprite-algo** skill: Add procedural sprites through the current tree, pen, flora, or generic sprite subsystem
 - **session-digest** agent: Analyze chat_log/ for momentum, open threads, patterns
 
 ## Ground rules
 
 - Never remove or break existing modes. Only add.
-- Expose tuning knobs as CLI args, don't hardcode.
+- A new standalone mode requires CLI dispatch, demo registration, and a fixed-seed integration snapshot.
+- A native animated mode also requires a `ModeForm` and an `iterate_grid` arm.
+- Expose tuning knobs as CLI args or `ModeForm` parameters. Keep registry defaults equal to renderer fallbacks.
 - Commit at each milestone for rewind points.

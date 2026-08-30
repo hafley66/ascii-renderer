@@ -1,0 +1,4 @@
+interface:
+  display_name: "Add Procedural ASCII Sprite"
+  short_description: "Add deterministic procedural sprites and trees"
+  default_prompt: "Use $add-sprite-algo to add a bounded procedural sprite to ascii-renderer."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Add ASCII Renderer Mode"
+  short_description: "Add a mode with wiring, knobs, and snapshots"
+  default_prompt: "Use $add-mode to add a deterministic rendering mode to ascii-renderer."

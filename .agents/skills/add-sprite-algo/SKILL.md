@@ -1,80 +1,50 @@
 ---
 name: add-sprite-algo
-description: Design and implement algorithmic sprites that draw themselves via walk/growth algorithms instead of stamp-from-array. Trigger on "algorithmic sprite", "L-system", "turtle walk", "fractal", "generative tree", "growth algorithm", "procedural sprite", or requests for sprites with controlled random variability.
+description: Add a deterministic procedural sprite or tree algorithm to ascii-renderer using the existing pen, growth, species, and packing systems. Use for turtle walks, L-systems, fractals, branching growth, vines, or controlled sprite variation.
 ---
 
 # Add Sprite Algorithm
 
-Create sprites that grow/draw themselves via algorithms rather than hardcoded character arrays.
+Add a bounded, seed-deterministic drawing algorithm and connect it to the subsystem that owns its lifecycle.
 
-## Design Principles
+## Select the owning subsystem
 
-- **Seed-deterministic**: same seed = same output, different seeds = visibly different shapes
-- **Asymmetry is good**: unbalanced trees, lopsided growth, weighted branching
-- **Algorithm families**:
-  - **Turtle walk**: position + direction + rules. Branch = push state, draw segment, pop
-  - **L-system**: string rewrite rules iterated N times, then interpret as drawing commands
-  - **Recursive subdivision**: split space, recurse with probability decay
-  - **Radial growth**: angle sweep with per-ray length variation
-  - **DLA (diffusion-limited aggregation)**: particles stick on contact, organic clusters
+| Shape and consumer | Location and interface |
+|---|---|
+| Trait-based tree archetype used by forest packing | `TreeDrawer` in `src/tree_draw.rs`; species in `src/tree_draw/species.rs` or `species_exotic.rs`; dispatch in `src/tree_draw/pack.rs` |
+| Pen-grown tree used by older sprite modes | `TreePen` and growth functions in `src/sprites/trees.rs`; dispatch table near the existing growth functions |
+| Flower, vine, fruit, or cloud growth | `src/sprites/flora.rs` |
+| Generic stamp, mask, fret, or standalone sprite helper | `src/sprites.rs` |
 
-## Implementation Pattern
+Follow the colocated state-management and signature style. A tree intended for `pack_forest` must implement `TreeDrawer`, enter `grow_tree_by_index`, and update `TREE_KIND_COUNT` consistently. A pen-tree addition must enter the pen-tree dispatch used by its consumer.
 
-All sprites in sprites.rs follow this signature pattern:
+## Shape the algorithm
 
-```rust
-pub fn grow_THING(
-    grid: &mut Grid,
-    root_x: usize, root_y: usize,  // anchor point
-    canopy_y: usize,                // vertical extent (or similar bound)
-    spread: usize,                  // horizontal extent
-    color: Color,
-    rng: &mut StdRng,               // controlled randomness
-) {
-    // Algorithm writes directly to grid cells
-    // Use Cell::new(ch, color) to place characters
-    // Respect grid bounds: check y < grid.len() && x < grid[0].len()
-}
-```
+State the type signatures first. Then add pseudocode comments for:
 
-## Character Palette
+- Root or anchor initialization.
+- Per-instance RNG reads and stable identity.
+- Growth, branching, or rewrite sequence.
+- Grid clipping and termination.
+- Tip, leaf, fruit, or decoration pass.
 
-Terminal cells are ~1:2 aspect ratio (taller than wide). Adjust horizontal distances by 1.5-2x.
+Describe the instance timeline: the owning mode seeds the RNG, layout assigns a plot or anchor, the algorithm writes cells, and later layers may overwrite them. Describe storage: parameters live in the owning mode arguments or `ModeForm`; the sprite itself receives values through its function inputs. Record uniqueness conditions for species index, dispatch index, and any shared parameter keys.
 
-**Trunk/branch chars**: `│ ┃ ╱ ╲ ╭ ╮ ╰ ╯ ┤ ├ ┬ ┴`
-**Leaf/canopy chars**: `◆ ◇ ● ○ ∙ · ⟨ ⟩ ∧ ∨`
-**Dense fill chars**: `█ ▓ ▒ ░ ⣿ ⡇ ⢸`
-**Organic chars**: `~ ≈ ∿ ⌇ ⌒`
+## Drawing constraints
 
-## Steps
+- Use the existing `Cell`, `Grid`, `TreePen`, `TreeParams`, and color helpers.
+- Preserve deterministic RNG read order for unchanged branches.
+- Clamp writes to the grid or route them through an existing bounded pen helper.
+- Account for terminal cell aspect ratio when evaluating geometric distance or angles.
+- Bound recursion depth, rewrite count, branch count, particle count, and walk length.
+- Use connectivity-aware glyph selection already present in the owning subsystem when branches must join cleanly.
 
-1. **Pick the algorithm family** based on what visual you're targeting
-2. **Write the growth function** in sprites.rs with the standard signature
-3. **Register it** in `draw_tree` match (if tree-like) or as standalone
-4. **Wire into modes** that use sprites (forest2, party NegativeSpace, etc.)
-5. **Add snapshot test** -- the algorithm must be deterministic given seed
-6. **Test with multiple seeds** to verify variety: `cargo run -- 42 forest2 ember`, seeds 1-10
+## Verification
 
-## Example: Turtle Tree
+1. Run existing subsystem tests before editing.
+2. Add a fixed-seed snapshot beside the subsystem tests.
+3. Add or update a mode integration snapshot when the sprite becomes reachable through a mode.
+4. Render selected seeds and at least one small grid to inspect variation and clipping.
+5. Run focused tests, inspect pending snapshots, then run `cargo test`.
 
-```
-Start at root. Direction = up. Stack = empty.
-For each step:
-  - Draw trunk char at current position
-  - With probability P (decreasing with height): branch
-    - Push current state
-    - Rotate left/right by random angle
-    - Reduce spread
-    - Continue drawing
-    - Pop state
-  - Move forward (up, adjusted for terminal aspect ratio)
-  - With probability Q: slight angle jitter
-Terminate when: above canopy_y, or spread < 1
-```
-
-## Anti-patterns
-
-- Don't stamp from a fixed char array -- that's what we're replacing
-- Don't make everything symmetric -- real plants aren't
-- Don't ignore terminal aspect ratio -- horizontal movement needs 1.5-2x scaling
-- Don't let the algorithm run unbounded -- always clamp to grid dimensions
+Keep existing species and dispatch indices stable. Append new variants unless the user requests a migration.
