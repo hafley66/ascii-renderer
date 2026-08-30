@@ -224,6 +224,20 @@ pub(crate) fn iterate_grid(mode: &str, seed: u64, theme: &str, w: usize, h: usiz
             );
             Some(grid)
         }
+        "qwen-cathedral" => {
+            let params = crate::qwen_cathedral::CathedralParams::from_args(&[]);
+            crate::qwen_cathedral::draw_qwen_cathedral(
+                &mut grid,
+                w,
+                h,
+                seed,
+                &palette,
+                &mut rng,
+                t,
+                &params,
+            );
+            Some(grid)
+        }
         "spiro" => Some(draw_spiro(grid, w, h, seed, palette, rng, t, &[])),
         "spiro-tile" => Some(draw_spiro_tile(grid, w, h, seed, palette, rng, t, &[])),
         "weave" => Some(draw_weave(grid, w, h, seed, palette, rng, t, &[])),
