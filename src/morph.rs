@@ -173,6 +173,20 @@ pub(crate) fn iterate_grid(mode: &str, seed: u64, theme: &str, w: usize, h: usiz
     };
     let mut grid = vec![vec![Cell::blank(); w]; h];
     let mut rng = StdRng::seed_from_u64(seed);
+    if let Some(registered) = registered_mode(mode) {
+        let mut frame = ModeFrame {
+            grid: &mut grid,
+            width: w,
+            height: h,
+            seed,
+            palette: &palette,
+            rng: &mut rng,
+            time: t,
+            args: &[],
+        };
+        registered.render(&mut frame);
+        return Some(grid);
+    }
     match mode {
         "delta" => {
             draw_delta(&mut grid, w, h, seed, &palette, &mut rng, t);
@@ -208,34 +222,6 @@ pub(crate) fn iterate_grid(mode: &str, seed: u64, theme: &str, w: usize, h: usiz
         }
         "sauron" => {
             crate::sauron::draw_sauron(&mut grid, w, h, seed, &palette, t);
-            Some(grid)
-        }
-        "illuminarium" => {
-            let params = crate::illuminarium::IlluminariumParams::from_args(&[]);
-            crate::illuminarium::draw_illuminarium(
-                &mut grid,
-                w,
-                h,
-                seed,
-                &palette,
-                &mut rng,
-                t,
-                &params,
-            );
-            Some(grid)
-        }
-        "qwen-cathedral" => {
-            let params = crate::qwen_cathedral::CathedralParams::from_args(&[]);
-            crate::qwen_cathedral::draw_qwen_cathedral(
-                &mut grid,
-                w,
-                h,
-                seed,
-                &palette,
-                &mut rng,
-                t,
-                &params,
-            );
             Some(grid)
         }
         "spiro" => Some(draw_spiro(grid, w, h, seed, palette, rng, t, &[])),

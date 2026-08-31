@@ -182,12 +182,9 @@ pub(crate) fn run() {
         eprintln!(
             "  sauron    The great eye: slit pupil wandering in a fire wall, embers, smoke (a=animate)"
         );
-        eprintln!(
-            "  illuminarium  Rotating rose vault, guilloche, recursive filigree, comet jewels [symm] [rings] [fili] [orbits] [speed] [warp] [trail] [sparks] [depth] [bloom]"
-        );
-        eprintln!(
-            "  qwen-cathedral  Gothic rose, ribbed vaults, lancets, candles, light [naves] [towers] [rose] [candles] [speed] [rays] [smoke] [depth] [mosaic] [glow] [arch] [banners]"
-        );
+        for (_, mode) in registered_modes().iter() {
+            eprintln!("  {:<16} {}", mode.name(), mode.help());
+        }
         eprintln!("  swatch    Color swatches for all named themes");
         eprintln!();
         eprintln!("THEMES:");
@@ -284,7 +281,19 @@ pub(crate) fn run() {
         make_palette(seed)
     };
 
-    if mode == "swatch" {
+    if let Some(registered) = registered_mode(mode) {
+        let mut frame = ModeFrame {
+            grid: &mut grid,
+            width,
+            height,
+            seed,
+            palette: &palette,
+            rng: &mut rng,
+            time: t_anim,
+            args: &args,
+        };
+        registered.render(&mut frame);
+    } else if mode == "swatch" {
         let (g, done) = cli_swatch(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
         grid = g;
         if done {
@@ -934,18 +943,6 @@ pub(crate) fn run() {
         }
     } else if mode == "sauron" {
         let (g, done) = cli_sauron(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
-        grid = g;
-        if done {
-            return;
-        }
-    } else if mode == "illuminarium" {
-        let (g, done) = cli_illuminarium(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
-        grid = g;
-        if done {
-            return;
-        }
-    } else if mode == "qwen-cathedral" {
-        let (g, done) = cli_qwen_cathedral(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
         grid = g;
         if done {
             return;

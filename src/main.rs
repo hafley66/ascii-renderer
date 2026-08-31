@@ -5,14 +5,9 @@ mod registry;
 
 mod arboretum;
 mod astrolabe;
-#[path = "30_illuminarium.rs"]
-mod illuminarium;
-#[path = "31_qwen_cathedral.rs"]
-mod qwen_cathedral;
 mod automata;
 mod avant;
 mod biomes;
-mod sauron;
 mod borders;
 mod cli;
 mod cli_basic;
@@ -28,6 +23,7 @@ mod gridio;
 mod ink;
 mod layout;
 mod markdown;
+mod modes;
 mod modes_creatures;
 mod modes_geo;
 mod modes_sky;
@@ -37,6 +33,7 @@ mod morph;
 mod opts;
 mod pp;
 mod render;
+mod sauron;
 mod scene;
 mod sprites;
 mod tree_draw;
@@ -52,8 +49,6 @@ use std::io::{self, IsTerminal, Read as _};
 
 use arboretum::*;
 use astrolabe::*;
-use illuminarium::*;
-use qwen_cathedral::*;
 use automata::*;
 use avant::*;
 use biomes::*;

@@ -5,7 +5,57 @@ use rand::rngs::StdRng;
 use crate::color::{darken, lerp_color, lighten, shift_hue};
 use crate::opts::param_f32;
 use crate::pp::{pp_fbm, pp_line, pp_put, pp_stroke};
+use crate::registry::{AnimKind, Mode, ModeFrame, Param};
 use crate::types::{Cell, Grid};
+
+pub(super) struct IlluminariumMode;
+
+pub(super) static MODE: IlluminariumMode = IlluminariumMode;
+
+const PARAMS: &[Param] = &[
+    param!("SYMM", "symmetry", 4.0, 28.0, 12.0, 1.0),
+    param!("RINGS", "rose rings", 3.0, 14.0, 7.0, 1.0),
+    param!("FILI", "filigree", 0.0, 1.0, 0.72, 0.04),
+    param!("ORBITS", "orbiters", 1.0, 24.0, 9.0, 1.0),
+    param!("SPEED", "rotation", 0.05, 3.0, 0.65, 0.05),
+    param!("WARP", "rose warp", 0.0, 1.0, 0.35, 0.05),
+    param!("TRAIL", "comet trail", 0.0, 18.0, 7.0, 1.0),
+    param!("SPARKS", "light motes", 0.0, 320.0, 90.0, 10.0),
+    param!("DEPTH", "branch depth", 1.0, 6.0, 4.0, 1.0),
+    param!("BLOOM", "bloom", 0.0, 1.5, 0.72, 0.05),
+];
+
+impl Mode for IlluminariumMode {
+    fn name(&self) -> &'static str {
+        "illuminarium"
+    }
+
+    fn help(&self) -> &'static str {
+        "Rotating rose vault, guilloche, recursive filigree, comet jewels [symm] [rings] [fili] [orbits] [speed] [warp] [trail] [sparks] [depth] [bloom]"
+    }
+
+    fn animation(&self) -> AnimKind {
+        AnimKind::Iterate
+    }
+
+    fn params(&self) -> &'static [Param] {
+        PARAMS
+    }
+
+    fn render(&self, frame: &mut ModeFrame<'_>) {
+        let params = IlluminariumParams::from_args(frame.args);
+        draw_illuminarium(
+            frame.grid,
+            frame.width,
+            frame.height,
+            frame.seed,
+            frame.palette,
+            frame.rng,
+            frame.time,
+            &params,
+        );
+    }
+}
 
 #[derive(Clone, Copy, Debug)]
 pub(crate) struct IlluminariumParams {

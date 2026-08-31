@@ -48,24 +48,27 @@ fn grid_to_string(grid: &Grid) -> String {
 
 ## Modes
 
-Runtime mode names and aliases are dispatched in `src/cli.rs`. The interactive demo subset is declared in `src/opts.rs`. Query the current code instead of maintaining another copied list:
+Generated-registry mode names are declared by their `Mode::name` implementations. Query the current code instead of maintaining another copied list:
 
 ```bash
-rg -o 'mode == "[^"]+"' src/cli.rs | sort -u
+rg -n 'fn name\(&self\)|static MODE|impl Mode for' src/modes
 ```
 
 ## Architecture
 
-Numbered-file convention per user prefs. Existing Rust modules predate that convention. New numeric Rust filenames require a stable module identifier through `#[path = "N_name.rs"] mod name;`.
+Numbered-file convention per user prefs. Existing Rust modules predate that convention. New standalone modes use `src/modes/_N_name.rs`; the leading underscore makes the numeric prefix a stable Rust module identifier.
 
 Key modules:
 
 - `main.rs` -- module declarations, imports, thin binary entry, legacy unit tests
-- `cli.rs` -- CLI parsing and per-mode dispatch
+- `modes/_N_name.rs` -- file-owned generated-registry modes, parameters, renderers, and tests
+- `modes/mod.rs` -- generated ordinary module declarations and registration calls
+- `scripts/0_generate_modes.sh`, `scripts/1_dev.sh` -- registry generator and development watcher
+- `cli.rs` -- CLI parsing and generic registered-mode dispatch plus legacy dispatch
 - `cli_basic.rs`, `cli_scenes.rs`, `cli_forest.rs`, `cli_catalog.rs`, `cli_fa.rs`, `cli_city.rs` -- mode-family CLI handlers
-- `registry.rs` -- mode parameter forms and animation kinds
-- `opts.rs` -- demo browser and persisted live parameter values
-- `morph.rs` -- morphing, native frame iteration, and subprocess frame fallback
+- `registry.rs` -- `Mode`, `ModeFrame`, global `ModeRegistry`, legacy parameter forms, and animation kinds
+- `opts.rs` -- demo browser, registered mode enumeration, and persisted live parameter values
+- `morph.rs` -- morphing, generic registered-mode frame iteration, legacy iteration, and subprocess frame fallback
 - Native animation currently recreates `Grid` and `StdRng` for every time value; no per-mode simulation state persists between frames
 - `gridio.rs` -- serialized grid I/O and final output selection
 - `render.rs` -- plain and ANSI grid rendering
@@ -84,7 +87,7 @@ Key modules:
 
 ## Skills & Agents
 
-- **add-mode** skill: Scaffold new rendering modes with snapshot tests
+- **add-mode** skill: Add file-owned generated-registry modes with snapshot tests
 - **add-animation** skill: Add deterministic time motion, native playback, and live knobs
 - **add-sprite-algo** skill: Add procedural sprites through the current tree, pen, flora, or generic sprite subsystem
 - **session-digest** agent: Analyze chat_log/ for momentum, open threads, patterns
@@ -92,7 +95,9 @@ Key modules:
 ## Ground rules
 
 - Never remove or break existing modes. Only add.
-- A new standalone mode requires CLI dispatch, demo registration, and a fixed-seed integration snapshot.
-- A native animated mode also requires a `ModeForm` and an `iterate_grid` arm.
-- Expose tuning knobs as CLI args or `ModeForm` parameters. Keep registry defaults equal to renderer fallbacks.
+- A new standalone mode requires one `src/modes/_N_name.rs` file and fixed-seed snapshots colocated under `src/modes/snapshots/`.
+- Run `scripts/0_generate_modes.sh` after adding or renaming a mode file. Never edit generated `src/modes/mod.rs` directly.
+- `scripts/1_dev.sh` runs the generator watcher with `cargo run`.
+- Do not add generated-registry mode branches to `src/main.rs`, `src/cli.rs`, `src/opts.rs`, `src/registry.rs`, or `src/morph.rs`.
+- Expose tuning knobs through the file-owned `Mode::params` declaration. Keep registry defaults equal to renderer fallbacks.
 - Commit at each milestone for rewind points.

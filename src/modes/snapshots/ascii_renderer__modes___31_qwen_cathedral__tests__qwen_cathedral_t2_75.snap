@@ -1,6 +1,6 @@
 ---
-source: src/31_qwen_cathedral.rs
-assertion_line: 1035
+source: src/modes/_31_qwen_cathedral.rs
+assertion_line: 1295
 expression: "plain(&frame(80, 36, 42, 2.75, &params))"
 ---
 ╔═══◆═══◇═══◆═══◇═══◆═══◇═══◆═══◇═══◆═══◇═══◆═══◇═══◆═══◇═══◆═══◇═══◆═══◇═══◆══╗

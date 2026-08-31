@@ -5,9 +5,61 @@ use rand::RngExt;
 use crate::color::{darken, lerp_color, lighten, shift_hue};
 use crate::opts::param_f32;
 use crate::pp::{pp_fbm, pp_line};
+use crate::registry::{AnimKind, Mode, ModeFrame, Param};
 use crate::types::{Cell, Grid};
 
 const TAU: f32 = std::f32::consts::TAU;
+
+pub(super) struct QwenCathedralMode;
+
+pub(super) static MODE: QwenCathedralMode = QwenCathedralMode;
+
+const PARAMS: &[Param] = &[
+    param!("NAVES", "nave bays", 3.0, 9.0, 5.0, 1.0),
+    param!("TOWERS", "towers", 0.0, 4.0, 2.0, 1.0),
+    param!("ROSE", "rose petals", 6.0, 18.0, 12.0, 1.0),
+    param!("CANDLES", "candles", 0.0, 40.0, 14.0, 2.0),
+    param!("SPEED", "motion", 0.05, 3.0, 0.8, 0.05),
+    param!("RAY", "light rays", 0.0, 1.0, 0.6, 0.05),
+    param!("SMOKE", "incense", 0.0, 24.0, 8.0, 1.0),
+    param!("DEPTH", "vault depth", 1.0, 5.0, 3.0, 1.0),
+    param!("MOSAIC", "mosaic", 0.0, 1.0, 0.55, 0.05),
+    param!("GLOW", "glass glow", 0.0, 1.5, 0.7, 0.05),
+    param!("ARCH", "arch point", 0.0, 1.0, 0.62, 0.05),
+    param!("BANNERS", "banners", 0.0, 8.0, 4.0, 1.0),
+];
+
+impl Mode for QwenCathedralMode {
+    fn name(&self) -> &'static str {
+        "qwen-cathedral"
+    }
+
+    fn help(&self) -> &'static str {
+        "Gothic rose, ribbed vaults, lancets, candles, light [naves] [towers] [rose] [candles] [speed] [rays] [smoke] [depth] [mosaic] [glow] [arch] [banners]"
+    }
+
+    fn animation(&self) -> AnimKind {
+        AnimKind::Iterate
+    }
+
+    fn params(&self) -> &'static [Param] {
+        PARAMS
+    }
+
+    fn render(&self, frame: &mut ModeFrame<'_>) {
+        let params = CathedralParams::from_args(frame.args);
+        draw_qwen_cathedral(
+            frame.grid,
+            frame.width,
+            frame.height,
+            frame.seed,
+            frame.palette,
+            frame.rng,
+            frame.time,
+            &params,
+        );
+    }
+}
 
 #[derive(Clone, Copy, Debug)]
 pub(crate) struct CathedralParams {

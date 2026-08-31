@@ -4,7 +4,9 @@ use crossterm::style::Color;
 use rand::RngExt;
 use rand::SeedableRng;
 use rand::rngs::StdRng;
+use std::collections::BTreeMap;
 use std::io::{self, IsTerminal, Read as _};
+use std::sync::OnceLock;
 
 use crate::automata::*;
 use crate::biomes::*;
@@ -60,6 +62,72 @@ pub(crate) enum AnimKind {
 pub(crate) struct ModeSpec {
     pub(crate) animate: AnimKind,
     pub(crate) params: &'static [Param],
+}
+
+
+/// Explicit inputs for one deterministic mode frame.
+pub(crate) struct ModeFrame<'a> {
+    pub(crate) grid: &'a mut Grid,
+    pub(crate) width: usize,
+    pub(crate) height: usize,
+    pub(crate) seed: u64,
+    pub(crate) palette: &'a [Color; 5],
+    pub(crate) rng: &'a mut StdRng,
+    pub(crate) time: f32,
+    pub(crate) args: &'a [String],
+}
+
+
+/// Standalone modes implement this object-safe surface. The generated
+/// `modes/mod.rs` registers one file-owned static per implementation.
+pub(crate) trait Mode: Sync {
+    fn name(&self) -> &'static str;
+    fn help(&self) -> &'static str;
+    fn animation(&self) -> AnimKind;
+    fn params(&self) -> &'static [Param];
+    fn render(&self, frame: &mut ModeFrame<'_>);
+}
+
+
+#[derive(Default)]
+pub(crate) struct ModeRegistry {
+    modes: BTreeMap<&'static str, &'static dyn Mode>,
+}
+
+
+impl ModeRegistry {
+    pub(crate) fn add(&mut self, mode: &'static dyn Mode) {
+        assert!(
+            self.modes.insert(mode.name(), mode).is_none(),
+            "duplicate registered mode name: {}",
+            mode.name(),
+        );
+    }
+
+    pub(crate) fn get(&self, name: &str) -> Option<&'static dyn Mode> {
+        self.modes.get(name).copied()
+    }
+
+    pub(crate) fn iter(&self) -> impl Iterator<Item = (&'static str, &'static dyn Mode)> + '_ {
+        self.modes.iter().map(|(name, mode)| (*name, *mode))
+    }
+}
+
+
+static REGISTERED_MODES: OnceLock<ModeRegistry> = OnceLock::new();
+
+
+pub(crate) fn registered_modes() -> &'static ModeRegistry {
+    REGISTERED_MODES.get_or_init(|| {
+        let mut registry = ModeRegistry::default();
+        crate::modes::register_all(&mut registry);
+        registry
+    })
+}
+
+
+pub(crate) fn registered_mode(name: &str) -> Option<&'static dyn Mode> {
+    registered_modes().get(name)
 }
 
 
@@ -268,40 +336,6 @@ pub(crate) static MODE_FORMS: &[ModeForm] = &[
             param!("TURB", "turbulence", 0.0, 3.0, 1.0, 0.1),
         ],
     },
-    ModeForm {
-        names: &["illuminarium"],
-        animate: AnimKind::Iterate,
-        params: &[
-            param!("SYMM", "symmetry", 4.0, 28.0, 12.0, 1.0),
-            param!("RINGS", "rose rings", 3.0, 14.0, 7.0, 1.0),
-            param!("FILI", "filigree", 0.0, 1.0, 0.72, 0.04),
-            param!("ORBITS", "orbiters", 1.0, 24.0, 9.0, 1.0),
-            param!("SPEED", "rotation", 0.05, 3.0, 0.65, 0.05),
-            param!("WARP", "rose warp", 0.0, 1.0, 0.35, 0.05),
-            param!("TRAIL", "comet trail", 0.0, 18.0, 7.0, 1.0),
-            param!("SPARKS", "light motes", 0.0, 320.0, 90.0, 10.0),
-            param!("DEPTH", "branch depth", 1.0, 6.0, 4.0, 1.0),
-            param!("BLOOM", "bloom", 0.0, 1.5, 0.72, 0.05),
-        ],
-    },
-    ModeForm {
-        names: &["qwen-cathedral"],
-        animate: AnimKind::Iterate,
-        params: &[
-            param!("NAVES", "nave bays", 3.0, 9.0, 5.0, 1.0),
-            param!("TOWERS", "towers", 0.0, 4.0, 2.0, 1.0),
-            param!("ROSE", "rose petals", 6.0, 18.0, 12.0, 1.0),
-            param!("CANDLES", "candles", 0.0, 40.0, 14.0, 2.0),
-            param!("SPEED", "motion", 0.05, 3.0, 0.8, 0.05),
-            param!("RAY", "light rays", 0.0, 1.0, 0.6, 0.05),
-            param!("SMOKE", "incense", 0.0, 24.0, 8.0, 1.0),
-            param!("DEPTH", "vault depth", 1.0, 5.0, 3.0, 1.0),
-            param!("MOSAIC", "mosaic", 0.0, 1.0, 0.55, 0.05),
-            param!("GLOW", "glass glow", 0.0, 1.5, 0.7, 0.05),
-            param!("ARCH", "arch point", 0.0, 1.0, 0.62, 0.05),
-            param!("BANNERS", "banners", 0.0, 8.0, 4.0, 1.0),
-        ],
-    },
     ModeForm { names: &["stained"], animate: AnimKind::Vflow, params: &[] },
     ModeForm {
         names: &["chimera"],
@@ -318,12 +352,29 @@ pub(crate) static MODE_FORMS: &[ModeForm] = &[
 /// T animates the mode natively if it reads it (in-process via iterate_grid),
 /// otherwise the player warps the base frame over time.
 pub(crate) fn mode_spec(name: &str) -> ModeSpec {
+    if let Some(mode) = registered_mode(name) {
+        return ModeSpec { animate: mode.animation(), params: mode.params() };
+    }
     for f in MODE_FORMS {
         if f.names.contains(&name) {
             return ModeSpec { animate: f.animate, params: f.params };
         }
     }
     ModeSpec { animate: AnimKind::Iterate, params: &[] }
+}
+
+
+#[cfg(test)]
+mod registered_mode_tests {
+    use super::*;
+
+    #[test]
+    fn generated_registry_contains_the_file_owned_modes() {
+        let names: Vec<_> = registered_modes().iter().map(|(name, _)| name).collect();
+        assert!(names.contains(&"illuminarium"));
+        assert!(names.contains(&"qwen-cathedral"));
+        assert!(registered_modes().iter().all(|(_, mode)| !mode.help().is_empty()));
+    }
 }
 
 

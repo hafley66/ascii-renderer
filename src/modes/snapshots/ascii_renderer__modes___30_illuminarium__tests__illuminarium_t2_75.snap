@@ -1,6 +1,6 @@
 ---
-source: src/30_illuminarium.rs
-assertion_line: 758
+source: src/modes/_30_illuminarium.rs
+assertion_line: 827
 expression: "plain(&frame(80, 36, 42, 2.75, &params))"
 ---
 │─◆───◇───◆───◇───◆───◇───◆───◇───◆───◇───◆───◇───◆───◇───◆───◇───◆───◇───◆───◇│

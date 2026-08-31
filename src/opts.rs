@@ -325,7 +325,7 @@ pub(crate) fn run_demo(initial_seed: u64) {
     use std::io::Write;
     use std::process::Command;
 
-    let all_modes: &[&str] = &[
+    let mut all_modes = vec![
         "party",
         "soup",
         "tree",
@@ -443,9 +443,8 @@ pub(crate) fn run_demo(initial_seed: u64) {
         "arboretum",
         "astrolabe",
         "sauron",
-        "illuminarium",
-        "qwen-cathedral",
     ];
+    all_modes.extend(registered_modes().iter().map(|(name, _)| name));
     let all_themes: &[&str] = &[
         "",
         "ember",
@@ -590,7 +589,7 @@ pub(crate) fn run_demo(initial_seed: u64) {
                 KeyCode::Char('j') => mode_idx = (mode_idx + 1) % all_modes.len(),
                 KeyCode::Char('f') => mode_idx = (mode_idx + all_modes.len() - 1) % all_modes.len(),
                 KeyCode::Char('/') | KeyCode::Char('m') => {
-                    if let Some(idx) = demo_pick_mode(all_modes, mode_idx) {
+                    if let Some(idx) = demo_pick_mode(&all_modes, mode_idx) {
                         mode_idx = idx;
                     }
                 }

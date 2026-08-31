@@ -1,6 +1,6 @@
 ---
 name: add-mode
-description: Add a rendering mode to ascii-renderer with current module placement, CLI and demo wiring, tunable parameters, deterministic snapshots, and animation integration when requested. Use for new modes or mode aliases. Do not use for a sprite that has no standalone mode.
+description: Add a file-owned rendering mode to ascii-renderer through the generated dyn Mode registry, including knobs, deterministic snapshots, and animation. Use for new standalone modes or mode aliases. Do not use for a sprite with no standalone mode.
 ---
 
 # Add Mode
@@ -17,24 +17,25 @@ Before writing the body, state the proposed Rust signatures and place pseudocode
 - Storage: CLI arguments, `ASCII_T`, `ASCII_P_<KEY>`, persisted option values, and where each value is read.
 - Uniqueness: canonical mode name, aliases, parameter keys within the mode, and exactly one CLI dispatch path.
 
-Place visual algorithms with the closest mode family. Place the `cli_<mode>` handler with the closest CLI family. Preserve the colocated signature and state-management style. If a new Rust module is required, choose its author-driven numeric prefix from its dependencies and expose it with `#[path = "N_name.rs"] mod name;`.
+New standalone modes live in `src/modes/_N_name.rs`. Choose `N` from dependency and reading order. The file owns its `Mode` implementation, `MODE` static, parameter declarations, renderer, and snapshot tests. The generated `src/modes/mod.rs` is the only module and registration list.
 
 ## Implement
 
 1. Run the existing tests before changing a mode family.
 2. Search the canonical name and aliases across `src/`, `tests/`, and `AGENTS.md`.
-3. Implement the renderer or composition using the existing grid, palette, RNG, scene, walker, sprite, or tree APIs.
-4. Add one `cli_<mode>` handler and one branch in `src/cli.rs`.
-5. Add the canonical name to the demo list in `src/opts.rs`.
-6. If the mode has live knobs, add one `ModeForm` in `src/registry.rs` and read matching keys through `param_f32` in the renderer.
-7. If the mode has native time motion, use the `add-animation` workflow and add its in-process path to `iterate_grid` in `src/morph.rs`.
-8. Add a fixed-seed integration snapshot in `tests/snapshot_modes.rs`. Add focused unit tests for invariants that a visual snapshot cannot express.
-9. Run `scripts/0_check_mode.sh <mode>` or add `--animated` for a native animation.
-10. Run the focused test, inspect pending snapshot output, then run `cargo test`. Accept a snapshot only after visual inspection.
+3. Create `src/modes/_N_name.rs` and implement `crate::registry::Mode` for a zero-sized type.
+4. Define `pub(super) static MODE`, returning the canonical name, help text, `AnimKind`, and a file-owned static parameter slice.
+5. Render exclusively through `Mode::render(&self, frame: &mut ModeFrame<'_>)`. Read positional arguments from `frame.args` and live values through `param_f32`.
+6. Use the existing grid, palette, RNG, scene, walker, sprite, or tree APIs. Treat every field in `ModeFrame` as borrowed frame input.
+7. Add fixed-seed snapshots in the mode file. Snapshot files are generated under `src/modes/snapshots/`.
+8. Run `scripts/0_generate_modes.sh`. Never edit `src/modes/mod.rs` directly.
+9. Run `scripts/0_generate_modes.sh --check`, the focused test, and `cargo test`. Inspect pending snapshot output before accepting it.
 
 ## Constraints
 
 - Keep every existing mode and alias working.
+- Do not add per-mode branches or lists to `src/main.rs`, `src/cli.rs`, `src/opts.rs`, `src/registry.rs`, or `src/morph.rs`.
+- Do not use `#[path]`, `automod`, `inventory`, or constructor-based registration.
 - Treat `(dimensions, seed, palette/theme, arguments, parameters, time)` as the render inputs.
 - Recreate randomness deterministically from the supplied seed. A frame must not depend on how many frames preceded it.
 - Bound all walks, recursion, particle counts, and writes by the grid dimensions.
