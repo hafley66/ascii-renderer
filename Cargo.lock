@@ -176,6 +176,7 @@ dependencies = [
 [[package]]
 name = "hafley-observe"
 version = "0.1.0"
+source = "git+https://github.com/hafley66/hafley-rs?tag=hafley-observe-v0.1.0#a4374c6168abf574571df3bebaa9dc6695d45214"
 dependencies = [
  "tracing",
  "tracing-subscriber",

@@ -2,11 +2,16 @@
 name = "ascii-renderer"
 version = "0.1.0"
 edition = "2024"
+description = "A deterministic, animated ASCII art renderer"
+license = "MIT"
+repository = "https://github.com/hafley66/ascii-renderer"
+homepage = "https://github.com/hafley66/ascii-renderer"
+publish = false
 
 [dependencies]
 console_engine = "2.6.1"
 crossterm = "0.26"
-hafley-observe = { path = "../hafley-rs/crates/hafley-observe" }
+hafley-observe = { git = "https://github.com/hafley66/hafley-rs", tag = "hafley-observe-v0.1.0" }
 pulldown-cmark = "0.13.1"
 rand = "0.10.0"
 tracing = "0.1"
@@ -14,11 +19,6 @@ unicode-width = "0.2.2"
 
 [dev-dependencies]
 insta = "1"
-
-[target.x86_64-pc-windows-gnu]
-linker = "x86_64-w64-mingw32-gcc"
-ar = "x86_64-w64-mingw32-gcc-ar"
-
 
 [profile.dev]
 opt-level = 0

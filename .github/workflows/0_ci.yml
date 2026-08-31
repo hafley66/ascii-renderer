@@ -1,0 +1,23 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v6
+      - name: install rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+      - name: test package
+        run: cargo test --locked
+      - name: build release binary
+        run: cargo build --release --locked
