@@ -1,6 +1,7 @@
 use crossterm::style::Color;
 use rand::rngs::StdRng;
 
+use crate::_0_profile::measure_layer;
 use crate::color::{darken, lerp_color, lighten, shift_hue};
 use crate::opts::param_f32;
 use crate::pp::{pp_fbm, pp_hash2, pp_stroke};
@@ -750,21 +751,37 @@ pub(crate) fn draw_aetherforge(
         return;
     }
     // 1. Initialize sparse star-metal and background bloom from explicit frame inputs.
-    draw_star_metal_field(grid, width, height, seed, palette, t, params);
+    measure_layer("aetherforge", "star_metal", || {
+        draw_star_metal_field(grid, width, height, seed, palette, t, params)
+    });
     // 2. Evaluate bounded horizontal and vertical magnetic rivers behind the mechanism.
-    draw_flux_rivers(grid, width, height, seed, palette, t, params);
+    measure_layer("aetherforge", "flux_rivers", || {
+        draw_flux_rivers(grid, width, height, seed, palette, t, params)
+    });
     // 3. Reconstruct every ballistic spiral spark and its fading trail from time.
-    draw_star_sparks(grid, width, height, seed, palette, t, params);
+    measure_layer("aetherforge", "star_sparks", || {
+        draw_star_sparks(grid, width, height, seed, palette, t, params)
+    });
     // 4. Raise mirrored architectural gates around the active foundry volume.
-    draw_forge_gates(grid, width, height, seed, palette, t, params);
+    measure_layer("aetherforge", "forge_gates", || {
+        draw_forge_gates(grid, width, height, seed, palette, t, params)
+    });
     // 5. Rotate corrugated halo mechanisms with stable seeded phases and nodes.
-    draw_halo_mechanisms(grid, width, height, seed, palette, t, params);
+    measure_layer("aetherforge", "halo_mechanisms", || {
+        draw_halo_mechanisms(grid, width, height, seed, palette, t, params)
+    });
     // 6. Draw the nested many-petaled spindle and faceted central reactor.
-    draw_reactor_spindle(grid, width, height, seed, palette, t, params);
+    measure_layer("aetherforge", "reactor_spindle", || {
+        draw_reactor_spindle(grid, width, height, seed, palette, t, params)
+    });
     // 7. Orbit crucibles analytically, including chains, molten contents, and drips.
-    draw_crucibles(grid, width, height, seed, palette, t, params);
+    measure_layer("aetherforge", "crucibles", || {
+        draw_crucibles(grid, width, height, seed, palette, t, params)
+    });
     // 8. Seal the composition with a moving runic machine border.
-    draw_runic_border(grid, width, height, seed, palette, t, params);
+    measure_layer("aetherforge", "runic_border", || {
+        draw_runic_border(grid, width, height, seed, palette, t, params)
+    });
 }
 
 #[cfg(test)]
