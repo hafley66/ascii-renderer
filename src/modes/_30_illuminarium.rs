@@ -986,21 +986,37 @@ fn draw_illuminarium_with_static(
     static_data: &IlluminariumStatic,
 ) {
     // Establish the colored night field and seeded stellar dust.
-    draw_background(grid, width, height, t, static_data);
+    crate::_0_profile::measure_layer("illuminarium", "background", || {
+        draw_background(grid, width, height, t, static_data);
+    });
     // Lay quiet full-frame harmonographs beneath the radial architecture.
-    draw_guilloche(grid, width, height, palette, t, params.warp, static_data);
+    crate::_0_profile::measure_layer("illuminarium", "guilloche", || {
+        draw_guilloche(grid, width, height, palette, t, params.warp, static_data);
+    });
     // Build the nested rotating rose vault and its indexed jewels.
-    draw_rose_lattice(grid, width, height, palette, t, params, static_data);
+    crate::_0_profile::measure_layer("illuminarium", "rose_lattice", || {
+        draw_rose_lattice(grid, width, height, palette, t, params, static_data);
+    });
     // Grow mirrored recursive ornament from the middle rings.
-    draw_filigree(grid, width, height, seed, palette, t, params, static_data);
+    crate::_0_profile::measure_layer("illuminarium", "filigree", || {
+        draw_filigree(grid, width, height, seed, palette, t, params, static_data);
+    });
     // Thread analytically reconstructed comet trails through the vault.
-    draw_orbits(grid, width, height, palette, t, params, static_data);
+    crate::_0_profile::measure_layer("illuminarium", "orbits", || {
+        draw_orbits(grid, width, height, palette, t, params, static_data);
+    });
     // Add seeded time-varying light points before the opaque central medallion.
-    draw_sparks(grid, width, height, palette, t, params, static_data);
+    crate::_0_profile::measure_layer("illuminarium", "sparks", || {
+        draw_sparks(grid, width, height, palette, t, params, static_data);
+    });
     // Seal the composition with a rotating bezier rosette and luminous core.
-    draw_rosette(grid, width, height, palette, t, params, static_data);
+    crate::_0_profile::measure_layer("illuminarium", "rosette", || {
+        draw_rosette(grid, width, height, palette, t, params, static_data);
+    });
     // Draw the animated architectural border last so it remains legible.
-    draw_arch_frame(grid, width, height, seed, palette, t, params.symmetry);
+    crate::_0_profile::measure_layer("illuminarium", "arch_frame", || {
+        draw_arch_frame(grid, width, height, seed, palette, t, params.symmetry);
+    });
 }
 
 #[cfg(test)]

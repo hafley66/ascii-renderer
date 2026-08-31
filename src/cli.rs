@@ -293,7 +293,9 @@ pub(crate) fn run() {
             args: &args,
             param_values: None,
         };
-        registered.render(&mut frame);
+        crate::_0_profile::measure_render(mode, width, height, || {
+            registered.render(&mut frame);
+        });
     } else if mode == "swatch" {
         let (g, done) = cli_swatch(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
         grid = g;

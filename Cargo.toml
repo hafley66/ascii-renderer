@@ -6,8 +6,10 @@ edition = "2024"
 [dependencies]
 console_engine = "2.6.1"
 crossterm = "0.26"
+hafley-observe = { path = "../hafley-rs/crates/hafley-observe" }
 pulldown-cmark = "0.13.1"
 rand = "0.10.0"
+tracing = "0.1"
 unicode-width = "0.2.2"
 
 [dev-dependencies]

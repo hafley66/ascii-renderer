@@ -675,7 +675,7 @@ pub(crate) fn morph_session(mode_a: &str, seed_a: u64, mode_b: &str, seed_b: u64
         terminal,
     };
     use std::io::Write;
-    use std::time::Duration;
+    use std::time::{Duration, Instant};
 
     // stained morphs as Voronoi mush; flow its sites instead.
     let mut strat = if mode_a == "stained" && mode_a == mode_b {
@@ -731,6 +731,7 @@ pub(crate) fn morph_session(mode_a: &str, seed_a: u64, mode_b: &str, seed_b: u64
     let mut iterate_renderer = IterateFrameRenderer::new(mode_a, seed_a, theme, initial_rw, h);
     let mut frame_encoder = AnsiFrameEncoder::new();
     let mut frame_buffer = String::with_capacity(w * h * 8);
+    let mut frame_profiler = crate::_0_profile::FrameProfiler::from_env(mode_a, &strat);
     let registered_native_params = registered_mode(mode_a).is_some();
     let mut encoded_strat = strat.clone();
     let mut eff = Vec::with_capacity(spec.params.len());
@@ -789,6 +790,7 @@ pub(crate) fn morph_session(mode_a: &str, seed_a: u64, mode_b: &str, seed_b: u64
         }
 
         let t = ease_in_out(phase);
+        let generation_started = frame_profiler.as_ref().map(|_| Instant::now());
         // native animators / warps ignore the A->B sweep; everything else morphs.
         let g: std::borrow::Cow<'_, Grid> = if strat == "iterate" {
             // Native T renders into retained storage. Unsupported modes preserve
@@ -815,7 +817,11 @@ pub(crate) fn morph_session(mode_a: &str, seed_a: u64, mode_b: &str, seed_b: u64
                 _ => st.frame(t, &strat),
             })
         };
-        frame_encoder.encode(g.as_ref(), false, &mut frame_buffer);
+        let generation_elapsed = generation_started.map(|started| started.elapsed());
+        let encoding_started = frame_profiler.as_ref().map(|_| Instant::now());
+        let encode_stats = frame_encoder.encode(g.as_ref(), false, &mut frame_buffer);
+        let encoding_elapsed = encoding_started.map(|started| started.elapsed());
+        let presentation_started = frame_profiler.as_ref().map(|_| Instant::now());
         // Overwrite in place: every grid row is full-width so it repaints every
         // cell -- no Clear needed (Clear + full-width writes were causing the
         // bottom-right autoscroll that spammed scrollback).
@@ -865,6 +871,22 @@ pub(crate) fn morph_session(mode_a: &str, seed_a: u64, mode_b: &str, seed_b: u64
         let mut out = stdout.lock();
         out.write_all(frame_buffer.as_bytes()).unwrap();
         out.flush().unwrap();
+        if let Some(profiler) = frame_profiler.as_mut() {
+            profiler.record(
+                &strat,
+                crate::_0_profile::FrameSample {
+                    generation: generation_elapsed.unwrap(),
+                    encoding: encoding_elapsed.unwrap(),
+                    presentation: presentation_started.unwrap().elapsed(),
+                    bytes: frame_buffer.len(),
+                    changed_cells: encode_stats.changed_cells,
+                    runs: encode_stats.runs,
+                    full_repaint: encode_stats.full_repaint,
+                    width: rw,
+                    height: h,
+                },
+            );
+        }
 
         if event::poll(Duration::from_millis(16)).unwrap_or(false) {
             match event::read() {

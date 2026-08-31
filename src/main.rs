@@ -1,5 +1,7 @@
 #![allow(warnings)]
 
+mod _0_profile;
+
 #[macro_use]
 mod registry;
 
@@ -86,6 +88,9 @@ use walker::*;
 use warps::*;
 
 fn main() {
+    if let Err(error) = _0_profile::init() {
+        eprintln!("profiling initialization failed: {error}");
+    }
     cli::run();
 }
 

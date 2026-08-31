@@ -1,3 +1,37 @@
+# Runtime profiling
+
+The executable initializes `hafley-observe` once. Profiling is opt-in and emits
+to stderr, so redirect stderr while the morph player owns the alternate screen:
+
+```bash
+ASCII_PROFILE=1 ASCII_PROFILE_EVERY=120 \
+  cargo run --release -- 42 morph ember illuminarium 42 illuminarium 42 iterate \
+  2>profile.log
+```
+
+Each interval event contains frame generation, ANSI encoding, and terminal
+presentation average/max times, wall-clock FPS, bytes, changed cells, dirty
+runs, and full-repaint count. Strategy changes flush the current interval.
+Single registered-mode renders emit one `render profile` event.
+
+Use JSON records for scripts and trace collectors:
+
+```bash
+ASCII_PROFILE=1 HAFLEY_LOG_FORMAT=json \
+  cargo run --release -- 42 illuminarium ember 2>profile.jsonl
+```
+
+Enable the eight Illuminarium composition timers independently:
+
+```bash
+ASCII_PROFILE=1 ASCII_PROFILE_LAYERS=1 HAFLEY_LOG_FORMAT=json \
+  cargo run --release -- 42 morph ember illuminarium 42 illuminarium 42 iterate \
+  2>illuminarium-profile.jsonl
+```
+
+`RUST_LOG` overrides the built-in profile filter. The event targets are
+`ascii_renderer::profile` and `ascii_renderer::profile::layer`.
+
 # PERF: Illuminarium animation path
 
 Reproduce the focused release probe:
