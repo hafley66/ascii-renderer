@@ -1,5 +1,20 @@
 # Runtime profiling
 
+Run Illuminarium animation headlessly at a fixed grid, frame count, and
+animation rate. The defaults are 320x100, 600 frames, a 60 FPS budget, and the
+interactive player's `0.06` animation-clock step:
+
+```bash
+scripts/1_profile_illuminarium.sh
+scripts/1_profile_illuminarium.sh 480 135 1200 60 0.06
+```
+
+The probe retains one grid and one ANSI diff encoder, advances deterministic
+animation time without sleeping, and excludes terminal writes. It reports
+generation and encoding averages, combined p50/p95/p99/max compute time,
+throughput, target-frame-budget utilization, diff volume, uncached static
+rebuild cost, and full-frame encoding cost.
+
 The executable initializes `hafley-observe` once. Profiling is opt-in and emits
 to stderr, so redirect stderr while the morph player owns the alternate screen:
 

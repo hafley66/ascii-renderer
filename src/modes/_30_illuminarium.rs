@@ -1130,99 +1130,167 @@ mod tests {
     #[test]
     #[ignore = "release-only performance probe; run with --release --ignored"]
     fn perf_illuminarium_generation_and_terminal_encoding() {
+        use crate::_0_profile::{FrameProfiler, FrameSample};
         use crate::gridio::{AnsiFrameEncoder, grid_to_ansi};
         use std::hint::black_box;
-        use std::time::Instant;
+        use std::time::{Duration, Instant};
 
-        const WIDTH: usize = 120;
-        const HEIGHT: usize = 40;
-        const FRAMES: usize = 60;
+        let env_usize = |name: &str, default| {
+            std::env::var(name)
+                .ok()
+                .and_then(|value| value.parse().ok())
+                .filter(|value| *value > 0)
+                .unwrap_or(default)
+        };
+        let width = env_usize("ASCII_PERF_WIDTH", 320);
+        let height = env_usize("ASCII_PERF_HEIGHT", 100);
+        let frames = env_usize("ASCII_PERF_FRAMES", 600);
+        let target_fps = std::env::var("ASCII_PERF_FPS")
+            .ok()
+            .and_then(|value| value.parse::<f64>().ok())
+            .filter(|value| value.is_finite() && *value > 0.0)
+            .unwrap_or(60.0);
+        let frame_step = std::env::var("ASCII_PERF_DT")
+            .ok()
+            .and_then(|value| value.parse::<f32>().ok())
+            .filter(|value| value.is_finite() && *value > 0.0)
+            .unwrap_or(0.06);
+        let frame_budget_ms = 1_000.0 / target_fps;
         let seed = 42;
         let params = IlluminariumParams::default();
         let palette = make_palette(seed);
-        let mut grid = vec![vec![Cell::blank(); WIDTH]; HEIGHT];
+        let mut grid = vec![vec![Cell::blank(); width]; height];
 
         // Populate the keyed static cache before measuring steady-state frames.
         let mut rng = StdRng::seed_from_u64(seed);
         draw_illuminarium(
-            &mut grid, WIDTH, HEIGHT, seed, &palette, &mut rng, 0.0, &params,
+            &mut grid, width, height, seed, &palette, &mut rng, 0.0, &params,
         );
 
-        let generation_start = Instant::now();
-        for frame_index in 0..FRAMES {
+        if let Err(error) = crate::_0_profile::init() {
+            eprintln!("profiling initialization failed: {error}");
+        }
+        let mut profiler = FrameProfiler::from_env("illuminarium", "headless");
+        let mut encoder = AnsiFrameEncoder::new();
+        let mut output = String::with_capacity(width * height * 8);
+        let mut generation = Duration::ZERO;
+        let mut encoding = Duration::ZERO;
+        let mut compute_samples = Vec::with_capacity(frames);
+        let mut encoded_bytes = 0usize;
+        let mut changed_cells = 0usize;
+        let mut runs = 0usize;
+        let mut full_repaints = 0usize;
+
+        for frame_index in 0..frames {
             let mut rng = StdRng::seed_from_u64(seed);
+            let generation_start = Instant::now();
             draw_illuminarium(
                 &mut grid,
-                WIDTH,
-                HEIGHT,
+                width,
+                height,
                 seed,
                 &palette,
                 &mut rng,
-                frame_index as f32 * 0.06,
+                frame_index as f32 * frame_step,
                 &params,
             );
-            black_box(&grid);
-        }
-        let generation = generation_start.elapsed();
+            let generation_elapsed = generation_start.elapsed();
+            let encoding_start = Instant::now();
+            let stats = encoder.encode(&grid, false, &mut output);
+            let encoding_elapsed = encoding_start.elapsed();
 
-        let uncached_frames = 20;
+            generation += generation_elapsed;
+            encoding += encoding_elapsed;
+            compute_samples.push((generation_elapsed + encoding_elapsed).as_nanos());
+            encoded_bytes += stats.bytes;
+            changed_cells += stats.changed_cells;
+            runs += stats.runs;
+            full_repaints += usize::from(stats.full_repaint);
+            if let Some(profiler) = profiler.as_mut() {
+                profiler.record(
+                    "headless",
+                    FrameSample {
+                        generation: generation_elapsed,
+                        encoding: encoding_elapsed,
+                        presentation: Duration::ZERO,
+                        bytes: stats.bytes,
+                        changed_cells: stats.changed_cells,
+                        runs: stats.runs,
+                        full_repaint: stats.full_repaint,
+                        width,
+                        height,
+                    },
+                );
+            }
+            black_box(&grid);
+            black_box(&output);
+        }
+        drop(profiler);
+
+        let uncached_frames = frames.min(20);
         let uncached_start = Instant::now();
         for frame_index in 0..uncached_frames {
             let mut rng = StdRng::seed_from_u64(seed);
             draw_illuminarium_uncached(
                 &mut grid,
-                WIDTH,
-                HEIGHT,
+                width,
+                height,
                 seed,
                 &palette,
                 &mut rng,
-                frame_index as f32 * 0.06,
+                frame_index as f32 * frame_step,
                 &params,
             );
             black_box(&grid);
         }
         let uncached = uncached_start.elapsed();
 
-        let mut frames = Vec::with_capacity(FRAMES);
-        for frame_index in 0..FRAMES {
-            frames.push(frame(
-                WIDTH,
-                HEIGHT,
-                seed,
-                frame_index as f32 * 0.06,
-                &params,
-            ));
-        }
-        let mut encoder = AnsiFrameEncoder::new();
-        let mut output = String::with_capacity(WIDTH * HEIGHT * 8);
-        let mut encoded_bytes = 0usize;
-        let mut full_repaints = 0usize;
-        let encoding_start = Instant::now();
-        for frame in &frames {
-            let stats = encoder.encode(frame, false, &mut output);
-            encoded_bytes += stats.bytes;
-            full_repaints += usize::from(stats.full_repaint);
-            black_box(&output);
-        }
-        let encoding = encoding_start.elapsed();
-
-        let full_encoding_start = Instant::now();
+        let full_frames = frames.min(60);
+        let mut full_encoding = Duration::ZERO;
         let mut full_encoded_bytes = 0usize;
-        for frame in &frames {
-            let output = grid_to_ansi(frame);
+        for frame_index in 0..full_frames {
+            let mut rng = StdRng::seed_from_u64(seed);
+            draw_illuminarium(
+                &mut grid,
+                width,
+                height,
+                seed,
+                &palette,
+                &mut rng,
+                frame_index as f32 * frame_step,
+                &params,
+            );
+            let full_encoding_start = Instant::now();
+            let output = grid_to_ansi(&grid);
+            full_encoding += full_encoding_start.elapsed();
             full_encoded_bytes += output.len();
             black_box(output);
         }
-        let full_encoding = full_encoding_start.elapsed();
+
+        compute_samples.sort_unstable();
+        let percentile_ms = |percentile: usize| {
+            let rank = (compute_samples.len() * percentile).div_ceil(100);
+            compute_samples[rank.saturating_sub(1)] as f64 / 1_000_000.0
+        };
+        let generation_ms = generation.as_secs_f64() * 1_000.0 / frames as f64;
+        let encoding_ms = encoding.as_secs_f64() * 1_000.0 / frames as f64;
+        let compute_ms = generation_ms + encoding_ms;
+        let p50_ms = percentile_ms(50);
+        let p95_ms = percentile_ms(95);
+        let p99_ms = percentile_ms(99);
+        let max_ms = compute_samples.last().copied().unwrap_or(0) as f64 / 1_000_000.0;
 
         eprintln!(
-            "illuminarium {WIDTH}x{HEIGHT}: cached_generation={generation:?} ({:.3} ms/frame), uncached_static_rebuild={uncached:?} ({:.3} ms/frame), diff_encoding={encoding:?} ({:.3} ms/frame, {} bytes/frame, {full_repaints}/{FRAMES} full), full_encoding={full_encoding:?} ({:.3} ms/frame, {} bytes/frame)",
-            generation.as_secs_f64() * 1000.0 / FRAMES as f64,
+            "illuminarium headless {width}x{height}, {frames} frames, time_step={frame_step:.6}s\n  generation_avg={generation_ms:.3} ms  diff_encoding_avg={encoding_ms:.3} ms  compute_avg={compute_ms:.3} ms\n  compute_p50={p50_ms:.3} ms  p95={p95_ms:.3} ms  p99={p99_ms:.3} ms  max={max_ms:.3} ms\n  capacity={:.1} fps  target={target_fps:.1} fps  budget={frame_budget_ms:.3} ms  p99_budget_ratio={:.1}%  p99_within_budget={}\n  diff_bytes_avg={}  changed_cells_avg={}  runs_avg={}  full_repaints={full_repaints}/{frames}\n  uncached_static_rebuild={:.3} ms/frame  full_encoding={:.3} ms/frame  full_bytes_avg={}",
+            1_000.0 / compute_ms,
+            p99_ms / frame_budget_ms * 100.0,
+            p99_ms <= frame_budget_ms,
+            encoded_bytes / frames,
+            changed_cells / frames,
+            runs / frames,
             uncached.as_secs_f64() * 1000.0 / uncached_frames as f64,
-            encoding.as_secs_f64() * 1000.0 / FRAMES as f64,
-            encoded_bytes / FRAMES,
-            full_encoding.as_secs_f64() * 1000.0 / FRAMES as f64,
-            full_encoded_bytes / FRAMES,
+            full_encoding.as_secs_f64() * 1_000.0 / full_frames as f64,
+            full_encoded_bytes / full_frames,
         );
     }
 
