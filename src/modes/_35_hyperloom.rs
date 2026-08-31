@@ -271,9 +271,7 @@ fn warp_thread_point(
     };
     (
         px,
-        base_y
-            + amplitude * (primary * 0.58 + secondary * 0.25 + lens * 0.17)
-            - veil_bulge,
+        base_y + amplitude * (primary * 0.58 + secondary * 0.25 + lens * 0.17) - veil_bulge,
     )
 }
 
@@ -375,9 +373,8 @@ fn draw_loom_apertures(
             let mut points = Vec::with_capacity(sides);
             for side in 0..sides {
                 let a = side as f32 / sides as f32 * TAU + angle;
-                let breathe = (1.0
-                    + (t * 0.9 + phase + side as f32).sin() * 0.08 * params.warp)
-                    * phase_kick;
+                let breathe =
+                    (1.0 + (t * 0.9 + phase + side as f32).sin() * 0.08 * params.warp) * phase_kick;
                 points.push((
                     cx + a.cos() * radius * 1.8 * breathe,
                     cy + a.sin() * radius * 0.72 * breathe,
@@ -460,8 +457,8 @@ fn draw_knot_cages(
                         6400 + (phase_idx * 31 + params.phase) as u64 * 13 + depth as u64,
                     )
                     * (0.4 + phase_mix);
-            let pulse = (1.0 + (t * 0.63 + phase + a * 2.0).sin() * 0.06 * params.warp)
-                * phase_kick;
+            let pulse =
+                (1.0 + (t * 0.63 + phase + a * 2.0).sin() * 0.06 * params.warp) * phase_kick;
             (
                 cx + (a * frequency_a + phase + t * params.speed * 0.21).sin()
                     * radius
@@ -774,10 +771,7 @@ mod tests {
             30,
             42,
             1.1,
-            &HyperloomParams {
-                veil: 0.0,
-                ..base
-            },
+            &HyperloomParams { veil: 0.0, ..base },
         ));
         let reseeded = plain(&frame(88, 30, 99, 1.1, &base));
         assert_ne!(t1, t0, "veil front must travel with time");
@@ -791,10 +785,7 @@ mod tests {
             30,
             42,
             1.1,
-            &HyperloomParams {
-                phase: 7,
-                ..base
-            },
+            &HyperloomParams { phase: 7, ..base },
         ));
         assert_ne!(t1, phased, "phase count must modulate the render");
     }
