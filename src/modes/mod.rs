@@ -2,8 +2,10 @@
 
 mod _30_illuminarium;
 mod _31_qwen_cathedral;
+mod _32_glm_apotheosis;
 
 pub(crate) fn register_all(registry: &mut crate::registry::ModeRegistry) {
     registry.add(&_30_illuminarium::MODE);
     registry.add(&_31_qwen_cathedral::MODE);
+    registry.add(&_32_glm_apotheosis::MODE);
 }
