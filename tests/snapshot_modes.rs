@@ -4,6 +4,8 @@ use std::process::Command;
 fn render(args: &[&str]) -> String {
     let output = Command::new(env!("CARGO_BIN_EXE_ascii-renderer"))
         .args(args)
+        .env("ASCII_GRID_W", "80")
+        .env("ASCII_GRID_H", "24")
         .output()
         .expect("failed to run ascii-renderer");
     let raw = String::from_utf8_lossy(&output.stdout);
@@ -631,4 +633,3 @@ fn gem_aetherium_seed_42() {
         "3.0",
     ]));
 }
-
