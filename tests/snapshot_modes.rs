@@ -610,3 +610,25 @@ fn qwen_cathedral_seed_7_midnight() {
         "6",
     ]));
 }
+
+#[test]
+fn gem_aetherium_seed_42() {
+    insta::assert_snapshot!(render(&[
+        "42",
+        "gem-aetherium",
+        "cathedral",
+        "6",
+        "7",
+        "4",
+        "12",
+        "0.75",
+        "0.45",
+        "0.7",
+        "0.8",
+        "4",
+        "0.85",
+        "1.0",
+        "3.0",
+    ]));
+}
+

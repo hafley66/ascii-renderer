@@ -4,10 +4,12 @@ mod _30_illuminarium;
 mod _31_qwen_cathedral;
 mod _32_glm_apotheosis;
 mod _33_cosmograph;
+mod _34_gemini_astrolabe;
 
 pub(crate) fn register_all(registry: &mut crate::registry::ModeRegistry) {
     registry.add(&_30_illuminarium::MODE);
     registry.add(&_31_qwen_cathedral::MODE);
     registry.add(&_32_glm_apotheosis::MODE);
     registry.add(&_33_cosmograph::MODE);
+    registry.add(&_34_gemini_astrolabe::MODE);
 }
