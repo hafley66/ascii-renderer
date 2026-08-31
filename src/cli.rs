@@ -291,6 +291,7 @@ pub(crate) fn run() {
             rng: &mut rng,
             time: t_anim,
             args: &args,
+            param_values: None,
         };
         registered.render(&mut frame);
     } else if mode == "swatch" {

@@ -1,7 +1,7 @@
 use crossterm::style::Color;
 use unicode_width::UnicodeWidthChar;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Cell {
     pub ch: char,
     pub fg: Color,

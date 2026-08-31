@@ -47,7 +47,7 @@ impl Mode for QwenCathedralMode {
     }
 
     fn render(&self, frame: &mut ModeFrame<'_>) {
-        let params = CathedralParams::from_args(frame.args);
+        let params = CathedralParams::from_inputs(frame.args, frame.param_values);
         draw_qwen_cathedral(
             frame.grid,
             frame.width,
@@ -98,9 +98,14 @@ impl Default for CathedralParams {
 
 impl CathedralParams {
     pub(crate) fn from_args(args: &[String]) -> Self {
+        Self::from_inputs(args, None)
+    }
+
+    pub(crate) fn from_inputs(args: &[String], param_values: Option<&[f32]>) -> Self {
         let read = |index: usize, key: &str, default: f32| {
             args.get(index)
                 .and_then(|value| value.parse::<f32>().ok())
+                .or_else(|| param_values.and_then(|values| values.get(index - 4)).copied())
                 .unwrap_or_else(|| param_f32(key, default))
         };
         Self {

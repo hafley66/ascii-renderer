@@ -1,3 +1,42 @@
+# PERF: Illuminarium animation path
+
+Reproduce the focused release probe:
+
+```bash
+cargo test --release perf_illuminarium_generation_and_terminal_encoding -- --ignored --nocapture
+```
+
+Measured on a 120x40 grid over 60 frames after one cache warm-up:
+
+| stage | before | after | delta |
+|-------|--------|-------|-------|
+| frame generation | 0.277 ms/frame with static work rebuilt | 0.186 ms/frame with keyed static cache | -33% |
+| terminal encoding CPU | 0.149 ms/frame full reconstruction | 0.147 ms/frame retained diff | -1% |
+| terminal bytes | 47,861 bytes/frame full reconstruction | 17,492 bytes/frame retained diff | -63% |
+
+The first diff frame is a forced full repaint. The measured sequence used one
+full repaint and 59 dirty-run frames. The encoder compares final composed cells,
+coalesces unchanged gaps when their encoded byte cost is no greater than another
+absolute cursor escape, and falls back to full output when the diff approaches
+the retained full-frame cost.
+
+Runtime ownership and invalidation:
+
+- `IterateFrameRenderer` owns one reusable nested `Grid`, palette, and seeded RNG
+  for a fixed mode, seed, theme, width, and height.
+- `AnsiFrameEncoder` owns a contiguous previous-frame copy plus retained dirty
+  flags and run storage. The morph loop retains the output `String`.
+- initialization, resize, and resume force a full repaint. Pane width changes
+  recreate native frame storage and invalidate through the encoder size check.
+- registered modes receive effective knob values directly through `ModeFrame`.
+  Legacy native branches and subprocess fallbacks retain environment semantics.
+- Illuminarium static data is keyed by algorithm version, seed, dimensions,
+  RGB palette, and every effective knob. Time only affects the dynamic pass.
+
+Remaining measured costs at 120x40 are 0.186 ms/frame for dynamic composition
+and 0.147 ms/frame for diff construction. The terminal receives one locked
+`write_all` containing body runs, status, and the options pane.
+
 # PERF: arboretum frame path
 
 `draw_arboretum` re-rendered the whole grove every frame. Everything except the

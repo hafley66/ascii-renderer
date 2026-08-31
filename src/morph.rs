@@ -157,223 +157,466 @@ impl MorphState {
     }
 }
 
+/// Reusable in-process frame storage for one fixed mode/seed/theme/grid tuple.
+///
+/// The instance lives for a morph session. `grid` keeps its row allocations and
+/// `rng` is reset to the explicit seed for each deterministic frame. Effective
+/// knob values are borrowed only for the render call; changing them invalidates
+/// mode-owned static caches through their own cache key.
+pub(crate) struct IterateFrameRenderer {
+    mode: String,
+    seed: u64,
+    width: usize,
+    height: usize,
+    palette: [Color; 5],
+    grid: Grid,
+    rng: StdRng,
+}
 
-/// In-process iterate render for modes that support it -- no subprocess fork,
-/// no serialize/parse round trip. Returns None for modes not handled here so the
-/// caller can fall back to the subprocess path. Reads the same ASCII_P_* knob env
-/// as the dispatch, so live tuning still applies.
-pub(crate) fn iterate_grid(mode: &str, seed: u64, theme: &str, w: usize, h: usize, t: f32) -> Option<Grid> {
-    if w == 0 || h == 0 {
-        return None;
+impl IterateFrameRenderer {
+    pub(crate) fn new(
+        mode: &str,
+        seed: u64,
+        theme: &str,
+        width: usize,
+        height: usize,
+    ) -> Option<Self> {
+        if width == 0 || height == 0 {
+            return None;
+        }
+        let palette = if theme.is_empty() {
+            make_palette(seed)
+        } else {
+            named_theme(theme).unwrap_or_else(|| make_palette(seed))
+        };
+        Some(Self {
+            mode: mode.to_string(),
+            seed,
+            width,
+            height,
+            palette,
+            grid: vec![vec![Cell::blank(); width]; height],
+            rng: StdRng::seed_from_u64(seed),
+        })
     }
-    let palette = if theme.is_empty() {
-        make_palette(seed)
-    } else {
-        named_theme(theme).unwrap_or_else(|| make_palette(seed))
-    };
-    let mut grid = vec![vec![Cell::blank(); w]; h];
-    let mut rng = StdRng::seed_from_u64(seed);
+
+    /// Clear the reusable back frame, reset deterministic RNG state, then
+    /// render directly into the same grid allocation.
+    pub(crate) fn render(&mut self, t: f32, param_values: Option<&[f32]>) -> Option<&Grid> {
+        for row in &mut self.grid {
+            row.fill(Cell::blank());
+        }
+        self.rng = StdRng::seed_from_u64(self.seed);
+        if iterate_grid_into(
+            &self.mode,
+            self.seed,
+            self.width,
+            self.height,
+            t,
+            &self.palette,
+            &mut self.grid,
+            &mut self.rng,
+            param_values,
+        ) {
+            Some(&self.grid)
+        } else {
+            None
+        }
+    }
+}
+
+/// In-process iterate render for callers that need an owned one-shot grid.
+pub(crate) fn iterate_grid(
+    mode: &str,
+    seed: u64,
+    theme: &str,
+    w: usize,
+    h: usize,
+    t: f32,
+) -> Option<Grid> {
+    let mut renderer = IterateFrameRenderer::new(mode, seed, theme, w, h)?;
+    renderer.render(t, None)?;
+    Some(renderer.grid)
+}
+
+/// Render a native frame into caller-owned retained storage.
+///
+/// Pseudocode: resolve a registered mode and pass direct frame parameters; for
+/// legacy native modes, invoke the existing branch; return false only when the
+/// subprocess/warp fallback still owns that mode.
+fn iterate_grid_into(
+    mode: &str,
+    seed: u64,
+    w: usize,
+    h: usize,
+    t: f32,
+    palette: &[Color; 5],
+    grid: &mut Grid,
+    rng: &mut StdRng,
+    param_values: Option<&[f32]>,
+) -> bool {
     if let Some(registered) = registered_mode(mode) {
         let mut frame = ModeFrame {
-            grid: &mut grid,
+            grid,
             width: w,
             height: h,
             seed,
-            palette: &palette,
-            rng: &mut rng,
+            palette,
+            rng,
             time: t,
             args: &[],
+            param_values,
         };
         registered.render(&mut frame);
-        return Some(grid);
+        return true;
     }
     match mode {
         "delta" => {
-            draw_delta(&mut grid, w, h, seed, &palette, &mut rng, t);
-            Some(grid)
+            draw_delta(grid, w, h, seed, palette, rng, t);
+            true
         }
         "phyllotaxis" => {
-            draw_phyllotaxis(&mut grid, w, h, seed, &palette, &mut rng, t);
-            Some(grid)
+            draw_phyllotaxis(grid, w, h, seed, palette, rng, t);
+            true
         }
         "moire" => {
-            draw_moire(&mut grid, w, h, seed, &palette, &mut rng, t);
-            Some(grid)
+            draw_moire(grid, w, h, seed, palette, rng, t);
+            true
         }
         "circuit" => {
-            draw_circuit(&mut grid, w, h, seed, &palette, &mut rng, t, 14);
-            Some(grid)
+            draw_circuit(grid, w, h, seed, palette, rng, t, 14);
+            true
         }
         "snakes" => {
-            draw_snakes(&mut grid, w, h, seed, &palette, &mut rng, t, 7);
-            Some(grid)
+            draw_snakes(grid, w, h, seed, palette, rng, t, 7);
+            true
         }
         "nebula" => {
-            draw_nebula(&mut grid, w, h, seed, &palette, &mut rng, t);
-            Some(grid)
+            draw_nebula(grid, w, h, seed, palette, rng, t);
+            true
         }
         "arboretum" => {
             let knobs = crate::arboretum::ForestKnobs::from_env();
-            Some(crate::arboretum::render_arboretum_frame(w, h, seed, &palette, rng, t, &knobs))
-        }
-        "astrolabe" => {
-            crate::astrolabe::draw_astrolabe(&mut grid, w, h, seed, &palette, t);
-            Some(grid)
-        }
-        "sauron" => {
-            crate::sauron::draw_sauron(&mut grid, w, h, seed, &palette, t);
-            Some(grid)
-        }
-        "spiro" => Some(draw_spiro(grid, w, h, seed, palette, rng, t, &[])),
-        "spiro-tile" => Some(draw_spiro_tile(grid, w, h, seed, palette, rng, t, &[])),
-        "weave" => Some(draw_weave(grid, w, h, seed, palette, rng, t, &[])),
-        "gears" => Some(draw_gears(grid, w, h, seed, palette, rng, t, &[])),
-        "kaleido" => Some(draw_kaleido(grid, w, h, seed, palette, rng, t, &[])),
-        "contour" => Some(draw_contour(grid, w, h, seed, palette, rng, t, &[])),
-        "solar-system" => Some(draw_solar_system(grid, w, h, seed, palette, rng, t, &[])),
-        "eyes3" => Some(draw_eyes3(grid, w, h, seed, palette, rng, t, &[])),
-        "fullmetal-eyes" => Some(draw_fullmetal_eyes(grid, w, h, seed, palette, rng, t, &[])),
-        "fullmetal-eyes2" => Some(draw_fullmetal_eyes2(grid, w, h, seed, palette, rng, t, &[])),
-        "hypercube" => {
-            draw_hypercube(
-                &mut grid,
+            *grid = crate::arboretum::render_arboretum_frame(
                 w,
                 h,
                 seed,
-                &palette,
-                &mut rng,
+                palette,
+                StdRng::seed_from_u64(seed),
+                t,
+                &knobs,
+            );
+            true
+        }
+        "astrolabe" => {
+            crate::astrolabe::draw_astrolabe(grid, w, h, seed, palette, t);
+            true
+        }
+        "sauron" => {
+            crate::sauron::draw_sauron(grid, w, h, seed, palette, t);
+            true
+        }
+        "spiro" => {
+            *grid = draw_spiro(
+                std::mem::take(grid),
+                w,
+                h,
+                seed,
+                *palette,
+                StdRng::seed_from_u64(seed),
+                t,
+                &[],
+            );
+            true
+        }
+        "spiro-tile" => {
+            *grid = draw_spiro_tile(
+                std::mem::take(grid),
+                w,
+                h,
+                seed,
+                *palette,
+                StdRng::seed_from_u64(seed),
+                t,
+                &[],
+            );
+            true
+        }
+        "weave" => {
+            *grid = draw_weave(
+                std::mem::take(grid),
+                w,
+                h,
+                seed,
+                *palette,
+                StdRng::seed_from_u64(seed),
+                t,
+                &[],
+            );
+            true
+        }
+        "gears" => {
+            *grid = draw_gears(
+                std::mem::take(grid),
+                w,
+                h,
+                seed,
+                *palette,
+                StdRng::seed_from_u64(seed),
+                t,
+                &[],
+            );
+            true
+        }
+        "kaleido" => {
+            *grid = draw_kaleido(
+                std::mem::take(grid),
+                w,
+                h,
+                seed,
+                *palette,
+                StdRng::seed_from_u64(seed),
+                t,
+                &[],
+            );
+            true
+        }
+        "contour" => {
+            *grid = draw_contour(
+                std::mem::take(grid),
+                w,
+                h,
+                seed,
+                *palette,
+                StdRng::seed_from_u64(seed),
+                t,
+                &[],
+            );
+            true
+        }
+        "solar-system" => {
+            *grid = draw_solar_system(
+                std::mem::take(grid),
+                w,
+                h,
+                seed,
+                *palette,
+                StdRng::seed_from_u64(seed),
+                t,
+                &[],
+            );
+            true
+        }
+        "eyes3" => {
+            *grid = draw_eyes3(
+                std::mem::take(grid),
+                w,
+                h,
+                seed,
+                *palette,
+                StdRng::seed_from_u64(seed),
+                t,
+                &[],
+            );
+            true
+        }
+        "fullmetal-eyes" => {
+            *grid = draw_fullmetal_eyes(
+                std::mem::take(grid),
+                w,
+                h,
+                seed,
+                *palette,
+                StdRng::seed_from_u64(seed),
+                t,
+                &[],
+            );
+            true
+        }
+        "fullmetal-eyes2" => {
+            *grid = draw_fullmetal_eyes2(
+                std::mem::take(grid),
+                w,
+                h,
+                seed,
+                *palette,
+                StdRng::seed_from_u64(seed),
+                t,
+                &[],
+            );
+            true
+        }
+        "hypercube" => {
+            draw_hypercube(
+                grid,
+                w,
+                h,
+                seed,
+                palette,
+                rng,
                 t,
                 param_f32("COPIES", 3.0) as usize,
                 param_f32("SPEED", 1.0),
                 param_f32("GHOSTS", 2.0) as usize,
             );
-            Some(grid)
+            true
         }
         "flux" => {
             draw_flux(
-                &mut grid,
+                grid,
                 w,
                 h,
                 seed,
-                &palette,
-                &mut rng,
+                palette,
+                rng,
                 t,
                 param_f32("COUNT", 58.0) as usize,
                 param_f32("TRAIL", 8.0) as usize,
                 param_f32("SPEED", 1.0),
             );
-            Some(grid)
+            true
         }
         "fireworks" => {
             draw_fireworks(
-                &mut grid,
+                grid,
                 w,
                 h,
                 seed,
-                &palette,
-                &mut rng,
+                palette,
+                rng,
                 t,
                 param_f32("BURSTS", 6.0) as usize,
                 param_f32("SPARKS", 22.0) as usize,
                 param_f32("SPEED", 1.0),
             );
-            Some(grid)
+            true
         }
         "elevator" => {
             draw_elevator(
-                &mut grid,
+                grid,
                 w,
                 h,
                 seed,
-                &palette,
-                &mut rng,
+                palette,
+                rng,
                 t,
                 param_f32("LIFTS", 3.0) as usize,
                 param_f32("SPEED", 1.0),
                 param_f32("CROWD", 1.0),
             );
-            Some(grid)
+            true
         }
         "ferris" => {
             draw_ferris(
-                &mut grid,
+                grid,
                 w,
                 h,
                 seed,
-                &palette,
-                &mut rng,
+                palette,
+                rng,
                 t,
                 param_f32("RADIUS", 8.0) as usize,
                 param_f32("GONDOLAS", 10.0) as usize,
                 param_f32("SPEED", 1.0),
             );
-            Some(grid)
+            true
         }
         "murmuration" => {
             draw_murmuration(
-                &mut grid,
+                grid,
                 w,
                 h,
                 seed,
-                &palette,
-                &mut rng,
+                palette,
+                rng,
                 t,
                 param_f32("BIRDS", 140.0) as usize,
                 param_f32("FLOCKS", 3.0) as usize,
                 param_f32("SPEED", 1.0),
             );
-            Some(grid)
+            true
         }
         "lanterns" => {
             draw_lanterns(
-                &mut grid,
+                grid,
                 w,
                 h,
                 seed,
-                &palette,
-                &mut rng,
+                palette,
+                rng,
                 t,
                 param_f32("COUNT", 7.0) as usize,
                 param_f32("RISE", 1.0),
                 param_f32("SWAY", 1.0),
             );
-            Some(grid)
+            true
         }
         "tide" => {
             draw_tide(
-                &mut grid,
+                grid,
                 w,
                 h,
                 seed,
-                &palette,
-                &mut rng,
+                palette,
+                rng,
                 t,
                 param_f32("WAVES", 2.0) as usize,
                 param_f32("AMP", 1.0),
                 param_f32("SPEED", 1.0),
             );
-            Some(grid)
+            true
         }
         "fa6" | "fullmetal-alchemist6" => {
             draw_fa6(
-                &mut grid,
+                grid,
                 w,
                 h,
                 seed,
-                &palette,
-                &mut rng,
+                palette,
+                rng,
                 t,
                 param_f32("CELLS", 8.0) as usize,
                 param_f32("DENS", 55.0) as u32,
                 param_f32("SPEED", 0.8),
                 param_f32("CHAOS", 42.0) / 100.0,
             );
-            Some(grid)
+            true
         }
-        _ => None,
+        _ => false,
     }
 }
 
+#[cfg(test)]
+mod iterate_frame_tests {
+    use super::*;
+
+    #[test]
+    fn retained_registered_frame_matches_one_shot_and_reuses_rows() {
+        let mut retained = IterateFrameRenderer::new("illuminarium", 42, "deep", 64, 24).unwrap();
+        let first_row = retained.grid[0].as_ptr();
+        let retained_frame = retained.render(2.75, None).unwrap().clone();
+        assert_eq!(retained.grid[0].as_ptr(), first_row);
+        retained.render(3.25, None).unwrap();
+        assert_eq!(retained.grid[0].as_ptr(), first_row);
+        assert_eq!(
+            retained_frame,
+            iterate_grid("illuminarium", 42, "deep", 64, 24, 2.75).unwrap(),
+        );
+    }
+
+    #[test]
+    fn registered_frame_consumes_direct_effective_knobs() {
+        let spec = mode_spec("illuminarium");
+        let defaults: Vec<f32> = spec.params.iter().map(|param| param.default).collect();
+        let mut tuned = defaults.clone();
+        tuned[0] = 17.0;
+        let mut retained =
+            IterateFrameRenderer::new("illuminarium", 42, "deep", 64, 24).unwrap();
+        let default_frame = retained.render(2.75, Some(&defaults)).unwrap().clone();
+        let tuned_frame = retained.render(2.75, Some(&tuned)).unwrap().clone();
+        assert_ne!(default_frame, tuned_frame);
+    }
+}
 
 /// Render any (mode, seed) to a Grid by re-running this binary with the dump flag.
 pub(crate) fn render_frame(exe: &std::path::Path, seed: u64, mode: &str, theme: &str, w: usize, h: usize) -> Option<Grid> {
@@ -483,19 +726,45 @@ pub(crate) fn morph_session(mode_a: &str, seed_a: u64, mode_b: &str, seed_b: u64
     let mut psel: usize = 0;
     let mut pane_open = !spec.params.is_empty();
     let has_params = !spec.params.is_empty();
+    let pane_w = if pane_open { 34.min(w / 2) } else { 0 };
+    let initial_rw = w.saturating_sub(pane_w).max(1);
+    let mut iterate_renderer = IterateFrameRenderer::new(mode_a, seed_a, theme, initial_rw, h);
+    let mut frame_encoder = AnsiFrameEncoder::new();
+    let mut frame_buffer = String::with_capacity(w * h * 8);
+    let registered_native_params = registered_mode(mode_a).is_some();
+    let mut encoded_strat = strat.clone();
+    let mut eff = Vec::with_capacity(spec.params.len());
 
     loop {
-        // Push knob values to env so the iterate subprocess picks up live edits.
-        // Randomize -> per-seed random samples instead of the tuned pvals.
-        // SAFETY: morph_session runs on the single demo thread.
-        let eff = effective_pvals(&spec, &pvals, seed_a, randomize, roll);
-        for (p, v) in spec.params.iter().zip(eff.iter()) {
-            unsafe { std::env::set_var(format!("ASCII_P_{}", p.key), format!("{}", v)) };
+        if strat != encoded_strat {
+            frame_encoder.invalidate();
+            encoded_strat.clone_from(&strat);
+        }
+        // Registered modes receive the values through ModeFrame. Legacy native
+        // branches retain their environment-based knob contract.
+        eff.clear();
+        if randomize {
+            let random_seed = seed_a ^ roll.wrapping_mul(0x9E37_79B9_7F4A_7C15);
+            eff.extend(spec.params.iter().map(|param| rand_knob(random_seed, param)));
+        } else {
+            eff.extend_from_slice(&pvals);
+        }
+        if !registered_native_params {
+            for (p, v) in spec.params.iter().zip(eff.iter()) {
+                // SAFETY: morph_session runs on the single demo thread.
+                unsafe { std::env::set_var(format!("ASCII_P_{}", p.key), format!("{}", v)) };
+            }
         }
         // When the pane is open, render the animation narrower so the tree isn't
         // hidden behind it (width-parametric strats only; warps/morph overlay).
         let pane_w = if pane_open { 34.min(w / 2) } else { 0 };
         let rw = w.saturating_sub(pane_w).max(1);
+        let renderer_size_changed = iterate_renderer
+            .as_ref()
+            .is_none_or(|renderer| renderer.width != rw || renderer.height != h);
+        if renderer_size_changed {
+            iterate_renderer = IterateFrameRenderer::new(mode_a, seed_a, theme, rw, h);
+        }
 
         if playing {
             clock += 0.06;
@@ -521,28 +790,42 @@ pub(crate) fn morph_session(mode_a: &str, seed_a: u64, mode_b: &str, seed_b: u64
 
         let t = ease_in_out(phase);
         // native animators / warps ignore the A->B sweep; everything else morphs.
-        let g = match strat.as_str() {
-            "wind" => warp_wind(&st.a, clock, (h as f32 * 0.18).clamp(3.0, 8.0)),
-            "drift" => warp_drift(&st.a, clock, 1.4),
-            "swirl" => warp_swirl(&st.a, clock, 1.0),
-            "ripple" => warp_ripple(&st.a, clock, 2.2),
-            "breathe" => warp_breathe(&st.a, clock, 1.0),
-            "vflow" => voronoi_flow_frame(rw, h, seed_a, clock, &palette),
-            // Native T if the mode renders in-process; otherwise warp the base
-            // frame over time (no per-frame fork -- the old fallback re-ran the
-            // binary every frame and froze the player).
-            "iterate" => iterate_grid(mode_a, seed_a, theme, rw, h, clock)
-                .unwrap_or_else(|| warp_wind(&st.a, clock, (h as f32 * 0.12).clamp(2.0, 6.0))),
-            _ => st.frame(t, &strat),
+        let g: std::borrow::Cow<'_, Grid> = if strat == "iterate" {
+            // Native T renders into retained storage. Unsupported modes preserve
+            // the existing no-subprocess-per-frame wind fallback.
+            match iterate_renderer
+                .as_mut()
+                .and_then(|renderer| renderer.render(clock, Some(&eff)))
+            {
+                Some(grid) => std::borrow::Cow::Borrowed(grid),
+                None => std::borrow::Cow::Owned(warp_wind(
+                    &st.a,
+                    clock,
+                    (h as f32 * 0.12).clamp(2.0, 6.0),
+                )),
+            }
+        } else {
+            std::borrow::Cow::Owned(match strat.as_str() {
+                "wind" => warp_wind(&st.a, clock, (h as f32 * 0.18).clamp(3.0, 8.0)),
+                "drift" => warp_drift(&st.a, clock, 1.4),
+                "swirl" => warp_swirl(&st.a, clock, 1.0),
+                "ripple" => warp_ripple(&st.a, clock, 2.2),
+                "breathe" => warp_breathe(&st.a, clock, 1.0),
+                "vflow" => voronoi_flow_frame(rw, h, seed_a, clock, &palette),
+                _ => st.frame(t, &strat),
+            })
         };
-        let body = grid_to_ansi(&g);
+        frame_encoder.encode(g.as_ref(), false, &mut frame_buffer);
         // Overwrite in place: every grid row is full-width so it repaints every
         // cell -- no Clear needed (Clear + full-width writes were causing the
         // bottom-right autoscroll that spammed scrollback).
         let status = if pane_open && has_params {
             format!(
                 " morph {} | {} | t={:.2} | {} | o=close opts  \u{2191}\u{2193}=select  \u{2190}\u{2192}=adjust  r=reset  i=iterate  q ",
-                mode_a, strat, t, if playing { "\u{25b6}" } else { "\u{2161}" },
+                mode_a,
+                strat,
+                t,
+                if playing { "\u{25b6}" } else { "\u{2161}" },
             )
         } else {
             format!(
@@ -560,16 +843,28 @@ pub(crate) fn morph_session(mode_a: &str, seed_a: u64, mode_b: &str, seed_b: u64
         let status_w = w.saturating_sub(1);
         let status: String = status.chars().take(status_w).collect();
         let pad = status_w.saturating_sub(status.chars().count());
-        let mut buf = String::new();
-        buf.push_str(&body); // each row self-positions; no newlines
-        buf.push_str(&format!("\x1b[{};1H", th)); // status on last row (1-based)
-        buf.push_str(&format!("\x1b[7m{}{}\x1b[0m", status, " ".repeat(pad)));
-        print!("{}", buf);
-        io::stdout().flush().unwrap();
+        use std::fmt::Write as _;
+        let _ = write!(frame_buffer, "\x1b[{};1H", th);
+        let _ = write!(frame_buffer, "\x1b[7m{}{}\x1b[0m", status, " ".repeat(pad));
         if pane_open {
             // overlay the knob pane on the right; covers columns rw..w each frame.
-            draw_options_pane(rw, th, mode_a, &spec, &eff, psel, seed_a, theme, randomize);
+            options_pane_to_ansi(
+                &mut frame_buffer,
+                rw,
+                th,
+                mode_a,
+                &spec,
+                &eff,
+                psel,
+                seed_a,
+                theme,
+                randomize,
+            );
         }
+        let stdout = io::stdout();
+        let mut out = stdout.lock();
+        out.write_all(frame_buffer.as_bytes()).unwrap();
+        out.flush().unwrap();
 
         if event::poll(Duration::from_millis(16)).unwrap_or(false) {
             match event::read() {
@@ -580,7 +875,12 @@ pub(crate) fn morph_session(mode_a: &str, seed_a: u64, mode_b: &str, seed_b: u64
                         randomize = !randomize;
                         store_randomize(&mut saved, randomize);
                     }
-                    KeyCode::Char(' ') => playing = !playing,
+                    KeyCode::Char(' ') => {
+                        playing = !playing;
+                        if playing {
+                            frame_encoder.invalidate();
+                        }
+                    }
                     KeyCode::Char('1') => strat = "dissolve".to_string(),
                     KeyCode::Char('2') => strat = "field".to_string(),
                     KeyCode::Char('3') => strat = "transport".to_string(),
@@ -600,10 +900,14 @@ pub(crate) fn morph_session(mode_a: &str, seed_a: u64, mode_b: &str, seed_b: u64
                     KeyCode::Down if pane_open && has_params => {
                         psel = (psel + 1) % spec.params.len();
                     }
-                    KeyCode::Char('-') | KeyCode::Char('_') if pane_open && has_params && randomize => {
+                    KeyCode::Char('-') | KeyCode::Char('_')
+                        if pane_open && has_params && randomize =>
+                    {
                         roll = roll.wrapping_sub(1);
                     }
-                    KeyCode::Char('+') | KeyCode::Char('=') if pane_open && has_params && randomize => {
+                    KeyCode::Char('+') | KeyCode::Char('=')
+                        if pane_open && has_params && randomize =>
+                    {
                         roll = roll.wrapping_add(1);
                     }
                     KeyCode::Char('-') | KeyCode::Char('_') if pane_open && has_params => {
@@ -662,12 +966,18 @@ pub(crate) fn morph_session(mode_a: &str, seed_a: u64, mode_b: &str, seed_b: u64
                     w = nw as usize;
                     h = (nh as usize).saturating_sub(1).max(1);
                     blank = vec![vec![Cell::blank(); w]; h];
-                    let (b_seed, b_mode) = if walk { (walk_seed, mode_a) } else { (seed_b, mode_b) };
+                    let (b_seed, b_mode) = if walk {
+                        (walk_seed, mode_a)
+                    } else {
+                        (seed_b, mode_b)
+                    };
                     let na = render_frame(&exe, seed_a, mode_a, theme, w, h)
                         .unwrap_or_else(|| blank.clone());
                     let nb = render_frame(&exe, b_seed, b_mode, theme, w, h)
                         .unwrap_or_else(|| blank.clone());
                     st = MorphState::new(na, nb);
+                    iterate_renderer = IterateFrameRenderer::new(mode_a, seed_a, theme, w, h);
+                    frame_encoder.invalidate();
                     phase = 0.0;
                     dir = 1.0;
                     execute!(io::stdout(), terminal::Clear(terminal::ClearType::All)).unwrap();

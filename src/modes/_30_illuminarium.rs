@@ -43,7 +43,7 @@ impl Mode for IlluminariumMode {
     }
 
     fn render(&self, frame: &mut ModeFrame<'_>) {
-        let params = IlluminariumParams::from_args(frame.args);
+        let params = IlluminariumParams::from_inputs(frame.args, frame.param_values);
         draw_illuminarium(
             frame.grid,
             frame.width,
@@ -90,9 +90,18 @@ impl Default for IlluminariumParams {
 
 impl IlluminariumParams {
     pub(crate) fn from_args(args: &[String]) -> Self {
+        Self::from_inputs(args, None)
+    }
+
+    pub(crate) fn from_inputs(args: &[String], param_values: Option<&[f32]>) -> Self {
         let read = |index: usize, key: &str, default: f32| {
             args.get(index)
                 .and_then(|value| value.parse::<f32>().ok())
+                .or_else(|| {
+                    param_values
+                        .and_then(|values| values.get(index - 4))
+                        .copied()
+                })
                 .unwrap_or_else(|| param_f32(key, default))
         };
         Self {
@@ -108,6 +117,213 @@ impl IlluminariumParams {
             bloom: read(13, "BLOOM", 0.72).clamp(0.0, 1.5),
         }
     }
+}
+
+const CACHE_ALGORITHM_VERSION: u32 = 1;
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct IlluminariumParamKey {
+    symmetry: usize,
+    rings: usize,
+    filigree: u32,
+    orbiters: usize,
+    speed: u32,
+    warp: u32,
+    trails: usize,
+    sparks: usize,
+    depth: usize,
+    bloom: u32,
+}
+
+impl From<&IlluminariumParams> for IlluminariumParamKey {
+    fn from(params: &IlluminariumParams) -> Self {
+        Self {
+            symmetry: params.symmetry,
+            rings: params.rings,
+            filigree: params.filigree.to_bits(),
+            orbiters: params.orbiters,
+            speed: params.speed.to_bits(),
+            warp: params.warp.to_bits(),
+            trails: params.trails,
+            sparks: params.sparks,
+            depth: params.depth,
+            bloom: params.bloom.to_bits(),
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct IlluminariumCacheKey {
+    algorithm_version: u32,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: [Color; 5],
+    params: IlluminariumParamKey,
+}
+
+#[derive(Clone, Copy)]
+struct BackgroundStar {
+    x: usize,
+    y: usize,
+    pick: f32,
+}
+
+#[derive(Clone, Copy)]
+struct GuillocheRibbon {
+    a_freq: f32,
+    b_freq: f32,
+    phase: f32,
+}
+
+#[derive(Clone, Copy)]
+struct RoseRing {
+    fraction: f32,
+    petals: usize,
+    direction: f32,
+    seed_phase: f32,
+}
+
+#[derive(Clone, Copy)]
+struct OrbiterStatic {
+    phase: f32,
+    radius: f32,
+    eccentricity: f32,
+    direction: f32,
+    rate: f32,
+}
+
+#[derive(Clone, Copy)]
+struct SparkStatic {
+    angle0: f32,
+    radius0: f32,
+    rate: f32,
+    wave: f32,
+    pulse_rate: f32,
+}
+
+/// Immutable work shared by every time sample for one complete cache key.
+/// Time is deliberately absent. Construction owns all seed hashes, noise field
+/// evaluation, background geometry, and stable per-object constants. Rendering
+/// only borrows this data; replacement occurs as one unique cache-slot write.
+struct IlluminariumStatic {
+    key: IlluminariumCacheKey,
+    background: Vec<Cell>,
+    background_stars: Vec<BackgroundStar>,
+    star_color: Color,
+    guilloche: [GuillocheRibbon; 3],
+    rose_rings: Vec<RoseRing>,
+    orbiters: Vec<OrbiterStatic>,
+    sparks: Vec<SparkStatic>,
+    filigree_phase: f32,
+    rosette_phase: f32,
+}
+
+impl IlluminariumStatic {
+    /// Build static state in painter-consumption order from explicit inputs.
+    ///
+    /// Pseudocode: classify every background cell, derive ribbon/ring constants,
+    /// derive filigree/orbiter/spark identities, then retain central phase data.
+    fn new(
+        width: usize,
+        height: usize,
+        seed: u64,
+        palette: &[Color; 5],
+        params: &IlluminariumParams,
+    ) -> Self {
+        let key = IlluminariumCacheKey {
+            algorithm_version: CACHE_ALGORITHM_VERSION,
+            width,
+            height,
+            seed,
+            palette: *palette,
+            params: params.into(),
+        };
+        let top = darken(palette[0], 18);
+        let bottom = darken(shift_hue(palette[2], 24.0), 54);
+        let span = height.saturating_sub(1).max(1) as f32;
+        let star_color = darken(palette[4], 38);
+        let dust_color = darken(shift_hue(palette[3], 35.0), 58);
+        let mut background = Vec::with_capacity(width * height);
+        let mut background_stars = Vec::new();
+        for y in 0..height {
+            let vertical = y as f32 / span;
+            let bg = lerp_color(top, bottom, vertical * vertical * 0.82);
+            for x in 0..width {
+                let field = pp_fbm(x as f32 * 0.075, y as f32 * 0.13, seed ^ 0x51A7);
+                let pick = hash01(seed, x as u64 * 131 + y as u64 * 977);
+                let cell = if field > 0.72 && pick > 0.82 - params.bloom * 0.08 {
+                    background_stars.push(BackgroundStar { x, y, pick });
+                    Cell::with_bg(' ', bg, bg)
+                } else if field > 0.63 && pick > 0.91 {
+                    Cell::with_bg('·', dust_color, bg)
+                } else {
+                    Cell::with_bg(' ', bg, bg)
+                };
+                background.push(cell);
+            }
+        }
+
+        let tau = std::f32::consts::TAU;
+        let guilloche = std::array::from_fn(|ribbon| GuillocheRibbon {
+            a_freq: 2.0 + ((seed as usize + ribbon * 3) % 5) as f32,
+            b_freq: 2.0
+                + ((seed as usize + ribbon * 3) % 5) as f32
+                + 1.0
+                + (params.rings % 3) as f32,
+            phase: hash01(seed, 800 + ribbon as u64) * tau,
+        });
+        let rose_rings = (0..params.rings)
+            .map(|ring| RoseRing {
+                fraction: (ring + 1) as f32 / (params.rings + 1) as f32,
+                petals: params.symmetry + (ring % 3) * 2,
+                direction: if ring % 2 == 0 { 1.0 } else { -1.0 },
+                seed_phase: hash01(seed, 1000 + ring as u64) * tau,
+            })
+            .collect();
+        let orbiters = (0..params.orbiters)
+            .map(|orbiter| {
+                let band = orbiter % params.rings.max(1);
+                OrbiterStatic {
+                    phase: hash01(seed, 7000 + orbiter as u64 * 13) * tau,
+                    radius: 0.16 + 0.69 * (band + 1) as f32 / (params.rings + 1) as f32,
+                    eccentricity: 0.70 + hash01(seed, 7100 + orbiter as u64) * 0.26,
+                    direction: if orbiter % 2 == 0 { 1.0 } else { -1.0 },
+                    rate: 0.18 + hash01(seed, 7200 + orbiter as u64) * 0.38,
+                }
+            })
+            .collect();
+        let sparks = (0..params.sparks)
+            .map(|spark| {
+                let base = spark as u64 * 41;
+                SparkStatic {
+                    angle0: hash01(seed, 9000 + base) * tau,
+                    radius0: hash01(seed, 9001 + base).sqrt(),
+                    rate: (hash01(seed, 9002 + base) - 0.5) * 0.20,
+                    wave: hash01(seed, 9003 + base) * tau,
+                    pulse_rate: 0.6 + hash01(seed, 9004 + base),
+                }
+            })
+            .collect();
+        Self {
+            key,
+            background,
+            background_stars,
+            star_color,
+            guilloche,
+            rose_rings,
+            orbiters,
+            sparks,
+            filigree_phase: hash01(seed, 4040) * tau,
+            rosette_phase: hash01(seed, 10001) * tau,
+        }
+    }
+}
+
+thread_local! {
+    static ILLUMINARIUM_STATIC: std::cell::RefCell<Option<IlluminariumStatic>> = const {
+        std::cell::RefCell::new(None)
+    };
 }
 
 fn hash01(seed: u64, tag: u64) -> f32 {
@@ -191,42 +407,29 @@ fn draw_background(
     grid: &mut Grid,
     width: usize,
     height: usize,
-    seed: u64,
-    palette: &[Color; 5],
     t: f32,
-    bloom: f32,
+    static_data: &IlluminariumStatic,
 ) {
-    let top = darken(palette[0], 18);
-    let bottom = darken(shift_hue(palette[2], 24.0), 54);
-    let span = height.saturating_sub(1).max(1) as f32;
     for y in 0..height {
-        let vertical = y as f32 / span;
-        let bg = lerp_color(top, bottom, vertical * vertical * 0.82);
-        for x in 0..width {
-            grid[y][x] = Cell::with_bg(' ', bg, bg);
-        }
+        let start = y * width;
+        grid[y].copy_from_slice(&static_data.background[start..start + width]);
     }
-
-    let star_color = darken(palette[4], 38);
-    let dust_color = darken(shift_hue(palette[3], 35.0), 58);
-    for y in 0..height {
-        for x in 0..width {
-            let field = pp_fbm(x as f32 * 0.075, y as f32 * 0.13, seed ^ 0x51A7);
-            let pick = hash01(seed, x as u64 * 131 + y as u64 * 977);
-            if field > 0.72 && pick > 0.82 - bloom * 0.08 {
-                let twinkle = (t * 0.9 + pick * std::f32::consts::TAU * 2.0).sin();
-                let ch = if twinkle > 0.84 {
-                    '✦'
-                } else if twinkle > 0.18 {
-                    '∙'
-                } else {
-                    '·'
-                };
-                put(grid, x as i32, y as i32, ch, star_color);
-            } else if field > 0.63 && pick > 0.91 {
-                put(grid, x as i32, y as i32, '·', dust_color);
-            }
-        }
+    for star in &static_data.background_stars {
+        let twinkle = (t * 0.9 + star.pick * std::f32::consts::TAU * 2.0).sin();
+        let ch = if twinkle > 0.84 {
+            '✦'
+        } else if twinkle > 0.18 {
+            '∙'
+        } else {
+            '·'
+        };
+        put(
+            grid,
+            star.x as i32,
+            star.y as i32,
+            ch,
+            static_data.star_color,
+        );
     }
 }
 
@@ -323,11 +526,10 @@ fn draw_guilloche(
     grid: &mut Grid,
     width: usize,
     height: usize,
-    seed: u64,
     palette: &[Color; 5],
     t: f32,
     warp: f32,
-    rings: usize,
+    static_data: &IlluminariumStatic,
 ) {
     let tau = std::f32::consts::TAU;
     let cx = width as f32 * 0.5;
@@ -335,10 +537,10 @@ fn draw_guilloche(
     let rx = width as f32 * 0.46;
     let ry = height as f32 * 0.43;
     let samples = (width + height).max(40) * 6;
-    for ribbon in 0..3usize {
-        let a_freq = 2.0 + ((seed as usize + ribbon * 3) % 5) as f32;
-        let b_freq = a_freq + 1.0 + (rings % 3) as f32;
-        let phase = hash01(seed, 800 + ribbon as u64) * tau;
+    for (ribbon, ribbon_static) in static_data.guilloche.iter().enumerate() {
+        let a_freq = ribbon_static.a_freq;
+        let b_freq = ribbon_static.b_freq;
+        let phase = ribbon_static.phase;
         let color = darken(
             color_wheel(palette, ribbon + 1, t * 0.2),
             48 - ribbon as u8 * 6,
@@ -362,10 +564,10 @@ fn draw_rose_lattice(
     grid: &mut Grid,
     width: usize,
     height: usize,
-    seed: u64,
     palette: &[Color; 5],
     t: f32,
     params: &IlluminariumParams,
+    static_data: &IlluminariumStatic,
 ) {
     let tau = std::f32::consts::TAU;
     let cx = width as f32 * 0.5;
@@ -374,11 +576,11 @@ fn draw_rose_lattice(
     let max_ry = height as f32 * 0.40;
     let samples = (width + height).max(48) * 5;
 
-    for ring in 0..params.rings {
-        let fraction = (ring + 1) as f32 / (params.rings + 1) as f32;
-        let petals = params.symmetry + (ring % 3) * 2;
-        let direction = if ring % 2 == 0 { 1.0 } else { -1.0 };
-        let seed_phase = hash01(seed, 1000 + ring as u64) * tau;
+    for (ring, ring_static) in static_data.rose_rings.iter().enumerate() {
+        let fraction = ring_static.fraction;
+        let petals = ring_static.petals;
+        let direction = ring_static.direction;
+        let seed_phase = ring_static.seed_phase;
         let rotation = seed_phase + direction * t * params.speed * (0.035 + ring as f32 * 0.006);
         let pulse = 1.0 + params.bloom * 0.035 * (t * 0.8 + seed_phase).sin();
         let color = darken(
@@ -506,6 +708,7 @@ fn draw_filigree(
     palette: &[Color; 5],
     t: f32,
     params: &IlluminariumParams,
+    static_data: &IlluminariumStatic,
 ) {
     if params.filigree <= 0.01 {
         return;
@@ -520,7 +723,7 @@ fn draw_filigree(
         .min(height as f32 * 0.11)
         .max(1.1)
         * (0.7 + params.filigree * 0.5);
-    let rotation = t * params.speed * -0.025 + hash01(seed, 4040) * tau;
+    let rotation = t * params.speed * -0.025 + static_data.filigree_phase;
     for arm in 0..arms {
         let angle = arm as f32 * tau / arms as f32 + rotation;
         let start = (cx + base_rx * angle.cos(), cy + base_ry * angle.sin());
@@ -545,23 +748,22 @@ fn draw_orbits(
     grid: &mut Grid,
     width: usize,
     height: usize,
-    seed: u64,
     palette: &[Color; 5],
     t: f32,
     params: &IlluminariumParams,
+    static_data: &IlluminariumStatic,
 ) {
     let tau = std::f32::consts::TAU;
     let cx = width as f32 * 0.5;
     let cy = height as f32 * 0.5;
     let heads = ['◆', '●', '⊙', '✦'];
     let tails = ['·', '∙', '○', '◇'];
-    for orbiter in 0..params.orbiters {
-        let phase = hash01(seed, 7000 + orbiter as u64 * 13) * tau;
-        let band = orbiter % params.rings.max(1);
-        let radius = 0.16 + 0.69 * (band + 1) as f32 / (params.rings + 1) as f32;
-        let eccentricity = 0.70 + hash01(seed, 7100 + orbiter as u64) * 0.26;
-        let direction = if orbiter % 2 == 0 { 1.0 } else { -1.0 };
-        let rate = 0.18 + hash01(seed, 7200 + orbiter as u64) * 0.38;
+    for (orbiter, orbiter_static) in static_data.orbiters.iter().enumerate() {
+        let phase = orbiter_static.phase;
+        let radius = orbiter_static.radius;
+        let eccentricity = orbiter_static.eccentricity;
+        let direction = orbiter_static.direction;
+        let rate = orbiter_static.rate;
         let color = color_wheel(palette, orbiter + 2, t * params.speed * 0.18);
         for trail in (0..=params.trails).rev() {
             let age = trail as f32 * 0.055;
@@ -596,26 +798,25 @@ fn draw_sparks(
     grid: &mut Grid,
     width: usize,
     height: usize,
-    seed: u64,
     palette: &[Color; 5],
     t: f32,
     params: &IlluminariumParams,
+    static_data: &IlluminariumStatic,
 ) {
     let tau = std::f32::consts::TAU;
     let cx = width as f32 * 0.5;
     let cy = height as f32 * 0.5;
     let glyphs = ['·', '∙', '*', '+', '✧', '✦'];
-    for spark in 0..params.sparks {
-        let base = spark as u64 * 41;
-        let angle0 = hash01(seed, 9000 + base) * tau;
-        let radius0 = hash01(seed, 9001 + base).sqrt();
-        let rate = (hash01(seed, 9002 + base) - 0.5) * 0.20;
-        let wave = hash01(seed, 9003 + base) * tau;
+    for (spark, spark_static) in static_data.sparks.iter().enumerate() {
+        let angle0 = spark_static.angle0;
+        let radius0 = spark_static.radius0;
+        let rate = spark_static.rate;
+        let wave = spark_static.wave;
         let angle = angle0 + t * params.speed * rate;
         let radius = (radius0 + 0.035 * (t * 0.37 + wave).sin()).clamp(0.04, 0.98);
         let x = cx + width as f32 * 0.45 * radius * angle.cos();
         let y = cy + height as f32 * 0.41 * radius * angle.sin();
-        let pulse = (t * (0.6 + hash01(seed, 9004 + base)) + wave).sin();
+        let pulse = (t * spark_static.pulse_rate + wave).sin();
         let glyph_index = ((pulse + 1.0) * 0.5 * (glyphs.len() - 1) as f32).round() as usize;
         let color = color_wheel(palette, spark, t * 0.05);
         put(
@@ -632,17 +833,17 @@ fn draw_rosette(
     grid: &mut Grid,
     width: usize,
     height: usize,
-    seed: u64,
     palette: &[Color; 5],
     t: f32,
     params: &IlluminariumParams,
+    static_data: &IlluminariumStatic,
 ) {
     let tau = std::f32::consts::TAU;
     let cx = width as f32 * 0.5;
     let cy = height as f32 * 0.5;
     let petal_rx = (width as f32 * 0.14).clamp(4.0, 15.0);
     let petal_ry = (height as f32 * 0.16).clamp(2.5, 7.0);
-    let rotation = t * params.speed * 0.08 + hash01(seed, 10001) * tau;
+    let rotation = t * params.speed * 0.08 + static_data.rosette_phase;
     let petals = params.symmetry;
 
     for petal in 0..petals {
@@ -724,30 +925,80 @@ pub(crate) fn draw_illuminarium(
         return;
     }
     let t = t + rng.random_range(0.0..std::f32::consts::TAU) * 0.03;
-
-    // Establish the colored night field and seeded stellar dust.
-    draw_background(grid, width, height, seed, palette, t, params.bloom);
-    // Lay quiet full-frame harmonographs beneath the radial architecture.
-    draw_guilloche(
-        grid,
+    let key = IlluminariumCacheKey {
+        algorithm_version: CACHE_ALGORITHM_VERSION,
         width,
         height,
         seed,
-        palette,
-        t,
-        params.warp,
-        params.rings,
-    );
+        palette: *palette,
+        params: params.into(),
+    };
+    ILLUMINARIUM_STATIC.with(|slot| {
+        let rebuild = slot
+            .borrow()
+            .as_ref()
+            .is_none_or(|static_data| static_data.key != key);
+        if rebuild {
+            *slot.borrow_mut() = Some(IlluminariumStatic::new(
+                width, height, seed, palette, params,
+            ));
+        }
+        let borrowed = slot.borrow();
+        draw_illuminarium_with_static(
+            grid,
+            width,
+            height,
+            seed,
+            palette,
+            t,
+            params,
+            borrowed.as_ref().unwrap(),
+        );
+    });
+}
+
+fn draw_illuminarium_uncached(
+    grid: &mut Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: &[Color; 5],
+    rng: &mut StdRng,
+    t: f32,
+    params: &IlluminariumParams,
+) {
+    if width == 0 || height == 0 {
+        return;
+    }
+    let t = t + rng.random_range(0.0..std::f32::consts::TAU) * 0.03;
+    let static_data = IlluminariumStatic::new(width, height, seed, palette, params);
+    draw_illuminarium_with_static(grid, width, height, seed, palette, t, params, &static_data);
+}
+
+fn draw_illuminarium_with_static(
+    grid: &mut Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: &[Color; 5],
+    t: f32,
+    params: &IlluminariumParams,
+    static_data: &IlluminariumStatic,
+) {
+    // Establish the colored night field and seeded stellar dust.
+    draw_background(grid, width, height, t, static_data);
+    // Lay quiet full-frame harmonographs beneath the radial architecture.
+    draw_guilloche(grid, width, height, palette, t, params.warp, static_data);
     // Build the nested rotating rose vault and its indexed jewels.
-    draw_rose_lattice(grid, width, height, seed, palette, t, params);
+    draw_rose_lattice(grid, width, height, palette, t, params, static_data);
     // Grow mirrored recursive ornament from the middle rings.
-    draw_filigree(grid, width, height, seed, palette, t, params);
+    draw_filigree(grid, width, height, seed, palette, t, params, static_data);
     // Thread analytically reconstructed comet trails through the vault.
-    draw_orbits(grid, width, height, seed, palette, t, params);
+    draw_orbits(grid, width, height, palette, t, params, static_data);
     // Add seeded time-varying light points before the opaque central medallion.
-    draw_sparks(grid, width, height, seed, palette, t, params);
+    draw_sparks(grid, width, height, palette, t, params, static_data);
     // Seal the composition with a rotating bezier rosette and luminous core.
-    draw_rosette(grid, width, height, seed, palette, t, params);
+    draw_rosette(grid, width, height, palette, t, params, static_data);
     // Draw the animated architectural border last so it remains legible.
     draw_arch_frame(grid, width, height, seed, palette, t, params.symmetry);
 }
@@ -764,6 +1015,22 @@ mod tests {
         let palette = make_palette(seed);
         let mut rng = StdRng::seed_from_u64(seed);
         draw_illuminarium(
+            &mut grid, width, height, seed, &palette, &mut rng, t, params,
+        );
+        grid
+    }
+
+    fn frame_uncached(
+        width: usize,
+        height: usize,
+        seed: u64,
+        t: f32,
+        params: &IlluminariumParams,
+    ) -> Grid {
+        let mut grid = vec![vec![Cell::blank(); width]; height];
+        let palette = make_palette(seed);
+        let mut rng = StdRng::seed_from_u64(seed);
+        draw_illuminarium_uncached(
             &mut grid, width, height, seed, &palette, &mut rng, t, params,
         );
         grid
@@ -819,6 +1086,128 @@ mod tests {
         let output = frame(12, 6, 7, 8.0, &params);
         assert_eq!(output.len(), 6);
         assert_eq!(output.iter().map(Vec::len).collect::<Vec<_>>(), vec![12; 6]);
+    }
+
+    #[test]
+    fn cached_and_uncached_frames_are_cell_exact_across_invalidation() {
+        let defaults = IlluminariumParams::default();
+        let tuned = IlluminariumParams {
+            symmetry: 17,
+            rings: 10,
+            sparks: 140,
+            bloom: 1.1,
+            ..defaults
+        };
+        for (width, height, seed, time, params) in [
+            (80, 36, 42, 0.0, &defaults),
+            (80, 36, 42, 2.75, &defaults),
+            (96, 30, 43, 1.5, &tuned),
+            (80, 36, 42, 4.25, &defaults),
+        ] {
+            assert_eq!(
+                frame(width, height, seed, time, params),
+                frame_uncached(width, height, seed, time, params),
+            );
+        }
+    }
+
+    #[test]
+    #[ignore = "release-only performance probe; run with --release --ignored"]
+    fn perf_illuminarium_generation_and_terminal_encoding() {
+        use crate::gridio::{AnsiFrameEncoder, grid_to_ansi};
+        use std::hint::black_box;
+        use std::time::Instant;
+
+        const WIDTH: usize = 120;
+        const HEIGHT: usize = 40;
+        const FRAMES: usize = 60;
+        let seed = 42;
+        let params = IlluminariumParams::default();
+        let palette = make_palette(seed);
+        let mut grid = vec![vec![Cell::blank(); WIDTH]; HEIGHT];
+
+        // Populate the keyed static cache before measuring steady-state frames.
+        let mut rng = StdRng::seed_from_u64(seed);
+        draw_illuminarium(
+            &mut grid, WIDTH, HEIGHT, seed, &palette, &mut rng, 0.0, &params,
+        );
+
+        let generation_start = Instant::now();
+        for frame_index in 0..FRAMES {
+            let mut rng = StdRng::seed_from_u64(seed);
+            draw_illuminarium(
+                &mut grid,
+                WIDTH,
+                HEIGHT,
+                seed,
+                &palette,
+                &mut rng,
+                frame_index as f32 * 0.06,
+                &params,
+            );
+            black_box(&grid);
+        }
+        let generation = generation_start.elapsed();
+
+        let uncached_frames = 20;
+        let uncached_start = Instant::now();
+        for frame_index in 0..uncached_frames {
+            let mut rng = StdRng::seed_from_u64(seed);
+            draw_illuminarium_uncached(
+                &mut grid,
+                WIDTH,
+                HEIGHT,
+                seed,
+                &palette,
+                &mut rng,
+                frame_index as f32 * 0.06,
+                &params,
+            );
+            black_box(&grid);
+        }
+        let uncached = uncached_start.elapsed();
+
+        let mut frames = Vec::with_capacity(FRAMES);
+        for frame_index in 0..FRAMES {
+            frames.push(frame(
+                WIDTH,
+                HEIGHT,
+                seed,
+                frame_index as f32 * 0.06,
+                &params,
+            ));
+        }
+        let mut encoder = AnsiFrameEncoder::new();
+        let mut output = String::with_capacity(WIDTH * HEIGHT * 8);
+        let mut encoded_bytes = 0usize;
+        let mut full_repaints = 0usize;
+        let encoding_start = Instant::now();
+        for frame in &frames {
+            let stats = encoder.encode(frame, false, &mut output);
+            encoded_bytes += stats.bytes;
+            full_repaints += usize::from(stats.full_repaint);
+            black_box(&output);
+        }
+        let encoding = encoding_start.elapsed();
+
+        let full_encoding_start = Instant::now();
+        let mut full_encoded_bytes = 0usize;
+        for frame in &frames {
+            let output = grid_to_ansi(frame);
+            full_encoded_bytes += output.len();
+            black_box(output);
+        }
+        let full_encoding = full_encoding_start.elapsed();
+
+        eprintln!(
+            "illuminarium {WIDTH}x{HEIGHT}: cached_generation={generation:?} ({:.3} ms/frame), uncached_static_rebuild={uncached:?} ({:.3} ms/frame), diff_encoding={encoding:?} ({:.3} ms/frame, {} bytes/frame, {full_repaints}/{FRAMES} full), full_encoding={full_encoding:?} ({:.3} ms/frame, {} bytes/frame)",
+            generation.as_secs_f64() * 1000.0 / FRAMES as f64,
+            uncached.as_secs_f64() * 1000.0 / uncached_frames as f64,
+            encoding.as_secs_f64() * 1000.0 / FRAMES as f64,
+            encoded_bytes / FRAMES,
+            full_encoding.as_secs_f64() * 1000.0 / FRAMES as f64,
+            full_encoded_bytes / FRAMES,
+        );
     }
 
     #[test]
