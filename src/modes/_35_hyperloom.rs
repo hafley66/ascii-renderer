@@ -26,6 +26,8 @@ const PARAMS: &[Param] = &[
     param!("MOIRE", "interference field", 0.0, 1.5, 0.82, 0.05),
     param!("TRAIL", "shuttle memory", 1.0, 24.0, 12.0, 1.0),
     param!("BLOOM", "spectral bloom", 0.0, 1.5, 0.86, 0.05),
+    param!("PHASE", "phase cycle", 1.0, 8.0, 4.0, 1.0),
+    param!("VEIL", "veil sweep", 0.0, 1.5, 0.9, 0.05),
 ];
 
 impl Mode for HyperloomMode {
@@ -74,6 +76,8 @@ pub(crate) struct HyperloomParams {
     pub(crate) moire: f32,
     pub(crate) trail: usize,
     pub(crate) bloom: f32,
+    pub(crate) phase: usize,
+    pub(crate) veil: f32,
 }
 
 impl Default for HyperloomParams {
@@ -91,6 +95,8 @@ impl Default for HyperloomParams {
             moire: 0.82,
             trail: 12,
             bloom: 0.86,
+            phase: 4,
+            veil: 0.9,
         }
     }
 }
@@ -120,6 +126,8 @@ impl HyperloomParams {
             moire: read(13, "MOIRE", 0.82).clamp(0.0, 1.5),
             trail: read(14, "TRAIL", 12.0).round().clamp(1.0, 24.0) as usize,
             bloom: read(15, "BLOOM", 0.86).clamp(0.0, 1.5),
+            phase: read(16, "PHASE", 4.0).round().clamp(1.0, 8.0) as usize,
+            veil: read(17, "VEIL", 0.9).clamp(0.0, 1.5),
         }
     }
 }
@@ -207,6 +215,25 @@ fn polygon(grid: &mut Grid, points: &[(f32, f32)], color: Color) {
     }
 }
 
+/// Deterministic phase state: the loom cycles through `params.phase` named
+/// phases, each with its own seeded modulation, advancing once per 2.5 seconds.
+fn loom_phase(seed: u64, t: f32, params: &HyperloomParams) -> (usize, f32) {
+    let total = params.phase.max(1) as f32;
+    let scaled = t / 2.5;
+    let index = scaled.floor().rem_euclid(total) as usize;
+    let frac = scaled - scaled.floor();
+    let ramp = hash01(seed, 5000 + index as u64);
+    (index, frac * (0.5 + ramp))
+}
+
+/// Time-driven x position of the traveling veil wavefront across the grid.
+fn veil_front(width: usize, t: f32, params: &HyperloomParams) -> f32 {
+    let span = width.max(1) as f32;
+    let period = 6.0 / params.speed.max(0.05);
+    let progress = (t / period).rem_euclid(1.0);
+    progress * (span + 14.0) - 7.0
+}
+
 fn thread_color(palette: &[Color; 5], index: usize, count: usize, t: f32) -> Color {
     let mix = if count <= 1 {
         0.5
@@ -233,9 +260,20 @@ fn warp_thread_point(
     let primary = (u * TAU * params.weave + phase + t * (0.7 + index as f32 * 0.013)).sin();
     let secondary = (u * TAU * (params.weave * 0.5 + 1.0) - phase * 0.7 - t * 1.3).cos();
     let lens = ((u - 0.5) * TAU).sin() * (t * 0.41 + phase).cos();
+    // The veil sweep bulges every warp thread as its front passes underneath.
+    let front = veil_front(width, t, params);
+    let px = u * width.saturating_sub(1) as f32;
+    let proximity = (px - front).abs();
+    let veil_bulge = if params.veil > 0.0 {
+        (-proximity * proximity / 18.0).exp() * params.veil * 2.4
+    } else {
+        0.0
+    };
     (
-        u * width.saturating_sub(1) as f32,
-        base_y + amplitude * (primary * 0.58 + secondary * 0.25 + lens * 0.17),
+        px,
+        base_y
+            + amplitude * (primary * 0.58 + secondary * 0.25 + lens * 0.17)
+            - veil_bulge,
     )
 }
 
@@ -324,6 +362,9 @@ fn draw_loom_apertures(
     params: &HyperloomParams,
 ) {
     let base = width.min(height.saturating_mul(2)) as f32;
+    let (phase_idx, phase_mix) = loom_phase(seed, t, params);
+    let phase_kick = 0.85
+        + 0.35 * hash01(seed, 6100 + (phase_idx * 31 + params.phase) as u64) * (0.4 + phase_mix);
     for loom in 0..params.looms {
         let (cx, cy, phase) = loom_center(width, height, seed, loom, params.looms, t);
         for depth in (0..params.depth).rev() {
@@ -334,7 +375,9 @@ fn draw_loom_apertures(
             let mut points = Vec::with_capacity(sides);
             for side in 0..sides {
                 let a = side as f32 / sides as f32 * TAU + angle;
-                let breathe = 1.0 + (t * 0.9 + phase + side as f32).sin() * 0.08 * params.warp;
+                let breathe = (1.0
+                    + (t * 0.9 + phase + side as f32).sin() * 0.08 * params.warp)
+                    * phase_kick;
                 points.push((
                     cx + a.cos() * radius * 1.8 * breathe,
                     cy + a.sin() * radius * 0.72 * breathe,
@@ -397,6 +440,7 @@ fn draw_knot_cages(
     let cy = height as f32 * 0.5;
     let radius = width.min(height.saturating_mul(2)) as f32 * 0.34;
     let samples = (width + height).clamp(96, 900);
+    let (phase_idx, phase_mix) = loom_phase(seed, t, params);
     for depth in 0..params.depth {
         let d = (depth + 1) as f32 / params.depth as f32;
         let frequency_a = params.symmetry as f32 + (depth % 3) as f32;
@@ -409,7 +453,15 @@ fn draw_knot_cages(
         stroke_curve(grid, samples, color, |u| {
             let a = u * TAU;
             let envelope = 0.28 + d * 0.72;
-            let pulse = 1.0 + (t * 0.63 + phase + a * 2.0).sin() * 0.06 * params.warp;
+            let phase_kick = 0.8
+                + 0.4
+                    * hash01(
+                        seed,
+                        6400 + (phase_idx * 31 + params.phase) as u64 * 13 + depth as u64,
+                    )
+                    * (0.4 + phase_mix);
+            let pulse = (1.0 + (t * 0.63 + phase + a * 2.0).sin() * 0.06 * params.warp)
+                * phase_kick;
             (
                 cx + (a * frequency_a + phase + t * params.speed * 0.21).sin()
                     * radius
@@ -475,6 +527,37 @@ fn draw_shuttles(
             };
             put(grid, x.round() as i32, y.round() as i32, glyph, color);
         }
+    }
+}
+
+fn draw_veil_band(
+    grid: &mut Grid,
+    width: usize,
+    height: usize,
+    palette: &[Color; 5],
+    t: f32,
+    params: &HyperloomParams,
+) {
+    if params.veil <= 0.0 || width < 4 {
+        return;
+    }
+    let front = veil_front(width, t, params);
+    let x = front.round() as i32;
+    let mid = (height / 2) as i32;
+    for dy in -2..=2i32 {
+        let strength = 1.0 - dy.abs() as f32 / 3.0;
+        let glyph = match dy {
+            -2 | 2 => '˙',
+            -1 | 1 => '¦',
+            _ => '│',
+        };
+        let color = lerp_color(
+            palette[4],
+            lighten(palette[3], 30),
+            strength * (0.5 + 0.5 * (t * 2.0).sin()),
+        );
+        put(grid, x, mid + dy, glyph, color);
+        put(grid, x, mid - dy, glyph, color);
     }
 }
 
@@ -578,7 +661,9 @@ pub(crate) fn draw_hyperloom(
     draw_knot_cages(grid, width, height, seed, palette, t, params);
     // 5. Reconstruct shuttle trails directly from the current time value.
     draw_shuttles(grid, width, height, seed, palette, t, params);
-    // 6. Seal the frame with moving punch cards and a woven machine border.
+    // 6. Sweep the veil wavefront band across the centerline.
+    draw_veil_band(grid, width, height, palette, t, params);
+    // 7. Seal the frame with moving punch cards and a woven machine border.
     draw_jacquard_cards(grid, width, height, seed, palette, t, params);
     draw_woven_border(grid, width, height, seed, palette, t, params);
 }
@@ -633,7 +718,7 @@ mod tests {
     #[test]
     fn parameter_values_override_and_clamp() {
         let values = [
-            100.0, 0.0, 99.0, 99.0, 99.0, 999.0, 0.0, 9.0, 99.0, 9.0, 0.0, 9.0,
+            100.0, 0.0, 99.0, 99.0, 99.0, 999.0, 0.0, 9.0, 99.0, 9.0, 0.0, 9.0, 0.0, 9.0,
         ];
         let params = HyperloomParams::from_inputs(&[], Some(&values));
         insta::assert_debug_snapshot!(params, @r###"
@@ -650,6 +735,8 @@ mod tests {
             moire: 1.5,
             trail: 1,
             bloom: 1.5,
+            phase: 1,
+            veil: 1.5,
         }
         "###);
     }
@@ -669,9 +756,71 @@ mod tests {
             moire: 1.5,
             trail: 24,
             bloom: 1.5,
+            phase: 8,
+            veil: 1.5,
         };
         assert_eq!(frame(1, 1, 7, 50_000.0, &params).len(), 1);
         assert_eq!(frame(5, 3, 7, 50_000.0, &params).len(), 3);
+    }
+
+    #[test]
+    fn veil_sweep_moves_with_time_and_depends_on_veil_and_seed() {
+        let base = HyperloomParams::default();
+        let t0 = plain(&frame(88, 30, 42, 0.0, &base));
+        let t1 = plain(&frame(88, 30, 42, 1.1, &base));
+        let t2 = plain(&frame(88, 30, 42, 2.6, &base));
+        let off = plain(&frame(
+            88,
+            30,
+            42,
+            1.1,
+            &HyperloomParams {
+                veil: 0.0,
+                ..base
+            },
+        ));
+        let reseeded = plain(&frame(88, 30, 99, 1.1, &base));
+        assert_ne!(t1, t0, "veil front must travel with time");
+        assert_ne!(t2, t1, "veil front must keep traveling");
+        assert_ne!(t1, off, "veil=0 must remove the sweep");
+        assert_ne!(t1, reseeded, "veil position must respond to seed");
+
+        // Phase cycle: same instant rendered at two phase counts must differ.
+        let phased = plain(&frame(
+            88,
+            30,
+            42,
+            1.1,
+            &HyperloomParams {
+                phase: 7,
+                ..base
+            },
+        ));
+        assert_ne!(t1, phased, "phase count must modulate the render");
+    }
+
+    #[test]
+    fn veil_extrema_and_micro_grids_terminate() {
+        let maxed = HyperloomParams {
+            phase: 8,
+            veil: 1.5,
+            ..HyperloomParams::default()
+        };
+        let off = HyperloomParams {
+            veil: 0.0,
+            phase: 1,
+            ..HyperloomParams::default()
+        };
+        for params in [&maxed, &off] {
+            for size in [(1usize, 1usize), (2usize, 1usize), (3usize, 5usize)] {
+                let grid = frame(size.0, size.1, 11, 50_000.0, params);
+                assert_eq!(grid.len(), size.1);
+            }
+        }
+        assert_ne!(
+            plain(&frame(24, 12, 11, 3.0, &maxed)),
+            plain(&frame(24, 12, 11, 3.0, &off))
+        );
     }
 
     #[test]
