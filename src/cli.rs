@@ -185,6 +185,9 @@ pub(crate) fn run() {
         eprintln!(
             "  illuminarium  Rotating rose vault, guilloche, recursive filigree, comet jewels [symm] [rings] [fili] [orbits] [speed] [warp] [trail] [sparks] [depth] [bloom]"
         );
+        eprintln!(
+            "  qwen-cathedral  Gothic rose, ribbed vaults, lancets, candles, light [naves] [towers] [rose] [candles] [speed] [rays] [smoke] [depth] [mosaic] [glow] [arch] [banners]"
+        );
         eprintln!("  swatch    Color swatches for all named themes");
         eprintln!();
         eprintln!("THEMES:");
@@ -937,6 +940,12 @@ pub(crate) fn run() {
         }
     } else if mode == "illuminarium" {
         let (g, done) = cli_illuminarium(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        grid = g;
+        if done {
+            return;
+        }
+    } else if mode == "qwen-cathedral" {
+        let (g, done) = cli_qwen_cathedral(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
         grid = g;
         if done {
             return;

@@ -444,6 +444,7 @@ pub(crate) fn run_demo(initial_seed: u64) {
         "astrolabe",
         "sauron",
         "illuminarium",
+        "qwen-cathedral",
     ];
     let all_themes: &[&str] = &[
         "",

@@ -568,3 +568,45 @@ fn illuminarium_seed_42() {
         "0.72",
     ]));
 }
+
+#[test]
+fn qwen_cathedral_seed_42() {
+    insta::assert_snapshot!(render(&[
+        "42",
+        "qwen-cathedral",
+        "ember",
+        "5",
+        "2",
+        "12",
+        "14",
+        "0.8",
+        "0.6",
+        "8",
+        "3",
+        "0.55",
+        "0.7",
+        "0.62",
+        "4",
+    ]));
+}
+
+#[test]
+fn qwen_cathedral_seed_7_midnight() {
+    insta::assert_snapshot!(render(&[
+        "7",
+        "qwen-cathedral",
+        "deep",
+        "7",
+        "3",
+        "16",
+        "24",
+        "1.2",
+        "0.9",
+        "12",
+        "4",
+        "0.8",
+        "1.1",
+        "0.85",
+        "6",
+    ]));
+}
