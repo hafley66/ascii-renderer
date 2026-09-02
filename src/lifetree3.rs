@@ -1088,9 +1088,9 @@ fn frame(grid: &mut Grid, c: &Cached, t: f32, k: &EyeKnobs) {
                     } else {
                         let lids = ry_open >= ry as f32 * 0.6;
                         let cell = if top && lids {
-                            Cell::with_bg('▄', scale(SCLERA, daylight), scale(socket, 1.0))
+                            Cell::with_bg('▀', scale(lid, 1.0), scale(SCLERA, daylight))
                         } else if bottom && lids {
-                            Cell::with_bg('▀', scale(SCLERA, daylight), scale(socket, 1.0))
+                            Cell::with_bg('▄', scale(lid, 1.0), scale(SCLERA, daylight))
                         } else if pupil {
                             Cell::with_bg('●', scale(PUPIL, 1.0), scale(iris, daylight))
                         } else if spec {
