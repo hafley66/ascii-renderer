@@ -503,6 +503,32 @@ pub(crate) static MODE_FORMS: &[ModeForm] = &[
             param!("FLAIR", "avant flair", 0.0, 1.0, 1.0, 0.1),
         ],
     },
+    ModeForm {
+        names: &["tree-of-life-3"],
+        animate: AnimKind::Iterate,
+        params: &[
+            param!("DEPTH", "branch depth", 4.0, 11.0, 8.0, 1.0),
+            param!("SPREAD", "spread", 0.15, 1.2, 0.55, 0.05),
+            param!("SWAY", "wind sway", 0.0, 6.0, 2.0, 0.25),
+            param!("SPEED", "anim speed", 0.05, 4.0, 1.0, 0.05),
+            param!("MOTES", "motes", 0.0, 300.0, 40.0, 5.0),
+            param!("GLOW", "ether glow", 0.0, 1.0, 0.8, 0.05),
+            param!("SEAM", "seam x", 0.1, 0.9, 0.5, 0.05),
+            param!("ROOTS", "root depth", 0.05, 0.5, 0.28, 0.01),
+            param!("VEIL", "veil wave", 0.0, 14.0, 5.0, 0.5),
+            param!("SEASON", "season rate", 0.0, 1.0, 0.12, 0.02),
+            param!("RING", "ring of life", 0.0, 1.0, 1.0, 0.1),
+            param!("TIDE", "veil tide", 0.0, 1.0, 0.7, 0.05),
+            param!("GUST", "gusts", 0.0, 1.0, 0.8, 0.05),
+            param!("SURGE", "life surge", 0.0, 1.0, 1.0, 0.1),
+            param!("FLOCK", "flocks", 0.0, 12.0, 3.0, 1.0),
+            param!("DAY", "day rate", 0.0, 2.0, 0.5, 0.1),
+            param!("FLAIR", "avant flair", 0.0, 1.0, 1.0, 0.1),
+            param!("EYES", "eye fruits", 0.0, 80.0, 24.0, 2.0),
+            param!("GAZE", "gaze track", 0.0, 1.0, 1.0, 0.1),
+            param!("BLINK", "blink rate", 0.0, 4.0, 1.0, 0.1),
+        ],
+    },
 ];
 
 

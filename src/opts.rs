@@ -449,6 +449,7 @@ pub(crate) fn run_demo(initial_seed: u64) {
         "mahoraga-5",
         "tree-of-life",
         "tree-of-life-2",
+        "tree-of-life-3",
     ];
     all_modes.extend(registered_modes().iter().map(|(name, _)| name));
     let all_themes: &[&str] = &[
