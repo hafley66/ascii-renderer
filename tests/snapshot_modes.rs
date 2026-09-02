@@ -678,3 +678,13 @@ fn tree_of_life_seed_42() {
 fn tree_of_life_deep_wide_seam() {
     insta::assert_snapshot!(render(&["42", "tree-of-life", "ember", "10", "3", "1", "60", "0.4"]));
 }
+
+#[test]
+fn tree_of_life_2_seed_42() {
+    insta::assert_snapshot!(render(&["42", "tree-of-life-2", "moss"]));
+}
+
+#[test]
+fn tree_of_life_2_autumn_veil() {
+    insta::assert_snapshot!(render(&["42", "tree-of-life-2", "ember", "9", "3", "1", "60", "0.45", "9", "0.5"]));
+}

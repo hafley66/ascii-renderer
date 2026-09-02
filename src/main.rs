@@ -47,6 +47,7 @@ mod mahoraga3;
 mod mahoraga4;
 mod mahoraga5;
 mod lifetree;
+mod lifetree2;
 
 use crossterm::style::Color;
 use rand::RngExt;
