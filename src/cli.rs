@@ -229,7 +229,7 @@ pub(crate) fn run() {
         eprintln!("  braid  Plait of colored ribbons, seeded braid word scrolling down, over/under crossings (a=animate) [strands] [speed] [pitch] [gap] [width] [cross] [sway] [dust] [twist] [fill]");
         eprintln!("  braid-2  Horizontal plait of twisted flat ribbons, beads run along each strand through the crossings (a=animate) [strands] [speed] [pitch] [gap] [width] [cross] [twist] [pulse] [beads] [trail] [slip] [fill]");
         eprintln!("  chladni  Sand on a center-driven plate, the figure stepping through seeded resonances (a=animate) [dwell] [glide] [order] [sand] [shake] [flicker] [margin] [label] [aspect]");
-        eprintln!("  pendulum-wave  Row of pendulums each one beat faster than its neighbor, front view with strings or top view with trails (a=animate) [count] [cycle] [base] [swing] [view] [trail] [tail] [aspect] [hue]");
+        eprintln!("  pendulum-wave  Row of pendulums each one beat faster than its neighbor, front view, top view with trails, or phase waterfall (a=animate) [count] [cycle] [base] [swing] [view] [trail] [tail] [aspect] [hue] [link] [arc] [rowdt] [bands]");
         for (_, mode) in registered_modes().iter() {
             eprintln!("  {:<16} {}", mode.name(), mode.help());
         }
