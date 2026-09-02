@@ -1,4 +1,4 @@
-//! mahoraga -- Shibuya: Mahoraga stands at the vanishing point as a signed-
+//! mahoraga-3 -- Shibuya: Mahoraga stands at the vanishing point as a signed-
 //! distance figure shaded into a dot ramp; Dismantle cuts shear the whole scene.
 use crate::color::*;
 use crate::opts::param_f32;
@@ -298,7 +298,7 @@ fn progress(t: f32, knobs: &ShrineKnobs) -> f32 {
 const SKIN_RAMP: [char; 10] = [' ', '.', '·', ':', '-', '=', '+', '*', '%', '@'];
 const CLOTH_RAMP: [char; 6] = [' ', '.', '-', '~', '=', '#'];
 
-pub fn draw_mahoraga(grid: &mut Grid, width: usize, height: usize, seed: u64, palette: &[Color; 5], rng: &mut StdRng, t: f32, knobs: &ShrineKnobs) {
+pub fn draw_mahoraga3(grid: &mut Grid, width: usize, height: usize, seed: u64, palette: &[Color; 5], rng: &mut StdRng, t: f32, knobs: &ShrineKnobs) {
     let _ = rng;
     let p = progress(t, knobs);
     let adaptations = (p.floor() as usize).min(8);
@@ -507,14 +507,14 @@ fn draw_fuga(grid: &mut Grid, width: usize, height: usize, seed: u64, cx: f32, c
     }
 }
 
-pub fn render_mahoraga_frame(width: usize, height: usize, seed: u64, palette: &[Color; 5], mut rng: StdRng, t: f32, knobs: &ShrineKnobs) -> Grid {
+pub fn render_mahoraga3_frame(width: usize, height: usize, seed: u64, palette: &[Color; 5], mut rng: StdRng, t: f32, knobs: &ShrineKnobs) -> Grid {
     let mut grid = vec![vec![Cell::blank(); width]; height];
-    draw_mahoraga(&mut grid, width, height, seed, palette, &mut rng, t, knobs);
+    draw_mahoraga3(&mut grid, width, height, seed, palette, &mut rng, t, knobs);
     grid
 }
 
-pub(crate) fn cli_mahoraga(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
-    // mahoraga [turns] [slash] [cut] [focus] -- positional overrides win over env/defaults
+pub(crate) fn cli_mahoraga3(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
+    // mahoraga-3 [turns] [slash] [cut] [focus] -- positional overrides win over env/defaults
     let mut knobs = ShrineKnobs::from_env();
     if let Some(v) = args.get(4).and_then(|v| v.parse::<f32>().ok()) {
         knobs.turns = v.clamp(0.0, 8.0);
@@ -529,7 +529,7 @@ pub(crate) fn cli_mahoraga(mut grid: Grid, width: usize, height: usize, seed: u6
         knobs.focus = v.clamp(0.0, 1.0);
     }
     let _ = (term_w, term_h, mode, theme_name);
-    draw_mahoraga(&mut grid, width, height, seed, &palette, &mut rng, t_anim, &knobs);
+    draw_mahoraga3(&mut grid, width, height, seed, &palette, &mut rng, t_anim, &knobs);
     (grid, false)
 }
 
@@ -541,7 +541,7 @@ mod tests {
         let p = crate::color::make_palette(seed);
         let mut knobs = ShrineKnobs::from_env();
         knobs.turns = turns;
-        let g = render_mahoraga_frame(w, h, seed, &p, StdRng::seed_from_u64(seed), t, &knobs);
+        let g = render_mahoraga3_frame(w, h, seed, &p, StdRng::seed_from_u64(seed), t, &knobs);
         g.iter()
             .map(|row| row.iter().map(|c| c.ch).collect::<String>())
             .collect::<Vec<_>>()
@@ -549,13 +549,13 @@ mod tests {
     }
 
     #[test]
-    fn snapshot_mahoraga_standing() {
-        insta::assert_snapshot!("mahoraga_80x24", run(80, 24, 42, 0.0, 7.0));
+    fn snapshot_mahoraga3_standing() {
+        insta::assert_snapshot!("mahoraga3_80x24", run(80, 24, 42, 0.0, 7.0));
     }
 
     #[test]
-    fn snapshot_mahoraga_fuga_tall() {
-        insta::assert_snapshot!("mahoraga_100x40_fuga", run(100, 40, 42, 0.0, 8.0));
+    fn snapshot_mahoraga3_fuga_tall() {
+        insta::assert_snapshot!("mahoraga3_100x40_fuga", run(100, 40, 42, 0.0, 8.0));
     }
 
     #[test]

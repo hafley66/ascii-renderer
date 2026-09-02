@@ -1,7 +1,7 @@
 ---
-source: src/mahoraga.rs
-assertion_line: 553
-expression: "run(80, 24, 42, 0.0, 7.0)"
+source: tests/snapshot_modes.rs
+assertion_line: 639
+expression: "render(&[\"42\", \"mahoraga-2\", \"ember\"])"
 ---
           ·                            \\                               O       
   O       ·                               \                   ·                ─

@@ -553,16 +553,6 @@ fn sauron_seed_42() {
 }
 
 #[test]
-fn mahoraga_seed_42() {
-    insta::assert_snapshot!(render(&["42", "mahoraga", "ember"]));
-}
-
-#[test]
-fn mahoraga_fuga_close_focus() {
-    insta::assert_snapshot!(render(&["42", "mahoraga", "deep", "8", "4", "2.5", "0.9"]));
-}
-
-#[test]
 fn illuminarium_seed_42() {
     insta::assert_snapshot!(render(&[
         "42",
@@ -642,4 +632,19 @@ fn gem_aetherium_seed_42() {
         "1.0",
         "3.0",
     ]));
+}
+
+#[test]
+fn mahoraga2_seed_42() {
+    insta::assert_snapshot!(render(&["42", "mahoraga-2", "ember"]));
+}
+
+#[test]
+fn mahoraga2_fuga_close_focus() {
+    insta::assert_snapshot!(render(&["42", "mahoraga-2", "deep", "8", "4", "2.5", "0.9"]));
+}
+
+#[test]
+fn mahoraga3_seed_42() {
+    insta::assert_snapshot!(render(&["42", "mahoraga-3", "ember"]));
 }

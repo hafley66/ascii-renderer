@@ -316,11 +316,6 @@ fn iterate_grid_into(
             crate::sauron::draw_sauron(grid, w, h, seed, palette, t);
             true
         }
-        "mahoraga" => {
-            let knobs = crate::mahoraga::ShrineKnobs::from_env();
-            *grid = crate::mahoraga::render_mahoraga_frame(w, h, seed, palette, StdRng::seed_from_u64(seed), t, &knobs);
-            true
-        }
         "spiro" => {
             *grid = draw_spiro(
                 std::mem::take(grid),
@@ -585,6 +580,16 @@ fn iterate_grid_into(
                 param_f32("SPEED", 0.8),
                 param_f32("CHAOS", 42.0) / 100.0,
             );
+            true
+        }
+        "mahoraga-2" => {
+            let knobs = crate::mahoraga2::ShrineKnobs::from_env();
+            *grid = crate::mahoraga2::render_mahoraga2_frame(w, h, seed, palette, StdRng::seed_from_u64(seed), t, &knobs);
+            true
+        }
+        "mahoraga-3" => {
+            let knobs = crate::mahoraga3::ShrineKnobs::from_env();
+            *grid = crate::mahoraga3::render_mahoraga3_frame(w, h, seed, palette, StdRng::seed_from_u64(seed), t, &knobs);
             true
         }
         _ => false,

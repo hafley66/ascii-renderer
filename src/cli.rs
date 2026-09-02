@@ -35,8 +35,9 @@ use crate::registry::*;
 use crate::warps::*;
 use crate::arboretum::cli_arboretum;
 use crate::astrolabe::cli_astrolabe;
-use crate::mahoraga::cli_mahoraga;
 use crate::sauron::cli_sauron;
+use crate::mahoraga2::cli_mahoraga2;
+use crate::mahoraga3::cli_mahoraga3;
 use crate::cli_basic::*;
 use crate::cli_catalog::*;
 use crate::cli_city::*;
@@ -181,10 +182,13 @@ pub(crate) fn run() {
             "  astrolabe Brass instrument: limb, tympan, precessing star rete, sweeping rule (a=animate)"
         );
         eprintln!(
-            "  mahoraga  Shibuya: SDF Mahoraga in a dot ramp, Dismantle cuts shear the scene, blocks with focus falloff [turns] [slash] [cut] [focus] (a=animate)"
+            "  sauron    The great eye: slit pupil wandering in a fire wall, embers, smoke (a=animate)"
         );
         eprintln!(
-            "  sauron    The great eye: slit pupil wandering in a fire wall, embers, smoke (a=animate)"
+            "  mahoraga-2 Shibuya: SDF Mahoraga in a dot ramp, Dismantle cuts shear the scene, blocks with focus falloff [turns] [slash] [cut] [focus] (a=animate)"
+        );
+        eprintln!(
+            "  mahoraga-3 Shibuya, expanded: poses, shrine, Sukuna, ash, debris, lit handles [turns] [slash] [cut] [focus] [pose] (a=animate)"
         );
         for (_, mode) in registered_modes().iter() {
             eprintln!("  {:<16} {}", mode.name(), mode.help());
@@ -948,12 +952,6 @@ pub(crate) fn run() {
         if done {
             return;
         }
-    } else if mode == "mahoraga" {
-        let (g, done) = cli_mahoraga(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
-        grid = g;
-        if done {
-            return;
-        }
     } else if mode == "sauron" {
         let (g, done) = cli_sauron(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
         grid = g;
@@ -1022,6 +1020,18 @@ pub(crate) fn run() {
         }
     } else if mode == "stained" {
         let (g, done) = cli_stained(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        grid = g;
+        if done {
+            return;
+        }
+    } else if mode == "mahoraga-2" {
+        let (g, done) = cli_mahoraga2(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        grid = g;
+        if done {
+            return;
+        }
+    } else if mode == "mahoraga-3" {
+        let (g, done) = cli_mahoraga3(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
         grid = g;
         if done {
             return;

@@ -10,7 +10,7 @@ Reference implementation: `src/arboretum.rs` (new-module mode with 10-knob genom
 
 ## Wiring checklist (6 touchpoints)
 
-1. **`src/cli.rs` -- dispatch arm.** Insert `} else if mode == "NEW_NAME"` before the `world` block (dispatch lives here, not main.rs; main.rs is `cli::run()` + tests):
+1. **`src/cli.rs` -- dispatch arm.** Append `} else if mode == "NEW_NAME"` as the LAST arm, directly before the final `} else {` / `cli_default` fallback. Never splice into the middle of the chain (dispatch lives here, not main.rs; main.rs is `cli::run()` + tests):
 ```rust
 } else if mode == "arboretum" {
     let (g, done) = cli_arboretum(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
@@ -22,20 +22,20 @@ Reference implementation: `src/arboretum.rs` (new-module mode with 10-knob genom
 ```
 Handler signature: `cli_<name>(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, args, mode, theme_name) -> (Grid, bool)`. Handlers live in the `cli_*.rs` family (cli_basic, cli_forest, cli_scenes, cli_city, cli_fa, cli_catalog) or your own module. If the handler is in a new module, add `use crate::<mod>::cli_<fn>;` -- cli.rs only glob-imports the six existing cli_* modules.
 
-2. **`src/main.rs` -- module decl.** `mod <name>;` + `use <name>::*;`.
+2. **`src/main.rs` -- module decl.** Append `mod <name>;` after the last `mod` line. No `use <name>::*;` (cli.rs and morph.rs path-import what they need; glob re-exports collide across modules that share type names).
 
-3. **`src/opts.rs` `run_demo()`.** Append the mode string to `all_modes` or it won't show in the demo picker.
+3. **`src/opts.rs` `run_demo()`.** Append the mode string as the last entry of `all_modes` (before `];`) or it won't show in the demo picker.
 
-4. **`src/registry.rs` `MODE_FORMS`.** One `ModeForm` row gives the mode's demo-pane knobs. Params are read at render time via `param_f32(KEY, default)` from env `ASCII_P_<KEY>`; keys must be unique within the form.
+4. **`src/registry.rs` `MODE_FORMS`.** Append one `ModeForm` row as the last element (before the closing `];`). Params are read at render time via `param_f32(KEY, default)` from env `ASCII_P_<KEY>`; keys must be unique within the form.
 
-5. **`tests/snapshot_modes.rs`.** CLI snapshot: `insta::assert_snapshot!(render(&["42", "NEW_NAME", "theme"]))`. In-module `#[cfg(test)]` tests may call draw fns directly (pattern in `src/tree_draw.rs`, `src/arboretum.rs`).
+5. **`tests/snapshot_modes.rs`.** Append at end of file. CLI snapshot: `insta::assert_snapshot!(render(&["42", "NEW_NAME", "theme"]))`. In-module `#[cfg(test)]` tests may call draw fns directly (pattern in `src/tree_draw.rs`, `src/arboretum.rs`).
 
-6. **`CLAUDE.md`.** Add the mode name to the modes list.
+6. **`CLAUDE.md`.** Append the mode name at the end of the modes list.
 
 ## Native animation
 
 If the mode does not consume `t_anim`, pressing `a` in demo falls back to `warp_wind` (the `.unwrap_or_else` fallback in morph.rs `iterate_grid`). For native animation:
-- Consume the `t` param in the draw fn, and add an arm to `iterate_grid` in `src/morph.rs` calling the draw fn in-process.
+- Consume the `t` param in the draw fn, and add an arm to `iterate_grid` in `src/morph.rs` calling the draw fn in-process. Append it as the last arm before `_ => false`.
 - t=0 MUST render the static frame byte-identical (snapshot stability): gate animation on `t > 0.0`.
 - Derive per-item animation phases/cycles from a SIDE rng seeded from a hash of (seed, layer, index) so the main rng stream and static render are untouched.
 - Verified pattern: `draw_arboretum` / `grow_tree` in `src/arboretum.rs`.
@@ -45,6 +45,8 @@ If the mode does not consume `t_anim`, pressing `a` in demo falls back to `warp_
 `cargo insta` may not be installed. Accept after visual inspection: `mv *.snap.new *.snap`. Snapshot files land in both `src/snapshots/` (in-module tests) and `tests/snapshots/` (integration tests).
 
 ## Rules
+
+- Every list append goes at the END (dispatch chain, mod list, all_modes, MODE_FORMS, morph match, tests, CLAUDE.md). Fixed-index or alphabetical splicing is banned.
 
 - Never modify existing modes
 - Use fixed seed for deterministic output

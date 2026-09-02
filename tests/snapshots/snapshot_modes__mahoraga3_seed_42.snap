@@ -1,7 +1,7 @@
 ---
 source: tests/snapshot_modes.rs
-assertion_line: 557
-expression: "render(&[\"42\", \"mahoraga\", \"ember\"])"
+assertion_line: 649
+expression: "render(&[\"42\", \"mahoraga-3\", \"ember\"])"
 ---
           ·                            \\                               O       
   O       ·                               \                   ·                ─
