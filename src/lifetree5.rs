@@ -185,30 +185,36 @@ fn grow(
     ord0: f32,
     is_root: bool,
 ) {
-    if lvl > max_lvl || len < 0.05 || norm2(pos) > 0.93 {
+    if lvl > max_lvl || len < 0.02 || norm2(pos) > 0.94 {
         return;
     }
     let end = (pos.0 + len * ang.cos(), pos.1 + len * ang.sin());
     let kind = if is_root {
         Kind::Root
-    } else if lvl <= 1 {
+    } else if lvl == 0 {
         Kind::Trunk
-    } else if lvl + 2 >= max_lvl {
+    } else if lvl == max_lvl {
         Kind::Twig
     } else {
         Kind::Branch
     };
     segs.push(BSeg { p0: pos, p1: end, kind, ord: ord0, phase: rng.random::<f32>() });
-    if lvl == max_lvl && !is_root {
-        for _ in 0..4 {
-            let a2 = rng.random::<f32>() * 6.2832;
-            let r = 0.04 + rng.random::<f32>() * 0.18;
-            leaves.push(BLeaf { z: (end.0 + r * a2.cos(), end.1 + r * a2.sin()), phase: rng.random::<f32>(), tex: rng.random_range(0..3u32) as u8 });
+    if lvl == max_lvl {
+        if !is_root {
+            for _ in 0..5 {
+                let a2 = rng.random::<f32>() * 6.2832;
+                let r = 0.03 + rng.random::<f32>() * 0.12;
+                leaves.push(BLeaf { z: (end.0 + r * a2.cos(), end.1 + r * a2.sin()), phase: rng.random::<f32>(), tex: rng.random_range(0..3u32) as u8 });
+            }
         }
         return;
     }
-    let n = if lvl == 0 { 2 } else if lvl <= 3 && rng.random::<f32>() < 0.28 { 3 } else { 2 };
-    let keep = if lvl >= 5 { 0.7 } else if lvl >= 3 { 0.85 } else { 1.0 };
+    if lvl == 0 {
+        grow(rng, segs, leaves, end, ang, len * 0.95, lvl + 1, max_lvl, spread, ord0 + len, is_root);
+        return;
+    }
+    let n = if rng.random::<f32>() < 0.3 { 3 } else { 2 };
+    let keep = if lvl >= 5 { 0.8 } else { 0.9 };
     for i in 0..n {
         if rng.random::<f32>() > keep {
             continue;
@@ -217,7 +223,7 @@ fn grow(
         let sp = spread * (0.6 + rng.random::<f32>() * 0.8);
         let jitter = (rng.random::<f32>() - 0.5) * 0.3;
         let na = ang + side * sp + jitter;
-        let nl = len * (0.82 + rng.random::<f32>() * 0.12);
+        let nl = len * (0.74 + rng.random::<f32>() * 0.14);
         grow(rng, segs, leaves, end, na, nl, lvl + 1, max_lvl, spread, ord0 + len, is_root);
     }
 }
@@ -242,9 +248,9 @@ fn build(w: usize, h: usize, seed: u64, palette: &[Color; 5], k: &Knobs5) -> Cac
     let mut segs = Vec::new();
     let mut leaves = Vec::new();
     let up = std::f32::consts::FRAC_PI_2;
-    grow(&mut rng, &mut segs, &mut leaves, (0.0, -0.2), up, k.len, 0, k.depth, k.spread, 0.0, false);
+    grow(&mut rng, &mut segs, &mut leaves, (0.0, -0.28), up, k.len * 0.22, 0, k.depth, k.spread, 0.0, false);
     let root_lvl = k.depth.saturating_sub(3).max(2);
-    grow(&mut rng, &mut segs, &mut leaves, (0.0, -0.2), -up, k.len * 0.7, 0, root_lvl, k.spread * 1.3, 0.0, true);
+    grow(&mut rng, &mut segs, &mut leaves, (0.0, -0.28), -up, k.len * 0.18, 0, root_lvl, k.spread * 1.3, 0.0, true);
     let ord_max = segs.iter().fold(0.1_f32, |m, s| m.max(s.ord));
     for s in segs.iter_mut() {
         s.ord /= ord_max;
@@ -343,7 +349,7 @@ fn frame(grid: &mut Grid, c: &Cached, t: f32, k: &Knobs5) {
     let w = grid[0].len();
     let h = grid.len();
     let ts = t * k.speed;
-    let (cosr, sinr) = (ts * k.spin).sin_cos();
+    let (sinr, cosr) = (ts * k.spin).sin_cos();
     let (cosa, sina) = (ts * k.seam).sin_cos();
     let side_of = |z: C| -> bool {
         let zr = rotate(z, cosa, -sina);
@@ -396,7 +402,12 @@ fn frame(grid: &mut Grid, c: &Cached, t: f32, k: &Knobs5) {
                 if side_of(z) {
                     let col = scale(mix(c.eth_rgb, c.eth_hi, pulse * 0.7), 0.3 * k.rings * (0.5 + 0.5 * pulse));
                     if let Some(p) = prev {
+                        let mut cnt = 0u32;
                         line(p.0, p.1, s.0, s.1, |x, y| {
+                            cnt += 1;
+                            if cnt % 3 != 0 {
+                                return;
+                            }
                             if x >= 0 && y >= 0 && (x as usize) < w && (y as usize) < h && grid[y as usize][x as usize].ch == ' ' {
                                 grid[y as usize][x as usize].ch = '·';
                                 grid[y as usize][x as usize].fg = col;
@@ -597,6 +608,17 @@ mod tests {
         let r = rotate(z, cosr, sinr);
         let back = rotate(r, cosr, -sinr);
         assert!((back.0 - z.0).abs() < 1e-4 && (back.1 - z.1).abs() < 1e-4);
+    }
+
+    #[test]
+    fn crown_has_hundreds_of_segments() {
+        let mut rng = StdRng::seed_from_u64(42 ^ 0x5EED_CAFE_7A11_3E5);
+        let mut segs = Vec::new();
+        let mut leaves = Vec::new();
+        let up = std::f32::consts::FRAC_PI_2;
+        grow(&mut rng, &mut segs, &mut leaves, (0.0, -0.28), up, 0.18, 0, 8, 0.6, 0.0, false);
+        eprintln!("crown segments at depth 8: {}", segs.len());
+        assert!(segs.len() > 300, "crown segments {} <= 300 at depth 8", segs.len());
     }
 
     #[test]
