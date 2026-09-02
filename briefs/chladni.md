@@ -15,3 +15,21 @@ Knobs:
 - DWELL: seconds a figure holds (default 3)
 - GLIDE: seconds to sweep between figures (default 2)
 - ORDER: highest mode number in the pairs (default 7)
+
+Added while building:
+- SAND: nodal line width in plate units (default 0.02)
+- SHAKE: loose grain density at the antinodes (default 0.3)
+- FLICKER: grain hops per second (default 8)
+- MARGIN: cells between plate rim and grid edge (default 1)
+- LABEL: show the current mode pair inside the plate, 0 or 1 (default 1)
+- ASPECT: plate columns per row (default 2)
+
+Positional order: dwell glide order sand shake flicker margin label aspect.
+
+Measured frame time, release, 200x60, 200 frames: avg 0.150 ms, worst 1.075 ms.
+
+Render commands:
+```bash
+ASCII_GRID_W=110 ASCII_GRID_H=36 ./target/release/ascii-renderer 42 chladni moss | sed 's/\x1b\[[0-9;]*m//g'
+ASCII_GRID_W=110 ASCII_GRID_H=36 ASCII_T=5 ./target/release/ascii-renderer 42 chladni moss | sed 's/\x1b\[[0-9;]*m//g'
+```

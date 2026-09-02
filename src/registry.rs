@@ -611,6 +611,21 @@ pub(crate) static MODE_FORMS: &[ModeForm] = &[
             param!("FILL", "crossings per step", 0.0, 1.0, 0.75, 0.05),
         ],
     },
+    ModeForm {
+        names: &["chladni"],
+        animate: AnimKind::Iterate,
+        params: &[
+            param!("DWELL", "hold seconds", 0.0, 20.0, 3.0, 0.5),
+            param!("GLIDE", "sweep seconds", 0.0, 20.0, 2.0, 0.5),
+            param!("ORDER", "max mode number", 2.0, 24.0, 7.0, 1.0),
+            param!("SAND", "node line width", 0.005, 0.3, 0.02, 0.005),
+            param!("SHAKE", "loose grain density", 0.0, 1.0, 0.3, 0.05),
+            param!("FLICKER", "hops per second", 0.0, 60.0, 8.0, 1.0),
+            param!("MARGIN", "plate margin cells", 1.0, 12.0, 1.0, 1.0),
+            param!("LABEL", "show mode label", 0.0, 1.0, 1.0, 1.0),
+            param!("ASPECT", "cell aspect", 0.25, 4.0, 2.0, 0.25),
+        ],
+    },
 ];
 
 

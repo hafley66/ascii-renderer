@@ -748,3 +748,13 @@ fn braid_2_seed_42() {
 fn braid_2_thick_slow_twist() {
     insta::assert_snapshot!(render(&["42", "braid-2", "ember", "4", "6", "16", "5", "5", "0.6", "48", "12", "30", "9", "0.1", "0.9"]));
 }
+
+#[test]
+fn chladni_seed_42() {
+    insta::assert_snapshot!(render(&["42", "chladni", "moss"]));
+}
+
+#[test]
+fn chladni_high_order_thin_sand() {
+    insta::assert_snapshot!(render(&["42", "chladni", "ember", "4", "1", "11", "0.03", "0.5", "6", "2", "0", "2"]));
+}

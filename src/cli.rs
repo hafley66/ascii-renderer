@@ -48,6 +48,7 @@ use crate::lifetree5::cli_lifetree5;
 use crate::lifetree6::cli_lifetree6;
 use crate::braid::cli_braid;
 use crate::braid2::cli_braid2;
+use crate::chladni::cli_chladni;
 use crate::cli_basic::*;
 use crate::cli_catalog::*;
 use crate::cli_city::*;
@@ -226,6 +227,7 @@ pub(crate) fn run() {
         );
         eprintln!("  braid  Plait of colored ribbons, seeded braid word scrolling down, over/under crossings (a=animate) [strands] [speed] [pitch] [gap] [width] [cross] [sway] [dust] [twist] [fill]");
         eprintln!("  braid-2  Horizontal plait of twisted flat ribbons, beads run along each strand through the crossings (a=animate) [strands] [speed] [pitch] [gap] [width] [cross] [twist] [pulse] [beads] [trail] [slip] [fill]");
+        eprintln!("  chladni  Sand on a center-driven plate, the figure stepping through seeded resonances (a=animate) [dwell] [glide] [order] [sand] [shake] [flicker] [margin] [label] [aspect]");
         for (_, mode) in registered_modes().iter() {
             eprintln!("  {:<16} {}", mode.name(), mode.help());
         }
@@ -1128,6 +1130,12 @@ pub(crate) fn run() {
         }
     } else if mode == "braid-2" {
         let (g, done) = cli_braid2(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        grid = g;
+        if done {
+            return;
+        }
+    } else if mode == "chladni" {
+        let (g, done) = cli_chladni(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
         grid = g;
         if done {
             return;

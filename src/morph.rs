@@ -642,6 +642,11 @@ fn iterate_grid_into(
             crate::braid2::draw_braid2(grid, w, h, seed, palette, t, &knobs);
             true
         }
+        "chladni" => {
+            let knobs = crate::chladni::ChladniKnobs::from_env();
+            crate::chladni::draw_chladni(grid, w, h, seed, palette, t, &knobs);
+            true
+        }
         _ => false,
     }
 }

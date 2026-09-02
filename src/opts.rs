@@ -455,6 +455,7 @@ pub(crate) fn run_demo(initial_seed: u64) {
         "tree-of-life-6",
         "braid",
         "braid-2",
+        "chladni",
     ];
     all_modes.extend(registered_modes().iter().map(|(name, _)| name));
     let all_themes: &[&str] = &[
