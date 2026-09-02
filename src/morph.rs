@@ -592,6 +592,11 @@ fn iterate_grid_into(
             *grid = crate::mahoraga3::render_mahoraga3_frame(w, h, seed, palette, StdRng::seed_from_u64(seed), t, &knobs);
             true
         }
+        "mahoraga-4" => {
+            let knobs = crate::mahoraga4::ShrineKnobs::from_env();
+            *grid = crate::mahoraga4::render_mahoraga4_frame(w, h, seed, palette, StdRng::seed_from_u64(seed), t, &knobs);
+            true
+        }
         _ => false,
     }
 }

@@ -44,6 +44,7 @@ mod walker;
 mod warps;
 mod mahoraga2;
 mod mahoraga3;
+mod mahoraga4;
 
 use crossterm::style::Color;
 use rand::RngExt;

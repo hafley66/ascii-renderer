@@ -648,3 +648,13 @@ fn mahoraga2_fuga_close_focus() {
 fn mahoraga3_seed_42() {
     insta::assert_snapshot!(render(&["42", "mahoraga-3", "ember"]));
 }
+
+#[test]
+fn mahoraga4_seed_42() {
+    insta::assert_snapshot!(render(&["42", "mahoraga-4", "ember"]));
+}
+
+#[test]
+fn mahoraga4_guard_to_lunge() {
+    insta::assert_snapshot!(render(&["42", "mahoraga-4", "deep", "8", "7", "1.5", "0.45", "2", "3", "0.6"]));
+}
