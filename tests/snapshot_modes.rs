@@ -758,3 +758,13 @@ fn chladni_seed_42() {
 fn chladni_high_order_thin_sand() {
     insta::assert_snapshot!(render(&["42", "chladni", "ember", "4", "1", "11", "0.03", "0.5", "6", "2", "0", "2"]));
 }
+
+#[test]
+fn pendulum_wave_seed_42() {
+    insta::assert_snapshot!(render(&["42", "pendulum-wave", "moss"]));
+}
+
+#[test]
+fn pendulum_wave_top_view_trails() {
+    insta::assert_snapshot!(render(&["42", "pendulum-wave", "ember", "10", "20", "12", "0.6", "1", "20", "0.05", "2", "30"]));
+}

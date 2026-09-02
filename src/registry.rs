@@ -626,6 +626,21 @@ pub(crate) static MODE_FORMS: &[ModeForm] = &[
             param!("ASPECT", "cell aspect", 0.25, 4.0, 2.0, 0.25),
         ],
     },
+    ModeForm {
+        names: &["pendulum-wave"],
+        animate: AnimKind::Iterate,
+        params: &[
+            param!("COUNT", "pendulums", 1.0, 64.0, 15.0, 1.0),
+            param!("CYCLE", "realign seconds", 1.0, 240.0, 30.0, 1.0),
+            param!("BASE", "swings per cycle, first", 1.0, 120.0, 20.0, 1.0),
+            param!("SWING", "amplitude radians", 0.0, 1.5, 0.5, 0.05),
+            param!("VIEW", "0 front, 1 top", 0.0, 1.0, 0.0, 1.0),
+            param!("TRAIL", "top view trail samples", 0.0, 200.0, 12.0, 1.0),
+            param!("TAIL", "seconds per trail sample", 0.001, 1.0, 0.06, 0.01),
+            param!("ASPECT", "cols per row", 0.25, 4.0, 2.0, 0.25),
+            param!("HUE", "hue step per bob", 0.0, 90.0, 18.0, 2.0),
+        ],
+    },
 ];
 
 

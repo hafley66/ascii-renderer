@@ -647,6 +647,11 @@ fn iterate_grid_into(
             crate::chladni::draw_chladni(grid, w, h, seed, palette, t, &knobs);
             true
         }
+        "pendulum-wave" => {
+            let knobs = crate::pendwave::PendWaveKnobs::from_env();
+            crate::pendwave::draw_pendwave(grid, w, h, seed, palette, t, &knobs);
+            true
+        }
         _ => false,
     }
 }
