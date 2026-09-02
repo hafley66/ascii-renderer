@@ -738,3 +738,13 @@ fn braid_seed_42() {
 fn braid_wide_ribbons() {
     insta::assert_snapshot!(render(&["42", "braid", "ember", "7", "4", "8", "9", "5", "0.7", "0.5", "0.1", "1.0", "0.9"]));
 }
+
+#[test]
+fn braid_2_seed_42() {
+    insta::assert_snapshot!(render(&["42", "braid-2", "moss"]));
+}
+
+#[test]
+fn braid_2_thick_slow_twist() {
+    insta::assert_snapshot!(render(&["42", "braid-2", "ember", "4", "6", "16", "5", "5", "0.6", "48", "12", "30", "9", "0.1", "0.9"]));
+}

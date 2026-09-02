@@ -15,3 +15,24 @@ Knobs:
 - STRANDS: number of ribbons (default 5)
 - SPEED: scroll rate in columns per second (default 6)
 - PITCH: columns between successive crossing steps (default 12)
+
+Added while building:
+- GAP: lane spacing in rows, clamped to fit the grid (default 4)
+- WIDTH: ribbon thickness in rows at full face, odd (default 3)
+- CROSS: fraction of each pitch block spent on the diagonal (default 0.5)
+- TWIST: twist period in columns; ribbon thins to one row at edge-on (default 28)
+- PULSE: bead speed in columns per second, positive runs rightward (default 10)
+- BEADS: bead spacing in columns along a ribbon (default 36)
+- TRAIL: bead trail length in columns (default 7)
+- SLIP: probability a crossing breaks the alternating over/under plait rule (default 0.15)
+- FILL: probability each same-parity lane pair crosses at a step (default 0.75)
+
+Positional order: strands speed pitch gap width cross twist pulse beads trail slip fill.
+
+Measured frame time, release, 200x60, 200 frames: avg 0.047 ms, worst 0.067 ms.
+
+Render commands:
+```bash
+ASCII_GRID_W=110 ASCII_GRID_H=36 ./target/release/ascii-renderer 42 braid-2 moss | sed 's/\x1b\[[0-9;]*m//g'
+ASCII_GRID_W=110 ASCII_GRID_H=36 ASCII_T=5 ./target/release/ascii-renderer 42 braid-2 moss | sed 's/\x1b\[[0-9;]*m//g'
+```

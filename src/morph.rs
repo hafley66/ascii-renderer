@@ -637,6 +637,11 @@ fn iterate_grid_into(
             crate::braid::draw_braid(grid, w, h, seed, palette, t, &knobs);
             true
         }
+        "braid-2" => {
+            let knobs = crate::braid2::Braid2Knobs::from_env();
+            crate::braid2::draw_braid2(grid, w, h, seed, palette, t, &knobs);
+            true
+        }
         _ => false,
     }
 }

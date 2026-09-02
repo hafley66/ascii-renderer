@@ -593,6 +593,24 @@ pub(crate) static MODE_FORMS: &[ModeForm] = &[
             param!("FILL", "crossings per step", 0.0, 1.0, 0.75, 0.05),
         ],
     },
+    ModeForm {
+        names: &["braid-2"],
+        animate: AnimKind::Iterate,
+        params: &[
+            param!("STRANDS", "ribbons", 2.0, 16.0, 5.0, 1.0),
+            param!("SPEED", "scroll cols/s", -30.0, 30.0, 6.0, 0.5),
+            param!("PITCH", "cols per crossing", 2.0, 60.0, 12.0, 1.0),
+            param!("GAP", "lane gap rows", 1.0, 12.0, 4.0, 1.0),
+            param!("WIDTH", "ribbon rows", 1.0, 9.0, 3.0, 2.0),
+            param!("CROSS", "crossing span", 0.1, 1.0, 0.5, 0.05),
+            param!("TWIST", "twist period cols", 2.0, 200.0, 28.0, 2.0),
+            param!("PULSE", "bead speed cols/s", -40.0, 40.0, 10.0, 1.0),
+            param!("BEADS", "bead spacing cols", 2.0, 200.0, 36.0, 2.0),
+            param!("TRAIL", "bead trail cols", 0.5, 40.0, 7.0, 0.5),
+            param!("SLIP", "plait slip chance", 0.0, 1.0, 0.15, 0.05),
+            param!("FILL", "crossings per step", 0.0, 1.0, 0.75, 0.05),
+        ],
+    },
 ];
 
 
