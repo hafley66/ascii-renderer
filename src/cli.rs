@@ -39,6 +39,7 @@ use crate::sauron::cli_sauron;
 use crate::mahoraga2::cli_mahoraga2;
 use crate::mahoraga3::cli_mahoraga3;
 use crate::mahoraga4::cli_mahoraga4;
+use crate::mahoraga5::cli_mahoraga5;
 use crate::cli_basic::*;
 use crate::cli_catalog::*;
 use crate::cli_city::*;
@@ -193,6 +194,9 @@ pub(crate) fn run() {
         );
         eprintln!(
             "  mahoraga-4 Shibuya on a rig: 20-bone FK, keyframe blend, seed joint noise, IK aim at Sukuna [turns] [slash] [cut] [focus] [poseA] [poseB] [blend] (a=animate)"
+        );
+        eprintln!(
+            "  mahoraga-5 Shibuya choreographed: depth-ordered rigs, Sukuna rigged and cutting, hatching, sampled Fuga, ghosts, shake [turns] [slash] [cut] [focus] [poseA] [poseB] [blend] [sukpose] (a=animate)"
         );
         for (_, mode) in registered_modes().iter() {
             eprintln!("  {:<16} {}", mode.name(), mode.help());
@@ -1042,6 +1046,12 @@ pub(crate) fn run() {
         }
     } else if mode == "mahoraga-4" {
         let (g, done) = cli_mahoraga4(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        grid = g;
+        if done {
+            return;
+        }
+    } else if mode == "mahoraga-5" {
+        let (g, done) = cli_mahoraga5(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
         grid = g;
         if done {
             return;

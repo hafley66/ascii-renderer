@@ -658,3 +658,13 @@ fn mahoraga4_seed_42() {
 fn mahoraga4_guard_to_lunge() {
     insta::assert_snapshot!(render(&["42", "mahoraga-4", "deep", "8", "7", "1.5", "0.45", "2", "3", "0.6"]));
 }
+
+#[test]
+fn mahoraga5_seed_42() {
+    insta::assert_snapshot!(render(&["42", "mahoraga-5", "ember"]));
+}
+
+#[test]
+fn mahoraga5_swing_vs_crouch() {
+    insta::assert_snapshot!(render(&["42", "mahoraga-5", "deep", "8", "7", "1.5", "0.45", "5", "3", "0.4", "3"]));
+}

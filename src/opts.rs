@@ -446,6 +446,7 @@ pub(crate) fn run_demo(initial_seed: u64) {
         "mahoraga-2",
         "mahoraga-3",
         "mahoraga-4",
+        "mahoraga-5",
     ];
     all_modes.extend(registered_modes().iter().map(|(name, _)| name));
     let all_themes: &[&str] = &[
