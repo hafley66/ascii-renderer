@@ -57,7 +57,7 @@ metro, koi, skyline, hive, jelly, jelly2,
 rhizome, effigy, dendrite, totem, chimera,
 murmuration, lanterns, tide,
 arboretum, astrolabe, sauron, mahoraga-2, mahoraga-3, mahoraga-4, mahoraga-5,
-tree-of-life, tree-of-life-2, tree-of-life-3, tree-of-life-4, tree-of-life-6
+tree-of-life, tree-of-life-2, tree-of-life-3, tree-of-life-4, tree-of-life-5, tree-of-life-6
 
 ## Architecture
 

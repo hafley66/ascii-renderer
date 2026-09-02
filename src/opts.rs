@@ -451,6 +451,7 @@ pub(crate) fn run_demo(initial_seed: u64) {
         "tree-of-life-2",
         "tree-of-life-3",
         "tree-of-life-4",
+        "tree-of-life-5",
         "tree-of-life-6",
     ];
     all_modes.extend(registered_modes().iter().map(|(name, _)| name));

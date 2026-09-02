@@ -710,6 +710,16 @@ fn tree_of_life_4_deep_drift() {
 }
 
 #[test]
+fn tree_of_life_5_seed_42() {
+    insta::assert_snapshot!(render(&["42", "tree-of-life-5", "moss"]));
+}
+
+#[test]
+fn tree_of_life_5_klein_spin() {
+    insta::assert_snapshot!(render(&["42", "tree-of-life-5", "ember", "8", "0.7", "0.9", "0.15", "0.06", "80"]));
+}
+
+#[test]
 fn tree_of_life_6_seed_42() {
     insta::assert_snapshot!(render(&["42", "tree-of-life-6", "moss"]));
 }
