@@ -181,7 +181,7 @@ pub(crate) fn run() {
             "  astrolabe Brass instrument: limb, tympan, precessing star rete, sweeping rule (a=animate)"
         );
         eprintln!(
-            "  mahoraga  Shibuya: Malevolent Shrine cuts, the eight-handled wheel turns per adaptation, Fire Arrow [turns] [slash] (a=animate)"
+            "  mahoraga  Shibuya: SDF Mahoraga in a dot ramp, Dismantle cuts shear the scene, blocks with focus falloff [turns] [slash] [cut] [focus] (a=animate)"
         );
         eprintln!(
             "  sauron    The great eye: slit pupil wandering in a fire wall, embers, smoke (a=animate)"

@@ -558,8 +558,8 @@ fn mahoraga_seed_42() {
 }
 
 #[test]
-fn mahoraga_pre_arrow() {
-    insta::assert_snapshot!(render(&["42", "mahoraga", "deep", "4", "0.4"]));
+fn mahoraga_fuga_close_focus() {
+    insta::assert_snapshot!(render(&["42", "mahoraga", "deep", "8", "4", "2.5", "0.9"]));
 }
 
 #[test]
