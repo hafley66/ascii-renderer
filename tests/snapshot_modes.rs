@@ -698,3 +698,13 @@ fn tree_of_life_3_seed_42() {
 fn tree_of_life_3_many_eyes() {
     insta::assert_snapshot!(render(&["42", "tree-of-life-3", "ember", "9", "2", "1", "40", "0.5", "4", "0.12", "0.3", "0.5", "1", "60"]));
 }
+
+#[test]
+fn tree_of_life_4_seed_42() {
+    insta::assert_snapshot!(render(&["42", "tree-of-life-4", "moss"]));
+}
+
+#[test]
+fn tree_of_life_4_deep_drift() {
+    insta::assert_snapshot!(render(&["42", "tree-of-life-4", "deep", "9", "0.6", "0.2", "1.4", "120"]));
+}

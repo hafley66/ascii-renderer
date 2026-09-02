@@ -617,6 +617,11 @@ fn iterate_grid_into(
             crate::lifetree3::draw_lifetree3(grid, w, h, seed, palette, t, &knobs);
             true
         }
+        "tree-of-life-4" => {
+            let knobs = crate::lifetree4::HyperKnobs::from_env();
+            crate::lifetree4::draw_lifetree4(grid, w, h, seed, palette, t, &knobs);
+            true
+        }
         _ => false,
     }
 }

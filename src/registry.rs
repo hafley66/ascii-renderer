@@ -529,6 +529,22 @@ pub(crate) static MODE_FORMS: &[ModeForm] = &[
             param!("BLINK", "blink rate", 0.0, 4.0, 1.0, 0.1),
         ],
     },
+    ModeForm {
+        names: &["tree-of-life-4"],
+        animate: AnimKind::Iterate,
+        params: &[
+            param!("DEPTH", "branch depth", 4.0, 11.0, 8.0, 1.0),
+            param!("SPREAD", "spread", 0.15, 1.3, 0.62, 0.05),
+            param!("LEN", "trunk length", 0.4, 2.5, 0.8, 0.1),
+            param!("DRIFT", "mobius drift", 0.0, 0.85, 0.35, 0.05),
+            param!("SPIN", "spin rate", -1.0, 1.0, 0.08, 0.02),
+            param!("SPEED", "anim speed", 0.05, 4.0, 1.0, 0.05),
+            param!("MOTES", "motes", 0.0, 400.0, 60.0, 10.0),
+            param!("GLOW", "ether glow", 0.0, 1.0, 0.8, 0.05),
+            param!("TILE", "geodesic web", 0.0, 1.0, 1.0, 0.1),
+            param!("SEAM", "seam turn rate", -0.5, 0.5, 0.06, 0.02),
+        ],
+    },
 ];
 
 
