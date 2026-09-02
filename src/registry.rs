@@ -524,7 +524,7 @@ pub(crate) static MODE_FORMS: &[ModeForm] = &[
             param!("FLOCK", "flocks", 0.0, 12.0, 3.0, 1.0),
             param!("DAY", "day rate", 0.0, 2.0, 0.5, 0.1),
             param!("FLAIR", "avant flair", 0.0, 1.0, 1.0, 0.1),
-            param!("EYES", "eye fruits", 0.0, 80.0, 24.0, 2.0),
+            param!("EYES", "eye fruits", 0.0, 80.0, 12.0, 1.0),
             param!("GAZE", "gaze track", 0.0, 1.0, 1.0, 0.1),
             param!("BLINK", "blink rate", 0.0, 4.0, 1.0, 0.1),
         ],

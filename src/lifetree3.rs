@@ -53,7 +53,7 @@ impl EyeKnobs {
             flock: param_f32("FLOCK", 3.0).round().clamp(0.0, 12.0) as usize,
             day: param_f32("DAY", 0.5).clamp(0.0, 2.0),
             flair: param_f32("FLAIR", 1.0).clamp(0.0, 1.0),
-            eyes: param_f32("EYES", 24.0).round().clamp(0.0, 80.0) as usize,
+            eyes: param_f32("EYES", 12.0).round().clamp(0.0, 80.0) as usize,
             gaze: param_f32("GAZE", 1.0).clamp(0.0, 1.0),
             blink: param_f32("BLINK", 1.0).clamp(0.0, 4.0),
         }
@@ -550,7 +550,7 @@ fn build(w: usize, h: usize, seed: u64, palette: &[Color; 5], k: &EyeKnobs) -> C
             let j = rng.random_range(0..(i as u32 + 1)) as usize;
             order.swap(i, j);
         }
-        let big = (w as f32 / 22.0).clamp(3.0, 6.0);
+        let big = (w as f32 / 16.0).clamp(4.0, 8.0);
         for &i in &order {
             if eyes.len() >= k.eyes {
                 break;
@@ -560,12 +560,12 @@ fn build(w: usize, h: usize, seed: u64, palette: &[Color; 5], k: &EyeKnobs) -> C
                 continue;
             }
             let near = ((ex - cx).abs() as f32 / half_w).clamp(0.0, 1.0);
-            let rx = (big * (1.0 - near * 0.5) * (0.7 + rng.random::<f32>() * 0.5)).round().max(2.0) as i32;
-            let ry = if rx >= 4 { 2 } else { 1 };
-            if ex - rx < 0 || ex + rx >= w as i32 {
+            let rx = (big * (1.0 - near * 0.35) * (0.75 + rng.random::<f32>() * 0.4)).round().max(4.0) as i32;
+            let ry = if rx >= 6 { 2 } else { 1 };
+            if ex - rx - 1 < 0 || ex + rx + 1 >= w as i32 || ey - ry - 1 < 1 {
                 continue;
             }
-            if eyes.iter().any(|e| (e.x - ex).abs() <= e.rx + rx + 2 && (e.y - ey).abs() <= e.ry + ry + 1) {
+            if eyes.iter().any(|e| (e.x - ex).abs() <= e.rx + rx + 3 && (e.y - ey).abs() <= e.ry + ry + 2) {
                 continue;
             }
             eyes.push(Eye {
@@ -998,12 +998,13 @@ fn frame(grid: &mut Grid, c: &Cached, t: f32, k: &EyeKnobs) {
         let sync_blink = if sync_p < 0.04 { (sync_p / 0.04 * 3.1416).sin() } else { 0.0 };
         let iris_base = mix(c.leaf_hi, c.eth_rgb, 0.35);
         let iris_alt = mix(c.autumn, c.leaf_rgb, 0.4);
+        let socket = mix(c.leaf_rgb, (0, 0, 0), 0.8);
         for e in &c.eyes {
             if size_k < 0.25 {
                 break;
             }
-            let rx = ((e.rx as f32) * size_k).round().max(1.0) as i32;
-            let ry = if rx >= 4 { 2 } else { 1 };
+            let rx = ((e.rx as f32) * size_k).round().max(3.0) as i32;
+            let ry = if rx >= 6 { 2 } else { 1 };
             let bp = (ts * e.rate * k.blink + e.phase).fract();
             let mut blink = if bp < 0.07 { (bp / 0.07 * 3.1416).sin() } else { 0.0 };
             if e.double && bp > 0.10 && bp < 0.17 {
@@ -1015,73 +1016,93 @@ fn frame(grid: &mut Grid, c: &Cached, t: f32, k: &EyeKnobs) {
             let tt = ts - e.lag;
             let tx = c.cx as f32 + w as f32 * 0.45 * (tt * 0.17).sin();
             let ty = gf * 0.5 + gf * 0.45 * (tt * 0.29).cos();
-            let gmax = (rx - 2).max(0) as f32;
-            let gx = ((tx - e.x as f32) / w as f32 * 2.4 * rx as f32 * k.gaze).round().clamp(-gmax, gmax) as i32;
+            let gmax = (rx - 3).max(0) as f32;
+            let gx = ((tx - e.x as f32) / w as f32 * 3.0 * rx as f32 * k.gaze).round().clamp(-gmax, gmax) as i32;
             let gy = ((ty - e.y as f32) / h as f32 * 2.6 * ry as f32 * k.gaze).round().clamp(-(ry - 1).max(0) as f32, (ry - 1).max(0) as f32) as i32;
             let iris = mix(iris_base, iris_alt, e.tint);
-            let lid = if eth { c.eth_hi } else { c.bark_hi };
+            let daylight = 0.75 + 0.25 * day;
+            let lid = if eth { c.eth_hi } else { mix(c.bark_hi, (0, 0, 0), 0.2) };
+            // socket: a dark ellipse one cell wider than the eye so the eye pops off the leaves
+            if !eth {
+                let sr = ry + 1;
+                for dy in -sr..=sr {
+                    let f = dy as f32 / (sr as f32 + 0.3);
+                    let hw = ((rx + 1) as f32 * (1.0 - f * f).max(0.0).sqrt()).round() as i32;
+                    for dx in -hw..=hw {
+                        let x = e.x + dx;
+                        let y = e.y + dy;
+                        if x >= 0 && y >= 0 && (x as usize) < w && (y as usize) < h {
+                            grid[y as usize][x as usize] = Cell::with_bg(' ', scale(socket, 1.0), scale(socket, 1.0));
+                        }
+                    }
+                }
+            }
             if open < 0.18 {
                 for dx in -rx..=rx {
                     let ch = if eth { '·' } else if dx == -rx { '◜' } else if dx == rx { '◝' } else { '─' };
-                    put(grid, e.x + dx, e.y, ch, ink(lid, 0.8));
+                    let cell = if eth { Cell::new(ch, ink(lid, 0.8)) } else { Cell::with_bg(ch, scale(lid, 1.0), scale(socket, 1.0)) };
+                    let x = e.x + dx;
+                    if x >= 0 && e.y >= 0 && (x as usize) < w && (e.y as usize) < h {
+                        grid[e.y as usize][x as usize] = cell;
+                    }
                 }
                 continue;
             }
             let ry_open = (ry as f32 * open).max(0.5);
-            let iris_r = (rx as f32 * 0.5).max(0.9);
-            for dy in -ry..=ry {
-                let fy = dy as f32 / ry_open;
-                if fy.abs() > 1.0 {
-                    continue;
-                }
+            let vis = ry_open.round().max(1.0) as i32;
+            let iris_r = (rx as f32 * 0.42).max(1.2);
+            for dy in -vis..=vis {
+                let fy = dy as f32 / (vis as f32 + 0.45);
                 let hw = (rx as f32 * (1.0 - fy * fy).sqrt()).round() as i32;
-                let top = dy < 0 && fy.abs() > 0.55;
-                let bottom = dy > 0 && fy.abs() > 0.55;
+                let top = dy == -vis;
+                let bottom = dy == vis;
                 for dx in -hw..=hw {
                     let x = e.x + dx;
                     let y = e.y + dy;
-                    let d = ((dx - gx) as f32 * 0.55).powi(2) + ((dy - gy) as f32).powi(2);
+                    if x < 0 || y < 0 || x as usize >= w || y as usize >= h {
+                        continue;
+                    }
+                    let xs = if ry == 2 { 0.55 } else { 0.85 };
+                    let d = ((dx - gx) as f32 * xs).powi(2) + ((dy - gy) as f32).powi(2);
                     let in_iris = d < iris_r * iris_r;
-                    let in_pupil = dx == gx && dy == gy;
-                    let ring = !in_iris && d < (iris_r + 0.9).powi(2);
+                    let pupil = dx == gx && dy == gy;
+                    let spec = ry == 2 && dx == gx - 1 && dy == gy - 1 && in_iris;
                     let edge = dx == -hw || dx == hw;
+                    let ring = !in_iris && d < (iris_r + 0.8).powi(2);
                     if eth {
                         let b = 0.5 + 0.5 * k.glow * (0.5 + 0.5 * (ts * 1.3 + e.phase * 6.28).sin()) + flash * 0.4;
-                        let ch = if in_pupil {
-                            '◦'
+                        let ch = if top || bottom || edge {
+                            '°'
+                        } else if pupil {
+                            '◉'
                         } else if ring {
                             '○'
-                        } else if in_iris {
-                            continue
-                        } else if top {
-                            '˙'
-                        } else if bottom {
-                            '·'
-                        } else if edge {
-                            '·'
                         } else {
-                            continue
+                            ' '
                         };
-                        put(grid, x, y, ch, ink(c.eth_hi, b));
+                        if ch == ' ' {
+                            grid[y as usize][x as usize] = Cell::new(' ', Color::Reset);
+                        } else {
+                            put(grid, x, y, ch, ink(c.eth_hi, b));
+                        }
                     } else {
-                        let daylight = 0.75 + 0.25 * day;
-                        let cell = if in_pupil {
-                            Cell::with_bg('◉', scale(PUPIL, 1.0), scale(iris, daylight))
+                        let lids = ry_open >= ry as f32 * 0.6;
+                        let cell = if top && lids {
+                            Cell::with_bg('▄', scale(SCLERA, daylight), scale(socket, 1.0))
+                        } else if bottom && lids {
+                            Cell::with_bg('▀', scale(SCLERA, daylight), scale(socket, 1.0))
+                        } else if pupil {
+                            Cell::with_bg('●', scale(PUPIL, 1.0), scale(iris, daylight))
+                        } else if spec {
+                            Cell::with_bg('°', scale((255, 255, 255), 1.0), scale(iris, daylight))
                         } else if in_iris {
-                            let spec = dx - gx == -1 && dy - gy <= 0;
-                            Cell::with_bg(if spec { '°' } else { '▒' }, scale(mix(iris, (255, 255, 255), if spec { 0.7 } else { 0.25 }), daylight), scale(iris, daylight * 0.8))
-                        } else if top {
-                            Cell::new('◠', scale(lid, 0.9))
-                        } else if bottom {
-                            Cell::new('◡', scale(lid, 0.9))
+                            Cell::with_bg('█', scale(iris, daylight), scale(SCLERA, daylight))
                         } else if edge {
-                            Cell::new(if dx < 0 { '(' } else { ')' }, scale(lid, 0.9))
+                            Cell::with_bg(if dx < 0 { '(' } else { ')' }, scale(lid, 1.0), scale(SCLERA, daylight))
                         } else {
                             Cell::with_bg(' ', scale(SCLERA, daylight), scale(SCLERA, daylight))
                         };
-                        if x >= 0 && y >= 0 && (x as usize) < w && (y as usize) < h {
-                            grid[y as usize][x as usize] = cell;
-                        }
+                        grid[y as usize][x as usize] = cell;
                     }
                 }
             }
@@ -1315,14 +1336,14 @@ mod tests {
     #[test]
     fn eyes_present_and_blink() {
         let s0 = run(100, 32, 42, 0.0);
-        assert!(s0.contains('◉') || s0.contains('○'), "eye pupils or rings");
+        assert!(s0.contains('●') || s0.contains('◉'), "eye pupils");
         let mut k = EyeKnobs::from_env();
         k.blink = 4.0;
         let count = |t: f32| {
             let mut g = vec![vec![Cell::blank(); 100]; 32];
             let p = crate::color::named_theme("moss").unwrap();
             draw_lifetree3(&mut g, 100, 32, 42, &p, t, &k);
-            g.iter().flatten().filter(|c| c.ch == '◉').count()
+            g.iter().flatten().filter(|c| c.ch == '●').count()
         };
         let a: Vec<usize> = (0..40).map(|i| count(i as f32 * 0.05)).collect();
         assert!(a.iter().any(|&n| n != a[0]), "pupil count must change across a blink window: {:?}", a);
@@ -1336,7 +1357,7 @@ mod tests {
         let mut g = vec![vec![Cell::blank(); 100]; 32];
         let p = crate::color::named_theme("moss").unwrap();
         draw_lifetree3(&mut g, 100, 32, 42, &p, 0.0, &k);
-        assert_eq!(g.iter().flatten().filter(|c| c.ch == '◉').count(), 0);
+        assert_eq!(g.iter().flatten().filter(|c| c.ch == '●').count(), 0);
     }
 
     #[test]
