@@ -553,6 +553,16 @@ fn sauron_seed_42() {
 }
 
 #[test]
+fn mahoraga_seed_42() {
+    insta::assert_snapshot!(render(&["42", "mahoraga", "ember"]));
+}
+
+#[test]
+fn mahoraga_pre_arrow() {
+    insta::assert_snapshot!(render(&["42", "mahoraga", "deep", "4", "0.4"]));
+}
+
+#[test]
 fn illuminarium_seed_42() {
     insta::assert_snapshot!(render(&[
         "42",

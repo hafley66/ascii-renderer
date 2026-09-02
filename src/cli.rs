@@ -35,6 +35,7 @@ use crate::registry::*;
 use crate::warps::*;
 use crate::arboretum::cli_arboretum;
 use crate::astrolabe::cli_astrolabe;
+use crate::mahoraga::cli_mahoraga;
 use crate::sauron::cli_sauron;
 use crate::cli_basic::*;
 use crate::cli_catalog::*;
@@ -178,6 +179,9 @@ pub(crate) fn run() {
         );
         eprintln!(
             "  astrolabe Brass instrument: limb, tympan, precessing star rete, sweeping rule (a=animate)"
+        );
+        eprintln!(
+            "  mahoraga  Shibuya: Malevolent Shrine cuts, the eight-handled wheel turns per adaptation, Fire Arrow [turns] [slash] (a=animate)"
         );
         eprintln!(
             "  sauron    The great eye: slit pupil wandering in a fire wall, embers, smoke (a=animate)"
@@ -940,6 +944,12 @@ pub(crate) fn run() {
         }
     } else if mode == "astrolabe" {
         let (g, done) = cli_astrolabe(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        grid = g;
+        if done {
+            return;
+        }
+    } else if mode == "mahoraga" {
+        let (g, done) = cli_mahoraga(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
         grid = g;
         if done {
             return;

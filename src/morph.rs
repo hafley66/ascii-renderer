@@ -316,6 +316,11 @@ fn iterate_grid_into(
             crate::sauron::draw_sauron(grid, w, h, seed, palette, t);
             true
         }
+        "mahoraga" => {
+            let knobs = crate::mahoraga::ShrineKnobs::from_env();
+            *grid = crate::mahoraga::render_mahoraga_frame(w, h, seed, palette, StdRng::seed_from_u64(seed), t, &knobs);
+            true
+        }
         "spiro" => {
             *grid = draw_spiro(
                 std::mem::take(grid),

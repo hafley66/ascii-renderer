@@ -340,6 +340,18 @@ pub(crate) static MODE_FORMS: &[ModeForm] = &[
             param!("TURB", "turbulence", 0.0, 3.0, 1.0, 0.1),
         ],
     },
+    ModeForm {
+        names: &["mahoraga"],
+        animate: AnimKind::Iterate,
+        params: &[
+            param!("TURNS", "adaptations", 0.0, 8.0, 8.0, 1.0),
+            param!("FUGA", "arrow after", 1.0, 8.0, 8.0, 1.0),
+            param!("SLASH", "dismantle", 0.0, 1.0, 0.6, 0.05),
+            param!("RADIUS", "wheel radius", 0.1, 0.45, 0.3, 0.05),
+            param!("HAZE", "haze", 0.0, 1.0, 0.5, 0.05),
+            param!("SPEED", "anim speed", 0.1, 3.0, 1.0, 0.1),
+        ],
+    },
     ModeForm { names: &["stained"], animate: AnimKind::Vflow, params: &[] },
     ModeForm {
         names: &["chimera"],
