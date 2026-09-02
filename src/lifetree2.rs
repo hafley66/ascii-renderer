@@ -22,6 +22,12 @@ pub(crate) struct VeilKnobs {
     pub veil: f32,
     pub season: f32,
     pub ring: f32,
+    pub tide: f32,
+    pub gust: f32,
+    pub surge: f32,
+    pub flock: usize,
+    pub day: f32,
+    pub flair: f32,
 }
 
 impl VeilKnobs {
@@ -38,6 +44,12 @@ impl VeilKnobs {
             veil: param_f32("VEIL", 5.0).clamp(0.0, 14.0),
             season: param_f32("SEASON", 0.12).clamp(0.0, 1.0),
             ring: param_f32("RING", 1.0).clamp(0.0, 1.0),
+            tide: param_f32("TIDE", 0.7).clamp(0.0, 1.0),
+            gust: param_f32("GUST", 0.8).clamp(0.0, 1.0),
+            surge: param_f32("SURGE", 1.0).clamp(0.0, 1.0),
+            flock: param_f32("FLOCK", 3.0).round().clamp(0.0, 12.0) as usize,
+            day: param_f32("DAY", 0.5).clamp(0.0, 2.0),
+            flair: param_f32("FLAIR", 1.0).clamp(0.0, 1.0),
         }
     }
 
@@ -81,6 +93,7 @@ struct Star {
 #[derive(Clone, Copy)]
 struct Mote {
     x0: f32,
+    y0: f32,
     phase: f32,
     rate: f32,
     amp: f32,
@@ -115,6 +128,8 @@ struct Cached {
     motes: Vec<Mote>,
     fallers: Vec<Mote>,
     ring: Vec<RingPt>,
+    tips: Vec<(i32, i32)>,
+    sky_rows: Vec<((u8, u8, u8), (u8, u8, u8), (u8, u8, u8))>,
     ground: usize,
     cx: i32,
     eth_rgb: (u8, u8, u8),
@@ -124,6 +139,7 @@ struct Cached {
     spring: (u8, u8, u8),
     autumn: (u8, u8, u8),
     bark_hi: (u8, u8, u8),
+    eth_dark: (u8, u8, u8),
 }
 
 thread_local! {
@@ -181,7 +197,8 @@ fn put(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
 /// Veil x for a row: seam column plus two travelling harmonics. t == 0 is a fixed wave.
 #[inline]
 fn veil_x(y: i32, w: usize, ts: f32, k: &VeilKnobs) -> i32 {
-    let base = w as f32 * k.seam;
+    let tide = k.tide * 0.5 * (ts * 0.11).sin() + k.tide * 0.12 * (ts * 0.37).sin();
+    let base = w as f32 * (k.seam + tide).clamp(-0.05, 1.05);
     let fy = y as f32;
     let wave = (fy * 0.33 + ts * 0.45).sin() + 0.45 * (fy * 0.81 - ts * 0.7).sin();
     (base + k.veil * wave).round().clamp(0.0, w as f32) as i32
@@ -465,6 +482,7 @@ fn build(w: usize, h: usize, seed: u64, palette: &[Color; 5], k: &VeilKnobs) -> 
     for _ in 0..k.motes {
         motes.push(Mote {
             x0: 1.0 + rng.random::<f32>() * (w as f32 - 2.0),
+            y0: 0.0,
             phase: rng.random::<f32>(),
             rate: 0.25 + rng.random::<f32>() * 0.45,
             amp: 1.0 + rng.random::<f32>() * 3.0,
@@ -472,16 +490,48 @@ fn build(w: usize, h: usize, seed: u64, palette: &[Color; 5], k: &VeilKnobs) -> 
             tint: rng.random::<f32>(),
         });
     }
+    let leaf_cells: Vec<(i32, i32)> = cells
+        .iter()
+        .filter(|c| matches!(c.kind, Kind::Leaf | Kind::LeafEdge))
+        .map(|c| (c.x, c.y))
+        .collect();
     let mut fallers = Vec::with_capacity(k.motes);
     for _ in 0..k.motes {
+        let (lx, ly) = if leaf_cells.is_empty() {
+            ((1.0 + rng.random::<f32>() * (w as f32 - 2.0)) as i32, 2)
+        } else {
+            leaf_cells[rng.random_range(0..leaf_cells.len() as u32) as usize]
+        };
         fallers.push(Mote {
-            x0: 1.0 + rng.random::<f32>() * (w as f32 - 2.0),
+            x0: lx as f32,
+            y0: ly as f32,
             phase: rng.random::<f32>(),
             rate: 0.18 + rng.random::<f32>() * 0.3,
             amp: 1.5 + rng.random::<f32>() * 3.5,
             freq: 1.0 + rng.random::<f32>() * 2.5,
             tint: rng.random::<f32>(),
         });
+    }
+    // canopy tips for the surge burst, thinned to at most 96
+    let mut tips: Vec<(i32, i32)> = canopy
+        .iter()
+        .filter(|s| s.lvl + 1 >= k.depth)
+        .map(|s| (s.x1.round() as i32, s.y1.round() as i32))
+        .collect();
+    if tips.len() > 96 {
+        let stride = tips.len() / 96 + 1;
+        tips = tips.into_iter().step_by(stride).collect();
+    }
+    // per-row sky colours: (night, day) for the living half, base for the ethereal half
+    let day_sky = mix(sky, (110, 165, 235), 0.65);
+    let mut sky_rows: Vec<((u8, u8, u8), (u8, u8, u8), (u8, u8, u8))> = Vec::with_capacity(h);
+    for y in 0..h {
+        let fy = y as f32 / h as f32;
+        let night = mix(rgb3(darken(palette[0], 70)), sky, fy * 1.3);
+        let day = mix(mix(day_sky, (200, 220, 245), 0.25), day_sky, fy * 1.2);
+        let dist = (y as f32 - ground as f32).abs() / h as f32;
+        let eth_c = mix(eth_dark, eth_rgb, (0.05 + (1.0 - dist) * 0.05) * 0.3);
+        sky_rows.push((night, day, eth_c));
     }
     // ring of life: ellipse centred mid-grid, tangent to the frame
     let rcx = cx as f32;
@@ -511,6 +561,8 @@ fn build(w: usize, h: usize, seed: u64, palette: &[Color; 5], k: &VeilKnobs) -> 
         motes,
         fallers,
         ring,
+        tips,
+        sky_rows,
         ground,
         cx,
         eth_rgb,
@@ -520,6 +572,7 @@ fn build(w: usize, h: usize, seed: u64, palette: &[Color; 5], k: &VeilKnobs) -> 
         spring,
         autumn,
         bark_hi,
+        eth_dark,
     }
 }
 
@@ -532,6 +585,25 @@ const MOTE: [char; 4] = ['·', '∙', '°', '○'];
 const FALL: [char; 4] = [',', '\'', '`', '"'];
 const RUNE: [char; 5] = ['·', '◦', '○', '✧', '✦'];
 const VINE: [char; 3] = ['~', '·', '♣'];
+const SPARK: [char; 4] = ['✦', '✧', '∙', '·'];
+const BIRD: [char; 2] = ['v', '~'];
+const WISP: [char; 4] = ['○', '°', '∙', '·'];
+const SEAM_TEXT: &[u8] = b"ARBOR\xb7VITAE\xb7MEMENTO\xb7MORI\xb7ANIMA\xb7MUNDI\xb7";
+
+#[inline]
+fn hash2(a: i32, b: i32) -> u32 {
+    let mut x = (a as u32).wrapping_mul(0x9E37_79B9) ^ (b as u32).wrapping_mul(0x85EB_CA6B);
+    x ^= x >> 15;
+    x = x.wrapping_mul(0x2C1B_3C6D);
+    x ^= x >> 12;
+    x
+}
+
+#[inline]
+fn smooth(x: f32) -> f32 {
+    let x = x.clamp(0.0, 1.0);
+    x * x * (3.0 - 2.0 * x)
+}
 
 /// Season weights (spring, summer, autumn, winter) from a 0..4 phase, each a tent of width 2.
 #[inline]
@@ -565,51 +637,135 @@ fn frame(grid: &mut Grid, c: &Cached, t: f32, k: &VeilKnobs) {
     let w = c.bg_eth[0].len();
     let h = c.bg_eth.len();
     let ts = t * k.speed;
-
-    // veil per row, then a two-slice background compose
-    let mut veil: [i32; 512] = [0; 512];
     let hh = h.min(512);
+
+    // clocks: gust envelope, surge front, heartbeat, day, negative flash
+    let gust = smooth(((ts * 0.19).sin() + 0.6 * (ts * 0.53).sin() - 0.55) * 2.2) * k.gust;
+    let su = (ts * 0.16).fract();
+    let root_front = 1.0 - su * 4.0;
+    let canopy_front = (su - 0.22) * 1.9;
+    let burst = ((su - 0.74) / 0.26).clamp(0.0, 1.0) * k.surge;
+    let burst_on = k.surge > 0.0 && su > 0.74;
+    let negative = k.flair > 0.0 && k.surge > 0.0 && su > 0.74 && su < 0.79;
+    let beat_p = (ts * 0.55).rem_euclid(3.0);
+    let flash = ((1.0 - beat_p * 5.0).max(0.0) + 0.6 * (1.0 - (beat_p - 0.32).abs() * 6.0).max(0.0)) * k.glow;
+    let beat = beat_p / 3.0;
+    let beat_r = beat * (w as f32 * 0.55);
+    let beat2_r = ((beat_p - 0.32).max(0.0) / 3.0) * (w as f32 * 0.55);
+    let heart_y = c.ground as f32 - 2.0;
+    let sun_a = ts * 0.07 * k.day;
+    let day = if k.day > 0.0 { smooth(sun_a.sin() * 1.4 + 0.5) } else { 0.0 };
+    let glitch_rows = k.flair * flash;
+
+    // veil per row, then background compose: sky rows are uniform, dirt rows memcpy
+    let mut veil: [i32; 512] = [0; 512];
     for y in 0..hh {
-        let v = veil_x(y as i32, w, ts, k) as usize;
+        let v = veil_x(y as i32, w, ts, k).clamp(0, w as i32) as usize;
         veil[y] = v as i32;
-        grid[y][..v].copy_from_slice(&c.bg_eth[y][..v]);
-        grid[y][v..w].copy_from_slice(&c.bg_phys[y][v..w]);
+        let (night, dayc, ethc) = c.sky_rows[y];
+        let eth_col = if negative { scale(c.eth_hi, 0.85) } else { scale(ethc, 1.0 + flash * 0.9) };
+        let eth_cell = Cell::new(' ', eth_col);
+        grid[y][..v].fill(eth_cell);
+        if y < c.ground {
+            grid[y][v..w].fill(Cell::new(' ', scale(mix(night, dayc, day), 1.0)));
+        } else {
+            grid[y][v..w].copy_from_slice(&c.bg_phys[y][v..w]);
+        }
     }
     let is_eth = |x: i32, y: i32| -> bool { y >= 0 && (y as usize) < hh && x < veil[y as usize] };
+    let ink = |bright: (u8, u8, u8), b: f32| -> Color {
+        if negative { scale(c.eth_dark, 1.0 + b * 0.5) } else { scale(bright, b) }
+    };
+    let shear = |y: i32| -> i32 {
+        if glitch_rows < 0.05 {
+            0
+        } else {
+            let r = hash2(y, (beat_p * 40.0) as i32) % 9;
+            (((r as i32) - 4) as f32 * glitch_rows * 1.4).round() as i32
+        }
+    };
 
     // seasons on the living half
     let sw = season_w((ts * k.season).rem_euclid(4.0));
     let season_tint = mix(mix(c.spring, c.leaf_rgb, sw[1] / (sw[0] + sw[1]).max(1e-3)), c.autumn, sw[2]);
-    let leaf_keep = 0.6 * sw[0] + 1.0 * sw[1] + 0.8 * sw[2] + 0.12 * sw[3];
+    let leaf_keep = (0.6 * sw[0] + 1.0 * sw[1] + 0.8 * sw[2] + 0.12 * sw[3]) - gust * 0.3;
     let season_mix = 0.7 * sw[0] + 0.85 * sw[2];
     let snow = sw[3];
 
-    // heartbeat radius on the ethereal half
-    let beat = (ts * 0.55).rem_euclid(3.0) / 3.0;
-    let beat_r = beat * (w as f32 * 0.55);
-    let heart_y = c.ground as f32 - 2.0;
+    // sun and moon on the living sky
+    if k.day > 0.0 {
+        let sx = (c.cx as f32 + sun_a.cos() * w as f32 * 0.42).round() as i32;
+        let sy = (c.ground as f32 - 1.0 - sun_a.sin() * (c.ground as f32 - 2.0)).round() as i32;
+        let mx = (c.cx as f32 - sun_a.cos() * w as f32 * 0.42).round() as i32;
+        let my = (c.ground as f32 - 1.0 + sun_a.sin() * (c.ground as f32 - 2.0)).round() as i32;
+        if sy < c.ground as i32 && !is_eth(sx, sy) {
+            put(grid, sx, sy, '◉', scale((255, 220, 120), 1.0));
+            for (dx, dy) in [(-2, 0), (2, 0), (0, -1), (0, 1)] {
+                if grid.get(( sy + dy).max(0) as usize).and_then(|r| r.get((sx + dx).max(0) as usize)).map(|cc| cc.ch == ' ').unwrap_or(false) && !is_eth(sx + dx, sy + dy) {
+                    put(grid, sx + dx, sy + dy, '·', scale((255, 200, 90), 0.8));
+                }
+            }
+        }
+        if my < c.ground as i32 && !is_eth(mx, my) {
+            put(grid, mx, my, '○', scale((220, 225, 240), 0.95));
+        }
+    }
 
     for s in &c.stars {
         let v = (ts * s.rate + s.phase).sin();
         let (ch, col) = if is_eth(s.x as i32, s.y as i32) {
-            let b = 0.35 + 0.65 * v.max(0.0);
-            (if v > 0.75 { '✦' } else { '·' }, scale(c.eth_rgb, b * 0.9))
+            let b = 0.35 + 0.65 * v.max(0.0) + flash * 0.4;
+            (if v > 0.75 { '✦' } else { '·' }, ink(c.eth_rgb, b * 0.9))
         } else if s.y < c.ground {
-            (if v > 0.9 { '✧' } else { '·' }, scale(c.eth_hi, 0.35 + 0.15 * v))
+            let b = (0.35 + 0.15 * v) * (1.0 - day);
+            if b < 0.12 {
+                continue;
+            }
+            (if v > 0.9 { '✧' } else { '·' }, scale(c.eth_hi, b))
         } else {
             continue;
         };
         put(grid, s.x as i32, s.y as i32, ch, col);
     }
 
-    // ring of life
-    if k.ring > 0.0 {
-        for p in &c.ring {
+    // shooting stars on the ethereal half: two streaks with short tails
+    for i in 0..2 {
+        let life = (ts * (0.21 + i as f32 * 0.07) + i as f32 * 0.5).fract();
+        if life > 0.35 {
+            continue;
+        }
+        let f = life / 0.35;
+        let sx0 = (hash2(i, (ts * 0.21) as i32) % w.max(1) as u32) as f32;
+        let sy0 = 0.0;
+        for tail in 0..5 {
+            let ft = f - tail as f32 * 0.04;
+            if ft < 0.0 {
+                break;
+            }
+            let x = (sx0 - ft * w as f32 * 0.4).round() as i32;
+            let y = (sy0 + ft * c.ground as f32 * 0.8).round() as i32;
+            if is_eth(x, y) {
+                put(grid, x, y, if tail == 0 { '✦' } else { '·' }, ink(c.eth_hi, 1.0 - tail as f32 * 0.18));
+            }
+        }
+    }
+
+    // ring of life with a comet on the ethereal arc
+    if k.ring > 0.0 && !c.ring.is_empty() {
+        let n = c.ring.len() as f32;
+        let head = (ts * 0.4).fract() * n;
+        for (i, p) in c.ring.iter().enumerate() {
             if is_eth(p.x, p.y) {
+                let mut d = (i as f32 - head).rem_euclid(n);
+                if d > n * 0.5 {
+                    d = n;
+                }
+                let comet = (1.0 - d / (n * 0.12)).max(0.0);
                 let v = (p.ang * 5.0 - ts * 1.9).sin();
-                let idx = ((v * 0.5 + 0.5) * 4.99) as usize;
-                let b = 0.4 + 0.6 * k.glow * (v * 0.5 + 0.5);
-                put(grid, p.x, p.y, RUNE[idx.min(4)], scale(c.eth_hi, b * k.ring));
+                let base = v * 0.5 + 0.5;
+                let idx = (((base + comet).min(1.0)) * 4.99) as usize;
+                let b = 0.35 + 0.65 * k.glow * base.max(comet);
+                put(grid, p.x, p.y, RUNE[idx.min(4)], ink(c.eth_hi, b * k.ring));
             } else {
                 let v = (p.ang * 9.0 + ts * 0.3).sin();
                 let idx = if v > 0.6 { 2 } else if v > -0.3 { 0 } else { 1 };
@@ -618,114 +774,174 @@ fn frame(grid: &mut Grid, c: &Cached, t: f32, k: &VeilKnobs) {
         }
     }
 
-    // ethereal horizon pulse, only where the veil sits over the ethereal half
+    // ethereal horizon pulse
     let gy = c.ground as i32;
     if gy >= 0 && (gy as usize) < hh {
         for x in 0..veil[gy as usize] {
             let d = (x - c.cx).abs() as f32;
             let p = (d * 0.35 - ts * 2.2).sin();
-            let b = 0.3 + 0.7 * k.glow * p.max(0.0);
-            put(grid, x, gy, if p > 0.6 { '∙' } else { '·' }, scale(c.eth_hi, b));
+            let b = 0.3 + 0.7 * k.glow * p.max(0.0) + flash * 0.5;
+            put(grid, x, gy, if p > 0.6 { '∙' } else { '·' }, ink(c.eth_hi, b));
         }
     }
 
-    // heartbeat ring on the ethereal half, drawn only over empty cells
+    // heartbeat rings on the ethereal half over empty cells
     if k.glow > 0.0 {
-        let steps = (beat_r * 3.0) as usize + 8;
-        let fade = (1.0 - beat).powi(2) * k.glow;
-        for i in 0..steps {
-            let a = i as f32 / steps as f32 * 6.2832;
-            let x = (c.cx as f32 + a.cos() * beat_r).round() as i32;
-            let y = (heart_y + a.sin() * beat_r * 0.5).round() as i32;
-            if !is_eth(x, y) || x < 0 || y < 0 || x as usize >= w {
+        for (r, fade) in [(beat_r, (1.0 - beat).powi(2)), (beat2_r, (1.0 - beat).powi(2) * 0.6)] {
+            if r <= 0.0 {
                 continue;
             }
-            if grid[y as usize][x as usize].ch == ' ' {
-                put(grid, x, y, if fade > 0.5 { '∙' } else { '·' }, scale(c.eth_rgb, 0.4 + 0.6 * fade));
+            let steps = (r * 3.0) as usize + 8;
+            for i in 0..steps {
+                let a = i as f32 / steps as f32 * 6.2832;
+                let x = (c.cx as f32 + a.cos() * r).round() as i32;
+                let y = (heart_y + a.sin() * r * 0.5).round() as i32;
+                if !is_eth(x, y) || x < 0 || y < 0 || x as usize >= w {
+                    continue;
+                }
+                if grid[y as usize][x as usize].ch == ' ' {
+                    put(grid, x, y, if fade > 0.5 { '∙' } else { '·' }, ink(c.eth_rgb, 0.4 + 0.6 * fade * k.glow));
+                }
             }
+        }
+    }
+
+    // still-water reflection of the canopy under the ethereal horizon
+    if k.flair > 0.0 {
+        for cell in &c.cells {
+            if matches!(cell.kind, Kind::Root | Kind::RootTip | Kind::Twig) {
+                continue;
+            }
+            let ry = 2 * gy - cell.y;
+            if ry <= gy || ry >= h as i32 || !is_eth(cell.x, ry) {
+                continue;
+            }
+            let wob = ((ry as f32 * 0.9 + ts * 1.3).sin() * 1.5).round() as i32;
+            let x = cell.x + wob;
+            if x < 0 || x as usize >= w || grid[ry as usize][x as usize].ch != ' ' {
+                continue;
+            }
+            let depth = (ry - gy) as f32 / (h as i32 - gy).max(1) as f32;
+            let ch = if cell.kind == Kind::Trunk { '˙' } else { '·' };
+            put(grid, x, ry, ch, ink(c.eth_rgb, (0.55 - depth * 0.4) * k.flair));
         }
     }
 
     let gf = c.ground as f32;
+    let sway_eff = k.sway * (1.0 + 2.5 * gust);
     for cell in &c.cells {
         let hf = ((gf - cell.y as f32) / gf).clamp(0.0, 1.0);
         let rooted = matches!(cell.kind, Kind::Root | Kind::RootTip);
+        // surge: how far behind the front this cell sits (0 = at the front)
+        let surge = if k.surge <= 0.0 {
+            0.0
+        } else if rooted {
+            let lag = cell.ord - root_front;
+            if lag >= 0.0 && lag < 0.5 { (1.0 - lag * 2.0) * k.surge } else { 0.0 }
+        } else {
+            let lag = canopy_front - cell.ord;
+            if lag >= 0.0 && lag < 0.35 { (1.0 - lag / 0.35) * k.surge } else { 0.0 }
+        };
         if is_eth(cell.x, cell.y) {
-            // ghost echo: half the wind, six tenths of a second late
             let dx = if rooted {
                 0
             } else {
                 let te = ts - 0.6;
                 let s = (te * 0.9 + cell.ord * 2.6).sin() + 0.35 * (te * 2.1 + cell.y as f32 * 0.21).sin();
-                (k.sway * 0.5 * hf * hf.sqrt() * s * 0.74).round() as i32
-            };
+                (sway_eff * 0.5 * hf * hf.sqrt() * s * 0.74).round() as i32
+            } + shear(cell.y);
             let p = (cell.ord * 11.0 - ts * 1.7 + cell.phase * 0.6).sin();
             let pulse = p.max(0.0);
             let pulse = pulse * pulse;
             let ddx = cell.x as f32 - c.cx as f32;
             let ddy = (cell.y as f32 - heart_y) * 2.0;
             let d = (ddx * ddx + ddy * ddy).sqrt();
-            let beat_hit = (1.0 - ((d - beat_r).abs() / 2.5)).max(0.0) * (1.0 - beat);
-            let b = 0.42 + 0.58 * k.glow * pulse.max(beat_hit) + 0.1 * (1.0 - k.glow);
-            let idx = if pulse.max(beat_hit) > 0.55 { 2 } else if pulse > 0.15 { 1 } else { 0 };
+            let beat_hit = (1.0 - ((d - beat_r).abs() / 2.5)).max(0.0).max((1.0 - ((d - beat2_r).abs() / 2.5)).max(0.0) * 0.7) * (1.0 - beat);
+            let lit = pulse.max(beat_hit).max(surge);
+            let b = 0.42 + 0.58 * k.glow * lit + 0.1 * (1.0 - k.glow) + surge * 0.4;
+            let idx = if lit > 0.55 { 2 } else if lit > 0.15 { 1 } else { 0 };
             let ch = match cell.kind {
-                Kind::Trunk | Kind::Branch => ETH_TRUNK[idx],
-                Kind::Root => ETH_TRUNK[idx.min(1)],
+                Kind::Trunk | Kind::Branch => if surge > 0.6 { '█' } else { ETH_TRUNK[idx] },
+                Kind::Root => if surge > 0.6 { '▓' } else { ETH_TRUNK[idx.min(1)] },
                 Kind::Twig | Kind::RootTip => ETH_TWIG[(idx > 0) as usize],
-                Kind::Leaf => continue,
-                Kind::LeafEdge => ETH_LEAF[idx],
+                Kind::Leaf => {
+                    if burst_on && cell.phase < burst { '✦' } else { continue }
+                }
+                Kind::LeafEdge => if burst_on && cell.phase < burst * 0.5 { '✧' } else { ETH_LEAF[idx] },
             };
-            put(grid, cell.x + dx, cell.y, ch, scale(mix(cell.eth, c.eth_hi, pulse.max(beat_hit) * 0.7), b));
+            put(grid, cell.x + dx, cell.y, ch, ink(mix(cell.eth, c.eth_hi, lit * 0.7), b));
         } else {
             let dx = if rooted {
                 0
             } else {
                 let s = (ts * 0.9 + cell.ord * 2.6).sin() + 0.35 * (ts * 2.1 + cell.y as f32 * 0.21).sin();
-                (k.sway * hf * hf.sqrt() * s * 0.74).round() as i32
+                (sway_eff * hf * hf.sqrt() * s * 0.74 + gust * 2.0 * hf).round() as i32
             };
+            let daylight = 1.0 + 0.18 * day;
             let (ch, col) = match cell.kind {
                 Kind::Leaf | Kind::LeafEdge => {
                     if cell.phase > leaf_keep {
                         if snow > 0.3 && cell.phase < leaf_keep + 0.25 * snow {
                             ('·', scale((235, 240, 255), 0.6 + 0.4 * snow))
+                        } else if burst_on && cell.phase < leaf_keep + burst * 0.5 {
+                            ('*', scale((255, 235, 200), 0.9))
                         } else {
                             continue;
                         }
                     } else {
-                        let r = (ts * 3.1 + cell.phase * 6.2832).sin();
+                        let r = (ts * (3.1 + gust * 6.0) + cell.phase * 6.2832).sin();
                         let pair = LEAF[(cell.tex & 3) as usize];
-                        let ch = if r > 0.62 { pair[1] } else { pair[0] };
-                        let light = 0.82 + 0.22 * r.max(0.0) + 0.1 * (ts * 0.4 + cell.x as f32 * 0.05).sin();
+                        let ch = if surge > 0.7 && sw[0] > 0.3 { '*' } else if r > 0.62 { pair[1] } else { pair[0] };
+                        let light = (0.82 + 0.22 * r.max(0.0) + 0.1 * (ts * 0.4 + cell.x as f32 * 0.05).sin()) * daylight + surge * 0.3;
                         let base = mix(cell.phys, season_tint, season_mix);
-                        (ch, scale(mix(base, cell.phys_alt, r.max(0.0) * 0.4), light))
+                        (ch, scale(mix(base, cell.phys_alt, r.max(0.0) * 0.4 + surge * 0.5), light))
                     }
                 }
                 Kind::Trunk | Kind::Branch => {
                     let pair = BARK[(cell.tex as usize).min(5)];
                     let ch = if cell.phase > 0.55 { pair[1] } else { pair[0] };
-                    let breath = 0.94 + 0.06 * (ts * 0.5 + cell.ord * 3.0).sin();
-                    (ch, scale(cell.phys, breath))
+                    let breath = (0.94 + 0.06 * (ts * 0.5 + cell.ord * 3.0).sin()) * daylight;
+                    (ch, scale(mix(cell.phys, c.eth_hi, surge * 0.6), breath + surge * 0.3))
                 }
                 Kind::Twig => {
                     if cell.phase > 0.6 {
                         continue;
                     }
-                    ('·', scale(cell.phys, 0.95))
+                    ('·', scale(mix(cell.phys, c.eth_hi, surge * 0.6), 0.95 * daylight))
                 }
                 Kind::Root => {
                     let pair = BARK[(cell.tex as usize).min(5)];
-                    (if cell.phase > 0.7 { pair[1] } else { pair[0] }, scale(cell.phys, 0.9))
+                    (if cell.phase > 0.7 { pair[1] } else { pair[0] }, scale(mix(cell.phys, c.eth_hi, surge * 0.6), 0.9 + surge * 0.3))
                 }
-                Kind::RootTip => ('·', scale(cell.phys, 0.85)),
+                Kind::RootTip => ('·', scale(mix(cell.phys, c.eth_hi, surge * 0.6), 0.85 + surge * 0.3)),
             };
             put(grid, cell.x + dx, cell.y, ch, col);
+        }
+    }
+
+    // surge burst: sparks fly from every tip on the ethereal half
+    if burst_on {
+        for (i, &(tx, ty)) in c.tips.iter().enumerate() {
+            for j in 0..3 {
+                let hsh = hash2(i as i32 * 3 + j, 77);
+                let ang = (hsh % 628) as f32 / 100.0;
+                let spd = 3.0 + ((hsh >> 8) % 6) as f32;
+                let f = burst;
+                let x = (tx as f32 + ang.cos() * spd * f).round() as i32;
+                let y = (ty as f32 + ang.sin() * spd * f * 0.5 - f * 1.5).round() as i32;
+                if !is_eth(x, y) {
+                    continue;
+                }
+                let idx = ((f * 3.99) as usize).min(3);
+                put(grid, x, y, SPARK[idx], ink(c.eth_hi, 1.0 - f * 0.6));
+            }
         }
     }
 
     if k.motes > 0 {
         let span = c.ground as f32 + 2.0;
         for m in &c.motes {
-            let life = (ts * m.rate * 0.35 + m.phase).fract();
+            let life = (ts * m.rate * (0.35 + flash * 0.2) + m.phase).fract();
             let y = (c.ground as f32 + 1.0 - life * span).round() as i32;
             let x = (m.x0 + m.amp * (life * m.freq * 6.2832 + m.phase * 6.2832).sin()).round() as i32;
             if !is_eth(x, y) {
@@ -733,34 +949,68 @@ fn frame(grid: &mut Grid, c: &Cached, t: f32, k: &VeilKnobs) {
             }
             let stage = ((life * 4.0) as usize).min(3);
             let b = (life * 3.1416).sin();
-            put(grid, x, y, MOTE[[0, 1, 2, 1][stage]], scale(mix(c.eth_rgb, c.eth_hi, m.tint), 0.35 + 0.65 * b));
+            put(grid, x, y, MOTE[[0, 1, 2, 1][stage]], ink(mix(c.eth_rgb, c.eth_hi, m.tint), 0.35 + 0.65 * b));
         }
-        // living half: leaves fall (heavier in autumn), snow falls in winter
-        let fall_span = (c.ground as f32 - 2.0).max(1.0);
-        let leaf_rate = 0.35 + 0.65 * sw[2] + 0.2 * sw[1];
+        // living half: leaves detach from the canopy, gusts turn them into streaks, snow in winter
+        let leaf_rate = 0.35 + 0.65 * sw[2] + 0.2 * sw[1] + gust;
         for m in &c.fallers {
             let snowing = snow > 0.2 && m.tint < snow;
             if !snowing && m.tint > leaf_rate {
                 continue;
             }
-            let rate = if snowing { m.rate * 0.6 } else { m.rate };
+            let rate = if snowing { m.rate * 0.6 } else { m.rate * (1.0 + gust * 2.0) };
             let life = (ts * rate * 0.3 + m.phase).fract();
-            let y = (2.0 + life * fall_span).round() as i32;
-            let x = (m.x0 + m.amp * (life * m.freq * 6.2832 + m.phase * 6.2832).sin() + k.sway * life * 1.5).round() as i32;
+            let (x, y) = if snowing {
+                let fall_span = (c.ground as f32 - 2.0).max(1.0);
+                ((m.x0 + m.amp * (life * m.freq * 6.2832).sin()).round() as i32, (2.0 + life * fall_span).round() as i32)
+            } else {
+                let drop = (c.ground as f32 - m.y0).max(1.0);
+                let x = m.x0 + m.amp * (life * m.freq * 6.2832 + m.phase * 6.2832).sin() + (k.sway * 1.5 + gust * 18.0) * life;
+                (x.round() as i32, (m.y0 + life * drop * (1.0 - gust * 0.5)).round() as i32)
+            };
             if is_eth(x, y) || y >= c.ground as i32 || x < 0 || x as usize >= w {
                 continue;
             }
             if snowing {
                 put(grid, x, y, if m.phase > 0.5 { '*' } else { '·' }, scale((235, 240, 255), 0.7 + 0.3 * snow));
             } else {
-                let ch = FALL[((life * m.freq * 12.0) as usize) & 3];
+                let ch = if gust > 0.45 { if m.phase > 0.5 { '─' } else { '~' } } else { FALL[((life * m.freq * 12.0) as usize) & 3] };
                 let base = mix(mix(c.leaf_rgb, c.leaf_hi, m.tint), c.autumn, sw[2] * 0.8);
                 put(grid, x, y, ch, scale(base, 0.75 + 0.25 * (life * 6.28).sin().abs()));
             }
         }
     }
 
-    // veil shimmer: one glyph per row at the boundary, over empty cells only
+    // flocks over the living sky, wisps through the ethereal half
+    for f in 0..k.flock {
+        let ph = f as f32 * 2.1;
+        let fx = c.cx as f32 + w as f32 * 0.42 * (ts * 0.13 + ph).sin();
+        let fy = 2.0 + gf * 0.42 * (0.5 + 0.5 * (ts * 0.21 + ph * 1.7).sin());
+        let heading = (ts * 0.13 + ph).cos().signum();
+        for b in 0..7 {
+            let bx = (fx + heading * (b as f32 - 3.0) * 2.2 + (ts * 0.9 + b as f32).sin()).round() as i32;
+            let by = (fy + ((b as f32 - 3.0).abs() * 0.7) + 0.6 * (ts * 1.7 + b as f32 * 1.3).sin()).round() as i32;
+            if by >= gy || is_eth(bx, by) {
+                continue;
+            }
+            let flap = (ts * 6.0 + b as f32 * 0.9 + ph).sin() > 0.0;
+            put(grid, bx, by, BIRD[flap as usize], scale((30, 30, 40), 1.0 + day * 0.5 + 0.8 * (1.0 - day)));
+        }
+        // one wisp per flock slot, a 6-glyph trail on a lissajous path
+        for tr in 0..6 {
+            let tt = ts - tr as f32 * 0.12;
+            let wx = (c.cx as f32 + w as f32 * 0.45 * (tt * 0.17 + ph).sin()).round() as i32;
+            let wy = (gf * 0.5 + gf * 0.45 * (tt * 0.29 + ph * 0.6).cos()).round() as i32;
+            if !is_eth(wx, wy) {
+                continue;
+            }
+            put(grid, wx, wy, WISP[(tr / 2).min(3)], ink(c.eth_hi, 1.0 - tr as f32 * 0.14));
+        }
+    }
+
+    // the veil itself: a phrase scrolling down the seam over empty cells
+    let n = SEAM_TEXT.len() as i32;
+    let scroll = (ts * 2.0) as i32;
     for y in 0..hh {
         let x = veil[y] as usize;
         if x >= w {
@@ -770,10 +1020,12 @@ fn frame(grid: &mut Grid, c: &Cached, t: f32, k: &VeilKnobs) {
         if cur != ' ' && cur != '·' && cur != '─' {
             continue;
         }
+        let idx = ((y as i32 - scroll).rem_euclid(n)) as usize;
+        let byte = SEAM_TEXT[idx];
+        let ch = if byte == 0xb7 { '·' } else { byte as char };
         let p = (y as f32 * 0.55 - ts * 2.6).sin();
-        if p > 0.2 {
-            put(grid, x as i32, y as i32, '┆', scale(c.eth_hi, 0.3 + 0.5 * k.glow * p));
-        }
+        let b = 0.35 + 0.45 * k.glow * (p * 0.5 + 0.5) + flash * 0.4;
+        put(grid, x as i32, y as i32, if k.flair > 0.0 { ch } else { '┆' }, scale(c.eth_hi, b));
     }
 }
 
@@ -801,6 +1053,15 @@ pub(crate) fn cli_lifetree2(mut grid: Grid, width: usize, height: usize, seed: u
     }
     if let Some(v) = f(10) {
         k.season = v.clamp(0.0, 1.0);
+    }
+    if let Some(v) = f(11) {
+        k.tide = v.clamp(0.0, 1.0);
+    }
+    if let Some(v) = f(12) {
+        k.gust = v.clamp(0.0, 1.0);
+    }
+    if let Some(v) = f(13) {
+        k.flair = v.clamp(0.0, 1.0);
     }
     draw_lifetree2(&mut grid, width, height, seed, &palette, t_anim, &k);
     (grid, false)

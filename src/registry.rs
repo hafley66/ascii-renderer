@@ -495,6 +495,12 @@ pub(crate) static MODE_FORMS: &[ModeForm] = &[
             param!("VEIL", "veil wave", 0.0, 14.0, 5.0, 0.5),
             param!("SEASON", "season rate", 0.0, 1.0, 0.12, 0.02),
             param!("RING", "ring of life", 0.0, 1.0, 1.0, 0.1),
+            param!("TIDE", "veil tide", 0.0, 1.0, 0.7, 0.05),
+            param!("GUST", "gusts", 0.0, 1.0, 0.8, 0.05),
+            param!("SURGE", "life surge", 0.0, 1.0, 1.0, 0.1),
+            param!("FLOCK", "flocks", 0.0, 12.0, 3.0, 1.0),
+            param!("DAY", "day rate", 0.0, 2.0, 0.5, 0.1),
+            param!("FLAIR", "avant flair", 0.0, 1.0, 1.0, 0.1),
         ],
     },
 ];
