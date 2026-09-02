@@ -545,6 +545,22 @@ pub(crate) static MODE_FORMS: &[ModeForm] = &[
             param!("SEAM", "seam turn rate", -0.5, 0.5, 0.06, 0.02),
         ],
     },
+    ModeForm {
+        names: &["tree-of-life-5"],
+        animate: AnimKind::Iterate,
+        params: &[
+            param!("DEPTH", "branch depth", 4.0, 10.0, 7.0, 1.0),
+            param!("SPREAD", "spread", 0.2, 1.3, 0.6, 0.05),
+            param!("LEN", "trunk length", 0.3, 2.0, 0.8, 0.1),
+            param!("SPIN", "spin rate", -1.0, 1.0, 0.1, 0.02),
+            param!("SEAM", "seam turn rate", -0.5, 0.5, 0.05, 0.02),
+            param!("MOTES", "motes", 0.0, 300.0, 50.0, 10.0),
+            param!("GLOW", "ether glow", 0.0, 1.0, 0.8, 0.05),
+            param!("RINGS", "horocycle rings", 0.0, 1.0, 0.7, 0.1),
+            param!("WIND", "leaf wind", 0.0, 1.0, 0.6, 0.1),
+            param!("SPEED", "anim speed", 0.05, 4.0, 1.0, 0.05),
+        ],
+    },
 ];
 
 

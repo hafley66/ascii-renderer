@@ -44,6 +44,7 @@ use crate::lifetree::cli_lifetree;
 use crate::lifetree2::cli_lifetree2;
 use crate::lifetree3::cli_lifetree3;
 use crate::lifetree4::cli_lifetree4;
+use crate::lifetree5::cli_lifetree5;
 use crate::cli_basic::*;
 use crate::cli_catalog::*;
 use crate::cli_city::*;
@@ -201,6 +202,9 @@ pub(crate) fn run() {
         );
         eprintln!(
             "  tree-of-life-4  Hyperbolic: tree in the Poincare disk, geodesic branches, Mobius drift/spin, geodesic seam (a=animate) [depth] [drift] [spin] [len] [motes]"
+        );
+        eprintln!(
+            "  tree-of-life-5  Klein model: straight-chord geodesic tree, Euclidean spin, rotating diameter seam, horocycle rings (a=animate) [depth] [spread] [len] [spin] [seam] [motes]"
         );
         eprintln!(
             "  mahoraga-2 Shibuya: SDF Mahoraga in a dot ramp, Dismantle cuts shear the scene, blocks with focus falloff [turns] [slash] [cut] [focus] (a=animate)"
@@ -1092,6 +1096,12 @@ pub(crate) fn run() {
         }
     } else if mode == "tree-of-life-4" {
         let (g, done) = cli_lifetree4(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        grid = g;
+        if done {
+            return;
+        }
+    } else if mode == "tree-of-life-5" {
+        let (g, done) = cli_lifetree5(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
         grid = g;
         if done {
             return;
