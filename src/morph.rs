@@ -632,6 +632,11 @@ fn iterate_grid_into(
             crate::lifetree6::draw_lifetree6(grid, w, h, seed, palette, t, &knobs);
             true
         }
+        "braid" => {
+            let knobs = crate::braid::BraidKnobs::from_env();
+            crate::braid::draw_braid(grid, w, h, seed, palette, t, &knobs);
+            true
+        }
         _ => false,
     }
 }

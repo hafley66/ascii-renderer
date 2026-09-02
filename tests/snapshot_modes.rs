@@ -728,3 +728,13 @@ fn tree_of_life_6_seed_42() {
 fn tree_of_life_6_zoom_flow() {
     insta::assert_snapshot!(render(&["42", "tree-of-life-6", "deep", "8", "0.8", "0.5", "0.8", "90"]));
 }
+
+#[test]
+fn braid_seed_42() {
+    insta::assert_snapshot!(render(&["42", "braid", "moss"]));
+}
+
+#[test]
+fn braid_wide_ribbons() {
+    insta::assert_snapshot!(render(&["42", "braid", "ember", "7", "4", "8", "9", "5", "0.7", "0.5", "0.1", "1.0", "0.9"]));
+}

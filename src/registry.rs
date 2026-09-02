@@ -577,6 +577,22 @@ pub(crate) static MODE_FORMS: &[ModeForm] = &[
             param!("SEAM", "seam speed", -0.6, 0.6, 0.08, 0.02),
         ],
     },
+    ModeForm {
+        names: &["braid"],
+        animate: AnimKind::Iterate,
+        params: &[
+            param!("STRANDS", "ribbons", 2.0, 16.0, 5.0, 1.0),
+            param!("SPEED", "scroll rows/s", -20.0, 20.0, 4.0, 0.5),
+            param!("PITCH", "rows per crossing", 2.0, 30.0, 6.0, 1.0),
+            param!("GAP", "lane gap", 1.0, 40.0, 8.0, 1.0),
+            param!("WIDTH", "ribbon width", 1.0, 13.0, 3.0, 2.0),
+            param!("CROSS", "crossing span", 0.1, 1.0, 0.6, 0.05),
+            param!("SWAY", "sway amplitude", 0.0, 8.0, 1.0, 0.25),
+            param!("DUST", "loom dust", 0.0, 1.0, 0.06, 0.01),
+            param!("TWIST", "alternation bias", 0.0, 1.0, 0.85, 0.05),
+            param!("FILL", "crossings per step", 0.0, 1.0, 0.75, 0.05),
+        ],
+    },
 ];
 
 

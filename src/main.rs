@@ -52,6 +52,7 @@ mod lifetree3;
 mod lifetree4;
 mod lifetree5;
 mod lifetree6;
+mod braid;
 
 use crossterm::style::Color;
 use rand::RngExt;
