@@ -602,6 +602,11 @@ fn iterate_grid_into(
             *grid = crate::mahoraga5::render_mahoraga5_frame(w, h, seed, palette, StdRng::seed_from_u64(seed), t, &knobs);
             true
         }
+        "tree-of-life" => {
+            let knobs = crate::lifetree::LifeKnobs::from_env();
+            crate::lifetree::draw_lifetree(grid, w, h, seed, palette, t, &knobs);
+            true
+        }
         _ => false,
     }
 }

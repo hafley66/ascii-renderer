@@ -668,3 +668,13 @@ fn mahoraga5_seed_42() {
 fn mahoraga5_swing_vs_crouch() {
     insta::assert_snapshot!(render(&["42", "mahoraga-5", "deep", "8", "7", "1.5", "0.45", "5", "3", "0.4", "3"]));
 }
+
+#[test]
+fn tree_of_life_seed_42() {
+    insta::assert_snapshot!(render(&["42", "tree-of-life", "moss"]));
+}
+
+#[test]
+fn tree_of_life_deep_wide_seam() {
+    insta::assert_snapshot!(render(&["42", "tree-of-life", "ember", "10", "3", "1", "60", "0.4"]));
+}

@@ -40,6 +40,7 @@ use crate::mahoraga2::cli_mahoraga2;
 use crate::mahoraga3::cli_mahoraga3;
 use crate::mahoraga4::cli_mahoraga4;
 use crate::mahoraga5::cli_mahoraga5;
+use crate::lifetree::cli_lifetree;
 use crate::cli_basic::*;
 use crate::cli_catalog::*;
 use crate::cli_city::*;
@@ -185,6 +186,9 @@ pub(crate) fn run() {
         );
         eprintln!(
             "  sauron    The great eye: slit pupil wandering in a fire wall, embers, smoke (a=animate)"
+        );
+        eprintln!(
+            "  tree-of-life  Half ethereal / half living tree of life, cached skeleton (a=animate) [depth] [sway] [speed] [motes] [seam]"
         );
         eprintln!(
             "  mahoraga-2 Shibuya: SDF Mahoraga in a dot ramp, Dismantle cuts shear the scene, blocks with focus falloff [turns] [slash] [cut] [focus] (a=animate)"
@@ -1052,6 +1056,12 @@ pub(crate) fn run() {
         }
     } else if mode == "mahoraga-5" {
         let (g, done) = cli_mahoraga5(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        grid = g;
+        if done {
+            return;
+        }
+    } else if mode == "tree-of-life" {
+        let (g, done) = cli_lifetree(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
         grid = g;
         if done {
             return;
