@@ -369,25 +369,35 @@ pub(crate) static MODE_FORMS: &[ModeForm] = &[
             param!("LEAN", "lean", -0.3, 0.3, 0.08, 0.02),
             param!("SPEED", "anim speed", 0.1, 3.0, 1.0, 0.1),
         ],
-    },    ModeForm {
+    },
+    ModeForm {
         names: &["mahoraga-3"],
         animate: AnimKind::Iterate,
         params: &[
             param!("TURNS", "adaptations", 0.0, 8.0, 7.0, 1.0),
             param!("FUGA", "arrow after", 1.0, 8.0, 8.0, 1.0),
+            param!("POSE", "pose", 0.0, 3.0, 1.0, 1.0),
             param!("SLASH", "dismantle", 0.0, 24.0, 7.0, 1.0),
             param!("CUT", "slip cells", 0.0, 4.0, 1.5, 0.25),
             param!("FOCUS", "focus depth", 0.0, 1.0, 0.45, 0.05),
             param!("BLUR", "blur", 0.0, 2.0, 1.0, 0.1),
             param!("DENS", "blocks", 0.0, 60.0, 22.0, 2.0),
-            param!("SCALE", "figure", 0.3, 1.0, 0.82, 0.02),
+            param!("SCALE", "figure", 0.3, 1.0, 0.8, 0.02),
             param!("LIGHT", "light deg", 0.0, 360.0, 215.0, 15.0),
             param!("GRAIN", "grain", 0.0, 1.0, 0.18, 0.02),
             param!("HAZE", "haze", 0.0, 1.0, 0.6, 0.05),
             param!("LEAN", "lean", -0.3, 0.3, 0.08, 0.02),
+            param!("SHRINE", "shrine", 0.0, 1.0, 0.7, 0.05),
+            param!("SUKUNA", "sukuna", 0.0, 1.0, 0.42, 0.02),
+            param!("ASH", "ash", 0.0, 1.0, 0.25, 0.05),
+            param!("DEBRIS", "debris", 0.0, 1.0, 0.6, 0.05),
+            param!("AURA", "aura", 0.0, 1.0, 0.35, 0.05),
+            param!("VIG", "vignette", 0.0, 1.0, 0.45, 0.05),
             param!("SPEED", "anim speed", 0.1, 3.0, 1.0, 0.1),
         ],
-    },];
+    },
+
+];
 
 
 /// Look up a mode's declared config. Unlisted modes default to iterate, no knobs:
