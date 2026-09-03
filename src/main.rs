@@ -60,6 +60,7 @@ mod polytope;
 mod poincare;
 mod opus_1_quasicrystal;
 mod opus_2_quasicrystal;
+mod sonnet_1_spirograph;
 #[cfg(test)]
 mod perf_sweep;
 

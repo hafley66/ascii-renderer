@@ -746,6 +746,23 @@ pub(crate) static MODE_FORMS: &[ModeForm] = &[
             param!("BLOOMS", "growth fronts in flight", 1.0, 3.0, 2.0, 1.0),
         ],
     },
+    ModeForm {
+        names: &["sonnet-1-spirograph"],
+        animate: AnimKind::Iterate,
+        params: &[
+            param!("SPEED", "lap speed multiplier", 0.2, 3.0, 1.0, 0.1),
+            param!("HUE", "hue offset deg", -180.0, 180.0, 0.0, 5.0),
+            param!("DEPTH", "pen offset from roller", 0.0, 1.6, 0.85, 0.05),
+            param!("TRAIL", "comet length fraction", 0.05, 1.0, 0.5, 0.05),
+            param!("GLOW", "pen spark intensity", 0.0, 3.0, 1.0, 0.1),
+            param!("ARMS", "show generating circles", 0.0, 1.0, 1.0, 1.0),
+            param!("ECHO", "full track ghost", 0.0, 1.0, 0.5, 0.05),
+            param!("LABEL", "show ratio label", 0.0, 1.0, 1.0, 1.0),
+            param!("SCALE", "fit fraction of frame", 0.3, 1.0, 0.92, 0.02),
+            param!("MARGIN", "frame margin cells", 0.0, 6.0, 1.0, 1.0),
+            param!("ASPECT", "cols per row", 1.0, 3.0, 2.0, 0.1),
+        ],
+    },
 ];
 
 

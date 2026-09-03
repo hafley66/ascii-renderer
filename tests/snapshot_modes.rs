@@ -830,3 +830,18 @@ fn opus_2_quasicrystal_seven_fold_moving() {
         "45"
     ));
 }
+
+#[test]
+fn sonnet_1_spirograph_seed_42() {
+    insta::assert_snapshot!(render(&["42", "sonnet-1-spirograph", "moss"]));
+}
+
+#[test]
+fn sonnet_1_spirograph_seed_7_knobs() {
+    insta::assert_snapshot!(render(&["7", "sonnet-1-spirograph", "ember", "1.6", "45", "1.2", "0.8", "1.8", "1", "0.3", "1", "0.85", "1", "2.3"]));
+}
+
+#[test]
+fn sonnet_1_spirograph_seed_42_moving() {
+    insta::assert_snapshot!(render_t(&["42", "sonnet-1-spirograph", "moss"], "14"));
+}
