@@ -8,7 +8,7 @@ description: Scaffold a new rendering mode for ascii-renderer. Trigger on "new m
 Scaffold a new rendering mode in ascii-renderer with snapshot test coverage.
 Reference implementation: `src/arboretum.rs` (new-module mode with 10-knob genome, 11 registry params, native lifecycle+sway animation, both snapshot styles).
 
-## Wiring checklist (6 touchpoints)
+## Wiring checklist (8 touchpoints)
 
 1. **`src/cli.rs` -- dispatch arm.** Append `} else if mode == "NEW_NAME"` as the LAST arm, directly before the final `} else {` / `cli_default` fallback. Never splice into the middle of the chain (dispatch lives here, not main.rs; main.rs is `cli::run()` + tests):
 ```rust
@@ -32,6 +32,10 @@ Handler signature: `cli_<name>(grid, width, height, seed, palette, rng, t_anim, 
 
 6. **`CLAUDE.md`.** Append the mode name at the end of the modes list.
 
+7. **Layer timers.** Wrap each painter section of the draw fn in `crate::_0_profile::measure_layer("<mode>", "<layer>", || ...)`, 3 to 8 layers covering at least 85 percent of the frame. Pattern and rules: `perf/INSTRUMENT.md`. Reference wraps: `src/chladni.rs`, `src/pendwave.rs`.
+
+8. **`src/perf_sweep.rs` `NATIVE_MODES`.** Append the mode name as the last entry. The `every_native_mode_has_layer_timers` test in `cargo test` fails for any listed mode that renders with no timers, and a mode missing from the list is never checked.
+
 ## Native animation
 
 If the mode does not consume `t_anim`, pressing `a` in demo falls back to `warp_wind` (the `.unwrap_or_else` fallback in morph.rs `iterate_grid`). For native animation:
@@ -39,6 +43,16 @@ If the mode does not consume `t_anim`, pressing `a` in demo falls back to `warp_
 - t=0 MUST render the static frame byte-identical (snapshot stability): gate animation on `t > 0.0`.
 - Derive per-item animation phases/cycles from a SIDE rng seeded from a hash of (seed, layer, index) so the main rng stream and static render are untouched.
 - Verified pattern: `draw_arboretum` / `grow_tree` in `src/arboretum.rs`.
+
+## Perf receipt
+
+Before committing, run the knob sweep once and paste the fps table plus the hotspot table into `briefs/<mode>.md`:
+
+```bash
+perf/knob_sweep.sh <mode> 2000 1000 2
+```
+
+Every registry knob is driven to its max; the worst one gets a per-layer hotspot table. `perf/results/<mode>.md` holds the output and `perf/sweep_all.sh 1` re-ranks every mode into `perf/results/SUMMARY.md`.
 
 ## Snapshots
 

@@ -53,7 +53,7 @@ pub(crate) fn cli_<name>(mut grid: Grid, width: usize, height: usize, seed: u64,
 `cli_<name>` parses positional knobs from `args[4..]` (`args[1]` seed, `[2]` mode, `[3]` theme), calls
 `draw_<name>`, returns `(grid, false)`.
 
-Wiring, seven append-only touches. Every insertion goes at the END of its list; never splice into the
+Wiring, nine append-only touches. Every insertion goes at the END of its list; never splice into the
 middle, never reorder:
 1. `src/main.rs`: `mod <name>;` after the last `mod` line.
 2. `src/cli.rs`: `use crate::<name>::cli_<name>;` next to the other `cli_*` imports; one
@@ -70,6 +70,11 @@ middle, never reorder:
 6. `tests/snapshot_modes.rs`: append two tests using the file's `render(&[...])` helper, one with
    `["42", "<mode>", "moss"]`, one with positional knobs.
 7. `CLAUDE.md`: append your mode name to the end of the modes list.
+8. Layer timers: wrap each painter section of `draw_<name>` in
+   `crate::_0_profile::measure_layer("<mode>", "<layer>", || ...)`, 3 to 8 layers, at least 85
+   percent of the frame inside them. Rules and validation: `perf/INSTRUMENT.md`.
+9. `src/perf_sweep.rs`: append `"<mode>"` as the last entry of `NATIVE_MODES`. `cargo test` then
+   fails if the mode renders with no timers.
 
 ## Hard constraints
 
@@ -89,6 +94,15 @@ middle, never reorder:
 - Never edit an existing mode. Never remove anything.
 - Expose every tunable as a knob (env `ASCII_P_<KEY>` via `param_f32`, and positional args). No
   hardcoded magic that a viewer would want to turn.
+
+## Perf receipt
+
+```bash
+perf/knob_sweep.sh <mode> 2000 1000 2
+```
+
+Paste the fps table and the hotspot table into `briefs/<your-mode>.md`. Every knob at its max must
+stay above 20 fps at 2000x1000; if one does not, name it in the brief with the hotspot layer.
 
 ## Validation, in this order
 
