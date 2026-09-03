@@ -77,6 +77,56 @@ fn sd_ellipse(p: P, c: P, rx: f32, ry: f32) -> f32 {
     (len(q) - 1.0) * rx.min(ry)
 }
 
+/// Axis-aligned bound around one primitive, used to skip it per cell and per row.
+#[derive(Clone, Copy)]
+struct Aabb {
+    x0: f32,
+    y0: f32,
+    x1: f32,
+    y1: f32,
+}
+
+/// Padding on every bound so rounding never culls a primitive the exact
+/// distance test would have counted as a hit.
+const SLACK: f32 = 1e-4;
+
+impl Aabb {
+    const EMPTY: Aabb = Aabb { x0: f32::MAX, y0: f32::MAX, x1: f32::MIN, y1: f32::MIN };
+
+    fn seg(a: P, b: P, r: f32) -> Aabb {
+        let r = r + SLACK;
+        Aabb { x0: a.0.min(b.0) - r, y0: a.1.min(b.1) - r, x1: a.0.max(b.0) + r, y1: a.1.max(b.1) + r }
+    }
+
+    fn disc(c: P, r: f32) -> Aabb {
+        Aabb::seg(c, c, r)
+    }
+
+    fn grow(self, o: Aabb) -> Aabb {
+        Aabb { x0: self.x0.min(o.x0), y0: self.y0.min(o.y0), x1: self.x1.max(o.x1), y1: self.y1.max(o.y1) }
+    }
+
+    fn pad(self, m: f32) -> Aabb {
+        Aabb { x0: self.x0 - m, y0: self.y0 - m, x1: self.x1 + m, y1: self.y1 + m }
+    }
+
+    /// Lower bound on the distance from p to the enclosed shape; exact box SDF inside.
+    fn lb(&self, p: P) -> f32 {
+        (self.x0 - p.0).max(p.0 - self.x1).max((self.y0 - p.1).max(p.1 - self.y1))
+    }
+
+    fn spans_row(&self, lo: f32, hi: f32, care: f32) -> bool {
+        self.y0 - care <= hi && self.y1 + care >= lo
+    }
+}
+
+/// One row's live primitive indices: everything else is out of reach of the row.
+#[derive(Clone, Copy)]
+struct RowSlice<'a> {
+    mask: &'a [u16],
+    span: Aabb,
+}
+
 fn hash01(seed: u64, x: i64, y: i64) -> f32 {
     let mut h = seed ^ (x as u64).wrapping_mul(0x9E37_79B9_7F4A_7C15) ^ (y as u64).wrapping_mul(0xC2B2_AE3D_27D4_EB4F);
     h ^= h >> 29;
@@ -129,55 +179,137 @@ enum Part {
     Eye,
 }
 
+/// One body part in figure space; the cloth skirt tapers with depth.
+#[derive(Clone, Copy)]
+enum Prim {
+    Disc { c: P, r: f32 },
+    Cap { a: P, b: P, r: f32 },
+    Oval { c: P, rx: f32, ry: f32 },
+    Skirt { a: P, b: P },
+}
+
+impl Prim {
+    fn sd(&self, p: P) -> f32 {
+        match *self {
+            Prim::Disc { c, r } => sd_circle(p, c, r),
+            Prim::Cap { a, b, r } => sd_seg(p, a, b, r),
+            Prim::Oval { c, rx, ry } => sd_ellipse(p, c, rx, ry),
+            Prim::Skirt { a, b } => sd_seg(p, a, b, 0.13 - (p.1 - 0.64).max(0.0) * 0.25),
+        }
+    }
+
+    /// `slack` covers the ellipse metric, which reads shorter than true distance.
+    fn bound(&self, slack: f32) -> Aabb {
+        match *self {
+            Prim::Disc { c, r } => Aabb::disc(c, r),
+            Prim::Cap { a, b, r } => Aabb::seg(a, b, r),
+            Prim::Oval { c, rx, ry } => Aabb { x0: c.0 - rx, y0: c.1 - ry, x1: c.0 + rx, y1: c.1 + ry }.pad(slack * (rx.max(ry) / rx.min(ry) - 1.0) + SLACK),
+            Prim::Skirt { a, b } => Aabb::seg(a, b, 0.13),
+        }
+    }
+}
+
 /// Figure space: u right, v down, 1.0 = figure height, square cells.
+/// Body primitives, spoke ends and their bounds are solved once per frame.
 struct Figure {
-    rot: f32,
     lean: f32,
+    prims: Vec<(Prim, Part, Aabb)>,
+    spokes: [(P, P); 8],
+    wheel_box: Aabb,
 }
 
 const WHEEL_C: P = (0.0, 0.105);
 const WHEEL_R: f32 = 0.105;
 
 impl Figure {
-    fn body(&self, p: P) -> (f32, Part) {
-        let p = (p.0 - self.lean * (0.62 - p.1), p.1);
+    fn new(rot: f32, lean: f32, care: f32) -> Self {
         let m = |u: f32, v: f32| (-u, v);
-        let mut best = (sd_ellipse(p, (0.0, 0.31), 0.058, 0.066), Part::Skin);
-        let mut take = |d: f32, part: Part| {
-            if d < best.0 {
-                best = (d, part);
-            }
-        };
-        take(sd_seg(p, (0.0, 0.36), (0.0, 0.4), 0.032), Part::Skin);
-        take(sd_seg(p, (0.0, 0.43), (0.0, 0.52), 0.13), Part::Skin);
-        take(sd_seg(p, (0.0, 0.52), (0.0, 0.66), 0.095), Part::Skin);
-        take(sd_seg(p, (-0.18, 0.43), (0.18, 0.43), 0.065), Part::Skin);
+        let mut list: Vec<(Prim, Part)> = vec![
+            (Prim::Oval { c: (0.0, 0.31), rx: 0.058, ry: 0.066 }, Part::Skin),
+            (Prim::Cap { a: (0.0, 0.36), b: (0.0, 0.4), r: 0.032 }, Part::Skin),
+            (Prim::Cap { a: (0.0, 0.43), b: (0.0, 0.52), r: 0.13 }, Part::Skin),
+            (Prim::Cap { a: (0.0, 0.52), b: (0.0, 0.66), r: 0.095 }, Part::Skin),
+            (Prim::Cap { a: (-0.18, 0.43), b: (0.18, 0.43), r: 0.065 }, Part::Skin),
+        ];
         for side in [-1.0f32, 1.0] {
             let s = |u: f32, v: f32| if side < 0.0 { m(u, v) } else { (u, v) };
-            take(sd_seg(p, s(0.22, 0.46), s(0.29, 0.62), 0.046), Part::Skin);
-            take(sd_seg(p, s(0.29, 0.62), s(0.32, 0.81), 0.058), Part::Wrap);
-            take(sd_circle(p, s(0.325, 0.865), 0.055), Part::Skin);
-            take(sd_seg(p, s(0.065, 0.68), s(0.085, 0.98), 0.052), Part::Skin);
-            take(sd_circle(p, s(0.095, 0.985), 0.045), Part::Skin);
-            take(sd_circle(p, s(0.022, 0.305), 0.011), Part::Eye);
+            list.push((Prim::Cap { a: s(0.22, 0.46), b: s(0.29, 0.62), r: 0.046 }, Part::Skin));
+            list.push((Prim::Cap { a: s(0.29, 0.62), b: s(0.32, 0.81), r: 0.058 }, Part::Wrap));
+            list.push((Prim::Disc { c: s(0.325, 0.865), r: 0.055 }, Part::Skin));
+            list.push((Prim::Cap { a: s(0.065, 0.68), b: s(0.085, 0.98), r: 0.052 }, Part::Skin));
+            list.push((Prim::Disc { c: s(0.095, 0.985), r: 0.045 }, Part::Skin));
+            list.push((Prim::Disc { c: s(0.022, 0.305), r: 0.011 }, Part::Eye));
         }
-        let cloth = sd_seg(p, (0.0, 0.64), (0.0, 0.82), 0.13 - (p.1 - 0.64).max(0.0) * 0.25);
-        take(cloth, Part::Cloth);
+        list.push((Prim::Skirt { a: (0.0, 0.64), b: (0.0, 0.82) }, Part::Cloth));
+        let slack = care + 0.01;
+        let mut spokes = [((0.0, 0.0), (0.0, 0.0)); 8];
+        for (k, sp) in spokes.iter_mut().enumerate() {
+            let a = rot + k as f32 * TAU / 8.0;
+            let d = (a.cos(), a.sin());
+            *sp = ((WHEEL_C.0 + d.0 * WHEEL_R * 0.25, WHEEL_C.1 + d.1 * WHEEL_R * 0.25), (WHEEL_C.0 + d.0 * WHEEL_R * 1.32, WHEEL_C.1 + d.1 * WHEEL_R * 1.32));
+        }
+        Figure {
+            lean,
+            prims: list.into_iter().map(|(pr, part)| (pr, part, pr.bound(slack))).collect(),
+            spokes,
+            wheel_box: Aabb::disc(WHEEL_C, WHEEL_R * 1.32 + 0.02),
+        }
+    }
+
+    fn warp(&self, p: P) -> P {
+        (p.0 - self.lean * (0.62 - p.1), p.1)
+    }
+
+    /// Primitives whose bound can reach a tile of cells, plus their union box.
+    fn tile_mask(&self, lo: f32, hi: f32, ulo: f32, uhi: f32, care: f32, out: &mut Vec<u16>) -> Aabb {
+        out.clear();
+        let mut span = Aabb::EMPTY;
+        for (i, (_, _, bx)) in self.prims.iter().enumerate() {
+            if bx.spans_row(lo, hi, care) && bx.x0 - care <= uhi && bx.x1 + care >= ulo {
+                out.push(i as u16);
+                span = span.grow(*bx);
+            }
+        }
+        span
+    }
+
+    /// Widest sideways offset `warp` can apply inside a row band.
+    fn warp_shift(&self, lo: f32, hi: f32) -> f32 {
+        (self.lean * (0.62 - lo)).abs().max((self.lean * (0.62 - hi)).abs())
+    }
+
+    /// Primitives further than `care` are skipped: the caller only reads d below it.
+    fn body(&self, p: P, care: f32, rows: RowSlice) -> (f32, Part) {
+        let p = self.warp(p);
+        let mut best = (f32::MAX, Part::Skin);
+        if rows.span.lb(p) >= care {
+            return best;
+        }
+        for &i in rows.mask {
+            let (prim, part, bx) = &self.prims[i as usize];
+            if bx.lb(p) >= care {
+                continue;
+            }
+            let d = prim.sd(p);
+            if d < best.0 {
+                best = (d, *part);
+            }
+        }
         best
     }
 
-    fn wheel(&self, p: P) -> (f32, Part) {
-        let p = (p.0 - self.lean * (0.62 - p.1), p.1);
+    fn wheel(&self, p: P, care: f32) -> (f32, Part) {
+        let p = self.warp(p);
+        let far = self.wheel_box.lb(p);
+        if far >= care {
+            return (far, Part::Ring);
+        }
         let mut best = ((len(sub(p, WHEEL_C)) - WHEEL_R).abs() - 0.014, Part::Ring);
         let hub = sd_circle(p, WHEEL_C, 0.009);
         if hub < best.0 {
             best = (hub, Part::Hub);
         }
-        for k in 0..8 {
-            let a = self.rot + k as f32 * TAU / 8.0;
-            let d = (a.cos(), a.sin());
-            let inner = (WHEEL_C.0 + d.0 * WHEEL_R * 0.25, WHEEL_C.1 + d.1 * WHEEL_R * 0.25);
-            let outer = (WHEEL_C.0 + d.0 * WHEEL_R * 1.32, WHEEL_C.1 + d.1 * WHEEL_R * 1.32);
+        for &(inner, outer) in self.spokes.iter() {
             let sp = sd_seg(p, inner, outer, 0.011);
             if sp < best.0 {
                 best = (sp, Part::Spoke);
@@ -190,16 +322,16 @@ impl Figure {
         best
     }
 
-    fn sample(&self, p: P) -> (f32, Part) {
-        let b = self.body(p);
-        let w = self.wheel(p);
+    fn sample(&self, p: P, care: f32, rows: RowSlice) -> (f32, Part) {
+        let b = self.body(p, care, rows);
+        let w = self.wheel(p, care);
         if w.0 < b.0 { w } else { b }
     }
 
-    fn normal(&self, p: P) -> P {
+    fn normal(&self, p: P, care: f32, rows: RowSlice) -> P {
         let e = 0.004;
-        let dx = self.body((p.0 + e, p.1)).0 - self.body((p.0 - e, p.1)).0;
-        let dy = self.body((p.0, p.1 + e)).0 - self.body((p.0, p.1 - e)).0;
+        let dx = self.body((p.0 + e, p.1), care, rows).0 - self.body((p.0 - e, p.1), care, rows).0;
+        let dy = self.body((p.0, p.1 + e), care, rows).0 - self.body((p.0, p.1 - e), care, rows).0;
         let l = len((dx, dy)).max(1e-6);
         (dx / l, dy / l)
     }
@@ -283,8 +415,8 @@ fn make_city(seed: u64, count: usize, u_span: f32, v_bot: f32, horizon: f32) -> 
     out
 }
 
-fn sample_city<'a>(city: &'a [Building], p: P) -> Option<&'a Building> {
-    city.iter().find(|b| p.0 >= b.u0 && p.0 <= b.u1 && p.1 >= b.top && p.1 <= b.base)
+fn sample_city<'a>(city: &'a [Building], rows: &[u16], p: P) -> Option<&'a Building> {
+    rows.iter().map(|&i| &city[i as usize]).find(|b| p.0 >= b.u0 && p.0 <= b.u1 && p.1 >= b.top && p.1 <= b.base)
 }
 
 // ── the clock ───────────────────────────────────────────────────────
@@ -295,6 +427,9 @@ fn progress(t: f32, knobs: &ShrineKnobs) -> f32 {
 }
 
 // ── render ──────────────────────────────────────────────────────────
+
+/// Column tile width for the per-tile primitive masks.
+const TILE: usize = 64;
 
 const SKIN_RAMP: [char; 10] = [' ', '.', '·', ':', '-', '=', '+', '*', '%', '@'];
 const CLOTH_RAMP: [char; 6] = [' ', '.', '-', '~', '=', '#'];
@@ -317,7 +452,8 @@ pub fn draw_mahoraga2(grid: &mut Grid, width: usize, height: usize, seed: u64, p
     let v_bot = (height as f32 - top) / fig_h;
     let horizon = 0.965;
 
-    let fig = Figure { rot, lean: knobs.lean };
+    let care = 0.3 / fig_h + 0.01;
+    let fig = Figure::new(rot, knobs.lean, care);
     let live = if t > 0.0 {
         (knobs.slash * (0.3 + 0.7 * (p / knobs.fuga as f32).min(1.0))).round() as usize
     } else {
@@ -337,9 +473,25 @@ pub fn draw_mahoraga2(grid: &mut Grid, width: usize, height: usize, seed: u64, p
     let edge_eps = 0.3 / fig_h;
 
     measure_layer("mahoraga-2", "shade", || {
+        let slip_max = slashes.iter().take(live).map(|s| s.slip.abs()).sum::<f32>() + 1e-4;
+        let mut mask: Vec<u16> = Vec::with_capacity(fig.prims.len());
+        let mut city_rows: Vec<u16> = Vec::with_capacity(city.len());
         for y in 0..height {
-            for x in 0..width {
-                let p0 = to_uv(x as f32, y as f32);
+            let v = to_uv(0.0, y as f32).1;
+            let (lo, hi) = (v - slip_max, v + slip_max);
+            let reach = slip_max + fig.warp_shift(lo, hi) + 0.005;
+            city_rows.clear();
+            for (i, b) in city.iter().enumerate() {
+                if b.top <= hi && b.base >= lo {
+                    city_rows.push(i as u16);
+                }
+            }
+            for xt in (0..width).step_by(TILE) {
+            let xe = (xt + TILE).min(width);
+            let span = fig.tile_mask(lo, hi, to_uv(xt as f32, 0.0).0 - reach, to_uv((xe - 1) as f32, 0.0).0 + reach, care + 0.01, &mut mask);
+            let rows = RowSlice { mask: &mask, span };
+            for x in xt..xe {
+                let p0 = (to_uv(x as f32, y as f32).0, v);
                 let (pu, hit) = displace(p0, &slashes, live, blade);
                 if let Some((i, along)) = hit {
                     let s = &slashes[i];
@@ -353,7 +505,7 @@ pub fn draw_mahoraga2(grid: &mut Grid, width: usize, height: usize, seed: u64, p
                     continue;
                 }
                 let noise = hash01(seed, x as i64, y as i64) - 0.5;
-                let (d, part) = fig.sample(pu);
+                let (d, part) = fig.sample(pu, care, rows);
                 if d < 0.0 {
                     let (ch, fg) = match part {
                         Part::Ring => ('#', ring_ink),
@@ -365,7 +517,7 @@ pub fn draw_mahoraga2(grid: &mut Grid, width: usize, height: usize, seed: u64, p
                         }
                         Part::Eye => ('◉', lighten(palette[2], 30)),
                         _ => {
-                            let n = fig.normal(pu);
+                            let n = fig.normal(pu, care, rows);
                             let lit = 0.5 + 0.5 * dot(n, light);
                             let rim = smoothstep(0.0, 0.05, -d);
                             let shade = (lit * 0.75 + (1.0 - rim) * 0.35 + noise * knobs.grain).clamp(0.0, 0.999);
@@ -390,13 +542,13 @@ pub fn draw_mahoraga2(grid: &mut Grid, width: usize, height: usize, seed: u64, p
                     continue;
                 }
                 if d < edge_eps && matches!(part, Part::Skin | Part::Cloth | Part::Wrap) {
-                    let n = fig.normal(pu);
+                    let n = fig.normal(pu, care, rows);
                     if n.0.abs() > 0.45 {
                         set(grid, x as i32, y as i32, stroke_glyph(-n.1 * 2.0, n.0), lerp_color(bone, pale, 0.6));
                         continue;
                     }
                 }
-                if let Some(b) = sample_city(&city, pu) {
+                if let Some(b) = sample_city(&city, &city_rows, pu) {
                     let defocus = ((b.z - knobs.focus).abs() * knobs.blur * 2.2).min(1.0);
                     let fade = (1.0 - b.z) * knobs.haze;
                     let ink = darken(lerp_color(palette[0], palette[1], b.z), (fade * 110.0) as u8);
@@ -449,6 +601,7 @@ pub fn draw_mahoraga2(grid: &mut Grid, width: usize, height: usize, seed: u64, p
                 if noise + 0.5 < sky * sky * 0.08 * (0.3 + knobs.haze) {
                     set(grid, x as i32, y as i32, '·', darken(palette[3], 70));
                 }
+            }
             }
         }
     });
