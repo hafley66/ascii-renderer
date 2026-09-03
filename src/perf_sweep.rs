@@ -39,9 +39,12 @@ fn set_knob(key: &str, value: Option<f32>) {
     }
 }
 
-fn run_for(label: &str, mode: &str, theme: &str, w: usize, h: usize, secs: f64, dt: f32) -> Option<RunStats> {
+fn run_for(label: &str, mode: &str, theme: &str, w: usize, h: usize, secs: f64, dt: f32, capture: bool) -> Option<RunStats> {
     let mut r = IterateFrameRenderer::new(mode, 42, theme, w, h)?;
     r.render(0.0, None)?;
+    if capture {
+        layer_capture_begin();
+    }
     let mut samples: Vec<u128> = Vec::with_capacity(4096);
     let mut t = 0.0f32;
     let started = Instant::now();
@@ -73,14 +76,14 @@ fn perf_knob_sweep() {
         set_knob(p.key, None);
     }
 
-    let Some(base) = run_for("baseline", &mode, &theme, w, h, secs, dt) else {
+    let Some(base) = run_for("baseline", &mode, &theme, w, h, secs, dt, false) else {
         println!("# knob sweep: {mode} does not render natively through iterate_grid; nothing measured");
         return;
     };
     let mut runs: Vec<(RunStats, f32)> = Vec::new();
     for p in spec.params {
         set_knob(p.key, Some(p.max));
-        if let Some(r) = run_for(&format!("{}={}", p.key, p.max), &mode, &theme, w, h, secs, dt) {
+        if let Some(r) = run_for(&format!("{}={}", p.key, p.max), &mode, &theme, w, h, secs, dt, false) {
             runs.push((r, p.max));
         }
         set_knob(p.key, None);
@@ -106,8 +109,7 @@ fn perf_knob_sweep() {
     if let Some(p) = spec.params.iter().find(|p| worst_key.starts_with(&format!("{}=", p.key))) {
         set_knob(p.key, Some(p.max));
     }
-    layer_capture_begin();
-    let worst = run_for(&worst_key, &mode, &theme, w, h, secs, dt).expect("worst run rendered once already");
+    let worst = run_for(&worst_key, &mode, &theme, w, h, secs, dt, true).expect("worst run rendered once already");
     let layers = layer_capture_end();
     for p in spec.params {
         set_knob(p.key, None);

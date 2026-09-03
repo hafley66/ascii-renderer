@@ -1,5 +1,6 @@
 //! mahoraga-4 -- Shibuya on a rig: 20-bone FK skeleton, keyframe blends,
 //! per-seed joint noise, sway over t, IK so the pointing arm finds Sukuna.
+use crate::_0_profile::measure_layer;
 use crate::color::*;
 use crate::opts::param_f32;
 use crate::pp::ease_in_out;
@@ -969,15 +970,15 @@ pub fn draw_mahoraga4(grid: &mut Grid, width: usize, height: usize, seed: u64, p
     let sukuna_s = if knobs.sukuna > 0.0 && height >= 20 { knobs.sukuna } else { 0.0 };
     let sukuna_c = (-u_span * 0.62, v_bot - sukuna_s * 0.98);
     let aim = if knobs.aim > 0.5 && sukuna_s > 0.0 { Some((sukuna_c.0 + 0.05, sukuna_c.1 + sukuna_s * 0.1)) } else { Some((0.62, 0.3)) };
-    let deltas = pose_deltas(seed, t, knobs, aim);
+    let deltas = measure_layer("mahoraga-4", "pose", || pose_deltas(seed, t, knobs, aim));
     let fig = Figure::new(rot, knobs.lean, adaptations, &deltas);
     let wheel_c = fig.wheel_c;
     let sc = Scene {
         fig,
-        slashes: make_slashes(seed, knobs.slash.round() as usize, knobs.cut / (2.0 * fig_h), u_span, (v_top, v_bot)),
+        slashes: measure_layer("mahoraga-4", "slashes", || make_slashes(seed, knobs.slash.round() as usize, knobs.cut / (2.0 * fig_h), u_span, (v_top, v_bot))),
         live,
         blade: 0.26 / fig_h,
-        city: make_city(seed, knobs.density.round() as usize, u_span, v_bot, horizon),
+        city: measure_layer("mahoraga-4", "city", || make_city(seed, knobs.density.round() as usize, u_span, v_bot, horizon)),
         light: (knobs.light.to_radians().cos(), knobs.light.to_radians().sin()),
         knobs,
         seed,
@@ -1004,21 +1005,23 @@ pub fn draw_mahoraga4(grid: &mut Grid, width: usize, height: usize, seed: u64, p
         haze: darken(palette[3], 70),
     };
 
-    for y in 0..height {
-        for x in 0..width {
-            let p0 = ((x as f32 - cx) / (2.0 * fig_h), (y as f32 - top) / fig_h);
-            if let Some((ch, fg)) = shade_cell(&sc, &ink, x, y, p0) {
-                set(grid, x as i32, y as i32, ch, fg);
+    measure_layer("mahoraga-4", "shade", || {
+        for y in 0..height {
+            for x in 0..width {
+                let p0 = ((x as f32 - cx) / (2.0 * fig_h), (y as f32 - top) / fig_h);
+                if let Some((ch, fg)) = shade_cell(&sc, &ink, x, y, p0) {
+                    set(grid, x as i32, y as i32, ch, fg);
+                }
             }
         }
-    }
+    });
 
-    draw_ash(grid, width, height, seed, t, knobs.ash, lighten(palette[3], 10));
-    draw_debris(grid, &sc, &ink, cx, top);
-    vignette(grid, width, height, knobs.vignette);
+    measure_layer("mahoraga-4", "ash", || draw_ash(grid, width, height, seed, t, knobs.ash, lighten(palette[3], 10)));
+    measure_layer("mahoraga-4", "debris", || draw_debris(grid, &sc, &ink, cx, top));
+    measure_layer("mahoraga-4", "vignette", || vignette(grid, width, height, knobs.vignette));
     let wx = cx + (wheel_c.0 + knobs.lean * (0.62 - wheel_c.1)) * 2.0 * fig_h;
     let wy = top + fig_h * wheel_c.1;
-    draw_fuga(grid, width, height, seed, cx, wy, fig_h * WHEEL_R * 1.3, t, reach);
+    measure_layer("mahoraga-4", "fuga", || draw_fuga(grid, width, height, seed, cx, wy, fig_h * WHEEL_R * 1.3, t, reach));
     if reach >= 1.0 {
         set(grid, wx.round() as i32, wy.round() as i32, '◉', hsl_to_rgb(48.0, 1.0, 0.8));
     }

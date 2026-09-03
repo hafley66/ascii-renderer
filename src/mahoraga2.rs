@@ -1,5 +1,6 @@
 //! mahoraga-2 -- Shibuya: Mahoraga stands at the vanishing point as a signed-
 //! distance figure shaded into a dot ramp; Dismantle cuts shear the whole scene.
+use crate::_0_profile::measure_layer;
 use crate::color::*;
 use crate::opts::param_f32;
 use crate::pp::ease_in_out;
@@ -322,9 +323,9 @@ pub fn draw_mahoraga2(grid: &mut Grid, width: usize, height: usize, seed: u64, p
     } else {
         knobs.slash.round() as usize
     };
-    let slashes = make_slashes(seed, knobs.slash.round() as usize, knobs.cut / (2.0 * fig_h), u_span, (v_top, v_bot));
+    let slashes = measure_layer("mahoraga-2", "slashes", || make_slashes(seed, knobs.slash.round() as usize, knobs.cut / (2.0 * fig_h), u_span, (v_top, v_bot)));
     let blade = 0.26 / fig_h;
-    let city = make_city(seed, knobs.density.round() as usize, u_span, v_bot, horizon);
+    let city = measure_layer("mahoraga-2", "city", || make_city(seed, knobs.density.round() as usize, u_span, v_bot, horizon));
     let light = (knobs.light.to_radians().cos(), knobs.light.to_radians().sin());
 
     let pale = lerp_color(lighten(palette[4], 40), rgb(236, 230, 222), 0.55);
@@ -335,122 +336,124 @@ pub fn draw_mahoraga2(grid: &mut Grid, width: usize, height: usize, seed: u64, p
     let cut_ink = lerp_color(lighten(palette[2], 40), rgb(250, 245, 235), 0.4);
     let edge_eps = 0.3 / fig_h;
 
-    for y in 0..height {
-        for x in 0..width {
-            let p0 = to_uv(x as f32, y as f32);
-            let (pu, hit) = displace(p0, &slashes, live, blade);
-            if let Some((i, along)) = hit {
-                let s = &slashes[i];
-                let ch = stroke_glyph(s.d.0 * 2.0, s.d.1);
-                let glow = along * (0.5 + 0.5 * s.bright);
-                let fg = if glow > 0.55 { cut_ink } else { darken(cut_ink, ((1.0 - glow) * 120.0) as u8) };
-                if glow < 0.12 {
+    measure_layer("mahoraga-2", "shade", || {
+        for y in 0..height {
+            for x in 0..width {
+                let p0 = to_uv(x as f32, y as f32);
+                let (pu, hit) = displace(p0, &slashes, live, blade);
+                if let Some((i, along)) = hit {
+                    let s = &slashes[i];
+                    let ch = stroke_glyph(s.d.0 * 2.0, s.d.1);
+                    let glow = along * (0.5 + 0.5 * s.bright);
+                    let fg = if glow > 0.55 { cut_ink } else { darken(cut_ink, ((1.0 - glow) * 120.0) as u8) };
+                    if glow < 0.12 {
+                        continue;
+                    }
+                    set(grid, x as i32, y as i32, ch, fg);
                     continue;
                 }
-                set(grid, x as i32, y as i32, ch, fg);
-                continue;
-            }
-            let noise = hash01(seed, x as i64, y as i64) - 0.5;
-            let (d, part) = fig.sample(pu);
-            if d < 0.0 {
-                let (ch, fg) = match part {
-                    Part::Ring => ('#', ring_ink),
-                    Part::Hub => ('◉', lighten(ring_ink, 40)),
-                    Part::Handle => ('◆', lighten(ring_ink, 25)),
-                    Part::Spoke => {
-                        let rel = sub((pu.0 - knobs.lean * (0.62 - pu.1), pu.1), WHEEL_C);
-                        (stroke_glyph(rel.0 * 2.0, rel.1), darken(ring_ink, 15))
-                    }
-                    Part::Eye => ('◉', lighten(palette[2], 30)),
-                    _ => {
-                        let n = fig.normal(pu);
-                        let lit = 0.5 + 0.5 * dot(n, light);
-                        let rim = smoothstep(0.0, 0.05, -d);
-                        let shade = (lit * 0.75 + (1.0 - rim) * 0.35 + noise * knobs.grain).clamp(0.0, 0.999);
-                        match part {
-                            Part::Cloth => {
-                                let i = (shade * CLOTH_RAMP.len() as f32) as usize;
-                                (CLOTH_RAMP[i], lerp_color(darken(cloth_ink, 60), cloth_ink, shade))
-                            }
-                            Part::Wrap => {
-                                let band = ((pu.1 * fig_h * 0.9) as i32).rem_euclid(3);
-                                let ch = if band == 0 { '=' } else if shade > 0.5 { '-' } else { '.' };
-                                (ch, lerp_color(darken(wrap_ink, 50), wrap_ink, shade))
-                            }
-                            _ => {
-                                let i = (shade * SKIN_RAMP.len() as f32) as usize;
-                                (SKIN_RAMP[i], lerp_color(bone, pale, shade))
+                let noise = hash01(seed, x as i64, y as i64) - 0.5;
+                let (d, part) = fig.sample(pu);
+                if d < 0.0 {
+                    let (ch, fg) = match part {
+                        Part::Ring => ('#', ring_ink),
+                        Part::Hub => ('◉', lighten(ring_ink, 40)),
+                        Part::Handle => ('◆', lighten(ring_ink, 25)),
+                        Part::Spoke => {
+                            let rel = sub((pu.0 - knobs.lean * (0.62 - pu.1), pu.1), WHEEL_C);
+                            (stroke_glyph(rel.0 * 2.0, rel.1), darken(ring_ink, 15))
+                        }
+                        Part::Eye => ('◉', lighten(palette[2], 30)),
+                        _ => {
+                            let n = fig.normal(pu);
+                            let lit = 0.5 + 0.5 * dot(n, light);
+                            let rim = smoothstep(0.0, 0.05, -d);
+                            let shade = (lit * 0.75 + (1.0 - rim) * 0.35 + noise * knobs.grain).clamp(0.0, 0.999);
+                            match part {
+                                Part::Cloth => {
+                                    let i = (shade * CLOTH_RAMP.len() as f32) as usize;
+                                    (CLOTH_RAMP[i], lerp_color(darken(cloth_ink, 60), cloth_ink, shade))
+                                }
+                                Part::Wrap => {
+                                    let band = ((pu.1 * fig_h * 0.9) as i32).rem_euclid(3);
+                                    let ch = if band == 0 { '=' } else if shade > 0.5 { '-' } else { '.' };
+                                    (ch, lerp_color(darken(wrap_ink, 50), wrap_ink, shade))
+                                }
+                                _ => {
+                                    let i = (shade * SKIN_RAMP.len() as f32) as usize;
+                                    (SKIN_RAMP[i], lerp_color(bone, pale, shade))
+                                }
                             }
                         }
+                    };
+                    set(grid, x as i32, y as i32, ch, fg);
+                    continue;
+                }
+                if d < edge_eps && matches!(part, Part::Skin | Part::Cloth | Part::Wrap) {
+                    let n = fig.normal(pu);
+                    if n.0.abs() > 0.45 {
+                        set(grid, x as i32, y as i32, stroke_glyph(-n.1 * 2.0, n.0), lerp_color(bone, pale, 0.6));
+                        continue;
                     }
-                };
-                set(grid, x as i32, y as i32, ch, fg);
-                continue;
-            }
-            if d < edge_eps && matches!(part, Part::Skin | Part::Cloth | Part::Wrap) {
-                let n = fig.normal(pu);
-                if n.0.abs() > 0.45 {
-                    set(grid, x as i32, y as i32, stroke_glyph(-n.1 * 2.0, n.0), lerp_color(bone, pale, 0.6));
-                    continue;
                 }
-            }
-            if let Some(b) = sample_city(&city, pu) {
-                let defocus = ((b.z - knobs.focus).abs() * knobs.blur * 2.2).min(1.0);
-                let fade = (1.0 - b.z) * knobs.haze;
-                let ink = darken(lerp_color(palette[0], palette[1], b.z), (fade * 110.0) as u8);
-                let col = ((pu.0 - b.u0) * 2.0 * fig_h).floor() as i64;
-                let row = ((pu.1 - b.top) * fig_h).floor() as i64;
-                let width_cols = ((b.u1 - b.u0) * 2.0 * fig_h).floor() as i64;
-                if width_cols < 2 {
-                    continue;
-                }
-                let on_edge = col == 0 || col == width_cols;
-                let on_roof = row == 0;
-                let window = col % 3 == 1 && row % 2 == 1 && row > 0;
-                let lit = hash01(seed ^ b.id.wrapping_mul(977), col, row) < 0.55 - b.z * 0.2;
-                let jitter = hash01(seed ^ 0x51AB, x as i64, y as i64);
-                let cell = if defocus < 0.45 {
-                    if on_roof {
-                        Some(('─', lighten(ink, 30)))
-                    } else if on_edge {
-                        Some(('│', lighten(ink, 20)))
-                    } else if window {
-                        Some(if lit { ('=', lighten(ink, 70)) } else { ('.', ink) })
+                if let Some(b) = sample_city(&city, pu) {
+                    let defocus = ((b.z - knobs.focus).abs() * knobs.blur * 2.2).min(1.0);
+                    let fade = (1.0 - b.z) * knobs.haze;
+                    let ink = darken(lerp_color(palette[0], palette[1], b.z), (fade * 110.0) as u8);
+                    let col = ((pu.0 - b.u0) * 2.0 * fig_h).floor() as i64;
+                    let row = ((pu.1 - b.top) * fig_h).floor() as i64;
+                    let width_cols = ((b.u1 - b.u0) * 2.0 * fig_h).floor() as i64;
+                    if width_cols < 2 {
+                        continue;
+                    }
+                    let on_edge = col == 0 || col == width_cols;
+                    let on_roof = row == 0;
+                    let window = col % 3 == 1 && row % 2 == 1 && row > 0;
+                    let lit = hash01(seed ^ b.id.wrapping_mul(977), col, row) < 0.55 - b.z * 0.2;
+                    let jitter = hash01(seed ^ 0x51AB, x as i64, y as i64);
+                    let cell = if defocus < 0.45 {
+                        if on_roof {
+                            Some(('─', lighten(ink, 30)))
+                        } else if on_edge {
+                            Some(('│', lighten(ink, 20)))
+                        } else if window {
+                            Some(if lit { ('=', lighten(ink, 70)) } else { ('.', ink) })
+                        } else {
+                            Some((' ', ink))
+                        }
+                    } else if window && lit && jitter < 1.0 - defocus * 0.4 {
+                        Some((if defocus > 0.8 { 'O' } else { 'o' }, darken(lighten(ink, 60), (defocus * 50.0) as u8)))
+                    } else if (on_edge || on_roof) && jitter > defocus * 0.9 {
+                        Some(('·', ink))
                     } else {
                         Some((' ', ink))
+                    };
+                    if let Some((ch, fg)) = cell {
+                        set(grid, x as i32, y as i32, ch, fg);
                     }
-                } else if window && lit && jitter < 1.0 - defocus * 0.4 {
-                    Some((if defocus > 0.8 { 'O' } else { 'o' }, darken(lighten(ink, 60), (defocus * 50.0) as u8)))
-                } else if (on_edge || on_roof) && jitter > defocus * 0.9 {
-                    Some(('·', ink))
-                } else {
-                    Some((' ', ink))
-                };
-                if let Some((ch, fg)) = cell {
-                    set(grid, x as i32, y as i32, ch, fg);
+                    continue;
                 }
-                continue;
-            }
-            if pu.1 > horizon {
-                let rel = (pu.0, pu.1 - horizon);
-                let ang = rel.0.atan2(rel.1.max(1e-4));
-                let ray = ((ang * 9.0).rem_euclid(1.0) - 0.5).abs() < 0.035 && rel.1 > 0.02;
-                let rubble = noise + 0.5 < (rel.1 * 1.6).min(0.6) * 0.5;
-                if ray {
-                    set(grid, x as i32, y as i32, stroke_glyph(ang.sin() * 2.0, ang.cos()), darken(palette[1], 40));
-                } else if rubble {
-                    set(grid, x as i32, y as i32, if noise > 0.2 { ':' } else { '·' }, darken(palette[1], 60));
+                if pu.1 > horizon {
+                    let rel = (pu.0, pu.1 - horizon);
+                    let ang = rel.0.atan2(rel.1.max(1e-4));
+                    let ray = ((ang * 9.0).rem_euclid(1.0) - 0.5).abs() < 0.035 && rel.1 > 0.02;
+                    let rubble = noise + 0.5 < (rel.1 * 1.6).min(0.6) * 0.5;
+                    if ray {
+                        set(grid, x as i32, y as i32, stroke_glyph(ang.sin() * 2.0, ang.cos()), darken(palette[1], 40));
+                    } else if rubble {
+                        set(grid, x as i32, y as i32, if noise > 0.2 { ':' } else { '·' }, darken(palette[1], 60));
+                    }
+                    continue;
                 }
-                continue;
-            }
-            let sky = (pu.1 - v_top) / (horizon - v_top).max(0.1);
-            if noise + 0.5 < sky * sky * 0.08 * (0.3 + knobs.haze) {
-                set(grid, x as i32, y as i32, '·', darken(palette[3], 70));
+                let sky = (pu.1 - v_top) / (horizon - v_top).max(0.1);
+                if noise + 0.5 < sky * sky * 0.08 * (0.3 + knobs.haze) {
+                    set(grid, x as i32, y as i32, '·', darken(palette[3], 70));
+                }
             }
         }
-    }
+    });
 
-    draw_fuga(grid, width, height, seed, cx, top + fig_h * WHEEL_C.1, fig_h * WHEEL_R * 1.3, t, reach);
+    measure_layer("mahoraga-2", "fuga", || draw_fuga(grid, width, height, seed, cx, top + fig_h * WHEEL_C.1, fig_h * WHEEL_R * 1.3, t, reach));
     if reach >= 1.0 {
         let hx = (cx + knobs.lean * (0.62 - WHEEL_C.1) * 2.0 * fig_h).round() as i32;
         set(grid, hx, (top + fig_h * WHEEL_C.1).round() as i32, '◉', hsl_to_rgb(48.0, 1.0, 0.8));
