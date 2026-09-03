@@ -2,6 +2,7 @@ use crossterm::style::Color;
 use rand::rngs::StdRng;
 use rand::RngExt;
 
+use crate::_0_profile::measure_layer;
 use crate::color::{darken, lerp_color, lighten, shift_hue};
 use crate::opts::param_f32;
 use crate::pp::{pp_arc, pp_fbm, pp_line};
@@ -681,16 +682,30 @@ pub(crate) fn draw_cosmograph(
     let t = t + rng.random_range(0.0..TAU) * 0.02;
     let plan = compute_plan(width, height, params.tilt);
 
-    draw_nebula(grid, width, height, seed, palette, t, params);
-    draw_starfield(grid, width, height, seed, palette, t, params);
-    draw_aurora(grid, width, height, seed, palette, t, params);
-    draw_spiral(grid, &plan, seed, palette, t, params);
-    draw_orrery(grid, &plan, seed, palette, t, params);
-    draw_zodiac(grid, &plan, seed, palette, t, params);
-    draw_planets(grid, &plan, width, height, seed, palette, t, params);
-    draw_comet(grid, &plan, width, height, seed, palette, t, params);
-    draw_motes(grid, &plan, width, height, seed, palette, t, params);
-    draw_frame(grid, width, height, seed, palette, t);
+    measure_layer("cosmograph", "nebula", || {
+        draw_nebula(grid, width, height, seed, palette, t, params);
+    });
+    measure_layer("cosmograph", "starfield", || {
+        draw_starfield(grid, width, height, seed, palette, t, params);
+    });
+    measure_layer("cosmograph", "aurora", || {
+        draw_aurora(grid, width, height, seed, palette, t, params);
+    });
+    measure_layer("cosmograph", "spiral", || {
+        draw_spiral(grid, &plan, seed, palette, t, params);
+    });
+    measure_layer("cosmograph", "orrery", || {
+        draw_orrery(grid, &plan, seed, palette, t, params);
+        draw_zodiac(grid, &plan, seed, palette, t, params);
+    });
+    measure_layer("cosmograph", "bodies", || {
+        draw_planets(grid, &plan, width, height, seed, palette, t, params);
+        draw_comet(grid, &plan, width, height, seed, palette, t, params);
+        draw_motes(grid, &plan, width, height, seed, palette, t, params);
+    });
+    measure_layer("cosmograph", "frame", || {
+        draw_frame(grid, width, height, seed, palette, t);
+    });
 }
 
 #[cfg(test)]

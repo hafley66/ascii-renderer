@@ -2,6 +2,7 @@ use crossterm::style::Color;
 use rand::rngs::StdRng;
 use rand::RngExt;
 
+use crate::_0_profile::measure_layer;
 use crate::color::{darken, lerp_color, lighten, shift_hue};
 use crate::opts::param_f32;
 use crate::pp::{pp_fbm, pp_line};
@@ -646,15 +647,27 @@ pub(crate) fn draw_glm_apotheosis(
     let t = t + rng.random_range(0.0..TAU) * 0.02;
     let plan = compute_plan(width, height);
 
-    draw_sky(grid, width, height, seed, palette, t, params);
-    draw_rays(grid, &plan, seed, palette, t, params);
-    draw_mandala(grid, &plan, seed, palette, t, params);
-    draw_wings(grid, &plan, seed, palette, t, params);
-    draw_figure(grid, &plan, palette, t, params);
-    draw_motes(grid, &plan, seed, palette, t, params);
-    draw_sparks(grid, &plan, width, height, seed, palette, t, params);
-    draw_clouds(grid, &plan, width, height, seed, palette, t, params);
-    draw_frame(grid, width, height, seed, palette, t);
+    measure_layer("glm-apotheosis", "background", || {
+        draw_sky(grid, width, height, seed, palette, t, params);
+    });
+    measure_layer("glm-apotheosis", "rays", || {
+        draw_rays(grid, &plan, seed, palette, t, params);
+    });
+    measure_layer("glm-apotheosis", "mandala", || {
+        draw_mandala(grid, &plan, seed, palette, t, params);
+        draw_wings(grid, &plan, seed, palette, t, params);
+    });
+    measure_layer("glm-apotheosis", "figure", || {
+        draw_figure(grid, &plan, palette, t, params);
+    });
+    measure_layer("glm-apotheosis", "particles", || {
+        draw_motes(grid, &plan, seed, palette, t, params);
+        draw_sparks(grid, &plan, width, height, seed, palette, t, params);
+        draw_clouds(grid, &plan, width, height, seed, palette, t, params);
+    });
+    measure_layer("glm-apotheosis", "frame", || {
+        draw_frame(grid, width, height, seed, palette, t);
+    });
 }
 
 #[cfg(test)]
