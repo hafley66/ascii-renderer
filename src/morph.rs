@@ -762,6 +762,16 @@ fn iterate_grid_into(
             crate::sonnet_2_forest::draw_sonnet_2_forest(grid, w, h, seed, palette, t, &knobs);
             true
         }
+        "sonnet-1-trees" => {
+            let knobs = crate::sonnet_1_trees::TreesKnobs::from_env();
+            crate::sonnet_1_trees::draw_sonnet_1_trees(grid, w, h, seed, palette, t, &knobs);
+            true
+        }
+        "sonnet-1-forest" => {
+            let knobs = crate::sonnet_1_forest::ForestKnobs::from_env();
+            crate::sonnet_1_forest::draw_sonnet_1_forest(grid, w, h, seed, palette, t, &knobs);
+            true
+        }
         _ => false,
     }
 }

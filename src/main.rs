@@ -78,6 +78,8 @@ mod haiku_2_trees;
 mod haiku_2_forest;
 mod sonnet_2_trees;
 mod sonnet_2_forest;
+mod sonnet_1_trees;
+mod sonnet_1_forest;
 #[cfg(test)]
 mod perf_sweep;
 

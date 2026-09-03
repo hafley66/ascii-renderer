@@ -164,6 +164,8 @@ const NATIVE_MODES: &[&str] = &[
     "haiku-2-forest",
     "sonnet-2-trees",
     "sonnet-2-forest",
+    "sonnet-1-trees",
+    "sonnet-1-forest",
 ];
 
 #[test]
