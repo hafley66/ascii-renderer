@@ -778,6 +778,18 @@ pub(crate) static MODE_FORMS: &[ModeForm] = &[
             param!("SCALE", "zoom into the attractor", 0.3, 2.0, 1.0, 0.05),
         ],
     },
+    ModeForm {
+        names: &["haiku-1-torus"],
+        animate: AnimKind::Iterate,
+        params: &[
+            param!("SPEED", "rotation speed radians/sec", 0.0, 4.0, 1.0, 0.1),
+            param!("TILT", "tilt amplitude radians", 0.0, 1.57, 0.5, 0.1),
+            param!("SCALE", "overall torus size", 0.2, 3.0, 1.0, 0.2),
+            param!("HUE", "primary hue rotation deg", 0.0, 360.0, 180.0, 15.0),
+            param!("MINOR", "minor/major radius ratio", 0.1, 0.6, 0.35, 0.05),
+            param!("DENSITY", "glyph density factor", 0.3, 2.0, 1.0, 0.1),
+        ],
+    },
 ];
 
 

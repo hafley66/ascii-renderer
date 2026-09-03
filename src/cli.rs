@@ -56,6 +56,7 @@ use crate::opus_1_quasicrystal::cli_opus_1_quasicrystal;
 use crate::opus_2_quasicrystal::cli_opus_2_quasicrystal;
 use crate::sonnet_1_spirograph::cli_sonnet_1_spirograph;
 use crate::sonnet_2_clifford::cli_sonnet_2_clifford;
+use crate::haiku_1_torus::cli_haiku_1_torus;
 use crate::cli_basic::*;
 use crate::cli_catalog::*;
 use crate::cli_city::*;
@@ -1191,6 +1192,12 @@ pub(crate) fn run() {
         }
     } else if mode == "sonnet-2-clifford" {
         let (g, done) = cli_sonnet_2_clifford(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        grid = g;
+        if done {
+            return;
+        }
+    } else if mode == "haiku-1-torus" {
+        let (g, done) = cli_haiku_1_torus(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
         grid = g;
         if done {
             return;

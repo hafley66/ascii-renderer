@@ -682,6 +682,11 @@ fn iterate_grid_into(
             crate::sonnet_2_clifford::draw_sonnet_2_clifford(grid, w, h, seed, palette, t, &knobs);
             true
         }
+        "haiku-1-torus" => {
+            let knobs = crate::haiku_1_torus::TorusKnobs::from_env();
+            crate::haiku_1_torus::draw_haiku_1_torus(grid, w, h, seed, palette, t, &knobs);
+            true
+        }
         _ => false,
     }
 }
