@@ -4,9 +4,10 @@ use rand::rngs::StdRng;
 use crate::_0_profile::measure_layer;
 use crate::color::{darken, lerp_color, lighten, shift_hue};
 use crate::opts::param_f32;
-use crate::pp::{pp_fbm, pp_hash2, pp_stroke};
+use crate::pp::{pp_hash2, pp_stroke};
 use crate::registry::{AnimKind, Mode, ModeFrame, Param};
 use crate::types::{Cell, Grid};
+use super::_33_cosmograph::FbmRow;
 
 const TAU: f32 = std::f32::consts::TAU;
 
@@ -308,26 +309,48 @@ fn draw_spectral_field(
 ) {
     let cx = width as f32 * 0.5;
     let cy = height as f32 * 0.5;
+    let span_w = width.max(1) as f32;
+    let span_h = height.max(1) as f32;
+    let t_a = t * 0.31;
+    let t_b = t * 0.23;
+    let bg_lo = darken(palette[0], 18);
+    let bg_hi = darken(palette[2], 55);
+    let hash_seed = seed ^ 0xA11C_E5ED;
+    let mut radial_x = Vec::with_capacity(width);
+    let mut wave_ax = Vec::with_capacity(width);
+    let mut wave_bx = Vec::with_capacity(width);
+    let mut noise_fx = Vec::with_capacity(width);
+    for x in 0..width {
+        let nx = (x as f32 - cx) / span_w;
+        radial_x.push(nx * nx * 3.0);
+        wave_ax.push(nx * 38.0);
+        wave_bx.push(nx * 13.0);
+        noise_fx.push(x as f32 * 0.035);
+    }
     for y in 0..height {
+        let ny = (y as f32 - cy) / span_h;
+        let radial_y = ny * ny * 7.0;
+        let wave_ay = ny * 17.0;
+        let wave_by = ny * 29.0;
+        let mut noise_row = FbmRow::new(y as f32 * 0.07 + t * 0.015, seed);
+        let row = &mut grid[y];
         for x in 0..width {
-            let nx = (x as f32 - cx) / width.max(1) as f32;
-            let ny = (y as f32 - cy) / height.max(1) as f32;
-            let radial = (nx * nx * 3.0 + ny * ny * 7.0).sqrt();
-            let wave_a = (nx * 38.0 + ny * 17.0 + t * 0.31).sin();
-            let wave_b = (ny * 29.0 - nx * 13.0 - t * 0.23).cos();
-            let noise = pp_fbm(x as f32 * 0.035, y as f32 * 0.07 + t * 0.015, seed);
+            let radial = (radial_x[x] + radial_y).sqrt();
+            let wave_a = ((wave_ax[x] + wave_ay) + t_a).sin();
+            let wave_b = ((wave_by - wave_bx[x]) - t_b).cos();
+            let noise = noise_row.at(noise_fx[x]);
             let interference = (wave_a * wave_b * 0.5 + 0.5) * params.moire;
             let glow = ((1.0 - radial).max(0.0) * 0.35 + interference * 0.2 + noise * 0.15)
                 .clamp(0.0, 1.0);
-            let bg = lerp_color(darken(palette[0], 18), darken(palette[2], 55), glow);
-            let threshold = pp_hash2(x as i32, y as i32, seed ^ 0xA11C_E5ED);
+            let bg = lerp_color(bg_lo, bg_hi, glow);
+            let threshold = pp_hash2(x as i32, y as i32, hash_seed);
             let ch = if threshold < glow * 0.08 * params.bloom {
                 if interference > 0.7 { '∙' } else { '·' }
             } else {
                 ' '
             };
             let fg = darken(lerp_color(palette[2], palette[3], interference), 45);
-            grid[y][x] = Cell::with_bg(ch, fg, bg);
+            row[x] = Cell::with_bg(ch, fg, bg);
         }
     }
 }
