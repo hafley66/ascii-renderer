@@ -978,6 +978,37 @@ pub(crate) static MODE_FORMS: &[ModeForm] = &[
             param!("ATMOS", "atmosphere strength", 0.0, 1.0, 0.7, 0.05),
         ],
     },
+    ModeForm {
+        names: &["sonnet-2-trees"],
+        animate: AnimKind::Iterate,
+        params: &[
+            param!("ENERGY", "top row crown energy", 0.3, 1.2, 0.9, 0.02),
+            param!("FRUIT", "fruit and cone rate", 0.0, 1.0, 0.25, 0.05),
+            param!("BRANCH", "branching factor", 0.3, 1.5, 1.0, 0.05),
+            param!("SWAY", "sway amplitude in cells", 0.0, 2.0, 0.5, 0.1),
+            param!("SPEED", "time scale", 0.2, 3.0, 1.0, 0.1),
+            param!("FLICKER", "leaf flicker rate", 0.0, 1.0, 0.5, 0.05),
+            param!("DETAIL", "growth sample count factor", 0.4, 2.0, 1.0, 0.1),
+            param!("ROOTS", "root and knee rate", 0.0, 1.0, 1.0, 0.05),
+        ],
+    },
+    ModeForm {
+        names: &["sonnet-2-forest"],
+        animate: AnimKind::Iterate,
+        params: &[
+            param!("DENSITY", "trees per depth layer", 0.2, 2.0, 1.0, 0.05),
+            param!("LAYERS", "depth layers", 1.0, 5.0, 3.0, 1.0),
+            param!("SWAY", "sway amplitude in cells", 0.0, 2.0, 0.6, 0.1),
+            param!("SPEED", "time scale", 0.2, 3.0, 1.0, 0.1),
+            param!("HUE", "hue rotation deg", 0.0, 360.0, 0.0, 10.0),
+            param!("ATMOS", "0 seed 1 fog 2 flies 3 leaves 4 snow 5 birds", 0.0, 5.0, 0.0, 1.0),
+            param!("HAZE", "aerial perspective fade", 0.0, 1.0, 0.5, 0.05),
+            param!("ENERGY", "crown energy", 0.4, 1.2, 0.9, 0.02),
+            param!("GROUND", "horizon fraction of height", 0.5, 0.9, 0.64, 0.02),
+            param!("FRUIT", "fruit and cone rate", 0.0, 1.0, 0.15, 0.05),
+            param!("LIGHT", "light cycle depth", 0.0, 1.0, 0.5, 0.1),
+        ],
+    },
 ];
 
 

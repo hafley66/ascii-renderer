@@ -752,6 +752,16 @@ fn iterate_grid_into(
             crate::haiku_2_forest::draw_haiku_2_forest(grid, w, h, seed, palette, t, &knobs);
             true
         }
+        "sonnet-2-trees" => {
+            let knobs = crate::sonnet_2_trees::SheetKnobs::from_env();
+            crate::sonnet_2_trees::draw_sonnet_2_trees(grid, w, h, seed, palette, t, &knobs);
+            true
+        }
+        "sonnet-2-forest" => {
+            let knobs = crate::sonnet_2_forest::ForestKnobs::from_env();
+            crate::sonnet_2_forest::draw_sonnet_2_forest(grid, w, h, seed, palette, t, &knobs);
+            true
+        }
         _ => false,
     }
 }

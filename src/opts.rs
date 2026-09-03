@@ -477,6 +477,8 @@ pub(crate) fn run_demo(initial_seed: u64) {
         "haiku-1-forest",
         "haiku-2-trees",
         "haiku-2-forest",
+        "sonnet-2-trees",
+        "sonnet-2-forest",
     ];
     all_modes.extend(registered_modes().iter().map(|(name, _)| name));
     let all_themes: &[&str] = &[
