@@ -802,6 +802,22 @@ pub(crate) static MODE_FORMS: &[ModeForm] = &[
             param!("WFORM", "waveform 0=sine 1=square 2=saw", 0.0, 2.0, 0.0, 1.0),
         ],
     },
+    ModeForm {
+        names: &["opus-1-trees"],
+        animate: AnimKind::Iterate,
+        params: &[
+            param!("ENERGY", "top row crown energy", 0.2, 1.0, 0.88, 0.02),
+            param!("FRUIT", "fruit and bloom rate", 0.0, 1.0, 0.18, 0.02),
+            param!("BRANCH", "branch keep probability", 0.05, 1.0, 0.62, 0.05),
+            param!("SCRUB", "bottom row energy factor", 0.2, 1.0, 0.58, 0.02),
+            param!("ROOTS", "root flare style offset", 0.0, 3.0, 0.0, 1.0),
+            param!("SWAY", "sway amplitude in cells", 0.0, 4.0, 0.9, 0.1),
+            param!("SPEED", "time scale", 0.0, 3.0, 1.0, 0.1),
+            param!("DETAIL", "growth sample count factor", 0.2, 2.0, 1.0, 0.1),
+            param!("HUE", "hue rotation deg", -180.0, 180.0, 0.0, 10.0),
+            param!("BARE", "bare trunk fraction of height", 0.08, 0.60, 0.26, 0.02),
+        ],
+    },
 ];
 
 

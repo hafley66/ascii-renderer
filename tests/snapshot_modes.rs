@@ -875,3 +875,8 @@ fn haiku_2_ripple_seed_42() {
 fn haiku_2_ripple_animated_t8() {
     insta::assert_snapshot!(render_t(&["42", "haiku-2-ripple", "moss"], "8"));
 }
+
+#[test]
+fn opus_1_trees_seed_42() {
+    insta::assert_snapshot!(render(&["42", "opus-1-trees", "moss"]));
+}

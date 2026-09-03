@@ -692,6 +692,11 @@ fn iterate_grid_into(
             crate::haiku_2_ripple::draw_haiku_2_ripple(grid, w, h, seed, palette, t, &knobs);
             true
         }
+        "opus-1-trees" => {
+            let knobs = crate::opus_1_trees::TreesKnobs::from_env();
+            crate::opus_1_trees::draw_opus_1_trees(grid, w, h, seed, palette, t, &knobs);
+            true
+        }
         _ => false,
     }
 }

@@ -57,7 +57,7 @@ metro, koi, skyline, hive, jelly, jelly2,
 rhizome, effigy, dendrite, totem, chimera,
 murmuration, lanterns, tide,
 arboretum, astrolabe, sauron, mahoraga-2, mahoraga-3, mahoraga-4, mahoraga-5,
-tree-of-life, tree-of-life-2, tree-of-life-3, tree-of-life-4, tree-of-life-5, tree-of-life-6, braid, braid-2, chladni, pendulum-wave, polytope, poincare, opus-1-quasicrystal, opus-2-quasicrystal, sonnet-1-spirograph, sonnet-2-clifford, haiku-1-torus, haiku-2-ripple
+tree-of-life, tree-of-life-2, tree-of-life-3, tree-of-life-4, tree-of-life-5, tree-of-life-6, braid, braid-2, chladni, pendulum-wave, polytope, poincare, opus-1-quasicrystal, opus-2-quasicrystal, sonnet-1-spirograph, sonnet-2-clifford, haiku-1-torus, haiku-2-ripple, opus-1-trees
 
 ## Architecture
 
