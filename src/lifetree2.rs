@@ -1,5 +1,6 @@
 //! tree-of-life-2 -- the seam is a wavering veil; a ring of life circles the tree; the living
 //! half cycles seasons, the ethereal half beats a heart pulse and echoes the wind. Cached skeleton.
+use crate::_0_profile::measure_layer;
 use crate::color::*;
 use crate::opts::param_f32;
 use crate::types::*;
@@ -659,19 +660,21 @@ fn frame(grid: &mut Grid, c: &Cached, t: f32, k: &VeilKnobs) {
 
     // veil per row, then background compose: sky rows are uniform, dirt rows memcpy
     let mut veil: [i32; 512] = [0; 512];
-    for y in 0..hh {
-        let v = veil_x(y as i32, w, ts, k).clamp(0, w as i32) as usize;
-        veil[y] = v as i32;
-        let (night, dayc, ethc) = c.sky_rows[y];
-        let eth_col = if negative { scale(c.eth_hi, 0.85) } else { scale(ethc, 1.0 + flash * 0.9) };
-        let eth_cell = Cell::new(' ', eth_col);
-        grid[y][..v].fill(eth_cell);
-        if y < c.ground {
-            grid[y][v..w].fill(Cell::new(' ', scale(mix(night, dayc, day), 1.0)));
-        } else {
-            grid[y][v..w].copy_from_slice(&c.bg_phys[y][v..w]);
+    measure_layer("tree-of-life-2", "background", || {
+        for y in 0..hh {
+            let v = veil_x(y as i32, w, ts, k).clamp(0, w as i32) as usize;
+            veil[y] = v as i32;
+            let (night, dayc, ethc) = c.sky_rows[y];
+            let eth_col = if negative { scale(c.eth_hi, 0.85) } else { scale(ethc, 1.0 + flash * 0.9) };
+            let eth_cell = Cell::new(' ', eth_col);
+            grid[y][..v].fill(eth_cell);
+            if y < c.ground {
+                grid[y][v..w].fill(Cell::new(' ', scale(mix(night, dayc, day), 1.0)));
+            } else {
+                grid[y][v..w].copy_from_slice(&c.bg_phys[y][v..w]);
+            }
         }
-    }
+    });
     let is_eth = |x: i32, y: i32| -> bool { y >= 0 && (y as usize) < hh && x < veil[y as usize] };
     let ink = |bright: (u8, u8, u8), b: f32| -> Color {
         if negative { scale(c.eth_dark, 1.0 + b * 0.5) } else { scale(bright, b) }
@@ -711,22 +714,24 @@ fn frame(grid: &mut Grid, c: &Cached, t: f32, k: &VeilKnobs) {
         }
     }
 
-    for s in &c.stars {
-        let v = (ts * s.rate + s.phase).sin();
-        let (ch, col) = if is_eth(s.x as i32, s.y as i32) {
-            let b = 0.35 + 0.65 * v.max(0.0) + flash * 0.4;
-            (if v > 0.75 { '✦' } else { '·' }, ink(c.eth_rgb, b * 0.9))
-        } else if s.y < c.ground {
-            let b = (0.35 + 0.15 * v) * (1.0 - day);
-            if b < 0.12 {
+    measure_layer("tree-of-life-2", "stars", || {
+        for s in &c.stars {
+            let v = (ts * s.rate + s.phase).sin();
+            let (ch, col) = if is_eth(s.x as i32, s.y as i32) {
+                let b = 0.35 + 0.65 * v.max(0.0) + flash * 0.4;
+                (if v > 0.75 { '✦' } else { '·' }, ink(c.eth_rgb, b * 0.9))
+            } else if s.y < c.ground {
+                let b = (0.35 + 0.15 * v) * (1.0 - day);
+                if b < 0.12 {
+                    continue;
+                }
+                (if v > 0.9 { '✧' } else { '·' }, scale(c.eth_hi, b))
+            } else {
                 continue;
-            }
-            (if v > 0.9 { '✧' } else { '·' }, scale(c.eth_hi, b))
-        } else {
-            continue;
-        };
-        put(grid, s.x as i32, s.y as i32, ch, col);
-    }
+            };
+            put(grid, s.x as i32, s.y as i32, ch, col);
+        }
+    });
 
     // shooting stars on the ethereal half: two streaks with short tails
     for i in 0..2 {
@@ -751,28 +756,30 @@ fn frame(grid: &mut Grid, c: &Cached, t: f32, k: &VeilKnobs) {
     }
 
     // ring of life with a comet on the ethereal arc
-    if k.ring > 0.0 && !c.ring.is_empty() {
-        let n = c.ring.len() as f32;
-        let head = (ts * 0.4).fract() * n;
-        for (i, p) in c.ring.iter().enumerate() {
-            if is_eth(p.x, p.y) {
-                let mut d = (i as f32 - head).rem_euclid(n);
-                if d > n * 0.5 {
-                    d = n;
+    measure_layer("tree-of-life-2", "ring", || {
+        if k.ring > 0.0 && !c.ring.is_empty() {
+            let n = c.ring.len() as f32;
+            let head = (ts * 0.4).fract() * n;
+            for (i, p) in c.ring.iter().enumerate() {
+                if is_eth(p.x, p.y) {
+                    let mut d = (i as f32 - head).rem_euclid(n);
+                    if d > n * 0.5 {
+                        d = n;
+                    }
+                    let comet = (1.0 - d / (n * 0.12)).max(0.0);
+                    let v = (p.ang * 5.0 - ts * 1.9).sin();
+                    let base = v * 0.5 + 0.5;
+                    let idx = (((base + comet).min(1.0)) * 4.99) as usize;
+                    let b = 0.35 + 0.65 * k.glow * base.max(comet);
+                    put(grid, p.x, p.y, RUNE[idx.min(4)], ink(c.eth_hi, b * k.ring));
+                } else {
+                    let v = (p.ang * 9.0 + ts * 0.3).sin();
+                    let idx = if v > 0.6 { 2 } else if v > -0.3 { 0 } else { 1 };
+                    put(grid, p.x, p.y, VINE[idx], scale(c.bark_hi, 0.75 * k.ring + 0.25));
                 }
-                let comet = (1.0 - d / (n * 0.12)).max(0.0);
-                let v = (p.ang * 5.0 - ts * 1.9).sin();
-                let base = v * 0.5 + 0.5;
-                let idx = (((base + comet).min(1.0)) * 4.99) as usize;
-                let b = 0.35 + 0.65 * k.glow * base.max(comet);
-                put(grid, p.x, p.y, RUNE[idx.min(4)], ink(c.eth_hi, b * k.ring));
-            } else {
-                let v = (p.ang * 9.0 + ts * 0.3).sin();
-                let idx = if v > 0.6 { 2 } else if v > -0.3 { 0 } else { 1 };
-                put(grid, p.x, p.y, VINE[idx], scale(c.bark_hi, 0.75 * k.ring + 0.25));
             }
         }
-    }
+    });
 
     // ethereal horizon pulse
     let gy = c.ground as i32;
@@ -829,6 +836,7 @@ fn frame(grid: &mut Grid, c: &Cached, t: f32, k: &VeilKnobs) {
 
     let gf = c.ground as f32;
     let sway_eff = k.sway * (1.0 + 2.5 * gust);
+    measure_layer("tree-of-life-2", "tree", || {
     for cell in &c.cells {
         let hf = ((gf - cell.y as f32) / gf).clamp(0.0, 1.0);
         let rooted = matches!(cell.kind, Kind::Root | Kind::RootTip);
@@ -918,6 +926,7 @@ fn frame(grid: &mut Grid, c: &Cached, t: f32, k: &VeilKnobs) {
             put(grid, cell.x + dx, cell.y, ch, col);
         }
     }
+    });
 
     // surge burst: sparks fly from every tip on the ethereal half
     if burst_on {

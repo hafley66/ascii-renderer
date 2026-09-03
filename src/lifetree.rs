@@ -1,5 +1,6 @@
 //! tree-of-life -- one trunk split at a seam: flat ethereal silhouette left, living
 //! bark/wind/leaf-fall right. Skeleton + bg cached per (w,h,seed,geometry); frame = memcpy + linear cell pass.
+use crate::_0_profile::measure_layer;
 use crate::color::*;
 use crate::opts::param_f32;
 use crate::types::*;
@@ -563,138 +564,150 @@ fn frame(grid: &mut Grid, c: &Cached, t: f32, k: &LifeKnobs) {
     let w = c.bg[0].len();
     let h = c.bg.len();
     let ts = t * k.speed;
-    for y in 0..h {
-        grid[y][..w].copy_from_slice(&c.bg[y][..w]);
-    }
+    measure_layer("tree-of-life", "background", || {
+        for y in 0..h {
+            grid[y][..w].copy_from_slice(&c.bg[y][..w]);
+        }
+    });
 
     // stars: strong twinkle on the ethereal side, slow drift on the physical
-    for s in &c.stars {
-        let eth = (s.x as i32) < c.divide;
-        let v = (ts * s.rate + s.phase).sin();
-        let (ch, col) = if eth {
-            let b = 0.35 + 0.65 * v.max(0.0);
-            (if v > 0.75 { '✦' } else if v > 0.1 { '·' } else { '·' }, scale(c.eth_rgb, b * 0.9))
-        } else {
-            (if v > 0.9 { '✧' } else { '·' }, scale(c.eth_hi, 0.35 + 0.15 * v))
-        };
-        put(grid, s.x as i32, s.y as i32, ch, col);
-    }
+    measure_layer("tree-of-life", "stars", || {
+        for s in &c.stars {
+            let eth = (s.x as i32) < c.divide;
+            let v = (ts * s.rate + s.phase).sin();
+            let (ch, col) = if eth {
+                let b = 0.35 + 0.65 * v.max(0.0);
+                (if v > 0.75 { '✦' } else if v > 0.1 { '·' } else { '·' }, scale(c.eth_rgb, b * 0.9))
+            } else {
+                (if v > 0.9 { '✧' } else { '·' }, scale(c.eth_hi, 0.35 + 0.15 * v))
+            };
+            put(grid, s.x as i32, s.y as i32, ch, col);
+        }
+    });
 
     // ethereal horizon: a pulse travelling outward from the trunk
-    if c.divide > 0 {
-        let gy = c.ground as i32;
-        for x in 0..c.divide {
-            let d = (x - c.cx).abs() as f32;
-            let p = (d * 0.35 - ts * 2.2).sin();
-            let b = 0.3 + 0.7 * k.glow * p.max(0.0);
-            let ch = if p > 0.6 { '∙' } else { '·' };
-            put(grid, x, gy, ch, scale(c.eth_hi, b));
+    measure_layer("tree-of-life", "horizon", || {
+        if c.divide > 0 {
+            let gy = c.ground as i32;
+            for x in 0..c.divide {
+                let d = (x - c.cx).abs() as f32;
+                let p = (d * 0.35 - ts * 2.2).sin();
+                let b = 0.3 + 0.7 * k.glow * p.max(0.0);
+                let ch = if p > 0.6 { '∙' } else { '·' };
+                put(grid, x, gy, ch, scale(c.eth_hi, b));
+            }
         }
-    }
+    });
 
     // tree cells
     let gf = c.ground as f32;
-    for cell in &c.cells {
-        let eth = cell.x < c.divide;
-        if eth {
-            let p = (cell.ord * 11.0 - ts * 1.7 + cell.phase * 0.6).sin();
-            let pulse = p.max(0.0);
-            let pulse = pulse * pulse;
-            let b = 0.42 + 0.58 * k.glow * pulse + 0.1 * (1.0 - k.glow);
-            let idx = if pulse > 0.55 { 2 } else if pulse > 0.15 { 1 } else { 0 };
-            let ch = match cell.kind {
-                Kind::Trunk | Kind::Branch => ETH_TRUNK[idx],
-                Kind::Root => ETH_TRUNK[idx.min(1)],
-                Kind::Twig | Kind::RootTip => ETH_TWIG[(idx > 0) as usize],
-                Kind::Leaf => continue,
-                Kind::LeafEdge => ETH_LEAF[idx],
-            };
-            let col = scale(mix(cell.rgb, cell.alt, pulse * 0.7), b);
-            put(grid, cell.x, cell.y, ch, col);
-        } else {
-            let hf = ((gf - cell.y as f32) / gf).clamp(0.0, 1.0);
-            let dx = if matches!(cell.kind, Kind::Root | Kind::RootTip) {
-                0
+    measure_layer("tree-of-life", "tree", || {
+        for cell in &c.cells {
+            let eth = cell.x < c.divide;
+            if eth {
+                let p = (cell.ord * 11.0 - ts * 1.7 + cell.phase * 0.6).sin();
+                let pulse = p.max(0.0);
+                let pulse = pulse * pulse;
+                let b = 0.42 + 0.58 * k.glow * pulse + 0.1 * (1.0 - k.glow);
+                let idx = if pulse > 0.55 { 2 } else if pulse > 0.15 { 1 } else { 0 };
+                let ch = match cell.kind {
+                    Kind::Trunk | Kind::Branch => ETH_TRUNK[idx],
+                    Kind::Root => ETH_TRUNK[idx.min(1)],
+                    Kind::Twig | Kind::RootTip => ETH_TWIG[(idx > 0) as usize],
+                    Kind::Leaf => continue,
+                    Kind::LeafEdge => ETH_LEAF[idx],
+                };
+                let col = scale(mix(cell.rgb, cell.alt, pulse * 0.7), b);
+                put(grid, cell.x, cell.y, ch, col);
             } else {
-                let s = (ts * 0.9 + cell.ord * 2.6).sin() + 0.35 * (ts * 2.1 + cell.y as f32 * 0.21).sin();
-                (k.sway * hf * hf.sqrt() * s * 0.74).round() as i32
-            };
-            let (ch, col) = match cell.kind {
-                Kind::Leaf | Kind::LeafEdge => {
-                    let r = (ts * 3.1 + cell.phase * 6.2832).sin();
-                    let pair = LEAF[(cell.tex & 3) as usize];
-                    let ch = if r > 0.62 { pair[1] } else { pair[0] };
-                    let light = 0.82 + 0.22 * r.max(0.0) + 0.1 * (ts * 0.4 + cell.x as f32 * 0.05).sin();
-                    (ch, scale(mix(cell.rgb, cell.alt, r.max(0.0) * 0.4), light))
-                }
-                Kind::Trunk | Kind::Branch => {
-                    let pair = BARK[(cell.tex as usize).min(5)];
-                    let ch = if cell.phase > 0.55 { pair[1] } else { pair[0] };
-                    let breath = 0.94 + 0.06 * (ts * 0.5 + cell.ord * 3.0).sin();
-                    (ch, scale(cell.rgb, breath))
-                }
-                Kind::Twig => {
-                    if cell.phase > 0.6 {
-                        continue;
+                let hf = ((gf - cell.y as f32) / gf).clamp(0.0, 1.0);
+                let dx = if matches!(cell.kind, Kind::Root | Kind::RootTip) {
+                    0
+                } else {
+                    let s = (ts * 0.9 + cell.ord * 2.6).sin() + 0.35 * (ts * 2.1 + cell.y as f32 * 0.21).sin();
+                    (k.sway * hf * hf.sqrt() * s * 0.74).round() as i32
+                };
+                let (ch, col) = match cell.kind {
+                    Kind::Leaf | Kind::LeafEdge => {
+                        let r = (ts * 3.1 + cell.phase * 6.2832).sin();
+                        let pair = LEAF[(cell.tex & 3) as usize];
+                        let ch = if r > 0.62 { pair[1] } else { pair[0] };
+                        let light = 0.82 + 0.22 * r.max(0.0) + 0.1 * (ts * 0.4 + cell.x as f32 * 0.05).sin();
+                        (ch, scale(mix(cell.rgb, cell.alt, r.max(0.0) * 0.4), light))
                     }
-                    ('·', scale(cell.rgb, 0.95))
-                }
-                Kind::Root => {
-                    let pair = BARK[(cell.tex as usize).min(5)];
-                    (if cell.phase > 0.7 { pair[1] } else { pair[0] }, scale(cell.rgb, 0.9))
-                }
-                Kind::RootTip => ('·', scale(cell.rgb, 0.85)),
-            };
-            put(grid, cell.x + dx, cell.y, ch, col);
+                    Kind::Trunk | Kind::Branch => {
+                        let pair = BARK[(cell.tex as usize).min(5)];
+                        let ch = if cell.phase > 0.55 { pair[1] } else { pair[0] };
+                        let breath = 0.94 + 0.06 * (ts * 0.5 + cell.ord * 3.0).sin();
+                        (ch, scale(cell.rgb, breath))
+                    }
+                    Kind::Twig => {
+                        if cell.phase > 0.6 {
+                            continue;
+                        }
+                        ('·', scale(cell.rgb, 0.95))
+                    }
+                    Kind::Root => {
+                        let pair = BARK[(cell.tex as usize).min(5)];
+                        (if cell.phase > 0.7 { pair[1] } else { pair[0] }, scale(cell.rgb, 0.9))
+                    }
+                    Kind::RootTip => ('·', scale(cell.rgb, 0.85)),
+                };
+                put(grid, cell.x + dx, cell.y, ch, col);
+            }
         }
-    }
+    });
 
     // motes rise on the ethereal side
-    if k.motes > 0 {
-        let span = c.ground as f32 + 2.0;
-        for m in &c.motes {
-            let life = (ts * m.rate * 0.35 + m.phase).fract();
-            let y = (c.ground as f32 + 1.0 - life * span).round() as i32;
-            let x = (m.x0 + m.amp * (life * m.freq * 6.2832 + m.phase * 6.2832).sin()).round() as i32;
-            if x >= c.divide || y < 0 {
-                continue;
+    measure_layer("tree-of-life", "motes", || {
+        if k.motes > 0 {
+            let span = c.ground as f32 + 2.0;
+            for m in &c.motes {
+                let life = (ts * m.rate * 0.35 + m.phase).fract();
+                let y = (c.ground as f32 + 1.0 - life * span).round() as i32;
+                let x = (m.x0 + m.amp * (life * m.freq * 6.2832 + m.phase * 6.2832).sin()).round() as i32;
+                if x >= c.divide || y < 0 {
+                    continue;
+                }
+                let stage = ((life * 4.0) as usize).min(3);
+                let ch = MOTE[[0, 1, 2, 1][stage]];
+                let b = (life * 3.1416).sin();
+                let col = scale(mix(c.eth_rgb, c.eth_hi, m.tint), 0.35 + 0.65 * b);
+                put(grid, x, y, ch, col);
             }
-            let stage = ((life * 4.0) as usize).min(3);
-            let ch = MOTE[[0, 1, 2, 1][stage]];
-            let b = (life * 3.1416).sin();
-            let col = scale(mix(c.eth_rgb, c.eth_hi, m.tint), 0.35 + 0.65 * b);
-            put(grid, x, y, ch, col);
-        }
-        // leaves fall on the physical side
-        let fall_span = (c.ground as f32 - 2.0).max(1.0);
-        for m in &c.leaves {
-            let life = (ts * m.rate * 0.3 + m.phase).fract();
-            let y = (2.0 + life * fall_span).round() as i32;
-            let x = (m.x0 + m.amp * (life * m.freq * 6.2832 + m.phase * 6.2832).sin() + k.sway * life * 1.5).round() as i32;
-            if x < c.divide || y >= c.ground as i32 {
-                continue;
+            // leaves fall on the physical side
+            let fall_span = (c.ground as f32 - 2.0).max(1.0);
+            for m in &c.leaves {
+                let life = (ts * m.rate * 0.3 + m.phase).fract();
+                let y = (2.0 + life * fall_span).round() as i32;
+                let x = (m.x0 + m.amp * (life * m.freq * 6.2832 + m.phase * 6.2832).sin() + k.sway * life * 1.5).round() as i32;
+                if x < c.divide || y >= c.ground as i32 {
+                    continue;
+                }
+                let ch = FALL[((life * m.freq * 12.0) as usize) & 3];
+                let col = scale(mix(c.leaf_rgb, c.leaf_hi, m.tint), 0.75 + 0.25 * (life * 6.28).sin().abs());
+                put(grid, x, y, ch, col);
             }
-            let ch = FALL[((life * m.freq * 12.0) as usize) & 3];
-            let col = scale(mix(c.leaf_rgb, c.leaf_hi, m.tint), 0.75 + 0.25 * (life * 6.28).sin().abs());
-            put(grid, x, y, ch, col);
         }
-    }
+    });
 
     // seam: a faint shimmer column where the two halves meet, skipping tree cells
-    if c.divide > 0 && (c.divide as usize) < w {
-        let x = c.divide;
-        for y in 0..h as i32 {
-            let cur = grid[y as usize][x as usize].ch;
-            if cur != ' ' && cur != '·' && cur != '─' {
-                continue;
-            }
-            let p = (y as f32 * 0.55 - ts * 2.6).sin();
-            if p > 0.35 {
-                let b = 0.3 + 0.5 * k.glow * p;
-                put(grid, x, y, '┆', scale(c.eth_hi, b));
+    measure_layer("tree-of-life", "seam", || {
+        if c.divide > 0 && (c.divide as usize) < w {
+            let x = c.divide;
+            for y in 0..h as i32 {
+                let cur = grid[y as usize][x as usize].ch;
+                if cur != ' ' && cur != '·' && cur != '─' {
+                    continue;
+                }
+                let p = (y as f32 * 0.55 - ts * 2.6).sin();
+                if p > 0.35 {
+                    let b = 0.3 + 0.5 * k.glow * p;
+                    put(grid, x, y, '┆', scale(c.eth_hi, b));
+                }
             }
         }
-    }
+    });
 }
 
 pub(crate) fn cli_lifetree(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
