@@ -2,19 +2,19 @@
 
 | knob at max | frames | fps | avg ms | p50 ms | p99 ms | max ms | vs baseline |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| baseline | 240 | 239.9 | 4.17 | 4.15 | 4.47 | 5.25 | 1.00x |
+| baseline | 242 | 241.9 | 4.13 | 4.12 | 4.33 | 4.52 | 1.00x |
 
 worst: baseline
 
-## hotspots at baseline: 234 frames, 233.9 fps
+## hotspots at baseline: 242 frames, 241.2 fps
 
 | layer | calls/frame | avg us | max us | share of frame |
 | --- | ---: | ---: | ---: | ---: |
-| noise | 1.0 | 2663.1 | 3467.4 | 62.3% |
-| rings | 1.0 | 620.9 | 743.9 | 14.5% |
-| links | 1.0 | 16.8 | 40.0 | 0.4% |
-| watchers | 1.0 | 10.0 | 30.8 | 0.2% |
-| nodes | 1.0 | 6.7 | 41.1 | 0.2% |
-| small_eye | 1.0 | 3.4 | 14.5 | 0.1% |
-| node_eyes | 1.0 | 3.3 | 12.6 | 0.1% |
-| runes | 1.0 | 3.0 | 16.0 | 0.1% |
+| noise | 1.0 | 2587.7 | 2827.8 | 62.4% |
+| rings | 1.0 | 603.2 | 699.3 | 14.5% |
+| links | 1.0 | 15.3 | 29.7 | 0.4% |
+| watchers | 1.0 | 9.0 | 18.5 | 0.2% |
+| nodes | 1.0 | 5.5 | 12.9 | 0.1% |
+| node_eyes | 1.0 | 2.9 | 7.7 | 0.1% |
+| small_eye | 1.0 | 2.7 | 5.8 | 0.1% |
+| runes | 1.0 | 2.5 | 6.0 | 0.1% |
