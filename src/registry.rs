@@ -936,6 +936,27 @@ pub(crate) static MODE_FORMS: &[ModeForm] = &[
             param!("MIX", "species mix evenness", 0.0, 1.0, 0.5, 0.05),
         ],
     },
+    ModeForm {
+        names: &["haiku-1-trees"],
+        animate: AnimKind::Iterate,
+        params: &[
+            param!("ENERGY", "energy", 0.3, 1.0, 0.85, 0.05),
+            param!("FRUIT", "fruit", 0.0, 1.0, 0.25, 0.05),
+            param!("BRANCH", "branch", 0.3, 1.0, 0.7, 0.05),
+        ],
+    },
+    ModeForm {
+        names: &["haiku-1-forest"],
+        animate: AnimKind::Iterate,
+        params: &[
+            param!("DENSITY", "density", 0.2, 1.0, 0.8, 0.05),
+            param!("LAYERS", "layers", 2.0, 5.0, 3.0, 1.0),
+            param!("SWAY", "sway", 0.0, 2.0, 0.5, 0.1),
+            param!("SPEED", "speed", 0.1, 1.0, 0.3, 0.05),
+            param!("HUE", "hue", 0.0, 1.0, 0.5, 0.05),
+            param!("ATMOS", "atmosphere", 0.0, 1.0, 0.4, 0.05),
+        ],
+    },
 ];
 
 

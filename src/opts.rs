@@ -473,6 +473,8 @@ pub(crate) fn run_demo(initial_seed: u64) {
         "opus-1-forest",
         "opus-2-trees",
         "opus-2-forest",
+        "haiku-1-trees",
+        "haiku-1-forest",
     ];
     all_modes.extend(registered_modes().iter().map(|(name, _)| name));
     let all_themes: &[&str] = &[
