@@ -2,6 +2,7 @@ use crossterm::style::Color;
 use rand::rngs::StdRng;
 use rand::RngExt;
 
+use crate::_0_profile::measure_layer;
 use crate::color::{darken, lerp_color, lighten, shift_hue};
 use crate::opts::param_f32;
 use crate::pp::{pp_fbm, pp_line};
@@ -1131,21 +1132,37 @@ pub(crate) fn draw_qwen_cathedral(
     let t = t + rng.random_range(0.0..TAU) * 0.02;
     let plan = compute_plan(width, height);
 
-    draw_sky(grid, width, height, seed, palette, t, params.glow);
-    draw_towers(grid, &plan, width, seed, palette, t, params);
-    draw_wall(grid, &plan, width, height, seed, palette);
-    draw_buttresses(grid, &plan, width, height, palette);
-    draw_rose(grid, &plan, seed, palette, t, params);
-    draw_lancets(grid, &plan, seed, palette, t, params);
-    draw_arcade(grid, &plan, palette, params);
-    draw_banners(grid, &plan, seed, palette, t, params);
-    draw_floor(grid, &plan, width, height, seed, palette, params);
-    draw_portal(grid, &plan, palette, t, params);
-    draw_candles(grid, &plan, width, height, seed, palette, t, params);
-    draw_smoke(grid, &plan, seed, palette, t, params);
-    draw_shafts(grid, &plan, seed, palette, t, params);
-    draw_dust(grid, &plan, width, seed, palette, t, params);
-    draw_frame(grid, width, height, seed, palette, t);
+    measure_layer("qwen-cathedral", "background", || {
+        draw_sky(grid, width, height, seed, palette, t, params.glow);
+    });
+    measure_layer("qwen-cathedral", "structure", || {
+        draw_towers(grid, &plan, width, seed, palette, t, params);
+        draw_wall(grid, &plan, width, height, seed, palette);
+        draw_buttresses(grid, &plan, width, height, palette);
+    });
+    measure_layer("qwen-cathedral", "fenestration", || {
+        draw_rose(grid, &plan, seed, palette, t, params);
+        draw_lancets(grid, &plan, seed, palette, t, params);
+        draw_arcade(grid, &plan, palette, params);
+    });
+    measure_layer("qwen-cathedral", "banners", || {
+        draw_banners(grid, &plan, seed, palette, t, params);
+    });
+    measure_layer("qwen-cathedral", "nave", || {
+        draw_floor(grid, &plan, width, height, seed, palette, params);
+        draw_portal(grid, &plan, palette, t, params);
+    });
+    measure_layer("qwen-cathedral", "flame", || {
+        draw_candles(grid, &plan, width, height, seed, palette, t, params);
+        draw_smoke(grid, &plan, seed, palette, t, params);
+    });
+    measure_layer("qwen-cathedral", "light", || {
+        draw_shafts(grid, &plan, seed, palette, t, params);
+        draw_dust(grid, &plan, width, seed, palette, t, params);
+    });
+    measure_layer("qwen-cathedral", "frame", || {
+        draw_frame(grid, width, height, seed, palette, t);
+    });
 }
 
 #[cfg(test)]

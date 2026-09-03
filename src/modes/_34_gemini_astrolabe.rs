@@ -3,6 +3,7 @@ use rand::rngs::StdRng;
 use rand::RngExt;
 use rand::SeedableRng;
 
+use crate::_0_profile::measure_layer;
 use crate::color::{darken, lerp_color, lighten, shift_hue};
 use crate::opts::param_f32;
 use crate::pp::{pp_fbm, pp_line, pp_put};
@@ -263,6 +264,7 @@ pub(crate) fn draw_gem_aetherium(
         stars.push((sx, sy, blink_speed, blink_phase, ch));
     }
 
+    measure_layer("gem-aetherium", "background", || {
     for y in 0..height {
         let ny = (y as f32 - cy) / (height as f32 * 0.5);
         for x in 0..width {
@@ -311,8 +313,9 @@ pub(crate) fn draw_gem_aetherium(
             z_buf[y * width + x] = -1000.0;
         }
     }
+    });
 
-    // Paint twinkling starfield
+    measure_layer("gem-aetherium", "starfield", || {
     for (sx, sy, b_spd, b_phs, sch) in stars {
         let blink = ((anim_t * b_spd + b_phs).sin() + 1.0) * 0.5;
         let col = lerp_color(star_dim, star_bright, blink);
@@ -320,6 +323,7 @@ pub(crate) fn draw_gem_aetherium(
             grid[sy][sx] = Cell::new(sch, col);
         }
     }
+    });
 
     // ------------------------------------------------------------------------
     // Depth Buffer Plotting Helper
@@ -337,6 +341,7 @@ pub(crate) fn draw_gem_aetherium(
     // ------------------------------------------------------------------------
     // 2. Epicyclic Clockwork Gears (Mechanical Foundation)
     // ------------------------------------------------------------------------
+    measure_layer("gem-aetherium", "gears", || {
     if params.gears > 0 {
         let mut gear_rng = StdRng::seed_from_u64(seed.wrapping_add(202));
         let num_gears = params.gears;
@@ -401,10 +406,12 @@ pub(crate) fn draw_gem_aetherium(
             }
         }
     }
+    });
 
     // ------------------------------------------------------------------------
     // 3. Nested 3D Armillary Spheres (Gimbaled Celestial Rings)
     // ------------------------------------------------------------------------
+    measure_layer("gem-aetherium", "armillary", || {
     let num_rings = params.rings;
     let mut arm_rng = StdRng::seed_from_u64(seed.wrapping_add(303));
 
@@ -454,10 +461,12 @@ pub(crate) fn draw_gem_aetherium(
             }
         }
     }
+    });
 
     // ------------------------------------------------------------------------
     // 4. Outer Astrolabe Limb & Zodiac Horizon Ring
     // ------------------------------------------------------------------------
+    measure_layer("gem-aetherium", "limb", || {
     let limb_radius = scale * 1.08 * pulse_val;
     let zodiac_count = params.zodiac;
     let zodiac_col = palette[3];
@@ -506,10 +515,12 @@ pub(crate) fn draw_gem_aetherium(
             }
         }
     }
+    });
 
     // ------------------------------------------------------------------------
     // 5. Grand Orrery Planetary Orbits & Moons
     // ------------------------------------------------------------------------
+    measure_layer("gem-aetherium", "orrery", || {
     let mut orrery_rng = StdRng::seed_from_u64(seed.wrapping_add(404));
     let num_planets = params.planets;
     let planet_glyphs = ['☉', '☿', '♀', '♁', '♂', '♃', '♄', '♅', '♆', '♇', '✧', '◈'];
@@ -598,10 +609,12 @@ pub(crate) fn draw_gem_aetherium(
             }
         }
     }
+    });
 
     // ------------------------------------------------------------------------
     // 6. Hyperbolic Orbital Comets with Glowing Ion Tails
     // ------------------------------------------------------------------------
+    measure_layer("gem-aetherium", "comets", || {
     if params.comets > 0 {
         let mut comet_rng = StdRng::seed_from_u64(seed.wrapping_add(505));
         let num_comets = params.comets;
@@ -671,10 +684,12 @@ pub(crate) fn draw_gem_aetherium(
             }
         }
     }
+    });
 
     // ------------------------------------------------------------------------
     // 7. Mystic Central Chronos Core & Alidade / Sighting Rule
     // ------------------------------------------------------------------------
+    measure_layer("gem-aetherium", "core", || {
     // Central Radiant Sun / Chronos Singularity
     let core_radius = scale * 0.12 * pulse_val;
     for dy in -3..=3 {
@@ -726,6 +741,7 @@ pub(crate) fn draw_gem_aetherium(
             put_z(grid, px, py, pz + 6.0, ch, col);
         }
     }
+    });
 }
 
 // ----------------------------------------------------------------------------

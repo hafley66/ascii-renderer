@@ -1,6 +1,7 @@
 use crossterm::style::Color;
 use rand::rngs::StdRng;
 
+use crate::_0_profile::measure_layer;
 use crate::color::{darken, lerp_color, lighten, shift_hue};
 use crate::opts::param_f32;
 use crate::pp::{pp_fbm, pp_hash2, pp_stroke};
@@ -648,21 +649,30 @@ pub(crate) fn draw_hyperloom(
     }
     let t = t * params.speed;
 
-    // 1. Initialize the full spectral field from dimensions, seed, and time.
-    draw_spectral_field(grid, width, height, seed, palette, t, params);
-    // 2. Evaluate bounded moving apertures before the thread layers cross them.
-    draw_loom_apertures(grid, width, height, seed, palette, t, params);
-    // 3. Interlace analytic warp and weft curves with deterministic phases.
-    draw_threads(grid, width, height, seed, palette, t, params);
-    // 4. Overlay nested knot cages and seeded crossing jewels.
-    draw_knot_cages(grid, width, height, seed, palette, t, params);
-    // 5. Reconstruct shuttle trails directly from the current time value.
-    draw_shuttles(grid, width, height, seed, palette, t, params);
-    // 6. Sweep the veil wavefront band across the centerline.
-    draw_veil_band(grid, width, height, palette, t, params);
-    // 7. Seal the frame with moving punch cards and a woven machine border.
-    draw_jacquard_cards(grid, width, height, seed, palette, t, params);
-    draw_woven_border(grid, width, height, seed, palette, t, params);
+    measure_layer("hyperloom", "spectral_field", || {
+        draw_spectral_field(grid, width, height, seed, palette, t, params);
+    });
+    measure_layer("hyperloom", "apertures", || {
+        draw_loom_apertures(grid, width, height, seed, palette, t, params);
+    });
+    measure_layer("hyperloom", "threads", || {
+        draw_threads(grid, width, height, seed, palette, t, params);
+    });
+    measure_layer("hyperloom", "knot_cages", || {
+        draw_knot_cages(grid, width, height, seed, palette, t, params);
+    });
+    measure_layer("hyperloom", "shuttles", || {
+        draw_shuttles(grid, width, height, seed, palette, t, params);
+    });
+    measure_layer("hyperloom", "veil", || {
+        draw_veil_band(grid, width, height, palette, t, params);
+    });
+    measure_layer("hyperloom", "cards", || {
+        draw_jacquard_cards(grid, width, height, seed, palette, t, params);
+    });
+    measure_layer("hyperloom", "border", || {
+        draw_woven_border(grid, width, height, seed, palette, t, params);
+    });
 }
 
 #[cfg(test)]
