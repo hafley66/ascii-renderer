@@ -768,3 +768,13 @@ fn pendulum_wave_seed_42() {
 fn pendulum_wave_top_view_trails() {
     insta::assert_snapshot!(render(&["42", "pendulum-wave", "ember", "10", "20", "12", "0.6", "1", "20", "0.05", "2", "30"]));
 }
+
+#[test]
+fn opus_1_quasicrystal_seed_42() {
+    insta::assert_snapshot!(render(&["42", "opus-1-quasicrystal", "moss"]));
+}
+
+#[test]
+fn opus_1_quasicrystal_octagonal_dense() {
+    insta::assert_snapshot!(render(&["7", "opus-1-quasicrystal", "ember", "1", "40", "4", "7", "0.05", "3", "1", "8", "3", "0.1", "0.4", "0.2"]));
+}

@@ -645,6 +645,24 @@ pub(crate) static MODE_FORMS: &[ModeForm] = &[
             param!("BANDS", "waterfall discrete lanes", 0.0, 1.0, 0.0, 1.0),
         ],
     },
+    ModeForm {
+        names: &["opus-1-quasicrystal"],
+        animate: AnimKind::Iterate,
+        params: &[
+            param!("SPEED", "time scale", 0.0, 4.0, 1.0, 0.1),
+            param!("HUE", "hue rotation", 0.0, 360.0, 0.0, 15.0),
+            param!("SYM", "symmetry order", 0.0, 13.0, 0.0, 1.0),
+            param!("SCALE", "cells per edge", 5.0, 40.0, 9.0, 1.0),
+            param!("DRIFT", "phason rate", 0.0, 0.4, 0.03, 0.01),
+            param!("SPIN", "spin deg/sec", 0.0, 12.0, 1.5, 0.5),
+            param!("SHADE", "interior fill", 0.0, 1.0, 0.85, 0.05),
+            param!("WAVE", "light wavelength", 2.0, 40.0, 11.0, 1.0),
+            param!("WORMS", "lit lines", 0.0, 6.0, 2.0, 1.0),
+            param!("PULSE", "pulse rate", 0.0, 1.0, 0.06, 0.02),
+            param!("STARS", "star threshold", 0.0, 1.0, 0.3, 0.05),
+            param!("BREATH", "zoom breath", 0.0, 0.35, 0.12, 0.02),
+        ],
+    },
 ];
 
 
