@@ -662,6 +662,11 @@ fn iterate_grid_into(
             crate::poincare::draw_poincare(grid, w, h, seed, palette, t, &knobs);
             true
         }
+        "opus-1-quasicrystal" => {
+            let knobs = crate::opus_1_quasicrystal::Opus1QuasicrystalKnobs::from_env();
+            crate::opus_1_quasicrystal::draw_opus_1_quasicrystal(grid, w, h, seed, palette, t, &knobs);
+            true
+        }
         _ => false,
     }
 }

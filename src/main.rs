@@ -58,6 +58,7 @@ mod chladni;
 mod pendwave;
 mod polytope;
 mod poincare;
+mod opus_1_quasicrystal;
 #[cfg(test)]
 mod perf_sweep;
 

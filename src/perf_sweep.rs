@@ -145,6 +145,7 @@ const NATIVE_MODES: &[&str] = &[
     "illuminarium", "qwen-cathedral", "aetherforge", "gem-aetherium", "hyperloom", "fa6",
     "polytope",
     "poincare",
+    "opus-1-quasicrystal",
 ];
 
 #[test]

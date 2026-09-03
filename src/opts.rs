@@ -459,6 +459,7 @@ pub(crate) fn run_demo(initial_seed: u64) {
         "pendulum-wave",
         "polytope",
         "poincare",
+        "opus-1-quasicrystal",
     ];
     all_modes.extend(registered_modes().iter().map(|(name, _)| name));
     let all_themes: &[&str] = &[

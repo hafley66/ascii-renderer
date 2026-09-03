@@ -795,3 +795,13 @@ fn poincare_seed_42() {
 fn poincare_half_plane_54() {
     insta::assert_snapshot!(render(&["7", "poincare", "ember", "5", "4", "24", "0.05", "2", "0", "2"]));
 }
+
+#[test]
+fn opus_1_quasicrystal_seed_42() {
+    insta::assert_snapshot!(render(&["42", "opus-1-quasicrystal", "moss"]));
+}
+
+#[test]
+fn opus_1_quasicrystal_octagonal_dense() {
+    insta::assert_snapshot!(render(&["7", "opus-1-quasicrystal", "ember", "1", "40", "4", "7", "0.05", "3", "1", "8", "3", "0.1", "0.4", "0.2"]));
+}
