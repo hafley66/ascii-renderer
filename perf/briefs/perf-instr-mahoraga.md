@@ -37,3 +37,7 @@ mahoraga-2, mahoraga-3, mahoraga-4, mahoraga-5 (these are the slowest modes in p
 
 1. One commit on your branch: `perf: measure_layer timers for <modes>` (list the modes).
 2. REPORT.md at the worktree root: per mode, the layer table from the validation command, the number of layers, and the summed share. End with the three gate lines: `cargo test` result lines, the `.snap.new` ls output (empty), and `git status --short` (clean after commit).
+
+## Build isolation
+
+Before any cargo command run `export CARGO_TARGET_DIR=$PWD/target-perf-instr-mahoraga` in your shell (the worktree is $PWD). Never cd into another checkout.
