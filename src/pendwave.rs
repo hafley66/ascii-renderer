@@ -29,17 +29,17 @@ impl PendWaveKnobs {
     pub(crate) fn from_env() -> Self {
         PendWaveKnobs {
             count: param_f32("COUNT", 15.0),
-            cycle: param_f32("CYCLE", 30.0),
+            cycle: param_f32("CYCLE", 120.0),
             base: param_f32("BASE", 20.0),
             swing: param_f32("SWING", 0.5),
             view: param_f32("VIEW", 2.0),
             trail: param_f32("TRAIL", 8.0),
-            tail: param_f32("TAIL", 0.03),
+            tail: param_f32("TAIL", 0.1),
             aspect: param_f32("ASPECT", 2.0),
             hue: param_f32("HUE", 18.0),
             link: param_f32("LINK", 0.0),
             arc: param_f32("ARC", 0.0),
-            rowdt: param_f32("ROWDT", 0.04),
+            rowdt: param_f32("ROWDT", 0.2),
             bands: param_f32("BANDS", 0.0),
         }
     }

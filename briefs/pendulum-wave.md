@@ -13,19 +13,19 @@ Glyph families:
 
 Knobs:
 - COUNT: number of pendulums (default 15)
-- CYCLE: seconds until all bobs realign (default 30)
+- CYCLE: seconds until all bobs realign (default 120; pendulum 0 swings once per 6 s)
 - SWING: swing amplitude in radians (default 0.5)
 
 Added while building:
 - BASE: swings per cycle for the first pendulum; pendulum i does BASE + i (default 20)
 - VIEW: 0 front view with strings, ghosts and shadows; 1 top view with trails; 2 phase waterfall (default 2)
 - TRAIL: ghost or trail samples per bob (default 8)
-- TAIL: seconds between ghost samples (default 0.03)
+- TAIL: seconds between ghost samples (default 0.1)
 - ASPECT: columns per row for the swing in the front view (default 2)
 - HUE: hue step between neighboring bobs in degrees (default 18)
 - LINK: envelope line through the bobs, 1 top view, 2 front view too (default 0)
 - ARC: dotted swing path guide (default 0)
-- ROWDT: waterfall seconds per row (default 0.04)
+- ROWDT: waterfall seconds per row, so the field drifts down at 1/ROWDT rows per second (default 0.2)
 - BANDS: waterfall quantized to the discrete pendulums, 0 or 1 (default 0)
 
 Waterfall: column = pendulum index as a continuous chirp, row = time going down, glyph = cos of the phase.
@@ -36,6 +36,6 @@ Measured frame time, release, 200x60, 200 frames: avg 0.079 ms, worst 0.091 ms.
 
 Render commands:
 ```bash
-ASCII_GRID_W=110 ASCII_GRID_H=36 ASCII_T=19 ./target/release/ascii-renderer 42 pendulum-wave moss | sed 's/\x1b\[[0-9;]*m//g'
+ASCII_GRID_W=110 ASCII_GRID_H=36 ASCII_T=76 ./target/release/ascii-renderer 42 pendulum-wave moss | sed 's/\x1b\[[0-9;]*m//g'
 ASCII_GRID_W=110 ASCII_GRID_H=36 ASCII_T=7 ASCII_P_VIEW=0 ./target/release/ascii-renderer 42 pendulum-wave moss | sed 's/\x1b\[[0-9;]*m//g'
 ```
