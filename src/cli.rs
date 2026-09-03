@@ -53,6 +53,7 @@ use crate::pendwave::cli_pendwave;
 use crate::polytope::cli_polytope;
 use crate::poincare::cli_poincare;
 use crate::opus_1_quasicrystal::cli_opus_1_quasicrystal;
+use crate::opus_2_quasicrystal::cli_opus_2_quasicrystal;
 use crate::cli_basic::*;
 use crate::cli_catalog::*;
 use crate::cli_city::*;
@@ -236,6 +237,7 @@ pub(crate) fn run() {
         eprintln!("  polytope  Regular 4D polytope turning in incommensurate planes, double perspective, floor shadow and vertex trails (a=animate) [poly] [speed] [planes] [fov] [zoom] [style] [floor] [trail] [tail] [hue] [span] [orbit] [pitch] [tile] [flow] [glow] [label] [cam] [aspect] [cull] [inset]");
         eprintln!("  poincare  {{p,q}} hyperbolic tessellation under a slow Mobius flow, disk or half-plane, glowing geodesics (a=animate) [p] [q] [depth] [speed] [twist] [hue] [model] [edge] [haze] [arcs] [glow] [petals] [fade] [aspect] [threads] [sway] [label] [span] [star] [pulse] [line] [detail] [dots] [focus] [thick] [rings] [dither]");
         eprintln!("  opus-1-quasicrystal  de Bruijn multigrid dual: a quasiperiodic rhombic tiling that drifts, spins and reconfigures (a=animate) [speed] [hue] [sym] [scale] [drift] [spin] [shade] [wave] [worms] [pulse] [stars] [breath]");
+        eprintln!("  opus-2-quasicrystal  de Bruijn multigrid quasilattice with a faceted growth front, phason drift and a slow turn (a=animate) [speed] [cycle] [folds] [scale] [linew] [band] [edge] [turn] [phason] [facet] [density] [dust] [hue] [glow] [aspect] [phase] [blooms]");
         for (_, mode) in registered_modes().iter() {
             eprintln!("  {:<16} {}", mode.name(), mode.help());
         }
@@ -1168,6 +1170,12 @@ pub(crate) fn run() {
         }
     } else if mode == "opus-1-quasicrystal" {
         let (g, done) = cli_opus_1_quasicrystal(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        grid = g;
+        if done {
+            return;
+        }
+    } else if mode == "opus-2-quasicrystal" {
+        let (g, done) = cli_opus_2_quasicrystal(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
         grid = g;
         if done {
             return;

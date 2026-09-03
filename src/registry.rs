@@ -723,6 +723,29 @@ pub(crate) static MODE_FORMS: &[ModeForm] = &[
             param!("BREATH", "zoom breath", 0.0, 0.35, 0.12, 0.02),
         ],
     },
+    ModeForm {
+        names: &["opus-2-quasicrystal"],
+        animate: AnimKind::Iterate,
+        params: &[
+            param!("SPEED", "clock multiplier", 0.0, 4.0, 1.0, 0.1),
+            param!("CYCLE", "growth sweep seconds", 10.0, 600.0, 130.0, 5.0),
+            param!("FOLDS", "symmetry order, 0 seeded", 0.0, 7.0, 0.0, 1.0),
+            param!("SCALE", "line spacing rows", 2.5, 30.0, 9.0, 0.5),
+            param!("LINEW", "web half width cells", 0.1, 2.5, 0.85, 0.05),
+            param!("BAND", "crystal band width", 0.05, 1.0, 0.72, 0.02),
+            param!("EDGE", "front rim softness", 0.005, 0.3, 0.025, 0.005),
+            param!("TURN", "lattice turn deg/s", -6.0, 6.0, 0.22, 0.02),
+            param!("PHASON", "offset drift per second", 0.0, 0.4, 0.012, 0.004),
+            param!("FACET", "round to polygon front", 0.0, 1.0, 0.85, 0.05),
+            param!("DENSITY", "mosaic fill", 0.0, 1.0, 0.8, 0.05),
+            param!("DUST", "loose grain density", 0.0, 1.0, 0.3, 0.05),
+            param!("HUE", "tile hue spread deg", 0.0, 180.0, 46.0, 2.0),
+            param!("GLOW", "front rim brightness", 0.0, 1.5, 0.85, 0.05),
+            param!("ASPECT", "cols per row", 0.25, 4.0, 2.0, 0.25),
+            param!("PHASE", "bloom start offset", 0.0, 1.0, 0.0, 0.02),
+            param!("BLOOMS", "growth fronts in flight", 1.0, 3.0, 2.0, 1.0),
+        ],
+    },
 ];
 
 

@@ -460,6 +460,7 @@ pub(crate) fn run_demo(initial_seed: u64) {
         "polytope",
         "poincare",
         "opus-1-quasicrystal",
+        "opus-2-quasicrystal",
     ];
     all_modes.extend(registered_modes().iter().map(|(name, _)| name));
     let all_themes: &[&str] = &[

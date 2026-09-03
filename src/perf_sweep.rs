@@ -146,6 +146,7 @@ const NATIVE_MODES: &[&str] = &[
     "polytope",
     "poincare",
     "opus-1-quasicrystal",
+    "opus-2-quasicrystal",
 ];
 
 #[test]
