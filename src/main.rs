@@ -61,6 +61,7 @@ mod poincare;
 mod opus_1_quasicrystal;
 mod opus_2_quasicrystal;
 mod sonnet_1_spirograph;
+mod sonnet_2_clifford;
 #[cfg(test)]
 mod perf_sweep;
 

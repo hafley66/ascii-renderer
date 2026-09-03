@@ -763,6 +763,21 @@ pub(crate) static MODE_FORMS: &[ModeForm] = &[
             param!("ASPECT", "cols per row", 1.0, 3.0, 2.0, 0.1),
         ],
     },
+    ModeForm {
+        names: &["sonnet-2-clifford"],
+        animate: AnimKind::Iterate,
+        params: &[
+            param!("SPEED", "time scale", 0.0, 4.0, 1.0, 0.1),
+            param!("HUE", "hue rotation deg", 0.0, 360.0, 0.0, 15.0),
+            param!("SPREAD", "hue spread core to mist deg", 0.0, 180.0, 60.0, 5.0),
+            param!("DRIFT", "map constant breathing amplitude", 0.0, 1.5, 0.5, 0.05),
+            param!("PERIOD", "breathing cycle seconds", 10.0, 90.0, 36.0, 2.0),
+            param!("DENSITY", "orbit points per frame", 20000.0, 600000.0, 180000.0, 5000.0),
+            param!("COMET", "trailing comet length", 20.0, 600.0, 220.0, 10.0),
+            param!("GLOW", "density contrast gamma", 0.2, 3.0, 1.0, 0.1),
+            param!("SCALE", "zoom into the attractor", 0.3, 2.0, 1.0, 0.05),
+        ],
+    },
 ];
 
 

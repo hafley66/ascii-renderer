@@ -845,3 +845,13 @@ fn sonnet_1_spirograph_seed_7_knobs() {
 fn sonnet_1_spirograph_seed_42_moving() {
     insta::assert_snapshot!(render_t(&["42", "sonnet-1-spirograph", "moss"], "14"));
 }
+
+#[test]
+fn sonnet_2_clifford_seed_42() {
+    insta::assert_snapshot!(render(&["42", "sonnet-2-clifford", "moss"]));
+}
+
+#[test]
+fn sonnet_2_clifford_breathing_t20() {
+    insta::assert_snapshot!(render_t(&["7", "sonnet-2-clifford", "deep"], "20"));
+}

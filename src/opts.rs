@@ -462,6 +462,7 @@ pub(crate) fn run_demo(initial_seed: u64) {
         "opus-1-quasicrystal",
         "opus-2-quasicrystal",
         "sonnet-1-spirograph",
+        "sonnet-2-clifford",
     ];
     all_modes.extend(registered_modes().iter().map(|(name, _)| name));
     let all_themes: &[&str] = &[
