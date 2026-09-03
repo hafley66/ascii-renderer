@@ -50,6 +50,7 @@ use crate::braid::cli_braid;
 use crate::braid2::cli_braid2;
 use crate::chladni::cli_chladni;
 use crate::pendwave::cli_pendwave;
+use crate::poincare::cli_poincare;
 use crate::cli_basic::*;
 use crate::cli_catalog::*;
 use crate::cli_city::*;
@@ -230,6 +231,7 @@ pub(crate) fn run() {
         eprintln!("  braid-2  Horizontal plait of twisted flat ribbons, beads run along each strand through the crossings (a=animate) [strands] [speed] [pitch] [gap] [width] [cross] [twist] [pulse] [beads] [trail] [slip] [fill]");
         eprintln!("  chladni  Sand on a center-driven plate, the figure stepping through seeded resonances (a=animate) [dwell] [glide] [order] [sand] [shake] [flicker] [margin] [label] [aspect]");
         eprintln!("  pendulum-wave  Row of pendulums each one beat faster than its neighbor, front view, top view with trails, or phase waterfall (a=animate) [count] [cycle] [base] [swing] [view] [trail] [tail] [aspect] [hue] [link] [arc] [rowdt] [bands]");
+        eprintln!("  poincare  {{p,q}} hyperbolic tessellation under a slow Mobius flow, disk or half-plane, glowing geodesics (a=animate) [p] [q] [depth] [speed] [twist] [hue] [model] [edge] [haze] [arcs] [glow] [petals] [fade] [aspect] [threads] [sway] [label] [span] [star] [pulse] [line] [detail] [dots] [focus] [thick] [rings] [dither]");
         for (_, mode) in registered_modes().iter() {
             eprintln!("  {:<16} {}", mode.name(), mode.help());
         }
@@ -1144,6 +1146,12 @@ pub(crate) fn run() {
         }
     } else if mode == "pendulum-wave" {
         let (g, done) = cli_pendwave(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        grid = g;
+        if done {
+            return;
+        }
+    } else if mode == "poincare" {
+        let (g, done) = cli_poincare(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
         grid = g;
         if done {
             return;

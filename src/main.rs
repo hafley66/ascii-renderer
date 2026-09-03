@@ -56,6 +56,7 @@ mod braid;
 mod braid2;
 mod chladni;
 mod pendwave;
+mod poincare;
 #[cfg(test)]
 mod perf_sweep;
 

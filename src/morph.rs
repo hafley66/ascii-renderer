@@ -652,6 +652,11 @@ fn iterate_grid_into(
             crate::pendwave::draw_pendwave(grid, w, h, seed, palette, t, &knobs);
             true
         }
+        "poincare" => {
+            let knobs = crate::poincare::PoincareKnobs::from_env();
+            crate::poincare::draw_poincare(grid, w, h, seed, palette, t, &knobs);
+            true
+        }
         _ => false,
     }
 }

@@ -768,3 +768,13 @@ fn pendulum_wave_seed_42() {
 fn pendulum_wave_top_view_trails() {
     insta::assert_snapshot!(render(&["42", "pendulum-wave", "ember", "10", "20", "12", "0.6", "1", "20", "0.05", "2", "30"]));
 }
+
+#[test]
+fn poincare_seed_42() {
+    insta::assert_snapshot!(render(&["42", "poincare", "moss"]));
+}
+
+#[test]
+fn poincare_half_plane_54() {
+    insta::assert_snapshot!(render(&["7", "poincare", "ember", "5", "4", "24", "0.05", "2", "0", "2"]));
+}
