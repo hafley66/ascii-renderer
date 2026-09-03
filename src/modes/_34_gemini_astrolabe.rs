@@ -6,9 +6,10 @@ use rand::SeedableRng;
 use crate::_0_profile::measure_layer;
 use crate::color::{darken, lerp_color, lighten, shift_hue};
 use crate::opts::param_f32;
-use crate::pp::{pp_fbm, pp_line, pp_put};
+use crate::pp::{pp_line, pp_put};
 use crate::registry::{AnimKind, Mode, ModeFrame, Param};
 use crate::types::{Cell, Grid};
+use super::_33_cosmograph::FbmRow;
 
 const TAU: f32 = std::f32::consts::TAU;
 const PI: f32 = std::f32::consts::PI;
@@ -265,22 +266,39 @@ pub(crate) fn draw_gem_aetherium(
     }
 
     measure_layer("gem-aetherium", "background", || {
+    // Column-invariant terms: the fbm x input and the nx powers never change down
+    // a column, so they are tabulated once per frame.
+    let nebula_on = params.nebula > 0.05;
+    let rays_on = params.rays > 0.05;
+    let neb_seed = seed.wrapping_add(999);
+    let neb_fx_bias = anim_t * 0.03;
+    let neb_fy_bias = anim_t * 0.02;
+    let neb_dim = darken(aether_color, 25);
+    let ray_spin = anim_t * 0.15;
+    let ray_k = params.zodiac as f32 * 0.5;
+    let mut nx_col = Vec::with_capacity(width);
+    let mut nx2_col = Vec::with_capacity(width);
+    let mut neb_fx_col = Vec::with_capacity(width);
+    for x in 0..width {
+        let nx = (x as f32 - cx) / (width as f32 * 0.5);
+        nx_col.push(nx);
+        nx2_col.push(nx * nx);
+        neb_fx_col.push(nx * 2.2 + neb_fx_bias);
+    }
     for y in 0..height {
         let ny = (y as f32 - cy) / (height as f32 * 0.5);
+        let ny2 = ny * ny;
+        let mut neb_noise = FbmRow::new(ny * 2.2 - neb_fy_bias, neb_seed);
+        let row = &mut grid[y];
+        z_buf[y * width..y * width + width].fill(-1000.0);
         for x in 0..width {
-            let nx = (x as f32 - cx) / (width as f32 * 0.5);
-            let dist_center = (nx * nx + ny * ny).sqrt();
+            let dist_center = (nx2_col[x] + ny2).sqrt();
 
             let mut cell_ch = ' ';
             let mut cell_fg = bg_color;
 
-            // Cosmic Aetherial Noise (FBM)
-            if params.nebula > 0.05 {
-                let fbm_val = pp_fbm(
-                    nx * 2.2 + anim_t * 0.03,
-                    ny * 2.2 - anim_t * 0.02,
-                    seed.wrapping_add(999),
-                );
+            if nebula_on {
+                let fbm_val = neb_noise.at(neb_fx_col[x]);
                 let neb_intensity = (fbm_val * 0.8 + (1.0 - dist_center * 0.85)).clamp(0.0, 1.0) * params.nebula;
                 if neb_intensity > 0.65 {
                     cell_ch = match ((neb_intensity - 0.65) * 8.0) as usize {
@@ -292,25 +310,30 @@ pub(crate) fn draw_gem_aetherium(
                     cell_fg = lerp_color(bg_color, aether_color, neb_intensity.min(1.0));
                 } else if neb_intensity > 0.45 {
                     cell_ch = ' ';
-                    cell_fg = darken(aether_color, 25);
+                    cell_fg = neb_dim;
                 }
             }
 
-            // Sacred Radiance Rays from Chronos center
-            if params.rays > 0.05 {
-                let angle = (ny).atan2(nx) + anim_t * 0.15;
-                let ray_wave = (angle * (params.zodiac as f32 * 0.5)).sin();
-                let ray_power = ray_wave.max(0.0).powf(4.0) * (1.0 / (dist_center * 1.5 + 0.3)) * params.rays;
-                if ray_power > 0.4 && dist_center < 1.4 {
-                    let r_ch = if ray_power > 1.2 { '│' } else if ray_power > 0.8 { '┆' } else { '┊' };
-                    let r_fg = lerp_color(cell_fg, palette[4], (ray_power * 0.4).min(0.9));
-                    cell_ch = r_ch;
-                    cell_fg = r_fg;
+            // The quartic wave term tops out at 1, so attenuation under 0.4 can
+            // never clear the gate and the atan2 plus sin pair is skipped.
+            if rays_on && dist_center < 1.4 {
+                let atten = 1.0 / (dist_center * 1.5 + 0.3);
+                if atten * params.rays > 0.4 {
+                    let angle = ny.atan2(nx_col[x]) + ray_spin;
+                    let ray_wave = (angle * ray_k).sin();
+                    if ray_wave > 0.0 {
+                        let ray_power = ray_wave.powf(4.0) * atten * params.rays;
+                        if ray_power > 0.4 {
+                            let r_ch = if ray_power > 1.2 { '│' } else if ray_power > 0.8 { '┆' } else { '┊' };
+                            let r_fg = lerp_color(cell_fg, palette[4], (ray_power * 0.4).min(0.9));
+                            cell_ch = r_ch;
+                            cell_fg = r_fg;
+                        }
+                    }
                 }
             }
 
-            grid[y][x] = Cell::new(cell_ch, cell_fg);
-            z_buf[y * width + x] = -1000.0;
+            row[x] = Cell::new(cell_ch, cell_fg);
         }
     }
     });
