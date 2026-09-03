@@ -1164,55 +1164,87 @@ pub(crate) fn draw_tide(
     let sand_col = darken(palette[2], 30);
     let shell_col = lighten(palette[3], 18);
 
+    // Every wave term depends on x and t alone, so each column's three fronts
+    // and its two sin phases are drawn once instead of once per cell.
+    struct TideCol {
+        front_now: f32,
+        front_t1: f32,
+        front_t2: f32,
+        shim_base: f32,
+        tumb_base: f32,
+    }
+    let t1 = t - 1.1;
+    let t2 = t - 2.2;
+
+    let sea_ink_dk = darken(sea_ink, 30);
+    let surf_bg = darken(palette[4], 58);
+    let foam_dk = darken(foam_col, 18);
+    let sand_mid = lerp_color(sand_wet_bg, sand_bg, 0.5);
+    let sand_dk = darken(sand_col, 18);
+    let depth_den = height as f32 * 0.35;
+    let hash_seed = seed ^ 0x71DE_71DE;
+
     measure_layer("tide", "sea", || {
-        for y in 0..height {
-            for x in 0..width {
+        let cols: Vec<TideCol> = (0..width)
+            .map(|x| {
                 let fx = x as f32;
-                let dy = y as f32 - front_at(fx, t); // <0 under water, >=0 exposed
-                let h = pp_hash2(x as i32, y as i32, seed ^ 0x71DE_71DE);
+                TideCol {
+                    front_now: front_at(fx, t),
+                    front_t1: front_at(fx, t1),
+                    front_t2: front_at(fx, t2),
+                    shim_base: fx * 0.30 + t * 1.4,
+                    tumb_base: fx * 0.7 + t * 2.6,
+                }
+            })
+            .collect();
+        for y in 0..height {
+            let yf = y as f32;
+            let y_shim = yf * 0.8;
+            let row = &mut grid[y];
+            for x in 0..width {
+                let c = &cols[x];
+                let dy = yf - c.front_now; // <0 under water, >=0 exposed
                 let (ch, col, zbg) = if dy < -0.8 {
                     // Open water: darker with distance from the front, slow shimmer.
-                    let depth = (-dy / (height as f32 * 0.35)).clamp(0.0, 1.0);
+                    let depth = (-dy / depth_den).clamp(0.0, 1.0);
                     let zbg = lerp_color(sea_shallow, sea_deep, depth);
-                    let shimmer = (fx * 0.30 + t * 1.4 + y as f32 * 0.8).sin();
+                    let shimmer = (c.shim_base + y_shim).sin();
                     if shimmer > 0.45 {
                         ('~', sea_ink, zbg)
-                    } else if h > 0.90 {
-                        ('≈', darken(sea_ink, 30), zbg)
+                    } else if pp_hash2(x as i32, y as i32, hash_seed) > 0.90 {
+                        ('≈', sea_ink_dk, zbg)
                     } else {
                         (' ', zbg, zbg)
                     }
                 } else if dy < 0.8 {
                     // Surf line: bright tumbling foam over a wash-lit bed.
-                    let tumble = (fx * 0.7 + t * 2.6 + y as f32).sin();
-                    let zbg = darken(palette[4], 58);
+                    let tumble = (c.tumb_base + yf).sin();
                     if tumble > -0.2 {
-                        ('≈', foam_col, zbg)
+                        ('≈', foam_col, surf_bg)
                     } else {
-                        ('~', darken(foam_col, 18), zbg)
+                        ('~', foam_dk, surf_bg)
                     }
                 } else {
                     // Sand: wet if the front covered this cell in the last beats.
-                    let covered_then = front_at(fx, t - 1.1) - y as f32 > -0.8;
-                    let covered_earlier = front_at(fx, t - 2.2) - y as f32 > -0.8;
-                    let zbg = if covered_then {
+                    let zbg = if c.front_t1 - yf > -0.8 {
                         sand_wet_bg
-                    } else if covered_earlier {
-                        lerp_color(sand_wet_bg, sand_bg, 0.5)
+                    } else if c.front_t2 - yf > -0.8 {
+                        sand_mid
                     } else {
                         sand_bg
                     };
+                    let h = pp_hash2(x as i32, y as i32, hash_seed);
                     if h > 0.9965 {
                         ('✶', shell_col, zbg)
                     } else if h > 0.965 {
                         ('∙', sand_col, zbg)
                     } else if h > 0.90 {
-                        ('·', darken(sand_col, 18), zbg)
+                        ('·', sand_dk, zbg)
                     } else {
                         (' ', zbg, zbg)
                     }
                 };
-                grid[y][x] = Cell::with_bg(ch, col, zbg);
+                row[x] = Cell::with_bg(ch, col, zbg);
             }
         }
     });
