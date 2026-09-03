@@ -802,6 +802,43 @@ pub(crate) static MODE_FORMS: &[ModeForm] = &[
             param!("WFORM", "waveform 0=sine 1=square 2=saw", 0.0, 2.0, 0.0, 1.0),
         ],
     },
+    ModeForm {
+        names: &["opus-2-trees"],
+        animate: AnimKind::Iterate,
+        params: &[
+            param!("ENERGY", "top row growth energy", 0.1, 1.0, 0.9, 0.05),
+            param!("FRUIT", "fruiting bodies per tip", 0.0, 1.0, 0.3, 0.05),
+            param!("BRANCH", "branch and shelf reach", 0.0, 1.0, 0.7, 0.05),
+            param!("GNARL", "trunk wander", 0.0, 1.0, 0.35, 0.05),
+            param!("ROOTS", "root and mat spread", 0.0, 1.0, 0.6, 0.05),
+            param!("SWAY", "sway columns", 0.0, 4.0, 1.0, 0.25),
+            param!("FLICK", "leaf flicker hops per second", 0.0, 6.0, 1.0, 0.5),
+            param!("HUE", "hue shift degrees", -180.0, 180.0, 0.0, 10.0),
+            param!("SCRUB", "bottom row energy factor", 0.1, 1.0, 0.55, 0.05),
+        ],
+    },
+    ModeForm {
+        names: &["opus-2-forest"],
+        animate: AnimKind::Iterate,
+        params: &[
+            param!("DENSITY", "stand crowding", 0.0, 1.0, 0.55, 0.05),
+            param!("LAYERS", "depth bands", 2.0, 6.0, 4.0, 1.0),
+            param!("SWAY", "sway columns", 0.0, 5.0, 1.2, 0.25),
+            param!("SPEED", "clock multiplier", 0.0, 4.0, 1.0, 0.1),
+            param!("HUE", "hue shift degrees", -180.0, 180.0, 0.0, 10.0),
+            param!("ATMOS", "0 seed, 1 mist, 2 fireflies, 3 leaves, 4 rain, 5 birds", 0.0, 5.0, 0.0, 1.0),
+            param!("ENERGY", "tree growth energy", 0.2, 1.0, 0.86, 0.05),
+            param!("GROUND", "ground fraction of canvas", 0.12, 0.6, 0.34, 0.02),
+            param!("HAZE", "aerial fade with depth", 0.0, 1.0, 0.7, 0.05),
+            param!("MOTES", "weather density", 0.0, 3.0, 1.0, 0.1),
+            param!("SCALE", "tree size", 0.4, 2.0, 1.0, 0.1),
+            param!("CYCLE", "seconds per light cycle", 20.0, 60.0, 44.0, 2.0),
+            param!("FRUIT", "fruiting bodies per tip", 0.0, 1.0, 0.22, 0.05),
+            param!("BRANCH", "branch and shelf reach", 0.0, 1.0, 0.7, 0.05),
+            param!("GNARL", "trunk wander", 0.0, 1.0, 0.35, 0.05),
+            param!("MIX", "species mix evenness", 0.0, 1.0, 0.5, 0.05),
+        ],
+    },
 ];
 
 
