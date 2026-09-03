@@ -134,3 +134,30 @@ fn perf_knob_sweep() {
         );
     }
 }
+
+const NATIVE_MODES: &[&str] = &[
+    "delta", "snakes", "fullmetal-eyes", "hypercube", "flux", "fireworks", "murmuration", "lanterns", "tide",
+    "elevator", "ferris", "arboretum", "astrolabe", "sauron", "mahoraga-2", "mahoraga-3", "mahoraga-4",
+    "mahoraga-5", "tree-of-life", "tree-of-life-2", "tree-of-life-3", "tree-of-life-4", "tree-of-life-5",
+    "tree-of-life-6", "braid", "braid-2", "chladni", "pendulum-wave", "glm-apotheosis", "cosmograph",
+    "illuminarium", "qwen-cathedral", "aetherforge", "gem-aetherium", "hyperloom",
+];
+
+#[test]
+#[ignore = "flip on once every native mode carries measure_layer timers"]
+fn every_native_mode_has_layer_timers() {
+    let mut missing = Vec::new();
+    for mode in NATIVE_MODES {
+        let Some(mut r) = IterateFrameRenderer::new(mode, 42, "moss", 120, 40) else {
+            missing.push(format!("{mode} (not native)"));
+            continue;
+        };
+        layer_capture_begin();
+        let ok = r.render(0.5, None).is_some();
+        let layers = layer_capture_end();
+        if !ok || layers.is_empty() {
+            missing.push(mode.to_string());
+        }
+    }
+    assert!(missing.is_empty(), "modes without layer timers: {}", missing.join(", "));
+}
