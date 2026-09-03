@@ -68,6 +68,8 @@ use crate::opus_1_trees::cli_opus_1_trees;
 use crate::opus_1_forest::cli_opus_1_forest;
 use crate::opus_2_trees::cli_opus_2_trees;
 use crate::opus_2_forest::cli_opus_2_forest;
+use crate::haiku_2_trees::cli_haiku_2_trees;
+use crate::haiku_2_forest::cli_haiku_2_forest;
 use crate::cli_basic::*;
 use crate::cli_catalog::*;
 use crate::cli_city::*;
@@ -1279,6 +1281,18 @@ pub(crate) fn run() {
         }
     } else if mode == "haiku-1-forest" {
         let (g, done) = cli_haiku_1_forest(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        grid = g;
+        if done {
+            return;
+        }
+    } else if mode == "haiku-2-trees" {
+        let (g, done) = cli_haiku_2_trees(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        grid = g;
+        if done {
+            return;
+        }
+    } else if mode == "haiku-2-forest" {
+        let (g, done) = cli_haiku_2_forest(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
         grid = g;
         if done {
             return;
