@@ -950,3 +950,18 @@ fn opus_2_forest_seed_42() {
 fn opus_2_forest_animated_t14() {
     insta::assert_snapshot!(render_t(&["42", "opus-2-forest", "moss"], "14"));
 }
+
+#[test]
+fn haiku_2_trees_seed_42() {
+    insta::assert_snapshot!(render(&["42", "haiku-2-trees", "moss"]));
+}
+
+#[test]
+fn haiku_2_forest_seed_42() {
+    insta::assert_snapshot!(render(&["42", "haiku-2-forest", "moss"]));
+}
+
+#[test]
+fn haiku_2_forest_animated_t12() {
+    insta::assert_snapshot!(render_t(&["42", "haiku-2-forest", "moss"], "12"));
+}

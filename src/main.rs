@@ -72,6 +72,8 @@ mod opus_1_trees;
 mod opus_1_forest;
 mod opus_2_trees;
 mod opus_2_forest;
+mod haiku_2_trees;
+mod haiku_2_forest;
 #[cfg(test)]
 mod perf_sweep;
 

@@ -732,6 +732,16 @@ fn iterate_grid_into(
             crate::opus_2_forest::draw_opus_2_forest(grid, w, h, seed, palette, t, &knobs);
             true
         }
+        "haiku-2-trees" => {
+            let knobs = crate::haiku_2_trees::Haiku2TreesKnobs::from_env();
+            crate::haiku_2_trees::draw_haiku_2_trees(grid, w, h, seed, palette, t, &knobs);
+            true
+        }
+        "haiku-2-forest" => {
+            let knobs = crate::haiku_2_forest::Haiku2ForestKnobs::from_env();
+            crate::haiku_2_forest::draw_haiku_2_forest(grid, w, h, seed, palette, t, &knobs);
+            true
+        }
         _ => false,
     }
 }
