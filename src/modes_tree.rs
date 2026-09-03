@@ -1067,117 +1067,122 @@ pub(crate) fn draw_fa6(
     let hush = darken(palette[2], 68);
     let colors = [gold, ether, rose, verdigris, chalk];
 
-    for y in 0..height {
-        for x in 0..width {
-            let field = pp_hash2(x as i32, y as i32, seed ^ 0xFA60_FA60);
-            let ch = if field > 0.994 {
-                '°'
-            } else if field > 0.982 {
-                '·'
+    measure_layer("fa6", "background", || {
+        for y in 0..height {
+            for x in 0..width {
+                let field = pp_hash2(x as i32, y as i32, seed ^ 0xFA60_FA60);
+                let ch = if field > 0.994 {
+                    '°'
+                } else if field > 0.982 {
+                    '·'
+                } else {
+                    ' '
+                };
+                grid[y][x] = Cell::new(ch, if ch == ' ' { bg } else { hush });
+            }
+        }
+    });
+
+    let (core_rx, core_ry, cx, cy, seed_phase, chambers) = measure_layer("fa6", "chambers", || {
+        let core_rx = (width as f32 * 0.235).clamp(10.0, 29.0);
+        let core_ry = (height as f32 * 0.34).clamp(4.0, 12.0);
+        let cx = (width as i32 / 2
+            + rng.random_range(-((width as i32 / 18).max(1))..=(width as i32 / 18).max(1)))
+            .clamp(2, width as i32 - 3);
+        let cy = (height as i32 / 2 + rng.random_range(-1..=1)).clamp(2, height as i32 - 3);
+        let seed_phase = rng.random_range(0.0..TAU);
+
+        #[derive(Clone)]
+        struct Chamber {
+            x0: usize,
+            y0: usize,
+            x1: usize,
+            y1: usize,
+            depth: usize,
+        }
+        let mut chambers = vec![Chamber {
+            x0: 1,
+            y0: 1,
+            x1: width.saturating_sub(2).max(1),
+            y1: height.saturating_sub(2).max(1),
+            depth: 0,
+        }];
+
+        while chambers.len() < chamber_count {
+            let split_idx = chambers
+                .iter()
+                .enumerate()
+                .filter(|(_, c)| c.x1.saturating_sub(c.x0) >= 10 || c.y1.saturating_sub(c.y0) >= 6)
+                .max_by_key(|(_, c)| {
+                    c.x1.saturating_sub(c.x0) * c.y1.saturating_sub(c.y0)
+                })
+                .map(|(i, _)| i);
+            let Some(split_idx) = split_idx else { break };
+            let cell = chambers.remove(split_idx);
+            let cw = cell.x1.saturating_sub(cell.x0);
+            let ch = cell.y1.saturating_sub(cell.y0);
+            let can_v = cw >= 10;
+            let can_h = ch >= 6;
+            let vertical = if can_v && can_h {
+                if cw as f32 > ch as f32 * 2.2 {
+                    true
+                } else if ch as f32 > cw as f32 * 0.72 {
+                    false
+                } else {
+                    rng.random_range(0..2) == 0
+                }
             } else {
-                ' '
+                can_v
             };
-            grid[y][x] = Cell::new(ch, if ch == ' ' { bg } else { hush });
-        }
-    }
-
-    let core_rx = (width as f32 * 0.235).clamp(10.0, 29.0);
-    let core_ry = (height as f32 * 0.34).clamp(4.0, 12.0);
-    let cx = (width as i32 / 2
-        + rng.random_range(-((width as i32 / 18).max(1))..=(width as i32 / 18).max(1)))
-        .clamp(2, width as i32 - 3);
-    let cy = (height as i32 / 2 + rng.random_range(-1..=1)).clamp(2, height as i32 - 3);
-    let seed_phase = rng.random_range(0.0..TAU);
-
-    #[derive(Clone)]
-    struct Chamber {
-        x0: usize,
-        y0: usize,
-        x1: usize,
-        y1: usize,
-        depth: usize,
-    }
-    let mut chambers = vec![Chamber {
-        x0: 1,
-        y0: 1,
-        x1: width.saturating_sub(2).max(1),
-        y1: height.saturating_sub(2).max(1),
-        depth: 0,
-    }];
-
-    while chambers.len() < chamber_count {
-        let split_idx = chambers
-            .iter()
-            .enumerate()
-            .filter(|(_, c)| c.x1.saturating_sub(c.x0) >= 10 || c.y1.saturating_sub(c.y0) >= 6)
-            .max_by_key(|(_, c)| {
-                c.x1.saturating_sub(c.x0) * c.y1.saturating_sub(c.y0)
-            })
-            .map(|(i, _)| i);
-        let Some(split_idx) = split_idx else { break };
-        let cell = chambers.remove(split_idx);
-        let cw = cell.x1.saturating_sub(cell.x0);
-        let ch = cell.y1.saturating_sub(cell.y0);
-        let can_v = cw >= 10;
-        let can_h = ch >= 6;
-        let vertical = if can_v && can_h {
-            if cw as f32 > ch as f32 * 2.2 {
-                true
-            } else if ch as f32 > cw as f32 * 0.72 {
-                false
+            let next_depth = cell.depth + 1;
+            if vertical {
+                let lo = cell.x0 + 4;
+                let hi = cell.x1.saturating_sub(4);
+                if lo >= hi {
+                    chambers.push(cell);
+                    break;
+                }
+                let cut = rng.random_range(lo..=hi);
+                chambers.push(Chamber {
+                    x0: cell.x0,
+                    y0: cell.y0,
+                    x1: cut,
+                    y1: cell.y1,
+                    depth: next_depth,
+                });
+                chambers.push(Chamber {
+                    x0: cut,
+                    y0: cell.y0,
+                    x1: cell.x1,
+                    y1: cell.y1,
+                    depth: next_depth,
+                });
             } else {
-                rng.random_range(0..2) == 0
+                let lo = cell.y0 + 2;
+                let hi = cell.y1.saturating_sub(2);
+                if lo >= hi {
+                    chambers.push(cell);
+                    break;
+                }
+                let cut = rng.random_range(lo..=hi);
+                chambers.push(Chamber {
+                    x0: cell.x0,
+                    y0: cell.y0,
+                    x1: cell.x1,
+                    y1: cut,
+                    depth: next_depth,
+                });
+                chambers.push(Chamber {
+                    x0: cell.x0,
+                    y0: cut,
+                    x1: cell.x1,
+                    y1: cell.y1,
+                    depth: next_depth,
+                });
             }
-        } else {
-            can_v
-        };
-        let next_depth = cell.depth + 1;
-        if vertical {
-            let lo = cell.x0 + 4;
-            let hi = cell.x1.saturating_sub(4);
-            if lo >= hi {
-                chambers.push(cell);
-                break;
-            }
-            let cut = rng.random_range(lo..=hi);
-            chambers.push(Chamber {
-                x0: cell.x0,
-                y0: cell.y0,
-                x1: cut,
-                y1: cell.y1,
-                depth: next_depth,
-            });
-            chambers.push(Chamber {
-                x0: cut,
-                y0: cell.y0,
-                x1: cell.x1,
-                y1: cell.y1,
-                depth: next_depth,
-            });
-        } else {
-            let lo = cell.y0 + 2;
-            let hi = cell.y1.saturating_sub(2);
-            if lo >= hi {
-                chambers.push(cell);
-                break;
-            }
-            let cut = rng.random_range(lo..=hi);
-            chambers.push(Chamber {
-                x0: cell.x0,
-                y0: cell.y0,
-                x1: cell.x1,
-                y1: cut,
-                depth: next_depth,
-            });
-            chambers.push(Chamber {
-                x0: cell.x0,
-                y0: cut,
-                x1: cell.x1,
-                y1: cell.y1,
-                depth: next_depth,
-            });
         }
-    }
+        (core_rx, core_ry, cx, cy, seed_phase, chambers)
+    });
 
     let inside_core = |x: f32, y: f32, margin: f32| -> bool {
         let dx = (x - cx as f32) / (core_rx * margin);
@@ -1187,6 +1192,7 @@ pub(crate) fn draw_fa6(
 
     // Each recursive chamber is a rational container, but its edges are
     // selectively erased. The missing segments are as important as the frame.
+    measure_layer("fa6", "chamber_paint", || {
     for (ci, chamber) in chambers.iter().enumerate() {
         let frame_color = darken(colors[ci % colors.len()], 48);
         for x in chamber.x0..=chamber.x1.min(width - 1) {
@@ -1248,9 +1254,11 @@ pub(crate) fn draw_fa6(
             );
         }
     }
+    });
 
     // Seeded rupture rays ignore the chamber hierarchy. They are still
     // deterministic and broken by a spatial hash, so they feel torn, not noisy.
+    measure_layer("fa6", "fractures", || {
     let fracture_count = 2 + (asymmetry * 7.0).round() as usize;
     for fi in 0..fracture_count {
         let angle = seed_phase + rng.random_range(0.0..TAU) + fi as f32 * 0.37;
@@ -1284,6 +1292,7 @@ pub(crate) fn draw_fa6(
             lighten(rose, 12),
         );
     }
+    });
 
     struct Node {
         x: f32,
@@ -1293,6 +1302,7 @@ pub(crate) fn draw_fa6(
         kind: usize,
         color: Color,
     }
+    let (nodes, positions): (Vec<Node>, Vec<(i32, i32)>) = measure_layer("fa6", "nodes", || {
     let mut nodes = Vec::with_capacity(chambers.len());
     for (ci, chamber) in chambers.iter().enumerate() {
         let mut x = (chamber.x0 + chamber.x1) as f32 * 0.5;
@@ -1348,9 +1358,12 @@ pub(crate) fn draw_fa6(
             lighten(node.color, 14),
         );
     }
+    (nodes, positions)
+    });
 
     // Carve the central void after drawing the network so every conduit appears
     // to terminate cleanly at the transmutation boundary.
+    measure_layer("fa6", "core_void", || {
     for y in 0..height {
         for x in 0..width {
             if inside_core(x as f32, y as f32, 1.08) {
@@ -1358,9 +1371,11 @@ pub(crate) fn draw_fa6(
             }
         }
     }
+    });
 
     // Satellite seals sit at chamber centroids. Their orbiting marks are driven
     // by T, but the chamber assignment and iconography remain seed-stable.
+    measure_layer("fa6", "seals", || {
     let sigils = ['☉', '☿', '♄', '♃', '△', '▽', '⊕', '⌬', '◉'];
     for (i, node) in nodes.iter().enumerate() {
         let (nx, ny) = positions[i];
@@ -1382,7 +1397,11 @@ pub(crate) fn draw_fa6(
         pp_put(grid, nx, ny, sigils[node.kind], lighten(node.color, 18));
         pp_put(grid, arm.0, arm.1, '○', lighten(chalk, 2));
     }
+    });
 
+    // Final layer: rings, ticks, and the central witness glyph, all driven by
+    // one phase variable so the whole assembly rotates as one piece.
+    measure_layer("fa6", "finale", || {
     let phase = seed_phase + t * speed * 0.18;
     pp_arc(
         grid,
@@ -1468,6 +1487,7 @@ pub(crate) fn draw_fa6(
     pp_put(grid, cx + 1, cy, '╶', rose);
     pp_put(grid, cx, top.1 - 1, '☉', lighten(gold, 16));
     pp_put(grid, cx, left.1 + 1, '▽', lighten(ether, 12));
+    });
 }
 
 
