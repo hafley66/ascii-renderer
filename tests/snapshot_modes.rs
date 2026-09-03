@@ -785,3 +785,13 @@ fn polytope_600_cell_trails_t12() {
         .expect("failed to run ascii-renderer");
     insta::assert_snapshot!(strip_ansi(&String::from_utf8_lossy(&output.stdout)));
 }
+
+#[test]
+fn poincare_seed_42() {
+    insta::assert_snapshot!(render(&["42", "poincare", "moss"]));
+}
+
+#[test]
+fn poincare_half_plane_54() {
+    insta::assert_snapshot!(render(&["7", "poincare", "ember", "5", "4", "24", "0.05", "2", "0", "2"]));
+}

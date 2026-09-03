@@ -144,6 +144,7 @@ const NATIVE_MODES: &[&str] = &[
     "tree-of-life-6", "braid", "braid-2", "chladni", "pendulum-wave", "glm-apotheosis", "cosmograph",
     "illuminarium", "qwen-cathedral", "aetherforge", "gem-aetherium", "hyperloom", "fa6",
     "polytope",
+    "poincare",
 ];
 
 #[test]

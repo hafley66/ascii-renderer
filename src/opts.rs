@@ -458,6 +458,7 @@ pub(crate) fn run_demo(initial_seed: u64) {
         "chladni",
         "pendulum-wave",
         "polytope",
+        "poincare",
     ];
     all_modes.extend(registered_modes().iter().map(|(name, _)| name));
     let all_themes: &[&str] = &[

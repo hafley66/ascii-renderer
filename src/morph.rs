@@ -657,6 +657,11 @@ fn iterate_grid_into(
             crate::polytope::draw_polytope(grid, w, h, seed, palette, t, &knobs);
             true
         }
+        "poincare" => {
+            let knobs = crate::poincare::PoincareKnobs::from_env();
+            crate::poincare::draw_poincare(grid, w, h, seed, palette, t, &knobs);
+            true
+        }
         _ => false,
     }
 }
