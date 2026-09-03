@@ -1,5 +1,6 @@
 //! chladni -- sand on a center-driven square plate, the figure stepping through
 //! seeded resonances. Node lines hold sand; antinodes hop loose grains.
+use crate::_0_profile::measure_layer;
 use crate::color::*;
 use crate::opts::param_f32;
 use crate::types::*;
@@ -54,6 +55,10 @@ struct Figure {
 struct Cached {
     key: (u64, u32),
     seq: Vec<Figure>,
+    col_n: Vec<f32>,
+    col_m: Vec<f32>,
+    row_n: Vec<f32>,
+    row_m: Vec<f32>,
 }
 
 thread_local! {
@@ -78,7 +83,7 @@ fn build(seed: u64, order: u32) -> Cached {
         let sign = if rng.random::<f32>() < 0.5 { -1.0 } else { 1.0 };
         seq.push(Figure { n: pair.0 as f32, m: pair.1 as f32, sign });
     }
-    Cached { key: (seed, order), seq }
+    Cached { key: (seed, order), seq, col_n: Vec::new(), col_m: Vec::new(), row_n: Vec::new(), row_m: Vec::new() }
 }
 
 fn hash(x: u32, y: u32, k: u32, seed: u64) -> f32 {
@@ -146,17 +151,19 @@ pub(crate) fn draw_chladni(grid: &mut Grid, w: usize, h: usize, seed: u64, palet
         if stale {
             *slot = Some(build(seed, order));
         }
-        let c = slot.as_ref().unwrap();
+        let c = slot.as_mut().unwrap();
         render(grid, w, h, seed, palette, t, k, c);
     });
 }
 
-fn render(grid: &mut Grid, w: usize, h: usize, seed: u64, palette: &[Color; 5], t: f32, k: &ChladniKnobs, c: &Cached) {
-    for row in grid.iter_mut().take(h) {
-        for cell in row.iter_mut().take(w) {
-            *cell = Cell::blank();
+fn render(grid: &mut Grid, w: usize, h: usize, seed: u64, palette: &[Color; 5], t: f32, k: &ChladniKnobs, c: &mut Cached) {
+    measure_layer("chladni", "clear", || {
+        for row in grid.iter_mut().take(h) {
+            for cell in row.iter_mut().take(w) {
+                *cell = Cell::blank();
+            }
         }
-    }
+    });
     if w < 6 || h < 4 {
         return;
     }
@@ -190,63 +197,98 @@ fn render(grid: &mut Grid, w: usize, h: usize, seed: u64, palette: &[Color; 5], 
     let foot_fg = darken(palette[3], 50);
     let hop_fg = darken(palette[1], 20);
 
+    // separable field: f = cn[x]*rm[y] + sign*cm[x]*rn[y]; sand bands by |f| thresholds
+    c.col_n.clear();
+    c.col_m.clear();
+    c.row_n.clear();
+    c.row_m.clear();
+    for xx in 0..pw {
+        let px = (xx as f32 + 0.5) / plate_w * 2.0 - 1.0;
+        c.col_n.push((d.fig.n * PI * px).cos());
+        c.col_m.push((d.fig.m * PI * px).cos());
+    }
     for yy in 0..ph {
         let py = (yy as f32 + 0.5) / plate_h * 2.0 - 1.0;
-        for xx in 0..pw {
-            let px = (xx as f32 + 0.5) / plate_w * 2.0 - 1.0;
-            let f = field(&d.fig, px, py);
-            let s = (-(f / eps) * (f / eps)).exp();
-            let x = x0 + xx;
+        c.row_n.push((d.fig.n * PI * py).cos());
+        c.row_m.push((d.fig.m * PI * py).cos());
+    }
+    let core_lim = eps * (-(0.8f32).ln()).sqrt();
+    let slope_lim = eps * (-(0.5f32).ln()).sqrt();
+    let foot_lim = eps * (-(0.22f32).ln()).sqrt();
+    let hop_scale = shake * storm * 0.5 * 0.25;
+    let sign = d.fig.sign;
+    let (col_n, col_m, row_n, row_m) = (&c.col_n, &c.col_m, &c.row_n, &c.row_m);
+    measure_layer("chladni", "field", || {
+        for yy in 0..ph {
+            let (rn, rm) = (row_n[yy as usize], row_m[yy as usize]);
             let y = y0 + yy;
-            let u = hash(x as u32, y as u32, 0, seed);
-            let cell = if s > 0.8 {
-                Cell::with_bg(if u < 0.65 { '#' } else { '%' }, core_fg, plate_bg)
-            } else if s > 0.5 {
-                Cell::with_bg(if u < 0.5 { '+' } else { '=' }, slope_fg, plate_bg)
-            } else if s > 0.22 {
-                Cell::with_bg(':', foot_fg, plate_bg)
-            } else {
-                let amp = (f.abs() * 0.5).min(1.0);
-                let v = hash(x as u32, y as u32, frame + 1, seed);
-                if v < shake * amp * amp * storm * 0.5 {
-                    let g = hash(x as u32, y as u32, frame + 7, seed);
-                    let ch = if g < 0.45 { '.' } else if g < 0.8 { '`' } else { '~' };
-                    Cell::with_bg(ch, hop_fg, plate_bg)
-                } else {
-                    Cell::with_bg(' ', hop_fg, plate_bg)
+            if y < 0 || y as usize >= h {
+                continue;
+            }
+            let row = &mut grid[y as usize];
+            for xx in 0..pw {
+                let x = x0 + xx;
+                if x < 0 || x as usize >= w {
+                    continue;
                 }
-            };
-            put(grid, w, h, x, y, cell);
+                let f = col_n[xx as usize] * rm + sign * col_m[xx as usize] * rn;
+                let af = f.abs();
+                let u = hash(x as u32, y as u32, 0, seed);
+                let cell = if af < core_lim {
+                    Cell::with_bg(if u < 0.65 { '#' } else { '%' }, core_fg, plate_bg)
+                } else if af < slope_lim {
+                    Cell::with_bg(if u < 0.5 { '+' } else { '=' }, slope_fg, plate_bg)
+                } else if af < foot_lim {
+                    Cell::with_bg(':', foot_fg, plate_bg)
+                } else {
+                    let amp = af.min(2.0);
+                    let v = hash(x as u32, y as u32, frame + 1, seed);
+                    if v < hop_scale * amp * amp {
+                        let g = hash(x as u32, y as u32, frame + 7, seed);
+                        let ch = if g < 0.45 { '.' } else if g < 0.8 { '`' } else { '~' };
+                        Cell::with_bg(ch, hop_fg, plate_bg)
+                    } else {
+                        Cell::with_bg(' ', hop_fg, plate_bg)
+                    }
+                };
+                row[x as usize] = cell;
+            }
         }
-    }
+    });
 
-    for xx in -1..=pw {
-        let ch = if xx == -1 || xx == pw { '+' } else { '-' };
-        put(grid, w, h, x0 + xx, y0 - 1, Cell::new(ch, rim));
-        put(grid, w, h, x0 + xx, y0 + ph, Cell::new(ch, rim));
-    }
-    for yy in 0..ph {
-        put(grid, w, h, x0 - 1, y0 + yy, Cell::new('|', rim));
-        put(grid, w, h, x0 + pw, y0 + yy, Cell::new('|', rim));
-    }
-
-    let cx = x0 + pw / 2;
-    let cy = y0 + ph / 2;
-    let pulse = 0.5 + 0.5 * (t * 4.0 * PI).sin();
-    let drive_fg = lighten(palette[3], (pulse * 80.0) as u8);
-    put(grid, w, h, cx, cy, Cell::with_bg('@', drive_fg, plate_bg));
-    let ring = if pulse > 0.5 { 'o' } else { '*' };
-    for (dx, dy) in [(-2, 0), (2, 0), (0, -1), (0, 1)] {
-        put(grid, w, h, cx + dx, cy + dy, Cell::with_bg(ring, darken(drive_fg, 40), plate_bg));
-    }
-
-    if k.label > 0.5 {
-        let mut text = format!("{}:{}", d.from.n as i32, d.from.m as i32);
-        if d.glide > 0.0 {
-            text.push_str(&format!(">{}:{}", d.to.n as i32, d.to.m as i32));
+    measure_layer("chladni", "rim", || {
+        for xx in -1..=pw {
+            let ch = if xx == -1 || xx == pw { '+' } else { '-' };
+            put(grid, w, h, x0 + xx, y0 - 1, Cell::new(ch, rim));
+            put(grid, w, h, x0 + xx, y0 + ph, Cell::new(ch, rim));
         }
-        put_text(grid, w, h, x0 + 1, y0 + ph - 1, &text, palette[4], plate_bg);
-    }
+        for yy in 0..ph {
+            put(grid, w, h, x0 - 1, y0 + yy, Cell::new('|', rim));
+            put(grid, w, h, x0 + pw, y0 + yy, Cell::new('|', rim));
+        }
+    });
+
+    measure_layer("chladni", "drive", || {
+        let cx = x0 + pw / 2;
+        let cy = y0 + ph / 2;
+        let pulse = 0.5 + 0.5 * (t * 4.0 * PI).sin();
+        let drive_fg = lighten(palette[3], (pulse * 80.0) as u8);
+        put(grid, w, h, cx, cy, Cell::with_bg('@', drive_fg, plate_bg));
+        let ring = if pulse > 0.5 { 'o' } else { '*' };
+        for (dx, dy) in [(-2, 0), (2, 0), (0, -1), (0, 1)] {
+            put(grid, w, h, cx + dx, cy + dy, Cell::with_bg(ring, darken(drive_fg, 40), plate_bg));
+        }
+    });
+
+    measure_layer("chladni", "label", || {
+        if k.label > 0.5 {
+            let mut text = format!("{}:{}", d.from.n as i32, d.from.m as i32);
+            if d.glide > 0.0 {
+                text.push_str(&format!(">{}:{}", d.to.n as i32, d.to.m as i32));
+            }
+            put_text(grid, w, h, x0 + 1, y0 + ph - 1, &text, palette[4], plate_bg);
+        }
+    });
 }
 
 pub(crate) fn cli_chladni(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {

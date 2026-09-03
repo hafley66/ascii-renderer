@@ -56,6 +56,8 @@ mod braid;
 mod braid2;
 mod chladni;
 mod pendwave;
+#[cfg(test)]
+mod perf_sweep;
 
 use crossterm::style::Color;
 use rand::RngExt;

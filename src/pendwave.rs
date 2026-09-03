@@ -1,5 +1,6 @@
 //! pendulum-wave -- a row of pendulums on one beam, each one beat faster than
 //! its neighbor. Front view with strings and shadows, or top view with trails.
+use crate::_0_profile::measure_layer;
 use crate::color::*;
 use crate::opts::param_f32;
 use crate::types::*;
@@ -158,61 +159,77 @@ fn front(grid: &mut Grid, w: usize, h: usize, palette: &[Color; 5], t: f32, k: &
         (px + len * th.sin() * aspect, 1.0 + len * th.cos())
     };
 
-    let x_first = (step * 0.5).round() as i32;
-    let x_last = (step * (n as f32 + 0.5)).round() as i32;
-    for x in x_first..=x_last {
-        put(grid, w, h, x, beam_y, '=', beam_fg);
-        put(grid, w, h, x, floor_y, '-', floor_fg);
-    }
+    measure_layer("pendulum-wave", "front_frame", || {
+        let x_first = (step * 0.5).round() as i32;
+        let x_last = (step * (n as f32 + 0.5)).round() as i32;
+        for x in x_first..=x_last {
+            put(grid, w, h, x, beam_y, '=', beam_fg);
+            put(grid, w, h, x, floor_y, '-', floor_fg);
+        }
+    });
 
     let mut bobs: [(i32, i32); MAX_COUNT] = [(0, 0); MAX_COUNT];
-    for i in 0..n {
-        let px = (step * (i as f32 + 1.0)).round() as i32;
-        let c = colors[i];
-        let (bx, by) = pos(i, rig.angle(i, t));
-        let rows = (by - 1.0).max(1.0);
-        let slope = (bx - px as f32) / rows;
-        let ch = if slope.abs() < 0.4 { '|' } else if slope > 0.0 { '\\' } else { '/' };
-        let last = by.floor() as i32;
-        for r in 1..=last {
-            let frac = (r as f32 - 1.0) / rows;
-            let x = (px as f32 + (bx - px as f32) * frac).round() as i32;
-            put(grid, w, h, x, r, ch, darken(c, 90 - (frac * 60.0) as u8));
-        }
-        put(grid, w, h, px, beam_y, '+', lighten(beam_fg, 40));
-        bobs[i] = (bx.round() as i32, by.round() as i32);
-    }
-    if k.arc > 0.5 {
+    measure_layer("pendulum-wave", "front_strings", || {
         for i in 0..n {
-            for j in 0..=32 {
-                let th = -rig.swing + 2.0 * rig.swing * j as f32 / 32.0;
-                let (x, y) = pos(i, th);
-                put_soft(grid, w, h, x.round() as i32, y.round() as i32, '.', arc_fg);
+            let px = (step * (i as f32 + 1.0)).round() as i32;
+            let c = colors[i];
+            let (bx, by) = pos(i, rig.angle(i, t));
+            let rows = (by - 1.0).max(1.0);
+            let slope = (bx - px as f32) / rows;
+            let ch = if slope.abs() < 0.4 { '|' } else if slope > 0.0 { '\\' } else { '/' };
+            let last = by.floor() as i32;
+            for r in 1..=last {
+                let frac = (r as f32 - 1.0) / rows;
+                let x = (px as f32 + (bx - px as f32) * frac).round() as i32;
+                put(grid, w, h, x, r, ch, darken(c, 90 - (frac * 60.0) as u8));
+            }
+            put(grid, w, h, px, beam_y, '+', lighten(beam_fg, 40));
+            bobs[i] = (bx.round() as i32, by.round() as i32);
+        }
+    });
+
+    measure_layer("pendulum-wave", "front_arcs", || {
+        if k.arc > 0.5 {
+            for i in 0..n {
+                for j in 0..=32 {
+                    let th = -rig.swing + 2.0 * rig.swing * j as f32 / 32.0;
+                    let (x, y) = pos(i, th);
+                    put_soft(grid, w, h, x.round() as i32, y.round() as i32, '.', arc_fg);
+                }
             }
         }
-    }
-    for i in 0..n {
-        let c = colors[i];
-        for j in (1..=trail).rev() {
-            let (x, y) = pos(i, rig.angle(i, t - j as f32 * tail));
-            let f = j as f32 / trail as f32;
-            let ch = if j <= 2 { 'o' } else { '.' };
-            put_soft(grid, w, h, x.round() as i32, y.round() as i32, ch, darken(c, 20 + (f * 100.0) as u8));
+    });
+
+    measure_layer("pendulum-wave", "front_ghosts", || {
+        for i in 0..n {
+            let c = colors[i];
+            for j in (1..=trail).rev() {
+                let (x, y) = pos(i, rig.angle(i, t - j as f32 * tail));
+                let f = j as f32 / trail as f32;
+                let ch = if j <= 2 { 'o' } else { '.' };
+                put_soft(grid, w, h, x.round() as i32, y.round() as i32, ch, darken(c, 20 + (f * 100.0) as u8));
+            }
         }
-    }
-    if k.link > 1.5 {
-        for i in 1..n {
-            link(grid, w, h, bobs[i - 1], bobs[i], link_fg);
+    });
+
+    measure_layer("pendulum-wave", "front_link", || {
+        if k.link > 1.5 {
+            for i in 1..n {
+                link(grid, w, h, bobs[i - 1], bobs[i], link_fg);
+            }
         }
-    }
-    for i in 0..n {
-        let (bx, by) = bobs[i];
-        let wide = 1 + ((1.0 - rig.length(i)) * 3.0).round() as i32;
-        for dx in -wide..=wide {
-            put(grid, w, h, bx + dx, floor_y, '~', shadow_fg);
+    });
+
+    measure_layer("pendulum-wave", "front_bobs", || {
+        for i in 0..n {
+            let (bx, by) = bobs[i];
+            let wide = 1 + ((1.0 - rig.length(i)) * 3.0).round() as i32;
+            for dx in -wide..=wide {
+                put(grid, w, h, bx + dx, floor_y, '~', shadow_fg);
+            }
+            pill(grid, w, h, bx, by, colors[i]);
         }
-        pill(grid, w, h, bx, by, colors[i]);
-    }
+    });
 }
 
 fn top(grid: &mut Grid, w: usize, h: usize, palette: &[Color; 5], t: f32, k: &PendWaveKnobs, rig: &Rig, colors: &[Color]) {
@@ -228,37 +245,48 @@ fn top(grid: &mut Grid, w: usize, h: usize, palette: &[Color; 5], t: f32, k: &Pe
     let lane_y = |i: usize| ((i as f32 + 0.5) * lane).floor() as i32;
     let bob_x = |i: usize, tt: f32| (cx + reach * rig.angle(i, tt).sin() / norm).round() as i32;
 
-    for y in 0..h as i32 {
-        put(grid, w, h, cx as i32, y, ':', guide_fg);
-    }
-    if k.arc > 0.5 {
-        for i in 0..n {
-            let y = lane_y(i);
-            let x0 = (cx - reach).round() as i32;
-            let x1 = (cx + reach).round() as i32;
-            for x in x0..=x1 {
-                put_soft(grid, w, h, x, y, '.', darken(guide_fg, 20));
+    measure_layer("pendulum-wave", "top_guides", || {
+        for y in 0..h as i32 {
+            put(grid, w, h, cx as i32, y, ':', guide_fg);
+        }
+        if k.arc > 0.5 {
+            for i in 0..n {
+                let y = lane_y(i);
+                let x0 = (cx - reach).round() as i32;
+                let x1 = (cx + reach).round() as i32;
+                for x in x0..=x1 {
+                    put_soft(grid, w, h, x, y, '.', darken(guide_fg, 20));
+                }
             }
         }
-    }
-    for i in 0..n {
-        let y = lane_y(i);
-        let c = colors[i];
-        for j in (1..=trail).rev() {
-            let x = bob_x(i, t - j as f32 * tail);
-            let f = j as f32 / trail as f32;
-            let ch = if f < 0.25 { '*' } else if f < 0.5 { '=' } else if f < 0.75 { ':' } else { '.' };
-            put(grid, w, h, x, y, ch, darken(c, (f * 110.0) as u8));
+    });
+
+    measure_layer("pendulum-wave", "top_trails", || {
+        for i in 0..n {
+            let y = lane_y(i);
+            let c = colors[i];
+            for j in (1..=trail).rev() {
+                let x = bob_x(i, t - j as f32 * tail);
+                let f = j as f32 / trail as f32;
+                let ch = if f < 0.25 { '*' } else if f < 0.5 { '=' } else if f < 0.75 { ':' } else { '.' };
+                put(grid, w, h, x, y, ch, darken(c, (f * 110.0) as u8));
+            }
         }
-    }
-    if k.link > 0.5 {
-        for i in 1..n {
-            link(grid, w, h, (bob_x(i - 1, t), lane_y(i - 1)), (bob_x(i, t), lane_y(i)), link_fg);
+    });
+
+    measure_layer("pendulum-wave", "top_link", || {
+        if k.link > 0.5 {
+            for i in 1..n {
+                link(grid, w, h, (bob_x(i - 1, t), lane_y(i - 1)), (bob_x(i, t), lane_y(i)), link_fg);
+            }
         }
-    }
-    for i in 0..n {
-        pill(grid, w, h, bob_x(i, t), lane_y(i), colors[i]);
-    }
+    });
+
+    measure_layer("pendulum-wave", "top_bobs", || {
+        for i in 0..n {
+            pill(grid, w, h, bob_x(i, t), lane_y(i), colors[i]);
+        }
+    });
 }
 
 const RAMP: [char; 10] = [' ', '.', ':', '-', '=', '+', '*', '#', '%', '@'];
@@ -268,30 +296,44 @@ fn waterfall(grid: &mut Grid, w: usize, h: usize, palette: &[Color; 5], t: f32, 
     let dt = k.rowdt.max(0.0005);
     let bands = k.bands > 0.5;
     let beam_fg = palette[1];
-    for x in 0..w {
-        let u = x as f32 / (w as f32 - 1.0).max(1.0);
-        let idx = u * (n as f32 - 1.0);
-        let idx = if bands { idx.round() } else { idx };
-        let beats = rig.base + if rig.flip { n as f32 - 1.0 - idx } else { idx };
-        let ci = (idx.round() as usize).min(n - 1);
-        let c = colors[ci];
-        for y in 1..h {
-            let tt = t - (y as f32 - 1.0) * dt;
-            let v = (TAU * beats * tt / rig.cycle).cos();
-            let level = ((v + 1.0) * 0.5 * (RAMP.len() as f32 - 0.01)).floor() as usize;
-            let ch = RAMP[level.min(RAMP.len() - 1)];
-            let fg = if v >= 0.0 { lighten(c, (v * 70.0) as u8) } else { darken(c, (-v * 90.0) as u8 + 10) };
-            grid[y][x] = Cell::new(ch, fg);
+    measure_layer("pendulum-wave", "waterfall_field", || {
+        // per column: phase rotates by a fixed step per row, so cos comes from a
+        // complex recurrence instead of one cos per cell
+        for x in 0..w {
+            let u = x as f32 / (w as f32 - 1.0).max(1.0);
+            let idx = u * (n as f32 - 1.0);
+            let idx = if bands { idx.round() } else { idx };
+            let beats = rig.base + if rig.flip { n as f32 - 1.0 - idx } else { idx };
+            let ci = (idx.round() as usize).min(n - 1);
+            let c = colors[ci];
+            let omega = TAU * beats / rig.cycle;
+            let (mut sn, mut cs) = (omega * t).sin_cos();
+            let (step_s, step_c) = (-omega * dt).sin_cos();
+            for y in 1..h {
+                if y > 1 {
+                    let nc = cs * step_c - sn * step_s;
+                    sn = sn * step_c + cs * step_s;
+                    cs = nc;
+                }
+                let v = cs;
+                let level = ((v + 1.0) * 0.5 * (RAMP.len() as f32 - 0.01)).floor() as usize;
+                let ch = RAMP[level.min(RAMP.len() - 1)];
+                let fg = if v >= 0.0 { lighten(c, (v * 70.0) as u8) } else { darken(c, (-v * 90.0) as u8 + 10) };
+                grid[y][x] = Cell::new(ch, fg);
+            }
+            grid[0][x] = Cell::new('=', beam_fg);
         }
-        grid[0][x] = Cell::new('=', beam_fg);
-    }
-    let step = w as f32 / (n as f32 + 1.0);
-    for i in 0..n {
-        let x = (step * (i as f32 + 1.0)).round() as i32;
-        let v = rig.angle(i, t) / rig.swing.max(0.01);
-        let ch = if v > 0.33 { ')' } else if v < -0.33 { '(' } else { '|' };
-        put(grid, w, h, x, 0, ch, lighten(colors[i], 50));
-    }
+    });
+
+    measure_layer("pendulum-wave", "waterfall_beam", || {
+        let step = w as f32 / (n as f32 + 1.0);
+        for i in 0..n {
+            let x = (step * (i as f32 + 1.0)).round() as i32;
+            let v = rig.angle(i, t) / rig.swing.max(0.01);
+            let ch = if v > 0.33 { ')' } else if v < -0.33 { '(' } else { '|' };
+            put(grid, w, h, x, 0, ch, lighten(colors[i], 50));
+        }
+    });
 }
 
 pub(crate) fn cli_pendwave(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {

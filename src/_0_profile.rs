@@ -1,3 +1,4 @@
+use std::cell::RefCell;
 use std::io::IsTerminal;
 use std::sync::OnceLock;
 use std::time::{Duration, Instant};
@@ -85,23 +86,68 @@ pub(crate) fn measure_render<T>(
     output
 }
 
+/// Per-layer totals gathered in-process while a capture is open.
+#[derive(Clone, Debug, Default)]
+pub(crate) struct LayerTotal {
+    pub(crate) layer: &'static str,
+    pub(crate) calls: u64,
+    pub(crate) total_ns: u128,
+    pub(crate) max_ns: u128,
+}
+
+thread_local! {
+    static LAYER_CAPTURE: RefCell<Option<Vec<LayerTotal>>> = const { RefCell::new(None) };
+}
+
+/// Open an in-process layer capture on this thread. Layer timers record into it
+/// even when ASCII_PROFILE_LAYERS is off, so probes need no log parsing.
+pub(crate) fn layer_capture_begin() {
+    LAYER_CAPTURE.with(|c| *c.borrow_mut() = Some(Vec::new()));
+}
+
+pub(crate) fn layer_capture_end() -> Vec<LayerTotal> {
+    LAYER_CAPTURE.with(|c| c.borrow_mut().take().unwrap_or_default())
+}
+
+fn layer_capture_record(layer: &'static str, elapsed_ns: u128) {
+    LAYER_CAPTURE.with(|c| {
+        if let Some(totals) = c.borrow_mut().as_mut() {
+            match totals.iter_mut().find(|t| t.layer == layer) {
+                Some(t) => {
+                    t.calls += 1;
+                    t.total_ns += elapsed_ns;
+                    t.max_ns = t.max_ns.max(elapsed_ns);
+                }
+                None => totals.push(LayerTotal { layer, calls: 1, total_ns: elapsed_ns, max_ns: elapsed_ns }),
+            }
+        }
+    });
+}
+
 pub(crate) fn measure_layer<T>(
     mode: &'static str,
     layer: &'static str,
     render: impl FnOnce() -> T,
 ) -> T {
-    if !settings().layers {
+    let capturing = LAYER_CAPTURE.with(|c| c.borrow().is_some());
+    if !settings().layers && !capturing {
         return render();
     }
     let started = Instant::now();
     let output = render();
-    tracing::debug!(
-        target: LAYER_TARGET,
-        mode,
-        layer,
-        elapsed_us = started.elapsed().as_secs_f64() * 1_000_000.0,
-        "render layer profile"
-    );
+    let elapsed = started.elapsed();
+    if capturing {
+        layer_capture_record(layer, elapsed.as_nanos());
+    }
+    if settings().layers {
+        tracing::debug!(
+            target: LAYER_TARGET,
+            mode,
+            layer,
+            elapsed_us = elapsed.as_secs_f64() * 1_000_000.0,
+            "render layer profile"
+        );
+    }
     output
 }
 
