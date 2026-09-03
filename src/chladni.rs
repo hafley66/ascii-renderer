@@ -66,10 +66,13 @@ fn build(seed: u64, order: u32) -> Cached {
     let mut last = (0u32, 0u32);
     for _ in 0..SEQ {
         let mut pair = last;
-        while pair == last {
+        for _ in 0..16 {
             let n = rng.random_range(1..order);
             let m = rng.random_range(n + 1..=order);
             pair = (n, m);
+            if pair != last {
+                break;
+            }
         }
         last = pair;
         let sign = if rng.random::<f32>() < 0.5 { -1.0 } else { 1.0 };
@@ -291,6 +294,15 @@ mod tests {
     #[test]
     fn snapshot_chladni_large() {
         insta::assert_snapshot!("chladni_110x36", run(110, 36, 42, 0.0));
+    }
+
+    #[test]
+    fn order_two_terminates() {
+        let mut g = vec![vec![Cell::blank(); 40]; 12];
+        let p = crate::color::make_palette(3);
+        let mut k = ChladniKnobs::from_env();
+        k.order = 2.0;
+        draw_chladni(&mut g, 40, 12, 3, &p, 5.0, &k);
     }
 
     #[test]
