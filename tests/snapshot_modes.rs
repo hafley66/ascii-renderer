@@ -935,3 +935,23 @@ fn opus_1_forest_seed_42() {
 fn opus_1_forest_drifting_t18() {
     insta::assert_snapshot!(render_t(&["7", "opus-1-forest", "moss"], "18"));
 }
+
+#[test]
+fn sonnet_2_trees_seed_42() {
+    insta::assert_snapshot!(render(&["42", "sonnet-2-trees", "moss"]));
+}
+
+#[test]
+fn sonnet_2_trees_seed_7_knobs() {
+    insta::assert_snapshot!(render(&["7", "sonnet-2-trees", "ember", "1.1", "0.6", "1.4", "0.5", "1", "0.5", "1.6", "1"]));
+}
+
+#[test]
+fn sonnet_2_forest_seed_42() {
+    insta::assert_snapshot!(render(&["42", "sonnet-2-forest", "moss"]));
+}
+
+#[test]
+fn sonnet_2_forest_seed_7_moving_t18() {
+    insta::assert_snapshot!(render_t(&["7", "sonnet-2-forest", "ember"], "18"));
+}
