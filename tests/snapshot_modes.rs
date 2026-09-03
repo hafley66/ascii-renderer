@@ -880,3 +880,13 @@ fn haiku_2_ripple_animated_t8() {
 fn opus_1_trees_seed_42() {
     insta::assert_snapshot!(render(&["42", "opus-1-trees", "moss"]));
 }
+
+#[test]
+fn opus_1_forest_seed_42() {
+    insta::assert_snapshot!(render(&["42", "opus-1-forest", "moss"]));
+}
+
+#[test]
+fn opus_1_forest_drifting_t18() {
+    insta::assert_snapshot!(render_t(&["7", "opus-1-forest", "moss"], "18"));
+}

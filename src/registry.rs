@@ -818,6 +818,25 @@ pub(crate) static MODE_FORMS: &[ModeForm] = &[
             param!("BARE", "bare trunk fraction of height", 0.08, 0.60, 0.26, 0.02),
         ],
     },
+    ModeForm {
+        names: &["opus-1-forest"],
+        animate: AnimKind::Iterate,
+        params: &[
+            param!("DENSITY", "trees per depth layer", 0.25, 2.5, 1.0, 0.05),
+            param!("LAYERS", "depth layers", 3.0, 6.0, 4.0, 1.0),
+            param!("SWAY", "sway amplitude in cells", 0.0, 4.0, 1.1, 0.1),
+            param!("SPEED", "time scale", 0.0, 3.0, 1.0, 0.1),
+            param!("HUE", "hue rotation deg", -180.0, 180.0, 0.0, 10.0),
+            param!("ATMOS", "0 seed 1 mist 2 flies 3 leaves 4 rain 5 snow", 0.0, 5.0, 0.0, 1.0),
+            param!("ENERGY", "crown energy", 0.3, 1.0, 0.9, 0.02),
+            param!("FRUIT", "fruit and bloom rate", 0.0, 1.0, 0.12, 0.02),
+            param!("BRANCH", "branch keep probability", 0.05, 1.0, 0.6, 0.05),
+            param!("DETAIL", "growth sample count factor", 0.2, 2.0, 1.0, 0.1),
+            param!("CYCLE", "day cycle seconds", 20.0, 60.0, 42.0, 2.0),
+            param!("HORIZON", "horizon height fraction", 0.2, 0.7, 0.40, 0.02),
+            param!("BARE", "bare trunk fraction of height", 0.08, 0.60, 0.30, 0.02),
+        ],
+    },
 ];
 
 
