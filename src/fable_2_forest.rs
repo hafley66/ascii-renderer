@@ -175,7 +175,7 @@ fn build_scene(key: Key, k: &ForestKnobs) -> Scene {
                 let f = y as f32 / horizon.max(1) as f32;
                 bg_slot[i] = sky_slots[((f * (sky_bands - 1) as f32) as usize).min(sky_bands - 1)];
             } else if y == gl[x] {
-                bg_ch[i] = '─';
+                bg_ch[i] = if hash3(x as u32, 7, key.seed as u32) % 5 == 0 { ' ' } else { '╌' };
                 bg_slot[i] = line_slot;
             } else {
                 let depth = (y - gl[x]) as f32 / (h - horizon).max(1) as f32;
