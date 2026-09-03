@@ -692,6 +692,16 @@ fn iterate_grid_into(
             crate::haiku_2_ripple::draw_haiku_2_ripple(grid, w, h, seed, palette, t, &knobs);
             true
         }
+        "fable-2-trees" => {
+            let knobs = crate::fable_2_trees::SheetKnobs::from_env();
+            crate::fable_2_trees::draw_fable_2_trees(grid, w, h, seed, palette, t, &knobs);
+            true
+        }
+        "fable-2-forest" => {
+            let knobs = crate::fable_2_forest::ForestKnobs::from_env();
+            crate::fable_2_forest::draw_fable_2_forest(grid, w, h, seed, palette, t, &knobs);
+            true
+        }
         _ => false,
     }
 }

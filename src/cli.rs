@@ -58,6 +58,8 @@ use crate::sonnet_1_spirograph::cli_sonnet_1_spirograph;
 use crate::sonnet_2_clifford::cli_sonnet_2_clifford;
 use crate::haiku_1_torus::cli_haiku_1_torus;
 use crate::haiku_2_ripple::cli_haiku_2_ripple;
+use crate::fable_2_trees::cli_fable_2_trees;
+use crate::fable_2_forest::cli_fable_2_forest;
 use crate::cli_basic::*;
 use crate::cli_catalog::*;
 use crate::cli_city::*;
@@ -1205,6 +1207,18 @@ pub(crate) fn run() {
         }
     } else if mode == "haiku-2-ripple" {
         let (g, done) = cli_haiku_2_ripple(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        grid = g;
+        if done {
+            return;
+        }
+    } else if mode == "fable-2-trees" {
+        let (g, done) = cli_fable_2_trees(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        grid = g;
+        if done {
+            return;
+        }
+    } else if mode == "fable-2-forest" {
+        let (g, done) = cli_fable_2_forest(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
         grid = g;
         if done {
             return;

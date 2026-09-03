@@ -802,6 +802,38 @@ pub(crate) static MODE_FORMS: &[ModeForm] = &[
             param!("WFORM", "waveform 0=sine 1=square 2=saw", 0.0, 2.0, 0.0, 1.0),
         ],
     },
+    ModeForm {
+        names: &["fable-2-trees"],
+        animate: AnimKind::Iterate,
+        params: &[
+            param!("ENERGY", "tree size fraction of plot", 0.3, 1.2, 0.9, 0.1),
+            param!("FRUIT", "fruit chance per tip", 0.0, 1.0, 0.25, 0.05),
+            param!("BRANCH", "branching factor", 0.3, 1.5, 1.0, 0.1),
+            param!("SWAY", "sway amplitude", 0.0, 2.0, 0.5, 0.1),
+            param!("SPEED", "clock multiplier", 0.2, 3.0, 1.0, 0.1),
+            param!("FLICKER", "leaf flicker fraction", 0.0, 1.0, 0.5, 0.1),
+            param!("DETAIL", "attractor and particle budget", 0.4, 2.0, 1.0, 0.1),
+            param!("ROOTS", "root reach and depth", 0.0, 1.0, 1.0, 0.1),
+        ],
+    },
+    ModeForm {
+        names: &["fable-2-forest"],
+        animate: AnimKind::Iterate,
+        params: &[
+            param!("DENSITY", "trees per layer", 0.2, 2.0, 1.0, 0.1),
+            param!("LAYERS", "depth layers", 1.0, 5.0, 3.0, 1.0),
+            param!("SWAY", "sway amplitude", 0.0, 2.0, 0.6, 0.1),
+            param!("SPEED", "clock multiplier", 0.2, 3.0, 1.0, 0.1),
+            param!("HUE", "hue rotation deg", 0.0, 360.0, 0.0, 15.0),
+            param!("ATMOS", "0 seed 1 mist 2 fireflies 3 leaves 4 rain 5 snow 6 birds", 0.0, 6.0, 0.0, 1.0),
+            param!("HAZE", "aerial perspective", 0.0, 1.0, 0.5, 0.1),
+            param!("MOON", "moon size, 0 hides", 0.0, 2.0, 1.0, 0.1),
+            param!("ENERGY", "tree height scale", 0.4, 1.2, 0.9, 0.1),
+            param!("GROUND", "horizon fraction of height", 0.5, 0.9, 0.64, 0.02),
+            param!("FRUIT", "fruit chance per tip", 0.0, 1.0, 0.15, 0.05),
+            param!("LIGHT", "light cycle depth", 0.0, 1.0, 0.5, 0.1),
+        ],
+    },
 ];
 
 

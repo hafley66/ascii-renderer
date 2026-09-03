@@ -64,6 +64,8 @@ mod sonnet_1_spirograph;
 mod sonnet_2_clifford;
 mod haiku_1_torus;
 mod haiku_2_ripple;
+mod fable_2_trees;
+mod fable_2_forest;
 #[cfg(test)]
 mod perf_sweep;
 
