@@ -5,9 +5,9 @@ use crate::color::*;
 use crate::opts::param_f32;
 use crate::types::*;
 use crossterm::style::Color;
+use rand::rngs::StdRng;
 use rand::RngExt;
 use rand::SeedableRng;
-use rand::rngs::StdRng;
 use std::cell::RefCell;
 use std::f32::consts::PI;
 
@@ -130,7 +130,9 @@ thread_local! {
 }
 
 fn norm4(v: &mut [f32; 4]) {
-    let n = (v[0] * v[0] + v[1] * v[1] + v[2] * v[2] + v[3] * v[3]).sqrt().max(1e-6);
+    let n = (v[0] * v[0] + v[1] * v[1] + v[2] * v[2] + v[3] * v[3])
+        .sqrt()
+        .max(1e-6);
     for c in v.iter_mut() {
         *c /= n;
     }
@@ -163,7 +165,11 @@ fn edges_nearest(verts: &[[f32; 4]]) -> Vec<(u16, u16)> {
 }
 
 fn sgn(mask: usize, bit: usize) -> f32 {
-    if (mask >> bit) & 1 == 1 { -1.0 } else { 1.0 }
+    if (mask >> bit) & 1 == 1 {
+        -1.0
+    } else {
+        1.0
+    }
 }
 
 fn verts_600() -> Vec<[f32; 4]> {
@@ -176,12 +182,27 @@ fn verts_600() -> Vec<[f32; 4]> {
         }
     }
     for m in 0..16 {
-        v.push([sgn(m, 0) * 0.5, sgn(m, 1) * 0.5, sgn(m, 2) * 0.5, sgn(m, 3) * 0.5]);
+        v.push([
+            sgn(m, 0) * 0.5,
+            sgn(m, 1) * 0.5,
+            sgn(m, 2) * 0.5,
+            sgn(m, 3) * 0.5,
+        ]);
     }
     let base = [PHI / 2.0, 0.5, 1.0 / (2.0 * PHI), 0.0];
     let even: [[usize; 4]; 12] = [
-        [0, 1, 2, 3], [0, 2, 3, 1], [0, 3, 1, 2], [1, 0, 3, 2], [1, 2, 0, 3], [1, 3, 2, 0],
-        [2, 0, 1, 3], [2, 1, 3, 0], [2, 3, 0, 1], [3, 0, 2, 1], [3, 1, 0, 2], [3, 2, 1, 0],
+        [0, 1, 2, 3],
+        [0, 2, 3, 1],
+        [0, 3, 1, 2],
+        [1, 0, 3, 2],
+        [1, 2, 0, 3],
+        [1, 3, 2, 0],
+        [2, 0, 1, 3],
+        [2, 1, 3, 0],
+        [2, 3, 0, 1],
+        [3, 0, 2, 1],
+        [3, 1, 0, 2],
+        [3, 2, 1, 0],
     ];
     for perm in even {
         for m in 0..8 {
@@ -234,76 +255,84 @@ fn verts_120() -> Vec<[f32; 4]> {
 }
 
 fn make_poly(choice: u32, p: usize, q: usize) -> Poly {
-    let (name, schlafli, mut verts, edges): (&str, String, Vec<[f32; 4]>, Option<Vec<(u16, u16)>>) = match choice {
-        1 => {
-            let r5 = 5f32.sqrt();
-            let v = vec![
-                [1.0, 1.0, 1.0, -1.0 / r5],
-                [1.0, -1.0, -1.0, -1.0 / r5],
-                [-1.0, 1.0, -1.0, -1.0 / r5],
-                [-1.0, -1.0, 1.0, -1.0 / r5],
-                [0.0, 0.0, 0.0, 4.0 / r5],
-            ];
-            let mut e = Vec::new();
-            for i in 0..5u16 {
-                for j in i + 1..5 {
-                    e.push((i, j));
+    let (name, schlafli, mut verts, edges): (&str, String, Vec<[f32; 4]>, Option<Vec<(u16, u16)>>) =
+        match choice {
+            1 => {
+                let r5 = 5f32.sqrt();
+                let v = vec![
+                    [1.0, 1.0, 1.0, -1.0 / r5],
+                    [1.0, -1.0, -1.0, -1.0 / r5],
+                    [-1.0, 1.0, -1.0, -1.0 / r5],
+                    [-1.0, -1.0, 1.0, -1.0 / r5],
+                    [0.0, 0.0, 0.0, 4.0 / r5],
+                ];
+                let mut e = Vec::new();
+                for i in 0..5u16 {
+                    for j in i + 1..5 {
+                        e.push((i, j));
+                    }
                 }
+                ("5-cell", "{3,3,3}".to_string(), v, Some(e))
             }
-            ("5-cell", "{3,3,3}".to_string(), v, Some(e))
-        }
-        2 => {
-            let v: Vec<[f32; 4]> = (0..16).map(|m| [sgn(m, 0), sgn(m, 1), sgn(m, 2), sgn(m, 3)]).collect();
-            ("tesseract", "{4,3,3}".to_string(), v, None)
-        }
-        3 => {
-            let mut v = Vec::new();
-            for i in 0..4 {
-                for s in [-1.0, 1.0] {
-                    let mut p = [0.0; 4];
-                    p[i] = s;
-                    v.push(p);
-                }
+            2 => {
+                let v: Vec<[f32; 4]> = (0..16)
+                    .map(|m| [sgn(m, 0), sgn(m, 1), sgn(m, 2), sgn(m, 3)])
+                    .collect();
+                ("tesseract", "{4,3,3}".to_string(), v, None)
             }
-            ("16-cell", "{3,3,4}".to_string(), v, None)
-        }
-        4 => {
-            let mut v = Vec::new();
-            for i in 0..4 {
-                for j in i + 1..4 {
-                    for m in 0..4 {
+            3 => {
+                let mut v = Vec::new();
+                for i in 0..4 {
+                    for s in [-1.0, 1.0] {
                         let mut p = [0.0; 4];
-                        p[i] = sgn(m, 0);
-                        p[j] = sgn(m, 1);
+                        p[i] = s;
                         v.push(p);
                     }
                 }
+                ("16-cell", "{3,3,4}".to_string(), v, None)
             }
-            ("24-cell", "{3,4,3}".to_string(), v, None)
-        }
-        5 => ("600-cell", "{3,3,5}".to_string(), verts_600(), None),
-        6 => ("120-cell", "{5,3,3}".to_string(), verts_120(), None),
-        _ => {
-            let mut v = Vec::with_capacity(p * q);
-            let mut e = Vec::with_capacity(2 * p * q);
-            for i in 0..p {
-                let a = 2.0 * PI * i as f32 / p as f32;
-                for j in 0..q {
-                    let b = 2.0 * PI * j as f32 / q as f32;
-                    v.push([a.cos(), a.sin(), b.cos(), b.sin()]);
-                    let id = (i * q + j) as u16;
-                    e.push((id, (((i + 1) % p) * q + j) as u16));
-                    e.push((id, (i * q + (j + 1) % q) as u16));
+            4 => {
+                let mut v = Vec::new();
+                for i in 0..4 {
+                    for j in i + 1..4 {
+                        for m in 0..4 {
+                            let mut p = [0.0; 4];
+                            p[i] = sgn(m, 0);
+                            p[j] = sgn(m, 1);
+                            v.push(p);
+                        }
+                    }
                 }
+                ("24-cell", "{3,4,3}".to_string(), v, None)
             }
-            ("duoprism", format!("{{{}}}x{{{}}}", p, q), v, Some(e))
-        }
-    };
+            5 => ("600-cell", "{3,3,5}".to_string(), verts_600(), None),
+            6 => ("120-cell", "{5,3,3}".to_string(), verts_120(), None),
+            _ => {
+                let mut v = Vec::with_capacity(p * q);
+                let mut e = Vec::with_capacity(2 * p * q);
+                for i in 0..p {
+                    let a = 2.0 * PI * i as f32 / p as f32;
+                    for j in 0..q {
+                        let b = 2.0 * PI * j as f32 / q as f32;
+                        v.push([a.cos(), a.sin(), b.cos(), b.sin()]);
+                        let id = (i * q + j) as u16;
+                        e.push((id, (((i + 1) % p) * q + j) as u16));
+                        e.push((id, (i * q + (j + 1) % q) as u16));
+                    }
+                }
+                ("duoprism", format!("{{{}}}x{{{}}}", p, q), v, Some(e))
+            }
+        };
     for v in verts.iter_mut() {
         norm4(v);
     }
     let edges = edges.unwrap_or_else(|| edges_nearest(&verts));
-    Poly { name, schlafli, verts, edges }
+    Poly {
+        name,
+        schlafli,
+        verts,
+        edges,
+    }
 }
 
 fn build(seed: u64, poly_choice: u32, planes_n: u32) -> Cached {
@@ -376,7 +405,11 @@ struct View {
 
 impl View {
     fn to_cam(&self, p: [f32; 3]) -> [f32; 3] {
-        [p[0], p[1] * self.pc + p[2] * self.ps, -p[1] * self.ps + p[2] * self.pc]
+        [
+            p[0],
+            p[1] * self.pc + p[2] * self.ps,
+            -p[1] * self.ps + p[2] * self.pc,
+        ]
     }
 
     fn project(&self, p: [f32; 3]) -> Scr {
@@ -385,7 +418,13 @@ impl View {
         let sx = self.cx + self.fx * c[0] / zc;
         let sy = self.cy - self.fy * c[1] / zc;
         let near = ((self.cam - zc) / 3.0 + 0.5).clamp(0.0, 1.0);
-        Scr { sx, sy, near, w: 0.0, ok: c[2] + self.cam > 0.2 }
+        Scr {
+            sx,
+            sy,
+            near,
+            w: 0.0,
+            ok: c[2] + self.cam > 0.2,
+        }
     }
 }
 
@@ -426,7 +465,13 @@ fn pose(c: &Cached, view: &View, t: f32, out_p3: &mut [[f32; 3]], out_scr: &mut 
     }
 }
 
-fn line_walk(a: (f32, f32), b: (f32, f32), w: usize, h: usize, mut f: impl FnMut(usize, usize, f32)) {
+fn line_walk(
+    a: (f32, f32),
+    b: (f32, f32),
+    w: usize,
+    h: usize,
+    mut f: impl FnMut(usize, usize, f32),
+) {
     let lim_x = 4.0 * w as f32;
     let lim_y = 4.0 * h as f32;
     if a.0.abs() > lim_x || b.0.abs() > lim_x || a.1.abs() > lim_y || b.1.abs() > lim_y {
@@ -450,7 +495,11 @@ fn line_walk(a: (f32, f32), b: (f32, f32), w: usize, h: usize, mut f: impl FnMut
     }
 }
 
-const EDGE_GLYPHS: [[char; 4]; 3] = [['·', ':', '.', '.'], ['-', '|', '/', '\\'], ['─', '│', '╱', '╲']];
+const EDGE_GLYPHS: [[char; 4]; 3] = [
+    ['·', ':', '.', '.'],
+    ['-', '|', '/', '\\'],
+    ['─', '│', '╱', '╲'],
+];
 
 fn band_of(near: f32) -> usize {
     if near > 0.62 {
@@ -468,7 +517,15 @@ fn put(grid: &mut Grid, w: usize, h: usize, x: i32, y: i32, cell: Cell) {
     }
 }
 
-pub(crate) fn draw_polytope(grid: &mut Grid, w: usize, h: usize, seed: u64, palette: &[Color; 5], t: f32, k: &PolytopeKnobs) {
+pub(crate) fn draw_polytope(
+    grid: &mut Grid,
+    w: usize,
+    h: usize,
+    seed: u64,
+    palette: &[Color; 5],
+    t: f32,
+    k: &PolytopeKnobs,
+) {
     let key = (seed, k.poly_n(), k.planes_n());
     CACHE.with(|cell| {
         let mut slot = cell.borrow_mut();
@@ -481,7 +538,15 @@ pub(crate) fn draw_polytope(grid: &mut Grid, w: usize, h: usize, seed: u64, pale
     });
 }
 
-fn render(grid: &mut Grid, w: usize, h: usize, palette: &[Color; 5], t: f32, k: &PolytopeKnobs, c: &mut Cached) {
+fn render(
+    grid: &mut Grid,
+    w: usize,
+    h: usize,
+    palette: &[Color; 5],
+    t: f32,
+    k: &PolytopeKnobs,
+    c: &mut Cached,
+) {
     let n = w * h;
     let bg = darken(palette[0], 4);
     measure_layer("polytope", "clear", || {
@@ -521,13 +586,22 @@ fn render(grid: &mut Grid, w: usize, h: usize, palette: &[Color; 5], t: f32, k: 
     if w < 8 || h < 4 {
         return;
     }
-    let style = if k.style.round() as u32 == 0 { c.style_seed } else { (k.style.round() as u32).clamp(1, 3) };
+    let style = if k.style.round() as u32 == 0 {
+        c.style_seed
+    } else {
+        (k.style.round() as u32).clamp(1, 3)
+    };
     let aspect = k.aspect.max(0.25);
     let fov = k.fov.max(1.2);
     let cam = k.cam.max(2.5);
     let fy = k.zoom.max(0.05) * (h as f32 / 2.0).min(w as f32 / (2.0 * aspect)) * cam;
     let pitch = k.pitch.to_radians();
-    let yaw = c.yaw0 + if t > 0.0 { k.orbit.to_radians() * t } else { 0.0 };
+    let yaw = c.yaw0
+        + if t > 0.0 {
+            k.orbit.to_radians() * t
+        } else {
+            0.0
+        };
     let view = View {
         cx: w as f32 / 2.0,
         cy: h as f32 / 2.0 + fy * pitch.tan() * 0.2,
@@ -589,11 +663,14 @@ fn render(grid: &mut Grid, w: usize, h: usize, palette: &[Color; 5], t: f32, k: 
                     horizon_row = y as i32;
                     continue;
                 };
-                let z_top = floor_z(v + 0.5 / view.fy).map(|p| p.1).unwrap_or(zf + tile * 4.0);
+                let z_top = floor_z(v + 0.5 / view.fy)
+                    .map(|p| p.1)
+                    .unwrap_or(zf + tile * 4.0);
                 let z_bot = floor_z(v - 0.5 / view.fy).map(|p| p.1).unwrap_or(zf);
                 let rows_per_tile = tile / (z_top - z_bot).max(1e-4);
                 let dense = (rows_per_tile / 2.5).clamp(0.0, 1.0);
-                let z_line = (z_top / tile).floor() != (z_bot / tile).floor() && rows_per_tile > 1.2;
+                let z_line =
+                    (z_top / tile).floor() != (z_bot / tile).floor() && rows_per_tile > 1.2;
                 let fade = (1.0 - tt / (cam * 3.5)).clamp(0.0, 1.0) * dense;
                 if fade < 0.05 {
                     continue;
@@ -604,11 +681,18 @@ fn render(grid: &mut Grid, w: usize, h: usize, palette: &[Color; 5], t: f32, k: 
                 for x in 0..w {
                     let u = (x as f32 + 0.5 - view.cx) / view.fx;
                     let xf = u * tt;
-                    let x_line = ((xf - half) / tile).floor() != ((xf + half) / tile).floor() && half * 2.0 < tile * 0.8;
+                    let x_line = ((xf - half) / tile).floor() != ((xf + half) / tile).floor()
+                        && half * 2.0 < tile * 0.8;
                     let ch = match (z_line, x_line) {
                         (true, true) => '+',
                         (true, false) => '·',
-                        (false, true) => if fade > 0.5 { ':' } else { '.' },
+                        (false, true) => {
+                            if fade > 0.5 {
+                                ':'
+                            } else {
+                                '.'
+                            }
+                        }
                         _ => continue,
                     };
                     row[x] = Cell::new(ch, col);
@@ -640,7 +724,13 @@ fn render(grid: &mut Grid, w: usize, h: usize, palette: &[Color; 5], t: f32, k: 
                 line_walk((sa.sx, sa.sy), (sb.sx, sb.sy), w, h, |x, y, u| {
                     let nr = na + (nb - na) * u;
                     let cell = &mut grid[y][x];
-                    let ch = if nr > 0.55 { '▒' } else if nr > 0.3 { '░' } else { ':' };
+                    let ch = if nr > 0.55 {
+                        '▒'
+                    } else if nr > 0.3 {
+                        '░'
+                    } else {
+                        ':'
+                    };
                     *cell = Cell::new(ch, if nr > 0.3 { shadow_col } else { shadow_far });
                 });
             }
@@ -657,7 +747,10 @@ fn render(grid: &mut Grid, w: usize, h: usize, palette: &[Color; 5], t: f32, k: 
             let mut spare = std::mem::take(&mut p3);
             for s in 1..=trail_n {
                 let ts = (anim_t - s as f32 * tail) * omega;
-                let view_s = View { yaw: c.yaw0 + k.orbit.to_radians() * (anim_t - s as f32 * tail), ..view };
+                let view_s = View {
+                    yaw: c.yaw0 + k.orbit.to_radians() * (anim_t - s as f32 * tail),
+                    ..view
+                };
                 pose(c, &view_s, ts, &mut spare, &mut cur);
                 let fade = 1.0 - s as f32 / (trail_n as f32 + 1.0);
                 let amp = fade * fade;
@@ -685,14 +778,22 @@ fn render(grid: &mut Grid, w: usize, h: usize, palette: &[Color; 5], t: f32, k: 
                     if g < 0.04 {
                         continue;
                     }
-                    let ch = if g < 0.25 { '.' } else if g < 0.55 { '·' } else if g < 0.85 { ':' } else { '•' };
+                    let ch = if g < 0.25 {
+                        '.'
+                    } else if g < 0.55 {
+                        '·'
+                    } else if g < 0.85 {
+                        ':'
+                    } else {
+                        '•'
+                    };
                     grid[y][x] = Cell::new(ch, lut_at(tw[idx], g * 0.6));
                 }
             }
         });
     }
 
-    measure_layer("polytope", "edges", || {
+    measure_layer("polytope", "wire", || {
         let dir_of = |sa: Scr, sb: Scr| -> u8 {
             let ang = ((sb.sy - sa.sy) * aspect).atan2(sb.sx - sa.sx).abs();
             if ang < PI / 8.0 || ang > 7.0 * PI / 8.0 {
@@ -724,7 +825,12 @@ fn render(grid: &mut Grid, w: usize, h: usize, palette: &[Color; 5], t: f32, k: 
                     return;
                 }
                 let other = ebuf[idx];
-                if other != 0 && other != id && k.glow > 0.5 && zbuf[idx] - depth > 0.3 && near > 0.55 {
+                if other != 0
+                    && other != id
+                    && k.glow > 0.5
+                    && zbuf[idx] - depth > 0.3
+                    && near > 0.55
+                {
                     let (oa, ob) = c.poly.edges[other as usize - 1];
                     let shared = oa == a || oa == b || ob == a || ob == b;
                     let odir = dir_of(scr[oa as usize], scr[ob as usize]);
@@ -744,9 +850,6 @@ fn render(grid: &mut Grid, w: usize, h: usize, palette: &[Color; 5], t: f32, k: 
             let ch = if near > 0.45 { '*' } else { '+' };
             grid[y][x] = Cell::new(ch, lighten(lut_at(wv, near.max(0.6)), 50));
         }
-    });
-
-    measure_layer("polytope", "vertices", || {
         for i in 0..nv {
             let s = scr[i];
             if !s.ok || s.sx < 0.0 || s.sy < 0.0 || s.near < cull {
@@ -775,47 +878,56 @@ fn render(grid: &mut Grid, w: usize, h: usize, palette: &[Color; 5], t: f32, k: 
         }
     });
 
-    measure_layer("polytope", "inset", || {
+    measure_layer("polytope", "overlay", || {
         let r = k.inset.clamp(0.0, 0.5) * h as f32;
-        if r < 2.0 {
-            return;
-        }
-        let rots = rotors(c, anim_t * omega);
-        let np = c.planes.len();
-        let icx = w as f32 - r * aspect - 2.0;
-        let icy = r + 2.0 + if style & 1 == 1 { (view.cy - view.fy * pitch.tan()).max(0.0) } else { 0.0 };
-        let ink = lerp_color(bg, palette[4], 0.28);
-        let ink_v = lerp_color(bg, palette[4], 0.5);
-        for (i, v) in c.poly.verts.iter().enumerate() {
-            let p = rotate4(v, &rots[..np]);
-            scr[i].sx = icx + p[0] * r * aspect;
-            scr[i].sy = icy - p[1] * r;
-            scr[i].w = p[3];
-        }
-        for &(a, b) in &c.poly.edges {
-            let (sa, sb) = (scr[a as usize], scr[b as usize]);
-            line_walk((sa.sx, sa.sy), (sb.sx, sb.sy), w, h, |x, y, _| {
-                if grid[y][x].ch == ' ' {
-                    grid[y][x] = Cell::new('·', ink);
+        if r >= 2.0 {
+            let rots = rotors(c, anim_t * omega);
+            let np = c.planes.len();
+            let icx = w as f32 - r * aspect - 2.0;
+            let icy = r
+                + 2.0
+                + if style & 1 == 1 {
+                    (view.cy - view.fy * pitch.tan()).max(0.0)
+                } else {
+                    0.0
+                };
+            let ink = lerp_color(bg, palette[4], 0.28);
+            let ink_v = lerp_color(bg, palette[4], 0.5);
+            for (i, v) in c.poly.verts.iter().enumerate() {
+                let p = rotate4(v, &rots[..np]);
+                scr[i].sx = icx + p[0] * r * aspect;
+                scr[i].sy = icy - p[1] * r;
+                scr[i].w = p[3];
+            }
+            for &(a, b) in &c.poly.edges {
+                let (sa, sb) = (scr[a as usize], scr[b as usize]);
+                line_walk((sa.sx, sa.sy), (sb.sx, sb.sy), w, h, |x, y, _| {
+                    if grid[y][x].ch == ' ' {
+                        grid[y][x] = Cell::new('·', ink);
+                    }
+                });
+            }
+            for i in 0..nv {
+                let s = scr[i];
+                if s.sx < 0.0 || s.sy < 0.0 {
+                    continue;
                 }
-            });
-        }
-        for i in 0..nv {
-            let s = scr[i];
-            if s.sx < 0.0 || s.sy < 0.0 {
-                continue;
-            }
-            let (x, y) = (s.sx as usize, s.sy as usize);
-            if x < w && y < h {
-                grid[y][x] = Cell::new(if s.w > 0.0 { 'o' } else { '.' }, ink_v);
+                let (x, y) = (s.sx as usize, s.sy as usize);
+                if x < w && y < h {
+                    grid[y][x] = Cell::new(if s.w > 0.0 { 'o' } else { '.' }, ink_v);
+                }
             }
         }
-    });
-
-    measure_layer("polytope", "label", || {
         if k.label > 0.5 && h >= 6 {
             let names: Vec<&str> = c.planes.iter().map(|p| p.name).collect();
-            let text = format!("{} {}  {}  {}v {}e", c.poly.schlafli, c.poly.name, names.join("+"), nv, poly_edges);
+            let text = format!(
+                "{} {}  {}  {}v {}e",
+                c.poly.schlafli,
+                c.poly.name,
+                names.join("+"),
+                nv,
+                poly_edges
+            );
             let fg = lerp_color(bg, palette[4], 0.6);
             for (i, ch) in text.chars().enumerate() {
                 put(grid, w, h, 1 + i as i32, h as i32 - 1, Cell::new(ch, fg));
@@ -835,7 +947,20 @@ fn render(grid: &mut Grid, w: usize, h: usize, palette: &[Color; 5], t: f32, k: 
     c.crossings = crossings;
 }
 
-pub(crate) fn cli_polytope(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
+pub(crate) fn cli_polytope(
+    mut grid: Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: [Color; 5],
+    rng: StdRng,
+    t_anim: f32,
+    term_w: u16,
+    term_h: u16,
+    args: &[String],
+    mode: &str,
+    theme_name: &str,
+) -> (Grid, bool) {
     let _ = (rng, term_w, term_h, mode, theme_name);
     let mut k = PolytopeKnobs::from_env();
     let pos: Vec<f32> = args.iter().skip(4).filter_map(|a| a.parse().ok()).collect();
@@ -891,7 +1016,14 @@ mod tests {
 
     #[test]
     fn edge_counts_match_the_regular_polytopes() {
-        let expect = [(1, 5, 10), (2, 16, 32), (3, 8, 24), (4, 24, 96), (5, 120, 720), (6, 600, 1200)];
+        let expect = [
+            (1, 5, 10),
+            (2, 16, 32),
+            (3, 8, 24),
+            (4, 24, 96),
+            (5, 120, 720),
+            (6, 600, 1200),
+        ];
         for (choice, nv, ne) in expect {
             let p = make_poly(choice, 3, 3);
             assert_eq!((p.verts.len(), p.edges.len()), (nv, ne), "{}", p.name);
@@ -941,7 +1073,10 @@ mod tests {
             worst = worst.max(t0.elapsed().as_secs_f64() * 1000.0);
         }
         let avg = start.elapsed().as_secs_f64() * 1000.0 / 200.0;
-        eprintln!("polytope frame_cost 200x60: avg {:.3} ms, worst {:.3} ms", avg, worst);
+        eprintln!(
+            "polytope frame_cost 200x60: avg {:.3} ms, worst {:.3} ms",
+            avg, worst
+        );
         if !cfg!(debug_assertions) {
             assert!(avg < 4.0, "avg frame {:.3} ms", avg);
         }
