@@ -1,0 +1,29 @@
+---
+source: src/haiku_2_ripple.rs
+assertion_line: 239
+expression: "run(80, 24, 42, 0.0)"
+---
+ O##Oo       oO###O .      .  oO################Oo  .      . O###Oo       oO##O 
+O##Oo.    .oO###O .     . oO######OOOOooooOOOO######Oo .     . O###Oo.    .oO##O
+##O .     o###Oo.     .oO####OOo ..          .. oOO####Oo.     .oO###o     . O##
+#Oo.     O###O      .oO###Oo .                    . oO###Oo.      O###O     .oO#
+Oo.     O###o     . O###Oo        ..   oo   ..        oO###O .     o###O     .oO
+o      o###o     .oO###o        oOO##########OOo        o###Oo.     o###o      o
+     .o###O     .o###O .    . O######OOOOOO######O .    . O###o.     O###o.     
+.     O##O .   .oO##O       O####Oo .      . oO####O       O##Oo.   . O##O     .
+.   .o###o.     O##Oo.     O###O .            . O###O     .oO##O     .o###o.   .
+     O##O .   .o###o.     O###o.     .    .     .o###O     .o###o.   . O##O     
+     O##O      O##Oo.   .o###O     .o######o.     O###o.   .oO##O      O##O     
+   . O##O      O##O      O###o.   .o########o.   .o###O      O##O      O##O .   
+   . O##O      O##O      O###o.   .o########o.   .o###O      O##O      O##O .   
+     O##O      O##Oo.   .o###O     .o######o.     O###o.   .oO##O      O##O     
+     O##O .   .o###o.     O###o.     .    .     .o###O     .o###o.   . O##O     
+.   .o###o.     O##Oo.     O###O .            . O###O     .oO##O     .o###o.   .
+.     O##O .   .oO##O       O####Oo .      . oO####O       O##Oo.   . O##O     .
+     .o###O     .o###O .    . O######OOOOOO######O .    . O###o.     O###o.     
+o      o###o     .oO###o        oOO##########OOo        o###Oo.     o###o      o
+Oo.     O###o     . O###Oo        ..   oo   ..        oO###O .     o###O     .oO
+#Oo.     O###O      .oO###Oo .                    . oO###Oo.      O###O     .oO#
+##O .     o###Oo.     .oO####OOo ..          .. oOO####Oo.     .oO###o     . O##
+O##Oo.    .oO###O .     . oO######OOOOooooOOOO######Oo .     . O###Oo.    .oO##O
+ O##Oo       oO###O .      .  oO################Oo  .      . O###Oo       oO##O

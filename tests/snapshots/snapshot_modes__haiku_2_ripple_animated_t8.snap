@@ -1,0 +1,29 @@
+---
+source: tests/snapshot_modes.rs
+assertion_line: 866
+expression: "render_t(&[\"42\", \"haiku-2-ripple\", \"moss\"], \"8\")"
+---
+#Oo.    .oO###O .     . oO#####OOoo      ~~  ooOO#####Oo .     . O###Oo.    .oO#
+O .     o###Oo. ·+  .oO####OO  .   x         +  .  OO####Oo.     .oO###o     . O
+ .+    O###O  +   .oO###Oo .     ·                  . oO###Oo.      O###O     . 
+.     O###o     . O###Oo        .  oOOOOOOOOo  .        oO###O . ·   o###O     .
+     O###o.    .oO###o        oO################Oo   ·    o###Oo.    .o###O     
+    o###o     .o###O .    .·O#####OOox     oOO#####O·.    . O###o. x   o###o    
+  .oO##O    ~.o###O ·     o####Oo           ·  oO####o   · + O###o.     O##Oo.  
+ · O##O .   .oO##O     . O###O .        ~       . O###O .  ~  O##Oo.   . O##O  +
+ .oO##O ~    O##Oo.     O###o.     . oOOOOo .     .o###O     .oO##O      O##Oo. 
+  o###o.   .o###O    · O###o.x ~ .o##########o.    .o###O   ·  O###o.   .o###o  
+  O##O     .o###o.   .o###O      O###OooooO###O    ~·O###o.   .o###o.     O##O·+
+  O##O~  ·  O##Oo.   .o###o.    o###O  x   O###o    .o###o.   .oO##O      O##O  
+  O##O      O##Oo.   .o###o.    o###O      O###o    .o###o.   .oO##O   +  O##O  
+  O##O  +  .o###o.   .o###O·     O###OooooO###O      O###o.   .o###o.     O##O  
+  o###o. x .o###O      O###o.   ~.o##########o.    .o###O      O###o.   .o###o  
+ .oO##O      O##Oo.     O###o. +   . oOOOOo .     .o###O     .oO##O      O##Oo. 
+ · O##O .   .oO##O     . O###O .          ~+    . O###O .x    O##Oo.   . O##O   
+  .oO##O     .o###O      ~o####Oo              oO####o       O###o.  ·  O##Oo.  
+~   o###o   x .o###O .    . O#####OOo      oOO#####O .  ~ . O###o.  ·  o###o   ~
+     O###o.    .oO###o   ~    oO################Oo        o###Oo. ~  .o###O     
+.     O###o  ·  . O###Oo        .  oOOOOOOOOo ·.   ~    oO###O .·    o###O     .
+ .  x  O###O      .oO###Oo .       +         ~      . oO###Oo.      O###O  ·· . 
+O .     o###Oo.x  · .oO####OO  .  x    ·        .x OO####Oo.     .oO###o     . O
+#Oo.    .oO###O .     . oO#####OOoo          ooOO#####Oo~.     . O###Oo.    .oO#

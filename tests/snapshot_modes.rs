@@ -855,3 +855,13 @@ fn sonnet_2_clifford_seed_42() {
 fn sonnet_2_clifford_breathing_t20() {
     insta::assert_snapshot!(render_t(&["7", "sonnet-2-clifford", "deep"], "20"));
 }
+
+#[test]
+fn haiku_2_ripple_seed_42() {
+    insta::assert_snapshot!(render(&["42", "haiku-2-ripple", "moss"]));
+}
+
+#[test]
+fn haiku_2_ripple_animated_t8() {
+    insta::assert_snapshot!(render_t(&["42", "haiku-2-ripple", "moss"], "8"));
+}

@@ -778,6 +778,18 @@ pub(crate) static MODE_FORMS: &[ModeForm] = &[
             param!("SCALE", "zoom into the attractor", 0.3, 2.0, 1.0, 0.05),
         ],
     },
+    ModeForm {
+        names: &["haiku-2-ripple"],
+        animate: AnimKind::Iterate,
+        params: &[
+            param!("SPEED", "wave speed", 0.3, 3.0, 1.0, 0.1),
+            param!("HUE", "hue shift degrees", 0.0, 360.0, 200.0, 15.0),
+            param!("FREQ", "ring frequency", 2.0, 12.0, 5.0, 0.5),
+            param!("DECAY", "amplitude decay", 0.1, 1.0, 0.5, 0.1),
+            param!("PDENSE", "particle density", 0.1, 1.2, 1.0, 0.1),
+            param!("WFORM", "waveform 0=sine 1=square 2=saw", 0.0, 2.0, 0.0, 1.0),
+        ],
+    },
 ];
 
 
