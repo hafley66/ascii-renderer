@@ -669,7 +669,7 @@ fn paint_atmos(
         return;
     }
     let kind = atmos_kind(seed, k);
-    let n = (((width * height) as f32 / 2400.0) * k.motes).clamp(6.0, 1600.0) as u64;
+    let n = (((width * height) as f32 / 220.0) * k.motes).clamp(12.0, 1500.0) as u64;
     let tt = if t > 0.0 { t * k.speed } else { 0.0 };
     match kind {
         0 => {

@@ -62,25 +62,24 @@ ASCII_GRID_W=110 ASCII_GRID_H=36 ASCII_T=12 ./target/release/ascii-renderer 7 op
 
 | knob at max | fps | avg ms | vs baseline |
 | --- | ---: | ---: | ---: |
-| baseline | 330.5 | 3.03 | 1.00x |
-| GROUND=0.6 | 264.1 | 3.79 | 1.25x |
-| ATMOS=5 | 270.4 | 3.70 | 1.22x |
-| HAZE=1 | 271.6 | 3.68 | 1.22x |
-| ENERGY=1 | 277.7 | 3.60 | 1.19x |
-| MOTES=3 | 285.2 | 3.51 | 1.16x |
-| SCALE=2 | 293.2 | 3.41 | 1.13x |
-| DENSITY=1 | 315.8 | 3.17 | 1.05x |
-| LAYERS=6 | 318.9 | 3.14 | 1.04x |
+| baseline | 334.5 | 2.99 | 1.00x |
+| DENSITY=1 | 319.5 | 3.13 | 1.05x |
+| GROUND=0.6 | 321.8 | 3.11 | 1.04x |
+| SCALE=2 | 323.2 | 3.09 | 1.04x |
+| LAYERS=6 | 327.1 | 3.06 | 1.02x |
+| ENERGY=1 | 333.0 | 3.00 | 1.00x |
+| SPEED=4 | 333.3 | 3.00 | 1.00x |
+| SWAY=5 | 335.6 | 2.98 | 1.00x |
 
-Worst knob GROUND=0.6 at 264 fps, 2000x1000. Hotspots there:
+Worst knob DENSITY=1 at 319 fps, 2000x1000. Hotspots there:
 
 | layer | avg us | share of frame |
 | --- | ---: | ---: |
-| ground | 1407.6 | 46.0% |
-| ridges | 373.7 | 12.2% |
-| sky | 192.6 | 6.3% |
-| canopy | 151.1 | 4.9% |
-| atmos | 10.2 | 0.3% |
-| grow | 0.1 | 0.0% |
+| ground | 1152.1 | 37.7% |
+| ridges | 434.6 | 14.2% |
+| canopy | 288.2 | 9.4% |
+| sky | 249.5 | 8.2% |
+| atmos | 17.8 | 0.6% |
+| grow | 0.0 | 0.0% |
 
 `grow` reads as free because the stand and the sprite bank are cached; a knob change pays the rebuild once. The 30 percent of the frame outside the timers is the `IterateFrameRenderer` grid reset in `src/morph.rs`, which clears two million cells before the mode is called.
