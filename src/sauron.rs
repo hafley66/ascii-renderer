@@ -49,19 +49,66 @@ fn col_rng(seed: u64, x: usize) -> StdRng {
     StdRng::seed_from_u64(seed ^ (x as u64).wrapping_mul(0x9E37_79B9) ^ 0xF1E7)
 }
 
+/// Same hue/lightness ramp as before, with the two fmod calls behind
+/// range checks; anything outside the fast range falls back to `hsl_to_rgb`.
 fn fire_color(heat: f32, hue_off: f64) -> Color {
     let heat = heat as f64;
-    let h = (50.0 - heat * 45.0 + hue_off).rem_euclid(360.0);
+    let hv = 50.0 - heat * 45.0 + hue_off;
     let l = (0.18 + heat * 0.38).min(0.58);
     let s = (0.85 + heat * 0.15).min(1.0);
-    hsl_to_rgb(h, s, l)
+    if !(0.0..360.0).contains(&hv) {
+        return hsl_to_rgb(hv.rem_euclid(360.0), s, l);
+    }
+    let u = hv / 60.0;
+    let fold = if u < 2.0 {
+        u
+    } else if u < 4.0 {
+        u - 2.0
+    } else if u < 6.0 {
+        u - 4.0
+    } else {
+        u % 2.0
+    };
+    let c = (1.0 - (2.0 * l - 1.0).abs()) * s;
+    let x = c * (1.0 - (fold - 1.0).abs());
+    let m = l - c / 2.0;
+    let (r1, g1, b1) = match hv as u32 {
+        0..=59 => (c, x, 0.0),
+        60..=119 => (x, c, 0.0),
+        120..=179 => (0.0, c, x),
+        180..=239 => (0.0, x, c),
+        240..=299 => (x, 0.0, c),
+        _ => (c, 0.0, x),
+    };
+    Color::Rgb {
+        r: ((r1 + m) * 255.0) as u8,
+        g: ((g1 + m) * 255.0) as u8,
+        b: ((b1 + m) * 255.0) as u8,
+    }
 }
 
 /// Fire wall: per-column flames with fixed base heights and sin flicker.
 /// The columns part around the eye, flanking it with taller fire.
 fn draw_fire(grid: &mut Grid, w: usize, h: usize, seed: u64, t: f32, blaze: f32, ex: f32, erx: f32, hue_off: f64) {
     let turb = param_f32("TURB", 1.0).clamp(0.0, 3.0);
-    for x in 0..w {
+    let gh = grid.len();
+    let gw = if gh > 0 { grid[0].len() } else { 0 };
+    let (rows, cols_n) = (h.min(gh), w.min(gw));
+    if rows == 0 || cols_n == 0 {
+        return;
+    }
+    let hh = h as f32;
+
+    // Per-column flame stream, drawn once so the paint pass can run row-major.
+    struct FireCol {
+        x: usize,
+        top: f32,
+        fm: f32,
+        shim_base: f32,
+        speck: bool,
+    }
+    let mut cols: Vec<FireCol> = Vec::with_capacity(cols_n);
+    for x in 0..cols_n {
         let mut rng = col_rng(seed, x);
         let base = rng.random_range(0.35..0.75) + blaze * 0.25;
         let ph1 = rng.random::<f32>() * std::f32::consts::TAU;
@@ -71,20 +118,42 @@ fn draw_fire(grid: &mut Grid, w: usize, h: usize, seed: u64, t: f32, blaze: f32,
         let dx = (x as f32 + 0.5 - ex) / erx.max(1.0);
         let dip = (1.0 - dx * dx).clamp(0.0, 1.0);
         let parted = 1.0 - dip * 0.55 + (1.0 - ((dx.abs() - 1.0).abs())).clamp(0.0, 1.0) * 0.35;
-        let hh = h as f32;
         let flick = (t * 2.2 * turb + ph1).sin() * 0.10 + (t * 5.1 * turb + ph2).sin() * 0.05;
         let flame_h = (base * parted + flick) * hh;
         if flame_h <= 0.0 {
             continue;
         }
-        for y in 0..h {
-            let gy = h as i32 - 1 - y as i32;
-            let above = gy as f32 - (hh - flame_h);
-            let heat = 1.0 - above / flame_h.max(1.0);
+        cols.push(FireCol {
+            x,
+            top: hh - flame_h,
+            fm: flame_h.max(1.0),
+            shim_base: t * 7.0 * turb + ph2,
+            speck: (jitter + (t * 3.0 + ph1).sin()) % 1.0 > 0.45,
+        });
+    }
+
+    // The shimmer only moves heat by +-0.08, so the flame core saturates to a
+    // fixed glyph and color, and a dark cell without a speck is already blank.
+    let core_col = fire_color(1.0, hue_off);
+
+    for y in 0..rows {
+        let gy = h as i32 - 1 - y as i32;
+        let gyf = gy as f32;
+        let yshim = y as f32 * 0.7;
+        let row = &mut grid[y];
+        for c in cols.iter() {
+            let heat = 1.0 - (gyf - c.top) / c.fm;
             if heat <= 0.0 {
                 continue;
             }
-            let shimmer = (t * 7.0 * turb + ph2 + y as f32 * 0.7).sin() * 0.08;
+            if heat >= 1.2 {
+                row[c.x] = Cell::new('▓', core_col);
+                continue;
+            }
+            if heat <= 0.13 && !c.speck {
+                continue;
+            }
+            let shimmer = (c.shim_base + yshim).sin() * 0.08;
             let ht = (heat + shimmer).clamp(0.0, 1.0);
             let ch = if ht > 0.72 {
                 '▓'
@@ -92,12 +161,12 @@ fn draw_fire(grid: &mut Grid, w: usize, h: usize, seed: u64, t: f32, blaze: f32,
                 '▒'
             } else if ht > 0.22 {
                 '░'
-            } else if (jitter + (t * 3.0 + ph1).sin()) % 1.0 > 0.45 {
+            } else if c.speck {
                 '·'
             } else {
                 continue;
             };
-            set(grid, x as i32, y as i32, ch, fire_color(ht, hue_off));
+            row[c.x] = Cell::new(ch, fire_color(ht, hue_off));
         }
     }
 }
