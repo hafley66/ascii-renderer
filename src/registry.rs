@@ -645,6 +645,33 @@ pub(crate) static MODE_FORMS: &[ModeForm] = &[
             param!("BANDS", "waterfall discrete lanes", 0.0, 1.0, 0.0, 1.0),
         ],
     },
+    ModeForm {
+        names: &["polytope"],
+        animate: AnimKind::Iterate,
+        params: &[
+            param!("POLY", "0 seed, 1 5-cell, 2 tesseract, 3 16-cell, 4 24-cell, 5 600-cell, 6 120-cell, 7 duoprism", 0.0, 7.0, 0.0, 1.0),
+            param!("SPEED", "seconds per turn, primary plane", 5.0, 180.0, 40.0, 5.0),
+            param!("PLANES", "rotation planes", 1.0, 3.0, 3.0, 1.0),
+            param!("FOV", "4D eye distance", 1.2, 8.0, 3.0, 0.2),
+            param!("ZOOM", "fit fraction", 0.1, 1.5, 0.46, 0.05),
+            param!("STYLE", "0 seed, 1 floor, 2 trails, 3 both", 0.0, 3.0, 0.0, 1.0),
+            param!("FLOOR", "floor depth under the center", 0.0, 4.0, 0.8, 0.1),
+            param!("TRAIL", "trail samples per vertex", 0.0, 240.0, 40.0, 4.0),
+            param!("TAIL", "seconds per trail sample", 0.005, 1.0, 0.3, 0.01),
+            param!("HUE", "hue offset degrees", 0.0, 360.0, 0.0, 10.0),
+            param!("SPAN", "hue span across w", 0.0, 240.0, 100.0, 10.0),
+            param!("ORBIT", "3D yaw degrees per second", 0.0, 30.0, 1.5, 0.5),
+            param!("PITCH", "camera pitch degrees", 0.0, 60.0, 22.0, 2.0),
+            param!("TILE", "floor tile size", 0.1, 4.0, 0.6, 0.1),
+            param!("FLOW", "floor drift units per second", 0.0, 2.0, 0.08, 0.02),
+            param!("GLOW", "edge crossings glow", 0.0, 1.0, 1.0, 1.0),
+            param!("LABEL", "name and planes caption", 0.0, 1.0, 1.0, 1.0),
+            param!("CAM", "3D eye distance", 2.5, 12.0, 4.5, 0.5),
+            param!("ASPECT", "cols per row", 0.25, 4.0, 2.0, 0.25),
+            param!("CULL", "far-side cut for dense polytopes", 0.0, 0.9, 0.35, 0.05),
+            param!("INSET", "plan-view inset radius, fraction of height", 0.0, 0.5, 0.2, 0.02),
+        ],
+    },
 ];
 
 

@@ -768,3 +768,20 @@ fn pendulum_wave_seed_42() {
 fn pendulum_wave_top_view_trails() {
     insta::assert_snapshot!(render(&["42", "pendulum-wave", "ember", "10", "20", "12", "0.6", "1", "20", "0.05", "2", "30"]));
 }
+
+#[test]
+fn polytope_seed_42() {
+    insta::assert_snapshot!(render(&["42", "polytope", "moss"]));
+}
+
+#[test]
+fn polytope_600_cell_trails_t12() {
+    let output = std::process::Command::new(env!("CARGO_BIN_EXE_ascii-renderer"))
+        .args(["7", "polytope", "ember", "5", "40", "3", "3", "0.5", "3"])
+        .env("ASCII_GRID_W", "80")
+        .env("ASCII_GRID_H", "24")
+        .env("ASCII_T", "12")
+        .output()
+        .expect("failed to run ascii-renderer");
+    insta::assert_snapshot!(strip_ansi(&String::from_utf8_lossy(&output.stdout)));
+}
