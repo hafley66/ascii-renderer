@@ -1,5 +1,6 @@
 //! sauron -- the great eye: a slit-pupil lens wreathed in a fire wall that
 //! flickers from fixed per-column streams; the gaze wanders, embers rise.
+use crate::_0_profile::measure_layer;
 use crate::color::*;
 use crate::opts::param_f32;
 use crate::sprites::{MoveDir, TreePen};
@@ -228,10 +229,10 @@ pub fn draw_sauron(grid: &mut Grid, width: usize, height: usize, seed: u64, pale
     let rx = (width as f32 * 0.30).max(8.0);
     let ry = (height as f32 * 0.13).max(4.0);
 
-    draw_fire(grid, width, height, seed, t, blaze, cx, rx, hue_off);
-    draw_embers(grid, width, height, seed, t, embers, hue_off);
-    draw_eye(grid, cx, cy, rx, ry, t, gaze, slit, iris_r, hue_off);
-    draw_smoke(grid, width, height, seed, t, hue_off);
+    measure_layer("sauron", "fire", || draw_fire(grid, width, height, seed, t, blaze, cx, rx, hue_off));
+    measure_layer("sauron", "embers", || draw_embers(grid, width, height, seed, t, embers, hue_off));
+    measure_layer("sauron", "eye", || draw_eye(grid, cx, cy, rx, ry, t, gaze, slit, iris_r, hue_off));
+    measure_layer("sauron", "smoke", || draw_smoke(grid, width, height, seed, t, hue_off));
 }
 
 pub(crate) fn cli_sauron(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {

@@ -6,6 +6,7 @@ use std::io::{self, IsTerminal, Read as _};
 
 use crate::automata::*;
 use crate::biomes::*;
+use crate::_0_profile::measure_layer;
 use crate::color::*;
 use crate::content::*;
 use crate::fills::*;
@@ -79,11 +80,13 @@ pub(crate) fn draw_elevator(
     let lifts = lifts.clamp(1, ((width - 7) / 5).max(1));
 
     let bg = darken(palette[0], 12);
-    for row in grid.iter_mut() {
-        for cell in row.iter_mut() {
-            *cell = Cell::new(' ', bg);
+    measure_layer("elevator", "clear", || {
+        for row in grid.iter_mut() {
+            for cell in row.iter_mut() {
+                *cell = Cell::new(' ', bg);
+            }
         }
-    }
+    });
 
     // Layout: sky band on top (stars, moon, antenna, water tower), then a setback
     // tower: shaft core full height on the right (5 cols per lift, shared walls),
@@ -123,16 +126,18 @@ pub(crate) fn draw_elevator(
     let moon_c = lighten(palette[1], 58);
 
     // Sky band: star field, then moon disc with a halo.
-    for y in 0..sky_h {
-        for x in 1..width - 1 {
-            let h = emix(seed ^ 0x5EED ^ (y as u64 * 331).wrapping_add(x as u64 * 7));
-            if h % 1000 < 8 {
-                pp_put(grid, x as i32, y as i32, '·', star_c);
-            } else if h % 1000 < 12 {
-                pp_put(grid, x as i32, y as i32, '✦', star_c);
+    measure_layer("elevator", "sky", || {
+        for y in 0..sky_h {
+            for x in 1..width - 1 {
+                let h = emix(seed ^ 0x5EED ^ (y as u64 * 331).wrapping_add(x as u64 * 7));
+                if h % 1000 < 8 {
+                    pp_put(grid, x as i32, y as i32, '·', star_c);
+                } else if h % 1000 < 12 {
+                    pp_put(grid, x as i32, y as i32, '✦', star_c);
+                }
             }
         }
-    }
+    });
     if sky_h >= 2 {
         let mh = emix(seed ^ 0xA0AA);
         let mcx = 4 + (mh % ((x0 / 2).max(3) as u64)) as usize;
@@ -146,35 +151,37 @@ pub(crate) fn draw_elevator(
 
     // Setback facade: left wall per floor band, roofline, stepped slabs,
     // terraces with parapets where the tower steps in.
-    for f in 0..floors {
-        let sy = row_y(f) as usize - 1; // slab above this floor's room row
-        let ins = inset(f);
-        for x in 1 + ins..x0 - 1 {
-            grid[sy][x] = Cell::new('─', slab_c);
-        }
-        // terrace where the tier above steps back (this slab is its floor)
-        if f + 1 < floors {
-            let ins_next = inset(f + 1);
-            if ins_next > ins {
-                for x in 1 + ins_next..1 + ins + 3 {
-                    grid[sy][x] = Cell::new('═', slab_c);
-                }
-                let ry = sy - 1;
-                grid[ry][1 + ins] = Cell::new('┌', wall_c);
-                for x in 1 + ins + 1..ins + 3 {
-                    grid[ry][x] = Cell::new('─', wall_c);
-                }
-                grid[ry][3 + ins] = Cell::new('┐', wall_c);
-                let h = emix(seed ^ 0x1E5A ^ (sy as u64 * 41));
-                if h % 3 == 0 {
-                    grid[sy][2 + ins] = Cell::new('♣', win_lit);
+    measure_layer("elevator", "floors", || {
+        for f in 0..floors {
+            let sy = row_y(f) as usize - 1; // slab above this floor's room row
+            let ins = inset(f);
+            for x in 1 + ins..x0 - 1 {
+                grid[sy][x] = Cell::new('─', slab_c);
+            }
+            // terrace where the tier above steps back (this slab is its floor)
+            if f + 1 < floors {
+                let ins_next = inset(f + 1);
+                if ins_next > ins {
+                    for x in 1 + ins_next..1 + ins + 3 {
+                        grid[sy][x] = Cell::new('═', slab_c);
+                    }
+                    let ry = sy - 1;
+                    grid[ry][1 + ins] = Cell::new('┌', wall_c);
+                    for x in 1 + ins + 1..ins + 3 {
+                        grid[ry][x] = Cell::new('─', wall_c);
+                    }
+                    grid[ry][3 + ins] = Cell::new('┐', wall_c);
+                    let h = emix(seed ^ 0x1E5A ^ (sy as u64 * 41));
+                    if h % 3 == 0 {
+                        grid[sy][2 + ins] = Cell::new('♣', win_lit);
+                    }
                 }
             }
+            // facade wall on the room rows of this band
+            let ry = sy + 1;
+            grid[ry][1 + ins] = Cell::new('▐', wall_c);
         }
-        // facade wall on the room rows of this band
-        let ry = sy + 1;
-        grid[ry][1 + ins] = Cell::new('▐', wall_c);
-    }
+    });
     if x0 + block_w + 2 < width {
         for sy in (row_y(floors - 1) as usize - 1..ground_y).step_by(2) {
             for x in x0 + block_w + 1..width - 1 {
@@ -240,28 +247,16 @@ pub(crate) fn draw_elevator(
     // the same clock that re-rolls the waiting crowds. Some windows toggle
     // on/off between tenant cycles; nobody home in the top two floors.
     let pc_pre = ((t * speed) / 7.5).floor().max(0.0) as u64;
-    for f in 1..floors.saturating_sub(2) {
-        let ry = row_y(f) as usize;
-        let ins = inset(f);
-        let mut x = 3 + ins;
-        while x + 1 < x0 - 3 {
-            let h = emix(seed ^ 0x51ED ^ (ry as u64 * 97).wrapping_add(x as u64 * 13));
-            let h2 = emix(h ^ pc_pre.wrapping_mul(0x9E37_79B9));
-            let lit = (h % 100 < 30) ^ (h2 % 100 < 9);
-            let (ch, col) = if lit {
-                ('☼', win_lit)
-            } else {
-                ('□', win_dark)
-            };
-            grid[ry][x] = Cell::new(ch, col);
-            x += 3;
-        }
-        let xr0 = x0 + block_w + 2;
-        if xr0 + 2 < width - 1 {
-            let mut x = xr0;
-            while x < width - 2 {
-                let h = emix(seed ^ 0x77AA ^ (ry as u64 * 89).wrapping_add(x as u64 * 17));
-                let (ch, col) = if h % 100 < 26 {
+    measure_layer("elevator", "waiting", || {
+        for f in 1..floors.saturating_sub(2) {
+            let ry = row_y(f) as usize;
+            let ins = inset(f);
+            let mut x = 3 + ins;
+            while x + 1 < x0 - 3 {
+                let h = emix(seed ^ 0x51ED ^ (ry as u64 * 97).wrapping_add(x as u64 * 13));
+                let h2 = emix(h ^ pc_pre.wrapping_mul(0x9E37_79B9));
+                let lit = (h % 100 < 30) ^ (h2 % 100 < 9);
+                let (ch, col) = if lit {
                     ('☼', win_lit)
                 } else {
                     ('□', win_dark)
@@ -269,8 +264,22 @@ pub(crate) fn draw_elevator(
                 grid[ry][x] = Cell::new(ch, col);
                 x += 3;
             }
+            let xr0 = x0 + block_w + 2;
+            if xr0 + 2 < width - 1 {
+                let mut x = xr0;
+                while x < width - 2 {
+                    let h = emix(seed ^ 0x77AA ^ (ry as u64 * 89).wrapping_add(x as u64 * 17));
+                    let (ch, col) = if h % 100 < 26 {
+                        ('☼', win_lit)
+                    } else {
+                        ('□', win_dark)
+                    };
+                    grid[ry][x] = Cell::new(ch, col);
+                    x += 3;
+                }
+            }
         }
-    }
+    });
 
     // Per-lift service loop: seeded floor sequence, eased travel, doored dwell.
     let mut serviced_until = vec![f32::NEG_INFINITY; floors];
@@ -284,40 +293,42 @@ pub(crate) fn draw_elevator(
         cab_col: Color,
     }
     let mut lift_setups: Vec<Lift> = Vec::new();
-    for i in 0..lifts {
-        let mut lcg = seed ^ (i as u64 + 1).wrapping_mul(0xD1B5_4A32_D192_ED03);
-        let mut next = || {
-            lcg = lcg
-                .wrapping_mul(6364136223846793005)
-                .wrapping_add(1442695040888963407);
-            lcg
-        };
-        let mut seq = vec![0usize];
-        for _ in 0..(floors * 2).max(4) {
-            let mut f = (next() % floors as u64) as usize;
-            while f == *seq.last().unwrap() {
-                f = (next() % floors as u64) as usize;
+    measure_layer("elevator", "lifts", || {
+        for i in 0..lifts {
+            let mut lcg = seed ^ (i as u64 + 1).wrapping_mul(0xD1B5_4A32_D192_ED03);
+            let mut next = || {
+                lcg = lcg
+                    .wrapping_mul(6364136223846793005)
+                    .wrapping_add(1442695040888963407);
+                lcg
+            };
+            let mut seq = vec![0usize];
+            for _ in 0..(floors * 2).max(4) {
+                let mut f = (next() % floors as u64) as usize;
+                while f == *seq.last().unwrap() {
+                    f = (next() % floors as u64) as usize;
+                }
+                seq.push(f);
             }
-            seq.push(f);
+            let dwell = 1.15f32;
+            let mut trav = Vec::new();
+            for k in 0..seq.len() - 1 {
+                let d = seq[k].max(seq[k + 1]) - seq[k].min(seq[k + 1]);
+                trav.push(0.22 + 0.16 * d as f32);
+            }
+            let cycle: f32 = trav.iter().sum::<f32>() + dwell * (seq.len() - 1) as f32;
+            let hue_jitter = rng.random_range(-14.0..14.0);
+            let cab_col = shift_hue(cab_c, hue_jitter);
+            lift_setups.push(Lift {
+                seq,
+                trav,
+                dwell,
+                cycle,
+                sx: x0 + i * 4,
+                cab_col,
+            });
         }
-        let dwell = 1.15f32;
-        let mut trav = Vec::new();
-        for k in 0..seq.len() - 1 {
-            let d = seq[k].max(seq[k + 1]) - seq[k].min(seq[k + 1]);
-            trav.push(0.22 + 0.16 * d as f32);
-        }
-        let cycle: f32 = trav.iter().sum::<f32>() + dwell * (seq.len() - 1) as f32;
-        let hue_jitter = rng.random_range(-14.0..14.0);
-        let cab_col = shift_hue(cab_c, hue_jitter);
-        lift_setups.push(Lift {
-            seq,
-            trav,
-            dwell,
-            cycle,
-            sx: x0 + i * 4,
-            cab_col,
-        });
-    }
+    });
 
     let t_abs = t * speed;
     // Tenant clock: waiting crowds re-roll every P seconds; a floor stays
@@ -333,177 +344,183 @@ pub(crate) fn draw_elevator(
         arriving: Option<(usize, bool)>, // (floor, has rider about to board/exit)
     }
     let mut frames = Vec::new();
-    for lift in &lift_setups {
-        let rep0 = (t_abs / lift.cycle).floor();
-        let tau = t_abs - rep0 * lift.cycle;
-        let mut y = row_y(lift.seq[0]);
-        let mut dir = '◇';
-        let mut dwell_state: Option<(usize, f32)> = None;
-        let mut arriving = None;
-        let mut acc = 0.0f32;
-        for k in 0..lift.seq.len() - 1 {
-            let (a, b) = (lift.seq[k], lift.seq[k + 1]);
-            let trav = lift.trav[k];
-            let travel_end = acc + trav;
-            let dwell_end = travel_end + lift.dwell;
-            if tau < travel_end {
-                let p = (tau - acc) / trav;
-                let mut yy = row_y(a) + (row_y(b) - row_y(a)) * ease_in_out(p);
-                // arrival settle: the car overshoots the floor by under half a
-                // row in the last stretch and eases back onto the landing
-                if p >= 0.82 {
-                    let s = (p - 0.82) / 0.18;
-                    let bump = if s < 0.5 { s * 2.0 } else { 2.0 - 2.0 * s };
-                    let sign_row = (row_y(b) - row_y(a)).signum();
-                    yy += 0.45 * bump * sign_row;
+    measure_layer("elevator", "lift_frames", || {
+        for lift in &lift_setups {
+            let rep0 = (t_abs / lift.cycle).floor();
+            let tau = t_abs - rep0 * lift.cycle;
+            let mut y = row_y(lift.seq[0]);
+            let mut dir = '◇';
+            let mut dwell_state: Option<(usize, f32)> = None;
+            let mut arriving = None;
+            let mut acc = 0.0f32;
+            for k in 0..lift.seq.len() - 1 {
+                let (a, b) = (lift.seq[k], lift.seq[k + 1]);
+                let trav = lift.trav[k];
+                let travel_end = acc + trav;
+                let dwell_end = travel_end + lift.dwell;
+                if tau < travel_end {
+                    let p = (tau - acc) / trav;
+                    let mut yy = row_y(a) + (row_y(b) - row_y(a)) * ease_in_out(p);
+                    // arrival settle: the car overshoots the floor by under half a
+                    // row in the last stretch and eases back onto the landing
+                    if p >= 0.82 {
+                        let s = (p - 0.82) / 0.18;
+                        let bump = if s < 0.5 { s * 2.0 } else { 2.0 - 2.0 * s };
+                        let sign_row = (row_y(b) - row_y(a)).signum();
+                        yy += 0.45 * bump * sign_row;
+                    }
+                    y = yy;
+                    dir = if b > a { '▲' } else { '▼' };
+                    // arrival time in absolute clock decides the tenant wave boarding
+                    let arr_abs = t_abs + (travel_end - tau);
+                    let pc_arr = (arr_abs / window).floor().max(0.0) as u64;
+                    arriving = Some((b, elevator_waiting(seed, b as u64, pc_arr, crowd) > 0));
+                    acc = dwell_end;
+                    break;
+                } else if tau < dwell_end {
+                    let q = (tau - travel_end) / lift.dwell;
+                    y = row_y(b);
+                    dwell_state = Some((b, q));
+                    let arr_abs = t_abs - q * lift.dwell;
+                    let pc_arr = (arr_abs / window).floor().max(0.0) as u64;
+                    arriving = Some((b, elevator_waiting(seed, b as u64, pc_arr, crowd) > 0 && q < 0.55));
+                    acc = dwell_end;
+                    break;
                 }
-                y = yy;
-                dir = if b > a { '▲' } else { '▼' };
-                // arrival time in absolute clock decides the tenant wave boarding
-                let arr_abs = t_abs + (travel_end - tau);
-                let pc_arr = (arr_abs / window).floor().max(0.0) as u64;
-                arriving = Some((b, elevator_waiting(seed, b as u64, pc_arr, crowd) > 0));
                 acc = dwell_end;
-                break;
-            } else if tau < dwell_end {
-                let q = (tau - travel_end) / lift.dwell;
-                y = row_y(b);
-                dwell_state = Some((b, q));
-                let arr_abs = t_abs - q * lift.dwell;
-                let pc_arr = (arr_abs / window).floor().max(0.0) as u64;
-                arriving = Some((b, elevator_waiting(seed, b as u64, pc_arr, crowd) > 0 && q < 0.55));
-                acc = dwell_end;
-                break;
             }
-            acc = dwell_end;
-        }
-        // Mark floors this cab has serviced inside the current tenant window.
-        let mut acc2 = 0.0f32;
-        for k in 0..lift.seq.len() - 1 {
-            let dwell_end = acc2 + lift.trav[k] + lift.dwell;
-            acc2 = dwell_end;
-            let b = lift.seq[k + 1];
-            let r = ((t_abs - dwell_end) / lift.cycle).floor();
-            let last_end = dwell_end + r * lift.cycle;
-            if t_abs - last_end < window {
-                serviced_until[b] = serviced_until[b].max(last_end + window);
+            // Mark floors this cab has serviced inside the current tenant window.
+            let mut acc2 = 0.0f32;
+            for k in 0..lift.seq.len() - 1 {
+                let dwell_end = acc2 + lift.trav[k] + lift.dwell;
+                acc2 = dwell_end;
+                let b = lift.seq[k + 1];
+                let r = ((t_abs - dwell_end) / lift.cycle).floor();
+                let last_end = dwell_end + r * lift.cycle;
+                if t_abs - last_end < window {
+                    serviced_until[b] = serviced_until[b].max(last_end + window);
+                }
             }
+            let open_floor = match dwell_state {
+                Some((f, q)) if q > 0.12 && q < 0.9 => Some(f),
+                _ => None,
+            };
+            let open_q = dwell_state.map(|(_, q)| q).unwrap_or(0.0);
+            frames.push(Frame {
+                y,
+                dir,
+                open_floor,
+                open_q,
+                arriving,
+            });
         }
-        let open_floor = match dwell_state {
-            Some((f, q)) if q > 0.12 && q < 0.9 => Some(f),
-            _ => None,
-        };
-        let open_q = dwell_state.map(|(_, q)| q).unwrap_or(0.0);
-        frames.push(Frame {
-            y,
-            dir,
-            open_floor,
-            open_q,
-            arriving,
-        });
-    }
+    });
 
     // Waiting tenants, boarding/exiting pedestrians, and call lamps on the
     // walkway left of the shaft block. A door open at the floor turns the
     // queue into a walk-in, then releases one rider who wanders off.
-    for f in 0..floors {
-        let ry = row_y(f) as usize;
-        let open_here = frames.iter().find_map(|fr| {
-            fr.open_floor.filter(|&ff| ff == f).map(|_| fr)
-        });
-        match open_here {
-            Some(fr) => {
-                let q = fr.open_q;
-                let has = fr.arriving.map(|(_, b)| b).unwrap_or(false);
-                if q < 0.5 {
-                    let t_in = q / 0.5;
+    measure_layer("elevator", "floor_paint", || {
+        for f in 0..floors {
+            let ry = row_y(f) as usize;
+            let open_here = frames.iter().find_map(|fr| {
+                fr.open_floor.filter(|&ff| ff == f).map(|_| fr)
+            });
+            match open_here {
+                Some(fr) => {
+                    let q = fr.open_q;
+                    let has = fr.arriving.map(|(_, b)| b).unwrap_or(false);
+                    if q < 0.5 {
+                        let t_in = q / 0.5;
+                        let n = elevator_waiting(seed, f as u64, pc, crowd);
+                        for j in 0..n {
+                            let xs = (x0 - 2 - j) as f32;
+                            pp_put(
+                                grid,
+                                (xs + ((x0 - 1) as f32 - xs) * t_in).round() as i32,
+                                ry as i32,
+                                '☻',
+                                if j == 0 { wait_c } else { darken(wait_c, 22) },
+                            );
+                        }
+                    } else if has {
+                        let t_out = ((q - 0.5) / 0.4).min(1.0);
+                        let x = (x0 - 1) as f32 - 2.0 * t_out;
+                        pp_put(grid, x.round() as i32, ry as i32, '☻', rider_c);
+                    }
+                    if q > 0.2 && q < 0.8 {
+                        pp_put(grid, (x0 - 1) as i32, ry as i32, '░', spill_c);
+                    }
+                }
+                None => {
+                    if serviced_until[f] > t_abs {
+                        continue;
+                    }
                     let n = elevator_waiting(seed, f as u64, pc, crowd);
                     for j in 0..n {
-                        let xs = (x0 - 2 - j) as f32;
                         pp_put(
                             grid,
-                            (xs + ((x0 - 1) as f32 - xs) * t_in).round() as i32,
+                            (x0 - 2 - j) as i32,
                             ry as i32,
                             '☻',
                             if j == 0 { wait_c } else { darken(wait_c, 22) },
                         );
+                        pp_put(grid, (x0 - 1) as i32, ry as i32, '◆', lamp_c);
                     }
-                } else if has {
-                    let t_out = ((q - 0.5) / 0.4).min(1.0);
-                    let x = (x0 - 1) as f32 - 2.0 * t_out;
-                    pp_put(grid, x.round() as i32, ry as i32, '☻', rider_c);
-                }
-                if q > 0.2 && q < 0.8 {
-                    pp_put(grid, (x0 - 1) as i32, ry as i32, '░', spill_c);
-                }
-            }
-            None => {
-                if serviced_until[f] > t_abs {
-                    continue;
-                }
-                let n = elevator_waiting(seed, f as u64, pc, crowd);
-                for j in 0..n {
-                    pp_put(
-                        grid,
-                        (x0 - 2 - j) as i32,
-                        ry as i32,
-                        '☻',
-                        if j == 0 { wait_c } else { darken(wait_c, 22) },
-                    );
-                    pp_put(grid, (x0 - 1) as i32, ry as i32, '◆', lamp_c);
                 }
             }
         }
-    }
+    });
 
     // Cabs: cable above, mirrored counterweight, doored cabin, direction lamp.
-    for (lift, fr) in lift_setups.iter().zip(frames.iter()) {
-        let sx = lift.sx;
-        let cy = fr.y.round() as i32;
-        // hoist cable from the shaft roof down to the car
-        for y in (roof_y as i32 + 1)..cy {
-            pp_put(grid, (sx + 2) as i32, y, '¦', cable_c);
-        }
-        // counterweight mirrors the car around the shaft midpoint
-        let mid = 1.0 + floors as f32;
-        let cw_row = 2.0 * mid - fr.y;
-        let cw_q = (cw_row.round() as i32 / 2 * 2).max(2);
-        if (cw_row - fr.y).abs() > 1.6 && (cw_q as usize) < ground_y {
-            pp_put(grid, (sx + 4) as i32, cw_q, '▚', cw_c);
-        }
-        // cabin face by door phase
-        let cells: [char; 3] = if fr.open_floor.is_some() {
-            let q = fr.open_q;
-            if q < 0.25 {
-                ['▓', '▓', '·']
-            } else if q < 0.75 {
-                ['·', if fr.arriving.map(|(_, b)| b).unwrap_or(false) { '☻' } else { '·' }, '·']
-            } else if q < 0.88 {
-                ['·', '·', '▓']
+    measure_layer("elevator", "cabs", || {
+        for (lift, fr) in lift_setups.iter().zip(frames.iter()) {
+            let sx = lift.sx;
+            let cy = fr.y.round() as i32;
+            // hoist cable from the shaft roof down to the car
+            for y in (roof_y as i32 + 1)..cy {
+                pp_put(grid, (sx + 2) as i32, y, '¦', cable_c);
+            }
+            // counterweight mirrors the car around the shaft midpoint
+            let mid = 1.0 + floors as f32;
+            let cw_row = 2.0 * mid - fr.y;
+            let cw_q = (cw_row.round() as i32 / 2 * 2).max(2);
+            if (cw_row - fr.y).abs() > 1.6 && (cw_q as usize) < ground_y {
+                pp_put(grid, (sx + 4) as i32, cw_q, '▚', cw_c);
+            }
+            // cabin face by door phase
+            let cells: [char; 3] = if fr.open_floor.is_some() {
+                let q = fr.open_q;
+                if q < 0.25 {
+                    ['▓', '▓', '·']
+                } else if q < 0.75 {
+                    ['·', if fr.arriving.map(|(_, b)| b).unwrap_or(false) { '☻' } else { '·' }, '·']
+                } else if q < 0.88 {
+                    ['·', '·', '▓']
+                } else {
+                    ['▓', '▓', '▓']
+                }
+            } else if fr.dir != '◇' {
+                ['▓', if fr.arriving.map(|(_, b)| b).unwrap_or(false) { '☻' } else { '▓' }, '▓']
             } else {
                 ['▓', '▓', '▓']
-            }
-        } else if fr.dir != '◇' {
-            ['▓', if fr.arriving.map(|(_, b)| b).unwrap_or(false) { '☻' } else { '▓' }, '▓']
-        } else {
-            ['▓', '▓', '▓']
-        };
-        for (j, ch) in cells.iter().enumerate() {
-            let col = if *ch == '▓' {
-                lift.cab_col
-            } else if *ch == '☻' {
-                rider_c
-            } else if fr.open_floor.is_some() {
-                lighten(palette[3], 6)
-            } else {
-                inner_c
             };
-            pp_put(grid, (sx + 1 + j) as i32, cy, *ch, col);
+            for (j, ch) in cells.iter().enumerate() {
+                let col = if *ch == '▓' {
+                    lift.cab_col
+                } else if *ch == '☻' {
+                    rider_c
+                } else if fr.open_floor.is_some() {
+                    lighten(palette[3], 6)
+                } else {
+                    inner_c
+                };
+                pp_put(grid, (sx + 1 + j) as i32, cy, *ch, col);
+            }
+            if fr.dir != '◇' {
+                pp_put(grid, (sx + 2) as i32, cy - 1, fr.dir, lighten(lift.cab_col, 14));
+            }
         }
-        if fr.dir != '◇' {
-            pp_put(grid, (sx + 2) as i32, cy - 1, fr.dir, lighten(lift.cab_col, 14));
-        }
-    }
+    });
 
     // Antenna beacon: square-wave blink (no sine phase, plain on/off duty cycle).
     let bx = 2 + inset(floors - 1);
@@ -2403,11 +2420,13 @@ pub(crate) fn draw_ferris(
     let cy = ground_y as f32 - 4.0 - ry;
 
     let bg = darken(palette[0], 16);
-    for row in grid.iter_mut() {
-        for cell in row.iter_mut() {
-            *cell = Cell::new(' ', bg);
+    measure_layer("ferris", "clear", || {
+        for row in grid.iter_mut() {
+            for cell in row.iter_mut() {
+                *cell = Cell::new(' ', bg);
+            }
         }
-    }
+    });
 
     let rim_c = darken(palette[1], 42);
     let spoke_c = darken(palette[1], 55);
@@ -2427,35 +2446,39 @@ pub(crate) fn draw_ferris(
 
     // Night sky: sparse stars above the wheel crown.
     let crown = (cy - ry).max(0.0) as usize;
-    for y in 0..crown {
-        for x in 1..width - 1 {
-            let h = emix(seed ^ 0x5EED ^ (y as u64 * 331).wrapping_add(x as u64 * 7));
-            if h % 1000 < 7 {
-                pp_put(grid, x as i32, y as i32, '·', star_c);
-            } else if h % 1000 < 10 {
-                pp_put(grid, x as i32, y as i32, '✦', star_c);
+    measure_layer("ferris", "crown", || {
+        for y in 0..crown {
+            for x in 1..width - 1 {
+                let h = emix(seed ^ 0x5EED ^ (y as u64 * 331).wrapping_add(x as u64 * 7));
+                if h % 1000 < 7 {
+                    pp_put(grid, x as i32, y as i32, '·', star_c);
+                } else if h % 1000 < 10 {
+                    pp_put(grid, x as i32, y as i32, '✦', star_c);
+                }
             }
         }
-    }
+    });
 
     // Ground, A-frame struts from hub to grade, cross-brace.
     for x in 1..width - 1 {
         pp_put(grid, x as i32, ground_y as i32, '▂', ground_c);
     }
-    for side in [-1.0f32, 1.0] {
-        let fx = cx + side * rx * 0.55;
-        let steps = (ground_y as i32 - cy as i32).max(1);
-        let per_step = (fx - cx) / steps as f32;
-        for s in 0..=steps {
-            let q = s as f32 / steps as f32;
-            let px = cx + (fx - cx) * q;
-            let py = cy + (ground_y as f32 - cy) * q;
-            let ch = pp_stroke(per_step.round() as i32, 1);
-            pp_put(grid, px.round() as i32, py.round() as i32, ch, strut_c);
+    measure_layer("ferris", "struts", || {
+        for side in [-1.0f32, 1.0] {
+            let fx = cx + side * rx * 0.55;
+            let steps = (ground_y as i32 - cy as i32).max(1);
+            let per_step = (fx - cx) / steps as f32;
+            for s in 0..=steps {
+                let q = s as f32 / steps as f32;
+                let px = cx + (fx - cx) * q;
+                let py = cy + (ground_y as f32 - cy) * q;
+                let ch = pp_stroke(per_step.round() as i32, 1);
+                pp_put(grid, px.round() as i32, py.round() as i32, ch, strut_c);
+            }
+            // foot pads
+            pp_put(grid, fx.round() as i32, ground_y as i32, '▆', strut_c);
         }
-        // foot pads
-        pp_put(grid, fx.round() as i32, ground_y as i32, '▆', strut_c);
-    }
+    });
     let brace_y = (cy + (ground_y as f32 - cy) * 0.55).round() as i32;
     let lx = (cx - rx * 0.55 * 0.55).round() as i32;
     let rxx = (cx + rx * 0.55 * 0.55).round() as i32;
@@ -2464,55 +2487,63 @@ pub(crate) fn draw_ferris(
     }
 
     // Spokes (under everything), then the rim, then the chase lights.
-    for s in 0..8 {
-        let a = theta + s as f32 * (TAU / 8.0);
-        for q in [0.2f32, 0.35, 0.5, 0.65, 0.8, 0.93] {
-            let px = cx + a.cos() * rx * q;
-            let py = cy + a.sin() * ry * q;
-            pp_put(grid, px.round() as i32, py.round() as i32, '∙', spoke_c);
+    measure_layer("ferris", "spokes", || {
+        for s in 0..8 {
+            let a = theta + s as f32 * (TAU / 8.0);
+            for q in [0.2f32, 0.35, 0.5, 0.65, 0.8, 0.93] {
+                let px = cx + a.cos() * rx * q;
+                let py = cy + a.sin() * ry * q;
+                pp_put(grid, px.round() as i32, py.round() as i32, '∙', spoke_c);
+            }
         }
-    }
+    });
     let rim_n = 120;
-    for i in 0..rim_n {
-        let a = i as f32 / rim_n as f32 * TAU;
-        let px = cx + a.cos() * rx;
-        let py = cy + a.sin() * ry;
-        pp_put(grid, px.round() as i32, py.round() as i32, '·', rim_c);
-    }
+    measure_layer("ferris", "rim", || {
+        for i in 0..rim_n {
+            let a = i as f32 / rim_n as f32 * TAU;
+            let px = cx + a.cos() * rx;
+            let py = cy + a.sin() * ry;
+            pp_put(grid, px.round() as i32, py.round() as i32, '·', rim_c);
+        }
+    });
     // Chase lights: 24 sockets stepping a 3-cell pattern; double-flash on the
     // revolution boundary (discrete tick, no phase wobble).
     let flash = (theta % TAU) < 0.28;
-    for i in 0..24 {
-        let a = i as f32 / 24.0 * TAU;
-        let px = cx + a.cos() * rx;
-        let py = cy + a.sin() * ry;
-        let lit = flash || (i + (theta * 1.2) as usize) % 3 == 0;
-        pp_put(
-            grid,
-            px.round() as i32,
-            py.round() as i32,
-            if lit { '•' } else { '·' },
-            if lit { light_lit } else { light_dim },
-        );
-    }
+    measure_layer("ferris", "lights", || {
+        for i in 0..24 {
+            let a = i as f32 / 24.0 * TAU;
+            let px = cx + a.cos() * rx;
+            let py = cy + a.sin() * ry;
+            let lit = flash || (i + (theta * 1.2) as usize) % 3 == 0;
+            pp_put(
+                grid,
+                px.round() as i32,
+                py.round() as i32,
+                if lit { '•' } else { '·' },
+                if lit { light_lit } else { light_dim },
+            );
+        }
+    });
 
     // Gondolas: pivot on the rim, cabin hangs upright one row below. Rider
     // manifest re-rolls per revolution, timed so the swap lands at the dock.
     let n = gondolas;
-    for k in 0..n {
-        let ang = theta + k as f32 * (TAU / n as f32);
-        let px = cx + ang.cos() * rx;
-        let py = cy + ang.sin() * ry;
-        let phi = theta - k as f32 * (TAU / n as f32) - std::f32::consts::FRAC_PI_2;
-        let rev = (phi / TAU).floor();
-        let occupied = emix(seed ^ (k as u64).wrapping_mul(0x9E37).wrapping_add((rev as i64 as u64).wrapping_mul(0xBF58))) % 100 < 72;
-        let col = shift_hue(cab_c, hue_jitter + k as f64 * 23.0);
-        pp_put(grid, px.round() as i32, py.round() as i32 + 1, '¦', strut_c);
-        let cy2 = py.round() as i32 + 2;
-        pp_put(grid, px.round() as i32 - 1, cy2, '▐', col);
-        pp_put(grid, px.round() as i32, cy2, if occupied { '☻' } else { '·' }, if occupied { rider_c } else { darken(col, 40) });
-        pp_put(grid, px.round() as i32 + 1, cy2, '▌', col);
-    }
+    measure_layer("ferris", "gondolas", || {
+        for k in 0..n {
+            let ang = theta + k as f32 * (TAU / n as f32);
+            let px = cx + ang.cos() * rx;
+            let py = cy + ang.sin() * ry;
+            let phi = theta - k as f32 * (TAU / n as f32) - std::f32::consts::FRAC_PI_2;
+            let rev = (phi / TAU).floor();
+            let occupied = emix(seed ^ (k as u64).wrapping_mul(0x9E37).wrapping_add((rev as i64 as u64).wrapping_mul(0xBF58))) % 100 < 72;
+            let col = shift_hue(cab_c, hue_jitter + k as f64 * 23.0);
+            pp_put(grid, px.round() as i32, py.round() as i32 + 1, '¦', strut_c);
+            let cy2 = py.round() as i32 + 2;
+            pp_put(grid, px.round() as i32 - 1, cy2, '▐', col);
+            pp_put(grid, px.round() as i32, cy2, if occupied { '☻' } else { '·' }, if occupied { rider_c } else { darken(col, 40) });
+            pp_put(grid, px.round() as i32 + 1, cy2, '▌', col);
+        }
+    });
 
     // Hub on top of the spokes.
     pp_put(grid, cx.round() as i32, cy.round() as i32, '◉', light_lit);
@@ -2535,36 +2566,40 @@ pub(crate) fn draw_ferris(
     // queue re-rolls on a slow tenant clock, docked left of the platform
     let pc = (t / 6.0).floor().max(0.0) as u64;
     let n_wait = (emix(seed ^ 0xCAFE ^ pc.wrapping_mul(0x9E37_79B9)) % 4) as usize;
-    for j in 0..n_wait {
-        pp_put(
-            grid,
-            cx as i32 - 6 - j as i32,
-            dock_y,
-            '☻',
-            if j == 0 { wait_c } else { darken(wait_c, 22) },
-        );
-    }
+    measure_layer("ferris", "queue", || {
+        for j in 0..n_wait {
+            pp_put(
+                grid,
+                cx as i32 - 6 - j as i32,
+                dock_y,
+                '☻',
+                if j == 0 { wait_c } else { darken(wait_c, 22) },
+            );
+        }
+    });
     // board/exit walks keyed to each gondola's exact bottom-pass time
-    for k in 0..n {
-        let ang0 = k as f32 * (TAU / n as f32);
-        let phi = theta - ang0 - std::f32::consts::FRAC_PI_2;
-        let rev = (phi / TAU).floor();
-        let t_pass = (rev * TAU + ang0 + std::f32::consts::FRAC_PI_2) / omega;
-        let since = t - t_pass;
-        if since >= 0.0 && since < 0.4 {
-            // a rider walks in from the queue head to the bottom cabin
-            let q = since / 0.4;
-            let x = cx - 5.0 + (cx - (cx - 5.0)) * q;
-            pp_put(grid, x.round() as i32, dock_y, '☻', wait_c);
+    measure_layer("ferris", "riders", || {
+        for k in 0..n {
+            let ang0 = k as f32 * (TAU / n as f32);
+            let phi = theta - ang0 - std::f32::consts::FRAC_PI_2;
+            let rev = (phi / TAU).floor();
+            let t_pass = (rev * TAU + ang0 + std::f32::consts::FRAC_PI_2) / omega;
+            let since = t - t_pass;
+            if since >= 0.0 && since < 0.4 {
+                // a rider walks in from the queue head to the bottom cabin
+                let q = since / 0.4;
+                let x = cx - 5.0 + (cx - (cx - 5.0)) * q;
+                pp_put(grid, x.round() as i32, dock_y, '☻', wait_c);
+            }
+            let since_exit = t - t_pass - 0.5;
+            if since_exit >= 0.0 && since_exit < 0.4 {
+                // the previous rider strolls off to the right
+                let q = since_exit / 0.4;
+                let x = cx + 1.0 + 4.0 * q;
+                pp_put(grid, x.round() as i32, dock_y, '☻', rider_c);
+            }
         }
-        let since_exit = t - t_pass - 0.5;
-        if since_exit >= 0.0 && since_exit < 0.4 {
-            // the previous rider strolls off to the right
-            let q = since_exit / 0.4;
-            let x = cx + 1.0 + 4.0 * q;
-            pp_put(grid, x.round() as i32, dock_y, '☻', rider_c);
-        }
-    }
+    });
 }
 
 /// Dispatch arm for mode(s): ferris.

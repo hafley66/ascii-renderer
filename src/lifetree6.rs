@@ -1,5 +1,6 @@
 //! tree-of-life-6 -- hyperbolic tree in the upper half-plane / horocycle projection
 //! with SL(2,R) parabolic/hyperbolic flows, {5,4} hyperbolic lattice, and dual ethereal/living halves.
+use crate::_0_profile::measure_layer;
 use crate::color::*;
 use crate::opts::param_f32;
 use crate::types::*;
@@ -525,159 +526,171 @@ fn render_frame6(grid: &mut Grid, c: &Cached6, t: f32, k: &Knobs6) {
     let beat = (ts * 0.7).rem_euclid(3.0);
     let flash = (1.0 - beat * 4.5).max(0.0) * k.glow;
 
-    for y in 0..h {
-        for x in 0..w {
-            let z_raw = unproject_from_screen(c, x as i32, y as i32);
-            let z = sl2_act([1.0 / boost, -horo_flow, 0.0, boost], z_raw);
-            let eth = is_ethereal(z);
-            let v_ratio = (y as f32 / h as f32).clamp(0.0, 1.0);
-            let base_col = if eth { c.col_eth_deep } else { c.col_live_dark };
-            let lit = if eth {
-                0.22 + 0.65 * (1.0 - v_ratio) + flash * 0.45
-            } else {
-                0.20 + 0.60 * (1.0 - v_ratio)
-            };
-            let col = scale_rgb(base_col, lit);
-            grid[y][x] = Cell::with_bg(' ', col, col);
+    measure_layer("tree-of-life-6", "plane", || {
+        for y in 0..h {
+            for x in 0..w {
+                let z_raw = unproject_from_screen(c, x as i32, y as i32);
+                let z = sl2_act([1.0 / boost, -horo_flow, 0.0, boost], z_raw);
+                let eth = is_ethereal(z);
+                let v_ratio = (y as f32 / h as f32).clamp(0.0, 1.0);
+                let base_col = if eth { c.col_eth_deep } else { c.col_live_dark };
+                let lit = if eth {
+                    0.22 + 0.65 * (1.0 - v_ratio) + flash * 0.45
+                } else {
+                    0.20 + 0.60 * (1.0 - v_ratio)
+                };
+                let col = scale_rgb(base_col, lit);
+                grid[y][x] = Cell::with_bg(' ', col, col);
+            }
         }
-    }
+    });
 
-    if k.lattice > 0.0 {
-        for arc in &c.lattice {
-            let mut prev: Option<(i32, i32)> = None;
-            for &pt in arc.pts.iter() {
-                let z_trans = sl2_act(sl2_mat, pt);
-                let (px, py) = project_to_screen(c, z_trans);
-                if let Some((x0, y0)) = prev {
-                    let eth = is_ethereal(pt);
-                    let col = if eth {
-                        scale_rgb(c.col_eth_core, 0.28 * k.lattice)
-                    } else {
-                        scale_rgb(c.col_bark, 0.45 * k.lattice)
-                    };
-                    raster_line(x0, y0, px, py, |lx, ly| {
-                        if lx >= 0 && ly >= 0 && (lx as usize) < w && (ly as usize) < h {
-                            if grid[ly as usize][lx as usize].ch == ' ' {
-                                grid[ly as usize][lx as usize].ch = '·';
-                                grid[ly as usize][lx as usize].fg = col;
+    measure_layer("tree-of-life-6", "lattice", || {
+        if k.lattice > 0.0 {
+            for arc in &c.lattice {
+                let mut prev: Option<(i32, i32)> = None;
+                for &pt in arc.pts.iter() {
+                    let z_trans = sl2_act(sl2_mat, pt);
+                    let (px, py) = project_to_screen(c, z_trans);
+                    if let Some((x0, y0)) = prev {
+                        let eth = is_ethereal(pt);
+                        let col = if eth {
+                            scale_rgb(c.col_eth_core, 0.28 * k.lattice)
+                        } else {
+                            scale_rgb(c.col_bark, 0.45 * k.lattice)
+                        };
+                        raster_line(x0, y0, px, py, |lx, ly| {
+                            if lx >= 0 && ly >= 0 && (lx as usize) < w && (ly as usize) < h {
+                                if grid[ly as usize][lx as usize].ch == ' ' {
+                                    grid[ly as usize][lx as usize].ch = '·';
+                                    grid[ly as usize][lx as usize].fg = col;
+                                }
                             }
+                        });
+                    }
+                    prev = Some((px, py));
+                }
+            }
+        }
+    });
+
+    measure_layer("tree-of-life-6", "branches", || {
+        for seg in &c.segments {
+            let eth = is_ethereal(seg.pts[0]);
+            let mut screen_pts = [(0i32, 0i32); SEG_SAMPLES];
+            for i in 0..SEG_SAMPLES {
+                let z_trans = sl2_act(sl2_mat, seg.pts[i]);
+                screen_pts[i] = project_to_screen(c, z_trans);
+            }
+            let heavy = matches!(seg.kind, SegmentKind::Trunk);
+            for i in 0..SEG_SAMPLES - 1 {
+                let (x0, y0) = screen_pts[i];
+                let (x1, y1) = screen_pts[i + 1];
+                if x0 < -10 && x1 < -10 || x0 >= w as i32 + 10 && x1 >= w as i32 + 10 {
+                    continue;
+                }
+                let depth_ratio = 1.0 - (seg.depth as f32 / (k.depth as f32).max(1.0));
+                let thick = if heavy && depth_ratio > 0.6 { 1 } else { 0 };
+
+                if eth {
+                    let p = (seg.depth as f32 * 1.5 - ts * 1.8 + seg.phase * 6.28).sin().max(0.0);
+                    let pulse = p * p;
+                    let b_idx = if pulse > 0.6 { 2 } else if pulse > 0.2 { 1 } else { 0 };
+                    let ch = match seg.kind {
+                        SegmentKind::Twig => if b_idx > 0 { '∙' } else { '·' },
+                        _ => ETH_BLOCKS[b_idx],
+                    };
+                    let intensity = (0.45 + 0.55 * k.glow * pulse.max(flash)) * (0.5 + 0.5 * depth_ratio);
+                    let col = scale_rgb(blend_rgb(c.col_eth_core, c.col_eth_glow, pulse * 0.75), intensity);
+                    raster_line(x0, y0, x1, y1, |lx, ly| {
+                        for off in -thick..=thick {
+                            set_cell(grid, lx + off, ly, ch, col);
+                        }
+                    });
+                } else {
+                    let ch = match seg.kind {
+                        SegmentKind::Twig => '·',
+                        _ => select_branch_char(x1 - x0, y1 - y0, heavy),
+                    };
+                    let base = match seg.kind {
+                        SegmentKind::HorocycleRoot => blend_rgb(c.col_bark, (0, 0, 0), 0.4),
+                        SegmentKind::Twig => blend_rgb(c.col_bark_bright, c.col_leaf, 0.45),
+                        _ => blend_rgb(c.col_bark, c.col_bark_bright, depth_ratio * 0.5),
+                    };
+                    let sway = 0.88 + 0.12 * (ts * 0.7 + seg.depth as f32 * 0.8).sin();
+                    let col = scale_rgb(base, (0.55 + 0.45 * depth_ratio) * sway);
+                    raster_line(x0, y0, x1, y1, |lx, ly| {
+                        for off in -thick..=thick {
+                            set_cell(grid, lx + off, ly, ch, col);
                         }
                     });
                 }
-                prev = Some((px, py));
             }
         }
-    }
+    });
 
-    for seg in &c.segments {
-        let eth = is_ethereal(seg.pts[0]);
-        let mut screen_pts = [(0i32, 0i32); SEG_SAMPLES];
-        for i in 0..SEG_SAMPLES {
-            let z_trans = sl2_act(sl2_mat, seg.pts[i]);
-            screen_pts[i] = project_to_screen(c, z_trans);
+    measure_layer("tree-of-life-6", "canopy", || {
+        for leaf in &c.canopy {
+            let z_trans = sl2_act(sl2_mat, leaf.z);
+            let (px, py) = project_to_screen(c, z_trans);
+            let eth = is_ethereal(leaf.z);
+            if eth {
+                let p = (ts * 1.5 + leaf.phase * 6.28).sin();
+                let ch = if p > 0.5 { '○' } else { '°' };
+                let col = scale_rgb(c.col_eth_glow, 0.5 + 0.45 * p.max(0.0));
+                set_cell(grid, px, py, ch, col);
+            } else {
+                let r = (ts * 2.5 + leaf.phase * 6.28).sin();
+                let pair = CANOPY_PAIRS[(leaf.glyph_idx & 3) as usize];
+                let ch = if r > 0.55 { pair[1] } else { pair[0] };
+                let col = scale_rgb(
+                    blend_rgb(c.col_leaf, c.col_leaf_accent, leaf.phase * 0.6 + r.max(0.0) * 0.3),
+                    0.8 + 0.2 * r,
+                );
+                set_cell(grid, px, py, ch, col);
+            }
         }
-        let heavy = matches!(seg.kind, SegmentKind::Trunk);
-        for i in 0..SEG_SAMPLES - 1 {
-            let (x0, y0) = screen_pts[i];
-            let (x1, y1) = screen_pts[i + 1];
-            if x0 < -10 && x1 < -10 || x0 >= w as i32 + 10 && x1 >= w as i32 + 10 {
+    });
+
+    measure_layer("tree-of-life-6", "motes", || {
+        for mote in &c.motes {
+            let cycle = (ts * mote.freq * 0.5 + mote.phase).fract();
+            let curr_y = mote.base_y * (1.0 + 1.2 * cycle);
+            let curr_x = mote.base_x + 0.3 * (cycle * 6.28 + mote.phase).sin();
+            let z_pt = (curr_x, curr_y);
+            if !is_ethereal(z_pt) {
                 continue;
             }
-            let depth_ratio = 1.0 - (seg.depth as f32 / (k.depth as f32).max(1.0));
-            let thick = if heavy && depth_ratio > 0.6 { 1 } else { 0 };
-
-            if eth {
-                let p = (seg.depth as f32 * 1.5 - ts * 1.8 + seg.phase * 6.28).sin().max(0.0);
-                let pulse = p * p;
-                let b_idx = if pulse > 0.6 { 2 } else if pulse > 0.2 { 1 } else { 0 };
-                let ch = match seg.kind {
-                    SegmentKind::Twig => if b_idx > 0 { '∙' } else { '·' },
-                    _ => ETH_BLOCKS[b_idx],
-                };
-                let intensity = (0.45 + 0.55 * k.glow * pulse.max(flash)) * (0.5 + 0.5 * depth_ratio);
-                let col = scale_rgb(blend_rgb(c.col_eth_core, c.col_eth_glow, pulse * 0.75), intensity);
-                raster_line(x0, y0, x1, y1, |lx, ly| {
-                    for off in -thick..=thick {
-                        set_cell(grid, lx + off, ly, ch, col);
-                    }
-                });
-            } else {
-                let ch = match seg.kind {
-                    SegmentKind::Twig => '·',
-                    _ => select_branch_char(x1 - x0, y1 - y0, heavy),
-                };
-                let base = match seg.kind {
-                    SegmentKind::HorocycleRoot => blend_rgb(c.col_bark, (0, 0, 0), 0.4),
-                    SegmentKind::Twig => blend_rgb(c.col_bark_bright, c.col_leaf, 0.45),
-                    _ => blend_rgb(c.col_bark, c.col_bark_bright, depth_ratio * 0.5),
-                };
-                let sway = 0.88 + 0.12 * (ts * 0.7 + seg.depth as f32 * 0.8).sin();
-                let col = scale_rgb(base, (0.55 + 0.45 * depth_ratio) * sway);
-                raster_line(x0, y0, x1, y1, |lx, ly| {
-                    for off in -thick..=thick {
-                        set_cell(grid, lx + off, ly, ch, col);
-                    }
-                });
-            }
-        }
-    }
-
-    for leaf in &c.canopy {
-        let z_trans = sl2_act(sl2_mat, leaf.z);
-        let (px, py) = project_to_screen(c, z_trans);
-        let eth = is_ethereal(leaf.z);
-        if eth {
-            let p = (ts * 1.5 + leaf.phase * 6.28).sin();
-            let ch = if p > 0.5 { '○' } else { '°' };
-            let col = scale_rgb(c.col_eth_glow, 0.5 + 0.45 * p.max(0.0));
-            set_cell(grid, px, py, ch, col);
-        } else {
-            let r = (ts * 2.5 + leaf.phase * 6.28).sin();
-            let pair = CANOPY_PAIRS[(leaf.glyph_idx & 3) as usize];
-            let ch = if r > 0.55 { pair[1] } else { pair[0] };
+            let z_trans = sl2_act(sl2_mat, z_pt);
+            let (px, py) = project_to_screen(c, z_trans);
+            let stage = ((cycle * 4.0) as usize).min(3);
+            let ch = MOTE_CHARS[[0, 1, 2, 1][stage]];
+            let b = (cycle * 3.14159).sin();
             let col = scale_rgb(
-                blend_rgb(c.col_leaf, c.col_leaf_accent, leaf.phase * 0.6 + r.max(0.0) * 0.3),
-                0.8 + 0.2 * r,
+                blend_rgb(c.col_eth_core, c.col_eth_glow, mote.shade),
+                0.35 + 0.65 * b,
             );
             set_cell(grid, px, py, ch, col);
         }
-    }
+    });
 
-    for mote in &c.motes {
-        let cycle = (ts * mote.freq * 0.5 + mote.phase).fract();
-        let curr_y = mote.base_y * (1.0 + 1.2 * cycle);
-        let curr_x = mote.base_x + 0.3 * (cycle * 6.28 + mote.phase).sin();
-        let z_pt = (curr_x, curr_y);
-        if !is_ethereal(z_pt) {
-            continue;
-        }
-        let z_trans = sl2_act(sl2_mat, z_pt);
-        let (px, py) = project_to_screen(c, z_trans);
-        let stage = ((cycle * 4.0) as usize).min(3);
-        let ch = MOTE_CHARS[[0, 1, 2, 1][stage]];
-        let b = (cycle * 3.14159).sin();
-        let col = scale_rgb(
-            blend_rgb(c.col_eth_core, c.col_eth_glow, mote.shade),
-            0.35 + 0.65 * b,
-        );
-        set_cell(grid, px, py, ch, col);
-    }
-
-    for step in 0..50 {
-        let frac = step as f32 / 49.0;
-        let y_val = 0.15 * (4.0f32).powf(frac * 3.2);
-        let curve_x = seam_center + 0.3 * (y_val.ln() * 1.4 + seam_wave).sin();
-        let z_trans = sl2_act(sl2_mat, (curve_x, y_val));
-        let (px, py) = project_to_screen(c, z_trans);
-        if px >= 0 && py >= 0 && (px as usize) < w && (py as usize) < h {
-            if grid[py as usize][px as usize].ch == ' ' {
-                let pulse = (frac * 10.0 - ts * 2.2).sin();
-                if pulse > 0.1 {
-                    set_cell(grid, px, py, '┆', scale_rgb(c.col_eth_glow, 0.4 + 0.5 * k.glow * pulse));
+    measure_layer("tree-of-life-6", "flow", || {
+        for step in 0..50 {
+            let frac = step as f32 / 49.0;
+            let y_val = 0.15 * (4.0f32).powf(frac * 3.2);
+            let curve_x = seam_center + 0.3 * (y_val.ln() * 1.4 + seam_wave).sin();
+            let z_trans = sl2_act(sl2_mat, (curve_x, y_val));
+            let (px, py) = project_to_screen(c, z_trans);
+            if px >= 0 && py >= 0 && (px as usize) < w && (py as usize) < h {
+                if grid[py as usize][px as usize].ch == ' ' {
+                    let pulse = (frac * 10.0 - ts * 2.2).sin();
+                    if pulse > 0.1 {
+                        set_cell(grid, px, py, '┆', scale_rgb(c.col_eth_glow, 0.4 + 0.5 * k.glow * pulse));
+                    }
                 }
             }
         }
-    }
+    });
 }
 
 pub(crate) fn cli_lifetree6(

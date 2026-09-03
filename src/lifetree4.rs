@@ -1,5 +1,6 @@
 //! tree-of-life-4 -- the tree in the Poincaré disk: geodesic branches, Möbius drift + spin per frame,
 //! a rotating geodesic seam (ethereal / living), {7,3}-style geodesic web behind. Skeleton cached in disk coords.
+use crate::_0_profile::measure_layer;
 use crate::color::*;
 use crate::opts::param_f32;
 use crate::types::*;
@@ -427,171 +428,185 @@ fn frame(grid: &mut Grid, c: &Cached, t: f32, k: &HyperKnobs) {
     let flash = (1.0 - beat * 4.0).max(0.0) * k.glow;
 
     // background: per cell, invert the view to find the seam side and the depth toward the rim
-    for y in 0..h {
-        for x in 0..w {
-            let z = ((x as f32 + 0.5 - c.cx) / c.rx, (c.cy - y as f32) / c.ry);
-            let r2 = norm2(z);
-            if r2 >= 1.0 {
-                grid[y][x] = Cell::blank();
-                continue;
+    measure_layer("tree-of-life-4", "disk", || {
+        for y in 0..h {
+            for x in 0..w {
+                let z = ((x as f32 + 0.5 - c.cx) / c.rx, (c.cy - y as f32) / c.ry);
+                let r2 = norm2(z);
+                if r2 >= 1.0 {
+                    grid[y][x] = Cell::blank();
+                    continue;
+                }
+                let zo = mobius_inv(z, a, rot);
+                let eth = side_of(zo);
+                let fade = 1.0 - r2 * r2;
+                let base = if eth { c.eth_dark } else { c.live_dark };
+                let col = scale(base, 0.35 + 0.65 * fade + if eth { flash * 0.6 } else { 0.0 });
+                grid[y][x] = Cell::with_bg(' ', col, col);
             }
-            let zo = mobius_inv(z, a, rot);
-            let eth = side_of(zo);
-            let fade = 1.0 - r2 * r2;
-            let base = if eth { c.eth_dark } else { c.live_dark };
-            let col = scale(base, 0.35 + 0.65 * fade + if eth { flash * 0.6 } else { 0.0 });
-            grid[y][x] = Cell::with_bg(' ', col, col);
         }
-    }
+    });
 
     // rim at infinity
     let rim_n = ((c.rx + c.ry) * 4.0) as usize;
-    for i in 0..rim_n {
-        let ang = i as f32 / rim_n as f32 * 6.2832;
-        let x = (c.cx + ang.cos() * (c.rx - 0.3)).round() as i32;
-        let y = (c.cy - ang.sin() * (c.ry - 0.3)).round() as i32;
-        let p = (ang * 6.0 - ts * 1.4).sin();
-        let ch = if p > 0.7 { '∙' } else { '·' };
-        put(grid, x, y, ch, scale(c.eth_hi, 0.3 + 0.3 * p.max(0.0)));
-    }
+    measure_layer("tree-of-life-4", "rim", || {
+        for i in 0..rim_n {
+            let ang = i as f32 / rim_n as f32 * 6.2832;
+            let x = (c.cx + ang.cos() * (c.rx - 0.3)).round() as i32;
+            let y = (c.cy - ang.sin() * (c.ry - 0.3)).round() as i32;
+            let p = (ang * 6.0 - ts * 1.4).sin();
+            let ch = if p > 0.7 { '∙' } else { '·' };
+            put(grid, x, y, ch, scale(c.eth_hi, 0.3 + 0.3 * p.max(0.0)));
+        }
+    });
 
     // geodesic web, faint, side-coloured
-    if k.tile > 0.0 {
-        for arc in &c.web {
-            let mut prev: Option<(i32, i32)> = None;
-            for &zo in arc.iter() {
-                let z = mobius(zo, a, rot);
-                if norm2(z) > 0.985 {
-                    prev = None;
+    measure_layer("tree-of-life-4", "tiles", || {
+        if k.tile > 0.0 {
+            for arc in &c.web {
+                let mut prev: Option<(i32, i32)> = None;
+                for &zo in arc.iter() {
+                    let z = mobius(zo, a, rot);
+                    if norm2(z) > 0.985 {
+                        prev = None;
+                        continue;
+                    }
+                    let s = to_screen(c, z);
+                    if let Some(p) = prev {
+                        let eth = side_of(zo);
+                        let col = if eth { scale(c.eth_rgb, 0.32 * k.tile) } else { scale(c.bark, 0.55 * k.tile) };
+                        line(p.0, p.1, s.0, s.1, |x, y| {
+                            if x >= 0 && y >= 0 && (x as usize) < w && (y as usize) < h && grid[y as usize][x as usize].ch == ' ' {
+                                grid[y as usize][x as usize].ch = '·';
+                                grid[y as usize][x as usize].fg = col;
+                            }
+                        });
+                    }
+                    prev = Some(s);
+                }
+            }
+        }
+    });
+
+    // branches: transform the six samples, join with slope glyphs; thickness from the local scale
+    measure_layer("tree-of-life-4", "branches", || {
+        for s in &c.segs {
+            let eth = side_of(s.p[0]);
+            let mut pts = [(0i32, 0i32); SEG_N];
+            let mut scl = [0.0f32; SEG_N];
+            for i in 0..SEG_N {
+                let z = mobius(s.p[i], a, rot);
+                pts[i] = to_screen(c, z);
+                scl[i] = 1.0 - norm2(z);
+            }
+            let heavy = matches!(s.kind, Kind::Trunk);
+            for i in 0..SEG_N - 1 {
+                let (x0, y0) = pts[i];
+                let (x1, y1) = pts[i + 1];
+                if scl[i] < 0.01 && scl[i + 1] < 0.01 {
                     continue;
                 }
-                let s = to_screen(c, z);
-                if let Some(p) = prev {
-                    let eth = side_of(zo);
-                    let col = if eth { scale(c.eth_rgb, 0.32 * k.tile) } else { scale(c.bark, 0.55 * k.tile) };
-                    line(p.0, p.1, s.0, s.1, |x, y| {
-                        if x >= 0 && y >= 0 && (x as usize) < w && (y as usize) < h && grid[y as usize][x as usize].ch == ' ' {
-                            grid[y as usize][x as usize].ch = '·';
-                            grid[y as usize][x as usize].fg = col;
+                let local = (scl[i] + scl[i + 1]) * 0.5;
+                let thick = if heavy && local > 0.55 { 1 } else { 0 };
+                if eth {
+                    let p = (s.ord * 9.0 - ts * 1.6 + s.phase).sin().max(0.0);
+                    let pulse = p * p;
+                    let idx = if pulse > 0.55 { 2 } else if pulse > 0.15 { 1 } else { 0 };
+                    let ch = match s.kind {
+                        Kind::Twig => if idx > 0 { '∙' } else { '·' },
+                        _ => ETH_FILL[idx],
+                    };
+                    let b = (0.4 + 0.6 * k.glow * pulse.max(flash)) * (0.45 + 0.55 * local);
+                    let col = scale(mix(c.eth_rgb, c.eth_hi, pulse * 0.7), b);
+                    line(x0, y0, x1, y1, |x, y| {
+                        for k2 in -thick..=thick {
+                            put(grid, x + k2, y, ch, col);
+                        }
+                    });
+                } else {
+                    let ch = match s.kind {
+                        Kind::Twig => '·',
+                        _ => slope_glyph(x1 - x0, y1 - y0, heavy),
+                    };
+                    let base = match s.kind {
+                        Kind::Root => mix(c.bark, (0, 0, 0), 0.35),
+                        Kind::Twig => mix(c.bark_hi, c.leaf_rgb, 0.4),
+                        _ => mix(c.bark, c.bark_hi, s.ord * 0.6),
+                    };
+                    let breath = 0.9 + 0.1 * (ts * 0.5 + s.ord * 3.0).sin();
+                    let col = scale(base, (0.5 + 0.5 * local) * breath);
+                    line(x0, y0, x1, y1, |x, y| {
+                        for k2 in -thick..=thick {
+                            put(grid, x + k2, y, ch, col);
                         }
                     });
                 }
-                prev = Some(s);
             }
         }
-    }
-
-    // branches: transform the six samples, join with slope glyphs; thickness from the local scale
-    for s in &c.segs {
-        let eth = side_of(s.p[0]);
-        let mut pts = [(0i32, 0i32); SEG_N];
-        let mut scl = [0.0f32; SEG_N];
-        for i in 0..SEG_N {
-            let z = mobius(s.p[i], a, rot);
-            pts[i] = to_screen(c, z);
-            scl[i] = 1.0 - norm2(z);
-        }
-        let heavy = matches!(s.kind, Kind::Trunk);
-        for i in 0..SEG_N - 1 {
-            let (x0, y0) = pts[i];
-            let (x1, y1) = pts[i + 1];
-            if scl[i] < 0.01 && scl[i + 1] < 0.01 {
-                continue;
-            }
-            let local = (scl[i] + scl[i + 1]) * 0.5;
-            let thick = if heavy && local > 0.55 { 1 } else { 0 };
-            if eth {
-                let p = (s.ord * 9.0 - ts * 1.6 + s.phase).sin().max(0.0);
-                let pulse = p * p;
-                let idx = if pulse > 0.55 { 2 } else if pulse > 0.15 { 1 } else { 0 };
-                let ch = match s.kind {
-                    Kind::Twig => if idx > 0 { '∙' } else { '·' },
-                    _ => ETH_FILL[idx],
-                };
-                let b = (0.4 + 0.6 * k.glow * pulse.max(flash)) * (0.45 + 0.55 * local);
-                let col = scale(mix(c.eth_rgb, c.eth_hi, pulse * 0.7), b);
-                line(x0, y0, x1, y1, |x, y| {
-                    for k2 in -thick..=thick {
-                        put(grid, x + k2, y, ch, col);
-                    }
-                });
-            } else {
-                let ch = match s.kind {
-                    Kind::Twig => '·',
-                    _ => slope_glyph(x1 - x0, y1 - y0, heavy),
-                };
-                let base = match s.kind {
-                    Kind::Root => mix(c.bark, (0, 0, 0), 0.35),
-                    Kind::Twig => mix(c.bark_hi, c.leaf_rgb, 0.4),
-                    _ => mix(c.bark, c.bark_hi, s.ord * 0.6),
-                };
-                let breath = 0.9 + 0.1 * (ts * 0.5 + s.ord * 3.0).sin();
-                let col = scale(base, (0.5 + 0.5 * local) * breath);
-                line(x0, y0, x1, y1, |x, y| {
-                    for k2 in -thick..=thick {
-                        put(grid, x + k2, y, ch, col);
-                    }
-                });
-            }
-        }
-    }
+    });
 
     // leaves
-    for l in &c.leaves {
-        let z = mobius(l.z, a, rot);
-        let local = 1.0 - norm2(z);
-        if local < 0.03 {
-            continue;
-        }
-        let (x, y) = to_screen(c, z);
-        if side_of(l.z) {
-            let p = (ts * 1.3 + l.phase * 6.28).sin();
-            let ch = if p > 0.5 { '○' } else { '°' };
-            put(grid, x, y, ch, scale(c.eth_hi, (0.45 + 0.4 * p.max(0.0)) * (0.5 + 0.5 * local)));
-        } else {
-            let r = (ts * 2.7 + l.phase * 6.2832).sin();
-            let pair = LEAF[(l.tex & 3) as usize];
-            let ch = if r > 0.6 { pair[1] } else { pair[0] };
-            let col = scale(mix(c.leaf_rgb, c.leaf_hi, l.phase * 0.5 + r.max(0.0) * 0.3), (0.7 + 0.3 * local) * (0.85 + 0.15 * r));
-            put(grid, x, y, ch, col);
-        }
-    }
-
-    // motes ride geodesic rays out of the origin; only the ethereal side shows them
-    for m in &c.motes {
-        let life = (ts * m.rate * 0.4 + m.phase).fract();
-        let d = life * 6.0;
-        let zo = polar((d * 0.5).tanh(), m.ang + 0.4 * (life * 6.28 + m.phase).sin());
-        if !side_of(zo) {
-            continue;
-        }
-        let z = mobius(zo, a, rot);
-        let local = 1.0 - norm2(z);
-        if local < 0.02 {
-            continue;
-        }
-        let (x, y) = to_screen(c, z);
-        let stage = ((life * 4.0) as usize).min(3);
-        let b = (life * 3.1416).sin() * (0.5 + 0.5 * local);
-        put(grid, x, y, MOTE[[0, 1, 2, 1][stage]], scale(mix(c.eth_rgb, c.eth_hi, m.tint), 0.35 + 0.65 * b));
-    }
-
-    // the seam geodesic itself: sample the diameter in original coords, transform, mark empty cells
-    for i in 0..48 {
-        let s = -4.0 + 8.0 * i as f32 / 47.0;
-        let zo = cmul(polar((s * 0.5).tanh(), 0.0), cdiv((0.0, 1.0), seam_dir));
-        let z = mobius(zo, a, rot);
-        if norm2(z) > 0.985 {
-            continue;
-        }
-        let (x, y) = to_screen(c, z);
-        if x >= 0 && y >= 0 && (x as usize) < w && (y as usize) < h && grid[y as usize][x as usize].ch == ' ' {
-            let p = (s * 2.0 - ts * 2.5).sin();
-            if p > 0.1 {
-                put(grid, x, y, '┆', scale(c.eth_hi, 0.35 + 0.5 * k.glow * p));
+    measure_layer("tree-of-life-4", "leaves", || {
+        for l in &c.leaves {
+            let z = mobius(l.z, a, rot);
+            let local = 1.0 - norm2(z);
+            if local < 0.03 {
+                continue;
+            }
+            let (x, y) = to_screen(c, z);
+            if side_of(l.z) {
+                let p = (ts * 1.3 + l.phase * 6.28).sin();
+                let ch = if p > 0.5 { '○' } else { '°' };
+                put(grid, x, y, ch, scale(c.eth_hi, (0.45 + 0.4 * p.max(0.0)) * (0.5 + 0.5 * local)));
+            } else {
+                let r = (ts * 2.7 + l.phase * 6.2832).sin();
+                let pair = LEAF[(l.tex & 3) as usize];
+                let ch = if r > 0.6 { pair[1] } else { pair[0] };
+                let col = scale(mix(c.leaf_rgb, c.leaf_hi, l.phase * 0.5 + r.max(0.0) * 0.3), (0.7 + 0.3 * local) * (0.85 + 0.15 * r));
+                put(grid, x, y, ch, col);
             }
         }
-    }
+    });
+
+    // motes ride geodesic rays out of the origin; only the ethereal side shows them
+    measure_layer("tree-of-life-4", "motes", || {
+        for m in &c.motes {
+            let life = (ts * m.rate * 0.4 + m.phase).fract();
+            let d = life * 6.0;
+            let zo = polar((d * 0.5).tanh(), m.ang + 0.4 * (life * 6.28 + m.phase).sin());
+            if !side_of(zo) {
+                continue;
+            }
+            let z = mobius(zo, a, rot);
+            let local = 1.0 - norm2(z);
+            if local < 0.02 {
+                continue;
+            }
+            let (x, y) = to_screen(c, z);
+            let stage = ((life * 4.0) as usize).min(3);
+            let b = (life * 3.1416).sin() * (0.5 + 0.5 * local);
+            put(grid, x, y, MOTE[[0, 1, 2, 1][stage]], scale(mix(c.eth_rgb, c.eth_hi, m.tint), 0.35 + 0.65 * b));
+        }
+    });
+
+    // the seam geodesic itself: sample the diameter in original coords, transform, mark empty cells
+    measure_layer("tree-of-life-4", "seam", || {
+        for i in 0..48 {
+            let s = -4.0 + 8.0 * i as f32 / 47.0;
+            let zo = cmul(polar((s * 0.5).tanh(), 0.0), cdiv((0.0, 1.0), seam_dir));
+            let z = mobius(zo, a, rot);
+            if norm2(z) > 0.985 {
+                continue;
+            }
+            let (x, y) = to_screen(c, z);
+            if x >= 0 && y >= 0 && (x as usize) < w && (y as usize) < h && grid[y as usize][x as usize].ch == ' ' {
+                let p = (s * 2.0 - ts * 2.5).sin();
+                if p > 0.1 {
+                    put(grid, x, y, '┆', scale(c.eth_hi, 0.35 + 0.5 * k.glow * p));
+                }
+            }
+        }
+    });
 }
 
 pub(crate) fn cli_lifetree4(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {

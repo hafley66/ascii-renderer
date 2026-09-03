@@ -8,6 +8,7 @@ use std::io::{self, IsTerminal, Read as _};
 
 use crate::automata::*;
 use crate::biomes::*;
+use crate::_0_profile::measure_layer;
 use crate::color::*;
 use crate::content::*;
 use crate::fills::*;
@@ -374,21 +375,23 @@ pub(crate) fn draw_fullmetal_eyes(mut grid: Grid, width: usize, height: usize, s
         let pupil = darken(palette[0], 2);
         let shadow = darken(palette[2], 60);
 
-        for y in 0..height {
-            for x in 0..width {
-                let n = (x * 19 + y * 43 + seed as usize * 5) % 151;
-                let ch = match n {
-                    0 => '·',
-                    1 => '∙',
-                    _ => ' ',
-                };
-                grid[y][x] = if ch == ' ' {
-                    Cell::new(' ', bg)
-                } else {
-                    Cell::new(ch, shadow)
-                };
+        measure_layer("fullmetal-eyes", "noise", || {
+            for y in 0..height {
+                for x in 0..width {
+                    let n = (x * 19 + y * 43 + seed as usize * 5) % 151;
+                    let ch = match n {
+                        0 => '·',
+                        1 => '∙',
+                        _ => ' ',
+                    };
+                    grid[y][x] = if ch == ' ' {
+                        Cell::new(' ', bg)
+                    } else {
+                        Cell::new(ch, shadow)
+                    };
+                }
             }
-        }
+        });
 
         let put = |grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color| {
             if x >= 0 && y >= 0 && (x as usize) < width && (y as usize) < height {
@@ -515,120 +518,134 @@ pub(crate) fn draw_fullmetal_eyes(mut grid: Grid, width: usize, height: usize, s
         let max_ry = (height as f32 / 2.0 - 2.0).max(5.0);
         let phase = seed as f32 * 0.031 - std::f32::consts::FRAC_PI_2 + t_anim * 0.12;
 
-        for i in 0..3 {
-            let rx = max_rx * (0.92 - i as f32 * 0.16);
-            let ry = max_ry * (0.92 - i as f32 * 0.16);
-            draw_arc(
-                &mut grid,
-                cx,
-                cy,
-                rx,
-                ry,
-                phase,
-                phase + std::f32::consts::TAU,
-                if i == 1 { gold } else { chalk },
-                if i == 2 { 7 } else { 0 },
-            );
-        }
+        measure_layer("fullmetal-eyes", "rings", || {
+            for i in 0..3 {
+                let rx = max_rx * (0.92 - i as f32 * 0.16);
+                let ry = max_ry * (0.92 - i as f32 * 0.16);
+                draw_arc(
+                    &mut grid,
+                    cx,
+                    cy,
+                    rx,
+                    ry,
+                    phase,
+                    phase + std::f32::consts::TAU,
+                    if i == 1 { gold } else { chalk },
+                    if i == 2 { 7 } else { 0 },
+                );
+            }
+        });
 
         let mut nodes = Vec::new();
-        for i in 0..node_count {
-            let a = phase + i as f32 * std::f32::consts::TAU / node_count as f32;
-            let outer = point_on(cx, cy, max_rx * 0.82, max_ry * 0.82, a);
-            let inner = point_on(cx, cy, max_rx * 0.45, max_ry * 0.45, a);
-            nodes.push(outer);
-            draw_line(
-                &mut grid,
-                inner.0,
-                inner.1,
-                outer.0,
-                outer.1,
-                darken(gold, 8),
-            );
-        }
-        for i in 0..nodes.len() {
-            let j = (i + 2) % nodes.len();
-            draw_line(
-                &mut grid,
-                nodes[i].0,
-                nodes[i].1,
-                nodes[j].0,
-                nodes[j].1,
-                darken(chalk, 18),
-            );
-        }
+        measure_layer("fullmetal-eyes", "nodes", || {
+            for i in 0..node_count {
+                let a = phase + i as f32 * std::f32::consts::TAU / node_count as f32;
+                let outer = point_on(cx, cy, max_rx * 0.82, max_ry * 0.82, a);
+                let inner = point_on(cx, cy, max_rx * 0.45, max_ry * 0.45, a);
+                nodes.push(outer);
+                draw_line(
+                    &mut grid,
+                    inner.0,
+                    inner.1,
+                    outer.0,
+                    outer.1,
+                    darken(gold, 8),
+                );
+            }
+        });
+        measure_layer("fullmetal-eyes", "links", || {
+            for i in 0..nodes.len() {
+                let j = (i + 2) % nodes.len();
+                draw_line(
+                    &mut grid,
+                    nodes[i].0,
+                    nodes[i].1,
+                    nodes[j].0,
+                    nodes[j].1,
+                    darken(chalk, 18),
+                );
+            }
+        });
 
         let runes = [
             '△', '▽', '□', '◇', '☉', '☽', '☿', '♄', '♃', '✦', '∴', '∵', '⊕', '⊗',
         ];
-        for i in 0..rune_count {
-            let lane = match i % 4 {
-                0 => 0.92,
-                1 => 0.74,
-                2 => 0.58,
-                _ => rng.random_range(0.38..0.88),
-            };
-            let a = phase
-                + i as f32 / rune_count as f32 * std::f32::consts::TAU
-                + rng.random_range(-0.035..0.035);
-            let p = point_on(cx, cy, max_rx * lane, max_ry * lane, a);
-            put(
-                &mut grid,
-                p.0,
-                p.1,
-                runes[(i + rng.random_range(0..runes.len())) % runes.len()],
-                shift_hue(gold, rng.random_range(-50..=65) as f64),
-            );
-        }
+        measure_layer("fullmetal-eyes", "runes", || {
+            for i in 0..rune_count {
+                let lane = match i % 4 {
+                    0 => 0.92,
+                    1 => 0.74,
+                    2 => 0.58,
+                    _ => rng.random_range(0.38..0.88),
+                };
+                let a = phase
+                    + i as f32 / rune_count as f32 * std::f32::consts::TAU
+                    + rng.random_range(-0.035..0.035);
+                let p = point_on(cx, cy, max_rx * lane, max_ry * lane, a);
+                put(
+                    &mut grid,
+                    p.0,
+                    p.1,
+                    runes[(i + rng.random_range(0..runes.len())) % runes.len()],
+                    shift_hue(gold, rng.random_range(-50..=65) as f64),
+                );
+            }
+        });
 
-        draw_small_eye(
-            &mut grid,
-            cx,
-            cy,
-            (width as i32 / 5).clamp(12, 20),
-            (height as i32 / 5).clamp(4, 7),
-            lighten(lid, 10),
-            lighten(iris, 16),
-            seed as usize,
-        );
-        for (i, &(nx, ny)) in nodes.iter().enumerate() {
+        measure_layer("fullmetal-eyes", "small_eye", || {
             draw_small_eye(
                 &mut grid,
-                nx,
-                ny,
-                5 + (i as i32 % 2),
-                2,
-                darken(lid, 8),
-                shift_hue(iris, i as f64 * 38.0),
-                i,
+                cx,
+                cy,
+                (width as i32 / 5).clamp(12, 20),
+                (height as i32 / 5).clamp(4, 7),
+                lighten(lid, 10),
+                lighten(iris, 16),
+                seed as usize,
             );
-            put(
-                &mut grid,
-                nx,
-                ny + 3,
-                runes[i % runes.len()],
-                lighten(gold, 12),
-            );
-        }
+        });
+        measure_layer("fullmetal-eyes", "node_eyes", || {
+            for (i, &(nx, ny)) in nodes.iter().enumerate() {
+                draw_small_eye(
+                    &mut grid,
+                    nx,
+                    ny,
+                    5 + (i as i32 % 2),
+                    2,
+                    darken(lid, 8),
+                    shift_hue(iris, i as f64 * 38.0),
+                    i,
+                );
+                put(
+                    &mut grid,
+                    nx,
+                    ny + 3,
+                    runes[i % runes.len()],
+                    lighten(gold, 12),
+                );
+            }
+        });
 
-        for _ in 0..node_count {
-            let a = phase + rng.random::<f32>() * std::f32::consts::TAU;
-            let p1 = point_on(
-                cx,
-                cy,
-                max_rx * rng.random_range(0.22..0.45),
-                max_ry * rng.random_range(0.22..0.45),
-                a,
-            );
-            let p2 = point_on(
-                cx,
-                cy,
-                max_rx * rng.random_range(0.60..0.90),
-                max_ry * rng.random_range(0.60..0.90),
-                a + rng.random_range(0.3..1.3),
-            );
-            draw_line(&mut grid, p1.0, p1.1, p2.0, p2.1, darken(iris, 18));
-        }
+        measure_layer("fullmetal-eyes", "watchers", || {
+            for _ in 0..node_count {
+                let a = phase + rng.random::<f32>() * std::f32::consts::TAU;
+                let p1 = point_on(
+                    cx,
+                    cy,
+                    max_rx * rng.random_range(0.22..0.45),
+                    max_ry * rng.random_range(0.22..0.45),
+                    a,
+                );
+                let p2 = point_on(
+                    cx,
+                    cy,
+                    max_rx * rng.random_range(0.60..0.90),
+                    max_ry * rng.random_range(0.60..0.90),
+                    a + rng.random_range(0.3..1.3),
+                );
+                draw_line(&mut grid, p1.0, p1.1, p2.0, p2.1, darken(iris, 18));
+            }
+        });
     grid
 }
 
@@ -1457,11 +1474,13 @@ pub(crate) fn draw_fa6(
 pub(crate) fn draw_delta(grid: &mut Grid, width: usize, height: usize, _seed: u64, palette: &[Color; 5], rng: &mut StdRng, t: f32) {
     use std::f32::consts::FRAC_PI_2;
     let bg = darken(palette[0], 6);
-    for y in 0..height {
-        for x in 0..width {
-            grid[y][x] = Cell::new(' ', bg);
+    measure_layer("delta", "clear", || {
+        for y in 0..height {
+            for x in 0..width {
+                grid[y][x] = Cell::new(' ', bg);
+            }
         }
-    }
+    });
     // Physics tree. Each branch is a torsional spring-damper at its joint: it has
     // a rest angle relative to its parent, an angular deflection `theta`, and an
     // angular velocity `omega`. A turbulent wind force field pushes on each
@@ -1495,44 +1514,48 @@ pub(crate) fn draw_delta(grid: &mut Grid, width: usize, height: usize, _seed: u6
     }
     let roots = 3;
     let mut stack: Vec<Pending> = Vec::new();
-    for r in 0..roots {
-        let x = width as f32 * (r as f32 + 1.0) / (roots as f32 + 1.0);
-        stack.push(Pending {
-            parent: -1,
-            rel: FRAC_PI_2 + rng.random_range(-0.25f32..0.25),
-            len: height as f32 * 0.30,
-            depth: 0,
-            bx: x,
-            by: 1.0,
-        });
-    }
-    while let Some(p) = stack.pop() {
-        if p.depth > 7 || p.len < 2.0 {
-            continue;
-        }
-        let idx = nodes.len() as i32;
-        nodes.push(Node {
-            parent: p.parent,
-            rel: p.rel,
-            len: p.len,
-            depth: p.depth,
-            bx: p.bx,
-            by: p.by,
-        });
-        let children = if p.depth < 2 { 3 } else { 2 };
-        for _ in 0..children {
-            let da = rng.random_range(-0.65f32..0.65);
-            let len = p.len * rng.random_range(0.6f32..0.78);
+    measure_layer("delta", "roots", || {
+        for r in 0..roots {
+            let x = width as f32 * (r as f32 + 1.0) / (roots as f32 + 1.0);
             stack.push(Pending {
-                parent: idx,
-                rel: da,
-                len,
-                depth: p.depth + 1,
-                bx: 0.0,
-                by: 0.0,
+                parent: -1,
+                rel: FRAC_PI_2 + rng.random_range(-0.25f32..0.25),
+                len: height as f32 * 0.30,
+                depth: 0,
+                bx: x,
+                by: 1.0,
             });
         }
-    }
+    });
+    measure_layer("delta", "grow", || {
+        while let Some(p) = stack.pop() {
+            if p.depth > 7 || p.len < 2.0 {
+                continue;
+            }
+            let idx = nodes.len() as i32;
+            nodes.push(Node {
+                parent: p.parent,
+                rel: p.rel,
+                len: p.len,
+                depth: p.depth,
+                bx: p.bx,
+                by: p.by,
+            });
+            let children = if p.depth < 2 { 3 } else { 2 };
+            for _ in 0..children {
+                let da = rng.random_range(-0.65f32..0.65);
+                let len = p.len * rng.random_range(0.6f32..0.78);
+                stack.push(Pending {
+                    parent: idx,
+                    rel: da,
+                    len,
+                    depth: p.depth + 1,
+                    bx: 0.0,
+                    by: 0.0,
+                });
+            }
+        }
+    });
     let n = nodes.len();
 
     // Per-joint physics constants, tunable from the demo options pane (env knobs;
@@ -1567,81 +1590,85 @@ pub(crate) fn draw_delta(grid: &mut Grid, width: usize, height: usize, _seed: u6
     let mut tipy = vec![0.0f32; n];
 
     let windy = t != 0.0; // t==0 -> rest tree, byte-identical to the static render
-    if windy {
-        const WARM: f32 = 6.0;
-        const DT: f32 = 0.08;
-        let t0 = (t - WARM).max(0.0);
-        let steps = (((t - t0) / DT).round() as i32).max(1);
-        let mut time = t0;
-        for _ in 0..steps {
-            // forward pass: world angle + tip position from current deflections.
-            for i in 0..n {
-                let nd = &nodes[i];
-                let (bx, by, pang) = if nd.parent < 0 {
-                    (nd.bx, nd.by, 0.0)
-                } else {
-                    let pi = nd.parent as usize;
-                    (tipx[pi], tipy[pi], wang[pi])
-                };
-                let a = pang + nd.rel + theta[i];
-                wang[i] = a;
-                tipx[i] = bx + a.cos() * nd.len * 1.8;
-                tipy[i] = by + a.sin() * nd.len;
+    measure_layer("delta", "wind", || {
+        if windy {
+            const WARM: f32 = 6.0;
+            const DT: f32 = 0.08;
+            let t0 = (t - WARM).max(0.0);
+            let steps = (((t - t0) / DT).round() as i32).max(1);
+            let mut time = t0;
+            for _ in 0..steps {
+                // forward pass: world angle + tip position from current deflections.
+                for i in 0..n {
+                    let nd = &nodes[i];
+                    let (bx, by, pang) = if nd.parent < 0 {
+                        (nd.bx, nd.by, 0.0)
+                    } else {
+                        let pi = nd.parent as usize;
+                        (tipx[pi], tipy[pi], wang[pi])
+                    };
+                    let a = pang + nd.rel + theta[i];
+                    wang[i] = a;
+                    tipx[i] = bx + a.cos() * nd.len * 1.8;
+                    tipy[i] = by + a.sin() * nd.len;
+                }
+                // integrate each joint (semi-implicit Euler).
+                for i in 0..n {
+                    let nd = &nodes[i];
+                    let (bx, by) = if nd.parent < 0 {
+                        (nd.bx, nd.by)
+                    } else {
+                        let pi = nd.parent as usize;
+                        (tipx[pi], tipy[pi])
+                    };
+                    let mx = (bx + tipx[i]) * 0.5; // segment midpoint (force sample point)
+                    let my = (by + tipy[i]) * 0.5;
+                    let (fx, fy) = wind(mx, my, time);
+                    let a = wang[i];
+                    // force component perpendicular to the branch -> bending torque.
+                    let perp = fx * (-a.sin()) + fy * a.cos();
+                    let exposure = 1.0 + 0.3 * nd.depth as f32; // tips catch more wind
+                    let torque = perp * nd.len * exposure
+                        - stiff(nd.len) * theta[i]
+                        - damp(nd.len) * omega[i];
+                    let alpha = torque / inertia(nd.len);
+                    omega[i] += alpha * DT;
+                    theta[i] += omega[i] * DT;
+                    theta[i] = theta[i].clamp(-0.7, 0.7); // keep branches from folding over
+                }
+                time += DT;
             }
-            // integrate each joint (semi-implicit Euler).
-            for i in 0..n {
-                let nd = &nodes[i];
-                let (bx, by) = if nd.parent < 0 {
-                    (nd.bx, nd.by)
-                } else {
-                    let pi = nd.parent as usize;
-                    (tipx[pi], tipy[pi])
-                };
-                let mx = (bx + tipx[i]) * 0.5; // segment midpoint (force sample point)
-                let my = (by + tipy[i]) * 0.5;
-                let (fx, fy) = wind(mx, my, time);
-                let a = wang[i];
-                // force component perpendicular to the branch -> bending torque.
-                let perp = fx * (-a.sin()) + fy * a.cos();
-                let exposure = 1.0 + 0.3 * nd.depth as f32; // tips catch more wind
-                let torque = perp * nd.len * exposure
-                    - stiff(nd.len) * theta[i]
-                    - damp(nd.len) * omega[i];
-                let alpha = torque / inertia(nd.len);
-                omega[i] += alpha * DT;
-                theta[i] += omega[i] * DT;
-                theta[i] = theta[i].clamp(-0.7, 0.7); // keep branches from folding over
-            }
-            time += DT;
         }
-    }
+    });
 
     // final forward pass + draw.
-    for i in 0..n {
-        let nd = &nodes[i];
-        let (bx, by, pang) = if nd.parent < 0 {
-            (nd.bx, nd.by, 0.0)
-        } else {
-            let pi = nd.parent as usize;
-            (tipx[pi], tipy[pi], wang[pi])
-        };
-        let a = pang + nd.rel + theta[i];
-        wang[i] = a;
-        let ex = bx + a.cos() * nd.len * 1.8;
-        let ey = by + a.sin() * nd.len;
-        tipx[i] = ex;
-        tipy[i] = ey;
-        let mut col = lerp_color(palette[1], palette[3], nd.depth as f32 / 7.0);
-        if rbow > 0.0 {
-            // hue sweeps with depth (trunk -> tips) plus horizontal position, so the
-            // canopy reads as a rainbow gradient. `rbow` blends it over the palette.
-            let hue = ((nd.depth as f32 / 7.0) * 280.0 + (ex / width as f32) * 80.0).rem_euclid(360.0);
-            let rainbow = hsl_to_rgb(hue as f64, 0.75, 0.55);
-            col = lerp_color(col, rainbow, rbow);
+    measure_layer("delta", "strokes", || {
+        for i in 0..n {
+            let nd = &nodes[i];
+            let (bx, by, pang) = if nd.parent < 0 {
+                (nd.bx, nd.by, 0.0)
+            } else {
+                let pi = nd.parent as usize;
+                (tipx[pi], tipy[pi], wang[pi])
+            };
+            let a = pang + nd.rel + theta[i];
+            wang[i] = a;
+            let ex = bx + a.cos() * nd.len * 1.8;
+            let ey = by + a.sin() * nd.len;
+            tipx[i] = ex;
+            tipy[i] = ey;
+            let mut col = lerp_color(palette[1], palette[3], nd.depth as f32 / 7.0);
+            if rbow > 0.0 {
+                // hue sweeps with depth (trunk -> tips) plus horizontal position, so the
+                // canopy reads as a rainbow gradient. `rbow` blends it over the palette.
+                let hue = ((nd.depth as f32 / 7.0) * 280.0 + (ex / width as f32) * 80.0).rem_euclid(360.0);
+                let rainbow = hsl_to_rgb(hue as f64, 0.75, 0.55);
+                col = lerp_color(col, rainbow, rbow);
+            }
+            pp_line(grid, bx.round() as i32, by.round() as i32, ex.round() as i32, ey.round() as i32, col);
+            pp_put(grid, ex.round() as i32, ey.round() as i32, '◆', lighten(col, 10));
         }
-        pp_line(grid, bx.round() as i32, by.round() as i32, ex.round() as i32, ey.round() as i32, col);
-        pp_put(grid, ex.round() as i32, ey.round() as i32, '◆', lighten(col, 10));
-    }
+    });
 }
 
 /// Dispatch arm for mode(s): fa6, fullmetal-alchemist6 (moved verbatim from run()).

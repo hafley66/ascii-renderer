@@ -1,5 +1,6 @@
 //! astrolabe -- a working brass instrument: graduated limb, engraved tympan,
 //! precessing rete of stars, sweeping rule. Rolls are t-independent; motion is rotation.
+use crate::_0_profile::measure_layer;
 use crate::color::*;
 use crate::opts::param_f32;
 use crate::sprites::{MoveDir, TreePen};
@@ -308,11 +309,11 @@ pub fn draw_astrolabe(grid: &mut Grid, width: usize, height: usize, seed: u64, p
     let spokes = if small { 6 } else { spokes };
     let stars = if small { stars / 2 } else { stars };
 
-    draw_tympan(grid, cx, cy, rx, ry, &b, rings, spokes, &mut plate_rng);
-    draw_rete(grid, cx, cy, rx, ry, &b, t * rate, stars, twinkle, t, ecliptic_amt);
-    draw_rule(grid, cx, cy, rx, ry, &b, t * rule_rate + 0.6);
-    draw_limb(grid, cx, cy, rx, ry, &b, &mut plate_rng);
-    draw_throne(grid, cx, cy, ry, &b);
+    measure_layer("astrolabe", "tympan", || draw_tympan(grid, cx, cy, rx, ry, &b, rings, spokes, &mut plate_rng));
+    measure_layer("astrolabe", "rete", || draw_rete(grid, cx, cy, rx, ry, &b, t * rate, stars, twinkle, t, ecliptic_amt));
+    measure_layer("astrolabe", "rule", || draw_rule(grid, cx, cy, rx, ry, &b, t * rule_rate + 0.6));
+    measure_layer("astrolabe", "limb", || draw_limb(grid, cx, cy, rx, ry, &b, &mut plate_rng));
+    measure_layer("astrolabe", "throne", || draw_throne(grid, cx, cy, ry, &b));
 }
 
 pub(crate) fn cli_astrolabe(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {

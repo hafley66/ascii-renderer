@@ -50,6 +50,6 @@ The last command must print a layer table, never the line `no measure_layer time
 
 ## Gate
 
-`cargo test --release every_native_mode_has_layer_timers -- --ignored` renders every
-native mode once with a capture open and lists the ones with no timers. It goes un-ignored
-once the list is empty.
+`every_native_mode_has_layer_timers` in `src/perf_sweep.rs` runs with `cargo test`. It renders
+every native mode once with a capture open and fails naming any mode with no timers. A new
+native mode must be added to `NATIVE_MODES` there and wrapped before it lands.

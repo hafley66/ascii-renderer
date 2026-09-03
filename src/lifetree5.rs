@@ -1,6 +1,7 @@
 //! tree-of-life-5 -- the tree in the Klein projective disk: straight-chord geodesic branches,
 //! Euclidean spin + a rotating diameter seam that sweeps ethereal from living, horocycle rings, motes.
 //! Skeleton cached in Klein coords; a frame does zero rng and zero allocation.
+use crate::_0_profile::measure_layer;
 use crate::color::*;
 use crate::opts::param_f32;
 use crate::types::*;
@@ -358,31 +359,35 @@ fn frame(grid: &mut Grid, c: &Cached, t: f32, k: &Knobs5) {
     let beat = (ts * 0.6).rem_euclid(3.0);
     let flash = (1.0 - beat * 4.0).max(0.0) * k.glow;
 
-    for y in 0..h {
-        for x in 0..w {
-            let z = ((x as f32 + 0.5 - c.cx) / c.rx, (c.cy - y as f32) / c.ry);
-            let r2 = norm2(z);
-            if r2 >= 1.0 {
-                grid[y][x] = Cell::blank();
-                continue;
+    measure_layer("tree-of-life-5", "disk", || {
+        for y in 0..h {
+            for x in 0..w {
+                let z = ((x as f32 + 0.5 - c.cx) / c.rx, (c.cy - y as f32) / c.ry);
+                let r2 = norm2(z);
+                if r2 >= 1.0 {
+                    grid[y][x] = Cell::blank();
+                    continue;
+                }
+                let eth = side_of(z);
+                let fade = 1.0 - r2 * r2;
+                let base = if eth { c.eth_dark } else { c.live_dark };
+                let col = scale(base, 0.35 + 0.65 * fade + if eth { flash * 0.6 } else { 0.0 });
+                grid[y][x] = Cell::with_bg(' ', col, col);
             }
-            let eth = side_of(z);
-            let fade = 1.0 - r2 * r2;
-            let base = if eth { c.eth_dark } else { c.live_dark };
-            let col = scale(base, 0.35 + 0.65 * fade + if eth { flash * 0.6 } else { 0.0 });
-            grid[y][x] = Cell::with_bg(' ', col, col);
         }
-    }
+    });
 
     let rim_n = ((c.rx + c.ry) * 4.0) as usize;
-    for i in 0..rim_n {
-        let ang = i as f32 / rim_n as f32 * 6.2832;
-        let x = (c.cx + ang.cos() * (c.rx - 0.3)).round() as i32;
-        let y = (c.cy - ang.sin() * (c.ry - 0.3)).round() as i32;
-        let p = (ang * 6.0 - ts * 1.4).sin();
-        let ch = if p > 0.7 { '∙' } else { '·' };
-        put(grid, x, y, ch, scale(c.eth_hi, 0.3 + 0.3 * p.max(0.0)));
-    }
+    measure_layer("tree-of-life-5", "rim", || {
+        for i in 0..rim_n {
+            let ang = i as f32 / rim_n as f32 * 6.2832;
+            let x = (c.cx + ang.cos() * (c.rx - 0.3)).round() as i32;
+            let y = (c.cy - ang.sin() * (c.ry - 0.3)).round() as i32;
+            let p = (ang * 6.0 - ts * 1.4).sin();
+            let ch = if p > 0.7 { '∙' } else { '·' };
+            put(grid, x, y, ch, scale(c.eth_hi, 0.3 + 0.3 * p.max(0.0)));
+        }
+    });
 
     if k.rings > 0.0 {
         for r in &c.rings {
@@ -420,108 +425,116 @@ fn frame(grid: &mut Grid, c: &Cached, t: f32, k: &Knobs5) {
         }
     }
 
-    for s in &c.segs {
-        let mid = ((s.p0.0 + s.p1.0) * 0.5, (s.p0.1 + s.p1.1) * 0.5);
-        let eth = side_of(mid);
-        let z0 = rotate(s.p0, cosr, sinr);
-        let z1 = rotate(s.p1, cosr, sinr);
-        let local = 1.0 - norm2(mid);
-        let heavy = matches!(s.kind, Kind::Trunk);
-        let thick = if heavy && local > 0.5 { 1 } else { 0 };
-        let p0 = to_screen(c, z0);
-        let p1 = to_screen(c, z1);
-        let dx = p1.0 - p0.0;
-        let dy = p1.1 - p0.1;
-        if eth {
-            let p = (s.ord * 9.0 - ts * 1.6 + s.phase).sin().max(0.0);
-            let pulse = p * p;
-            let idx = if pulse > 0.55 { 2 } else if pulse > 0.15 { 1 } else { 0 };
-            let ch = match s.kind {
-                Kind::Twig => if idx > 0 { '∙' } else { '·' },
-                _ => ETH_FILL[idx],
-            };
-            let b = (0.4 + 0.6 * k.glow * pulse.max(flash)) * (0.45 + 0.55 * local);
-            let col = scale(mix(c.eth_rgb, c.eth_hi, pulse * 0.7), b);
-            line(p0.0, p0.1, p1.0, p1.1, |x, y| {
-                for k2 in -thick..=thick {
-                    put(grid, x + k2, y, ch, col);
-                }
-            });
-        } else {
-            let ch = match s.kind {
-                Kind::Twig => '·',
-                _ => slope_glyph(dx, dy, heavy),
-            };
-            let base = match s.kind {
-                Kind::Root => mix(c.bark, (0, 0, 0), 0.35),
-                Kind::Twig => mix(c.bark_hi, c.leaf_rgb, 0.4),
-                _ => mix(c.bark, c.bark_hi, s.ord * 0.6),
-            };
-            let breath = 0.9 + 0.1 * (ts * 0.5 + s.ord * 3.0).sin();
-            let col = scale(base, (0.5 + 0.5 * local) * breath);
-            line(p0.0, p0.1, p1.0, p1.1, |x, y| {
-                for k2 in -thick..=thick {
-                    put(grid, x + k2, y, ch, col);
-                }
-            });
-        }
-    }
-
-    for l in &c.leaves {
-        let z = rotate(l.z, cosr, sinr);
-        let local = 1.0 - norm2(l.z);
-        if local < 0.03 {
-            continue;
-        }
-        let (mut x, mut y) = to_screen(c, z);
-        if side_of(l.z) {
-            let p = (ts * 1.3 + l.phase * 6.28).sin();
-            let ch = if p > 0.5 { '○' } else { '°' };
-            put(grid, x, y, ch, scale(c.eth_hi, (0.45 + 0.4 * p.max(0.0)) * (0.5 + 0.5 * local)));
-        } else {
-            let sway = k.wind * (ts * 1.8 + l.phase * 6.2832).sin() * 1.2;
-            x = (x as f32 + sway).round() as i32;
-            let r = (ts * 2.7 + l.phase * 6.2832).sin();
-            let pair = LIVE_LEAF[(l.tex & 3) as usize % 3];
-            let ch = if r > 0.6 { pair[1] } else { pair[0] };
-            let col = scale(mix(c.leaf_rgb, c.leaf_hi, l.phase * 0.5 + r.max(0.0) * 0.3), (0.7 + 0.3 * local) * (0.85 + 0.15 * r));
-            put(grid, x, y, ch, col);
-        }
-    }
-
-    for m in &c.motes {
-        let life = (ts * m.rate * 0.4 + m.phase).fract();
-        let d = life * 3.0;
-        let zo = polar(d, m.ang + 0.4 * (life * 6.28 + m.phase).sin());
-        if !side_of(zo) {
-            continue;
-        }
-        let z = rotate(zo, cosr, sinr);
-        let local = 1.0 - norm2(z);
-        if local < 0.02 {
-            continue;
-        }
-        let (x, y) = to_screen(c, z);
-        let stage = ((life * 4.0) as usize).min(3);
-        let b = (life * 3.1416).sin() * (0.5 + 0.5 * local);
-        put(grid, x, y, MOTE[[0, 1, 2, 1][stage]], scale(mix(c.eth_rgb, c.eth_hi, m.tint), 0.35 + 0.65 * b));
-    }
-
-    for i in 0..48 {
-        let s = -1.05 + 2.1 * i as f32 / 47.0;
-        let zo = rotate((0.0, s), cosa, sina);
-        if norm2(zo) >= 0.985 {
-            continue;
-        }
-        let z = rotate(zo, cosr, sinr);
-        let (x, y) = to_screen(c, z);
-        if x >= 0 && y >= 0 && (x as usize) < w && (y as usize) < h && grid[y as usize][x as usize].ch == ' ' {
-            let p = (s * 4.0 - ts * 2.5).sin();
-            if p > 0.1 {
-                put(grid, x, y, '┆', scale(c.eth_hi, 0.35 + 0.5 * k.glow * p));
+    measure_layer("tree-of-life-5", "branches", || {
+        for s in &c.segs {
+            let mid = ((s.p0.0 + s.p1.0) * 0.5, (s.p0.1 + s.p1.1) * 0.5);
+            let eth = side_of(mid);
+            let z0 = rotate(s.p0, cosr, sinr);
+            let z1 = rotate(s.p1, cosr, sinr);
+            let local = 1.0 - norm2(mid);
+            let heavy = matches!(s.kind, Kind::Trunk);
+            let thick = if heavy && local > 0.5 { 1 } else { 0 };
+            let p0 = to_screen(c, z0);
+            let p1 = to_screen(c, z1);
+            let dx = p1.0 - p0.0;
+            let dy = p1.1 - p0.1;
+            if eth {
+                let p = (s.ord * 9.0 - ts * 1.6 + s.phase).sin().max(0.0);
+                let pulse = p * p;
+                let idx = if pulse > 0.55 { 2 } else if pulse > 0.15 { 1 } else { 0 };
+                let ch = match s.kind {
+                    Kind::Twig => if idx > 0 { '∙' } else { '·' },
+                    _ => ETH_FILL[idx],
+                };
+                let b = (0.4 + 0.6 * k.glow * pulse.max(flash)) * (0.45 + 0.55 * local);
+                let col = scale(mix(c.eth_rgb, c.eth_hi, pulse * 0.7), b);
+                line(p0.0, p0.1, p1.0, p1.1, |x, y| {
+                    for k2 in -thick..=thick {
+                        put(grid, x + k2, y, ch, col);
+                    }
+                });
+            } else {
+                let ch = match s.kind {
+                    Kind::Twig => '·',
+                    _ => slope_glyph(dx, dy, heavy),
+                };
+                let base = match s.kind {
+                    Kind::Root => mix(c.bark, (0, 0, 0), 0.35),
+                    Kind::Twig => mix(c.bark_hi, c.leaf_rgb, 0.4),
+                    _ => mix(c.bark, c.bark_hi, s.ord * 0.6),
+                };
+                let breath = 0.9 + 0.1 * (ts * 0.5 + s.ord * 3.0).sin();
+                let col = scale(base, (0.5 + 0.5 * local) * breath);
+                line(p0.0, p0.1, p1.0, p1.1, |x, y| {
+                    for k2 in -thick..=thick {
+                        put(grid, x + k2, y, ch, col);
+                    }
+                });
             }
         }
-    }
+    });
+
+    measure_layer("tree-of-life-5", "leaves", || {
+        for l in &c.leaves {
+            let z = rotate(l.z, cosr, sinr);
+            let local = 1.0 - norm2(l.z);
+            if local < 0.03 {
+                continue;
+            }
+            let (mut x, mut y) = to_screen(c, z);
+            if side_of(l.z) {
+                let p = (ts * 1.3 + l.phase * 6.28).sin();
+                let ch = if p > 0.5 { '○' } else { '°' };
+                put(grid, x, y, ch, scale(c.eth_hi, (0.45 + 0.4 * p.max(0.0)) * (0.5 + 0.5 * local)));
+            } else {
+                let sway = k.wind * (ts * 1.8 + l.phase * 6.2832).sin() * 1.2;
+                x = (x as f32 + sway).round() as i32;
+                let r = (ts * 2.7 + l.phase * 6.2832).sin();
+                let pair = LIVE_LEAF[(l.tex & 3) as usize % 3];
+                let ch = if r > 0.6 { pair[1] } else { pair[0] };
+                let col = scale(mix(c.leaf_rgb, c.leaf_hi, l.phase * 0.5 + r.max(0.0) * 0.3), (0.7 + 0.3 * local) * (0.85 + 0.15 * r));
+                put(grid, x, y, ch, col);
+            }
+        }
+    });
+
+    measure_layer("tree-of-life-5", "motes", || {
+        for m in &c.motes {
+            let life = (ts * m.rate * 0.4 + m.phase).fract();
+            let d = life * 3.0;
+            let zo = polar(d, m.ang + 0.4 * (life * 6.28 + m.phase).sin());
+            if !side_of(zo) {
+                continue;
+            }
+            let z = rotate(zo, cosr, sinr);
+            let local = 1.0 - norm2(z);
+            if local < 0.02 {
+                continue;
+            }
+            let (x, y) = to_screen(c, z);
+            let stage = ((life * 4.0) as usize).min(3);
+            let b = (life * 3.1416).sin() * (0.5 + 0.5 * local);
+            put(grid, x, y, MOTE[[0, 1, 2, 1][stage]], scale(mix(c.eth_rgb, c.eth_hi, m.tint), 0.35 + 0.65 * b));
+        }
+    });
+
+    measure_layer("tree-of-life-5", "seam", || {
+        for i in 0..48 {
+            let s = -1.05 + 2.1 * i as f32 / 47.0;
+            let zo = rotate((0.0, s), cosa, sina);
+            if norm2(zo) >= 0.985 {
+                continue;
+            }
+            let z = rotate(zo, cosr, sinr);
+            let (x, y) = to_screen(c, z);
+            if x >= 0 && y >= 0 && (x as usize) < w && (y as usize) < h && grid[y as usize][x as usize].ch == ' ' {
+                let p = (s * 4.0 - ts * 2.5).sin();
+                if p > 0.1 {
+                    put(grid, x, y, '┆', scale(c.eth_hi, 0.35 + 0.5 * k.glow * p));
+                }
+            }
+        }
+    });
 }
 
 pub(crate) fn cli_lifetree5(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {

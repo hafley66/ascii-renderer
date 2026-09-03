@@ -8,6 +8,7 @@ use std::io::{self, IsTerminal, Read as _};
 
 use crate::automata::*;
 use crate::biomes::*;
+use crate::_0_profile::measure_layer;
 use crate::color::*;
 use crate::content::*;
 use crate::fills::*;
@@ -453,17 +454,21 @@ pub(crate) fn draw_hypercube(
     let speed = speed.clamp(0.05, 4.0);
     let bg = darken(palette[0], 12);
     let star = darken(palette[4], 62);
-    for row in grid.iter_mut() {
-        for cell in row.iter_mut() {
-            *cell = Cell::new(' ', bg);
+    measure_layer("hypercube", "clear", || {
+        for row in grid.iter_mut() {
+            for cell in row.iter_mut() {
+                *cell = Cell::new(' ', bg);
+            }
         }
-    }
-    for _ in 0..(width * height / 70).max(3) {
-        let x = rng.random_range(0..width);
-        let y = rng.random_range(0..height);
-        let ch = if rng.random_range(0..5) == 0 { '∙' } else { '·' };
-        grid[y][x] = Cell::new(ch, star);
-    }
+    });
+    measure_layer("hypercube", "stars", || {
+        for _ in 0..(width * height / 70).max(3) {
+            let x = rng.random_range(0..width);
+            let y = rng.random_range(0..height);
+            let ch = if rng.random_range(0..5) == 0 { '∙' } else { '·' };
+            grid[y][x] = Cell::new(ch, star);
+        }
+    });
 
     let phases: Vec<(f32, f32, f32)> = (0..copies)
         .map(|_| {
@@ -482,88 +487,90 @@ pub(crate) fn draw_hypercube(
         lighten(palette[4], 18),
     ];
 
-    for copy in 0..copies {
-        let cx = slot_w * (copy as f32 + 0.5);
-        let cy = height as f32 * (0.48 + 0.05 * phases[copy].2.sin());
-        let sx = (slot_w * 0.28).clamp(3.0, 17.0);
-        let sy = (height as f32 * 0.24).clamp(2.5, 8.0);
+    measure_layer("hypercube", "cube", || {
+        for copy in 0..copies {
+            let cx = slot_w * (copy as f32 + 0.5);
+            let cy = height as f32 * (0.48 + 0.05 * phases[copy].2.sin());
+            let sx = (slot_w * 0.28).clamp(3.0, 17.0);
+            let sy = (height as f32 * 0.24).clamp(2.5, 8.0);
 
-        for ghost in (0..=ghosts).rev() {
-            let gt = t * speed - ghost as f32 * 0.16;
-            let axw = phases[copy].0 + gt * (0.47 + copy as f32 * 0.03);
-            let ayz = phases[copy].1 - gt * 0.31;
-            let azw = phases[copy].2 + gt * 0.23;
-            let axy = phases[copy].1 * 0.35 + gt * 0.17;
-            let mut projected = Vec::with_capacity(16);
+            for ghost in (0..=ghosts).rev() {
+                let gt = t * speed - ghost as f32 * 0.16;
+                let axw = phases[copy].0 + gt * (0.47 + copy as f32 * 0.03);
+                let ayz = phases[copy].1 - gt * 0.31;
+                let azw = phases[copy].2 + gt * 0.23;
+                let axy = phases[copy].1 * 0.35 + gt * 0.17;
+                let mut projected = Vec::with_capacity(16);
 
-            for bits in 0..16usize {
-                let mut x = if bits & 1 == 0 { -1.0 } else { 1.0 };
-                let mut y = if bits & 2 == 0 { -1.0 } else { 1.0 };
-                let mut z = if bits & 4 == 0 { -1.0 } else { 1.0 };
-                let mut w = if bits & 8 == 0 { -1.0 } else { 1.0 };
+                for bits in 0..16usize {
+                    let mut x = if bits & 1 == 0 { -1.0 } else { 1.0 };
+                    let mut y = if bits & 2 == 0 { -1.0 } else { 1.0 };
+                    let mut z = if bits & 4 == 0 { -1.0 } else { 1.0 };
+                    let mut w = if bits & 8 == 0 { -1.0 } else { 1.0 };
 
-                let (c, s) = (axw.cos(), axw.sin());
-                (x, w) = (x * c - w * s, x * s + w * c);
-                let (c, s) = (ayz.cos(), ayz.sin());
-                (y, z) = (y * c - z * s, y * s + z * c);
-                let (c, s) = (azw.cos(), azw.sin());
-                (z, w) = (z * c - w * s, z * s + w * c);
-                let (c, s) = (axy.cos(), axy.sin());
-                (x, y) = (x * c - y * s, x * s + y * c);
+                    let (c, s) = (axw.cos(), axw.sin());
+                    (x, w) = (x * c - w * s, x * s + w * c);
+                    let (c, s) = (ayz.cos(), ayz.sin());
+                    (y, z) = (y * c - z * s, y * s + z * c);
+                    let (c, s) = (azw.cos(), azw.sin());
+                    (z, w) = (z * c - w * s, z * s + w * c);
+                    let (c, s) = (axy.cos(), axy.sin());
+                    (x, y) = (x * c - y * s, x * s + y * c);
 
-                let four_d = 1.8 / (2.9 - w * 0.42);
-                x *= four_d;
-                y *= four_d;
-                z *= four_d;
-                let three_d = 2.4 / (3.5 - z * 0.34);
-                projected.push((
-                    (cx + x * three_d * sx).round() as i32,
-                    (cy + y * three_d * sy).round() as i32,
-                    z,
-                ));
-            }
+                    let four_d = 1.8 / (2.9 - w * 0.42);
+                    x *= four_d;
+                    y *= four_d;
+                    z *= four_d;
+                    let three_d = 2.4 / (3.5 - z * 0.34);
+                    projected.push((
+                        (cx + x * three_d * sx).round() as i32,
+                        (cy + y * three_d * sy).round() as i32,
+                        z,
+                    ));
+                }
 
-            for vertex in 0..16usize {
-                for dim in 0..4usize {
-                    if vertex & (1 << dim) != 0 {
-                        continue;
+                for vertex in 0..16usize {
+                    for dim in 0..4usize {
+                        if vertex & (1 << dim) != 0 {
+                            continue;
+                        }
+                        let other = vertex | (1 << dim);
+                        let a = projected[vertex];
+                        let b = projected[other];
+                        let depth_shade = if (a.2 + b.2) * 0.5 < 0.0 { 20 } else { 0 };
+                        let ghost_shade = (ghost * 15 + depth_shade).min(78) as u8;
+                        pp_line(
+                            grid,
+                            a.0,
+                            a.1,
+                            b.0,
+                            b.1,
+                            darken(edge_colors[dim], ghost_shade),
+                        );
                     }
-                    let other = vertex | (1 << dim);
-                    let a = projected[vertex];
-                    let b = projected[other];
-                    let depth_shade = if (a.2 + b.2) * 0.5 < 0.0 { 20 } else { 0 };
-                    let ghost_shade = (ghost * 15 + depth_shade).min(78) as u8;
-                    pp_line(
+                }
+
+                if ghost == 0 {
+                    for (i, &(x, y, z)) in projected.iter().enumerate() {
+                        let ch = if i == 0 || i == 15 { '◆' } else { '◇' };
+                        let color = if z > 0.0 {
+                            lighten(palette[4], 26)
+                        } else {
+                            darken(palette[4], 18)
+                        };
+                        pp_put(grid, x, y, ch, color);
+                    }
+                    pp_put(
                         grid,
-                        a.0,
-                        a.1,
-                        b.0,
-                        b.1,
-                        darken(edge_colors[dim], ghost_shade),
+                        cx.round() as i32,
+                        cy.round() as i32,
+                        '⊹',
+                        darken(palette[4], 28),
                     );
                 }
             }
-
-            if ghost == 0 {
-                for (i, &(x, y, z)) in projected.iter().enumerate() {
-                    let ch = if i == 0 || i == 15 { '◆' } else { '◇' };
-                    let color = if z > 0.0 {
-                        lighten(palette[4], 26)
-                    } else {
-                        darken(palette[4], 18)
-                    };
-                    pp_put(grid, x, y, ch, color);
-                }
-                pp_put(
-                    grid,
-                    cx.round() as i32,
-                    cy.round() as i32,
-                    '⊹',
-                    darken(palette[4], 28),
-                );
-            }
         }
-    }
+    });
 }
 
 
@@ -587,87 +594,93 @@ pub(crate) fn draw_flux(
     let trail = trail.clamp(1, 24);
     let speed = speed.clamp(0.05, 4.0);
     let bg = darken(palette[0], 14);
-    for row in grid.iter_mut() {
-        for cell in row.iter_mut() {
-            *cell = Cell::new(' ', bg);
+    measure_layer("flux", "clear", || {
+        for row in grid.iter_mut() {
+            for cell in row.iter_mut() {
+                *cell = Cell::new(' ', bg);
+            }
         }
-    }
+    });
 
     // A quiet seeded vector-field lattice makes the flow legible without
     // competing with the bright particle heads.
-    for y in (1..height).step_by(4) {
-        for x in (2..width).step_by(8) {
-            let a = (x as f32 * 0.071 + y as f32 * 0.19 + seed as f32 * 0.013).sin();
-            let ch = if a < -0.45 {
-                '╲'
-            } else if a > 0.45 {
-                '╱'
-            } else {
-                '─'
-            };
-            grid[y][x] = Cell::new(ch, darken(palette[2], 68));
-        }
-    }
-
-    for i in 0..count {
-        let x0 = rng.random_range(0.0..width as f32);
-        let y0 = rng.random_range(0.0..height as f32);
-        let phase = rng.random_range(0.0..std::f32::consts::TAU);
-        let velocity = rng.random_range(0.72..1.32);
-        let curl = rng.random_range(0.65..1.55);
-        let base = match i % 4 {
-            0 => lighten(palette[1], 24),
-            1 => shift_hue(lighten(palette[2], 30), 32.0),
-            2 => shift_hue(lighten(palette[3], 34), -36.0),
-            _ => lighten(palette[4], 14),
-        };
-        let position = |time: f32| -> (f32, f32) {
-            let flow = time * velocity * 5.2;
-            let x = x0
-                + flow
-                + (y0 * 0.22 + phase + time * 0.63).sin() * 5.5 * curl
-                + (phase * 1.7 - time * 0.31).cos() * 1.8;
-            let y = y0
-                + (x0 * 0.08 - time * 0.71 + phase).sin() * 2.6 * curl
-                + (y0 * 0.17 + time * 0.39).cos() * 1.2;
-            (x.rem_euclid(width as f32), y.rem_euclid(height as f32))
-        };
-
-        for step in (0..=trail).rev() {
-            let tau = t * speed - step as f32 * 0.065;
-            let p = position(tau);
-            let prev = position(tau - 0.025);
-            let dx = p.0 - prev.0;
-            let dy = p.1 - prev.1;
-            let ch = if step == 0 {
-                if dx.abs() > dy.abs() {
-                    if dx >= 0.0 { '▶' } else { '◀' }
-                } else if dy >= 0.0 {
-                    '▼'
+    measure_layer("flux", "field", || {
+        for y in (1..height).step_by(4) {
+            for x in (2..width).step_by(8) {
+                let a = (x as f32 * 0.071 + y as f32 * 0.19 + seed as f32 * 0.013).sin();
+                let ch = if a < -0.45 {
+                    '╲'
+                } else if a > 0.45 {
+                    '╱'
                 } else {
-                    '▲'
-                }
-            } else if step < 3 {
-                '•'
-            } else if step % 2 == 0 {
-                '∙'
-            } else {
-                '·'
-            };
-            let shade = if step == 0 {
-                0
-            } else {
-                (10 + step * 66 / trail).min(78) as u8
-            };
-            pp_put(
-                grid,
-                p.0.round() as i32,
-                p.1.round() as i32,
-                ch,
-                darken(base, shade),
-            );
+                    '─'
+                };
+                grid[y][x] = Cell::new(ch, darken(palette[2], 68));
+            }
         }
-    }
+    });
+
+    measure_layer("flux", "particles", || {
+        for i in 0..count {
+            let x0 = rng.random_range(0.0..width as f32);
+            let y0 = rng.random_range(0.0..height as f32);
+            let phase = rng.random_range(0.0..std::f32::consts::TAU);
+            let velocity = rng.random_range(0.72..1.32);
+            let curl = rng.random_range(0.65..1.55);
+            let base = match i % 4 {
+                0 => lighten(palette[1], 24),
+                1 => shift_hue(lighten(palette[2], 30), 32.0),
+                2 => shift_hue(lighten(palette[3], 34), -36.0),
+                _ => lighten(palette[4], 14),
+            };
+            let position = |time: f32| -> (f32, f32) {
+                let flow = time * velocity * 5.2;
+                let x = x0
+                    + flow
+                    + (y0 * 0.22 + phase + time * 0.63).sin() * 5.5 * curl
+                    + (phase * 1.7 - time * 0.31).cos() * 1.8;
+                let y = y0
+                    + (x0 * 0.08 - time * 0.71 + phase).sin() * 2.6 * curl
+                    + (y0 * 0.17 + time * 0.39).cos() * 1.2;
+                (x.rem_euclid(width as f32), y.rem_euclid(height as f32))
+            };
+
+            for step in (0..=trail).rev() {
+                let tau = t * speed - step as f32 * 0.065;
+                let p = position(tau);
+                let prev = position(tau - 0.025);
+                let dx = p.0 - prev.0;
+                let dy = p.1 - prev.1;
+                let ch = if step == 0 {
+                    if dx.abs() > dy.abs() {
+                        if dx >= 0.0 { '▶' } else { '◀' }
+                    } else if dy >= 0.0 {
+                        '▼'
+                    } else {
+                        '▲'
+                    }
+                } else if step < 3 {
+                    '•'
+                } else if step % 2 == 0 {
+                    '∙'
+                } else {
+                    '·'
+                };
+                let shade = if step == 0 {
+                    0
+                } else {
+                    (10 + step * 66 / trail).min(78) as u8
+                };
+                pp_put(
+                    grid,
+                    p.0.round() as i32,
+                    p.1.round() as i32,
+                    ch,
+                    darken(base, shade),
+                );
+            }
+        }
+    });
 }
 
 
@@ -693,34 +706,40 @@ pub(crate) fn draw_fireworks(
     let sparks = sparks.clamp(4, 64);
     let speed = speed.clamp(0.05, 4.0);
     let bg = darken(palette[0], 18);
-    for row in grid.iter_mut() {
-        for cell in row.iter_mut() {
-            *cell = Cell::new(' ', bg);
+    measure_layer("fireworks", "clear", || {
+        for row in grid.iter_mut() {
+            for cell in row.iter_mut() {
+                *cell = Cell::new(' ', bg);
+            }
         }
-    }
+    });
 
-    for _ in 0..(width * height / 55).max(4) {
-        let x = rng.random_range(0..width);
-        let y = rng.random_range(0..height.saturating_sub(2).max(1));
-        let phase = rng.random_range(0.0..TAU);
-        let glow = (t * 0.8 + phase).sin();
-        let ch = if glow > 0.72 { '✦' } else if glow > 0.0 { '∙' } else { '·' };
-        let col = if glow > 0.72 {
-            darken(palette[4], 28)
-        } else {
-            darken(palette[4], 62)
-        };
-        grid[y][x] = Cell::new(ch, col);
-    }
+    measure_layer("fireworks", "stars", || {
+        for _ in 0..(width * height / 55).max(4) {
+            let x = rng.random_range(0..width);
+            let y = rng.random_range(0..height.saturating_sub(2).max(1));
+            let phase = rng.random_range(0.0..TAU);
+            let glow = (t * 0.8 + phase).sin();
+            let ch = if glow > 0.72 { '✦' } else if glow > 0.0 { '∙' } else { '·' };
+            let col = if glow > 0.72 {
+                darken(palette[4], 28)
+            } else {
+                darken(palette[4], 62)
+            };
+            grid[y][x] = Cell::new(ch, col);
+        }
+    });
 
     // A low, irregular horizon gives the launches a physical origin.
-    if height >= 2 {
-        for x in 0..width {
-            let n = ((x as u64 * 17 + seed * 13) % 11) as usize;
-            let y = height - 1 - usize::from(n == 0);
-            grid[y][x] = Cell::new(if n == 0 { '▆' } else { '▂' }, darken(palette[1], 64));
+    measure_layer("fireworks", "horizon", || {
+        if height >= 2 {
+            for x in 0..width {
+                let n = ((x as u64 * 17 + seed * 13) % 11) as usize;
+                let y = height - 1 - usize::from(n == 0);
+                grid[y][x] = Cell::new(if n == 0 { '▆' } else { '▂' }, darken(palette[1], 64));
+            }
         }
-    }
+    });
 
     let cycle = 6.2f32;
     let colors = [
@@ -729,88 +748,90 @@ pub(crate) fn draw_fireworks(
         shift_hue(lighten(palette[3], 40), -44.0),
         lighten(palette[4], 22),
     ];
-    for burst in 0..bursts {
-        let launch_x = rng.random_range(2.0..(width as f32 - 2.0).max(2.1));
-        let apex_x = (launch_x + rng.random_range(-7.0..7.0)).clamp(1.0, width as f32 - 2.0);
-        let apex_y = rng.random_range(2.0..(height as f32 * 0.48).max(2.1));
-        let phase = rng.random_range(0.0..cycle);
-        let wind = rng.random_range(-0.34..0.34);
-        let gravity = rng.random_range(0.38..0.62);
-        let color = colors[burst % colors.len()];
-        let spark_specs: Vec<(f32, f32, f32)> = (0..sparks)
-            .map(|s| {
-                let spoke = s as f32 / sparks as f32 * TAU;
-                (
-                    spoke + rng.random_range(-0.10..0.10),
-                    rng.random_range(3.2..7.4),
-                    rng.random_range(0.82..1.18),
-                )
-            })
-            .collect();
-        let age = (t * speed + phase).rem_euclid(cycle);
+    measure_layer("fireworks", "bursts", || {
+        for burst in 0..bursts {
+            let launch_x = rng.random_range(2.0..(width as f32 - 2.0).max(2.1));
+            let apex_x = (launch_x + rng.random_range(-7.0..7.0)).clamp(1.0, width as f32 - 2.0);
+            let apex_y = rng.random_range(2.0..(height as f32 * 0.48).max(2.1));
+            let phase = rng.random_range(0.0..cycle);
+            let wind = rng.random_range(-0.34..0.34);
+            let gravity = rng.random_range(0.38..0.62);
+            let color = colors[burst % colors.len()];
+            let spark_specs: Vec<(f32, f32, f32)> = (0..sparks)
+                .map(|s| {
+                    let spoke = s as f32 / sparks as f32 * TAU;
+                    (
+                        spoke + rng.random_range(-0.10..0.10),
+                        rng.random_range(3.2..7.4),
+                        rng.random_range(0.82..1.18),
+                    )
+                })
+                .collect();
+            let age = (t * speed + phase).rem_euclid(cycle);
 
-        if age < 1.0 {
-            let q = age * age * (3.0 - 2.0 * age);
-            let x = launch_x + (apex_x - launch_x) * q;
-            let y = (height as f32 - 2.0) + (apex_y - (height as f32 - 2.0)) * q;
-            for tail in 1..=5 {
-                let ty = y + tail as f32;
-                let tx = x - wind * tail as f32 * 0.35;
-                pp_put(
-                    grid,
-                    tx.round() as i32,
-                    ty.round() as i32,
-                    if tail < 3 { '│' } else { '·' },
-                    darken(color, (tail * 12).min(70) as u8),
-                );
-            }
-            pp_put(grid, x.round() as i32, y.round() as i32, '▲', lighten(color, 12));
-            continue;
-        }
-
-        let explosion_t = age - 1.0;
-        if explosion_t < 0.16 {
-            pp_put(
-                grid,
-                apex_x.round() as i32,
-                apex_y.round() as i32,
-                '✺',
-                lighten(color, 18),
-            );
-        }
-        for &(angle, velocity, wobble) in &spark_specs {
-            for tail in (0..=3).rev() {
-                let et = explosion_t - tail as f32 * 0.11;
-                if et < 0.0 {
-                    continue;
+            if age < 1.0 {
+                let q = age * age * (3.0 - 2.0 * age);
+                let x = launch_x + (apex_x - launch_x) * q;
+                let y = (height as f32 - 2.0) + (apex_y - (height as f32 - 2.0)) * q;
+                for tail in 1..=5 {
+                    let ty = y + tail as f32;
+                    let tx = x - wind * tail as f32 * 0.35;
+                    pp_put(
+                        grid,
+                        tx.round() as i32,
+                        ty.round() as i32,
+                        if tail < 3 { '│' } else { '·' },
+                        darken(color, (tail * 12).min(70) as u8),
+                    );
                 }
-                let radial = velocity * (1.0 - (-et * 0.55).exp()) / 0.55;
-                let x = apex_x + angle.cos() * radial + wind * et * et * 1.8;
-                let y = apex_y + angle.sin() * radial * 0.48 * wobble + gravity * et * et;
-                let fade = ((explosion_t / 5.2) * 62.0) as usize + tail * 13;
-                let ch = if tail == 0 {
-                    if angle.cos().abs() > angle.sin().abs() {
-                        '━'
-                    } else if angle.sin() > 0.0 {
-                        '╻'
-                    } else {
-                        '╹'
-                    }
-                } else if tail == 1 {
-                    '•'
-                } else {
-                    '·'
-                };
+                pp_put(grid, x.round() as i32, y.round() as i32, '▲', lighten(color, 12));
+                continue;
+            }
+
+            let explosion_t = age - 1.0;
+            if explosion_t < 0.16 {
                 pp_put(
                     grid,
-                    x.round() as i32,
-                    y.round() as i32,
-                    ch,
-                    darken(color, fade.min(82) as u8),
+                    apex_x.round() as i32,
+                    apex_y.round() as i32,
+                    '✺',
+                    lighten(color, 18),
                 );
             }
+            for &(angle, velocity, wobble) in &spark_specs {
+                for tail in (0..=3).rev() {
+                    let et = explosion_t - tail as f32 * 0.11;
+                    if et < 0.0 {
+                        continue;
+                    }
+                    let radial = velocity * (1.0 - (-et * 0.55).exp()) / 0.55;
+                    let x = apex_x + angle.cos() * radial + wind * et * et * 1.8;
+                    let y = apex_y + angle.sin() * radial * 0.48 * wobble + gravity * et * et;
+                    let fade = ((explosion_t / 5.2) * 62.0) as usize + tail * 13;
+                    let ch = if tail == 0 {
+                        if angle.cos().abs() > angle.sin().abs() {
+                            '━'
+                        } else if angle.sin() > 0.0 {
+                            '╻'
+                        } else {
+                            '╹'
+                        }
+                    } else if tail == 1 {
+                        '•'
+                    } else {
+                        '·'
+                    };
+                    pp_put(
+                        grid,
+                        x.round() as i32,
+                        y.round() as i32,
+                        ch,
+                        darken(color, fade.min(82) as u8),
+                    );
+                }
+            }
         }
-    }
+    });
 }
 
 
@@ -847,28 +868,32 @@ pub(crate) fn draw_murmuration(
         let d = y as f32 / span;
         lerp_color(zenith, horizon, d * d * 0.9)
     };
-    for y in 0..height {
-        let band = sky_at(y);
-        for x in 0..width {
-            grid[y][x] = Cell::with_bg(' ', band, band);
+    measure_layer("murmuration", "sky", || {
+        for y in 0..height {
+            let band = sky_at(y);
+            for x in 0..width {
+                grid[y][x] = Cell::with_bg(' ', band, band);
+            }
         }
-    }
+    });
 
     // Seeded stars prick through the upper sky; they twinkle but never move.
-    for _ in 0..(width * height / 70).max(6) {
-        let x = rng.random_range(0..width);
-        let y = rng.random_range(0..(height / 2).max(1));
-        let phase = rng.random_range(0.0..TAU);
-        let tw = (t * 0.9 + phase).sin();
-        let ch = if tw > 0.75 {
-            '✦'
-        } else if tw > 0.0 {
-            '∙'
-        } else {
-            '·'
-        };
-        grid[y][x] = Cell::with_bg(ch, darken(palette[4], 35), sky_at(y));
-    }
+    measure_layer("murmuration", "stars", || {
+        for _ in 0..(width * height / 70).max(6) {
+            let x = rng.random_range(0..width);
+            let y = rng.random_range(0..(height / 2).max(1));
+            let phase = rng.random_range(0.0..TAU);
+            let tw = (t * 0.9 + phase).sin();
+            let ch = if tw > 0.75 {
+                '✦'
+            } else if tw > 0.0 {
+                '∙'
+            } else {
+                '·'
+            };
+            grid[y][x] = Cell::with_bg(ch, darken(palette[4], 35), sky_at(y));
+        }
+    });
 
     // Flock loops are sized in fractions of the grid so the choreography
     // survives a resize; member swirls are in cells. Flock params are drawn
@@ -882,62 +907,68 @@ pub(crate) fn draw_murmuration(
         wy: f32,
     }
     let mut specs = Vec::with_capacity(flocks);
-    for _ in 0..flocks {
-        specs.push(Flock {
-            phase: rng.random_range(0.0..TAU),
-            cy0: rng.random_range(0.30..0.62),
-            rx: rng.random_range(0.16..0.34),
-            ry: rng.random_range(0.10..0.20),
-            wx: rng.random_range(0.05..0.11),
-            wy: rng.random_range(0.04..0.09),
-        });
-    }
+    measure_layer("murmuration", "flocks", || {
+        for _ in 0..flocks {
+            specs.push(Flock {
+                phase: rng.random_range(0.0..TAU),
+                cy0: rng.random_range(0.30..0.62),
+                rx: rng.random_range(0.16..0.34),
+                ry: rng.random_range(0.10..0.20),
+                wx: rng.random_range(0.05..0.11),
+                wy: rng.random_range(0.04..0.09),
+            });
+        }
+    });
 
     let mut pos: Vec<(f32, f32)> = Vec::with_capacity(birds);
-    for i in 0..birds {
-        let f = &specs[i % flocks];
-        let cx = width as f32 * (0.5 + f.rx * (t * f.wx + f.phase).cos());
-        let cy = height as f32 * (f.cy0 + f.ry * (t * f.wy + f.phase * 1.7).sin());
+    measure_layer("murmuration", "birds", || {
+        for i in 0..birds {
+            let f = &specs[i % flocks];
+            let cx = width as f32 * (0.5 + f.rx * (t * f.wx + f.phase).cos());
+            let cy = height as f32 * (f.cy0 + f.ry * (t * f.wy + f.phase * 1.7).sin());
 
-        let phase = rng.random_range(0.0..TAU);
-        let w = rng.random_range(0.5..1.6);
-        let rx = rng.random_range(2.0..9.0);
-        let ry = rng.random_range(0.8..2.4);
-        let a = t * w + phase;
-        let x = cx + a.cos() * rx + (a * 2.7).cos() * 1.3;
-        let y = cy + a.sin() * ry + (a * 1.9 + phase).sin() * 1.1;
-        pos.push((x, y));
-    }
+            let phase = rng.random_range(0.0..TAU);
+            let w = rng.random_range(0.5..1.6);
+            let rx = rng.random_range(2.0..9.0);
+            let ry = rng.random_range(0.8..2.4);
+            let a = t * w + phase;
+            let x = cx + a.cos() * rx + (a * 2.7).cos() * 1.3;
+            let y = cy + a.sin() * ry + (a * 1.9 + phase).sin() * 1.1;
+            pos.push((x, y));
+        }
+    });
 
     // Density pass: O(n^2) is fine at a few hundred birds.
-    for i in 0..birds {
-        let (x, y) = pos[i];
-        let mut near = 0usize;
-        for (j, &(ox, oy)) in pos.iter().enumerate() {
-            if i != j && (ox - x).abs() <= 2.5 && (oy - y).abs() <= 1.5 {
-                near += 1;
+    measure_layer("murmuration", "density", || {
+        for i in 0..birds {
+            let (x, y) = pos[i];
+            let mut near = 0usize;
+            for (j, &(ox, oy)) in pos.iter().enumerate() {
+                if i != j && (ox - x).abs() <= 2.5 && (oy - y).abs() <= 1.5 {
+                    near += 1;
+                }
+            }
+            let ch = if near >= 6 {
+                '▓'
+            } else if near >= 3 {
+                '▒'
+            } else if near >= 1 {
+                'ˇ'
+            } else {
+                '·'
+            };
+            // Silhouettes: pale against the dark zenith, dark against the horizon.
+            let d = (y / span).clamp(0.0, 1.0);
+            let mut col = lerp_color(lighten(palette[4], 18), darken(palette[4], 46), d);
+            if near >= 6 {
+                col = darken(col, 20);
+            }
+            let (xi, yi) = (x.round() as i32, y.round() as i32);
+            if xi >= 0 && yi >= 0 && (yi as usize) < height && (xi as usize) < width {
+                grid[yi as usize][xi as usize] = Cell::with_bg(ch, col, sky_at(yi as usize));
             }
         }
-        let ch = if near >= 6 {
-            '▓'
-        } else if near >= 3 {
-            '▒'
-        } else if near >= 1 {
-            'ˇ'
-        } else {
-            '·'
-        };
-        // Silhouettes: pale against the dark zenith, dark against the horizon.
-        let d = (y / span).clamp(0.0, 1.0);
-        let mut col = lerp_color(lighten(palette[4], 18), darken(palette[4], 46), d);
-        if near >= 6 {
-            col = darken(col, 20);
-        }
-        let (xi, yi) = (x.round() as i32, y.round() as i32);
-        if xi >= 0 && yi >= 0 && (yi as usize) < height && (xi as usize) < width {
-            grid[yi as usize][xi as usize] = Cell::with_bg(ch, col, sky_at(yi as usize));
-        }
-    }
+    });
 }
 
 
@@ -966,11 +997,13 @@ pub(crate) fn draw_lanterns(
     let sway = sway.clamp(0.0, 3.0);
 
     let sky = darken(palette[0], 14);
-    for row in grid.iter_mut() {
-        for cell in row.iter_mut() {
-            *cell = Cell::with_bg(' ', sky, sky);
+    measure_layer("lanterns", "clear", || {
+        for row in grid.iter_mut() {
+            for cell in row.iter_mut() {
+                *cell = Cell::with_bg(' ', sky, sky);
+            }
         }
-    }
+    });
     let lput = |grid: &mut Grid, x: i32, y: i32, ch: char, col: Color| {
         if x >= 0 && y >= 0 && (y as usize) < height && (x as usize) < width {
             grid[y as usize][x as usize] = Cell::with_bg(ch, col, sky);
@@ -978,88 +1011,94 @@ pub(crate) fn draw_lanterns(
     };
 
     // Sparse high stars with a slow twinkle.
-    for _ in 0..(width * height / 90).max(5) {
-        let x = rng.random_range(0..width);
-        let y = rng.random_range(0..(height * 2 / 3).max(1));
-        let phase = rng.random_range(0.0..TAU);
-        let ch = if (t * 0.6 + phase).sin() > 0.8 { '✦' } else { '·' };
-        lput(grid, x as i32, y as i32, ch, darken(palette[4], 45));
-    }
+    measure_layer("lanterns", "stars", || {
+        for _ in 0..(width * height / 90).max(5) {
+            let x = rng.random_range(0..width);
+            let y = rng.random_range(0..(height * 2 / 3).max(1));
+            let phase = rng.random_range(0.0..TAU);
+            let ch = if (t * 0.6 + phase).sin() > 0.8 { '✦' } else { '·' };
+            lput(grid, x as i32, y as i32, ch, darken(palette[4], 45));
+        }
+    });
 
     // Water: horizontal ripple bands, darkening with depth.
     let water_y = (height * 3 / 4).max(1);
     let shallow = darken(palette[1], 48);
     let deep = darken(palette[1], 68);
-    for y in water_y..height {
-        let d = (y - water_y) as f32 / (height - water_y).max(1) as f32;
-        let base = lerp_color(shallow, deep, d);
-        for x in 0..width {
-            let ripple = (x as f32 * 0.35 + t * 1.2 + y as f32 * 0.9).sin();
-            let (ch, col) = if ripple > 0.55 {
-                ('≈', lighten(base, 16))
-            } else if ripple > 0.10 {
-                ('~', base)
-            } else {
-                (' ', base)
-            };
-            grid[y][x] = Cell::with_bg(ch, col, sky);
-        }
-    }
-
-    let cycle = 16.0f32; // seconds for one full ascent
-    for i in 0..count {
-        let phase = rng.random_range(0.0..cycle);
-        let base_x =
-            (i as f32 + 0.5) / count as f32 * width as f32 + rng.random_range(-3.0..3.0);
-        let sway_amp = rng.random_range(1.5..4.0) * sway;
-        let sway_w = rng.random_range(0.4..0.9);
-        let sway_ph = rng.random_range(0.0..TAU);
-        let flick_w = rng.random_range(5.0..8.0);
-        let hue_jit = rng.random_range(-22.0..22.0);
-
-        let age = (t * rise + phase).rem_euclid(cycle);
-        let prog = age / cycle;
-        // Fade in over the first 8% of the rise, out over the last 12%.
-        let vis = (prog / 0.08)
-            .clamp(0.0, 1.0)
-            .min(((1.0 - prog) / 0.12).clamp(0.0, 1.0));
-        let y = water_y as f32 + 1.0 - prog * (water_y as f32 + 3.0);
-        let x = base_x + (t * sway_w + sway_ph).sin() * sway_amp;
-
-        let glow = vis * (0.72 + 0.28 * (t * flick_w + sway_ph * 3.0).sin());
-        let warm = shift_hue(lighten(palette[1], 28), hue_jit);
-        let core = lerp_color(darken(warm, 72), lighten(warm, 32), glow);
-        let halo1 = lerp_color(darken(warm, 84), warm, glow * 0.8);
-        let halo2 = lerp_color(sky, darken(warm, 55), glow * 0.5);
-
-        let (xi, yi) = (x.round() as i32, y.round() as i32);
-        for dy in -2i32..=2 {
-            for dx in -2i32..=2 {
-                let ring = dx.abs().max(dy.abs());
-                if ring == 1 {
-                    lput(grid, xi + dx, yi + dy, '∘', halo1);
-                } else if ring == 2 && (dx + dy) % 2 == 0 {
-                    lput(grid, xi + dx, yi + dy, '·', halo2);
-                }
+    measure_layer("lanterns", "water", || {
+        for y in water_y..height {
+            let d = (y - water_y) as f32 / (height - water_y).max(1) as f32;
+            let base = lerp_color(shallow, deep, d);
+            for x in 0..width {
+                let ripple = (x as f32 * 0.35 + t * 1.2 + y as f32 * 0.9).sin();
+                let (ch, col) = if ripple > 0.55 {
+                    ('≈', lighten(base, 16))
+                } else if ripple > 0.10 {
+                    ('~', base)
+                } else {
+                    (' ', base)
+                };
+                grid[y][x] = Cell::with_bg(ch, col, sky);
             }
         }
-        lput(grid, xi, yi, '◉', core);
+    });
 
-        // Reflection: squashed, dimmed, wobbling on the water.
-        if y < water_y as f32 {
-            let ry = water_y as f32 + ((water_y as f32 - y) * 0.30);
-            let rx = x + (t * 2.2 + y).sin() * 1.3;
-            let rcol = darken(warm, 58);
-            lput(grid, rx.round() as i32, ry.round() as i32, '∘', rcol);
-            lput(
-                grid,
-                (rx + 1.0).round() as i32,
-                (ry + 1.0).round() as i32,
-                '·',
-                darken(rcol, 18),
-            );
+    let cycle = 16.0f32; // seconds for one full ascent
+    measure_layer("lanterns", "lanterns", || {
+        for i in 0..count {
+            let phase = rng.random_range(0.0..cycle);
+            let base_x =
+                (i as f32 + 0.5) / count as f32 * width as f32 + rng.random_range(-3.0..3.0);
+            let sway_amp = rng.random_range(1.5..4.0) * sway;
+            let sway_w = rng.random_range(0.4..0.9);
+            let sway_ph = rng.random_range(0.0..TAU);
+            let flick_w = rng.random_range(5.0..8.0);
+            let hue_jit = rng.random_range(-22.0..22.0);
+
+            let age = (t * rise + phase).rem_euclid(cycle);
+            let prog = age / cycle;
+            // Fade in over the first 8% of the rise, out over the last 12%.
+            let vis = (prog / 0.08)
+                .clamp(0.0, 1.0)
+                .min(((1.0 - prog) / 0.12).clamp(0.0, 1.0));
+            let y = water_y as f32 + 1.0 - prog * (water_y as f32 + 3.0);
+            let x = base_x + (t * sway_w + sway_ph).sin() * sway_amp;
+
+            let glow = vis * (0.72 + 0.28 * (t * flick_w + sway_ph * 3.0).sin());
+            let warm = shift_hue(lighten(palette[1], 28), hue_jit);
+            let core = lerp_color(darken(warm, 72), lighten(warm, 32), glow);
+            let halo1 = lerp_color(darken(warm, 84), warm, glow * 0.8);
+            let halo2 = lerp_color(sky, darken(warm, 55), glow * 0.5);
+
+            let (xi, yi) = (x.round() as i32, y.round() as i32);
+            for dy in -2i32..=2 {
+                for dx in -2i32..=2 {
+                    let ring = dx.abs().max(dy.abs());
+                    if ring == 1 {
+                        lput(grid, xi + dx, yi + dy, '∘', halo1);
+                    } else if ring == 2 && (dx + dy) % 2 == 0 {
+                        lput(grid, xi + dx, yi + dy, '·', halo2);
+                    }
+                }
+            }
+            lput(grid, xi, yi, '◉', core);
+
+            // Reflection: squashed, dimmed, wobbling on the water.
+            if y < water_y as f32 {
+                let ry = water_y as f32 + ((water_y as f32 - y) * 0.30);
+                let rx = x + (t * 2.2 + y).sin() * 1.3;
+                let rcol = darken(warm, 58);
+                lput(grid, rx.round() as i32, ry.round() as i32, '∘', rcol);
+                lput(
+                    grid,
+                    (rx + 1.0).round() as i32,
+                    (ry + 1.0).round() as i32,
+                    '·',
+                    darken(rcol, 18),
+                );
+            }
         }
-    }
+    });
 }
 
 
@@ -1099,13 +1138,15 @@ pub(crate) fn draw_tide(
         shore_base + shore_a1 * (x * 0.045 + shore_p1).sin() + shore_a2 * (x * 0.11 + shore_p2).sin()
     };
     let mut wp = [(0.0f32, 0.0f32, 0.0f32); 4];
-    for k in 0..waves {
-        wp[k] = (
-            rng.random_range(1.2..3.2) * amp,
-            rng.random_range(0.35..0.80),
-            rng.random_range(0.0..TAU),
-        );
-    }
+    measure_layer("tide", "waves", || {
+        for k in 0..waves {
+            wp[k] = (
+                rng.random_range(1.2..3.2) * amp,
+                rng.random_range(0.35..0.80),
+                rng.random_range(0.0..TAU),
+            );
+        }
+    });
     let front_at = |x: f32, tt: f32| {
         let mut y = shore_at(x);
         for &(a, w, p) in wp.iter().take(waves) {
@@ -1123,56 +1164,58 @@ pub(crate) fn draw_tide(
     let sand_col = darken(palette[2], 30);
     let shell_col = lighten(palette[3], 18);
 
-    for y in 0..height {
-        for x in 0..width {
-            let fx = x as f32;
-            let dy = y as f32 - front_at(fx, t); // <0 under water, >=0 exposed
-            let h = pp_hash2(x as i32, y as i32, seed ^ 0x71DE_71DE);
-            let (ch, col, zbg) = if dy < -0.8 {
-                // Open water: darker with distance from the front, slow shimmer.
-                let depth = (-dy / (height as f32 * 0.35)).clamp(0.0, 1.0);
-                let zbg = lerp_color(sea_shallow, sea_deep, depth);
-                let shimmer = (fx * 0.30 + t * 1.4 + y as f32 * 0.8).sin();
-                if shimmer > 0.45 {
-                    ('~', sea_ink, zbg)
-                } else if h > 0.90 {
-                    ('≈', darken(sea_ink, 30), zbg)
+    measure_layer("tide", "sea", || {
+        for y in 0..height {
+            for x in 0..width {
+                let fx = x as f32;
+                let dy = y as f32 - front_at(fx, t); // <0 under water, >=0 exposed
+                let h = pp_hash2(x as i32, y as i32, seed ^ 0x71DE_71DE);
+                let (ch, col, zbg) = if dy < -0.8 {
+                    // Open water: darker with distance from the front, slow shimmer.
+                    let depth = (-dy / (height as f32 * 0.35)).clamp(0.0, 1.0);
+                    let zbg = lerp_color(sea_shallow, sea_deep, depth);
+                    let shimmer = (fx * 0.30 + t * 1.4 + y as f32 * 0.8).sin();
+                    if shimmer > 0.45 {
+                        ('~', sea_ink, zbg)
+                    } else if h > 0.90 {
+                        ('≈', darken(sea_ink, 30), zbg)
+                    } else {
+                        (' ', zbg, zbg)
+                    }
+                } else if dy < 0.8 {
+                    // Surf line: bright tumbling foam over a wash-lit bed.
+                    let tumble = (fx * 0.7 + t * 2.6 + y as f32).sin();
+                    let zbg = darken(palette[4], 58);
+                    if tumble > -0.2 {
+                        ('≈', foam_col, zbg)
+                    } else {
+                        ('~', darken(foam_col, 18), zbg)
+                    }
                 } else {
-                    (' ', zbg, zbg)
-                }
-            } else if dy < 0.8 {
-                // Surf line: bright tumbling foam over a wash-lit bed.
-                let tumble = (fx * 0.7 + t * 2.6 + y as f32).sin();
-                let zbg = darken(palette[4], 58);
-                if tumble > -0.2 {
-                    ('≈', foam_col, zbg)
-                } else {
-                    ('~', darken(foam_col, 18), zbg)
-                }
-            } else {
-                // Sand: wet if the front covered this cell in the last beats.
-                let covered_then = front_at(fx, t - 1.1) - y as f32 > -0.8;
-                let covered_earlier = front_at(fx, t - 2.2) - y as f32 > -0.8;
-                let zbg = if covered_then {
-                    sand_wet_bg
-                } else if covered_earlier {
-                    lerp_color(sand_wet_bg, sand_bg, 0.5)
-                } else {
-                    sand_bg
+                    // Sand: wet if the front covered this cell in the last beats.
+                    let covered_then = front_at(fx, t - 1.1) - y as f32 > -0.8;
+                    let covered_earlier = front_at(fx, t - 2.2) - y as f32 > -0.8;
+                    let zbg = if covered_then {
+                        sand_wet_bg
+                    } else if covered_earlier {
+                        lerp_color(sand_wet_bg, sand_bg, 0.5)
+                    } else {
+                        sand_bg
+                    };
+                    if h > 0.9965 {
+                        ('✶', shell_col, zbg)
+                    } else if h > 0.965 {
+                        ('∙', sand_col, zbg)
+                    } else if h > 0.90 {
+                        ('·', darken(sand_col, 18), zbg)
+                    } else {
+                        (' ', zbg, zbg)
+                    }
                 };
-                if h > 0.9965 {
-                    ('✶', shell_col, zbg)
-                } else if h > 0.965 {
-                    ('∙', sand_col, zbg)
-                } else if h > 0.90 {
-                    ('·', darken(sand_col, 18), zbg)
-                } else {
-                    (' ', zbg, zbg)
-                }
-            };
-            grid[y][x] = Cell::with_bg(ch, col, zbg);
+                grid[y][x] = Cell::with_bg(ch, col, zbg);
+            }
         }
-    }
+    });
 }
 
 pub(crate) fn draw_fireflies(

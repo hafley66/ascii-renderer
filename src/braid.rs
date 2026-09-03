@@ -1,5 +1,6 @@
 //! braid -- a vertical plait of colored ribbons tied by a seeded braid word.
 //! Crossings scroll downward with t; over strands occlude under strands.
+use crate::_0_profile::measure_layer;
 use crate::color::*;
 use crate::opts::param_f32;
 use crate::types::*;
@@ -212,65 +213,67 @@ fn render(grid: &mut Grid, w: usize, h: usize, seed: u64, palette: &[Color; 5], 
     let dust_hi = darken(palette[4], 90);
     let dust_glyph = ['.', '`', '\''];
 
-    for y in 0..h as i32 {
-        let u = t * speed - y as f32 + h as f32;
-        let kf = (u / pitch).floor();
-        let frac = u - kf * pitch;
-        let ki = (kf as i64).rem_euclid(len as i64) as usize;
-        let (lanes_bits, over_left) = c.word[ki];
-        let a = pitch * (1.0 - cross) * 0.5;
-        let b = pitch * (1.0 + cross) * 0.5;
-        let s = ((frac - a) / (b - a)).clamp(0.0, 1.0);
-        let moving = s > 0.0 && s < 1.0;
-        let mid_row = ((frac - pitch * 0.5).abs()) < 0.5;
-        let uy = (u.floor()) as i32;
+    measure_layer("braid", "lanes", || {
+        for y in 0..h as i32 {
+            let u = t * speed - y as f32 + h as f32;
+            let kf = (u / pitch).floor();
+            let frac = u - kf * pitch;
+            let ki = (kf as i64).rem_euclid(len as i64) as usize;
+            let (lanes_bits, over_left) = c.word[ki];
+            let a = pitch * (1.0 - cross) * 0.5;
+            let b = pitch * (1.0 + cross) * 0.5;
+            let s = ((frac - a) / (b - a)).clamp(0.0, 1.0);
+            let moving = s > 0.0 && s < 1.0;
+            let mid_row = ((frac - pitch * 0.5).abs()) < 0.5;
+            let uy = (u.floor()) as i32;
 
-        for x in 0..w as i32 {
-            let hv = hash2(x, uy, seed);
-            let r = (hv & 0xFFFF) as f32 / 65535.0;
-            if r < dust {
-                let g = dust_glyph[((hv >> 16) % 3) as usize];
-                let fg = if (hv >> 20) & 7 == 0 { dust_hi } else { dust_c };
-                grid[y as usize][x as usize] = Cell::new(g, fg);
-            } else {
-                grid[y as usize][x as usize] = Cell::blank();
+            for x in 0..w as i32 {
+                let hv = hash2(x, uy, seed);
+                let r = (hv & 0xFFFF) as f32 / 65535.0;
+                if r < dust {
+                    let g = dust_glyph[((hv >> 16) % 3) as usize];
+                    let fg = if (hv >> 20) & 7 == 0 { dust_hi } else { dust_c };
+                    grid[y as usize][x as usize] = Cell::new(g, fg);
+                } else {
+                    grid[y as usize][x as usize] = Cell::blank();
+                }
             }
-        }
 
-        let mut lanes: [Lane; MAX_STRANDS] = std::array::from_fn(|_| Lane { x: 0.0, strand: 0, slope: 0, over: false, under: false, knot: false });
-        for i in 0..n {
-            let strand = c.perm[ki * n + i] as usize;
-            let ph = c.phase[strand];
-            let wob = sway * (t * 0.9 + ph + y as f32 * 0.12).sin();
-            let lx = |lane: usize| cx0 + (lane as f32 - (n as f32 - 1.0) * 0.5) * gap + wob;
-            let mut l = Lane { x: lx(i), strand, slope: 0, over: false, under: false, knot: false };
-            if lanes_bits & (1 << i) != 0 {
-                l.x = lx(i) + (lx(i + 1) - lx(i)) * s;
-                l.slope = if moving { 1 } else { 0 };
-                let left_over = over_left & (1 << i) != 0;
-                l.over = moving && left_over;
-                l.under = moving && !left_over;
-            } else if i > 0 && lanes_bits & (1 << (i - 1)) != 0 {
-                l.x = lx(i) + (lx(i - 1) - lx(i)) * s;
-                l.slope = if moving { -1 } else { 0 };
-                let left_over = over_left & (1 << (i - 1)) != 0;
-                l.over = moving && !left_over;
-                l.under = moving && left_over;
+            let mut lanes: [Lane; MAX_STRANDS] = std::array::from_fn(|_| Lane { x: 0.0, strand: 0, slope: 0, over: false, under: false, knot: false });
+            for i in 0..n {
+                let strand = c.perm[ki * n + i] as usize;
+                let ph = c.phase[strand];
+                let wob = sway * (t * 0.9 + ph + y as f32 * 0.12).sin();
+                let lx = |lane: usize| cx0 + (lane as f32 - (n as f32 - 1.0) * 0.5) * gap + wob;
+                let mut l = Lane { x: lx(i), strand, slope: 0, over: false, under: false, knot: false };
+                if lanes_bits & (1 << i) != 0 {
+                    l.x = lx(i) + (lx(i + 1) - lx(i)) * s;
+                    l.slope = if moving { 1 } else { 0 };
+                    let left_over = over_left & (1 << i) != 0;
+                    l.over = moving && left_over;
+                    l.under = moving && !left_over;
+                } else if i > 0 && lanes_bits & (1 << (i - 1)) != 0 {
+                    l.x = lx(i) + (lx(i - 1) - lx(i)) * s;
+                    l.slope = if moving { -1 } else { 0 };
+                    let left_over = over_left & (1 << (i - 1)) != 0;
+                    l.over = moving && !left_over;
+                    l.under = moving && left_over;
+                }
+                l.knot = l.over && mid_row;
+                lanes[i] = l;
             }
-            l.knot = l.over && mid_row;
-            lanes[i] = l;
-        }
-        for i in 0..n {
-            if !lanes[i].over {
-                paint_lane(grid, w, h, y, &lanes[i], half, c);
+            for i in 0..n {
+                if !lanes[i].over {
+                    paint_lane(grid, w, h, y, &lanes[i], half, c);
+                }
+            }
+            for i in 0..n {
+                if lanes[i].over {
+                    paint_lane(grid, w, h, y, &lanes[i], half, c);
+                }
             }
         }
-        for i in 0..n {
-            if lanes[i].over {
-                paint_lane(grid, w, h, y, &lanes[i], half, c);
-            }
-        }
-    }
+    });
 }
 
 pub(crate) fn cli_braid(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {

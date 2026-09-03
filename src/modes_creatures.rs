@@ -8,6 +8,7 @@ use std::io::{self, IsTerminal, Read as _};
 
 use crate::automata::*;
 use crate::biomes::*;
+use crate::_0_profile::measure_layer;
 use crate::color::*;
 use crate::content::*;
 use crate::fills::*;
@@ -158,13 +159,15 @@ pub(crate) fn draw_snakes(
 ) {
     use std::collections::HashMap;
     // faint board dot grid, same as circuit
-    for y in 0..height {
-        for x in 0..width {
-            if x % 4 == 0 && y % 2 == 0 {
-                grid[y][x] = Cell::new('·', darken(palette[1], 90));
+    measure_layer("snakes", "clear", || {
+        for y in 0..height {
+            for x in 0..width {
+                if x % 4 == 0 && y % 2 == 0 {
+                    grid[y][x] = Cell::new('·', darken(palette[1], 90));
+                }
             }
         }
-    }
+    });
 
     let w = width as i32;
     let h = height as i32;
@@ -192,79 +195,85 @@ pub(crate) fn draw_snakes(
     }
     let mut snakes: Vec<Snake> = Vec::new();
     let mut attempts = 0;
-    while snakes.len() < count && attempts < count * 8 {
-        attempts += 1;
-        let (cells, dirs, block) = snake_walk(w, h, rng, turn_prob, hop_chance, hop_len);
-        if cells.len() < 8 {
-            continue;
+    measure_layer("snakes", "spawn", || {
+        while snakes.len() < count && attempts < count * 8 {
+            attempts += 1;
+            let (cells, dirs, block) = snake_walk(w, h, rng, turn_prob, hop_chance, hop_len);
+            if cells.len() < 8 {
+                continue;
+            }
+            let n = cells.len();
+            let base = colors[snakes.len() % colors.len()];
+            // rainbow: each snake gets a hue spread around the wheel, blended over the
+            // palette color by `rbow` (0 = palette, 1 = full rainbow).
+            let color = if rbow > 0.0 {
+                let hue = (snakes.len() as f32 / count.max(1) as f32) * 360.0;
+                lerp_color(base, hsl_to_rgb(hue as f64, 0.85, 0.55), rbow)
+            } else {
+                base
+            };
+            let speed = (speed_base * (0.8 + rng.random::<f32>() * 0.4)).max(0.5);
+            let phase = rng.random_range(0.0..n as f32);
+            let body = body_len.clamp(4, 40).min(n.saturating_sub(1));
+            snakes.push(Snake { cells, dirs, block, color, speed, phase, body });
         }
-        let n = cells.len();
-        let base = colors[snakes.len() % colors.len()];
-        // rainbow: each snake gets a hue spread around the wheel, blended over the
-        // palette color by `rbow` (0 = palette, 1 = full rainbow).
-        let color = if rbow > 0.0 {
-            let hue = (snakes.len() as f32 / count.max(1) as f32) * 360.0;
-            lerp_color(base, hsl_to_rgb(hue as f64, 0.85, 0.55), rbow)
-        } else {
-            base
-        };
-        let speed = (speed_base * (0.8 + rng.random::<f32>() * 0.4)).max(0.5);
-        let phase = rng.random_range(0.0..n as f32);
-        let body = body_len.clamp(4, 40).min(n.saturating_sub(1));
-        snakes.push(Snake { cells, dirs, block, color, speed, phase, body });
-    }
+    });
 
     // Pass 1: collect every visible body cell. claim = (ch, color, hbit, vbit, head)
     let mut claims: HashMap<(i32, i32), Vec<(char, Color, bool, bool, bool)>> = HashMap::new();
-    for s in &snakes {
-        let n = s.cells.len() as i32;
-        let head = (t * s.speed + s.phase).rem_euclid(n as f32);
-        let head_i = head as i32;
-        let bl = s.body as i32;
-        for k in 0..bl {
-            let idx = (head_i - k).rem_euclid(n);
-            let (px, py) = s.cells[idx as usize];
-            // dir into this cell, and dir out (into the next) -- from stored steps,
-            // not coordinate deltas, so the wrap seam stays a continuous line.
-            let din = s.dirs[idx as usize];
-            let dout = s.dirs[(idx + 1).rem_euclid(n) as usize];
-            let (mut ch, hb, vb) = snake_seg(din, dout);
-            // hop cells render as solid blocks instead of thin box-drawing lines.
-            if s.block[idx as usize] {
-                ch = '\u{2588}'; // full block
+    measure_layer("snakes", "claims", || {
+        for s in &snakes {
+            let n = s.cells.len() as i32;
+            let head = (t * s.speed + s.phase).rem_euclid(n as f32);
+            let head_i = head as i32;
+            let bl = s.body as i32;
+            for k in 0..bl {
+                let idx = (head_i - k).rem_euclid(n);
+                let (px, py) = s.cells[idx as usize];
+                // dir into this cell, and dir out (into the next) -- from stored steps,
+                // not coordinate deltas, so the wrap seam stays a continuous line.
+                let din = s.dirs[idx as usize];
+                let dout = s.dirs[(idx + 1).rem_euclid(n) as usize];
+                let (mut ch, hb, vb) = snake_seg(din, dout);
+                // hop cells render as solid blocks instead of thin box-drawing lines.
+                if s.block[idx as usize] {
+                    ch = '\u{2588}'; // full block
+                }
+                let fade = 1.0 - k as f32 / bl as f32; // 1 at head -> ~0 at tail
+                let amt = (25.0 + 70.0 * fade) as u8;
+                claims
+                    .entry((px, py))
+                    .or_default()
+                    .push((ch, lighten(s.color, amt), hb, vb, k == 0));
             }
-            let fade = 1.0 - k as f32 / bl as f32; // 1 at head -> ~0 at tail
-            let amt = (25.0 + 70.0 * fade) as u8;
-            claims
-                .entry((px, py))
-                .or_default()
-                .push((ch, lighten(s.color, amt), hb, vb, k == 0));
         }
-    }
+    });
 
     // Pass 2: resolve. Single claim -> draw it (head -> pad glyph). Multiple claims
     // spanning both axes -> bright crossover knot. Otherwise (parallel overlap) the
     // head, else the first claim, wins.
     let knot_color = lighten(palette[4], 80);
-    for ((px, py), v) in claims {
-        if px < 0 || py < 0 || px >= w || py >= h {
-            continue;
-        }
-        let (gx, gy) = (px as usize, py as usize);
-        if v.len() == 1 {
-            let (ch, col, _, _, head) = v[0];
-            grid[gy][gx] = Cell::new(if head { '◉' } else { ch }, col);
-        } else {
-            let has_h = v.iter().any(|e| e.2);
-            let has_v = v.iter().any(|e| e.3);
-            if has_h && has_v {
-                grid[gy][gx] = Cell::new('╬', knot_color);
+    measure_layer("snakes", "paint", || {
+        for ((px, py), v) in claims {
+            if px < 0 || py < 0 || px >= w || py >= h {
+                continue;
+            }
+            let (gx, gy) = (px as usize, py as usize);
+            if v.len() == 1 {
+                let (ch, col, _, _, head) = v[0];
+                grid[gy][gx] = Cell::new(if head { '◉' } else { ch }, col);
             } else {
-                let e = v.iter().find(|e| e.4).unwrap_or(&v[0]);
-                grid[gy][gx] = Cell::new(if e.4 { '◉' } else { e.0 }, e.1);
+                let has_h = v.iter().any(|e| e.2);
+                let has_v = v.iter().any(|e| e.3);
+                if has_h && has_v {
+                    grid[gy][gx] = Cell::new('╬', knot_color);
+                } else {
+                    let e = v.iter().find(|e| e.4).unwrap_or(&v[0]);
+                    grid[gy][gx] = Cell::new(if e.4 { '◉' } else { e.0 }, e.1);
+                }
             }
         }
-    }
+    });
 }
 
 /// Dispatch arm for mode(s): snakes (moved verbatim from run()).

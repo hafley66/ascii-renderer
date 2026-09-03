@@ -146,7 +146,6 @@ const NATIVE_MODES: &[&str] = &[
 ];
 
 #[test]
-#[ignore = "flip on once every native mode carries measure_layer timers"]
 fn every_native_mode_has_layer_timers() {
     let mut missing = Vec::new();
     for mode in NATIVE_MODES {

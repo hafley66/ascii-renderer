@@ -1,6 +1,7 @@
 //! arboretum -- one-shot grove: TreeGenome (10 per-tree knobs) + ForestKnobs
 //! (10 grove knobs via param_f32), scaling 3-row saplings to full-screen ancients.
 
+use crate::_0_profile::measure_layer;
 use crate::color::*;
 use crate::opts::param_f32;
 use crate::pp::ease_in_out;
@@ -755,23 +756,27 @@ pub fn draw_arboretum(
 ) {
     let key = CacheKey { seed, width, height, palette: *palette, knobs: knobs.clone() };
     if let Some(hit) = take_base(&key) {
-        for (row, brow) in grid.iter_mut().zip(hit.grid.iter()) {
-            row.clone_from(brow);
-        }
+        measure_layer("arboretum", "base_copy", || {
+            for (row, brow) in grid.iter_mut().zip(hit.grid.iter()) {
+                row.clone_from(brow);
+            }
+        });
         let mut frame_rng = FrameRng::Replay(hit.log.into_iter());
-        draw_dynamic(grid, width, height, seed, &hit.ground, hit.horizon, hit.ground_hue, hit.tree_base_hue, &mut frame_rng, t, knobs);
+        measure_layer("arboretum", "dynamic", || draw_dynamic(grid, width, height, seed, &hit.ground, hit.horizon, hit.ground_hue, hit.tree_base_hue, &mut frame_rng, t, knobs));
         return;
     }
     let (bg, ground, horizon, ground_hue) =
-        render_static(width, height, seed, palette, rng, knobs);
+        measure_layer("arboretum", "static_build", || render_static(width, height, seed, palette, rng, knobs));
     let tree_base_hue = ground_hue + rng.random_range(-25..25) as f64;
-    for (row, brow) in grid.iter_mut().zip(bg.iter()) {
-        row.clone_from(brow);
-    }
+    measure_layer("arboretum", "base_copy", || {
+        for (row, brow) in grid.iter_mut().zip(bg.iter()) {
+            row.clone_from(brow);
+        }
+    });
     let mut log = Vec::new();
     {
         let mut frame_rng = FrameRng::Live(rng, &mut log);
-        draw_dynamic(grid, width, height, seed, &ground, horizon, ground_hue, tree_base_hue, &mut frame_rng, t, knobs);
+        measure_layer("arboretum", "dynamic", || draw_dynamic(grid, width, height, seed, &ground, horizon, ground_hue, tree_base_hue, &mut frame_rng, t, knobs));
     }
     STATIC_BASE.with(|c| {
         *c.borrow_mut() = Some(StaticBase {
