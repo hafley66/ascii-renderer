@@ -5,9 +5,10 @@ use rand::RngExt;
 use crate::_0_profile::measure_layer;
 use crate::color::{darken, lerp_color, lighten, shift_hue};
 use crate::opts::param_f32;
-use crate::pp::{pp_fbm, pp_line};
+use crate::pp::pp_line;
 use crate::registry::{AnimKind, Mode, ModeFrame, Param};
 use crate::types::{Cell, Grid};
+use super::_33_cosmograph::FbmRow;
 
 const TAU: f32 = std::f32::consts::TAU;
 
@@ -275,16 +276,26 @@ fn draw_sky(
     let span = height.saturating_sub(1).max(1) as f32;
     for y in 0..height {
         let bg = lerp_color(top, horizon, (y as f32 / span).powf(1.4) * 0.9);
-        for x in 0..width {
-            grid[y][x] = Cell::with_bg(' ', bg, bg);
-        }
+        grid[y].fill(Cell::with_bg(' ', bg, bg));
     }
     let star = lighten(palette[4], 6);
+    let threshold = 0.80 - glow * 0.05;
+    let star_seed = seed ^ 0xC47;
+    let mut field_fx = Vec::with_capacity(width);
+    for x in 0..width {
+        field_fx.push(x as f32 * 0.085);
+    }
     for y in 0..height {
+        let row_tag = y as u64 * 977;
+        let mut field_row = FbmRow::new(y as f32 * 0.14, star_seed);
         for x in 0..width {
-            let pick = hash01(seed, x as u64 * 131 + y as u64 * 977);
-            let field = pp_fbm(x as f32 * 0.085, y as f32 * 0.14, seed ^ 0xC47);
-            if field > 0.68 && pick > 0.80 - glow * 0.05 {
+            // `pick` is one hash against a fixed cut; only survivors pay for the fbm.
+            let pick = hash01(seed, x as u64 * 131 + row_tag);
+            if pick <= threshold {
+                continue;
+            }
+            let field = field_row.at(field_fx[x]);
+            if field > 0.68 {
                 let tw = (t * 0.9 + pick * TAU * 2.0).sin();
                 let ch = if tw > 0.82 {
                     '✦'
