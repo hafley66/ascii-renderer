@@ -2,13 +2,17 @@
 
 | knob at max | frames | fps | avg ms | p50 ms | p99 ms | max ms | vs baseline |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| baseline | 608 | 607.9 | 1.64 | 1.59 | 1.79 | 22.60 | 1.00x |
-| SPEED=3 | 616 | 616.0 | 1.62 | 1.59 | 1.79 | 9.35 | 0.99x |
-| GHOSTS=5 | 622 | 621.3 | 1.61 | 1.59 | 1.73 | 1.85 | 0.98x |
-| COPIES=5 | 625 | 624.0 | 1.60 | 1.59 | 1.78 | 1.93 | 0.97x |
+| baseline | 604 | 603.2 | 1.66 | 1.64 | 1.84 | 2.49 | 1.00x |
+| GHOSTS=5 | 605 | 604.5 | 1.65 | 1.64 | 1.83 | 2.11 | 1.00x |
+| COPIES=5 | 606 | 605.3 | 1.65 | 1.63 | 1.85 | 2.68 | 1.00x |
+| SPEED=3 | 607 | 606.4 | 1.65 | 1.63 | 1.82 | 2.73 | 0.99x |
 
-worst: SPEED=3
+worst: GHOSTS=5
 
-## hotspots at SPEED=3: 619 frames, 618.8 fps
+## hotspots at GHOSTS=5: 604 frames, 603.9 fps
 
-no measure_layer timers fired for hypercube; wrap its painters in crate::_0_profile::measure_layer
+| layer | calls/frame | avg us | max us | share of frame |
+| --- | ---: | ---: | ---: | ---: |
+| clear | 1.0 | 389.7 | 543.1 | 23.5% |
+| stars | 1.0 | 340.1 | 401.4 | 20.5% |
+| cube | 1.0 | 14.3 | 22.5 | 0.9% |

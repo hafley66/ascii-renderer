@@ -2,14 +2,14 @@
 
 | knob at max | frames | fps | avg ms | p50 ms | p99 ms | max ms | vs baseline |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| baseline | 165 | 164.1 | 6.09 | 6.07 | 6.38 | 6.45 | 1.00x |
-| DENS=100 | 164 | 163.9 | 6.10 | 6.08 | 6.46 | 6.53 | 1.00x |
-| CELLS=16 | 165 | 164.2 | 6.09 | 6.06 | 6.41 | 6.92 | 1.00x |
-| CHAOS=100 | 165 | 164.3 | 6.09 | 6.06 | 6.46 | 6.50 | 1.00x |
-| SPEED=3 | 165 | 164.9 | 6.07 | 6.05 | 6.38 | 6.42 | 1.00x |
+| baseline | 162 | 161.3 | 6.20 | 6.17 | 6.49 | 6.61 | 1.00x |
+| SPEED=3 | 151 | 150.5 | 6.64 | 6.51 | 9.45 | 11.90 | 1.07x |
+| CHAOS=100 | 160 | 159.1 | 6.28 | 6.22 | 6.75 | 6.99 | 1.01x |
+| CELLS=16 | 161 | 160.9 | 6.21 | 6.19 | 6.51 | 6.80 | 1.00x |
+| DENS=100 | 162 | 162.0 | 6.17 | 6.13 | 6.58 | 7.22 | 1.00x |
 
-worst: DENS=100
+worst: SPEED=3
 
-## hotspots at DENS=100: 163 frames, 163.0 fps
+## hotspots at SPEED=3: 163 frames, 162.3 fps
 
 no measure_layer timers fired for fa6; wrap its painters in crate::_0_profile::measure_layer

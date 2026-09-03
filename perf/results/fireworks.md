@@ -2,13 +2,18 @@
 
 | knob at max | frames | fps | avg ms | p50 ms | p99 ms | max ms | vs baseline |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| baseline | 428 | 427.5 | 2.34 | 2.31 | 2.66 | 4.51 | 1.00x |
-| SPEED=3 | 434 | 433.5 | 2.31 | 2.28 | 2.58 | 3.31 | 0.99x |
-| SPARKS=48 | 435 | 434.1 | 2.30 | 2.28 | 2.50 | 2.60 | 0.98x |
-| BURSTS=12 | 436 | 435.5 | 2.30 | 2.28 | 2.42 | 2.51 | 0.98x |
+| baseline | 414 | 413.5 | 2.42 | 2.37 | 2.65 | 7.71 | 1.00x |
+| BURSTS=12 | 418 | 417.1 | 2.40 | 2.38 | 2.59 | 3.27 | 0.99x |
+| SPEED=3 | 421 | 420.1 | 2.38 | 2.36 | 2.57 | 2.75 | 0.98x |
+| SPARKS=48 | 422 | 421.5 | 2.37 | 2.35 | 2.54 | 2.79 | 0.98x |
 
-worst: SPEED=3
+worst: BURSTS=12
 
-## hotspots at SPEED=3: 430 frames, 429.9 fps
+## hotspots at BURSTS=12: 419 frames, 418.7 fps
 
-no measure_layer timers fired for fireworks; wrap its painters in crate::_0_profile::measure_layer
+| layer | calls/frame | avg us | max us | share of frame |
+| --- | ---: | ---: | ---: | ---: |
+| stars | 1.0 | 1065.3 | 1245.8 | 44.6% |
+| clear | 1.0 | 401.5 | 854.9 | 16.8% |
+| bursts | 1.0 | 6.5 | 14.1 | 0.3% |
+| horizon | 1.0 | 3.8 | 25.8 | 0.2% |

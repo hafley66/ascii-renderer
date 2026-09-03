@@ -2,13 +2,17 @@
 
 | knob at max | frames | fps | avg ms | p50 ms | p99 ms | max ms | vs baseline |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| baseline | 651 | 650.6 | 1.54 | 1.47 | 2.76 | 8.62 | 1.00x |
-| TRAIL=18 | 661 | 660.3 | 1.51 | 1.50 | 1.68 | 1.94 | 0.99x |
-| COUNT=140 | 664 | 663.4 | 1.51 | 1.49 | 1.64 | 1.87 | 0.98x |
-| SPEED=3 | 676 | 675.9 | 1.48 | 1.46 | 1.60 | 1.76 | 0.96x |
+| baseline | 632 | 631.9 | 1.58 | 1.57 | 1.69 | 1.88 | 1.00x |
+| COUNT=140 | 618 | 617.6 | 1.62 | 1.60 | 1.77 | 1.87 | 1.02x |
+| TRAIL=18 | 620 | 619.6 | 1.61 | 1.60 | 1.77 | 2.21 | 1.02x |
+| SPEED=3 | 631 | 630.8 | 1.59 | 1.57 | 1.72 | 1.84 | 1.00x |
 
-worst: TRAIL=18
+worst: COUNT=140
 
-## hotspots at TRAIL=18: 670 frames, 669.5 fps
+## hotspots at COUNT=140: 614 frames, 613.7 fps
 
-no measure_layer timers fired for flux; wrap its painters in crate::_0_profile::measure_layer
+| layer | calls/frame | avg us | max us | share of frame |
+| --- | ---: | ---: | ---: | ---: |
+| clear | 1.0 | 394.0 | 658.0 | 24.2% |
+| field | 1.0 | 273.1 | 377.2 | 16.8% |
+| particles | 1.0 | 42.3 | 63.2 | 2.6% |

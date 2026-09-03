@@ -2,13 +2,19 @@
 
 | knob at max | frames | fps | avg ms | p50 ms | p99 ms | max ms | vs baseline |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| baseline | 393 | 392.5 | 2.55 | 2.52 | 2.77 | 2.91 | 1.00x |
-| BIRDS=500 | 355 | 354.3 | 2.82 | 2.79 | 3.18 | 3.35 | 1.11x |
-| SPEED=3 | 391 | 391.0 | 2.56 | 2.53 | 2.87 | 3.06 | 1.00x |
-| FLOCKS=9 | 393 | 392.3 | 2.55 | 2.52 | 2.87 | 2.98 | 1.00x |
+| baseline | 332 | 331.5 | 3.02 | 2.99 | 3.28 | 3.86 | 1.00x |
+| BIRDS=500 | 298 | 297.1 | 3.37 | 3.30 | 4.26 | 4.57 | 1.12x |
+| FLOCKS=9 | 331 | 329.9 | 3.03 | 2.99 | 3.37 | 3.53 | 1.00x |
+| SPEED=3 | 333 | 332.4 | 3.01 | 2.98 | 3.28 | 4.21 | 1.00x |
 
 worst: BIRDS=500
 
-## hotspots at BIRDS=500: 354 frames, 353.7 fps
+## hotspots at BIRDS=500: 303 frames, 302.6 fps
 
-no measure_layer timers fired for murmuration; wrap its painters in crate::_0_profile::measure_layer
+| layer | calls/frame | avg us | max us | share of frame |
+| --- | ---: | ---: | ---: | ---: |
+| sky | 1.0 | 1343.3 | 1567.8 | 40.7% |
+| stars | 1.0 | 739.5 | 816.0 | 22.4% |
+| density | 1.0 | 275.0 | 373.9 | 8.3% |
+| birds | 1.0 | 25.4 | 40.8 | 0.8% |
+| flocks | 1.0 | 0.0 | 0.2 | 0.0% |
