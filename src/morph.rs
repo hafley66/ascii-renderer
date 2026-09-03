@@ -652,6 +652,11 @@ fn iterate_grid_into(
             crate::pendwave::draw_pendwave(grid, w, h, seed, palette, t, &knobs);
             true
         }
+        "polytope" => {
+            let knobs = crate::polytope::PolytopeKnobs::from_env();
+            crate::polytope::draw_polytope(grid, w, h, seed, palette, t, &knobs);
+            true
+        }
         _ => false,
     }
 }
