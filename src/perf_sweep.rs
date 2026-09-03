@@ -147,6 +147,7 @@ const NATIVE_MODES: &[&str] = &[
     "poincare",
     "opus-1-quasicrystal",
     "opus-2-quasicrystal",
+    "sonnet-2-clifford",
 ];
 
 #[test]

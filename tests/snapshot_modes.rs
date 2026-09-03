@@ -830,3 +830,13 @@ fn opus_2_quasicrystal_seven_fold_moving() {
         "45"
     ));
 }
+
+#[test]
+fn sonnet_2_clifford_seed_42() {
+    insta::assert_snapshot!(render(&["42", "sonnet-2-clifford", "moss"]));
+}
+
+#[test]
+fn sonnet_2_clifford_breathing_t20() {
+    insta::assert_snapshot!(render_t(&["7", "sonnet-2-clifford", "deep"], "20"));
+}

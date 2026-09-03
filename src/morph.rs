@@ -672,6 +672,11 @@ fn iterate_grid_into(
             crate::opus_2_quasicrystal::draw_opus_2_quasicrystal(grid, w, h, seed, palette, t, &knobs);
             true
         }
+        "sonnet-2-clifford" => {
+            let knobs = crate::sonnet_2_clifford::CliffordKnobs::from_env();
+            crate::sonnet_2_clifford::draw_sonnet_2_clifford(grid, w, h, seed, palette, t, &knobs);
+            true
+        }
         _ => false,
     }
 }
