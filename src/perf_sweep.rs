@@ -150,6 +150,7 @@ const NATIVE_MODES: &[&str] = &[
     "sonnet-1-spirograph",
     "sonnet-2-clifford",
     "haiku-1-torus",
+    "haiku-2-ripple",
 ];
 
 #[test]

@@ -865,3 +865,13 @@ fn haiku_1_torus_seed_42() {
 fn haiku_1_torus_rotating_t10() {
     insta::assert_snapshot!(render_t(&["42", "haiku-1-torus", "moss"], "10"));
 }
+
+#[test]
+fn haiku_2_ripple_seed_42() {
+    insta::assert_snapshot!(render(&["42", "haiku-2-ripple", "moss"]));
+}
+
+#[test]
+fn haiku_2_ripple_animated_t8() {
+    insta::assert_snapshot!(render_t(&["42", "haiku-2-ripple", "moss"], "8"));
+}

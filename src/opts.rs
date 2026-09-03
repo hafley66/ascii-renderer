@@ -464,6 +464,7 @@ pub(crate) fn run_demo(initial_seed: u64) {
         "sonnet-1-spirograph",
         "sonnet-2-clifford",
         "haiku-1-torus",
+        "haiku-2-ripple",
     ];
     all_modes.extend(registered_modes().iter().map(|(name, _)| name));
     let all_themes: &[&str] = &[

@@ -63,6 +63,7 @@ mod opus_2_quasicrystal;
 mod sonnet_1_spirograph;
 mod sonnet_2_clifford;
 mod haiku_1_torus;
+mod haiku_2_ripple;
 #[cfg(test)]
 mod perf_sweep;
 

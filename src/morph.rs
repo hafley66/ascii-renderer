@@ -687,6 +687,11 @@ fn iterate_grid_into(
             crate::haiku_1_torus::draw_haiku_1_torus(grid, w, h, seed, palette, t, &knobs);
             true
         }
+        "haiku-2-ripple" => {
+            let knobs = crate::haiku_2_ripple::RippleKnobs::from_env();
+            crate::haiku_2_ripple::draw_haiku_2_ripple(grid, w, h, seed, palette, t, &knobs);
+            true
+        }
         _ => false,
     }
 }
