@@ -526,21 +526,31 @@ fn render_frame6(grid: &mut Grid, c: &Cached6, t: f32, k: &Knobs6) {
     let beat = (ts * 0.7).rem_euclid(3.0);
     let flash = (1.0 - beat * 4.5).max(0.0) * k.glow;
 
+    // The plane's inverse map is upper triangular, so its denominator and the
+    // transformed height are fixed along a row; only z.0 varies with x.
+    let (m0, m1, m3) = (1.0 / boost, -horo_flow, boost);
+    let inv_den = (m3 * m3).max(1e-7);
+    let ny_coef = m0 * m3;
+    let unproj_den = (c.scale_x * 0.45).max(1.0);
+
     measure_layer("tree-of-life-6", "plane", || {
+        let xn: Vec<f32> = (0..w).map(|x| ((x as i32) as f32 - c.c_x) / unproj_den).collect();
         for y in 0..h {
+            let y_norm = ((c.c_y - (y as i32) as f32) / c.scale_y).clamp(0.01, 1.1);
+            let yv = ((y_norm * 5.5) - 2.5).exp();
+            let ysq = yv.sqrt();
+            let z1 = ((ny_coef * yv.max(1e-4)) / inv_den).max(1e-4);
+            let curve_x = seam_center + 0.3 * (z1.ln() * 1.4 + seam_wave).sin();
+
+            let v_ratio = (y as f32 / h as f32).clamp(0.0, 1.0);
+            let col_eth = scale_rgb(c.col_eth_deep, 0.22 + 0.65 * (1.0 - v_ratio) + flash * 0.45);
+            let col_live = scale_rgb(c.col_live_dark, 0.20 + 0.60 * (1.0 - v_ratio));
+
+            let row = &mut grid[y];
             for x in 0..w {
-                let z_raw = unproject_from_screen(c, x as i32, y as i32);
-                let z = sl2_act([1.0 / boost, -horo_flow, 0.0, boost], z_raw);
-                let eth = is_ethereal(z);
-                let v_ratio = (y as f32 / h as f32).clamp(0.0, 1.0);
-                let base_col = if eth { c.col_eth_deep } else { c.col_live_dark };
-                let lit = if eth {
-                    0.22 + 0.65 * (1.0 - v_ratio) + flash * 0.45
-                } else {
-                    0.20 + 0.60 * (1.0 - v_ratio)
-                };
-                let col = scale_rgb(base_col, lit);
-                grid[y][x] = Cell::with_bg(' ', col, col);
+                let z0 = ((m0 * (xn[x] * ysq) + m1) * m3) / inv_den;
+                let col = if z0 < curve_x { col_eth } else { col_live };
+                row[x] = Cell::with_bg(' ', col, col);
             }
         }
     });
