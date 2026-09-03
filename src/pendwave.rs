@@ -72,7 +72,7 @@ fn pill(grid: &mut Grid, w: usize, h: usize, x: i32, y: i32, c: Color) {
     }
 }
 
-fn link(grid: &mut Grid, w: usize, h: usize, a: (i32, i32), b: (i32, i32), fg: Color) {
+fn link(grid: &mut Grid, w: usize, h: usize, a: (i32, i32), b: (i32, i32), fg: Color, hard: bool) {
     let (dx, dy) = (b.0 - a.0, b.1 - a.1);
     let steps = dx.abs().max(dy.abs());
     if steps < 2 {
@@ -83,7 +83,30 @@ fn link(grid: &mut Grid, w: usize, h: usize, a: (i32, i32), b: (i32, i32), fg: C
     for s in 1..steps {
         let x = a.0 + ((dx * s) as f32 / steps as f32).round() as i32;
         let y = a.1 + ((dy * s) as f32 / steps as f32).round() as i32;
-        put_soft(grid, w, h, x, y, ch, fg);
+        if hard {
+            put(grid, w, h, x, y, ch, fg);
+        } else {
+            put_soft(grid, w, h, x, y, ch, fg);
+        }
+    }
+}
+
+/// Filled ellipse bob for packed top-view lanes, rx from ry and the cell aspect.
+fn blob(grid: &mut Grid, w: usize, h: usize, x: i32, y: i32, rx: i32, ry: i32, c: Color) {
+    let bg = darken(c, 70);
+    for dy in -ry..=ry {
+        for dx in -rx..=rx {
+            let u = dx as f32 / (rx as f32 + 0.5);
+            let v = dy as f32 / (ry as f32 + 0.5);
+            let r = u * u + v * v;
+            if r > 1.0 {
+                continue;
+            }
+            let (ch, fg) = if r < 0.45 { ('@', lighten(c, 60)) } else { ('%', darken(c, 10)) };
+            if x + dx >= 0 && y + dy >= 0 && ((x + dx) as usize) < w && ((y + dy) as usize) < h {
+                grid[(y + dy) as usize][(x + dx) as usize] = Cell::with_bg(ch, fg, bg);
+            }
+        }
     }
 }
 
@@ -215,7 +238,7 @@ fn front(grid: &mut Grid, w: usize, h: usize, palette: &[Color; 5], t: f32, k: &
     measure_layer("pendulum-wave", "front_link", || {
         if k.link > 1.5 {
             for i in 1..n {
-                link(grid, w, h, bobs[i - 1], bobs[i], link_fg);
+                link(grid, w, h, bobs[i - 1], bobs[i], link_fg, false);
             }
         }
     });
@@ -243,19 +266,70 @@ fn top(grid: &mut Grid, w: usize, h: usize, palette: &[Color; 5], t: f32, k: &Pe
     let link_fg = darken(palette[4], 110);
     let lane = h as f32 / n as f32;
     let lane_y = |i: usize| ((i as f32 + 0.5) * lane).floor() as i32;
-    let bob_x = |i: usize, tt: f32| (cx + reach * rig.angle(i, tt).sin() / norm).round() as i32;
+    let bob_f = |i: usize, tt: f32| cx + reach * rig.angle(i, tt).sin() / norm;
+    let bob_x = |i: usize, tt: f32| bob_f(i, tt).round() as i32;
+    // a lane two rows or taller is packed: the bob path is smeared over the whole
+    // band, newest row on top, so tall lanes read as a ribbon instead of one line
+    let tall = lane >= 2.0;
+    let band = |i: usize| {
+        let y0 = (i as f32 * lane).floor() as i32;
+        let y1 = ((((i + 1) as f32) * lane).floor() as i32 - 1).max(y0);
+        (y0, y1)
+    };
+    let span = trail.max(1) as f32 * tail;
+
+    measure_layer("pendulum-wave", "top_bands", || {
+        if !tall {
+            return;
+        }
+        let steps = RAMP.len() as f32;
+        for i in 0..n {
+            let (y0, y1) = band(i);
+            let rows = (y1 - y0 + 1) as f32;
+            let c = colors[i];
+            for y in y0..=y1 {
+                let f = (y - y0) as f32 / rows;
+                let bx = bob_f(i, t - f * span);
+                let fade = 1.0 - 0.5 * f;
+                let gmin = (1.0 / (steps * fade)).cbrt();
+                let dmax = reach * (1.0 - gmin);
+                if dmax < 0.5 {
+                    continue;
+                }
+                let x0 = ((bx - dmax).floor() as i32).max(0);
+                let x1 = ((bx + dmax).ceil() as i32).min(w as i32 - 1);
+                for x in x0..=x1 {
+                    let g = 1.0 - ((x as f32 - bx).abs() / reach).min(1.0);
+                    let v = g * g * g * fade;
+                    let lvl = (v * steps) as usize;
+                    if lvl == 0 {
+                        continue;
+                    }
+                    let ch = RAMP[lvl.min(RAMP.len() - 1)];
+                    put(grid, w, h, x, y, ch, darken(c, ((1.0 - v) * 110.0) as u8));
+                }
+            }
+        }
+    });
 
     measure_layer("pendulum-wave", "top_guides", || {
         for y in 0..h as i32 {
             put(grid, w, h, cx as i32, y, ':', guide_fg);
         }
         if k.arc > 0.5 {
+            let rail_fg = darken(guide_fg, 20);
             for i in 0..n {
-                let y = lane_y(i);
+                let (y0, _) = band(i);
+                let y = if tall { y0 } else { lane_y(i) };
+                let ch = if tall { '-' } else { '.' };
                 let x0 = (cx - reach).round() as i32;
                 let x1 = (cx + reach).round() as i32;
                 for x in x0..=x1 {
-                    put_soft(grid, w, h, x, y, '.', darken(guide_fg, 20));
+                    if tall {
+                        put(grid, w, h, x, y, ch, rail_fg);
+                    } else {
+                        put_soft(grid, w, h, x, y, ch, rail_fg);
+                    }
                 }
             }
         }
@@ -265,9 +339,18 @@ fn top(grid: &mut Grid, w: usize, h: usize, palette: &[Color; 5], t: f32, k: &Pe
         for i in 0..n {
             let y = lane_y(i);
             let c = colors[i];
-            for j in (1..=trail).rev() {
-                let x = bob_x(i, t - j as f32 * tail);
-                let f = j as f32 / trail as f32;
+            // sub-sample the same time span until neighboring samples touch, so a
+            // wide grid gets a solid curve instead of scattered dots
+            let sub = if tall {
+                ((bob_f(i, t) - bob_f(i, t - tail)).abs().ceil() as i32).clamp(1, 64)
+            } else {
+                1
+            };
+            let dt = tail / sub as f32;
+            let total = trail * sub;
+            for j in (1..=total).rev() {
+                let x = bob_x(i, t - j as f32 * dt);
+                let f = j as f32 / total as f32;
                 let ch = if f < 0.25 { '*' } else if f < 0.5 { '=' } else if f < 0.75 { ':' } else { '.' };
                 put(grid, w, h, x, y, ch, darken(c, (f * 110.0) as u8));
             }
@@ -275,16 +358,24 @@ fn top(grid: &mut Grid, w: usize, h: usize, palette: &[Color; 5], t: f32, k: &Pe
     });
 
     measure_layer("pendulum-wave", "top_link", || {
-        if k.link > 0.5 {
+        if k.link > 0.5 || (tall && k.link > -0.5) {
             for i in 1..n {
-                link(grid, w, h, (bob_x(i - 1, t), lane_y(i - 1)), (bob_x(i, t), lane_y(i)), link_fg);
+                link(grid, w, h, (bob_x(i - 1, t), lane_y(i - 1)), (bob_x(i, t), lane_y(i)), link_fg, tall);
             }
         }
     });
 
     measure_layer("pendulum-wave", "top_bobs", || {
         for i in 0..n {
-            pill(grid, w, h, bob_x(i, t), lane_y(i), colors[i]);
+            let (y0, y1) = band(i);
+            let rows = y1 - y0 + 1;
+            if rows >= 5 {
+                let ry = (rows / 8).clamp(1, 4);
+                let rx = ((ry as f32 * k.aspect.max(0.25)).round() as i32).max(1);
+                blob(grid, w, h, bob_x(i, t), lane_y(i), rx, ry, colors[i]);
+            } else {
+                pill(grid, w, h, bob_x(i, t), lane_y(i), colors[i]);
+            }
         }
     });
 }
