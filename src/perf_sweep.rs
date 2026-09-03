@@ -153,6 +153,8 @@ const NATIVE_MODES: &[&str] = &[
     "haiku-2-ripple",
     "fable-1-trees",
     "fable-1-forest",
+    "fable-2-trees",
+    "fable-2-forest",
 ];
 
 #[test]

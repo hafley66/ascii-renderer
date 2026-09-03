@@ -66,6 +66,8 @@ mod haiku_1_torus;
 mod haiku_2_ripple;
 mod fable_1_trees;
 mod fable_1_forest;
+mod fable_2_trees;
+mod fable_2_forest;
 #[cfg(test)]
 mod perf_sweep;
 
