@@ -5,7 +5,7 @@ use rand::RngExt;
 use crate::_0_profile::measure_layer;
 use crate::color::{darken, lerp_color, lighten, shift_hue};
 use crate::opts::param_f32;
-use crate::pp::{pp_arc, pp_fbm, pp_line};
+use crate::pp::{pp_arc, pp_fbm, pp_hash2, pp_line};
 use crate::registry::{AnimKind, Mode, ModeFrame, Param};
 use crate::types::{Cell, Grid};
 
@@ -182,6 +182,74 @@ fn compute_plan(width: usize, height: usize, tilt: f32) -> Plan {
     }
 }
 
+pub(super) const FBM_OCTAVES: usize = 4;
+
+/// Row-walking `pp_fbm`: y lattice fixed per scanline, corner hashes refetched only
+/// when x crosses a lattice edge. Arithmetic order matches `pp_vnoise` term for term.
+pub(super) struct FbmRow {
+    seed: [u64; FBM_OCTAVES],
+    y0: [i32; FBM_OCTAVES],
+    sy: [f32; FBM_OCTAVES],
+    x0: [i32; FBM_OCTAVES],
+    corners: [[f32; 4]; FBM_OCTAVES],
+    primed: bool,
+}
+
+impl FbmRow {
+    pub(super) fn new(fy: f32, seed: u64) -> Self {
+        let mut row = FbmRow {
+            seed: [0; FBM_OCTAVES],
+            y0: [0; FBM_OCTAVES],
+            sy: [0.0; FBM_OCTAVES],
+            x0: [0; FBM_OCTAVES],
+            corners: [[0.0; 4]; FBM_OCTAVES],
+            primed: false,
+        };
+        let mut freq = 1.0f32;
+        for o in 0..FBM_OCTAVES {
+            let fyo = fy * freq;
+            let iy = fyo.floor() as i32;
+            let ty = fyo - iy as f32;
+            row.seed[o] = seed.wrapping_add(o as u64 * 101);
+            row.y0[o] = iy;
+            row.sy[o] = ty * ty * (3.0 - 2.0 * ty);
+            freq *= 2.0;
+        }
+        row
+    }
+
+    pub(super) fn at(&mut self, fx: f32) -> f32 {
+        let force = !self.primed;
+        let mut v = 0.0f32;
+        let mut amp = 0.5f32;
+        let mut freq = 1.0f32;
+        for o in 0..FBM_OCTAVES {
+            let fxo = fx * freq;
+            let ix = fxo.floor() as i32;
+            let tx = fxo - ix as f32;
+            let sx = tx * tx * (3.0 - 2.0 * tx);
+            if force || ix != self.x0[o] {
+                let (iy, sd) = (self.y0[o], self.seed[o]);
+                self.corners[o] = [
+                    pp_hash2(ix, iy, sd),
+                    pp_hash2(ix + 1, iy, sd),
+                    pp_hash2(ix, iy + 1, sd),
+                    pp_hash2(ix + 1, iy + 1, sd),
+                ];
+                self.x0[o] = ix;
+            }
+            let c = self.corners[o];
+            let a = c[0] + (c[1] - c[0]) * sx;
+            let b = c[2] + (c[3] - c[2]) * sx;
+            v += amp * (a + (b - a) * self.sy[o]);
+            amp *= 0.5;
+            freq *= 2.0;
+        }
+        self.primed = true;
+        v
+    }
+}
+
 fn draw_nebula(
     grid: &mut Grid,
     width: usize,
@@ -197,22 +265,45 @@ fn draw_nebula(
     let heart = lerp_color(lighten(palette[2], 6), palette[3], 0.35);
     let span_y = height.saturating_sub(1).max(1) as f32;
     let span_x = width.saturating_sub(1).max(1) as f32;
+    let noise_seed = seed ^ 0x0CB;
+    let swirl_off = (t * params.speed * 0.045).sin() * 2.4;
+    let fy_drift = t * params.speed * 0.02;
+    let denom_x = span_x.max(8.0);
+    let denom_y = span_y.max(6.0);
+    let glow_base = 0.22 + params.glow * 0.40;
+    let mut fx_col = Vec::with_capacity(width);
+    let mut dx2_col = Vec::with_capacity(width);
+    // dx is exactly antisymmetric about plan.cx, so dx2 and the falloff term it
+    // feeds repeat bit-for-bit at the mirrored column.
+    let mut mirror_col = Vec::with_capacity(width);
+    for x in 0..width {
+        fx_col.push(x as f32 * 0.055 + swirl_off);
+        let dx = (x as f32 - plan.cx as f32) / denom_x;
+        dx2_col.push(dx * dx * 0.7);
+        let m = 2 * plan.cx - x as i32;
+        mirror_col.push(if m >= 0 && (m as usize) < x { m as usize } else { usize::MAX });
+    }
+    let mut falloff = vec![0.0f32; width];
     for y in 0..height {
+        let vfade = y as f32 / span_y;
+        let base = lerp_color(deep, rim, vfade.powf(0.85));
+        let dy = (y as f32 - plan.cy as f32) / denom_y;
+        let dy2 = dy * dy;
+        let mut noise = FbmRow::new(y as f32 * 0.085 - fy_drift, noise_seed);
+        let row = &mut grid[y];
         for x in 0..width {
-            let vfade = y as f32 / span_y;
-            let base = lerp_color(deep, rim, vfade.powf(0.85));
-            let swirl = pp_fbm(
-                x as f32 * 0.055 + (t * params.speed * 0.045).sin() * 2.4,
-                y as f32 * 0.085 - t * params.speed * 0.02,
-                seed ^ 0x0CB,
-            );
-            let dx = (x as f32 - plan.cx as f32) / span_x.max(8.0);
-            let dy = (y as f32 - plan.cy as f32) / span_y.max(6.0);
-            let d = (dx * dx * 0.7 + dy * dy).sqrt();
-            let warmth = (1.0 - d.clamp(0.0, 1.0)).powf(2.6)
-                * (0.22 + params.glow * 0.40 + swirl * 0.22);
+            let swirl = noise.at(fx_col[x]);
+            let mirror = mirror_col[x];
+            let fall = if mirror != usize::MAX {
+                falloff[mirror]
+            } else {
+                let d = (dx2_col[x] + dy2).sqrt();
+                (1.0 - d.clamp(0.0, 1.0)).powf(2.6)
+            };
+            falloff[x] = fall;
+            let warmth = fall * (glow_base + swirl * 0.22);
             let bg = lerp_color(base, heart, warmth.clamp(0.0, 1.0));
-            grid[y][x] = Cell::with_bg(' ', bg, bg);
+            row[x] = Cell::with_bg(' ', bg, bg);
         }
     }
 }
@@ -228,12 +319,23 @@ fn draw_starfield(
 ) {
     let star = lighten(palette[4], 10);
     let faint = darken(star, 34);
+    let threshold = 0.875 - params.stars * 0.20;
+    let field_seed = seed ^ 0x57A;
+    let mut field_fx = Vec::with_capacity(width);
+    for x in 0..width {
+        field_fx.push(x as f32 * 0.10);
+    }
     for y in 0..height {
+        let row_tag = y as u64 * 977 + 5;
+        let mut field_row = FbmRow::new(y as f32 * 0.14, field_seed);
         for x in 0..width {
-            let pick = hash01(seed, x as u64 * 131 + y as u64 * 977 + 5);
-            let field = pp_fbm(x as f32 * 0.10, y as f32 * 0.14, seed ^ 0x57A);
-            let threshold = 0.875 - params.stars * 0.20;
-            if field > 0.68 && pick > threshold {
+            // `pick` is one hash against a fixed cut; only survivors pay for the fbm.
+            let pick = hash01(seed, x as u64 * 131 + row_tag);
+            if pick <= threshold {
+                continue;
+            }
+            let field = field_row.at(field_fx[x]);
+            if field > 0.68 {
                 let tw = (t * params.speed * 1.1 + pick * TAU * 2.0).sin();
                 let ch = if tw > 0.86 {
                     '✦'
@@ -863,3 +965,23 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+mod fbm_row_tests {
+    use super::*;
+    use crate::pp::pp_fbm;
+
+    #[test]
+    fn fbm_row_matches_pp_fbm_bitwise() {
+        let seed = 0x0CBu64 ^ 12345;
+        for yi in 0..64 {
+            let fy = yi as f32 * 0.085 - 3.7;
+            let mut row = FbmRow::new(fy, seed);
+            for xi in 0..512 {
+                let fx = xi as f32 * 0.055 + 1.9;
+                assert_eq!(row.at(fx).to_bits(), pp_fbm(fx, fy, seed).to_bits());
+            }
+        }
+    }
+}
+
