@@ -58,6 +58,8 @@ use crate::sonnet_1_spirograph::cli_sonnet_1_spirograph;
 use crate::sonnet_2_clifford::cli_sonnet_2_clifford;
 use crate::haiku_1_torus::cli_haiku_1_torus;
 use crate::haiku_2_ripple::cli_haiku_2_ripple;
+use crate::fable_1_trees::cli_fable_1_trees;
+use crate::fable_1_forest::cli_fable_1_forest;
 use crate::cli_basic::*;
 use crate::cli_catalog::*;
 use crate::cli_city::*;
@@ -243,6 +245,8 @@ pub(crate) fn run() {
         eprintln!("  opus-1-quasicrystal  de Bruijn multigrid dual: a quasiperiodic rhombic tiling that drifts, spins and reconfigures (a=animate) [speed] [hue] [sym] [scale] [drift] [spin] [shade] [wave] [worms] [pulse] [stars] [breath]");
         eprintln!("  opus-2-quasicrystal  de Bruijn multigrid quasilattice with a faceted growth front, phason drift and a slow turn (a=animate) [speed] [cycle] [folds] [scale] [linew] [band] [edge] [turn] [phason] [facet] [density] [dust] [hue] [glow] [aspect] [phase] [blooms]");
         eprintln!("  sonnet-1-spirograph  A rolling circle laps a closed hypotrochoid/epitrochoid track forever, comet trail and generating circles both drawn (a=animate) [speed] [hue] [depth] [trail] [glow] [arms] [echo] [label] [scale] [margin] [aspect]");
+        eprintln!("  fable-1-trees  Sample sheet of five fable-1 growth algorithms: space colonization, banyan, mangrove, baobab, coral DLA (a=animate) [energy] [fruit] [branch] [leaf] [roots] [scrub] [flicker] [sway]");
+        eprintln!("  fable-1-forest  Layered forest of the fable-1 species with hills, moon, slow light and a seeded atmosphere (a=animate) [density] [layers] [sway] [speed] [hue] [atmos] [fog] [horizon] [moon] [fruit]");
         for (_, mode) in registered_modes().iter() {
             eprintln!("  {:<16} {}", mode.name(), mode.help());
         }
@@ -1205,6 +1209,18 @@ pub(crate) fn run() {
         }
     } else if mode == "haiku-2-ripple" {
         let (g, done) = cli_haiku_2_ripple(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        grid = g;
+        if done {
+            return;
+        }
+    } else if mode == "fable-1-trees" {
+        let (g, done) = cli_fable_1_trees(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        grid = g;
+        if done {
+            return;
+        }
+    } else if mode == "fable-1-forest" {
+        let (g, done) = cli_fable_1_forest(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
         grid = g;
         if done {
             return;

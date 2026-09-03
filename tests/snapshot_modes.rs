@@ -875,3 +875,28 @@ fn haiku_2_ripple_seed_42() {
 fn haiku_2_ripple_animated_t8() {
     insta::assert_snapshot!(render_t(&["42", "haiku-2-ripple", "moss"], "8"));
 }
+
+#[test]
+fn fable_1_trees_seed_42() {
+    insta::assert_snapshot!(render(&["42", "fable-1-trees", "moss"]));
+}
+
+#[test]
+fn fable_1_trees_seed_7_knobs() {
+    insta::assert_snapshot!(render(&["7", "fable-1-trees", "ember", "0.8", "0.6", "1.2", "1.1", "1.0", "0.5"]));
+}
+
+#[test]
+fn fable_1_forest_seed_42() {
+    insta::assert_snapshot!(render(&["42", "fable-1-forest", "moss"]));
+}
+
+#[test]
+fn fable_1_forest_seed_7_knobs() {
+    insta::assert_snapshot!(render(&["7", "fable-1-forest", "deep", "1.4", "4", "2", "1", "40", "3", "0.8", "0.55", "1", "0.4"]));
+}
+
+#[test]
+fn fable_1_forest_swaying_t12() {
+    insta::assert_snapshot!(render_t(&["42", "fable-1-forest", "moss"], "12"));
+}
