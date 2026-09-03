@@ -64,6 +64,8 @@ use crate::fable_2_trees::cli_fable_2_trees;
 use crate::fable_2_forest::cli_fable_2_forest;
 use crate::opus_1_trees::cli_opus_1_trees;
 use crate::opus_1_forest::cli_opus_1_forest;
+use crate::opus_2_trees::cli_opus_2_trees;
+use crate::opus_2_forest::cli_opus_2_forest;
 use crate::cli_basic::*;
 use crate::cli_catalog::*;
 use crate::cli_city::*;
@@ -251,6 +253,8 @@ pub(crate) fn run() {
         eprintln!("  sonnet-1-spirograph  A rolling circle laps a closed hypotrochoid/epitrochoid track forever, comet trail and generating circles both drawn (a=animate) [speed] [hue] [depth] [trail] [glow] [arms] [echo] [label] [scale] [margin] [aspect]");
         eprintln!("  fable-1-trees  Sample sheet of five fable-1 growth algorithms: space colonization, banyan, mangrove, baobab, coral DLA (a=animate) [energy] [fruit] [branch] [leaf] [roots] [scrub] [flicker] [sway]");
         eprintln!("  fable-1-forest  Layered forest of the fable-1 species with hills, moon, slow light and a seeded atmosphere (a=animate) [density] [layers] [sway] [speed] [hue] [atmos] [fog] [horizon] [moon] [fruit]");
+        eprintln!("  opus-2-trees  sample sheet of five growth algorithms: mangrove, colony, banyan, bracket, coral, two energies each (a=animate) [energy] [fruit] [branch] [gnarl] [roots] [sway] [flick] [hue] [scrub]");
+        eprintln!("  opus-2-forest  depth-layered stand of the opus-2 species with sky, ridges, ground and weather (a=animate) [density] [layers] [sway] [speed] [hue] [atmos] [energy] [ground] [haze] [motes] [scale] [cycle]");
         for (_, mode) in registered_modes().iter() {
             eprintln!("  {:<16} {}", mode.name(), mode.help());
         }
@@ -1223,6 +1227,12 @@ pub(crate) fn run() {
         if done {
             return;
         }
+    } else if mode == "opus-2-trees" {
+        let (g, done) = cli_opus_2_trees(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        grid = g;
+        if done {
+            return;
+        }
     } else if mode == "opus-1-trees" {
         let (g, done) = cli_opus_1_trees(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
         grid = g;
@@ -1249,6 +1259,12 @@ pub(crate) fn run() {
         }
     } else if mode == "opus-1-forest" {
         let (g, done) = cli_opus_1_forest(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        grid = g;
+        if done {
+            return;
+        }
+    } else if mode == "opus-2-forest" {
+        let (g, done) = cli_opus_2_forest(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
         grid = g;
         if done {
             return;

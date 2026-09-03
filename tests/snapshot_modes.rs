@@ -935,3 +935,18 @@ fn opus_1_forest_seed_42() {
 fn opus_1_forest_drifting_t18() {
     insta::assert_snapshot!(render_t(&["7", "opus-1-forest", "moss"], "18"));
 }
+
+#[test]
+fn opus_2_trees_seed_42() {
+    insta::assert_snapshot!(render(&["42", "opus-2-trees", "moss"]));
+}
+
+#[test]
+fn opus_2_forest_seed_42() {
+    insta::assert_snapshot!(render(&["42", "opus-2-forest", "moss"]));
+}
+
+#[test]
+fn opus_2_forest_animated_t14() {
+    insta::assert_snapshot!(render_t(&["42", "opus-2-forest", "moss"], "14"));
+}

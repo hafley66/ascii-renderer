@@ -722,6 +722,16 @@ fn iterate_grid_into(
             crate::opus_1_forest::draw_opus_1_forest(grid, w, h, seed, palette, t, &knobs);
             true
         }
+        "opus-2-trees" => {
+            let knobs = crate::opus_2_trees::Opus2TreesKnobs::from_env();
+            crate::opus_2_trees::draw_opus_2_trees(grid, w, h, seed, palette, t, &knobs);
+            true
+        }
+        "opus-2-forest" => {
+            let knobs = crate::opus_2_forest::Opus2ForestKnobs::from_env();
+            crate::opus_2_forest::draw_opus_2_forest(grid, w, h, seed, palette, t, &knobs);
+            true
+        }
         _ => false,
     }
 }
