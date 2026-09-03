@@ -443,6 +443,8 @@ pub(crate) fn run_demo(initial_seed: u64) {
         "arboretum",
         "astrolabe",
         "sauron",
+        "haiku-1-trees",
+        "haiku-1-forest",
     ];
     all_modes.extend(registered_modes().iter().map(|(name, _)| name));
     let all_themes: &[&str] = &[

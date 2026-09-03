@@ -35,6 +35,8 @@ use crate::registry::*;
 use crate::warps::*;
 use crate::arboretum::cli_arboretum;
 use crate::astrolabe::cli_astrolabe;
+use crate::haiku_1_forest::cli_haiku_1_forest;
+use crate::haiku_1_trees::cli_haiku_1_trees;
 use crate::sauron::cli_sauron;
 use crate::cli_basic::*;
 use crate::cli_catalog::*;
@@ -1012,6 +1014,18 @@ pub(crate) fn run() {
         }
     } else if mode == "stained" {
         let (g, done) = cli_stained(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        grid = g;
+        if done {
+            return;
+        }
+    } else if mode == "haiku-1-trees" {
+        let (g, done) = cli_haiku_1_trees(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        grid = g;
+        if done {
+            return;
+        }
+    } else if mode == "haiku-1-forest" {
+        let (g, done) = cli_haiku_1_forest(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
         grid = g;
         if done {
             return;

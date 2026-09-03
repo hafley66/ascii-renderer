@@ -22,6 +22,8 @@ mod color;
 mod content;
 mod fills;
 mod gridio;
+mod haiku_1_forest;
+mod haiku_1_trees;
 mod ink;
 mod layout;
 mod markdown;

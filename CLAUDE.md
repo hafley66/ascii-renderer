@@ -56,7 +56,7 @@ eyes++, fullmetal-eyes++, trees++, forest++, phyllotaxis, moire, nebula, delta, 
 metro, koi, skyline, hive, jelly, jelly2,
 rhizome, effigy, dendrite, totem, chimera,
 murmuration, lanterns, tide,
-arboretum, astrolabe, sauron
+arboretum, astrolabe, sauron, haiku-1-trees, haiku-1-forest
 
 ## Architecture
 

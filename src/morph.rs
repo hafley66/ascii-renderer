@@ -582,6 +582,16 @@ fn iterate_grid_into(
             );
             true
         }
+        "haiku-1-trees" => {
+            let knobs = crate::haiku_1_trees::HaikuTreesKnobs::from_env();
+            crate::haiku_1_trees::draw_haiku_1_trees(grid, w, h, seed, palette, t, knobs.energy, knobs.fruit, knobs.branch);
+            true
+        }
+        "haiku-1-forest" => {
+            let knobs = crate::haiku_1_forest::HaikuForestKnobs::from_env();
+            crate::haiku_1_forest::draw_haiku_1_forest(grid, w, h, seed, palette, t, knobs.density, knobs.layers, knobs.sway, knobs.speed, knobs.hue, knobs.atmos);
+            true
+        }
         _ => false,
     }
 }

@@ -633,3 +633,13 @@ fn gem_aetherium_seed_42() {
         "3.0",
     ]));
 }
+
+#[test]
+fn haiku_1_trees_seed_42() {
+    insta::assert_snapshot!(render(&["42", "haiku-1-trees", "moss"]));
+}
+
+#[test]
+fn haiku_1_forest_seed_42() {
+    insta::assert_snapshot!(render(&["42", "haiku-1-forest", "moss"]));
+}
