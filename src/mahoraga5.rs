@@ -121,6 +121,45 @@ fn sd_box(p: P, c: P, hx: f32, hy: f32) -> f32 {
     len((dx.max(0.0), dy.max(0.0))) + dx.max(dy).min(0.0)
 }
 
+/// Axis-aligned bound around one primitive, used to skip it per cell and per row.
+#[derive(Clone, Copy)]
+struct Aabb {
+    x0: f32,
+    y0: f32,
+    x1: f32,
+    y1: f32,
+}
+
+/// Padding on every bound so rounding never culls a primitive the exact
+/// distance test would have counted as a hit.
+const SLACK: f32 = 1e-4;
+
+impl Aabb {
+    const EMPTY: Aabb = Aabb { x0: f32::MAX, y0: f32::MAX, x1: f32::MIN, y1: f32::MIN };
+
+    fn seg(a: P, b: P, r: f32) -> Aabb {
+        let r = r + SLACK;
+        Aabb { x0: a.0.min(b.0) - r, y0: a.1.min(b.1) - r, x1: a.0.max(b.0) + r, y1: a.1.max(b.1) + r }
+    }
+
+    fn disc(c: P, r: f32) -> Aabb {
+        Aabb::seg(c, c, r)
+    }
+
+    fn grow(self, o: Aabb) -> Aabb {
+        Aabb { x0: self.x0.min(o.x0), y0: self.y0.min(o.y0), x1: self.x1.max(o.x1), y1: self.y1.max(o.y1) }
+    }
+
+    /// Lower bound on the distance from p to the enclosed shape; exact box SDF inside.
+    fn lb(&self, p: P) -> f32 {
+        (self.x0 - p.0).max(p.0 - self.x1).max((self.y0 - p.1).max(p.1 - self.y1))
+    }
+
+    fn spans_row(&self, lo: f32, hi: f32, care: f32) -> bool {
+        self.y0 - care <= hi && self.y1 + care >= lo
+    }
+}
+
 fn hash01(seed: u64, x: i64, y: i64) -> f32 {
     let mut h = seed ^ (x as u64).wrapping_mul(0x9E37_79B9_7F4A_7C15) ^ (y as u64).wrapping_mul(0xC2B2_AE3D_27D4_EB4F);
     h ^= h >> 29;
@@ -435,10 +474,11 @@ fn bone_normal(p: P, s: &Seg, r0: f32, r1: f32) -> P {
     (dx / l, dy / l)
 }
 
-/// A posed rig: solved segments over a bone table.
+/// A posed rig: solved segments over a bone table, each with its bound.
 struct Body {
     bones: &'static [BoneDef],
     segs: Vec<Seg>,
+    boxes: Vec<Aabb>,
 }
 
 struct Hit {
@@ -449,14 +489,38 @@ struct Hit {
 }
 
 impl Body {
+    fn new(bones: &'static [BoneDef], segs: Vec<Seg>) -> Body {
+        let boxes = bones.iter().zip(segs.iter()).map(|(bd, s)| Aabb::seg(s.a, s.b, bd.r0.max(bd.r1))).collect();
+        Body { bones, segs, boxes }
+    }
+
+    /// Bones whose bound can reach a tile of cells, plus their union box.
+    fn tile_mask(&self, t: Tile, care: f32, out: &mut Vec<u16>) -> Aabb {
+        out.clear();
+        let mut span = Aabb::EMPTY;
+        for (i, bd) in self.bones.iter().enumerate() {
+            if bd.z != HIDDEN && t.holds(&self.boxes[i], care) {
+                out.push(i as u16);
+                span = span.grow(self.boxes[i]);
+            }
+        }
+        span
+    }
+
     /// Nearest-in-depth bone containing p, else the closest bone surface.
-    fn sample(&self, p: P, contour_w: f32) -> Hit {
+    /// Bones further than `care` are skipped: the caller only reads d below it.
+    fn sample(&self, p: P, contour_w: f32, care: f32, rows: RowSlice) -> Hit {
         let mut nearest = Hit { d: f32::MAX, part: Part::Skin, bone: 0, over: false };
+        if rows.span.lb(p) >= care {
+            return nearest;
+        }
         let mut inside: Option<(f32, usize)> = None;
         let mut min_inside_z = i8::MAX;
         let mut inside_count = 0;
-        for (i, bd) in self.bones.iter().enumerate() {
-            if bd.z == HIDDEN {
+        for &bi in rows.mask {
+            let i = bi as usize;
+            let bd = &self.bones[i];
+            if bd.z == HIDDEN || self.boxes[i].lb(p) >= care {
                 continue;
             }
             let d = sd_bone(p, &self.segs[i], bd.r0, bd.r1);
@@ -491,22 +555,35 @@ impl Body {
 
 /// Mahoraga: body rig plus the wheel riding the head locator.
 struct Figure {
-    rot: f32,
     lean: f32,
     lit: usize,
     body: Body,
     wheel_c: P,
+    spokes: [(P, P); 8],
+    wheel_box: Aabb,
 }
 
 impl Figure {
     fn new(rot: f32, lean: f32, lit: usize, deltas: &[f32]) -> Self {
         let segs = solve(&BONES, deltas, ROOT, 1.0, 1.0);
-        let wheel_c = segs[WHEEL].b;
-        Figure { rot, lean, lit, body: Body { bones: &BONES, segs }, wheel_c }
+        let c = segs[WHEEL].b;
+        let mut spokes = [((0.0, 0.0), (0.0, 0.0)); 8];
+        for (k, sp) in spokes.iter_mut().enumerate() {
+            let a = rot + k as f32 * TAU / 8.0;
+            let d = (a.cos(), a.sin());
+            *sp = ((c.0 + d.0 * WHEEL_R * 0.25, c.1 + d.1 * WHEEL_R * 0.25), (c.0 + d.0 * WHEEL_R * 1.32, c.1 + d.1 * WHEEL_R * 1.32));
+        }
+        let wheel_box = Aabb::disc(c, WHEEL_R * 1.32 + 0.02);
+        Figure { lean, lit, body: Body::new(&BONES, segs), wheel_c: c, spokes, wheel_box }
     }
 
     fn warp(&self, p: P) -> P {
         (p.0 - self.lean * (0.62 - p.1), p.1)
+    }
+
+    /// Widest sideways offset `warp` can apply inside a row band.
+    fn warp_shift(&self, lo: f32, hi: f32) -> f32 {
+        (self.lean * (0.62 - lo)).abs().max((self.lean * (0.62 - hi)).abs())
     }
 
     fn face(&self, p: P, best: &mut Hit) {
@@ -528,18 +605,18 @@ impl Figure {
         }
     }
 
-    fn wheel(&self, p: P) -> Hit {
+    fn wheel(&self, p: P, care: f32) -> Hit {
+        let far = self.wheel_box.lb(p);
+        if far >= care {
+            return Hit { d: far, part: Part::Ring, bone: WHEEL, over: false };
+        }
         let c = self.wheel_c;
         let mut best = Hit { d: (len(sub(p, c)) - WHEEL_R).abs() - 0.014, part: Part::Ring, bone: WHEEL, over: false };
         let hub = sd_circle(p, c, 0.009);
         if hub < best.d {
             best = Hit { d: hub, part: Part::Hub, bone: WHEEL, over: false };
         }
-        for k in 0..8 {
-            let a = self.rot + k as f32 * TAU / 8.0;
-            let d = (a.cos(), a.sin());
-            let inner = (c.0 + d.0 * WHEEL_R * 0.25, c.1 + d.1 * WHEEL_R * 0.25);
-            let outer = (c.0 + d.0 * WHEEL_R * 1.32, c.1 + d.1 * WHEEL_R * 1.32);
+        for (k, &(inner, outer)) in self.spokes.iter().enumerate() {
             let sp = sd_seg(p, inner, outer, 0.011);
             if sp < best.d {
                 best = Hit { d: sp, part: Part::Spoke, bone: WHEEL, over: false };
@@ -553,13 +630,13 @@ impl Figure {
     }
 
     /// Wheel in front when inside it, else the body (face features win inside the head).
-    fn sample(&self, p: P, contour_w: f32) -> Hit {
+    fn sample(&self, p: P, contour_w: f32, care: f32, rows: RowSlice) -> Hit {
         let p = self.warp(p);
-        let w = self.wheel(p);
+        let w = self.wheel(p, care);
         if w.d < 0.0 {
             return w;
         }
-        let mut b = self.body.sample(p, contour_w);
+        let mut b = self.body.sample(p, contour_w, care, rows);
         if b.d < 0.0 && b.bone == HEAD {
             self.face(p, &mut b);
         }
@@ -657,37 +734,72 @@ enum ShrinePart {
     Wall,
 }
 
-/// Malevolent Shrine: eaves, ridge, skull with horns, pillars. Figure-space.
-fn sd_shrine(p: P, presence: f32) -> Option<ShrinePart> {
+#[derive(Clone, Copy)]
+enum ShrinePrim {
+    Slab { c: P, hx: f32, hy: f32 },
+    Beam { a: P, b: P, r: f32 },
+    Shell { c: P, r: f32, w: f32 },
+}
+
+impl ShrinePrim {
+    fn sd(&self, p: P) -> f32 {
+        match *self {
+            ShrinePrim::Slab { c, hx, hy } => sd_box(p, c, hx, hy),
+            ShrinePrim::Beam { a, b, r } => sd_seg(p, a, b, r),
+            ShrinePrim::Shell { c, r, w } => sd_circle(p, c, r).abs() - w,
+        }
+    }
+
+    fn bound(&self) -> Aabb {
+        match *self {
+            ShrinePrim::Slab { c, hx, hy } => Aabb { x0: c.0 - hx - SLACK, y0: c.1 - hy - SLACK, x1: c.0 + hx + SLACK, y1: c.1 + hy + SLACK },
+            ShrinePrim::Beam { a, b, r } => Aabb::seg(a, b, r),
+            ShrinePrim::Shell { c, r, w } => Aabb::disc(c, r + w),
+        }
+    }
+}
+
+/// Malevolent Shrine: eaves, ridge, skull with horns, pillars. Figure-space,
+/// built once per frame so the per-cell path only walks the row's primitives.
+struct ShrineGeo {
+    prims: Vec<(ShrinePrim, ShrinePart, Aabb)>,
+    half_w: f32,
+}
+
+fn make_shrine(presence: f32) -> Option<ShrineGeo> {
     if presence <= 0.0 {
         return None;
     }
     let w = 0.75 + presence * 0.5;
-    let ridge = sd_box(p, (0.0, -0.02), w * 0.55, 0.012);
-    let eave_r = sd_seg(p, (w * 0.5, 0.06), (w, 0.0), 0.014);
-    let eave_l = sd_seg(p, (-w * 0.5, 0.06), (-w, 0.0), 0.014);
-    let mid = sd_box(p, (0.0, 0.05), w * 0.55, 0.012);
-    let skull = sd_circle(p, (0.0, -0.12), 0.07).abs() - 0.012;
-    let horn_r = sd_seg(p, (0.05, -0.16), (0.16, -0.32), 0.014);
-    let horn_l = sd_seg(p, (-0.05, -0.16), (-0.16, -0.32), 0.014);
-    let mut best: Option<(f32, ShrinePart)> = None;
-    let mut take = |d: f32, part: ShrinePart| {
-        if d < 0.0 && best.map_or(true, |b| d < b.0) {
-            best = Some((d, part));
-        }
-    };
-    take(ridge, ShrinePart::Roof);
-    take(mid, ShrinePart::Roof);
-    take(eave_r, ShrinePart::Eave);
-    take(eave_l, ShrinePart::Eave);
-    take(skull, ShrinePart::Skull);
-    take(horn_r, ShrinePart::Horn);
-    take(horn_l, ShrinePart::Horn);
+    let mut prims: Vec<(ShrinePrim, ShrinePart)> = vec![
+        (ShrinePrim::Slab { c: (0.0, -0.02), hx: w * 0.55, hy: 0.012 }, ShrinePart::Roof),
+        (ShrinePrim::Slab { c: (0.0, 0.05), hx: w * 0.55, hy: 0.012 }, ShrinePart::Roof),
+        (ShrinePrim::Beam { a: (w * 0.5, 0.06), b: (w, 0.0), r: 0.014 }, ShrinePart::Eave),
+        (ShrinePrim::Beam { a: (-w * 0.5, 0.06), b: (-w, 0.0), r: 0.014 }, ShrinePart::Eave),
+        (ShrinePrim::Shell { c: (0.0, -0.12), r: 0.07, w: 0.012 }, ShrinePart::Skull),
+        (ShrinePrim::Beam { a: (0.05, -0.16), b: (0.16, -0.32), r: 0.014 }, ShrinePart::Horn),
+        (ShrinePrim::Beam { a: (-0.05, -0.16), b: (-0.16, -0.32), r: 0.014 }, ShrinePart::Horn),
+    ];
     for k in 0..5 {
         let x = (k as f32 - 2.0) * w * 0.25;
-        take(sd_box(p, (x, 0.45), 0.012, 0.4), ShrinePart::Pillar);
+        prims.push((ShrinePrim::Slab { c: (x, 0.45), hx: 0.012, hy: 0.4 }, ShrinePart::Pillar));
     }
-    if best.is_none() && p.0.abs() < w * 0.55 && p.1 > 0.05 && p.1 < 0.85 {
+    Some(ShrineGeo { prims: prims.into_iter().map(|(pr, part)| (pr, part, pr.bound())).collect(), half_w: w * 0.55 })
+}
+
+fn sd_shrine(geo: &ShrineGeo, p: P, mask: &[u16]) -> Option<ShrinePart> {
+    let mut best: Option<(f32, ShrinePart)> = None;
+    for &i in mask {
+        let (prim, part, bx) = &geo.prims[i as usize];
+        if bx.lb(p) >= 0.0 {
+            continue;
+        }
+        let d = prim.sd(p);
+        if d < 0.0 && best.map_or(true, |b| d < b.0) {
+            best = Some((d, *part));
+        }
+    }
+    if best.is_none() && p.0.abs() < geo.half_w && p.1 > 0.05 && p.1 < 0.85 {
         return Some(ShrinePart::Wall);
     }
     best.map(|b| b.1)
@@ -786,8 +898,8 @@ fn make_city(seed: u64, count: usize, u_span: f32, v_bot: f32, horizon: f32) -> 
     out
 }
 
-fn sample_city<'a>(city: &'a [Building], p: P) -> Option<&'a Building> {
-    city.iter().find(|b| p.0 >= b.u0 && p.0 <= b.u1 && p.1 >= b.top && p.1 <= b.base)
+fn sample_city<'a>(city: &'a [Building], rows: &[u16], p: P) -> Option<&'a Building> {
+    rows.iter().map(|&i| &city[i as usize]).find(|b| p.0 >= b.u0 && p.0 <= b.u1 && p.1 >= b.top && p.1 <= b.base)
 }
 
 // ── the clock ───────────────────────────────────────────────────────
@@ -798,6 +910,9 @@ fn progress(t: f32, knobs: &ShrineKnobs) -> f32 {
 }
 
 // ── render ──────────────────────────────────────────────────────────
+
+/// Column tile width for the per-tile primitive masks.
+const TILE: usize = 64;
 
 const SKIN_RAMP: [char; 10] = [' ', '.', '·', ':', '-', '=', '+', '*', '%', '@'];
 const CLOTH_RAMP: [char; 6] = [' ', '.', '-', '~', '=', '#'];
@@ -821,7 +936,88 @@ struct Scene<'a> {
     t: f32,
     frac: f32,
     lunge: f32,
-    fuga: Option<(P, P, f32)>,
+    fuga: Option<Fuga>,
+    shrine: Option<ShrineGeo>,
+    contour_w: f32,
+    edge_eps: f32,
+}
+
+/// Fire Arrow beam with its endpoints and reach bound resolved once per frame.
+struct Fuga {
+    o: P,
+    tip: P,
+    reach: f32,
+    bx: Aabb,
+}
+
+/// Cell band one mask is built for: a row's worth of v, a tile's worth of u.
+#[derive(Clone, Copy)]
+struct Tile {
+    lo: f32,
+    hi: f32,
+    ulo: f32,
+    uhi: f32,
+}
+
+impl Tile {
+    fn holds(&self, bx: &Aabb, care: f32) -> bool {
+        bx.spans_row(self.lo, self.hi, care) && bx.x0 - care <= self.uhi && bx.x1 + care >= self.ulo
+    }
+}
+
+/// One row's live primitive indices: everything else is out of reach of the row.
+#[derive(Clone, Copy)]
+struct RowSlice<'a> {
+    mask: &'a [u16],
+    span: Aabb,
+}
+
+struct RowCtx {
+    fig: (Vec<u16>, Aabb),
+    ghosts: Vec<(Vec<u16>, Aabb)>,
+    sukuna: (Vec<u16>, Aabb),
+    city: Vec<u16>,
+    shrine: Vec<u16>,
+}
+
+impl RowCtx {
+    fn new(sc: &Scene) -> RowCtx {
+        RowCtx {
+            fig: (Vec::with_capacity(NBONES), Aabb::EMPTY),
+            ghosts: sc.ghosts.iter().map(|_| (Vec::with_capacity(NBONES), Aabb::EMPTY)).collect(),
+            sukuna: (Vec::with_capacity(S_NBONES), Aabb::EMPTY),
+            city: Vec::with_capacity(sc.city.len()),
+            shrine: Vec::with_capacity(sc.shrine.as_ref().map_or(0, |g| g.prims.len())),
+        }
+    }
+
+    fn rebuild(&mut self, sc: &Scene, t: Tile) {
+        self.fig.1 = sc.fig.body.tile_mask(t, sc.edge_eps, &mut self.fig.0);
+        for (slot, ghost) in self.ghosts.iter_mut().zip(sc.ghosts.iter()) {
+            slot.1 = ghost.body.tile_mask(t, 0.0, &mut slot.0);
+        }
+        if let Some(body) = &sc.sukuna {
+            self.sukuna.1 = body.tile_mask(t, 0.0, &mut self.sukuna.0);
+        }
+        self.city.clear();
+        for (i, b) in sc.city.iter().enumerate() {
+            if b.top <= t.hi && b.base >= t.lo && b.u0 <= t.uhi && b.u1 >= t.ulo {
+                self.city.push(i as u16);
+            }
+        }
+        self.shrine.clear();
+        if let Some(geo) = &sc.shrine {
+            for (i, (_, _, bx)) in geo.prims.iter().enumerate() {
+                if t.holds(bx, 0.0) {
+                    self.shrine.push(i as u16);
+                }
+            }
+        }
+    }
+
+    fn slice(pair: &(Vec<u16>, Aabb)) -> RowSlice<'_> {
+        RowSlice { mask: &pair.0, span: pair.1 }
+    }
 }
 
 struct Ink {
@@ -899,9 +1095,9 @@ fn figure_cell(sc: &Scene, ink: &Ink, hit: &Hit, pu: P, noise: f32) -> (char, Co
 }
 
 /// Sukuna: a dark cutout with a lit rim and contour lines where limbs cross.
-fn sukuna_cell(sc: &Scene, ink: &Ink, body: &Body, pu: P, noise: f32) -> Option<(char, Color)> {
+fn sukuna_cell(sc: &Scene, ink: &Ink, body: &Body, rows: RowSlice, pu: P, noise: f32) -> Option<(char, Color)> {
     let rim = 0.45 / sc.fig_h;
-    let hit = body.sample(pu, rim * 0.8);
+    let hit = body.sample(pu, rim * 0.8, 0.0, rows);
     if hit.d >= 0.0 {
         return None;
     }
@@ -919,8 +1115,11 @@ fn sukuna_cell(sc: &Scene, ink: &Ink, body: &Body, pu: P, noise: f32) -> Option<
 
 /// Fire Arrow as a tapered beam sampled per cell: core, fringe, flicker halo.
 fn fuga_cell(sc: &Scene, ink: &Ink, pu: P, x: usize, y: usize) -> Option<(char, Color)> {
-    let (o, w, reach) = sc.fuga?;
-    let tip = (o.0 + (w.0 - o.0) * reach, o.1 + (w.1 - o.1) * reach);
+    let f = sc.fuga.as_ref()?;
+    if f.bx.lb(pu) >= 0.0 {
+        return None;
+    }
+    let (o, tip, reach) = (f.o, f.tip, f.reach);
     let ba = sub(tip, o);
     let pa = sub(pu, o);
     let h = (dot(pa, ba) / dot(ba, ba).max(1e-6)).clamp(0.0, 1.0);
@@ -953,7 +1152,7 @@ fn fuga_cell(sc: &Scene, ink: &Ink, pu: P, x: usize, y: usize) -> Option<(char, 
 }
 
 /// One cell of the scene, front to back. None = leave blank.
-fn shade_cell(sc: &Scene, ink: &Ink, x: usize, y: usize, p0: P) -> Option<(char, Color)> {
+fn shade_cell(sc: &Scene, ink: &Ink, row: &RowCtx, x: usize, y: usize, p0: P) -> Option<(char, Color)> {
     let k = sc.knobs;
     let (pu, hit) = displace(p0, &sc.slashes, sc.live, sc.blade);
     if let Some(c) = fuga_cell(sc, ink, pu, x, y) {
@@ -971,17 +1170,17 @@ fn shade_cell(sc: &Scene, ink: &Ink, x: usize, y: usize, p0: P) -> Option<(char,
     let noise = hash01(sc.seed, x as i64, y as i64) - 0.5;
 
     if let Some(body) = &sc.sukuna {
-        if let Some(c) = sukuna_cell(sc, ink, body, pu, noise) {
+        if let Some(c) = sukuna_cell(sc, ink, body, RowCtx::slice(&row.sukuna), pu, noise) {
             return Some(c);
         }
     }
 
-    let contour_w = 0.35 / sc.fig_h;
-    let fh = sc.fig.sample(pu, contour_w);
+    let contour_w = sc.contour_w;
+    let fh = sc.fig.sample(pu, contour_w, sc.edge_eps, RowCtx::slice(&row.fig));
     if fh.d < 0.0 {
         return Some(figure_cell(sc, ink, &fh, pu, noise));
     }
-    let edge_eps = 0.3 / sc.fig_h;
+    let edge_eps = sc.edge_eps;
     if fh.d < edge_eps && matches!(fh.part, Part::Skin | Part::Cloth | Part::Wrap) {
         let n = sc.fig.normal(pu, fh.bone);
         if n.0.abs() > 0.45 {
@@ -990,8 +1189,7 @@ fn shade_cell(sc: &Scene, ink: &Ink, x: usize, y: usize, p0: P) -> Option<(char,
     }
 
     for (g, ghost) in sc.ghosts.iter().enumerate() {
-        let gh = ghost.sample(pu, contour_w);
-        if gh.d < 0.0 && noise + 0.5 < 0.55 - g as f32 * 0.15 {
+        if noise + 0.5 < 0.55 - g as f32 * 0.15 && ghost.sample(pu, contour_w, 0.0, RowCtx::slice(&row.ghosts[g])).d < 0.0 {
             let ch = if g == 0 { ':' } else { '·' };
             return Some((ch, darken(ink.pale, 90 + g as u8 * 30)));
         }
@@ -1023,15 +1221,17 @@ fn shade_cell(sc: &Scene, ink: &Ink, x: usize, y: usize, p0: P) -> Option<(char,
         }
     }
 
-    let block = sample_city(&sc.city, pu);
+    let block = sample_city(&sc.city, &row.city, pu);
     if let Some(b) = block {
         if b.z >= 0.3 {
             return block_cell(sc, ink, b, pu, x, y);
         }
     }
-    if let Some(part) = sd_shrine(sc.fig.warp(pu), k.shrine) {
-        if let Some(c) = shrine_cell(sc, ink, part, pu, noise) {
-            return Some(c);
+    if let Some(geo) = &sc.shrine {
+        if let Some(part) = sd_shrine(geo, sc.fig.warp(pu), &row.shrine) {
+            if let Some(c) = shrine_cell(sc, ink, part, pu, noise) {
+                return Some(c);
+            }
         }
     }
     if let Some(b) = block {
@@ -1211,7 +1411,7 @@ pub fn draw_mahoraga5(grid: &mut Grid, width: usize, height: usize, seed: u64, p
     let sukuna_root = (-u_span * 0.62, v_bot - sukuna_s * 0.45 - 0.02);
     let sukuna = if sukuna_s > 0.0 {
         let d = measure_layer("mahoraga-5", "sukuna_pose", || sukuna_deltas(seed, t, frac, knobs));
-        Some(Body { bones: &SUKUNA_BONES, segs: solve(&SUKUNA_BONES, &d, sukuna_root, sukuna_s, 1.0) })
+        Some(Body::new(&SUKUNA_BONES, solve(&SUKUNA_BONES, &d, sukuna_root, sukuna_s, 1.0)))
     } else {
         None
     };
@@ -1238,7 +1438,13 @@ pub fn draw_mahoraga5(grid: &mut Grid, width: usize, height: usize, seed: u64, p
     } else {
         (0.0, 0.0)
     };
-    let fuga = if reach > 0.0 { Some(((-u_span * 0.92, v_top + 0.12), wheel_c, reach)) } else { None };
+    let fuga = if reach > 0.0 {
+        let o = (-u_span * 0.92, v_top + 0.12);
+        let tip = (o.0 + (wheel_c.0 - o.0) * reach, o.1 + (wheel_c.1 - o.1) * reach);
+        Some(Fuga { o, tip, reach, bx: Aabb::seg(o, tip, 0.2) })
+    } else {
+        None
+    };
 
     let sc = Scene {
         fig,
@@ -1259,6 +1465,9 @@ pub fn draw_mahoraga5(grid: &mut Grid, width: usize, height: usize, seed: u64, p
         frac,
         lunge,
         fuga,
+        shrine: make_shrine(knobs.shrine),
+        contour_w: 0.35 / fig_h,
+        edge_eps: 0.3 / fig_h,
     };
     let pale = lerp_color(lighten(palette[4], 40), rgb(236, 230, 222), 0.55);
     let ink = Ink {
@@ -1280,11 +1489,22 @@ pub fn draw_mahoraga5(grid: &mut Grid, width: usize, height: usize, seed: u64, p
     };
 
     measure_layer("mahoraga-5", "shade", || {
+        let slip_max = sc.slashes.iter().take(sc.live).map(|s| s.slip.abs()).sum::<f32>() + 1e-4;
+        let mut row = RowCtx::new(&sc);
         for y in 0..height {
-            for x in 0..width {
-                let p0 = ((x as f32 - cx) / (2.0 * fig_h) + shake.0, (y as f32 - top) / fig_h + shake.1);
-                if let Some((ch, fg)) = shade_cell(&sc, &ink, x, y, p0) {
-                    set(grid, x as i32, y as i32, ch, fg);
+            let v = (y as f32 - top) / fig_h + shake.1;
+            let (lo, hi) = (v - slip_max, v + slip_max);
+            let reach = slip_max + sc.fig.warp_shift(lo, hi) + 0.005;
+            for xt in (0..width).step_by(TILE) {
+                let xe = (xt + TILE).min(width);
+                let ulo = (xt as f32 - cx) / (2.0 * fig_h) + shake.0 - reach;
+                let uhi = ((xe - 1) as f32 - cx) / (2.0 * fig_h) + shake.0 + reach;
+                row.rebuild(&sc, Tile { lo, hi, ulo, uhi });
+                for x in xt..xe {
+                    let p0 = ((x as f32 - cx) / (2.0 * fig_h) + shake.0, v);
+                    if let Some((ch, fg)) = shade_cell(&sc, &ink, &row, x, y, p0) {
+                        set(grid, x as i32, y as i32, ch, fg);
+                    }
                 }
             }
         }
@@ -1377,10 +1597,12 @@ mod tests {
     #[test]
     fn depth_order_keeps_crossing_arm_visible() {
         let segs = solve(&BONES, &keyframe(2), ROOT, 1.0, 1.0);
-        let body = Body { bones: &BONES, segs };
+        let body = Body::new(&BONES, segs);
         let mid = body.segs[FORE_R];
         let p = ((mid.a.0 + mid.b.0) * 0.5, (mid.a.1 + mid.b.1) * 0.5);
-        let hit = body.sample(p, 0.0);
+        let mut mask = Vec::new();
+        let span = body.tile_mask(Tile { lo: p.1, hi: p.1, ulo: p.0, uhi: p.0 }, 1.0, &mut mask);
+        let hit = body.sample(p, 0.0, 1.0, RowSlice { mask: &mask, span });
         assert_eq!(hit.bone, FORE_R, "guard forearm should win over the torso at {:?}", p);
     }
 
