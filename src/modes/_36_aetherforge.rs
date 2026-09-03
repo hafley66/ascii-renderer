@@ -4,9 +4,10 @@ use rand::rngs::StdRng;
 use crate::_0_profile::measure_layer;
 use crate::color::{darken, lerp_color, lighten, shift_hue};
 use crate::opts::param_f32;
-use crate::pp::{pp_fbm, pp_hash2, pp_stroke};
+use crate::pp::{pp_hash2, pp_stroke};
 use crate::registry::{AnimKind, Mode, ModeFrame, Param};
 use crate::types::{Cell, Grid};
+use super::_33_cosmograph::FbmRow;
 
 const PI: f32 = std::f32::consts::PI;
 const TAU: f32 = std::f32::consts::TAU;
@@ -245,38 +246,57 @@ fn draw_star_metal_field(
     }
     let inv_w = 1.0 / width.max(1) as f32;
     let inv_h = 1.0 / height.max(1) as f32;
+    let threshold = 0.94 - params.bloom * 0.075;
+    let hot_threshold = threshold + 0.075;
+    let bloom_on = params.bloom > 0.25;
+    let bloom_bg = darken(palette[0], (20.0 - params.bloom * 8.0) as u8);
+    let res_t_a = t * params.speed * 0.16;
+    let res_t_b = t * 0.11;
+    let noise_seed = seed + 101;
+    let noise_fx_bias = t * 0.025;
+    let noise_fy_bias = t * 0.018;
+    let mut noise_fx = Vec::with_capacity(width);
+    let mut res_ax = Vec::with_capacity(width);
+    let mut res_bx = Vec::with_capacity(width);
+    for x in 0..width {
+        let nx = x as f32 * inv_w;
+        noise_fx.push(nx * 5.0 + noise_fx_bias);
+        res_ax.push(nx * 13.0);
+        res_bx.push(nx * 3.0);
+    }
     for y in 0..height {
+        let ny = y as f32 * inv_h;
+        let res_ay = ny * 9.0;
+        let res_by = ny * 17.0;
+        let mut noise_row = FbmRow::new(ny * 7.0 - noise_fy_bias, noise_seed);
         for x in 0..width {
-            let nx = x as f32 * inv_w;
-            let ny = y as f32 * inv_h;
-            let noise = pp_fbm(nx * 5.0 + t * 0.025, ny * 7.0 - t * 0.018, seed + 101);
-            let resonance = ((nx * 13.0 - ny * 9.0 + t * params.speed * 0.16).sin()
-                * (ny * 17.0 + nx * 3.0 - t * 0.11).cos())
-            .abs();
-            let threshold = 0.94 - params.bloom * 0.075;
-            if noise * 0.72 + resonance * 0.28 > threshold {
-                let hot = noise > threshold + 0.075;
-                let glyph = if hot {
-                    '✦'
-                } else if resonance > 0.76 {
-                    '∙'
-                } else {
-                    '·'
-                };
-                let color = if hot {
-                    lighten(palette[3], 30)
-                } else {
-                    darken(lerp_color(palette[1], palette[2], resonance), 55)
-                };
-                put(grid, x as i32, y as i32, glyph, color);
+            let noise = noise_row.at(noise_fx[x]);
+            let noise_term = noise * 0.72;
+            // Resonance is bounded by 1, so a cell that misses the gate at
+            // resonance 1 never needs its sin/cos pair evaluated.
+            if noise_term + 0.28 > threshold {
+                let resonance = (((res_ax[x] - res_ay) + res_t_a).sin()
+                    * ((res_by + res_bx[x]) - res_t_b).cos())
+                .abs();
+                if noise_term + resonance * 0.28 > threshold {
+                    let hot = noise > hot_threshold;
+                    let glyph = if hot {
+                        '✦'
+                    } else if resonance > 0.76 {
+                        '∙'
+                    } else {
+                        '·'
+                    };
+                    let color = if hot {
+                        lighten(palette[3], 30)
+                    } else {
+                        darken(lerp_color(palette[1], palette[2], resonance), 55)
+                    };
+                    put(grid, x as i32, y as i32, glyph, color);
+                }
             }
-            if params.bloom > 0.25 && noise > 0.89 {
-                put_bg(
-                    grid,
-                    x,
-                    y,
-                    darken(palette[0], (20.0 - params.bloom * 8.0) as u8),
-                );
+            if bloom_on && noise > 0.89 {
+                put_bg(grid, x, y, bloom_bg);
             }
         }
     }
