@@ -8,6 +8,7 @@ use crate::opts::param_f32;
 use crate::pp::{pp_fbm, pp_line};
 use crate::registry::{AnimKind, Mode, ModeFrame, Param};
 use crate::types::{Cell, Grid};
+use super::_33_cosmograph::FbmRow;
 
 const TAU: f32 = std::f32::consts::TAU;
 
@@ -209,25 +210,57 @@ fn draw_sky(
     let mid = darken(palette[0], 18);
     let apex_glow = lighten(palette[3], 10);
     let span = height.saturating_sub(1).max(1) as f32;
+    let denom_x = (plan.halo_rx * 2.2).max(6.0);
+    let denom_y = (plan.halo_ry * 2.4).max(5.0);
+    let warm_gain = 0.30 + params.glow * 0.42;
+    let mut dx2_col = Vec::with_capacity(width);
+    // dx is exactly antisymmetric about plan.cx, so dx2 and the falloff term it
+    // feeds repeat bit-for-bit at the mirrored column.
+    let mut mirror_col = Vec::with_capacity(width);
+    for x in 0..width {
+        let dx = (x as f32 - plan.cx as f32) / denom_x;
+        dx2_col.push(dx * dx);
+        let m = 2 * plan.cx - x as i32;
+        mirror_col.push(if m >= 0 && (m as usize) < x { m as usize } else { usize::MAX });
+    }
+    let mut falloff = vec![0.0f32; width];
     for y in 0..height {
+        let f = y as f32 / span;
+        let base = lerp_color(zenith, mid, f.powf(0.8));
+        let dy = (y as f32 - plan.halo_cy as f32) / denom_y;
+        let dy2 = dy * dy;
+        let row = &mut grid[y];
         for x in 0..width {
-            let f = y as f32 / span;
-            let base = lerp_color(zenith, mid, f.powf(0.8));
-            let dx = (x as f32 - plan.cx as f32) / (plan.halo_rx * 2.2).max(6.0);
-            let dy = (y as f32 - plan.halo_cy as f32) / (plan.halo_ry * 2.4).max(5.0);
-            let d = (dx * dx + dy * dy).sqrt();
-            let warm = (1.0 - d.clamp(0.0, 1.0)).powf(2.2) * (0.30 + params.glow * 0.42);
-            let bg = lerp_color(base, apex_glow, warm.clamp(0.0, 1.0));
-            grid[y][x] = Cell::with_bg(' ', bg, bg);
+            let mirror = mirror_col[x];
+            let fall = if mirror != usize::MAX {
+                falloff[mirror]
+            } else {
+                let d = (dx2_col[x] + dy2).sqrt();
+                (1.0 - d.clamp(0.0, 1.0)).powf(2.2)
+            };
+            falloff[x] = fall;
+            let bg = lerp_color(base, apex_glow, (fall * warm_gain).clamp(0.0, 1.0));
+            row[x] = Cell::with_bg(' ', bg, bg);
         }
     }
     let star = lighten(palette[4], 8);
+    let threshold = 0.86 - params.dens * 0.16;
+    let star_seed = seed ^ 0xA0F;
+    let mut field_fx = Vec::with_capacity(width);
+    for x in 0..width {
+        field_fx.push(x as f32 * 0.09);
+    }
     for y in 0..height {
+        let row_tag = y as u64 * 977;
+        let mut field_row = FbmRow::new(y as f32 * 0.15, star_seed);
         for x in 0..width {
-            let pick = hash01(seed, x as u64 * 131 + y as u64 * 977);
-            let field = pp_fbm(x as f32 * 0.09, y as f32 * 0.15, seed ^ 0xA0F);
-            let threshold = 0.86 - params.dens * 0.16;
-            if field > 0.70 && pick > threshold {
+            // `pick` is one hash against a fixed cut; only survivors pay for the fbm.
+            let pick = hash01(seed, x as u64 * 131 + row_tag);
+            if pick <= threshold {
+                continue;
+            }
+            let field = field_row.at(field_fx[x]);
+            if field > 0.70 {
                 let tw = (t * params.speed * 0.9 + pick * TAU * 2.0).sin();
                 let ch = if tw > 0.82 {
                     '✦'
