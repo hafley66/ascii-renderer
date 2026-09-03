@@ -64,6 +64,8 @@ use crate::fable_2_trees::cli_fable_2_trees;
 use crate::fable_2_forest::cli_fable_2_forest;
 use crate::opus_1_trees::cli_opus_1_trees;
 use crate::opus_1_forest::cli_opus_1_forest;
+use crate::sonnet_1_trees::cli_sonnet_1_trees;
+use crate::sonnet_1_forest::cli_sonnet_1_forest;
 use crate::cli_basic::*;
 use crate::cli_catalog::*;
 use crate::cli_city::*;
@@ -281,6 +283,8 @@ pub(crate) fn run() {
         eprintln!("  morph:  1 dissolve  2 field  3 transport  4 sdf");
         eprintln!("  warp:   5 wind  6 vflow(voronoi)  7 swirl  8 ripple  9 breathe  0 drift");
         eprintln!("  native: i = iterate (re-render the mode with a time T -- true motion)");
+        eprintln!("  sonnet-1-trees  sample sheet of six species: krummholz, fig, colonist, proproot, bottle, stilt (a=animate) [energy] [fruit] [branch] [scrub] [roots] [wind] [sway] [speed] [detail] [hue]");
+        eprintln!("  sonnet-1-forest  depth-layered stand of the sonnet-1 species with fog, fireflies or leaf fall (a=animate) [density] [layers] [sway] [speed] [hue] [atmos] [energy] [fruit] [branch] [detail] [cycle] [horizon]");
         eprintln!("  ascii-renderer 1 morph forest            # forest seed 1 \u{2194} 2, walks seeds");
         eprintln!("  ascii-renderer 1 morph forest 1 forest 1 wind   # sway one scene in the wind");
         eprintln!("  ascii-renderer 1 morph stained           # voronoi cells flow (auto)");
@@ -1249,6 +1253,18 @@ pub(crate) fn run() {
         }
     } else if mode == "opus-1-forest" {
         let (g, done) = cli_opus_1_forest(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        grid = g;
+        if done {
+            return;
+        }
+    } else if mode == "sonnet-1-trees" {
+        let (g, done) = cli_sonnet_1_trees(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        grid = g;
+        if done {
+            return;
+        }
+    } else if mode == "sonnet-1-forest" {
+        let (g, done) = cli_sonnet_1_forest(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
         grid = g;
         if done {
             return;

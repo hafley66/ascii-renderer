@@ -899,6 +899,43 @@ pub(crate) static MODE_FORMS: &[ModeForm] = &[
             param!("BARE", "bare trunk fraction of height", 0.08, 0.60, 0.30, 0.02),
         ],
     },
+    ModeForm {
+        names: &["sonnet-1-trees"],
+        animate: AnimKind::Iterate,
+        params: &[
+            param!("ENERGY", "top row crown energy", 0.2, 1.0, 0.88, 0.02),
+            param!("FRUIT", "fruit and bloom rate", 0.0, 1.0, 0.16, 0.02),
+            param!("BRANCH", "branch density", 0.05, 1.0, 0.6, 0.05),
+            param!("SCRUB", "bottom row energy factor", 0.2, 1.0, 0.56, 0.02),
+            param!("ROOTS", "root and flare style offset", 0.0, 3.0, 0.0, 1.0),
+            param!("WIND", "prevailing wind, negative blows left", -1.0, 1.0, 0.35, 0.05),
+            param!("SWAY", "sway amplitude in cells", 0.0, 4.0, 0.9, 0.1),
+            param!("SPEED", "time scale", 0.0, 3.0, 1.0, 0.1),
+            param!("DETAIL", "growth sample count factor", 0.2, 2.0, 1.0, 0.1),
+            param!("HUE", "hue rotation deg", -180.0, 180.0, 0.0, 10.0),
+            param!("BARE", "bare trunk fraction of height", 0.08, 0.60, 0.26, 0.02),
+        ],
+    },
+    ModeForm {
+        names: &["sonnet-1-forest"],
+        animate: AnimKind::Iterate,
+        params: &[
+            param!("DENSITY", "trees per depth layer", 0.25, 2.5, 1.0, 0.05),
+            param!("LAYERS", "depth layers", 3.0, 6.0, 4.0, 1.0),
+            param!("SWAY", "sway amplitude in cells", 0.0, 4.0, 1.1, 0.1),
+            param!("SPEED", "time scale", 0.0, 3.0, 1.0, 0.1),
+            param!("HUE", "hue rotation deg", -180.0, 180.0, 0.0, 10.0),
+            param!("ATMOS", "0 seed 1 fog 2 fireflies 3 leaffall", 0.0, 3.0, 0.0, 1.0),
+            param!("ENERGY", "crown energy", 0.3, 1.0, 0.88, 0.02),
+            param!("FRUIT", "fruit and bloom rate", 0.0, 1.0, 0.12, 0.02),
+            param!("BRANCH", "branch density", 0.05, 1.0, 0.58, 0.05),
+            param!("DETAIL", "growth sample count factor", 0.2, 2.0, 1.0, 0.1),
+            param!("CYCLE", "day cycle seconds", 20.0, 60.0, 40.0, 2.0),
+            param!("HORIZON", "horizon height fraction", 0.2, 0.7, 0.40, 0.02),
+            param!("BARE", "bare trunk fraction of height", 0.08, 0.60, 0.28, 0.02),
+            param!("WIND", "prevailing wind, negative blows left", -1.0, 1.0, 0.35, 0.05),
+        ],
+    },
 ];
 
 
