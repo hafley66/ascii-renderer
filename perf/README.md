@@ -34,3 +34,12 @@ ASCII_PROFILE_LAYERS=1` is set on the binary (see `PERF.md` for the JSON log for
 | ASCII_PERF_SECS | 5 |
 | ASCII_PERF_DT | 0.06 |
 | ASCII_PERF_THEME | moss |
+
+## All modes
+
+```bash
+perf/sweep_all.sh 1        # 1 s per run, every knob-form and registered mode
+```
+
+Writes one `perf/results/<mode>.md` per mode and ranks them in
+`perf/results/SUMMARY.md` by the fps of each mode's worst knob.

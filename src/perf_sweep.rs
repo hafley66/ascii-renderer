@@ -39,8 +39,9 @@ fn set_knob(key: &str, value: Option<f32>) {
     }
 }
 
-fn run_for(label: &str, mode: &str, theme: &str, w: usize, h: usize, secs: f64, dt: f32) -> RunStats {
-    let mut r = IterateFrameRenderer::new(mode, 42, theme, w, h).expect("mode renders natively");
+fn run_for(label: &str, mode: &str, theme: &str, w: usize, h: usize, secs: f64, dt: f32) -> Option<RunStats> {
+    let mut r = IterateFrameRenderer::new(mode, 42, theme, w, h)?;
+    r.render(0.0, None)?;
     let mut samples: Vec<u128> = Vec::with_capacity(4096);
     let mut t = 0.0f32;
     let started = Instant::now();
@@ -55,7 +56,7 @@ fn run_for(label: &str, mode: &str, theme: &str, w: usize, h: usize, secs: f64, 
     let wall = started.elapsed();
     samples.sort_unstable();
     let pick = |q: f64| samples[((samples.len() - 1) as f64 * q) as usize] as f64 / 1e6;
-    RunStats { label: label.to_string(), frames, wall, p50_ms: pick(0.5), p99_ms: pick(0.99), max_ms: pick(1.0) }
+    Some(RunStats { label: label.to_string(), frames, wall, p50_ms: pick(0.5), p99_ms: pick(0.99), max_ms: pick(1.0) })
 }
 
 #[test]
@@ -72,11 +73,16 @@ fn perf_knob_sweep() {
         set_knob(p.key, None);
     }
 
-    let base = run_for("baseline", &mode, &theme, w, h, secs, dt);
+    let Some(base) = run_for("baseline", &mode, &theme, w, h, secs, dt) else {
+        println!("# knob sweep: {mode} does not render natively through iterate_grid; nothing measured");
+        return;
+    };
     let mut runs: Vec<(RunStats, f32)> = Vec::new();
     for p in spec.params {
         set_knob(p.key, Some(p.max));
-        runs.push((run_for(&format!("{}={}", p.key, p.max), &mode, &theme, w, h, secs, dt), p.max));
+        if let Some(r) = run_for(&format!("{}={}", p.key, p.max), &mode, &theme, w, h, secs, dt) {
+            runs.push((r, p.max));
+        }
         set_knob(p.key, None);
     }
     runs.sort_by(|a, b| a.0.fps().partial_cmp(&b.0.fps()).unwrap());
@@ -101,7 +107,7 @@ fn perf_knob_sweep() {
         set_knob(p.key, Some(p.max));
     }
     layer_capture_begin();
-    let worst = run_for(&worst_key, &mode, &theme, w, h, secs, dt);
+    let worst = run_for(&worst_key, &mode, &theme, w, h, secs, dt).expect("worst run rendered once already");
     let layers = layer_capture_end();
     for p in spec.params {
         set_knob(p.key, None);
