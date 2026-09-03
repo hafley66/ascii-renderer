@@ -787,9 +787,9 @@ fn opus_2_quasicrystal_seed_42() {
 }
 
 #[test]
-fn opus_2_quasicrystal_nine_fold_moving() {
+fn opus_2_quasicrystal_seven_fold_moving() {
     insta::assert_snapshot!(render_t(
-        &["7", "opus-2-quasicrystal", "ember", "1", "90", "9", "6", "1.1", "0.6", "0.05", "0.6", "0.03", "1", "0.9", "0.45", "80", "1", "2", "0.35", "3"],
+        &["7", "opus-2-quasicrystal", "ember", "1", "90", "7", "6", "1.1", "0.6", "0.05", "0.6", "0.03", "1", "0.9", "0.45", "80", "1", "2", "0.35", "3"],
         "45"
     ));
 }

@@ -11,10 +11,63 @@ use rand::rngs::StdRng;
 use std::cell::RefCell;
 use std::f32::consts::PI;
 
-const MAXN: usize = 9;
+const MAXN: usize = 7;
 const LEVELS: usize = 8;
 const TYPES: usize = MAXN;
 const MAXB: usize = 3;
+const RDIRS: usize = 16;
+const RSEC: f32 = 1.004_82;
+const INV12: f32 = 1.0 / 4096.0;
+const LUT_Q: f32 = 1.25;
+const MIX: [u32; MAXN] = [0x9E37_79B1, 0x85EB_CA6B, 0xC2B2_AE35, 0x27D4_EB2F, 0x1656_67B1, 0xD3A2_646C, 0xFD70_46C5];
+
+#[derive(Clone, Copy)]
+struct FrontLut {
+    pack: u32,
+    formed: f32,
+}
+
+fn build_lut(f: &Frame, out: &mut Vec<FrontLut>, n: usize) {
+    out.clear();
+    out.reserve(n);
+    let inv_edge = 1.0 / f.edge_q;
+    let inv_melt = 1.0 / f.melt_q;
+    let inv_vapor = 1.0 / f.vapor_q;
+    let inv_meltw = 1.0 / (f.edge_q * 1.6).max(0.008);
+    let scale = LUT_Q / (n - 1) as f32;
+    for i in 0..n {
+        let q = i as f32 * scale;
+        let mut formed = 0.0f32;
+        let mut lead = 0.0f32;
+        let mut melt = 0.0f32;
+        let mut gate = 0.0f32;
+        let mut moat = false;
+        for b in 0..f.nb {
+            let dq = f.q_out[b] - q;
+            let dm = q - f.q_in[b];
+            formed = formed.max(smooth(dq * inv_edge) * smooth(dm * inv_melt));
+            if dq > 0.0 {
+                if dq < f.edge_q {
+                    let g = dq * inv_edge;
+                    lead = lead.max(4.0 * g * (1.0 - g));
+                }
+            } else {
+                moat |= dq > -f.moat_q;
+                gate = gate.max((1.0 + dq * inv_vapor).clamp(0.0, 1.0));
+            }
+            let g = dm * inv_meltw;
+            if dm > 0.0 && g < 1.0 {
+                melt = melt.max(4.0 * g * (1.0 - g));
+            }
+        }
+        let pack = (lead * 255.0) as u32
+            | ((melt * 255.0) as u32) << 8
+            | ((gate * 255.0) as u32) << 16
+            | (moat as u32) << 24;
+        out.push(FrontLut { pack, formed });
+    }
+}
+
 
 const RAMP_SOLID: [char; LEVELS] = ['.', ':', ';', '=', '*', '8', '#', '%'];
 const RAMP_STIPPLE: [char; LEVELS] = ['.', ',', ';', ':', 'o', 'O', '&', '@'];
@@ -80,7 +133,7 @@ struct Cached {
     nudge_y: f32,
     phase0: f32,
     star: f32,
-    scratch: Vec<u32>,
+    lut: Vec<FrontLut>,
 }
 
 thread_local! {
@@ -89,7 +142,7 @@ thread_local! {
 
 fn build(seed: u64, folds_knob: usize) -> Cached {
     let mut rng = StdRng::seed_from_u64(seed ^ 0x0_9A5C_2117);
-    let picks = [5usize, 5, 7, 5, 4, 7, 9, 6];
+    let picks = [5usize, 5, 7, 5, 4, 7, 6, 5];
     let seeded = picks[rng.random_range(0..picks.len())];
     let n = if folds_knob >= 4 { folds_knob.min(MAXN) } else { seeded };
     let mut gamma0 = [0.0f32; MAXN];
@@ -114,18 +167,18 @@ fn build(seed: u64, folds_knob: usize) -> Cached {
         nudge_y: rng.random::<f32>() * 0.24 - 0.12,
         phase0: rng.random::<f32>(),
         star: rng.random::<f32>() * 0.5 + 0.5,
-        scratch: Vec::new(),
+        lut: Vec::new(),
     }
 }
 
-fn hash2(x: u32, y: u32, k: u32) -> f32 {
+fn hash_bits(x: u32, y: u32, k: u32) -> u32 {
     let mut h = (x as u64).wrapping_mul(0x9E37_79B9_7F4A_7C15)
         ^ (y as u64).wrapping_mul(0xBF58_476D_1CE4_E5B9)
         ^ (k as u64).wrapping_mul(0x94D0_49BB_1331_11EB);
     h ^= h >> 31;
     h = h.wrapping_mul(0xD6E8_FEB8_6659_FD93);
     h ^= h >> 32;
-    (h & 0xFF_FFFF) as f32 / 16_777_216.0
+    h as u32
 }
 
 fn smooth(s: f32) -> f32 {
@@ -194,6 +247,10 @@ struct Frame {
     linew: f32,
     density: f32,
     lvl: [f32; TYPES],
+    aspect: f32,
+    spacing: f32,
+    rcol: [f32; RDIRS],
+    rrow: [f32; RDIRS],
 }
 
 fn geometry(w: usize, h: usize, t: f32, k: &Opus2QuasicrystalKnobs, c: &Cached) -> Frame {
@@ -228,7 +285,16 @@ fn geometry(w: usize, h: usize, t: f32, k: &Opus2QuasicrystalKnobs, c: &Cached) 
         linew: k.linew.clamp(0.05, 3.0),
         density: k.density.clamp(0.0, 1.0),
         lvl: [0.0; TYPES],
+        aspect,
+        spacing: d,
+        rcol: [0.0; RDIRS],
+        rrow: [0.0; RDIRS],
     };
+    for i in 0..RDIRS {
+        let th = PI * i as f32 / RDIRS as f32;
+        f.rcol[i] = th.cos() / (aspect * d);
+        f.rrow[i] = th.sin() / d;
+    }
     for ty in 0..TYPES {
         let a = frac(ty as f32 * 0.618_034);
         f.lvl[ty] = f.density * (0.16 + 0.84 * a);
@@ -327,183 +393,243 @@ fn render(grid: &mut Grid, w: usize, h: usize, seed: u64, palette: &[Color; 5], 
     let f = geometry(w, h, t, k, c);
     let tt = if t > 0.0 { t * k.speed.clamp(0.0, 8.0) } else { 0.0 };
     let pulse = 0.5 + 0.5 * (tt * 0.18).sin();
-    let p = paints(palette, k, c, f.n, pulse);
     let ramp = c.ramp;
     let seed32 = (seed ^ (seed >> 32)) as u32;
-    if c.scratch.len() != w * h {
-        c.scratch.resize(w * h, 0);
-    }
-    let scratch = &mut c.scratch;
+    let lut_n = (4096).min((w * h / 2).max(256));
+    let p = measure_layer("opus-2-quasicrystal", "fronts", || {
+        if c.lut.len() != lut_n {
+            c.lut.clear();
+        }
+        build_lut(&f, &mut c.lut, lut_n);
+        paints(palette, k, c, f.n, pulse)
+    });
+    let lut = &c.lut;
     let twinkle = ((tt * 0.35).floor() as i64 as u32) ^ seed32;
-    let ghost = k.dust.clamp(0.0, 1.0);
 
     measure_layer("opus-2-quasicrystal", "lattice", || {
-        lattice_pass(grid, w, h, &f, &p, &ramp, seed32, twinkle, ghost, scratch);
-    });
-    measure_layer("opus-2-quasicrystal", "fronts", || {
-        fronts_pass(grid, w, h, &p, k, twinkle, scratch);
+        lattice_pass(grid, w, h, &f, &p, k, &ramp, seed32, twinkle, lut);
     });
     measure_layer("opus-2-quasicrystal", "nucleus", || {
         nucleus_pass(grid, w, h, &f, &p, c.star, pulse, k);
     });
 }
 
-fn lattice_pass(grid: &mut Grid, w: usize, h: usize, f: &Frame, p: &Paint, ramp: &[char; LEVELS], seed32: u32, twinkle: u32, ghost: f32, scratch: &mut [u32]) {
-    let n = f.n;
-    let inv_edge = 1.0 / f.edge_q;
-    let inv_melt = 1.0 / f.melt_q;
-    let inv_vapor = 1.0 / f.vapor_q;
-    let melt_w = (f.edge_q * 1.6).max(0.008);
+/// Upper envelope of the 2N lines +/-(A_j + B_j x) that define the polygonal
+/// radius along one row. Walked left to right, one fma per column.
+struct Envelope {
+    m: [f32; 2 * RDIRS],
+    b: [f32; 2 * RDIRS],
+    brk: [f32; 2 * RDIRS],
+    len: usize,
+    at: usize,
+}
+
+impl Envelope {
+    fn build(a: &[f32], bslope: &[f32], n: usize) -> Self {
+        let mut m = [0.0f32; 2 * RDIRS];
+        let mut b = [0.0f32; 2 * RDIRS];
+        let mut cnt = 0usize;
+        for j in 0..n {
+            m[cnt] = bslope[j];
+            b[cnt] = a[j];
+            cnt += 1;
+            m[cnt] = -bslope[j];
+            b[cnt] = -a[j];
+            cnt += 1;
+        }
+        for i in 1..cnt {
+            let (km, kb) = (m[i], b[i]);
+            let mut j = i;
+            while j > 0 && (m[j - 1] > km || (m[j - 1] == km && b[j - 1] < kb)) {
+                m[j] = m[j - 1];
+                b[j] = b[j - 1];
+                j -= 1;
+            }
+            m[j] = km;
+            b[j] = kb;
+        }
+        let mut hm = [0.0f32; 2 * RDIRS];
+        let mut hb = [0.0f32; 2 * RDIRS];
+        let mut len = 0usize;
+        for i in 0..cnt {
+            if len > 0 && hm[len - 1] == m[i] {
+                continue;
+            }
+            while len >= 2 {
+                let x_new = (b[i] - hb[len - 2]) / (hm[len - 2] - m[i]);
+                let x_old = (hb[len - 1] - hb[len - 2]) / (hm[len - 2] - hm[len - 1]);
+                if x_new <= x_old {
+                    len -= 1;
+                } else {
+                    break;
+                }
+            }
+            hm[len] = m[i];
+            hb[len] = b[i];
+            len += 1;
+        }
+        let mut brk = [f32::INFINITY; 2 * RDIRS];
+        for i in 0..len.saturating_sub(1) {
+            brk[i] = (hb[i + 1] - hb[i]) / (hm[i] - hm[i + 1]);
+        }
+        brk[len.saturating_sub(1)] = f32::INFINITY;
+        Envelope { m: hm, b: hb, brk, len: len.max(1), at: 0 }
+    }
+
+    #[inline(always)]
+    fn at(&mut self, x: f32) -> f32 {
+        while self.at + 1 < self.len && x >= self.brk[self.at] {
+            self.at += 1;
+        }
+        self.m[self.at] * x + self.b[self.at]
+    }
+}
+
+fn lattice_pass(grid: &mut Grid, w: usize, h: usize, f: &Frame, p: &Paint, k: &Opus2QuasicrystalKnobs, ramp: &[char; LEVELS], seed32: u32, twinkle: u32, lut: &[FrontLut]) {
+    match f.n {
+        0..=4 => lattice_rows::<4>(grid, w, h, f, p, k, ramp, seed32, twinkle, lut),
+        5 => lattice_rows::<5>(grid, w, h, f, p, k, ramp, seed32, twinkle, lut),
+        6 => lattice_rows::<6>(grid, w, h, f, p, k, ramp, seed32, twinkle, lut),
+        _ => lattice_rows::<7>(grid, w, h, f, p, k, ramp, seed32, twinkle, lut),
+    }
+}
+
+fn lattice_rows<const N: usize>(grid: &mut Grid, w: usize, h: usize, f: &Frame, p: &Paint, k: &Opus2QuasicrystalKnobs, ramp: &[char; LEVELS], seed32: u32, twinkle: u32, lut: &[FrontLut]) {
+    let facet = f.facet;
+    let one_facet = 1.0 - f.facet;
+    let inv_rmax = f.inv_rmax;
+    let lut_scale = (lut.len() - 1) as f32 / LUT_Q;
+    let lut_top = lut.len() - 1;
+    let ghost = k.dust.clamp(0.0, 1.0);
+    let ghost_low = ghost * 0.09;
+    let dust = ghost * 0.4;
+    let glow = k.glow.clamp(0.0, 1.5) * (1.0 / 255.0);
+    let inv255 = 1.0 / 255.0;
+    let mut step = [0.0f32; N];
+    let mut invthr = [0.0f32; N];
+    let mut glyph = [' '; N];
+    let mut mix = [0u32; N];
+    for j in 0..N {
+        step[j] = f.colstep[j];
+        invthr[j] = f.invthr[j];
+        glyph[j] = f.glyph[j];
+        mix[j] = MIX[j];
+    }
     for y in 0..h {
-        let mut u = [0.0f32; MAXN];
-        let mut v = [0.0f32; MAXN];
-        let mut kk = [0i32; MAXN];
-        let mut fr = [0.0f32; MAXN];
+        let mut a0 = [0.0f32; N];
+        let mut fr = [0.0f32; N];
+        let mut ksum = 0i32;
+        let mut hsh = seed32;
         let dy = y as f32 + 0.5 - f.ncy;
         let dx0 = 0.5 - f.ncx;
-        for j in 0..n {
-            v[j] = dx0 * f.colstep[j] + dy * f.rowstep[j];
-            u[j] = v[j] + f.gamma[j];
-            let fl = u[j].floor();
-            kk[j] = fl as i32;
-            fr[j] = u[j] - fl;
+        for j in 0..N {
+            a0[j] = dx0 * step[j] + dy * f.rowstep[j];
+            let u = a0[j] + f.gamma[j];
+            let fl = u.floor();
+            let kj = fl as i32;
+            ksum = ksum.wrapping_add(kj);
+            hsh = hsh.wrapping_add((kj as u32).wrapping_mul(mix[j]));
+            fr[j] = u - fl;
         }
-        let row = &mut grid[y];
-        let base = y * w;
-        for x in 0..w {
-            let mut d1 = 1.0e9f32;
-            let mut d2 = 1.0e9f32;
+        let mut env = Envelope::build(&a0, &step, N);
+        let mut renv = if one_facet > 0.0 {
+            let mut ra = [0.0f32; RDIRS];
+            for i in 0..RDIRS {
+                ra[i] = dx0 * f.rcol[i] + dy * f.rrow[i];
+            }
+            Envelope::build(&ra, &f.rcol, RDIRS)
+        } else {
+            Envelope::build(&a0, &step, N)
+        };
+        let row = &mut grid[y][..w];
+        for (x, cell) in row.iter_mut().enumerate() {
+            let rad = env.at(x as f32);
+            let q = if one_facet > 0.0 {
+                let round = renv.at(x as f32) * RSEC;
+                (rad * facet + round * one_facet) * inv_rmax
+            } else {
+                rad * inv_rmax
+            };
+            let e = lut[((q * lut_scale) as usize).min(lut_top)];
+            let pack = e.pack;
+            let formed = e.formed;
+
+            let mut quick = None;
+            let lead = (pack & 0xFF) as f32 * glow;
+            if lead > 0.5 {
+                let ch = if lead > 0.92 { '@' } else if lead > 0.74 { '#' } else { '%' };
+                quick = Some(Cell::new(ch, p.rim));
+            } else if (pack >> 24) & 1 == 1 {
+                quick = Some(Cell::new(' ', p.bg));
+            } else if formed <= 0.02 {
+                let gate = ((pack >> 16) & 0xFF) as f32 * inv255;
+                let prob = if gate > 0.0 { ghost * gate.max(0.13) * gate.max(0.13) } else { ghost_low };
+                let hb = hash_bits(x as u32, y as u32, twinkle);
+                if prob <= 0.0 || (hb & 0xFFF) as f32 * INV12 >= prob {
+                    let melt = ((pack >> 8) & 0xFF) as f32 * glow;
+                    quick = Some(if melt > 0.4 {
+                        Cell::new(if melt > 0.8 { ':' } else { '.' }, p.melt)
+                    } else if dust > 0.0 && gate > 0.0 && ((hb >> 12) & 0xFFF) as f32 * INV12 < dust * gate * gate {
+                        let v = (hb >> 24) as f32 * (1.0 / 256.0);
+                        let ch = if v < 0.5 { '.' } else if v < 0.82 { '`' } else { ',' };
+                        Cell::new(ch, p.dust)
+                    } else {
+                        Cell::new(' ', p.bg)
+                    });
+                }
+            }
+            if let Some(c) = quick {
+                *cell = c;
+                for j in 0..N {
+                    let nf = fr[j] + step[j];
+                    let fl = nf.floor();
+                    fr[j] = nf - fl;
+                    let dk = fl as i32;
+                    ksum = ksum.wrapping_add(dk);
+                    hsh = hsh.wrapping_add((dk as u32).wrapping_mul(mix[j]));
+                }
+                continue;
+            }
+
+            let mut d1 = f32::INFINITY;
+            let mut d2 = f32::INFINITY;
             let mut i1 = 0usize;
-            let mut rad = 0.0f32;
-            let mut sum = 0.0f32;
-            let mut ksum = 0i32;
-            let mut hsh = seed32;
-            for j in 0..n {
+            for j in 0..N {
                 let g = fr[j];
-                let raw = if g < 0.5 { g } else { 1.0 - g };
-                let dist = raw * f.invthr[j];
-                if dist < d1 {
-                    d2 = d1;
-                    d1 = dist;
-                    i1 = j;
-                } else if dist < d2 {
-                    d2 = dist;
-                }
-                let av = v[j].abs();
-                if av > rad {
-                    rad = av;
-                }
-                sum += v[j] * v[j];
-                ksum = ksum.wrapping_add(kk[j]);
-                hsh = hsh.wrapping_mul(0x9E37_79B1).wrapping_add(kk[j] as u32);
-                let nf = fr[j] + f.colstep[j];
+                let dist = g.min(1.0 - g) * invthr[j];
+                let better = dist < d1;
+                d2 = if better { d1 } else { d2.min(dist) };
+                i1 = if better { j } else { i1 };
+                d1 = if better { dist } else { d1 };
+                let nf = g + step[j];
                 let fl = nf.floor();
                 fr[j] = nf - fl;
-                kk[j] += fl as i32;
-                v[j] += f.colstep[j];
+                let dk = fl as i32;
+                ksum = ksum.wrapping_add(dk);
+                hsh = hsh.wrapping_add((dk as u32).wrapping_mul(mix[j]));
             }
-            let round = (sum * 2.0 / n as f32).sqrt();
-            let q = (rad * f.facet + round * (1.0 - f.facet)) * f.inv_rmax;
-
-            let mut formed = 0.0f32;
-            let mut lead = 0.0f32;
-            let mut melt = 0.0f32;
-            let mut gate = 0.0f32;
-            let mut moat = false;
-            for b in 0..f.nb {
-                let dq = f.q_out[b] - q;
-                let dm = q - f.q_in[b];
-                let fm = smooth(dq * inv_edge) * smooth(dm * inv_melt);
-                if fm > formed {
-                    formed = fm;
-                }
-                if dq > 0.0 && dq < f.edge_q {
-                    let g = dq * inv_edge;
-                    lead = lead.max(4.0 * g * (1.0 - g));
-                } else if dq < 0.0 {
-                    if dq > -f.moat_q {
-                        moat = true;
-                    }
-                    gate = gate.max((1.0 + dq * inv_vapor).clamp(0.0, 1.0));
-                }
-                if dm > 0.0 && dm < melt_w {
-                    let g = dm / melt_w;
-                    melt = melt.max(4.0 * g * (1.0 - g));
-                }
-            }
-            scratch[base + x] = (lead * 255.0) as u32
-                | ((melt * 255.0) as u32) << 8
-                | ((gate * 255.0) as u32) << 16
-                | (moat as u32) << 24;
 
             if formed <= 0.02 {
-                let (thr, prob) = if gate > 0.0 {
-                    let gf = gate.max(0.13);
-                    (0.5 + 1.7 * gf, ghost * gf * gf)
-                } else {
-                    (0.45, ghost * 0.09)
-                };
-                if !moat && prob > 0.0 && d1 < thr && hash2(x as u32, y as u32, twinkle) < prob {
-                    row[x] = Cell::new(f.glyph[i1], p.dust);
-                } else {
-                    row[x] = Cell::new(' ', p.bg);
-                }
+                let gate = ((pack >> 16) & 0xFF) as f32 * inv255;
+                let thr = if gate > 0.0 { 0.5 + 1.7 * gate.max(0.13) } else { 0.45 };
+                *cell = if d1 < thr { Cell::new(glyph[i1], p.dust) } else { Cell::new(' ', p.bg) };
                 continue;
             }
             let wthr = 0.4 + 0.6 * formed;
             if d1 < wthr {
-                if d2 < wthr * 1.35 {
-                    row[x] = Cell::new(if d1 < wthr * 0.45 { '+' } else { 'x' }, p.node);
+                *cell = if d2 < wthr * 1.35 {
+                    Cell::new(if d1 < wthr * 0.45 { '+' } else { 'x' }, p.node)
                 } else {
-                    let lv = ((0.45 + 0.55 * formed) * (LEVELS as f32 - 0.01)) as usize;
-                    row[x] = Cell::new(f.glyph[i1], p.web[lv]);
-                }
+                    let lv = (((0.45 + 0.55 * formed) * LEVELS as f32) as usize).min(LEVELS - 1);
+                    Cell::new(glyph[i1], p.web[lv])
+                };
                 continue;
             }
-            let ty = (ksum.rem_euclid(n as i32) as usize).min(TYPES - 1);
-            let shade = ((hsh >> 11) & 0x7) as f32 / 7.0;
+            let ty = (((ksum.wrapping_add(0x0010_0000) as u32) % N as u32) as usize).min(TYPES - 1);
+            let shade = ((hsh >> 11) & 0x7) as f32 * (1.0 / 7.0);
             let level = f.lvl[ty] * (0.72 + 0.56 * shade) * formed;
             let li = ((level * LEVELS as f32) as usize).min(LEVELS - 1);
-            row[x] = Cell::new(ramp[li], p.tile[ty][li]);
-        }
-    }
-}
-
-fn fronts_pass(grid: &mut Grid, w: usize, h: usize, p: &Paint, k: &Opus2QuasicrystalKnobs, twinkle: u32, scratch: &[u32]) {
-    let dust = k.dust.clamp(0.0, 1.0) * 0.4;
-    let glow = k.glow.clamp(0.0, 1.5);
-    for y in 0..h {
-        let row = &mut grid[y];
-        let base = y * w;
-        for x in 0..w {
-            let packed = scratch[base + x];
-            let lead = (packed & 0xFF) as f32 / 255.0 * glow;
-            if lead > 0.5 {
-                let ch = if lead > 0.92 { '@' } else if lead > 0.74 { '#' } else { '%' };
-                row[x] = Cell::new(ch, p.rim);
-                continue;
-            }
-            if (packed >> 24) & 1 == 1 {
-                row[x] = Cell::new(' ', p.bg);
-                continue;
-            }
-            if row[x].ch != ' ' {
-                continue;
-            }
-            let melt = ((packed >> 8) & 0xFF) as f32 / 255.0 * glow;
-            if melt > 0.4 {
-                row[x] = Cell::new(if melt > 0.8 { ':' } else { '.' }, p.melt);
-                continue;
-            }
-            let gate = ((packed >> 16) & 0xFF) as f32 / 255.0;
-            if dust > 0.0 && gate > 0.0 {
-                let u = hash2(x as u32, y as u32, twinkle);
-                if u < dust * gate * gate {
-                    let v = hash2(x as u32, y as u32, twinkle ^ 0x5BF0_3A17);
-                    let ch = if v < 0.5 { '.' } else if v < 0.82 { '`' } else { ',' };
-                    row[x] = Cell::new(ch, p.dust);
-                }
-            }
+            *cell = Cell::new(ramp[li], p.tile[ty][li]);
         }
     }
 }
@@ -632,6 +758,31 @@ mod tests {
             k.folds = folds as f32;
             draw_opus_2_quasicrystal(&mut g, 60, 20, 3, &p, 5.0, &k);
         }
+    }
+
+    #[test]
+    fn envelope_matches_brute_force() {
+        let mut worst = 0.0f32;
+        for trial in 0..40u32 {
+            let n = 4 + (trial % (MAXN as u32 - 3)) as usize;
+            let mut a = [0.0f32; MAXN];
+            let mut b = [0.0f32; MAXN];
+            for j in 0..n {
+                let t = (trial * 7 + j as u32 * 13) as f32;
+                a[j] = (t * 0.37).sin() * 40.0;
+                b[j] = (t * 0.11).cos() * 0.4;
+            }
+            let mut env = Envelope::build(&a, &b, n);
+            for x in 0..300 {
+                let xf = x as f32;
+                let mut want = 0.0f32;
+                for j in 0..n {
+                    want = want.max((a[j] + b[j] * xf).abs());
+                }
+                worst = worst.max((env.at(xf) - want).abs());
+            }
+        }
+        assert!(worst < 1e-3, "envelope drift {worst}");
     }
 
     #[test]

@@ -651,7 +651,7 @@ pub(crate) static MODE_FORMS: &[ModeForm] = &[
         params: &[
             param!("SPEED", "clock multiplier", 0.0, 4.0, 1.0, 0.1),
             param!("CYCLE", "growth sweep seconds", 10.0, 600.0, 130.0, 5.0),
-            param!("FOLDS", "symmetry order, 0 seeded", 0.0, 9.0, 0.0, 1.0),
+            param!("FOLDS", "symmetry order, 0 seeded", 0.0, 7.0, 0.0, 1.0),
             param!("SCALE", "line spacing rows", 2.5, 30.0, 9.0, 0.5),
             param!("LINEW", "web half width cells", 0.1, 2.5, 0.85, 0.05),
             param!("BAND", "crystal band width", 0.05, 1.0, 0.72, 0.02),
