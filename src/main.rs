@@ -68,6 +68,8 @@ mod fable_1_trees;
 mod fable_1_forest;
 mod fable_2_trees;
 mod fable_2_forest;
+mod opus_1_trees;
+mod opus_1_forest;
 #[cfg(test)]
 mod perf_sweep;
 

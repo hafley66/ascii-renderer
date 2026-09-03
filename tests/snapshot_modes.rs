@@ -920,3 +920,18 @@ fn fable_2_forest_seed_42() {
 fn fable_2_forest_seed_7_moving_t12() {
     insta::assert_snapshot!(render_t(&["7", "fable-2-forest", "ember", "1.4", "4", "1.0", "1", "0", "2", "0.6", "1", "1", "0.7", "0.3", "0.5"], "12"));
 }
+
+#[test]
+fn opus_1_trees_seed_42() {
+    insta::assert_snapshot!(render(&["42", "opus-1-trees", "moss"]));
+}
+
+#[test]
+fn opus_1_forest_seed_42() {
+    insta::assert_snapshot!(render(&["42", "opus-1-forest", "moss"]));
+}
+
+#[test]
+fn opus_1_forest_drifting_t18() {
+    insta::assert_snapshot!(render_t(&["7", "opus-1-forest", "moss"], "18"));
+}

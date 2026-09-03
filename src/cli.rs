@@ -62,6 +62,8 @@ use crate::fable_1_trees::cli_fable_1_trees;
 use crate::fable_1_forest::cli_fable_1_forest;
 use crate::fable_2_trees::cli_fable_2_trees;
 use crate::fable_2_forest::cli_fable_2_forest;
+use crate::opus_1_trees::cli_opus_1_trees;
+use crate::opus_1_forest::cli_opus_1_forest;
 use crate::cli_basic::*;
 use crate::cli_catalog::*;
 use crate::cli_city::*;
@@ -1221,6 +1223,12 @@ pub(crate) fn run() {
         if done {
             return;
         }
+    } else if mode == "opus-1-trees" {
+        let (g, done) = cli_opus_1_trees(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        grid = g;
+        if done {
+            return;
+        }
     } else if mode == "fable-2-trees" {
         let (g, done) = cli_fable_2_trees(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
         grid = g;
@@ -1235,6 +1243,12 @@ pub(crate) fn run() {
         }
     } else if mode == "fable-2-forest" {
         let (g, done) = cli_fable_2_forest(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        grid = g;
+        if done {
+            return;
+        }
+    } else if mode == "opus-1-forest" {
+        let (g, done) = cli_opus_1_forest(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
         grid = g;
         if done {
             return;
