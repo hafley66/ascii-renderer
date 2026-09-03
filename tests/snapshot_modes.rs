@@ -768,3 +768,28 @@ fn pendulum_wave_seed_42() {
 fn pendulum_wave_top_view_trails() {
     insta::assert_snapshot!(render(&["42", "pendulum-wave", "ember", "10", "20", "12", "0.6", "1", "20", "0.05", "2", "30"]));
 }
+
+/// Same as `render` but with the animation clock set, for modes that move.
+fn render_t(args: &[&str], t: &str) -> String {
+    let output = Command::new(env!("CARGO_BIN_EXE_ascii-renderer"))
+        .args(args)
+        .env("ASCII_GRID_W", "80")
+        .env("ASCII_GRID_H", "24")
+        .env("ASCII_T", t)
+        .output()
+        .expect("failed to run ascii-renderer");
+    strip_ansi(&String::from_utf8_lossy(&output.stdout))
+}
+
+#[test]
+fn opus_2_quasicrystal_seed_42() {
+    insta::assert_snapshot!(render(&["42", "opus-2-quasicrystal", "moss"]));
+}
+
+#[test]
+fn opus_2_quasicrystal_nine_fold_moving() {
+    insta::assert_snapshot!(render_t(
+        &["7", "opus-2-quasicrystal", "ember", "1", "90", "9", "6", "1.1", "0.6", "0.05", "0.6", "0.03", "1", "0.9", "0.45", "80", "1", "2", "0.35", "3"],
+        "45"
+    ));
+}

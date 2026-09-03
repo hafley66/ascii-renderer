@@ -652,6 +652,11 @@ fn iterate_grid_into(
             crate::pendwave::draw_pendwave(grid, w, h, seed, palette, t, &knobs);
             true
         }
+        "opus-2-quasicrystal" => {
+            let knobs = crate::opus_2_quasicrystal::Opus2QuasicrystalKnobs::from_env();
+            crate::opus_2_quasicrystal::draw_opus_2_quasicrystal(grid, w, h, seed, palette, t, &knobs);
+            true
+        }
         _ => false,
     }
 }
