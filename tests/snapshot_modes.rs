@@ -553,6 +553,11 @@ fn sauron_seed_42() {
 }
 
 #[test]
+fn singularity_seed_42() {
+    insta::assert_snapshot!(render(&["42", "singularity", "deep"]));
+}
+
+#[test]
 fn illuminarium_seed_42() {
     insta::assert_snapshot!(render(&[
         "42",

@@ -142,7 +142,7 @@ const NATIVE_MODES: &[&str] = &[
     "elevator", "ferris", "arboretum", "astrolabe", "sauron", "mahoraga-2", "mahoraga-3", "mahoraga-4",
     "mahoraga-5", "tree-of-life", "tree-of-life-2", "tree-of-life-3", "tree-of-life-4", "tree-of-life-5",
     "tree-of-life-6", "braid", "braid-2", "chladni", "pendulum-wave", "glm-apotheosis", "cosmograph",
-    "illuminarium", "qwen-cathedral", "aetherforge", "gem-aetherium", "hyperloom", "fa6",
+    "illuminarium", "qwen-cathedral", "aetherforge", "gem-aetherium", "hyperloom", "singularity", "fa6",
     "polytope",
     "poincare",
     "opus-1-quasicrystal",
