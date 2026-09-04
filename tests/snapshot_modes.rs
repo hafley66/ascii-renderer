@@ -558,6 +558,11 @@ fn singularity_seed_42() {
 }
 
 #[test]
+fn thunderhead_seed_42() {
+    insta::assert_snapshot!(render(&["42", "thunderhead", "arctic"]));
+}
+
+#[test]
 fn illuminarium_seed_42() {
     insta::assert_snapshot!(render(&[
         "42",

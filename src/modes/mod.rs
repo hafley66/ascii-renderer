@@ -8,6 +8,7 @@ mod _34_gemini_astrolabe;
 mod _35_hyperloom;
 mod _36_aetherforge;
 mod _37_singularity;
+mod _38_thunderhead;
 
 pub(crate) fn register_all(registry: &mut crate::registry::ModeRegistry) {
     registry.add(&_30_illuminarium::MODE);
@@ -18,4 +19,5 @@ pub(crate) fn register_all(registry: &mut crate::registry::ModeRegistry) {
     registry.add(&_35_hyperloom::MODE);
     registry.add(&_36_aetherforge::MODE);
     registry.add(&_37_singularity::MODE);
+    registry.add(&_38_thunderhead::MODE);
 }
