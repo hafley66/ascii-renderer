@@ -563,6 +563,11 @@ fn thunderhead_seed_42() {
 }
 
 #[test]
+fn mandelbox_seed_42() {
+    insta::assert_snapshot!(render(&["42", "mandelbox", "neon"]));
+}
+
+#[test]
 fn illuminarium_seed_42() {
     insta::assert_snapshot!(render(&[
         "42",
