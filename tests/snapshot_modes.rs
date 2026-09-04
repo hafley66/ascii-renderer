@@ -35,6 +35,11 @@ fn strip_ansi(s: &str) -> String {
 // ── Mode snapshots ───────────────────────────────────────────────
 
 #[test]
+fn moonwake_seed_42() {
+    insta::assert_snapshot!(render_t(&["42", "moonwake", "deep"], "0"));
+}
+
+#[test]
 fn forest_seed_42() {
     insta::assert_snapshot!(render(&["42", "forest", "ember"]));
 }
