@@ -21,3 +21,7 @@ Validate optimized outputs against captured baseline full colored grids over mul
 ## Delivery
 
 Commit milestones scoped to your files, no push. Report commits, exact changes, why they affect measured work, baseline/after timing tables, cold and tail behavior, output-equivalence evidence, run command, and remaining stutter risks. Root reviews and integrates. If shared playback code needs repair, explain exact evidence and coordinate ownership rather than expanding scope silently.
+
+## Subsequent user steering
+
+The user values maximum variability from random animation knob hopping. Preserve all control ranges and their interactions. Measure knob-change rebuild spikes and randomized combinations as well as steady frames. Dependency ownership for Cargo.toml/Cargo.lock is granted to Sol for measured Rayon row parallelism; root and Astra will avoid those files.

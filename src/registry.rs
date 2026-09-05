@@ -4,7 +4,6 @@ use crossterm::style::Color;
 use rand::RngExt;
 use rand::SeedableRng;
 use rand::rngs::StdRng;
-use std::collections::BTreeMap;
 use std::io::{self, IsTerminal, Read as _};
 use std::sync::OnceLock;
 
@@ -95,25 +94,27 @@ pub(crate) trait Mode: Sync {
 
 #[derive(Default)]
 pub(crate) struct ModeRegistry {
-    modes: BTreeMap<&'static str, &'static dyn Mode>,
+    // Generated registration order follows the author-assigned file numbers.
+    modes: Vec<&'static dyn Mode>,
 }
 
 
 impl ModeRegistry {
     pub(crate) fn add(&mut self, mode: &'static dyn Mode) {
         assert!(
-            self.modes.insert(mode.name(), mode).is_none(),
+            self.get(mode.name()).is_none(),
             "duplicate registered mode name: {}",
             mode.name(),
         );
+        self.modes.push(mode);
     }
 
     pub(crate) fn get(&self, name: &str) -> Option<&'static dyn Mode> {
-        self.modes.get(name).copied()
+        self.modes.iter().copied().find(|mode| mode.name() == name)
     }
 
     pub(crate) fn iter(&self) -> impl Iterator<Item = (&'static str, &'static dyn Mode)> + '_ {
-        self.modes.iter().map(|(name, mode)| (*name, *mode))
+        self.modes.iter().map(|mode| (mode.name(), *mode))
     }
 }
 
@@ -1068,6 +1069,33 @@ pub(crate) fn mode_spec(name: &str) -> ModeSpec {
 #[cfg(test)]
 mod registered_mode_tests {
     use super::*;
+
+    struct NamedMode(&'static str);
+    impl Mode for NamedMode {
+        fn name(&self) -> &'static str { self.0 }
+        fn help(&self) -> &'static str { "registry ordering fixture" }
+        fn animation(&self) -> AnimKind { AnimKind::Iterate }
+        fn params(&self) -> &'static [Param] { &[] }
+        fn render(&self, _: &mut ModeFrame<'_>) {}
+    }
+
+    #[test]
+    fn registration_order_survives_lookup_and_duplicate_rejection() {
+        static OLDER: NamedMode = NamedMode("z-first");
+        static NEWER: NamedMode = NamedMode("a-second");
+        let mut registry = ModeRegistry::default();
+        registry.add(&OLDER);
+        registry.add(&NEWER);
+        assert_eq!(registry.get("a-second").unwrap().name(), "a-second");
+        assert!(registry.get("missing").is_none());
+        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| registry.add(&OLDER))).is_err());
+        insta::assert_debug_snapshot!(registry.iter().map(|(name, _)| name).collect::<Vec<_>>(), @r#"
+        [
+            "z-first",
+            "a-second",
+        ]
+        "#);
+    }
 
     #[test]
     fn generated_registry_contains_the_file_owned_modes() {

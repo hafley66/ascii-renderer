@@ -97,6 +97,7 @@ Key modules:
 - Never remove or break existing modes. Only add.
 - A new standalone mode requires one `src/modes/_N_name.rs` file and fixed-seed snapshots colocated under `src/modes/snapshots/`.
 - Run `scripts/0_generate_modes.sh` after adding or renaming a mode file. Never edit generated `src/modes/mod.rs` directly.
+- Generated modes retain numeric file order in the registry and appear after legacy modes in the demo. Assign the next available number to append a new mode chronologically.
 - `scripts/1_dev.sh` runs the generator watcher with `cargo run`.
 - Do not add generated-registry mode branches to `src/main.rs`, `src/cli.rs`, `src/opts.rs`, `src/registry.rs`, or `src/morph.rs`.
 - Expose tuning knobs through the file-owned `Mode::params` declaration. Keep registry defaults equal to renderer fallbacks.

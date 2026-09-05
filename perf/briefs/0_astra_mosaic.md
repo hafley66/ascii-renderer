@@ -23,3 +23,7 @@ Target under 16.7 ms/frame at 2000x1000 default on this machine, with measured t
 ## Validation/delivery
 
 Run baseline tests; generator --check; fixed-seed static and nonzero-time snapshots; complete colored-grid repeatability, parameter effects, seed changes, small grids and finite/nonfinite boundary handling. Inspect snapshots before accepting. Run full cargo test after finishing. No blind snapshot acceptance. Keep current modes untouched. Commit milestones scoped to owned files (no push). Report commits, files, run command, visual choices, benchmark averages/p50/p99/max, cold costs, limits, and any remaining work. Root reviews and integrates.
+
+## Subsequent user steering
+
+Maximum meaningful visual variability is the priority. The user primarily uses demo, animation, random knob mode, reseeding, and arrow-key knob hopping. Opus tessellations are the reference because random combinations produce dramatically varied geometry and motion. Make seed and controls alter structural families, topology, repetition scale, layout, materials and temporal behavior. Inspect a deterministic gallery of random combinations. A fixed scene with surface-only variation is insufficient for this commission. Use the next numbered mode file and generator; root handles preserving numeric chronology in the demo.
