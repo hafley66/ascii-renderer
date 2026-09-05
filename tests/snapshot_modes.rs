@@ -35,6 +35,37 @@ fn strip_ansi(s: &str) -> String {
 // ── Mode snapshots ───────────────────────────────────────────────
 
 #[test]
+fn tideglass_cli_seed_42() {
+    let output = Command::new(env!("CARGO_BIN_EXE_ascii-renderer"))
+        .args(["42", "tideglass", "deep"])
+        .env("ASCII_GRID_W", "80")
+        .env("ASCII_GRID_H", "24")
+        .env("ASCII_T", "0")
+        .output()
+        .expect("run tideglass CLI");
+    assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
+    insta::with_settings!({snapshot_path => "../src/modes/snapshots"}, {
+        insta::assert_snapshot!(strip_ansi(&String::from_utf8(output.stdout).unwrap()));
+    });
+}
+
+#[test]
+fn volute_cli_seed42() {
+    let output = Command::new(env!("CARGO_BIN_EXE_ascii-renderer"))
+        .args(["42", "volute", "deep", "1", "0.13", "18", "0.65", "0.55", "0.6"])
+        .env("ASCII_GRID_W", "80")
+        .env("ASCII_GRID_H", "24")
+        .env("ASCII_T", "0")
+        .env_remove("ASCII_GRID_DUMP")
+        .output()
+        .expect("volute CLI render");
+    assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
+    insta::with_settings!({snapshot_path => "../src/modes/snapshots"}, {
+        insta::assert_snapshot!("volute_cli_seed42", strip_ansi(&String::from_utf8(output.stdout).unwrap()));
+    });
+}
+
+#[test]
 fn moonwake_seed_42() {
     insta::assert_snapshot!(render_t(&["42", "moonwake", "deep"], "0"));
 }

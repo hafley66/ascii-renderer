@@ -14,6 +14,10 @@ mod _40_moonwake;
 mod _41_vesper;
 mod _42_bower;
 mod _43_azulejo;
+mod _44_tideglass;
+mod _45_chimera_shadow_garden;
+mod _46_volute;
+mod _47_astra_opus_1_chronofold;
 
 pub(crate) fn register_all(registry: &mut crate::registry::ModeRegistry) {
     registry.add(&_30_illuminarium::MODE);
@@ -30,4 +34,8 @@ pub(crate) fn register_all(registry: &mut crate::registry::ModeRegistry) {
     registry.add(&_41_vesper::MODE);
     registry.add(&_42_bower::MODE);
     registry.add(&_43_azulejo::MODE);
+    registry.add(&_44_tideglass::MODE);
+    registry.add(&_45_chimera_shadow_garden::MODE);
+    registry.add(&_46_volute::MODE);
+    registry.add(&_47_astra_opus_1_chronofold::MODE);
 }
