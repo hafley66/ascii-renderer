@@ -13,6 +13,7 @@ mod _39_mandelbox;
 mod _40_moonwake;
 mod _41_vesper;
 mod _42_bower;
+mod _43_azulejo;
 
 pub(crate) fn register_all(registry: &mut crate::registry::ModeRegistry) {
     registry.add(&_30_illuminarium::MODE);
@@ -28,4 +29,5 @@ pub(crate) fn register_all(registry: &mut crate::registry::ModeRegistry) {
     registry.add(&_40_moonwake::MODE);
     registry.add(&_41_vesper::MODE);
     registry.add(&_42_bower::MODE);
+    registry.add(&_43_azulejo::MODE);
 }
