@@ -11,6 +11,7 @@ mod _37_singularity;
 mod _38_thunderhead;
 mod _39_mandelbox;
 mod _40_moonwake;
+mod _41_vesper;
 
 pub(crate) fn register_all(registry: &mut crate::registry::ModeRegistry) {
     registry.add(&_30_illuminarium::MODE);
@@ -24,4 +25,5 @@ pub(crate) fn register_all(registry: &mut crate::registry::ModeRegistry) {
     registry.add(&_38_thunderhead::MODE);
     registry.add(&_39_mandelbox::MODE);
     registry.add(&_40_moonwake::MODE);
+    registry.add(&_41_vesper::MODE);
 }
