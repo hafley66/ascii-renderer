@@ -8,6 +8,7 @@ use crossterm::style::Color;
 use rand::RngExt;
 use rand::SeedableRng;
 use rand::rngs::StdRng;
+use rayon::prelude::*;
 use std::cell::RefCell;
 use std::f32::consts::PI;
 
@@ -84,6 +85,7 @@ struct Cached {
     lit: Vec<i32>,
     head: Vec<f32>,
     rhombs: Vec<Rhomb>,
+    shade_rows: Vec<Vec<usize>>,
 }
 
 thread_local! {
@@ -168,6 +170,7 @@ fn build(seed: u64, n: u32) -> Cached {
         lit: vec![i32::MIN; nn],
         head: vec![0.0; nn],
         rhombs: Vec::new(),
+        shade_rows: Vec::new(),
     }
 }
 
@@ -290,6 +293,45 @@ fn fill_par(
             for (x, cell) in row[x0..=x1].iter_mut().enumerate() {
                 *cell = if hash2((x0 + x) as i32, y as i32, salt) < mix { b } else { a };
             }
+        }
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
+fn fill_par_row(
+    row: &mut [Cell], y: usize, ax: f32, ay: f32, u: (f32, f32), v: (f32, f32),
+    a: Cell, b: Cell, mix: f32, salt: u32,
+) {
+    let det = u.0 * v.1 - u.1 * v.0;
+    if det.abs() < 1e-3 { return; }
+    let inv = 1.0 / det;
+    let dy = y as f32 + 0.5 - ay;
+    let au = v.1 * inv;
+    let aw = -u.1 * inv;
+    let bu = -ax * v.1 * inv - dy * v.0 * inv;
+    let bw = (u.0 * dy + u.1 * ax) * inv;
+    let mut lo = 0.0f32;
+    let mut hi = row.len() as f32;
+    for (s, c) in [(au, bu), (aw, bw)] {
+        if s > 1e-6 {
+            lo = lo.max(-c / s);
+            hi = hi.min((1.0 - c) / s);
+        } else if s < -1e-6 {
+            lo = lo.max((1.0 - c) / s);
+            hi = hi.min(-c / s);
+        } else if !(0.0..=1.0).contains(&c) { return; }
+    }
+    if hi <= lo { return; }
+    let x0 = (lo - 0.5).ceil().max(0.0) as usize;
+    let x1t = (hi - 0.5).floor();
+    if x1t < 0.0 || x0 >= row.len() { return; }
+    let x1 = (x1t as usize).min(row.len() - 1);
+    if x0 > x1 { return; }
+    if mix <= 0.0 {
+        row[x0..=x1].fill(a);
+    } else {
+        for (x, cell) in row[x0..=x1].iter_mut().enumerate() {
+            *cell = if hash2((x0 + x) as i32, y as i32, salt) < mix { b } else { a };
         }
     }
 }
@@ -521,22 +563,39 @@ fn render(grid: &mut Grid, w: usize, h: usize, palette: &[Color; 5], t: f32, k: 
     let rhombs = &c.rhombs;
 
     measure_layer("opus-1-quasicrystal", "shade", || {
-        for r in rhombs.iter() {
-            let (ci, lv) = (r.class as usize, r.level as usize);
-            fill_par(
-                grid,
-                w,
-                h,
-                r.ax,
-                r.ay,
-                ev[r.j as usize],
-                ev[r.l as usize],
-                fill_a[ci][lv],
-                fill_b[ci][lv],
-                if lv >= 5 { 0.3 } else { 0.0 },
-                (lv as u32) << 3 | ci as u32,
-            );
+        if w.saturating_mul(h) < 100_000 {
+            for r in rhombs.iter() {
+                let (ci, lv) = (r.class as usize, r.level as usize);
+                fill_par(grid, w, h, r.ax, r.ay, ev[r.j as usize], ev[r.l as usize],
+                    fill_a[ci][lv], fill_b[ci][lv], if lv >= 5 { 0.3 } else { 0.0 },
+                    (lv as u32) << 3 | ci as u32);
+            }
+            return;
         }
+        c.shade_rows.resize_with(h, Vec::new);
+        for bin in &mut c.shade_rows { bin.clear(); }
+        for (ri, r) in rhombs.iter().enumerate() {
+            let u = ev[r.j as usize];
+            let v = ev[r.l as usize];
+            let ymin = r.ay.min(r.ay + u.1).min(r.ay + v.1).min(r.ay + u.1 + v.1);
+            let ymax = r.ay.max(r.ay + u.1).max(r.ay + v.1).max(r.ay + u.1 + v.1);
+            let y0 = (ymin - 0.5).ceil().max(0.0) as usize;
+            let y1t = (ymax - 0.5).floor();
+            if y1t < 0.0 || y0 >= h { continue; }
+            let y1 = (y1t as usize).min(h - 1);
+            if y0 > y1 { continue; }
+            for bin in &mut c.shade_rows[y0..=y1] { bin.push(ri); }
+        }
+        grid[..h].par_iter_mut().zip(c.shade_rows[..h].par_iter()).enumerate()
+            .for_each(|(y, (row, bin))| {
+                for &ri in bin {
+                    let r = &rhombs[ri];
+                    let (ci, lv) = (r.class as usize, r.level as usize);
+                    fill_par_row(&mut row[..w], y, r.ax, r.ay, ev[r.j as usize], ev[r.l as usize],
+                        fill_a[ci][lv], fill_b[ci][lv], if lv >= 5 { 0.3 } else { 0.0 },
+                        (lv as u32) << 3 | ci as u32);
+                }
+            });
     });
 
     measure_layer("opus-1-quasicrystal", "edges", || {
@@ -690,6 +749,39 @@ mod tests {
         let p = crate::color::make_palette(1);
         let k = Opus1QuasicrystalKnobs::from_env();
         draw_opus_1_quasicrystal(&mut g, 4, 3, 1, &p, 2.0, &k);
+    }
+
+    #[test]
+    fn row_fill_matches_serial_with_clipping_dither_and_overwrite() {
+        let (w, h) = (37, 19);
+        let mut serial = vec![vec![Cell::blank(); w]; h];
+        let mut rows = serial.clone();
+        let fills = [
+            (-5.4, 2.2, (13.7, 4.3), (-3.1, 8.8), Cell::with_bg('#', Color::Red, Color::Blue), Cell::with_bg('%', Color::Yellow, Color::Blue), 0.3, 43),
+            (11.8, -4.5, (8.2, 16.4), (14.7, 2.1), Cell::with_bg('x', Color::Green, Color::Black), Cell::with_bg('o', Color::Cyan, Color::Black), 0.0, 7),
+            (20.1, 8.7, (-12.5, 6.4), (9.3, 7.8), Cell::with_bg('@', Color::Magenta, Color::DarkGrey), Cell::with_bg('.', Color::White, Color::DarkGrey), 0.3, 61),
+        ];
+        for &(ax, ay, u, v, a, b, mix, salt) in &fills {
+            fill_par(&mut serial, w, h, ax, ay, u, v, a, b, mix, salt);
+            for (y, row) in rows.iter_mut().enumerate() {
+                fill_par_row(row, y, ax, ay, u, v, a, b, mix, salt);
+            }
+        }
+        assert_eq!(rows, serial);
+    }
+
+    #[test]
+    fn parallel_shading_preserves_full_colored_grid() {
+        let render = |threads| rayon::ThreadPoolBuilder::new().num_threads(threads).build().unwrap().install(|| {
+            let (w, h) = (400, 260);
+            let mut g = vec![vec![Cell::blank(); w]; h];
+            let p = crate::color::make_palette(73);
+            let mut k = Opus1QuasicrystalKnobs::from_env();
+            k.sym = 13.0; k.shade = 1.0; k.stars = 0.83;
+            draw_opus_1_quasicrystal(&mut g, w, h, 73, &p, 19.75, &k);
+            g
+        });
+        assert_eq!(render(1), render(4));
     }
 
     #[test]

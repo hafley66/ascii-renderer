@@ -8,6 +8,7 @@ use crossterm::style::Color;
 use rand::RngExt;
 use rand::SeedableRng;
 use rand::rngs::StdRng;
+use rayon::prelude::*;
 use std::cell::RefCell;
 use std::f32::consts::PI;
 
@@ -515,7 +516,7 @@ fn lattice_rows<const N: usize>(grid: &mut Grid, w: usize, h: usize, f: &Frame, 
         glyph[j] = f.glyph[j];
         mix[j] = MIX[j];
     }
-    for y in 0..h {
+    grid[..h].par_iter_mut().enumerate().for_each(|(y, grid_row)| {
         let mut a0 = [0.0f32; N];
         let mut fr = [0.0f32; N];
         let mut ksum = 0i32;
@@ -541,7 +542,7 @@ fn lattice_rows<const N: usize>(grid: &mut Grid, w: usize, h: usize, f: &Frame, 
         } else {
             Envelope::build(&a0, &step, N)
         };
-        let row = &mut grid[y][..w];
+        let row = &mut grid_row[..w];
         for (x, cell) in row.iter_mut().enumerate() {
             let rad = env.at(x as f32);
             let q = if one_facet > 0.0 {
@@ -631,7 +632,7 @@ fn lattice_rows<const N: usize>(grid: &mut Grid, w: usize, h: usize, f: &Frame, 
             let li = ((level * LEVELS as f32) as usize).min(LEVELS - 1);
             *cell = Cell::new(ramp[li], p.tile[ty][li]);
         }
-    }
+    });
 }
 
 fn nucleus_pass(grid: &mut Grid, w: usize, h: usize, f: &Frame, p: &Paint, star: f32, pulse: f32, k: &Opus2QuasicrystalKnobs) {
@@ -783,6 +784,76 @@ mod tests {
             }
         }
         assert!(worst < 1e-3, "envelope drift {worst}");
+    }
+
+    #[test]
+    fn parallel_lattice_preserves_full_colored_grid() {
+        let render = |threads| {
+            rayon::ThreadPoolBuilder::new().num_threads(threads).build().unwrap().install(|| {
+                let (w, h) = (320, 180);
+                let mut g = vec![vec![Cell::blank(); w]; h];
+                let p = crate::color::make_palette(91);
+                let mut k = Opus2QuasicrystalKnobs::from_env();
+                k.folds = 7.0;
+                k.dust = 0.91;
+                k.band = 0.88;
+                k.facet = 0.37;
+                k.phase = 0.61;
+                draw_opus_2_quasicrystal(&mut g, w, h, 91, &p, 47.25, &k);
+                g
+            })
+        };
+        assert_eq!(render(1), render(4));
+    }
+
+    #[test]
+    #[ignore = "manual mixed-knob animation timing"]
+    fn perf_random_knob_hops() {
+        fn report(label: &str, cold: f64, mut samples: Vec<f64>) {
+            samples.sort_by(f64::total_cmp);
+            let p50 = samples[samples.len() / 2];
+            let p99 = samples[(samples.len() * 99 / 100).min(samples.len() - 1)];
+            let max = *samples.last().unwrap();
+            let avg = samples.iter().sum::<f64>() / samples.len() as f64;
+            eprintln!("{label}: cold {cold:.3} ms, avg {avg:.3} ms, p50 {p50:.3} ms, p99 {p99:.3} ms, max {max:.3} ms");
+        }
+
+        let (w, h) = (1000, 500);
+        let p = crate::color::make_palette(317);
+        let mut grid = vec![vec![Cell::blank(); w]; h];
+        let mut k1 = crate::opus_1_quasicrystal::Opus1QuasicrystalKnobs::from_env();
+        let started = std::time::Instant::now();
+        crate::opus_1_quasicrystal::draw_opus_1_quasicrystal(&mut grid, w, h, 317, &p, 0.0, &k1);
+        let cold1 = started.elapsed().as_secs_f64() * 1000.0;
+        let mut s1 = Vec::with_capacity(240);
+        for i in 0..240 {
+            k1.sym = (3 + (i * 7 % 11)) as f32;
+            k1.scale = 5.0 + (i * 13 % 76) as f32;
+            k1.drift = (i * 17 % 41) as f32 * 0.01;
+            k1.shade = (i * 19 % 101) as f32 * 0.01;
+            k1.worms = (i * 5 % 7) as f32;
+            let started = std::time::Instant::now();
+            crate::opus_1_quasicrystal::draw_opus_1_quasicrystal(&mut grid, w, h, 317, &p, i as f32 * 0.06, &k1);
+            s1.push(started.elapsed().as_secs_f64() * 1000.0);
+        }
+        report("opus-1 random hops 1000x500", cold1, s1);
+
+        let mut k2 = Opus2QuasicrystalKnobs::from_env();
+        let started = std::time::Instant::now();
+        draw_opus_2_quasicrystal(&mut grid, w, h, 317, &p, 0.0, &k2);
+        let cold2 = started.elapsed().as_secs_f64() * 1000.0;
+        let mut s2 = Vec::with_capacity(240);
+        for i in 0..240 {
+            k2.folds = (4 + (i * 5 % 4)) as f32;
+            k2.scale = 1.2 + (i * 13 % 389) as f32 * 0.1;
+            k2.band = 0.02 + (i * 17 % 99) as f32 * 0.01;
+            k2.facet = (i * 19 % 101) as f32 * 0.01;
+            k2.dust = (i * 23 % 101) as f32 * 0.01;
+            let started = std::time::Instant::now();
+            draw_opus_2_quasicrystal(&mut grid, w, h, 317, &p, i as f32 * 0.06, &k2);
+            s2.push(started.elapsed().as_secs_f64() * 1000.0);
+        }
+        report("opus-2 random hops 1000x500", cold2, s2);
     }
 
     #[test]
