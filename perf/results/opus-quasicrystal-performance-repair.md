@@ -62,3 +62,9 @@ cargo test --release frame_cost -- --nocapture --test-threads=1
 cargo test frame_cost -- --nocapture --test-threads=1
 cargo test --release perf_random_knob_hops -- --ignored --nocapture --test-threads=1
 ```
+
+## Integrated verification
+
+The shared project now supplies live legacy knobs through UI-thread-local overrides in `param_f32`, and exports them to preview subprocesses with `Command::env`. The sweep uses the same overrides. Process-wide `set_var`/`remove_var` calls were removed from the demo, animation loop and sweep before integrating persistent Rayon workers, following the [Rust environment safety contract](https://doc.rust-lang.org/std/env/fn.set_var.html). Worker closures receive resolved frame inputs.
+
+Combined `cargo test`: 370 unit tests, 1 generator integration test and 181 rendering integration tests passed; 10 ignored. Focused release checks passed for both quasicrystals and Azulejo. `cargo build --release` passed. The release-only `polytope_80x24` snapshot failure was reproduced using the untouched pre-Rayon Bower-era release test executable, confirming it predates these changes; its snapshot was not changed.
