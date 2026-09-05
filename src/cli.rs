@@ -85,6 +85,12 @@ use crate::modes_geo::draw_weave;
 pub(crate) fn run() {
     let args: Vec<String> = std::env::args().collect();
 
+    #[cfg(unix)]
+    if args.get(1).map(String::as_str) == Some("--animation-worker") {
+        crate::_1_playback::worker(&args);
+        return;
+    }
+
     if args.len() > 1 && (args[1] == "--help" || args[1] == "-h") {
         eprintln!("ascii-renderer <seed> [mode] [theme]");
         eprintln!();

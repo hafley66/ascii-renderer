@@ -69,6 +69,8 @@ Key modules:
 - `registry.rs` -- `Mode`, `ModeFrame`, global `ModeRegistry`, legacy parameter forms, and animation kinds
 - `opts.rs` -- demo browser, registered mode enumeration, and persisted live parameter values
 - `morph.rs` -- morphing, generic registered-mode frame iteration, legacy iteration, and subprocess frame fallback
+- `_1_playback.rs` -- Unix terminal input supervisor, nonblocking output relay, bounded control batches, and cancellable animation/preview process groups. Workers never read terminal events; Ctrl+C exits demo, q/Q returns from animation to demo.
+- `scripts/2_test_quit.py` -- 2000x1000 PTY cancellation and terminal-restoration regression test
 - Native animation currently recreates `Grid` and `StdRng` for every time value; no per-mode simulation state persists between frames
 - `gridio.rs` -- serialized grid I/O and final output selection
 - `render.rs` -- plain and ANSI grid rendering

@@ -1,6 +1,8 @@
 #![allow(warnings)]
 
 mod _0_profile;
+#[cfg(unix)]
+mod _1_playback;
 
 #[macro_use]
 mod registry;

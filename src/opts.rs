@@ -103,6 +103,7 @@ pub(crate) fn load_options_from(path: &std::path::Path) -> OptMap {
 
 /// Write the whole option map to `path` (creates parent dirs as needed).
 pub(crate) fn save_options_to(path: &std::path::Path, map: &OptMap) {
+    use std::io::Write;
     if let Some(dir) = path.parent() {
         let _ = std::fs::create_dir_all(dir);
     }
@@ -112,7 +113,15 @@ pub(crate) fn save_options_to(path: &std::path::Path, map: &OptMap) {
             s.push_str(&format!("{}\t{}\t{}\n", m, k, v));
         }
     }
-    let _ = std::fs::write(path, s);
+    // The animation worker can be killed at any instruction. Replace the file
+    // only after writing the complete map so cancellation cannot truncate it.
+    if let Some(dir) = path.parent() {
+        if let Ok(mut pending) = tempfile::NamedTempFile::new_in(dir) {
+            if pending.write_all(s.as_bytes()).is_ok() {
+                let _ = pending.persist(path);
+            }
+        }
+    }
 }
 
 
@@ -566,7 +575,9 @@ pub(crate) fn run_demo(initial_seed: u64) {
             values.borrow_mut().extend(spec.params.iter().zip(&eff).map(|(p, v)| (p.key, Some(*v))));
         });
 
-        // Disable raw mode so child process writes normal line endings
+        // Unix previews stay in raw mode with input owned by the supervisor.
+        // Other platforms retain direct child output and normal line endings.
+        #[cfg(not(unix))]
         terminal::disable_raw_mode().unwrap();
         execute!(
             io::stdout(),
@@ -581,16 +592,18 @@ pub(crate) fn run_demo(initial_seed: u64) {
         if !current_theme.is_empty() {
             cmd.arg(current_theme);
         }
-        if pane_open {
-            cmd.env("ASCII_GRID_W", render_w.to_string());
-            cmd.env("ASCII_GRID_H", th.saturating_sub(1).to_string());
-        } else {
-            cmd.env_remove("ASCII_GRID_W").env_remove("ASCII_GRID_H");
+        cmd.env("ASCII_GRID_W", render_w.max(1).to_string());
+        cmd.env("ASCII_GRID_H", th.saturating_sub(1).max(1).to_string());
+        let mut pending_event = None;
+        #[cfg(unix)]
+        match crate::_1_playback::supervise(&mut cmd, false) {
+            Ok(crate::_1_playback::Exit::Quit | crate::_1_playback::Exit::Interrupt) => break,
+            Ok(crate::_1_playback::Exit::Input(event)) => pending_event = Some(event),
+            Ok(_) => {},
+            Err(_) => break,
         }
-        let _ = cmd.status();
-
-        // Re-enable raw mode for keyboard input
-        terminal::enable_raw_mode().unwrap();
+        #[cfg(not(unix))]
+        { let _ = cmd.status(); terminal::enable_raw_mode().unwrap(); }
 
         if pane_open {
             draw_options_pane(
@@ -628,10 +641,10 @@ pub(crate) fn run_demo(initial_seed: u64) {
         io::stdout().flush().unwrap();
 
         let has_params = !spec.params.is_empty();
-        if let Ok(Event::Key(key)) = event::read() {
+        if let Ok(Event::Key(key)) = pending_event.map(Ok).unwrap_or_else(event::read) {
             match key.code {
-                KeyCode::Char('q') => break,
-                KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => break,
+                KeyCode::Char('q' | 'Q') => break,
+                KeyCode::Char('c' | 'C') if key.modifiers.contains(KeyModifiers::CONTROL) => break,
                 KeyCode::Char('o') => pane_open = !pane_open,
                 KeyCode::Char('g') => {
                     randomize = !randomize;
@@ -651,14 +664,14 @@ pub(crate) fn run_demo(initial_seed: u64) {
                 KeyCode::Char('a') => {
                     // Animate via the declared strategy with the UI thread
                     // overrides and explicit subprocess environments.
-                    morph_session(
+                    if morph_session(
                         current_mode,
                         seed,
                         current_mode,
                         seed.wrapping_add(1),
                         anim_strat(spec.animate),
                         current_theme,
-                    );
+                    ) { break; }
                 }
                 KeyCode::Up => {
                     if pane_open && has_params {

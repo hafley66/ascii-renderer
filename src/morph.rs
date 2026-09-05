@@ -857,8 +857,27 @@ pub(crate) fn run_morph(args: &[String], default_seed: u64, theme: &str) {
 
 
 /// The morph player loop. Assumes raw mode + alternate screen are already active
-/// (so it composes inside `demo`). Returns when the user presses q/esc.
-pub(crate) fn morph_session(mode_a: &str, seed_a: u64, mode_b: &str, seed_b: u64, strat0: &str, theme: &str) {
+/// (so it composes inside `demo`). Returns true when Ctrl+C should exit demo.
+pub(crate) fn morph_session(mode_a: &str, seed_a: u64, mode_b: &str, seed_b: u64, strat0: &str, theme: &str) -> bool {
+    #[cfg(unix)]
+    {
+        return match crate::_1_playback::animate(mode_a, seed_a, mode_b, seed_b, strat0, theme) {
+            Ok(exit) => exit == crate::_1_playback::Exit::Interrupt,
+            Err(error) => {
+                eprintln!("Playback failed: {error}");
+                true
+            }
+        };
+    }
+    #[cfg(not(unix))]
+    {
+        morph_worker_session(mode_a, seed_a, mode_b, seed_b, strat0, theme, None, None);
+        false
+    }
+}
+
+pub(crate) fn morph_worker_session(mode_a: &str, seed_a: u64, mode_b: &str, seed_b: u64, strat0: &str, theme: &str,
+    input: Option<std::sync::mpsc::Receiver<crossterm::event::Event>>, size: Option<(u16, u16)>) {
     use crossterm::{
         cursor,
         event::{self, Event, KeyCode, KeyModifiers},
@@ -875,7 +894,7 @@ pub(crate) fn morph_session(mode_a: &str, seed_a: u64, mode_b: &str, seed_b: u64
         strat0.to_string()
     };
     let exe = std::env::current_exe().unwrap();
-    let (tw, mut th) = terminal::size().unwrap_or((80, 45));
+    let (tw, mut th) = size.unwrap_or_else(|| terminal::size().unwrap_or((80, 45)));
     let mut w = tw as usize;
     let mut h = (th as usize).saturating_sub(1).max(1); // leave a status row
 
@@ -927,7 +946,7 @@ pub(crate) fn morph_session(mode_a: &str, seed_a: u64, mode_b: &str, seed_b: u64
     let mut encoded_strat = strat.clone();
     let mut eff = Vec::with_capacity(spec.params.len());
 
-    loop {
+    'frames: loop {
         if strat != encoded_strat {
             frame_encoder.invalidate();
             encoded_strat.clone_from(&strat);
@@ -1078,11 +1097,22 @@ pub(crate) fn morph_session(mode_a: &str, seed_a: u64, mode_b: &str, seed_b: u64
             );
         }
 
-        if event::poll(Duration::from_millis(16)).unwrap_or(false) {
-            match event::read() {
-                Ok(Event::Key(key)) => match key.code {
-                    KeyCode::Char('q') | KeyCode::Esc => break,
-                    KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => break,
+        let mut events = Vec::new();
+        if let Some(receiver) = &input {
+            match receiver.recv_timeout(Duration::from_millis(16)) {
+                Ok(event) => events.push(event),
+                Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => break,
+                Err(_) => {}
+            }
+            events.extend(receiver.try_iter().take(31));
+        } else if event::poll(Duration::from_millis(16)).unwrap_or(false) {
+            if let Ok(event) = event::read() { events.push(event); }
+        }
+        for event in events {
+            match event {
+                Event::Key(key) => match key.code {
+                    KeyCode::Char('q' | 'Q') | KeyCode::Esc => break 'frames,
+                    KeyCode::Char('c' | 'C') if key.modifiers.contains(KeyModifiers::CONTROL) => break 'frames,
                     KeyCode::Char('g') => {
                         randomize = !randomize;
                         store_randomize(&mut saved, randomize);
@@ -1172,7 +1202,7 @@ pub(crate) fn morph_session(mode_a: &str, seed_a: u64, mode_b: &str, seed_b: u64
                     }
                     _ => {}
                 },
-                Ok(Event::Resize(nw, nh)) => {
+                Event::Resize(nw, nh) => {
                     // re-render both frames at the new size and rebuild state.
                     th = nh;
                     w = nw as usize;
