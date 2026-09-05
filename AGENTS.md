@@ -101,4 +101,5 @@ Key modules:
 - `scripts/1_dev.sh` runs the generator watcher with `cargo run`.
 - Do not add generated-registry mode branches to `src/main.rs`, `src/cli.rs`, `src/opts.rs`, `src/registry.rs`, or `src/morph.rs`.
 - Expose tuning knobs through the file-owned `Mode::params` declaration. Keep registry defaults equal to renderer fallbacks.
+- Live UI knobs use thread-local overrides; preview subprocesses receive `Command::env`. Keep process environment immutable after startup so native renderers can use worker threads.
 - Commit at each milestone for rewind points.

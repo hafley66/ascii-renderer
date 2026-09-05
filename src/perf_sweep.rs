@@ -28,15 +28,10 @@ fn env_or<T: std::str::FromStr>(name: &str, default: T) -> T {
     std::env::var(name).ok().and_then(|v| v.parse().ok()).unwrap_or(default)
 }
 
-fn set_knob(key: &str, value: Option<f32>) {
-    let name = format!("ASCII_P_{key}");
-    // The probe runs alone (--ignored, one thread); knobs are read through env.
-    unsafe {
-        match value {
-            Some(v) => std::env::set_var(&name, v.to_string()),
-            None => std::env::remove_var(&name),
-        }
-    }
+fn set_knob(key: &'static str, value: Option<f32>) {
+    crate::opts::LIVE_PARAMS.with(|values| {
+        values.borrow_mut().insert(key, value);
+    });
 }
 
 fn run_for(label: &str, mode: &str, theme: &str, w: usize, h: usize, secs: f64, dt: f32, capture: bool) -> Option<RunStats> {

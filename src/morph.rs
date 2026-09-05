@@ -819,6 +819,7 @@ pub(crate) fn render_frame(exe: &std::path::Path, seed: u64, mode: &str, theme: 
 pub(crate) fn render_frame_t(exe: &std::path::Path, seed: u64, mode: &str, theme: &str, w: usize, h: usize, t: f32) -> Option<Grid> {
     use std::process::Command;
     let mut cmd = Command::new(exe);
+    live_params_to_command(&mut cmd);
     cmd.arg(seed.to_string()).arg(mode);
     if !theme.is_empty() {
         cmd.arg(theme);
@@ -932,7 +933,7 @@ pub(crate) fn morph_session(mode_a: &str, seed_a: u64, mode_b: &str, seed_b: u64
             encoded_strat.clone_from(&strat);
         }
         // Registered modes receive the values through ModeFrame. Legacy native
-        // branches retain their environment-based knob contract.
+        // branches resolve the UI-thread overrides through param_f32.
         eff.clear();
         if randomize {
             let random_seed = seed_a ^ roll.wrapping_mul(0x9E37_79B9_7F4A_7C15);
@@ -941,10 +942,9 @@ pub(crate) fn morph_session(mode_a: &str, seed_a: u64, mode_b: &str, seed_b: u64
             eff.extend_from_slice(&pvals);
         }
         if !registered_native_params {
-            for (p, v) in spec.params.iter().zip(eff.iter()) {
-                // SAFETY: morph_session runs on the single demo thread.
-                unsafe { std::env::set_var(format!("ASCII_P_{}", p.key), format!("{}", v)) };
-            }
+            LIVE_PARAMS.with(|values| {
+                values.borrow_mut().extend(spec.params.iter().zip(&eff).map(|(p, v)| (p.key, Some(*v))));
+            });
         }
         // When the pane is open, render the animation narrower so the tree isn't
         // hidden behind it (width-parametric strats only; warps/morph overlay).

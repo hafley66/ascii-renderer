@@ -34,12 +34,32 @@ use crate::pp::*;
 use crate::registry::*;
 use crate::warps::*;
 
-/// Read a runtime knob set by the demo panel (env ASCII_P_<KEY>), or `default`.
+// The UI thread owns live overrides. Rayon receives already-resolved render
+// inputs; preview subprocesses receive their own environment through Command.
+// None explicitly selects the renderer fallback (used by the benchmark sweep).
+thread_local! {
+    pub(crate) static LIVE_PARAMS: std::cell::RefCell<std::collections::BTreeMap<&'static str, Option<f32>>> =
+        const { std::cell::RefCell::new(std::collections::BTreeMap::new()) };
+}
+
 pub(crate) fn param_f32(key: &str, default: f32) -> f32 {
-    std::env::var(format!("ASCII_P_{}", key))
-        .ok()
-        .and_then(|v| v.parse().ok())
-        .unwrap_or(default)
+    match LIVE_PARAMS.with(|values| values.borrow().get(key).copied()) {
+        Some(value) => value.unwrap_or(default),
+        None => std::env::var(format!("ASCII_P_{}", key))
+            .ok().and_then(|v| v.parse().ok()).unwrap_or(default),
+    }
+}
+
+pub(crate) fn live_params_to_command(command: &mut std::process::Command) {
+    LIVE_PARAMS.with(|values| {
+        for (key, value) in values.borrow().iter() {
+            let name = format!("ASCII_P_{key}");
+            match value {
+                Some(value) => { command.env(name, value.to_string()); }
+                None => { command.env_remove(name); }
+            }
+        }
+    });
 }
 
 // ============================================================================
@@ -541,14 +561,10 @@ pub(crate) fn run_demo(initial_seed: u64) {
         };
         let render_w = (tw as usize).saturating_sub(pane_w);
 
-        // Push the current knob values down to the render subprocess via env. In
-        // randomize mode these are per-seed random samples instead of the tuned
-        // pvals. Child processes (preview + iterate animator) inherit them.
-        // SAFETY: the demo loop is single-threaded.
         let eff = effective_pvals(&spec, &pvals, seed, randomize, roll);
-        for (p, v) in spec.params.iter().zip(eff.iter()) {
-            unsafe { std::env::set_var(format!("ASCII_P_{}", p.key), format!("{}", v)) };
-        }
+        LIVE_PARAMS.with(|values| {
+            values.borrow_mut().extend(spec.params.iter().zip(&eff).map(|(p, v)| (p.key, Some(*v))));
+        });
 
         // Disable raw mode so child process writes normal line endings
         terminal::disable_raw_mode().unwrap();
@@ -560,6 +576,7 @@ pub(crate) fn run_demo(initial_seed: u64) {
         .unwrap();
 
         let mut cmd = Command::new(&exe);
+        live_params_to_command(&mut cmd);
         cmd.arg(seed.to_string()).arg(current_mode);
         if !current_theme.is_empty() {
             cmd.arg(current_theme);
@@ -568,11 +585,7 @@ pub(crate) fn run_demo(initial_seed: u64) {
             cmd.env("ASCII_GRID_W", render_w.to_string());
             cmd.env("ASCII_GRID_H", th.saturating_sub(1).to_string());
         } else {
-            // SAFETY: single-threaded demo loop.
-            unsafe {
-                std::env::remove_var("ASCII_GRID_W");
-                std::env::remove_var("ASCII_GRID_H");
-            }
+            cmd.env_remove("ASCII_GRID_W").env_remove("ASCII_GRID_H");
         }
         let _ = cmd.status();
 
@@ -636,8 +649,8 @@ pub(crate) fn run_demo(initial_seed: u64) {
                     store_pvals(current_mode, &spec, &pvals, &mut saved);
                 }
                 KeyCode::Char('a') => {
-                    // Animate via the declared strategy. Knob env is already set, so
-                    // the iterate subprocess inherits the tuned values.
+                    // Animate via the declared strategy with the UI thread
+                    // overrides and explicit subprocess environments.
                     morph_session(
                         current_mode,
                         seed,
@@ -693,4 +706,33 @@ pub(crate) fn run_demo(initial_seed: u64) {
 
     execute!(io::stdout(), terminal::LeaveAlternateScreen).unwrap();
     terminal::disable_raw_mode().unwrap();
+}
+
+#[cfg(test)]
+mod live_param_tests {
+    use super::*;
+
+    #[test]
+    fn live_values_stay_thread_local_and_are_explicit_for_children() {
+        std::thread::spawn(|| {
+            const KEY: &str = "CODEX_TEST_LIVE_PARAM";
+            let env_name = format!("ASCII_P_{KEY}");
+            let inherited = std::env::var_os(&env_name);
+            LIVE_PARAMS.with(|v| { v.borrow_mut().insert(KEY, Some(7.5)); });
+            assert_eq!(param_f32(KEY, 2.0), 7.5);
+            let other = std::thread::spawn(|| {
+                LIVE_PARAMS.with(|v| v.borrow().get(KEY).copied())
+            }).join().unwrap();
+            assert_eq!(other, None);
+            let mut command = std::process::Command::new("unused-test-command");
+            live_params_to_command(&mut command);
+            assert_eq!(command.get_envs().find(|(key, _)| *key == env_name.as_str()).unwrap().1,
+                Some(std::ffi::OsStr::new("7.5")));
+            LIVE_PARAMS.with(|v| { v.borrow_mut().insert(KEY, None); });
+            assert_eq!(param_f32(KEY, 2.0), 2.0);
+            live_params_to_command(&mut command);
+            assert_eq!(command.get_envs().find(|(key, _)| *key == env_name.as_str()).unwrap().1, None);
+            assert_eq!(std::env::var_os(env_name), inherited);
+        }).join().unwrap();
+    }
 }
