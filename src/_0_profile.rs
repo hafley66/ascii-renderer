@@ -173,6 +173,7 @@ pub(crate) struct RenderTraceContext {
 pub(crate) struct RenderTrace {
     context: RenderTraceContext,
     started: Instant,
+    render_finished: Option<Duration>,
 }
 
 impl RenderTrace {
@@ -182,7 +183,15 @@ impl RenderTrace {
         Some(Self {
             context,
             started: Instant::now(),
+            render_finished: None,
         })
+    }
+
+    /// Mark the point at which mode dispatch has finished and ANSI/grid output
+    /// begins. The final trace event then separates renderer generation from
+    /// terminal serialization and presentation.
+    pub(crate) fn mark_render_complete(&mut self) {
+        self.render_finished = Some(self.started.elapsed());
     }
 }
 
@@ -192,6 +201,8 @@ impl Drop for RenderTrace {
         let layers = layer_capture_end();
         let elapsed = self.started.elapsed();
         let elapsed_us = elapsed.as_micros() as u64;
+        let render_us = self.render_finished.unwrap_or(elapsed).as_micros() as u64;
+        let emit_us = elapsed_us.saturating_sub(render_us);
         let slow = elapsed_us >= settings.slow_ms.saturating_mul(1_000);
         if !settings.all && !slow {
             return;
@@ -221,6 +232,8 @@ impl Drop for RenderTrace {
             "kind": kind.as_str(),
             "ts_ms": timestamp_ms,
             "dur_us": elapsed_us,
+            "render_us": render_us,
+            "emit_us": emit_us,
             "mode": self.context.mode,
             "theme": self.context.theme,
             "seed": self.context.seed,

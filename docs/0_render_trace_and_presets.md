@@ -16,7 +16,7 @@ ASCII_TRACE_PATH=/tmp/renders.ndjson ASCII_TRACE_ALL=1 ascii-renderer 1701 gem-a
 ASCII_TRACE_SLOW_MS=8 ascii-renderer 1701 gem-aetherium-2 deep
 ```
 
-Set `ASCII_TRACE=0` to disable slow tracing. Each line is one JSON object. Fields include `kind` (`render` or `slow_render`), `ts_ms`, `dur_us`, mode inputs, the resolved knob map, grid dimensions, and measured layer totals when the renderer declares layers.
+Set `ASCII_TRACE=0` to disable slow tracing. Each line is one JSON object. Fields include `kind` (`render` or `slow_render`), `ts_ms`, total `dur_us`, `render_us`, `emit_us`, mode inputs, the resolved knob map, grid dimensions, and measured layer totals when the renderer declares layers.
 
 ## Named replay inputs
 

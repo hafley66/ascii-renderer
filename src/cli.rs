@@ -1,9 +1,9 @@
 #![allow(warnings)]
 
 use crossterm::style::Color;
+use rand::rngs::StdRng;
 use rand::RngExt;
 use rand::SeedableRng;
-use rand::rngs::StdRng;
 use std::io::{self, IsTerminal, Read as _};
 
 use crate::arboretum::cli_arboretum;
@@ -568,7 +568,7 @@ fn run_render(args: Vec<String>) {
             (param.key.to_string(), value)
         })
         .collect();
-    let _trace = crate::_0_profile::RenderTrace::start(crate::_0_profile::RenderTraceContext {
+    let mut trace = crate::_0_profile::RenderTrace::start(crate::_0_profile::RenderTraceContext {
         mode: mode.to_string(),
         theme: theme_name.to_string(),
         seed,
@@ -2027,5 +2027,8 @@ fn run_render(args: Vec<String>) {
         }
     }
 
+    if let Some(trace) = trace.as_mut() {
+        trace.mark_render_complete();
+    }
     emit_grid(&grid);
 }
