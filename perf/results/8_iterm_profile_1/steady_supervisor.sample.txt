@@ -1,0 +1,221 @@
+Analysis of sampling ascii-renderer (pid 29650) every 1 millisecond
+Process:         ascii-renderer [29650]
+Path:            /Users/USER/*/ascii-renderer
+Load Address:    0x100728000
+Identifier:      ascii-renderer
+Version:         0
+Code Type:       ARM64
+Platform:        macOS
+Parent Process:  bash [29648]
+
+Date/Time:       2026-09-06 14:35:45.354 -0400
+Launch Time:     2026-09-06 14:35:40.009 -0400
+OS Version:      macOS 14.6.1 (23G93)
+Report Version:  7
+Analysis Tool:   /usr/bin/sample
+
+Physical footprint:         2945K
+Physical footprint (peak):  2945K
+Idle exit:                  untracked
+----
+
+Call graph:
+    5318 Thread_64533230   DispatchQueue_1: com.apple.main-thread  (serial)
+      5318 start  (in dyld) + 2476  [0x19ee37154]
+        5318 main  (in ascii-renderer) + 52  [0x1009b3c7c]
+          5318 _RNvNtCshaMuUdr4xqv_3std2rt19lang_start_internal  (in ascii-renderer) + 952  [0x100b52238]
+            5318 _RNCINvNtCshaMuUdr4xqv_3std2rt10lang_startuE0CscyLA3ltjFBl_14ascii_renderer  (in ascii-renderer) + 16  [0x100a0bcf8]
+              5318 _RINvNtNtCshaMuUdr4xqv_3std3sys9backtrace28___rust_begin_short_backtraceFEuuECscyLA3ltjFBl_14ascii_renderer  (in ascii-renderer) + 12  [0x1008fa6b0]
+                5318 _RNvCscyLA3ltjFBl_14ascii_renderer4main  (in ascii-renderer) + 104  [0x1009837b4]
+                  5318 _RNvNtCscyLA3ltjFBl_14ascii_renderer3cli3run  (in ascii-renderer) + 212  [0x10090fdd4]
+                    5318 _RNvNtCscyLA3ltjFBl_14ascii_renderer3cli10run_render  (in ascii-renderer) + 7004  [0x10090929c]
+                      5318 _RNvNtCscyLA3ltjFBl_14ascii_renderer4opts8run_demo  (in ascii-renderer) + 9032  [0x1008b8a00]
+                        5318 _RNvNtCscyLA3ltjFBl_14ascii_renderer5morph13morph_session  (in ascii-renderer) + 32  [0x1008baab8]
+                          5318 _RNvNtCscyLA3ltjFBl_14ascii_renderer11__1_playback7animate  (in ascii-renderer) + 960  [0x100905f20]
+                            4301 _RNvNtCscyLA3ltjFBl_14ascii_renderer11__1_playback9supervise  (in ascii-renderer) + 4772  [0x100907278]
+                            + 4298 _RNvNtNtCshaMuUdr4xqv_3std6thread9functions5sleep  (in ascii-renderer) + 100  [0x100b54594]
+                            + ! 3977 nanosleep  (in libsystem_c.dylib) + 220  [0x19f065568]
+                            + ! : 3968 __semwait_signal  (in libsystem_kernel.dylib) + 8,0,...  [0x19f1843e8,0x19f1843e0,...]
+                            + ! : 5 __semwait_signal  (in libsystem_kernel.dylib) + 28  [0x19f1843fc]
+                            + ! : | 3 cerror  (in libsystem_kernel.dylib) + 44  [0x19f1826b4]
+                            + ! : | + 3 _pthread_exit_if_canceled  (in libsystem_pthread.dylib) + 0,8  [0x19f1bba88,0x19f1bba90]
+                            + ! : | 2 cerror  (in libsystem_kernel.dylib) + 52  [0x19f1826bc]
+                            + ! : |   2 cerror_nocancel  (in libsystem_kernel.dylib) + 12  [0x19f1817bc]
+                            + ! : 3 DYLD-STUB$$__semwait_signal  (in libsystem_c.dylib) + 0  [0x19f0cf460]
+                            + ! : 1 cerror  (in libsystem_kernel.dylib) + 64  [0x19f1826c8]
+                            + ! 316 nanosleep  (in libsystem_c.dylib) + 116  [0x19f065500]
+                            + ! : 310 clock_get_time  (in libsystem_kernel.dylib) + 120  [0x19f186580]
+                            + ! : | 309 mach_msg2_internal  (in libsystem_kernel.dylib) + 80  [0x19f1935e4]
+                            + ! : | + 309 mach_msg2_trap  (in libsystem_kernel.dylib) + 8  [0x19f180df4]
+                            + ! : | 1 mach_msg2_internal  (in libsystem_kernel.dylib) + 0  [0x19f193594]
+                            + ! : 5 clock_get_time  (in libsystem_kernel.dylib) + 120,148,...  [0x19f186580,0x19f18659c,...]
+                            + ! : 1 mach_msg2_internal  (in libsystem_kernel.dylib) + 260  [0x19f193698]
+                            + ! 3 nanosleep  (in libsystem_c.dylib) + 228  [0x19f065570]
+                            + ! : 3 __error  (in libsystem_kernel.dylib) + 0,4  [0x19f1817d4,0x19f1817d8]
+                            + ! 1 clock_get_time  (in libsystem_kernel.dylib) + 300  [0x19f186634]
+                            + ! 1 nanosleep  (in libsystem_c.dylib) + 200  [0x19f065554]
+                            + 3 _RNvNtNtCshaMuUdr4xqv_3std6thread9functions5sleep  (in ascii-renderer) + 100  [0x100b54594]
+                            550 _RNvNtCscyLA3ltjFBl_14ascii_renderer11__1_playback9supervise  (in ascii-renderer) + 4704  [0x100907234]
+                            + 549 _RINvNtCsjhfb5o2O9M7_3nix4poll4polltECscyLA3ltjFBl_14ascii_renderer  (in ascii-renderer) + 20  [0x100a0a878]
+                            + ! 549 poll  (in libsystem_kernel.dylib) + 8  [0x19f189700]
+                            + 1 _RINvNtCsjhfb5o2O9M7_3nix4poll4polltECscyLA3ltjFBl_14ascii_renderer  (in ascii-renderer) + 0  [0x100a0a864]
+                            334 _RNvNtCscyLA3ltjFBl_14ascii_renderer11__1_playback9supervise  (in ascii-renderer) + 4284  [0x100907090]
+                            + 334 _RNvXsb_NtCshaMuUdr4xqv_3std2fsNtB5_4FileNtNtNtCsbdgPRJL8iXf_4core2io5write5Write5write  (in ascii-renderer) + 32  [0x100b5c530]
+                            +   333 write  (in libsystem_kernel.dylib) + 8,0  [0x19f184914,0x19f18490c]
+                            +   1 write  (in libsystem_kernel.dylib) + 28  [0x19f184928]
+                            +     1 cerror  (in libsystem_kernel.dylib) + 52  [0x19f1826bc]
+                            +       1 cerror_nocancel  (in libsystem_kernel.dylib) + 20  [0x19f1817c4]
+                            68 _RNvNtCscyLA3ltjFBl_14ascii_renderer11__1_playback9supervise  (in ascii-renderer) + 1604  [0x100906618]
+                            + 68 _RNvNtCs5tI1WbUR7dm_9crossterm5event4poll  (in ascii-renderer) + 228  [0x100b24de0]
+                            +   68 _RINvMs_NtNtCs5tI1WbUR7dm_9crossterm5event4readNtB5_19InternalEventReader4pollNtNtB7_6filter11EventFilterEB9_  (in ascii-renderer) + 404  [0x100b2a6d4]
+                            +     67 _RNvXs_NtNtNtNtCs5tI1WbUR7dm_9crossterm5event6source4unix3mioNtB4_23UnixInternalEventSourceNtB8_11EventSource8try_read  (in ascii-renderer) + 320  [0x100b25bac]
+                            +     ! 67 _RNvMNtCs5YZjd8MvbdO_3mio4pollNtB2_4Poll4poll  (in ascii-renderer) + 108  [0x100b2e9b8]
+                            +     !   67 kevent  (in libsystem_kernel.dylib) + 8  [0x19f186f40]
+                            +     1 _RNvXs_NtNtNtNtCs5tI1WbUR7dm_9crossterm5event6source4unix3mioNtB4_23UnixInternalEventSourceNtB8_11EventSource8try_read  (in ascii-renderer) + 132  [0x100b25af0]
+                            +       1 _RNvMNtNtNtNtCshaMuUdr4xqv_3std3sys3pal4unix4timeNtB2_8Timespec3now  (in ascii-renderer) + 24  [0x100b3ef3c]
+                            +         1 clock_gettime  (in libsystem_c.dylib) + 72  [0x19f0665a8]
+                            +           1 clock_gettime_nsec_np  (in libsystem_c.dylib) + 404  [0x19f059640]
+                            +             1 mach_absolute_time  (in libsystem_kernel.dylib) + 108  [0x19f1812c0]
+                            10 _RNvNtCscyLA3ltjFBl_14ascii_renderer11__1_playback9supervise  (in ascii-renderer) + 1500  [0x1009065b0]
+                            + 10 _RNvMs4_NtCscyLA3ltjFBl_14ascii_renderer10__0_profileNtB5_13RelayProfiler4tick  (in ascii-renderer) + 20  [0x1007b2968]
+                            +   9 _RNvMNtCshaMuUdr4xqv_3std4timeNtB2_7Instant7elapsed  (in ascii-renderer) + 28  [0x100b3e6dc]
+                            +   ! 8 _RNvMNtNtNtNtCshaMuUdr4xqv_3std3sys3pal4unix4timeNtB2_8Timespec3now  (in ascii-renderer) + 24  [0x100b3ef3c]
+                            +   ! : 7 clock_gettime  (in libsystem_c.dylib) + 72  [0x19f0665a8]
+                            +   ! : | 6 clock_gettime_nsec_np  (in libsystem_c.dylib) + 404  [0x19f059640]
+                            +   ! : | + 6 mach_absolute_time  (in libsystem_kernel.dylib) + 108  [0x19f1812c0]
+                            +   ! : | 1 clock_gettime_nsec_np  (in libsystem_c.dylib) + 28  [0x19f0594c8]
+                            +   ! : 1 clock_gettime  (in libsystem_c.dylib) + 408  [0x19f0666f8]
+                            +   ! 1 _RNvMNtNtNtNtCshaMuUdr4xqv_3std3sys3pal4unix4timeNtB2_8Timespec3now  (in ascii-renderer) + 88  [0x100b3ef7c]
+                            +   1 _RNvMNtCshaMuUdr4xqv_3std4timeNtB2_7Instant7elapsed  (in ascii-renderer) + 4  [0x100b3e6c4]
+                            9 _RNvNtCscyLA3ltjFBl_14ascii_renderer11__1_playback9supervise  (in ascii-renderer) + 4780  [0x100907280]
+                            + 8 _RNvMNtCshaMuUdr4xqv_3std4timeNtB2_7Instant7elapsed  (in ascii-renderer) + 28  [0x100b3e6dc]
+                            + ! 8 _RNvMNtNtNtNtCshaMuUdr4xqv_3std3sys3pal4unix4timeNtB2_8Timespec3now  (in ascii-renderer) + 24  [0x100b3ef3c]
+                            + !   6 clock_gettime  (in libsystem_c.dylib) + 72  [0x19f0665a8]
+                            + !   : 4 clock_gettime_nsec_np  (in libsystem_c.dylib) + 404  [0x19f059640]
+                            + !   : | 4 mach_absolute_time  (in libsystem_kernel.dylib) + 108  [0x19f1812c0]
+                            + !   : 1 clock_gettime_nsec_np  (in libsystem_c.dylib) + 240  [0x19f05959c]
+                            + !   : | 1 DYLD-STUB$$mach_timebase_info  (in libsystem_c.dylib) + 0  [0x19f0cfc00]
+                            + !   : 1 clock_gettime_nsec_np  (in libsystem_c.dylib) + 12  [0x19f0594b8]
+                            + !   2 clock_gettime  (in libsystem_c.dylib) + 12,68  [0x19f06656c,0x19f0665a4]
+                            + 1 _RNvMNtCshaMuUdr4xqv_3std4timeNtB2_7Instant7elapsed  (in ascii-renderer) + 0  [0x100b3e6c0]
+                            8 _RNvNtCscyLA3ltjFBl_14ascii_renderer11__1_playback9supervise  (in ascii-renderer) + 3876,3884,...  [0x100906ef8,0x100906f00,...]
+                            7 _RNvNtCscyLA3ltjFBl_14ascii_renderer11__1_playback9supervise  (in ascii-renderer) + 1504  [0x1009065b4]
+                            + 6 _RNvMNtNtNtNtCshaMuUdr4xqv_3std3sys3pal4unix4timeNtB2_8Timespec3now  (in ascii-renderer) + 24  [0x100b3ef3c]
+                            + ! 5 clock_gettime  (in libsystem_c.dylib) + 72  [0x19f0665a8]
+                            + ! : 5 clock_gettime_nsec_np  (in libsystem_c.dylib) + 404  [0x19f059640]
+                            + ! :   5 mach_absolute_time  (in libsystem_kernel.dylib) + 108,36  [0x19f1812c0,0x19f181278]
+                            + ! 1 clock_gettime  (in libsystem_c.dylib) + 408  [0x19f0666f8]
+                            + 1 _RNvMNtNtNtNtCshaMuUdr4xqv_3std3sys3pal4unix4timeNtB2_8Timespec3now  (in ascii-renderer) + 96  [0x100b3ef84]
+                            6 _RNvNtCscyLA3ltjFBl_14ascii_renderer11__1_playback9supervise  (in ascii-renderer) + 4244  [0x100907068]
+                            + 6 _RNvMNtNtNtNtCshaMuUdr4xqv_3std3sys3pal4unix4timeNtB2_8Timespec3now  (in ascii-renderer) + 24  [0x100b3ef3c]
+                            +   6 clock_gettime  (in libsystem_c.dylib) + 72  [0x19f0665a8]
+                            +     6 clock_gettime_nsec_np  (in libsystem_c.dylib) + 404  [0x19f059640]
+                            +       6 mach_absolute_time  (in libsystem_kernel.dylib) + 108  [0x19f1812c0]
+                            6 _RNvNtCscyLA3ltjFBl_14ascii_renderer11__1_playback9supervise  (in ascii-renderer) + 4644  [0x1009071f8]
+                            + 6 _RNvMNtNtNtNtCshaMuUdr4xqv_3std3sys3pal4unix4timeNtB2_8Timespec3now  (in ascii-renderer) + 24  [0x100b3ef3c]
+                            +   6 clock_gettime  (in libsystem_c.dylib) + 72  [0x19f0665a8]
+                            +     6 clock_gettime_nsec_np  (in libsystem_c.dylib) + 404  [0x19f059640]
+                            +       6 mach_absolute_time  (in libsystem_kernel.dylib) + 108  [0x19f1812c0]
+                            4 _RNvNtCscyLA3ltjFBl_14ascii_renderer11__1_playback9supervise  (in ascii-renderer) + 3184  [0x100906c44]
+                            + 4 _RNvMNtNtNtNtCshaMuUdr4xqv_3std3sys3pal4unix4timeNtB2_8Timespec3now  (in ascii-renderer) + 24  [0x100b3ef3c]
+                            +   4 clock_gettime  (in libsystem_c.dylib) + 72  [0x19f0665a8]
+                            +     3 clock_gettime_nsec_np  (in libsystem_c.dylib) + 404  [0x19f059640]
+                            +     ! 3 mach_absolute_time  (in libsystem_kernel.dylib) + 108,112  [0x19f1812c0,0x19f1812c4]
+                            +     1 clock_gettime_nsec_np  (in libsystem_c.dylib) + 240  [0x19f05959c]
+                            +       1 mach_timebase_info  (in libsystem_kernel.dylib) + 28  [0x19f1811a0]
+                            4 _RNvNtCscyLA3ltjFBl_14ascii_renderer11__1_playback9supervise  (in ascii-renderer) + 3696  [0x100906e44]
+                            + 2 _RNvMNtCshaMuUdr4xqv_3std4timeNtB2_7Instant7elapsed  (in ascii-renderer) + 28  [0x100b3e6dc]
+                            + ! 2 _RNvMNtNtNtNtCshaMuUdr4xqv_3std3sys3pal4unix4timeNtB2_8Timespec3now  (in ascii-renderer) + 24  [0x100b3ef3c]
+                            + !   1 clock_gettime  (in libsystem_c.dylib) + 72  [0x19f0665a8]
+                            + !   : 1 clock_gettime_nsec_np  (in libsystem_c.dylib) + 404  [0x19f059640]
+                            + !   :   1 mach_absolute_time  (in libsystem_kernel.dylib) + 108  [0x19f1812c0]
+                            + !   1 clock_gettime  (in libsystem_c.dylib) + 12  [0x19f06656c]
+                            + 2 _RNvMNtCshaMuUdr4xqv_3std4timeNtB2_7Instant7elapsed  (in ascii-renderer) + 68  [0x100b3e704]
+                            +   2 _RNvMNtNtNtNtCshaMuUdr4xqv_3std3sys3pal4unix4timeNtB2_8Timespec12sub_timespec  (in ascii-renderer) + 32,80  [0x100b3ee60,0x100b3ee90]
+                            4 _RNvNtCscyLA3ltjFBl_14ascii_renderer11__1_playback9supervise  (in ascii-renderer) + 3792  [0x100906ea4]
+                            + 4 _RNvMsi_NtNtNtCshaMuUdr4xqv_3std3sys2fs4unixNtB5_4File4read  (in ascii-renderer) + 32  [0x100b50df4]
+                            +   4 read  (in libsystem_kernel.dylib) + 8  [0x19f1819b4]
+                            3 _RNvNtCscyLA3ltjFBl_14ascii_renderer11__1_playback9supervise  (in ascii-renderer) + 4304  [0x1009070a4]
+                            + 2 _RNvMNtCshaMuUdr4xqv_3std4timeNtB2_7Instant7elapsed  (in ascii-renderer) + 28  [0x100b3e6dc]
+                            + ! 1 _RNvMNtNtNtNtCshaMuUdr4xqv_3std3sys3pal4unix4timeNtB2_8Timespec3now  (in ascii-renderer) + 24  [0x100b3ef3c]
+                            + ! : 1 clock_gettime  (in libsystem_c.dylib) + 72  [0x19f0665a8]
+                            + ! :   1 clock_gettime_nsec_np  (in libsystem_c.dylib) + 404  [0x19f059640]
+                            + ! :     1 mach_absolute_time  (in libsystem_kernel.dylib) + 108  [0x19f1812c0]
+                            + ! 1 _RNvMNtNtNtNtCshaMuUdr4xqv_3std3sys3pal4unix4timeNtB2_8Timespec3now  (in ascii-renderer) + 88  [0x100b3ef7c]
+                            + 1 _RNvMNtCshaMuUdr4xqv_3std4timeNtB2_7Instant7elapsed  (in ascii-renderer) + 0  [0x100b3e6c0]
+                            3 _RNvNtCscyLA3ltjFBl_14ascii_renderer11__1_playback9supervise  (in ascii-renderer) + 4744  [0x10090725c]
+                            + 3 _RNvMNtCshaMuUdr4xqv_3std4timeNtB2_7Instant7elapsed  (in ascii-renderer) + 28  [0x100b3e6dc]
+                            +   3 _RNvMNtNtNtNtCshaMuUdr4xqv_3std3sys3pal4unix4timeNtB2_8Timespec3now  (in ascii-renderer) + 24  [0x100b3ef3c]
+                            +     2 clock_gettime  (in libsystem_c.dylib) + 72  [0x19f0665a8]
+                            +     ! 2 clock_gettime_nsec_np  (in libsystem_c.dylib) + 404  [0x19f059640]
+                            +     !   2 mach_absolute_time  (in libsystem_kernel.dylib) + 108  [0x19f1812c0]
+                            +     1 DYLD-STUB$$clock_gettime  (in ascii-renderer) + 0  [0x100b91594]
+                            1 _RNvNtCscyLA3ltjFBl_14ascii_renderer11__1_playback9supervise  (in ascii-renderer) + 1552  [0x1009065e4]
+                              1 _RNvMs4_NtCscyLA3ltjFBl_14ascii_renderer10__0_profileNtB5_13RelayProfiler12input_polled  (in ascii-renderer) + 0  [0x1007b28bc]
+
+Total number in stack (recursive counted multiple, when >=5):
+        10       _RNvMNtNtNtNtCshaMuUdr4xqv_3std3sys3pal4unix4timeNtB2_8Timespec3now  (in ascii-renderer) + 24  [0x100b3ef3c]
+        10       clock_gettime  (in libsystem_c.dylib) + 72  [0x19f0665a8]
+        10       clock_gettime_nsec_np  (in libsystem_c.dylib) + 404  [0x19f059640]
+        10       mach_absolute_time  (in libsystem_kernel.dylib) + 0  [0x19f181254]
+        5       _RNvMNtCshaMuUdr4xqv_3std4timeNtB2_7Instant7elapsed  (in ascii-renderer) + 28  [0x100b3e6dc]
+
+Sort by top of stack, same collapsed (when >= 5):
+        __semwait_signal  (in libsystem_kernel.dylib)        3968
+        poll  (in libsystem_kernel.dylib)        549
+        write  (in libsystem_kernel.dylib)        333
+        mach_msg2_trap  (in libsystem_kernel.dylib)        309
+        kevent  (in libsystem_kernel.dylib)        67
+        mach_absolute_time  (in libsystem_kernel.dylib)        35
+        _RNvNtCscyLA3ltjFBl_14ascii_renderer11__1_playback9supervise  (in ascii-renderer)        8
+        clock_get_time  (in libsystem_kernel.dylib)        6
+        clock_gettime  (in libsystem_c.dylib)        5
+
+Binary Images:
+       0x100728000 -        0x100c53f9f +ascii-renderer (0) <A4C14F35-5173-3B52-A119-19673492FB54> /Users/*/ascii-renderer
+       0x19ede0000 -        0x19ee30e0b  libobjc.A.dylib (912.7) <5C6386BD-F308-3370-BCE9-63D1A89DAB87> /usr/lib/libobjc.A.dylib
+       0x19ee31000 -        0x19eeba507  dyld (1.0.0 - 1165.3) <F635824E-318B-3F0C-842C-C369737F2B68> /usr/lib/dyld
+       0x19eebb000 -        0x19eebfff8  libsystem_blocks.dylib (90) <6BC23DD4-94AC-3BB0-BC84-93E6D7813ACE> /usr/lib/system/libsystem_blocks.dylib
+       0x19eec0000 -        0x19ef0afff  libxpc.dylib (2748.140.10) <987AF6AA-AB54-39CE-84CF-C6D2D1DC9464> /usr/lib/system/libxpc.dylib
+       0x19ef0b000 -        0x19ef25fff  libsystem_trace.dylib (1510.140.4) <72852AF1-4BCC-326A-BE13-6C6F22A44E4A> /usr/lib/system/libsystem_trace.dylib
+       0x19ef26000 -        0x19efcffcf  libcorecrypto.dylib (1638.140.6) <717EA919-DB53-3DDA-AFA1-D87BFD649A83> /usr/lib/system/libcorecrypto.dylib
+       0x19efd0000 -        0x19f00cff7  libsystem_malloc.dylib (521.120.7) <8A69A1AC-6D54-3B64-9860-CD0DB47473ED> /usr/lib/system/libsystem_malloc.dylib
+       0x19f00d000 -        0x19f054fff  libdispatch.dylib (1477.100.9) <1A1CE00A-89CD-36BA-9678-5038AEDD0D8D> /usr/lib/system/libdispatch.dylib
+       0x19f055000 -        0x19f057fff  libsystem_featureflags.dylib (86) <F9E56A3B-6350-3D8B-BEC6-6BC253B19355> /usr/lib/system/libsystem_featureflags.dylib
+       0x19f058000 -        0x19f0d6ff7  libsystem_c.dylib (1592.100.35) <D30F1830-93D0-3D0B-8CBA-9544E84BFD5B> /usr/lib/system/libsystem_c.dylib
+       0x19f0d7000 -        0x19f163ff7  libc++.1.dylib (1700.255.5) <AAA5636D-6F3F-3FA7-9F4A-CF966F0308FE> /usr/lib/libc++.1.dylib
+       0x19f164000 -        0x19f17fffb  libc++abi.dylib (1700.255.5) <68E3EB36-B4BA-30E0-A240-31E942936D06> /usr/lib/libc++abi.dylib
+       0x19f180000 -        0x19f1baffb  libsystem_kernel.dylib (10063.141.2) <71FF45B8-F14E-3666-9E96-6CF58315B91D> /usr/lib/system/libsystem_kernel.dylib
+       0x19f1bb000 -        0x19f1c7fff  libsystem_pthread.dylib (519.120.4) <E03E8478-6F5C-3D21-A79A-58408F514000> /usr/lib/system/libsystem_pthread.dylib
+       0x19f1c8000 -        0x19f1edff7  libdyld.dylib (1165.3) <C433509D-7CD3-3884-B24D-5D68B9B95627> /usr/lib/system/libdyld.dylib
+       0x19f1ee000 -        0x19f1f5fe7  libsystem_platform.dylib (316.100.10) <B4BF9F89-31D7-3742-8CE7-AB3554F9F525> /usr/lib/system/libsystem_platform.dylib
+       0x19f1f6000 -        0x19f222ffb  libsystem_info.dylib (583.0.1) <827E8091-520E-3537-8E72-678CED1BAAAE> /usr/lib/system/libsystem_info.dylib
+       0x1a25e6000 -        0x1a25f0ff3  libsystem_darwin.dylib (1592.100.35) <4DD0C579-C2FC-37A7-B6D7-1BA7268DD8B3> /usr/lib/system/libsystem_darwin.dylib
+       0x1a2a5c000 -        0x1a2a6cfff  libsystem_notify.dylib (317.120.2) <6902E910-4F75-32C7-BBF3-D46CD6743BFA> /usr/lib/system/libsystem_notify.dylib
+       0x1a48b2000 -        0x1a48ccfff  libsystem_networkextension.dylib (1838.140.5.0.1) <9ADD8A04-8F8C-3916-A9ED-20F6947294BD> /usr/lib/system/libsystem_networkextension.dylib
+       0x1a4945000 -        0x1a495cff7  libsystem_asl.dylib (398) <138939F9-52A2-35BF-A8E5-4B2154A3F1B0> /usr/lib/system/libsystem_asl.dylib
+       0x1a6337000 -        0x1a633fff3  libsystem_symptoms.dylib (1871.140.6) <3E5E0270-E98C-303F-A566-624005886B88> /usr/lib/system/libsystem_symptoms.dylib
+       0x1a94c5000 -        0x1a94efffb  libsystem_containermanager.dylib (582.140.2) <230DEE13-0738-3710-A305-2D87D2522E52> /usr/lib/system/libsystem_containermanager.dylib
+       0x1aa489000 -        0x1aa48dfff  libsystem_configuration.dylib (1300.120.2) <4F21FA09-0224-337E-9843-10109C019B1E> /usr/lib/system/libsystem_configuration.dylib
+       0x1aa48e000 -        0x1aa493fff  libsystem_sandbox.dylib (2190.140.13) <DA843F8C-6155-3B7C-99B0-DEB74CF9F109> /usr/lib/system/libsystem_sandbox.dylib
+       0x1ab2b1000 -        0x1ab2b3fff  libquarantine.dylib (172.140.2) <1F514E6F-7D94-356E-A5DC-6E8DCDD40846> /usr/lib/system/libquarantine.dylib
+       0x1aba68000 -        0x1aba6dfff  libsystem_coreservices.dylib (152.5.3) <CF38F1DD-9C1B-34D8-8C4D-DC5899486CD1> /usr/lib/system/libsystem_coreservices.dylib
+       0x1abd96000 -        0x1abdccff3  libsystem_m.dylib (3252.100.9) <0BE2E009-9F7F-331D-B4AC-F39136591F6F> /usr/lib/system/libsystem_m.dylib
+       0x1abdcd000 -        0x1abdd0fff  libcharset.1.dylib (102) <56C33416-C658-3BA4-9210-3D463DFDC945> /usr/lib/libcharset.1.dylib
+       0x1abdd1000 -        0x1abdd8ffb  libmacho.dylib (1010.6) <BB441E41-3804-3949-B620-0B29D7975490> /usr/lib/system/libmacho.dylib
+       0x1abdf9000 -        0x1abe06ff7  libcommonCrypto.dylib (600028.100.1) <B0A2DDA7-420D-3DDE-9FE2-3AFDD2188F14> /usr/lib/system/libcommonCrypto.dylib
+       0x1abe07000 -        0x1abe12fff  libunwind.dylib (1700.242) <40A5125B-1225-337B-9D1A-968356D29580> /usr/lib/system/libunwind.dylib
+       0x1abe13000 -        0x1abe1afff  liboah.dylib (318.9) <749BB71D-B6F2-3C9D-A96D-65D22F7A42B3> /usr/lib/liboah.dylib
+       0x1abe1b000 -        0x1abe24fff  libcopyfile.dylib (196.120.5) <3F3A181E-C6AB-3F09-BC74-37B8AC2BBE57> /usr/lib/system/libcopyfile.dylib
+       0x1abe25000 -        0x1abe28fff  libcompiler_rt.dylib (103.2) <D133BCC9-EFB7-3C69-83D2-A33BB6AFA430> /usr/lib/system/libcompiler_rt.dylib
+       0x1abe29000 -        0x1abe2dffb  libsystem_collections.dylib (1592.100.35) <E08997D8-CC79-3A51-A3E0-B7706A78CC50> /usr/lib/system/libsystem_collections.dylib
+       0x1abe2e000 -        0x1abe31ffb  libsystem_secinit.dylib (147.140.2) <1F043FF2-1603-32F0-A8FB-DC6CBB118581> /usr/lib/system/libsystem_secinit.dylib
+       0x1abe32000 -        0x1abe34ffb  libremovefile.dylib (70.100.4) <01FAC88B-53F2-36C6-91EE-1EC62AC11CC8> /usr/lib/system/libremovefile.dylib
+       0x1abe35000 -        0x1abe35ffb  libkeymgr.dylib (31) <59B09DF8-56B7-3FAC-94D3-CC946797E98E> /usr/lib/system/libkeymgr.dylib
+       0x1abe36000 -        0x1abe3efff  libsystem_dnssd.dylib (2200.140.11) <4E11F9C6-8BD5-380C-A46F-7AB5DD6E91B6> /usr/lib/system/libsystem_dnssd.dylib
+       0x1abe3f000 -        0x1abe44fff  libcache.dylib (93) <291EEBA0-190B-30E0-A7FF-1ED0CA3505B4> /usr/lib/system/libcache.dylib
+       0x1abe45000 -        0x1abe46fff  libSystem.B.dylib (1345.120.2) <2C0809B3-B3E0-3921-BB57-569E6984EC1A> /usr/lib/libSystem.B.dylib
+       0x1abe82000 -        0x1abe88ff7  libiconv.2.dylib (102) <132D5CDF-9E1F-3595-A92D-22C4B22F7A92> /usr/lib/libiconv.2.dylib
+       0x266d39000 -        0x266d3cfff  libsystem_darwindirectory.dylib (86.0.2) <815D7896-79A3-36C4-8008-DD672DA625C5> /usr/lib/system/libsystem_darwindirectory.dylib
+       0x266d3d000 -        0x266d40fff  libsystem_eligibility.dylib (47.140.3) <ADF6A9D2-C5C3-3A9C-9302-4618D9DFAD21> /usr/lib/system/libsystem_eligibility.dylib
+       0x266d41000 -        0x266d44ffb  libsystem_sanitizers.dylib (8) <6BBDFCBC-D608-3318-BC22-2172E5258046> /usr/lib/system/libsystem_sanitizers.dylib

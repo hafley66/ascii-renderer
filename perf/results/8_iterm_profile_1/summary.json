@@ -1,0 +1,4031 @@
+{
+  "profiles": {
+    "quit_iterm.sample.txt": [
+      {
+        "thread": "Thread_39465   DispatchQueue_1: com.apple.main-thread  (serial)",
+        "samples": 6621,
+        "inclusive": {
+          "terminal_drawing": 5670,
+          "construct_and_draw_runs": 5624,
+          "build_attributed_strings": 2849,
+          "draw_attributed_strings": 2764,
+          "iterm_timer_instrumentation": 874,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "objc_msgSend",
+            465
+          ],
+          [
+            "semaphore_timedwait_trap",
+            288
+          ],
+          [
+            "mach_absolute_time",
+            250
+          ],
+          [
+            "id2data(objc_object*, SyncKind, usage)",
+            202
+          ],
+          [
+            "+[NSAttributeDictionary newWithDictionary:]",
+            196
+          ],
+          [
+            "objc_release",
+            181
+          ],
+          [
+            "semaphore_wait_trap",
+            164
+          ],
+          [
+            "__CFStringHash",
+            145
+          ],
+          [
+            "_CFRelease",
+            132
+          ],
+          [
+            "_nanov2_free",
+            126
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_42507   DispatchQueue_126: com.iterm2.accept  (serial)",
+        "samples": 6621,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "__accept",
+            6621
+          ],
+          [
+            "start_wqthread",
+            0
+          ],
+          [
+            "_pthread_wqthread",
+            0
+          ],
+          [
+            "_dispatch_workloop_worker_thread",
+            0
+          ],
+          [
+            "_dispatch_root_queue_drain_deferred_wlh",
+            0
+          ],
+          [
+            "_dispatch_lane_invoke",
+            0
+          ],
+          [
+            "_dispatch_lane_serial_drain",
+            0
+          ],
+          [
+            "_dispatch_client_callout",
+            0
+          ],
+          [
+            "_dispatch_call_block_and_release",
+            0
+          ],
+          [
+            "__40-[iTermSocket listenWithBacklog:accept:]_block_invoke",
+            0
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_42664: com.apple.NSEventThread",
+        "samples": 6621,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "mach_msg2_trap",
+            6621
+          ],
+          [
+            "thread_start",
+            0
+          ],
+          [
+            "_pthread_start",
+            0
+          ],
+          [
+            "_NSEventThread",
+            0
+          ],
+          [
+            "CFRunLoopRunSpecific",
+            0
+          ],
+          [
+            "__CFRunLoopRun",
+            0
+          ],
+          [
+            "__CFRunLoopServiceMachPort",
+            0
+          ],
+          [
+            "mach_msg",
+            0
+          ],
+          [
+            "mach_msg_overwrite",
+            0
+          ],
+          [
+            "mach_msg2_internal",
+            0
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_42827",
+        "samples": 6584,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "_pthread_start",
+            6584
+          ],
+          [
+            "thread_start",
+            0
+          ]
+        ]
+      },
+      {
+        "thread": "__NSThread__start__  (in Foundation) + 716  [0x1a03ccd60]",
+        "samples": 6584,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "semaphore_wait_trap",
+            3750
+          ],
+          [
+            "__select",
+            1727
+          ],
+          [
+            "tiny_malloc_from_free_list",
+            98
+          ],
+          [
+            "objc_msgSend",
+            83
+          ],
+          [
+            "-[VT100Parser addNextParsedTokensToVector:nonSignalingCount:]",
+            77
+          ],
+          [
+            "AdvanceAndEatControlChars",
+            73
+          ],
+          [
+            "+[VT100CSIParser decodeFromContext:support8BitControlCharacters:incidentals:token:]",
+            67
+          ],
+          [
+            "read",
+            39
+          ],
+          [
+            "ParseString",
+            23
+          ],
+          [
+            "__CFStringCreateImmutableFunnel3",
+            22
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_64532727",
+        "samples": 6379,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "__workq_kernreturn",
+            6377
+          ],
+          [
+            "start_wqthread",
+            2
+          ],
+          [
+            "_pthread_wqthread",
+            0
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_64533194",
+        "samples": 6292,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "__workq_kernreturn",
+            6239
+          ],
+          [
+            "start_wqthread",
+            53
+          ],
+          [
+            "_pthread_wqthread",
+            0
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_<multiple>   DispatchQueue_238: com.iterm2.mutation  (serial)",
+        "samples": 5103,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 4271,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "objc_msgSend",
+            637
+          ],
+          [
+            "CF_IS_OBJC",
+            244
+          ],
+          [
+            "objc_release",
+            225
+          ],
+          [
+            "objc_retainAutoreleasedReturnValue",
+            215
+          ],
+          [
+            "objc_retain",
+            195
+          ],
+          [
+            "_CFRelease",
+            186
+          ],
+          [
+            "???",
+            103
+          ],
+          [
+            "_CFRetain",
+            94
+          ],
+          [
+            "objc_autoreleaseReturnValue",
+            84
+          ],
+          [
+            "DYLD-STUB$$objc_release",
+            84
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_64486885",
+        "samples": 4080,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "__workq_kernreturn",
+            4066
+          ],
+          [
+            "start_wqthread",
+            14
+          ],
+          [
+            "_pthread_wqthread",
+            0
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_64495777",
+        "samples": 3871,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "__workq_kernreturn",
+            3862
+          ],
+          [
+            "start_wqthread",
+            7
+          ],
+          [
+            "_dispatch_workloop_worker_thread",
+            1
+          ],
+          [
+            "_dispatch_queue_wakeup",
+            1
+          ],
+          [
+            "_pthread_wqthread",
+            0
+          ],
+          [
+            "_dispatch_event_loop_merge",
+            0
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_<multiple>   DispatchQueue_921: com.iterm2.token-destroyer  (serial)",
+        "samples": 416,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "tiny_free_no_lock",
+            53
+          ],
+          [
+            "madvise",
+            53
+          ],
+          [
+            "free_tiny",
+            22
+          ],
+          [
+            "tiny_free_list_remove_ptr",
+            20
+          ],
+          [
+            "tiny_free_detach_region",
+            19
+          ],
+          [
+            "tiny_free_list_add_ptr",
+            18
+          ],
+          [
+            "_free",
+            18
+          ],
+          [
+            "_szone_free",
+            18
+          ],
+          [
+            "_nanov2_free",
+            18
+          ],
+          [
+            "tiny_free_scan_madvise_free",
+            17
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_<multiple>   DispatchQueue_417: CA::CG::Queue  (serial)",
+        "samples": 289,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "_platform_memmove",
+            14
+          ],
+          [
+            "CA::OGL::MetalContext::draw(MTLPrimitiveType, unsigned int, unsigned int, void const*, unsigned long, unsigned long, unsigned int, unsigned int, unsigned short const*, CA::OGL::ClipPlane const*, CA::OGL::MetalBufferPool::MetalBuffer const*)",
+            12
+          ],
+          [
+            "CF_IS_OBJC",
+            9
+          ],
+          [
+            "AGX::RenderContext<AGX::G14X::Encoders, AGX::G14X::Classes, AGX::G14X::ObjClasses>::encodeAndEmitRenderState(AGX::G14X::VertexProgramVariant const*, AGX::G14X::FragmentProgramVariant const*, AGX::ArgumentTable<AGX::G14X::Encoders, AGX::G14X::Classes>&, AGX::ArgumentTable<AGX::G14X::Encoders, AGX::G14X::Classes>&, AGX::RenderDirtyBits<AGX::G14X::Classes>&, bool)",
+            8
+          ],
+          [
+            "std::__hash_table<std::__hash_value_type<unsigned int, unsigned int>>::__emplace_unique_key_args<unsigned int, std::piecewise_construct_t const&, std::tuple<unsigned int const&>, std::tuple<>>(unsigned int const&, std::piecewise_construct_t const&, std::tuple<unsigned int const&>&&, std::tuple<>&&)",
+            8
+          ],
+          [
+            "AGX::ESLStateLoadEncoderGen1<AGX::G14X::Classes, AGX::G14X::Encoders>::emitUscStateLoad<LdShdrTransformNone>(unsigned long long*, unsigned long long**, unsigned int, unsigned long long, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int const*, unsigned long long const*, LdShdrTransformNone) const",
+            7
+          ],
+          [
+            "CA::CG::DrawOp::render(CA::CG::Renderer&) const",
+            6
+          ],
+          [
+            "CA::CG::draw_glyph_bitmaps(CA::CG::Renderer&, CA::CG::FillGlyphs const&, CA::CG::ShadowStyle const*)",
+            6
+          ],
+          [
+            "CA::OGL::GlyphCache::flush(unsigned long, CGGlyphBitmap const* const*, CGGlyphPosition const*)",
+            6
+          ],
+          [
+            "os_unfair_lock_unlock",
+            6
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_<multiple>   DispatchQueue_424: com.apple.coreanimation.mtl_submission  (serial)",
+        "samples": 33,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "iokit_user_client_trap",
+            32
+          ],
+          [
+            "objc_retain",
+            1
+          ],
+          [
+            "start_wqthread",
+            0
+          ],
+          [
+            "_pthread_wqthread",
+            0
+          ],
+          [
+            "_dispatch_workloop_worker_thread",
+            0
+          ],
+          [
+            "_dispatch_root_queue_drain_deferred_wlh",
+            0
+          ],
+          [
+            "_dispatch_lane_invoke",
+            0
+          ],
+          [
+            "_dispatch_lane_serial_drain",
+            0
+          ],
+          [
+            "_dispatch_source_invoke",
+            0
+          ],
+          [
+            "_dispatch_source_latch_and_call",
+            0
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_42827   DispatchQueue_750155: com.iterm2.job-manager.21  (serial)",
+        "samples": 16,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "_pthread_start",
+            16
+          ],
+          [
+            "thread_start",
+            0
+          ]
+        ]
+      },
+      {
+        "thread": "__NSThread__start__  (in Foundation) + 716  [0x1a03ccd60]",
+        "samples": 16,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "objc_msgSend",
+            4
+          ],
+          [
+            "objc_retainAutoreleasedReturnValue",
+            2
+          ],
+          [
+            "-[iTermSynchronizedState ready]",
+            2
+          ],
+          [
+            "_objc_rootRetain",
+            1
+          ],
+          [
+            "-[iTermSynchronizedState check]",
+            1
+          ],
+          [
+            "DYLD-STUB$$dispatch_queue_get_label",
+            1
+          ],
+          [
+            "DYLD-STUB$$objc_retainAutoreleasedReturnValue",
+            1
+          ],
+          [
+            "DYLD-STUB$$objc_release",
+            1
+          ],
+          [
+            "_objc_rootRelease",
+            1
+          ],
+          [
+            "objc_msgSendSuper2",
+            1
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_64486885   DispatchQueue_748715: designatedCodeRequirementsCacheQueue  (serial)",
+        "samples": 13,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "semaphore_wait_trap",
+            13
+          ],
+          [
+            "start_wqthread",
+            0
+          ],
+          [
+            "_pthread_wqthread",
+            0
+          ],
+          [
+            "_dispatch_workloop_worker_thread",
+            0
+          ],
+          [
+            "_dispatch_root_queue_drain_deferred_wlh",
+            0
+          ],
+          [
+            "_dispatch_lane_invoke",
+            0
+          ],
+          [
+            "_dispatch_lane_serial_drain",
+            0
+          ],
+          [
+            "_dispatch_client_callout",
+            0
+          ],
+          [
+            "_dispatch_call_block_and_release",
+            0
+          ],
+          [
+            "???",
+            0
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_42827   DispatchQueue_641551: com.iterm2.job-manager.15  (serial)",
+        "samples": 12,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "_pthread_start",
+            12
+          ],
+          [
+            "thread_start",
+            0
+          ]
+        ]
+      },
+      {
+        "thread": "__NSThread__start__  (in Foundation) + 716  [0x1a03ccd60]",
+        "samples": 12,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "objc_msgSend",
+            3
+          ],
+          [
+            "objc_retain",
+            2
+          ],
+          [
+            "objc_release",
+            2
+          ],
+          [
+            "__28-[iTermThread dispatchSync:]_block_invoke",
+            1
+          ],
+          [
+            "-[iTermSynchronizedState retain]",
+            1
+          ],
+          [
+            "objc_msgSendSuper2",
+            1
+          ],
+          [
+            "DYLD-STUB$$objc_retainAutoreleasedReturnValue",
+            1
+          ],
+          [
+            "__39-[iTermMultiServerJobManager ioAllowed]_block_invoke",
+            1
+          ],
+          [
+            "-[TaskNotifier run]",
+            0
+          ],
+          [
+            "-[PTYTask fd]",
+            0
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_42827   DispatchQueue_285900: com.iterm2.job-manager.12  (serial)",
+        "samples": 9,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "_pthread_start",
+            9
+          ],
+          [
+            "thread_start",
+            0
+          ]
+        ]
+      },
+      {
+        "thread": "__NSThread__start__  (in Foundation) + 716  [0x1a03ccd60]",
+        "samples": 9,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "objc_release",
+            3
+          ],
+          [
+            "objc_retain",
+            2
+          ],
+          [
+            "_objc_rootRelease",
+            1
+          ],
+          [
+            "_objc_rootRetain",
+            1
+          ],
+          [
+            "objc_msgSendSuper2",
+            1
+          ],
+          [
+            "objc_msgSend",
+            1
+          ],
+          [
+            "-[TaskNotifier run]",
+            0
+          ],
+          [
+            "-[PTYTask fd]",
+            0
+          ],
+          [
+            "-[iTermMultiServerJobManager fd]",
+            0
+          ],
+          [
+            "-[iTermThread dispatchSync:]",
+            0
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_64495777   DispatchQueue_282: com.iterm2.process-cache-work  (serial)",
+        "samples": 5,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "madvise",
+            2
+          ],
+          [
+            "__bzero",
+            1
+          ],
+          [
+            "-[NSObject autorelease]",
+            1
+          ],
+          [
+            "__sysctl",
+            1
+          ],
+          [
+            "start_wqthread",
+            0
+          ],
+          [
+            "_pthread_wqthread",
+            0
+          ],
+          [
+            "_dispatch_workloop_worker_thread",
+            0
+          ],
+          [
+            "_dispatch_root_queue_drain_deferred_wlh",
+            0
+          ],
+          [
+            "_dispatch_lane_invoke",
+            0
+          ],
+          [
+            "_dispatch_lane_serial_drain",
+            0
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_<multiple>   DispatchQueue_427: com.apple.coreanimation.mtl_completion  (serial)",
+        "samples": 2,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "mach_absolute_time",
+            1
+          ],
+          [
+            "_Block_release",
+            1
+          ],
+          [
+            "start_wqthread",
+            0
+          ],
+          [
+            "_pthread_wqthread",
+            0
+          ],
+          [
+            "_dispatch_workloop_worker_thread",
+            0
+          ],
+          [
+            "_dispatch_root_queue_drain_deferred_wlh",
+            0
+          ],
+          [
+            "_dispatch_lane_invoke",
+            0
+          ],
+          [
+            "_dispatch_lane_serial_drain",
+            0
+          ],
+          [
+            "_dispatch_mach_invoke",
+            0
+          ],
+          [
+            "_dispatch_mach_msg_invoke",
+            0
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_64533194   DispatchQueue_209: com.Metal.DeviceDispatchQueue  (serial)",
+        "samples": 1,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "iokit_user_client_trap",
+            1
+          ],
+          [
+            "start_wqthread",
+            0
+          ],
+          [
+            "_pthread_wqthread",
+            0
+          ],
+          [
+            "_dispatch_workloop_worker_thread",
+            0
+          ],
+          [
+            "_dispatch_root_queue_drain_deferred_wlh",
+            0
+          ],
+          [
+            "_dispatch_lane_invoke",
+            0
+          ],
+          [
+            "_dispatch_lane_serial_drain",
+            0
+          ],
+          [
+            "_dispatch_source_invoke",
+            0
+          ],
+          [
+            "_dispatch_source_latch_and_call",
+            0
+          ],
+          [
+            "_dispatch_continuation_pop",
+            0
+          ]
+        ]
+      }
+    ],
+    "quit_iterm_server.sample.txt": [
+      {
+        "thread": "Thread_42660   DispatchQueue_1: com.apple.main-thread  (serial)",
+        "samples": 7346,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "__select",
+            7346
+          ],
+          [
+            "start",
+            0
+          ],
+          [
+            "main",
+            0
+          ],
+          [
+            "iTermSelect",
+            0
+          ]
+        ]
+      }
+    ],
+    "quit_supervisor.sample.txt": [
+      {
+        "thread": "Thread_64533230   DispatchQueue_1: com.apple.main-thread  (serial)",
+        "samples": 7131,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 4542
+        },
+        "top_exclusive": [
+          [
+            "__semwait_signal",
+            4350
+          ],
+          [
+            "kevent",
+            1515
+          ],
+          [
+            "poll",
+            504
+          ],
+          [
+            "write",
+            440
+          ],
+          [
+            "mach_msg2_trap",
+            160
+          ],
+          [
+            "mach_absolute_time",
+            76
+          ],
+          [
+            "_RNvNtCscyLA3ltjFBl_14ascii_renderer11__1_playback9supervise",
+            19
+          ],
+          [
+            "_pthread_exit_if_canceled",
+            8
+          ],
+          [
+            "read",
+            8
+          ],
+          [
+            "nanosleep",
+            7
+          ]
+        ]
+      }
+    ],
+    "quit_worker.sample.txt": [
+      {
+        "thread": "Thread_64533384   DispatchQueue_1: com.apple.main-thread  (serial)",
+        "samples": 5225,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 4851,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "poll",
+            4847
+          ],
+          [
+            "semaphore_timedwait_trap",
+            181
+          ],
+          [
+            "_RNvNtCscyLA3ltjFBl_14ascii_renderer5morph20morph_worker_session",
+            92
+          ],
+          [
+            "_RNCNCNvNtNtCscyLA3ltjFBl_14ascii_renderer5modes19__50_gem_aetherium_220draw_gem_aetherium_20s_0B9_",
+            31
+          ],
+          [
+            "_RNvNtCscRB6Wg0isjl_13unicode_width6tables12lookup_width",
+            19
+          ],
+          [
+            "__psynch_cvwait",
+            15
+          ],
+          [
+            "_RNvNtCscyLA3ltjFBl_14ascii_renderer6gridio11encode_span",
+            15
+          ],
+          [
+            "_RNvNtCscyLA3ltjFBl_14ascii_renderer6render10push_color",
+            11
+          ],
+          [
+            "write",
+            3
+          ],
+          [
+            "_RNvNtCsbdgPRJL8iXf_4core3fmt5write",
+            3
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_64533385",
+        "samples": 5225,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "read",
+            5225
+          ],
+          [
+            "thread_start",
+            0
+          ],
+          [
+            "_pthread_start",
+            0
+          ],
+          [
+            "_RNvNvMs0_NtNtNtCshaMuUdr4xqv_3std3sys6thread4unixNtB7_6Thread3new12thread_start",
+            0
+          ],
+          [
+            "_RNSNvYNCINvNtNtCshaMuUdr4xqv_3std6thread9lifecycle15spawn_uncheckedNCNvNtCscyLA3ltjFBl_14ascii_renderer11__1_playback6worker0uEs_0INtNtNtCsbdgPRJL8iXf_4core3ops8function6FnOnceuE9call_once6vtableB19_",
+            0
+          ],
+          [
+            "_RINvNtNtCshaMuUdr4xqv_3std3sys9backtrace28___rust_begin_short_backtraceNCNvNtCscyLA3ltjFBl_14ascii_renderer11__1_playback6worker0uEB1d_",
+            0
+          ],
+          [
+            "_RNvXs8_NtNtCseDzz0AwM82n_5alloc2io4utilINtB5_5LinesNtNtNtCshaMuUdr4xqv_3std2io5stdio9StdinLockENtNtNtNtCsbdgPRJL8iXf_4core4iter6traits8iterator8Iterator4nextCscyLA3ltjFBl_14ascii_renderer",
+            0
+          ],
+          [
+            "_RNvXs7_NtNtCshaMuUdr4xqv_3std2io5stdioNtB5_9StdinLockNtNtNtCseDzz0AwM82n_5alloc2io8buf_read7BufRead9read_line",
+            0
+          ],
+          [
+            "_RINvNtNtCseDzz0AwM82n_5alloc2io8buf_read18default_read_untilINtNtNtB4_8buffered9bufreader9BufReaderNtNtNtCshaMuUdr4xqv_3std2io5stdio8StdinRawEEB1F_",
+            0
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_64533386",
+        "samples": 5225,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "__psynch_cvwait",
+            5212
+          ],
+          [
+            "swtch_pri",
+            5
+          ],
+          [
+            "_RNvXs_NtNtNtCsbdgPRJL8iXf_4core3ops8function5implsRNCNCNCNvNtNtCscyLA3ltjFBl_14ascii_renderer5modes19__50_gem_aetherium_220draw_gem_aetherium_20s0_00INtB6_5FnMutTTjQINtNtCseDzz0AwM82n_5alloc3vec3VecNtNtBZ_5types4CellEEEE8call_mutBZ_",
+            2
+          ],
+          [
+            "powf",
+            2
+          ],
+          [
+            "sinf",
+            2
+          ],
+          [
+            "atan2f",
+            1
+          ],
+          [
+            "DYLD-STUB$$atan2f",
+            1
+          ],
+          [
+            "thread_start",
+            0
+          ],
+          [
+            "_pthread_start",
+            0
+          ],
+          [
+            "_RNvNvMs0_NtNtNtCshaMuUdr4xqv_3std3sys6thread4unixNtB7_6Thread3new12thread_start",
+            0
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_64533387",
+        "samples": 5225,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "__psynch_cvwait",
+            5213
+          ],
+          [
+            "_RNvXs_NtNtNtCsbdgPRJL8iXf_4core3ops8function5implsRNCNCNCNvNtNtCscyLA3ltjFBl_14ascii_renderer5modes19__50_gem_aetherium_220draw_gem_aetherium_20s0_00INtB6_5FnMutTTjQINtNtCseDzz0AwM82n_5alloc3vec3VecNtNtBZ_5types4CellEEEE8call_mutBZ_",
+            3
+          ],
+          [
+            "powf",
+            3
+          ],
+          [
+            "atan2f",
+            3
+          ],
+          [
+            "swtch_pri",
+            2
+          ],
+          [
+            "__psynch_mutexdrop",
+            1
+          ],
+          [
+            "thread_start",
+            0
+          ],
+          [
+            "_pthread_start",
+            0
+          ],
+          [
+            "_RNvNvMs0_NtNtNtCshaMuUdr4xqv_3std3sys6thread4unixNtB7_6Thread3new12thread_start",
+            0
+          ],
+          [
+            "_RNSNvYNCINvNtNtCshaMuUdr4xqv_3std6thread9lifecycle15spawn_uncheckedNCNvXs0_NtCs2fccRRW0PD6_10rayon_core8registryNtB1b_12DefaultSpawnNtB1b_11ThreadSpawn5spawn0uEs_0INtNtNtCsbdgPRJL8iXf_4core3ops8function6FnOnceuE9call_once6vtableB1d_",
+            0
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_64533388",
+        "samples": 5225,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "__psynch_cvwait",
+            5211
+          ],
+          [
+            "_RNvXs_NtNtNtCsbdgPRJL8iXf_4core3ops8function5implsRNCNCNCNvNtNtCscyLA3ltjFBl_14ascii_renderer5modes19__50_gem_aetherium_220draw_gem_aetherium_20s0_00INtB6_5FnMutTTjQINtNtCseDzz0AwM82n_5alloc3vec3VecNtNtBZ_5types4CellEEEE8call_mutBZ_",
+            7
+          ],
+          [
+            "swtch_pri",
+            3
+          ],
+          [
+            "sinf",
+            2
+          ],
+          [
+            "atan2f",
+            1
+          ],
+          [
+            "__psynch_mutexwait",
+            1
+          ],
+          [
+            "thread_start",
+            0
+          ],
+          [
+            "_pthread_start",
+            0
+          ],
+          [
+            "_RNvNvMs0_NtNtNtCshaMuUdr4xqv_3std3sys6thread4unixNtB7_6Thread3new12thread_start",
+            0
+          ],
+          [
+            "_RNSNvYNCINvNtNtCshaMuUdr4xqv_3std6thread9lifecycle15spawn_uncheckedNCNvXs0_NtCs2fccRRW0PD6_10rayon_core8registryNtB1b_12DefaultSpawnNtB1b_11ThreadSpawn5spawn0uEs_0INtNtNtCsbdgPRJL8iXf_4core3ops8function6FnOnceuE9call_once6vtableB1d_",
+            0
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_64533389",
+        "samples": 5225,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "__psynch_cvwait",
+            5213
+          ],
+          [
+            "_RNvXs_NtNtNtCsbdgPRJL8iXf_4core3ops8function5implsRNCNCNCNvNtNtCscyLA3ltjFBl_14ascii_renderer5modes19__50_gem_aetherium_220draw_gem_aetherium_20s0_00INtB6_5FnMutTTjQINtNtCseDzz0AwM82n_5alloc3vec3VecNtNtBZ_5types4CellEEEE8call_mutBZ_",
+            5
+          ],
+          [
+            "DYLD-STUB$$atan2f",
+            2
+          ],
+          [
+            "swtch_pri",
+            2
+          ],
+          [
+            "powf",
+            2
+          ],
+          [
+            "__psynch_cvsignal",
+            1
+          ],
+          [
+            "thread_start",
+            0
+          ],
+          [
+            "_pthread_start",
+            0
+          ],
+          [
+            "_RNvNvMs0_NtNtNtCshaMuUdr4xqv_3std3sys6thread4unixNtB7_6Thread3new12thread_start",
+            0
+          ],
+          [
+            "_RNSNvYNCINvNtNtCshaMuUdr4xqv_3std6thread9lifecycle15spawn_uncheckedNCNvXs0_NtCs2fccRRW0PD6_10rayon_core8registryNtB1b_12DefaultSpawnNtB1b_11ThreadSpawn5spawn0uEs_0INtNtNtCsbdgPRJL8iXf_4core3ops8function6FnOnceuE9call_once6vtableB1d_",
+            0
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_64533390",
+        "samples": 5225,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "__psynch_cvwait",
+            5212
+          ],
+          [
+            "swtch_pri",
+            4
+          ],
+          [
+            "_RNvXs_NtNtNtCsbdgPRJL8iXf_4core3ops8function5implsRNCNCNCNvNtNtCscyLA3ltjFBl_14ascii_renderer5modes19__50_gem_aetherium_220draw_gem_aetherium_20s0_00INtB6_5FnMutTTjQINtNtCseDzz0AwM82n_5alloc3vec3VecNtNtBZ_5types4CellEEEE8call_mutBZ_",
+            3
+          ],
+          [
+            "powf",
+            2
+          ],
+          [
+            "DYLD-STUB$$atan2f",
+            1
+          ],
+          [
+            "atan2f",
+            1
+          ],
+          [
+            "sinf",
+            1
+          ],
+          [
+            "__psynch_mutexwait",
+            1
+          ],
+          [
+            "thread_start",
+            0
+          ],
+          [
+            "_pthread_start",
+            0
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_64533391",
+        "samples": 5225,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "__psynch_cvwait",
+            5211
+          ],
+          [
+            "_RNvXs_NtNtNtCsbdgPRJL8iXf_4core3ops8function5implsRNCNCNCNvNtNtCscyLA3ltjFBl_14ascii_renderer5modes19__50_gem_aetherium_220draw_gem_aetherium_20s0_00INtB6_5FnMutTTjQINtNtCseDzz0AwM82n_5alloc3vec3VecNtNtBZ_5types4CellEEEE8call_mutBZ_",
+            4
+          ],
+          [
+            "swtch_pri",
+            4
+          ],
+          [
+            "sinf",
+            2
+          ],
+          [
+            "atan2f",
+            2
+          ],
+          [
+            "powf",
+            1
+          ],
+          [
+            "__psynch_mutexwait",
+            1
+          ],
+          [
+            "thread_start",
+            0
+          ],
+          [
+            "_pthread_start",
+            0
+          ],
+          [
+            "_RNvNvMs0_NtNtNtCshaMuUdr4xqv_3std3sys6thread4unixNtB7_6Thread3new12thread_start",
+            0
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_64533392",
+        "samples": 5225,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "__psynch_cvwait",
+            5212
+          ],
+          [
+            "_RNvXs_NtNtNtCsbdgPRJL8iXf_4core3ops8function5implsRNCNCNCNvNtNtCscyLA3ltjFBl_14ascii_renderer5modes19__50_gem_aetherium_220draw_gem_aetherium_20s0_00INtB6_5FnMutTTjQINtNtCseDzz0AwM82n_5alloc3vec3VecNtNtBZ_5types4CellEEEE8call_mutBZ_",
+            3
+          ],
+          [
+            "powf",
+            3
+          ],
+          [
+            "swtch_pri",
+            3
+          ],
+          [
+            "__psynch_mutexwait",
+            2
+          ],
+          [
+            "atan2f",
+            1
+          ],
+          [
+            "_RINvXs_NtNtNtCsbdgPRJL8iXf_4core4iter8adapters5chainINtB5_5ChainINtNtNtBb_3ops5range5RangejEB10_ENtNtNtB9_6traits8iterator8Iterator8try_folduNCINvNtB7_6filter15filter_try_foldjuINtNtB15_12control_flow11ControlFlowNtNtCs2fccRRW0PD6_10rayon_core3job6JobRefENCNvMs8_NtB3t_8registryNtB4d_12WorkerThread5steal0NCINvNvB1x_8find_map5checkjB3p_NCB47_s_0E0E0B2P_EB3t_",
+            1
+          ],
+          [
+            "thread_start",
+            0
+          ],
+          [
+            "_pthread_start",
+            0
+          ],
+          [
+            "_RNvNvMs0_NtNtNtCshaMuUdr4xqv_3std3sys6thread4unixNtB7_6Thread3new12thread_start",
+            0
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_64533393",
+        "samples": 5225,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "__psynch_cvwait",
+            5210
+          ],
+          [
+            "_RNvXs_NtNtNtCsbdgPRJL8iXf_4core3ops8function5implsRNCNCNCNvNtNtCscyLA3ltjFBl_14ascii_renderer5modes19__50_gem_aetherium_220draw_gem_aetherium_20s0_00INtB6_5FnMutTTjQINtNtCseDzz0AwM82n_5alloc3vec3VecNtNtBZ_5types4CellEEEE8call_mutBZ_",
+            4
+          ],
+          [
+            "swtch_pri",
+            4
+          ],
+          [
+            "sinf",
+            3
+          ],
+          [
+            "atan2f",
+            2
+          ],
+          [
+            "powf",
+            2
+          ],
+          [
+            "thread_start",
+            0
+          ],
+          [
+            "_pthread_start",
+            0
+          ],
+          [
+            "_RNvNvMs0_NtNtNtCshaMuUdr4xqv_3std3sys6thread4unixNtB7_6Thread3new12thread_start",
+            0
+          ],
+          [
+            "_RNSNvYNCINvNtNtCshaMuUdr4xqv_3std6thread9lifecycle15spawn_uncheckedNCNvXs0_NtCs2fccRRW0PD6_10rayon_core8registryNtB1b_12DefaultSpawnNtB1b_11ThreadSpawn5spawn0uEs_0INtNtNtCsbdgPRJL8iXf_4core3ops8function6FnOnceuE9call_once6vtableB1d_",
+            0
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_64533394",
+        "samples": 5225,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "__psynch_cvwait",
+            5212
+          ],
+          [
+            "atan2f",
+            4
+          ],
+          [
+            "powf",
+            3
+          ],
+          [
+            "swtch_pri",
+            3
+          ],
+          [
+            "_RNvXs_NtNtNtCsbdgPRJL8iXf_4core3ops8function5implsRNCNCNCNvNtNtCscyLA3ltjFBl_14ascii_renderer5modes19__50_gem_aetherium_220draw_gem_aetherium_20s0_00INtB6_5FnMutTTjQINtNtCseDzz0AwM82n_5alloc3vec3VecNtNtBZ_5types4CellEEEE8call_mutBZ_",
+            2
+          ],
+          [
+            "DYLD-STUB$$atan2f",
+            1
+          ],
+          [
+            "thread_start",
+            0
+          ],
+          [
+            "_pthread_start",
+            0
+          ],
+          [
+            "_RNvNvMs0_NtNtNtCshaMuUdr4xqv_3std3sys6thread4unixNtB7_6Thread3new12thread_start",
+            0
+          ],
+          [
+            "_RNSNvYNCINvNtNtCshaMuUdr4xqv_3std6thread9lifecycle15spawn_uncheckedNCNvXs0_NtCs2fccRRW0PD6_10rayon_core8registryNtB1b_12DefaultSpawnNtB1b_11ThreadSpawn5spawn0uEs_0INtNtNtCsbdgPRJL8iXf_4core3ops8function6FnOnceuE9call_once6vtableB1d_",
+            0
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_64533395",
+        "samples": 5225,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "__psynch_cvwait",
+            5214
+          ],
+          [
+            "swtch_pri",
+            5
+          ],
+          [
+            "_RNvXs_NtNtNtCsbdgPRJL8iXf_4core3ops8function5implsRNCNCNCNvNtNtCscyLA3ltjFBl_14ascii_renderer5modes19__50_gem_aetherium_220draw_gem_aetherium_20s0_00INtB6_5FnMutTTjQINtNtCseDzz0AwM82n_5alloc3vec3VecNtNtBZ_5types4CellEEEE8call_mutBZ_",
+            4
+          ],
+          [
+            "sinf",
+            1
+          ],
+          [
+            "atan2f",
+            1
+          ],
+          [
+            "thread_start",
+            0
+          ],
+          [
+            "_pthread_start",
+            0
+          ],
+          [
+            "_RNvNvMs0_NtNtNtCshaMuUdr4xqv_3std3sys6thread4unixNtB7_6Thread3new12thread_start",
+            0
+          ],
+          [
+            "_RNSNvYNCINvNtNtCshaMuUdr4xqv_3std6thread9lifecycle15spawn_uncheckedNCNvXs0_NtCs2fccRRW0PD6_10rayon_core8registryNtB1b_12DefaultSpawnNtB1b_11ThreadSpawn5spawn0uEs_0INtNtNtCsbdgPRJL8iXf_4core3ops8function6FnOnceuE9call_once6vtableB1d_",
+            0
+          ],
+          [
+            "_RINvNtNtCshaMuUdr4xqv_3std3sys9backtrace28___rust_begin_short_backtraceNCNvXs0_NtCs2fccRRW0PD6_10rayon_core8registryNtB1f_12DefaultSpawnNtB1f_11ThreadSpawn5spawn0uEB1h_",
+            0
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_64533396",
+        "samples": 5225,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "__psynch_cvwait",
+            5213
+          ],
+          [
+            "_RNvXs_NtNtNtCsbdgPRJL8iXf_4core3ops8function5implsRNCNCNCNvNtNtCscyLA3ltjFBl_14ascii_renderer5modes19__50_gem_aetherium_220draw_gem_aetherium_20s0_00INtB6_5FnMutTTjQINtNtCseDzz0AwM82n_5alloc3vec3VecNtNtBZ_5types4CellEEEE8call_mutBZ_",
+            7
+          ],
+          [
+            "atan2f",
+            2
+          ],
+          [
+            "swtch_pri",
+            2
+          ],
+          [
+            "sinf",
+            1
+          ],
+          [
+            "thread_start",
+            0
+          ],
+          [
+            "_pthread_start",
+            0
+          ],
+          [
+            "_RNvNvMs0_NtNtNtCshaMuUdr4xqv_3std3sys6thread4unixNtB7_6Thread3new12thread_start",
+            0
+          ],
+          [
+            "_RNSNvYNCINvNtNtCshaMuUdr4xqv_3std6thread9lifecycle15spawn_uncheckedNCNvXs0_NtCs2fccRRW0PD6_10rayon_core8registryNtB1b_12DefaultSpawnNtB1b_11ThreadSpawn5spawn0uEs_0INtNtNtCsbdgPRJL8iXf_4core3ops8function6FnOnceuE9call_once6vtableB1d_",
+            0
+          ],
+          [
+            "_RINvNtNtCshaMuUdr4xqv_3std3sys9backtrace28___rust_begin_short_backtraceNCNvXs0_NtCs2fccRRW0PD6_10rayon_core8registryNtB1f_12DefaultSpawnNtB1f_11ThreadSpawn5spawn0uEB1h_",
+            0
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_64533397",
+        "samples": 5225,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "__psynch_cvwait",
+            5213
+          ],
+          [
+            "swtch_pri",
+            4
+          ],
+          [
+            "_RNvXs_NtNtNtCsbdgPRJL8iXf_4core3ops8function5implsRNCNCNCNvNtNtCscyLA3ltjFBl_14ascii_renderer5modes19__50_gem_aetherium_220draw_gem_aetherium_20s0_00INtB6_5FnMutTTjQINtNtCseDzz0AwM82n_5alloc3vec3VecNtNtBZ_5types4CellEEEE8call_mutBZ_",
+            3
+          ],
+          [
+            "sinf",
+            2
+          ],
+          [
+            "__psynch_mutexwait",
+            1
+          ],
+          [
+            "atan2f",
+            1
+          ],
+          [
+            "powf",
+            1
+          ],
+          [
+            "thread_start",
+            0
+          ],
+          [
+            "_pthread_start",
+            0
+          ],
+          [
+            "_RNvNvMs0_NtNtNtCshaMuUdr4xqv_3std3sys6thread4unixNtB7_6Thread3new12thread_start",
+            0
+          ]
+        ]
+      }
+    ],
+    "steady_iterm.sample.txt": [
+      {
+        "thread": "Thread_39465   DispatchQueue_1: com.apple.main-thread  (serial)",
+        "samples": 4952,
+        "inclusive": {
+          "terminal_drawing": 4264,
+          "construct_and_draw_runs": 4232,
+          "build_attributed_strings": 2117,
+          "draw_attributed_strings": 2110,
+          "iterm_timer_instrumentation": 645,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "objc_msgSend",
+            360
+          ],
+          [
+            "semaphore_timedwait_trap",
+            194
+          ],
+          [
+            "+[NSAttributeDictionary newWithDictionary:]",
+            169
+          ],
+          [
+            "mach_absolute_time",
+            164
+          ],
+          [
+            "id2data(objc_object*, SyncKind, usage)",
+            160
+          ],
+          [
+            "objc_release",
+            125
+          ],
+          [
+            "semaphore_wait_trap",
+            118
+          ],
+          [
+            "__CFStringHash",
+            108
+          ],
+          [
+            "_CFRelease",
+            97
+          ],
+          [
+            "CF_IS_OBJC",
+            95
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_42507   DispatchQueue_126: com.iterm2.accept  (serial)",
+        "samples": 4952,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "__accept",
+            4952
+          ],
+          [
+            "start_wqthread",
+            0
+          ],
+          [
+            "_pthread_wqthread",
+            0
+          ],
+          [
+            "_dispatch_workloop_worker_thread",
+            0
+          ],
+          [
+            "_dispatch_root_queue_drain_deferred_wlh",
+            0
+          ],
+          [
+            "_dispatch_lane_invoke",
+            0
+          ],
+          [
+            "_dispatch_lane_serial_drain",
+            0
+          ],
+          [
+            "_dispatch_client_callout",
+            0
+          ],
+          [
+            "_dispatch_call_block_and_release",
+            0
+          ],
+          [
+            "__40-[iTermSocket listenWithBacklog:accept:]_block_invoke",
+            0
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_42664: com.apple.NSEventThread",
+        "samples": 4952,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "mach_msg2_trap",
+            4952
+          ],
+          [
+            "thread_start",
+            0
+          ],
+          [
+            "_pthread_start",
+            0
+          ],
+          [
+            "_NSEventThread",
+            0
+          ],
+          [
+            "CFRunLoopRunSpecific",
+            0
+          ],
+          [
+            "__CFRunLoopRun",
+            0
+          ],
+          [
+            "__CFRunLoopServiceMachPort",
+            0
+          ],
+          [
+            "mach_msg",
+            0
+          ],
+          [
+            "mach_msg_overwrite",
+            0
+          ],
+          [
+            "mach_msg2_internal",
+            0
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_42827",
+        "samples": 4920,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "_pthread_start",
+            4920
+          ],
+          [
+            "thread_start",
+            0
+          ]
+        ]
+      },
+      {
+        "thread": "__NSThread__start__  (in Foundation) + 716  [0x1a03ccd60]",
+        "samples": 4920,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "semaphore_wait_trap",
+            3606
+          ],
+          [
+            "__select",
+            274
+          ],
+          [
+            "AdvanceAndEatControlChars",
+            88
+          ],
+          [
+            "tiny_malloc_from_free_list",
+            86
+          ],
+          [
+            "objc_msgSend",
+            75
+          ],
+          [
+            "+[VT100CSIParser decodeFromContext:support8BitControlCharacters:incidentals:token:]",
+            70
+          ],
+          [
+            "-[VT100Parser addNextParsedTokensToVector:nonSignalingCount:]",
+            66
+          ],
+          [
+            "read",
+            33
+          ],
+          [
+            "__CFStringCreateImmutableFunnel3",
+            26
+          ],
+          [
+            "objc_release",
+            23
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_<multiple>   DispatchQueue_238: com.iterm2.mutation  (serial)",
+        "samples": 4864,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 4089,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "objc_msgSend",
+            612
+          ],
+          [
+            "CF_IS_OBJC",
+            223
+          ],
+          [
+            "objc_retainAutoreleasedReturnValue",
+            207
+          ],
+          [
+            "objc_release",
+            206
+          ],
+          [
+            "_CFRelease",
+            175
+          ],
+          [
+            "objc_retain",
+            159
+          ],
+          [
+            "???",
+            102
+          ],
+          [
+            "__CFStringAppendFormatCore",
+            95
+          ],
+          [
+            "_CFRetain",
+            81
+          ],
+          [
+            "objc_autoreleaseReturnValue",
+            80
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_64533194",
+        "samples": 4774,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "__workq_kernreturn",
+            4760
+          ],
+          [
+            "start_wqthread",
+            14
+          ],
+          [
+            "_pthread_wqthread",
+            0
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_64486885",
+        "samples": 4577,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "__workq_kernreturn",
+            4564
+          ],
+          [
+            "start_wqthread",
+            12
+          ],
+          [
+            "DYLD-STUB$$memcpy",
+            1
+          ],
+          [
+            "_pthread_wqthread",
+            0
+          ],
+          [
+            "_dispatch_workloop_worker_thread",
+            0
+          ],
+          [
+            "_dispatch_event_loop_merge",
+            0
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_64532727",
+        "samples": 4186,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "__workq_kernreturn",
+            4175
+          ],
+          [
+            "start_wqthread",
+            11
+          ],
+          [
+            "_pthread_wqthread",
+            0
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_64495777",
+        "samples": 768,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "__workq_kernreturn",
+            750
+          ],
+          [
+            "start_wqthread",
+            18
+          ],
+          [
+            "_pthread_wqthread",
+            0
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_<multiple>   DispatchQueue_921: com.iterm2.token-destroyer  (serial)",
+        "samples": 377,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "tiny_free_no_lock",
+            50
+          ],
+          [
+            "madvise",
+            45
+          ],
+          [
+            "tiny_free_list_remove_ptr",
+            27
+          ],
+          [
+            "tiny_free_list_add_ptr",
+            23
+          ],
+          [
+            "_platform_memset",
+            20
+          ],
+          [
+            "free_tiny",
+            19
+          ],
+          [
+            "tiny_free_detach_region",
+            18
+          ],
+          [
+            "_nanov2_free",
+            18
+          ],
+          [
+            "-[VT100Token dealloc]",
+            13
+          ],
+          [
+            "_free",
+            12
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_<multiple>   DispatchQueue_417: CA::CG::Queue  (serial)",
+        "samples": 216,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "CA::OGL::MetalContext::draw(MTLPrimitiveType, unsigned int, unsigned int, void const*, unsigned long, unsigned long, unsigned int, unsigned int, unsigned short const*, CA::OGL::ClipPlane const*, CA::OGL::MetalBufferPool::MetalBuffer const*)",
+            14
+          ],
+          [
+            "CA::BoundsImpl::intersect(CA::GenericRect<int>&, CA::GenericRect<int> const&)",
+            8
+          ],
+          [
+            "std::__hash_table<std::__hash_value_type<unsigned int, unsigned int>>::__emplace_unique_key_args<unsigned int, std::piecewise_construct_t const&, std::tuple<unsigned int const&>, std::tuple<>>(unsigned int const&, std::piecewise_construct_t const&, std::tuple<unsigned int const&>&&, std::tuple<>&&)",
+            6
+          ],
+          [
+            "_platform_memset",
+            6
+          ],
+          [
+            "CF_IS_OBJC",
+            6
+          ],
+          [
+            "CA::Rect::apply_transform(CGAffineTransform const&)",
+            6
+          ],
+          [
+            "CA::CG::DrawOp::render(CA::CG::Renderer&) const",
+            5
+          ],
+          [
+            "CGFontGetGlyphIdentifiers",
+            5
+          ],
+          [
+            "CA::CG::draw_glyph_bitmaps(CA::CG::Renderer&, CA::CG::FillGlyphs const&, CA::CG::ShadowStyle const*)",
+            4
+          ],
+          [
+            "AGX::RenderContext<AGX::G14X::Encoders, AGX::G14X::Classes, AGX::G14X::ObjClasses>::encodeAndEmitRenderState(AGX::G14X::VertexProgramVariant const*, AGX::G14X::FragmentProgramVariant const*, AGX::ArgumentTable<AGX::G14X::Encoders, AGX::G14X::Classes>&, AGX::ArgumentTable<AGX::G14X::Encoders, AGX::G14X::Classes>&, AGX::RenderDirtyBits<AGX::G14X::Classes>&, bool)",
+            4
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_<multiple>   DispatchQueue_424: com.apple.coreanimation.mtl_submission  (serial)",
+        "samples": 25,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "iokit_user_client_trap",
+            24
+          ],
+          [
+            "_dispatch_continuation_pop",
+            1
+          ],
+          [
+            "start_wqthread",
+            0
+          ],
+          [
+            "_pthread_wqthread",
+            0
+          ],
+          [
+            "_dispatch_workloop_worker_thread",
+            0
+          ],
+          [
+            "_dispatch_root_queue_drain_deferred_wlh",
+            0
+          ],
+          [
+            "_dispatch_lane_invoke",
+            0
+          ],
+          [
+            "_dispatch_lane_serial_drain",
+            0
+          ],
+          [
+            "_dispatch_source_invoke",
+            0
+          ],
+          [
+            "_dispatch_source_latch_and_call",
+            0
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_42827   DispatchQueue_750155: com.iterm2.job-manager.21  (serial)",
+        "samples": 15,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "_pthread_start",
+            15
+          ],
+          [
+            "thread_start",
+            0
+          ]
+        ]
+      },
+      {
+        "thread": "__NSThread__start__  (in Foundation) + 716  [0x1a03ccd60]",
+        "samples": 15,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "objc_msgSend",
+            4
+          ],
+          [
+            "-[iTermMultiServerJobManagerState child]",
+            2
+          ],
+          [
+            "objc_release",
+            2
+          ],
+          [
+            "objc_retainAutoreleasedReturnValue",
+            2
+          ],
+          [
+            "_objc_rootRelease",
+            2
+          ],
+          [
+            "__39-[iTermMultiServerJobManager ioAllowed]_block_invoke",
+            1
+          ],
+          [
+            "DYLD-STUB$$objc_retain",
+            1
+          ],
+          [
+            "DYLD-STUB$$dispatch_queue_get_label",
+            1
+          ],
+          [
+            "-[TaskNotifier run]",
+            0
+          ],
+          [
+            "-[PTYTask wantsRead]",
+            0
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_42827   DispatchQueue_285900: com.iterm2.job-manager.12  (serial)",
+        "samples": 13,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "_pthread_start",
+            13
+          ],
+          [
+            "thread_start",
+            0
+          ]
+        ]
+      },
+      {
+        "thread": "__NSThread__start__  (in Foundation) + 716  [0x1a03ccd60]",
+        "samples": 13,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "objc_msgSend",
+            2
+          ],
+          [
+            "objc_retainAutoreleasedReturnValue",
+            2
+          ],
+          [
+            "objc_release",
+            2
+          ],
+          [
+            "__28-[iTermThread dispatchSync:]_block_invoke",
+            1
+          ],
+          [
+            "__32-[iTermMultiServerJobManager fd]_block_invoke",
+            1
+          ],
+          [
+            "-[iTermSynchronizedState retain]",
+            1
+          ],
+          [
+            "objc_msgSendSuper2",
+            1
+          ],
+          [
+            "DYLD-STUB$$objc_msgSendSuper2",
+            1
+          ],
+          [
+            "-[iTermSynchronizedState check]",
+            1
+          ],
+          [
+            "dispatch_queue_get_label",
+            1
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_64486885   DispatchQueue_7: com.apple.root.background-qos  (concurrent)",
+        "samples": 9,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "CoreAnalytics::Client::get()",
+            9
+          ],
+          [
+            "start_wqthread",
+            0
+          ],
+          [
+            "_pthread_wqthread",
+            0
+          ],
+          [
+            "_dispatch_worker_thread2",
+            0
+          ],
+          [
+            "_dispatch_root_queue_drain",
+            0
+          ],
+          [
+            "_dispatch_source_invoke",
+            0
+          ],
+          [
+            "_dispatch_source_latch_and_call",
+            0
+          ],
+          [
+            "_dispatch_continuation_pop",
+            0
+          ],
+          [
+            "_dispatch_client_callout",
+            0
+          ],
+          [
+            "__SPCheckHIDResponseTime_block_invoke",
+            0
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_<multiple>   DispatchQueue_427: com.apple.coreanimation.mtl_completion  (serial)",
+        "samples": 5,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "_platform_memset",
+            2
+          ],
+          [
+            "__IODataQueueDequeue",
+            2
+          ],
+          [
+            "-[_MTLCommandBuffer signalCommandBufferAvailable]",
+            1
+          ],
+          [
+            "start_wqthread",
+            0
+          ],
+          [
+            "_pthread_wqthread",
+            0
+          ],
+          [
+            "_dispatch_workloop_worker_thread",
+            0
+          ],
+          [
+            "_dispatch_root_queue_drain_deferred_wlh",
+            0
+          ],
+          [
+            "_dispatch_lane_invoke",
+            0
+          ],
+          [
+            "_dispatch_lane_serial_drain",
+            0
+          ],
+          [
+            "_dispatch_mach_invoke",
+            0
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_42827   DispatchQueue_641551: com.iterm2.job-manager.15  (serial)",
+        "samples": 4,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "_pthread_start",
+            4
+          ],
+          [
+            "thread_start",
+            0
+          ]
+        ]
+      },
+      {
+        "thread": "__NSThread__start__  (in Foundation) + 716  [0x1a03ccd60]",
+        "samples": 4,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "objc_msgSend",
+            2
+          ],
+          [
+            "_dispatch_client_callout",
+            1
+          ],
+          [
+            "__32-[iTermMultiServerJobManager fd]_block_invoke",
+            1
+          ],
+          [
+            "-[TaskNotifier run]",
+            0
+          ],
+          [
+            "-[PTYTask wantsRead]",
+            0
+          ],
+          [
+            "-[iTermMultiServerJobManager ioAllowed]",
+            0
+          ],
+          [
+            "-[iTermThread dispatchSync:]",
+            0
+          ],
+          [
+            "_dispatch_lane_barrier_sync_invoke_and_complete",
+            0
+          ],
+          [
+            "__28-[iTermThread dispatchSync:]_block_invoke",
+            0
+          ],
+          [
+            "__39-[iTermMultiServerJobManager ioAllowed]_block_invoke",
+            0
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_64486885   DispatchQueue_282: com.iterm2.process-cache-work  (serial)",
+        "samples": 4,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "__bzero",
+            2
+          ],
+          [
+            "objc_msgSend",
+            1
+          ],
+          [
+            "madvise",
+            1
+          ],
+          [
+            "start_wqthread",
+            0
+          ],
+          [
+            "_pthread_wqthread",
+            0
+          ],
+          [
+            "_dispatch_workloop_worker_thread",
+            0
+          ],
+          [
+            "_dispatch_root_queue_drain_deferred_wlh",
+            0
+          ],
+          [
+            "_dispatch_lane_invoke",
+            0
+          ],
+          [
+            "_dispatch_lane_serial_drain",
+            0
+          ],
+          [
+            "_dispatch_client_callout",
+            0
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_64486885   DispatchQueue_281: com.iterm2.process-cache-lock  (serial)",
+        "samples": 1,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "weak_unregister_no_lock",
+            1
+          ],
+          [
+            "start_wqthread",
+            0
+          ],
+          [
+            "_pthread_wqthread",
+            0
+          ],
+          [
+            "_dispatch_workloop_worker_thread",
+            0
+          ],
+          [
+            "_dispatch_root_queue_drain_deferred_wlh",
+            0
+          ],
+          [
+            "_dispatch_lane_invoke",
+            0
+          ],
+          [
+            "_dispatch_lane_serial_drain",
+            0
+          ],
+          [
+            "_dispatch_client_callout",
+            0
+          ],
+          [
+            "_dispatch_call_block_and_release",
+            0
+          ],
+          [
+            "__35-[iTermProcessCache updateIfNeeded]_block_invoke_2",
+            0
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_64532727   DispatchQueue_416: CA::CG::DeallocQueue  (serial)",
+        "samples": 1,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "_nanov2_free",
+            1
+          ],
+          [
+            "start_wqthread",
+            0
+          ],
+          [
+            "_pthread_wqthread",
+            0
+          ],
+          [
+            "_dispatch_workloop_worker_thread",
+            0
+          ],
+          [
+            "_dispatch_root_queue_drain_deferred_wlh",
+            0
+          ],
+          [
+            "_dispatch_lane_invoke",
+            0
+          ],
+          [
+            "_dispatch_lane_serial_drain",
+            0
+          ],
+          [
+            "_dispatch_client_callout",
+            0
+          ],
+          [
+            "_dispatch_call_block_and_release",
+            0
+          ],
+          [
+            "invocation function for block in CA::CG::Renderer::release_object(void const*)",
+            0
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_64533194   DispatchQueue_2: com.apple.libdispatch-manager  (serial)",
+        "samples": 1,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "nanov2_calloc",
+            1
+          ],
+          [
+            "start_wqthread",
+            0
+          ],
+          [
+            "_pthread_wqthread",
+            0
+          ],
+          [
+            "_dispatch_kevent_worker_thread",
+            0
+          ],
+          [
+            "_dispatch_mgr_queue_drain",
+            0
+          ],
+          [
+            "_dispatch_lane_serial_drain",
+            0
+          ],
+          [
+            "_dispatch_source_invoke",
+            0
+          ],
+          [
+            "_dispatch_timer_unote_arm",
+            0
+          ],
+          [
+            "_dispatch_timer_heap_grow",
+            0
+          ],
+          [
+            "_dispatch_calloc",
+            0
+          ]
+        ]
+      }
+    ],
+    "steady_iterm_server.sample.txt": [
+      {
+        "thread": "Thread_42660   DispatchQueue_1: com.apple.main-thread  (serial)",
+        "samples": 5529,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "__select",
+            5529
+          ],
+          [
+            "start",
+            0
+          ],
+          [
+            "main",
+            0
+          ],
+          [
+            "iTermSelect",
+            0
+          ]
+        ]
+      }
+    ],
+    "steady_supervisor.sample.txt": [
+      {
+        "thread": "Thread_64533230   DispatchQueue_1: com.apple.main-thread  (serial)",
+        "samples": 5318,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 4301
+        },
+        "top_exclusive": [
+          [
+            "__semwait_signal",
+            3968
+          ],
+          [
+            "poll",
+            549
+          ],
+          [
+            "write",
+            333
+          ],
+          [
+            "mach_msg2_trap",
+            309
+          ],
+          [
+            "kevent",
+            67
+          ],
+          [
+            "mach_absolute_time",
+            35
+          ],
+          [
+            "_RNvNtCscyLA3ltjFBl_14ascii_renderer11__1_playback9supervise",
+            8
+          ],
+          [
+            "clock_get_time",
+            6
+          ],
+          [
+            "clock_gettime",
+            5
+          ],
+          [
+            "read",
+            4
+          ]
+        ]
+      }
+    ],
+    "steady_worker.sample.txt": [
+      {
+        "thread": "Thread_64533384   DispatchQueue_1: com.apple.main-thread  (serial)",
+        "samples": 5345,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 4929,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "poll",
+            4912
+          ],
+          [
+            "semaphore_timedwait_trap",
+            196
+          ],
+          [
+            "_RNvNtCscyLA3ltjFBl_14ascii_renderer5morph20morph_worker_session",
+            103
+          ],
+          [
+            "_RNCNCNvNtNtCscyLA3ltjFBl_14ascii_renderer5modes19__50_gem_aetherium_220draw_gem_aetherium_20s_0B9_",
+            35
+          ],
+          [
+            "__psynch_cvwait",
+            21
+          ],
+          [
+            "_RNvNtCscRB6Wg0isjl_13unicode_width6tables12lookup_width",
+            19
+          ],
+          [
+            "_RNvNtCscyLA3ltjFBl_14ascii_renderer6gridio11encode_span",
+            14
+          ],
+          [
+            "_RNvNtCscyLA3ltjFBl_14ascii_renderer6render10push_color",
+            13
+          ],
+          [
+            "write",
+            12
+          ],
+          [
+            "_platform_memmove",
+            4
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_64533385",
+        "samples": 5345,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "read",
+            5345
+          ],
+          [
+            "thread_start",
+            0
+          ],
+          [
+            "_pthread_start",
+            0
+          ],
+          [
+            "_RNvNvMs0_NtNtNtCshaMuUdr4xqv_3std3sys6thread4unixNtB7_6Thread3new12thread_start",
+            0
+          ],
+          [
+            "_RNSNvYNCINvNtNtCshaMuUdr4xqv_3std6thread9lifecycle15spawn_uncheckedNCNvNtCscyLA3ltjFBl_14ascii_renderer11__1_playback6worker0uEs_0INtNtNtCsbdgPRJL8iXf_4core3ops8function6FnOnceuE9call_once6vtableB19_",
+            0
+          ],
+          [
+            "_RINvNtNtCshaMuUdr4xqv_3std3sys9backtrace28___rust_begin_short_backtraceNCNvNtCscyLA3ltjFBl_14ascii_renderer11__1_playback6worker0uEB1d_",
+            0
+          ],
+          [
+            "_RNvXs8_NtNtCseDzz0AwM82n_5alloc2io4utilINtB5_5LinesNtNtNtCshaMuUdr4xqv_3std2io5stdio9StdinLockENtNtNtNtCsbdgPRJL8iXf_4core4iter6traits8iterator8Iterator4nextCscyLA3ltjFBl_14ascii_renderer",
+            0
+          ],
+          [
+            "_RNvXs7_NtNtCshaMuUdr4xqv_3std2io5stdioNtB5_9StdinLockNtNtNtCseDzz0AwM82n_5alloc2io8buf_read7BufRead9read_line",
+            0
+          ],
+          [
+            "_RINvNtNtCseDzz0AwM82n_5alloc2io8buf_read18default_read_untilINtNtNtB4_8buffered9bufreader9BufReaderNtNtNtCshaMuUdr4xqv_3std2io5stdio8StdinRawEEB1F_",
+            0
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_64533386",
+        "samples": 5345,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "__psynch_cvwait",
+            5324
+          ],
+          [
+            "_RNvXs_NtNtNtCsbdgPRJL8iXf_4core3ops8function5implsRNCNCNCNvNtNtCscyLA3ltjFBl_14ascii_renderer5modes19__50_gem_aetherium_220draw_gem_aetherium_20s0_00INtB6_5FnMutTTjQINtNtCseDzz0AwM82n_5alloc3vec3VecNtNtBZ_5types4CellEEEE8call_mutBZ_",
+            7
+          ],
+          [
+            "swtch_pri",
+            7
+          ],
+          [
+            "powf",
+            3
+          ],
+          [
+            "atan2f",
+            2
+          ],
+          [
+            "__psynch_cvsignal",
+            1
+          ],
+          [
+            "sinf",
+            1
+          ],
+          [
+            "thread_start",
+            0
+          ],
+          [
+            "_pthread_start",
+            0
+          ],
+          [
+            "_RNvNvMs0_NtNtNtCshaMuUdr4xqv_3std3sys6thread4unixNtB7_6Thread3new12thread_start",
+            0
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_64533387",
+        "samples": 5345,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "__psynch_cvwait",
+            5326
+          ],
+          [
+            "_RNvXs_NtNtNtCsbdgPRJL8iXf_4core3ops8function5implsRNCNCNCNvNtNtCscyLA3ltjFBl_14ascii_renderer5modes19__50_gem_aetherium_220draw_gem_aetherium_20s0_00INtB6_5FnMutTTjQINtNtCseDzz0AwM82n_5alloc3vec3VecNtNtBZ_5types4CellEEEE8call_mutBZ_",
+            5
+          ],
+          [
+            "swtch_pri",
+            5
+          ],
+          [
+            "sinf",
+            3
+          ],
+          [
+            "powf",
+            2
+          ],
+          [
+            "atan2f",
+            2
+          ],
+          [
+            "DYLD-STUB$$sinf",
+            1
+          ],
+          [
+            "__psynch_mutexwait",
+            1
+          ],
+          [
+            "thread_start",
+            0
+          ],
+          [
+            "_pthread_start",
+            0
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_64533388",
+        "samples": 5345,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "__psynch_cvwait",
+            5326
+          ],
+          [
+            "_RNvXs_NtNtNtCsbdgPRJL8iXf_4core3ops8function5implsRNCNCNCNvNtNtCscyLA3ltjFBl_14ascii_renderer5modes19__50_gem_aetherium_220draw_gem_aetherium_20s0_00INtB6_5FnMutTTjQINtNtCseDzz0AwM82n_5alloc3vec3VecNtNtBZ_5types4CellEEEE8call_mutBZ_",
+            11
+          ],
+          [
+            "swtch_pri",
+            4
+          ],
+          [
+            "atan2f",
+            2
+          ],
+          [
+            "powf",
+            1
+          ],
+          [
+            "sinf",
+            1
+          ],
+          [
+            "thread_start",
+            0
+          ],
+          [
+            "_pthread_start",
+            0
+          ],
+          [
+            "_RNvNvMs0_NtNtNtCshaMuUdr4xqv_3std3sys6thread4unixNtB7_6Thread3new12thread_start",
+            0
+          ],
+          [
+            "_RNSNvYNCINvNtNtCshaMuUdr4xqv_3std6thread9lifecycle15spawn_uncheckedNCNvXs0_NtCs2fccRRW0PD6_10rayon_core8registryNtB1b_12DefaultSpawnNtB1b_11ThreadSpawn5spawn0uEs_0INtNtNtCsbdgPRJL8iXf_4core3ops8function6FnOnceuE9call_once6vtableB1d_",
+            0
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_64533389",
+        "samples": 5345,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "__psynch_cvwait",
+            5327
+          ],
+          [
+            "_RNvXs_NtNtNtCsbdgPRJL8iXf_4core3ops8function5implsRNCNCNCNvNtNtCscyLA3ltjFBl_14ascii_renderer5modes19__50_gem_aetherium_220draw_gem_aetherium_20s0_00INtB6_5FnMutTTjQINtNtCseDzz0AwM82n_5alloc3vec3VecNtNtBZ_5types4CellEEEE8call_mutBZ_",
+            5
+          ],
+          [
+            "swtch_pri",
+            4
+          ],
+          [
+            "sinf",
+            4
+          ],
+          [
+            "atan2f",
+            3
+          ],
+          [
+            "__psynch_mutexwait",
+            2
+          ],
+          [
+            "thread_start",
+            0
+          ],
+          [
+            "_pthread_start",
+            0
+          ],
+          [
+            "_RNvNvMs0_NtNtNtCshaMuUdr4xqv_3std3sys6thread4unixNtB7_6Thread3new12thread_start",
+            0
+          ],
+          [
+            "_RNSNvYNCINvNtNtCshaMuUdr4xqv_3std6thread9lifecycle15spawn_uncheckedNCNvXs0_NtCs2fccRRW0PD6_10rayon_core8registryNtB1b_12DefaultSpawnNtB1b_11ThreadSpawn5spawn0uEs_0INtNtNtCsbdgPRJL8iXf_4core3ops8function6FnOnceuE9call_once6vtableB1d_",
+            0
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_64533390",
+        "samples": 5345,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "__psynch_cvwait",
+            5324
+          ],
+          [
+            "_RNvXs_NtNtNtCsbdgPRJL8iXf_4core3ops8function5implsRNCNCNCNvNtNtCscyLA3ltjFBl_14ascii_renderer5modes19__50_gem_aetherium_220draw_gem_aetherium_20s0_00INtB6_5FnMutTTjQINtNtCseDzz0AwM82n_5alloc3vec3VecNtNtBZ_5types4CellEEEE8call_mutBZ_",
+            6
+          ],
+          [
+            "atan2f",
+            6
+          ],
+          [
+            "swtch_pri",
+            5
+          ],
+          [
+            "__psynch_mutexwait",
+            3
+          ],
+          [
+            "sinf",
+            1
+          ],
+          [
+            "thread_start",
+            0
+          ],
+          [
+            "_pthread_start",
+            0
+          ],
+          [
+            "_RNvNvMs0_NtNtNtCshaMuUdr4xqv_3std3sys6thread4unixNtB7_6Thread3new12thread_start",
+            0
+          ],
+          [
+            "_RNSNvYNCINvNtNtCshaMuUdr4xqv_3std6thread9lifecycle15spawn_uncheckedNCNvXs0_NtCs2fccRRW0PD6_10rayon_core8registryNtB1b_12DefaultSpawnNtB1b_11ThreadSpawn5spawn0uEs_0INtNtNtCsbdgPRJL8iXf_4core3ops8function6FnOnceuE9call_once6vtableB1d_",
+            0
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_64533391",
+        "samples": 5345,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "__psynch_cvwait",
+            5328
+          ],
+          [
+            "_RNvXs_NtNtNtCsbdgPRJL8iXf_4core3ops8function5implsRNCNCNCNvNtNtCscyLA3ltjFBl_14ascii_renderer5modes19__50_gem_aetherium_220draw_gem_aetherium_20s0_00INtB6_5FnMutTTjQINtNtCseDzz0AwM82n_5alloc3vec3VecNtNtBZ_5types4CellEEEE8call_mutBZ_",
+            5
+          ],
+          [
+            "sinf",
+            4
+          ],
+          [
+            "swtch_pri",
+            4
+          ],
+          [
+            "__psynch_mutexwait",
+            2
+          ],
+          [
+            "powf",
+            1
+          ],
+          [
+            "DYLD-STUB$$atan2f",
+            1
+          ],
+          [
+            "thread_start",
+            0
+          ],
+          [
+            "_pthread_start",
+            0
+          ],
+          [
+            "_RNvNvMs0_NtNtNtCshaMuUdr4xqv_3std3sys6thread4unixNtB7_6Thread3new12thread_start",
+            0
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_64533392",
+        "samples": 5345,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "__psynch_cvwait",
+            5329
+          ],
+          [
+            "swtch_pri",
+            5
+          ],
+          [
+            "sinf",
+            4
+          ],
+          [
+            "atan2f",
+            4
+          ],
+          [
+            "_RNvXs_NtNtNtCsbdgPRJL8iXf_4core3ops8function5implsRNCNCNCNvNtNtCscyLA3ltjFBl_14ascii_renderer5modes19__50_gem_aetherium_220draw_gem_aetherium_20s0_00INtB6_5FnMutTTjQINtNtCseDzz0AwM82n_5alloc3vec3VecNtNtBZ_5types4CellEEEE8call_mutBZ_",
+            2
+          ],
+          [
+            "powf",
+            1
+          ],
+          [
+            "thread_start",
+            0
+          ],
+          [
+            "_pthread_start",
+            0
+          ],
+          [
+            "_RNvNvMs0_NtNtNtCshaMuUdr4xqv_3std3sys6thread4unixNtB7_6Thread3new12thread_start",
+            0
+          ],
+          [
+            "_RNSNvYNCINvNtNtCshaMuUdr4xqv_3std6thread9lifecycle15spawn_uncheckedNCNvXs0_NtCs2fccRRW0PD6_10rayon_core8registryNtB1b_12DefaultSpawnNtB1b_11ThreadSpawn5spawn0uEs_0INtNtNtCsbdgPRJL8iXf_4core3ops8function6FnOnceuE9call_once6vtableB1d_",
+            0
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_64533393",
+        "samples": 5345,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "__psynch_cvwait",
+            5325
+          ],
+          [
+            "swtch_pri",
+            6
+          ],
+          [
+            "_RNvXs_NtNtNtCsbdgPRJL8iXf_4core3ops8function5implsRNCNCNCNvNtNtCscyLA3ltjFBl_14ascii_renderer5modes19__50_gem_aetherium_220draw_gem_aetherium_20s0_00INtB6_5FnMutTTjQINtNtCseDzz0AwM82n_5alloc3vec3VecNtNtBZ_5types4CellEEEE8call_mutBZ_",
+            5
+          ],
+          [
+            "sinf",
+            4
+          ],
+          [
+            "__psynch_mutexwait",
+            2
+          ],
+          [
+            "DYLD-STUB$$sinf",
+            1
+          ],
+          [
+            "atan2f",
+            1
+          ],
+          [
+            "powf",
+            1
+          ],
+          [
+            "thread_start",
+            0
+          ],
+          [
+            "_pthread_start",
+            0
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_64533394",
+        "samples": 5345,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "__psynch_cvwait",
+            5327
+          ],
+          [
+            "swtch_pri",
+            8
+          ],
+          [
+            "sinf",
+            4
+          ],
+          [
+            "powf",
+            3
+          ],
+          [
+            "_RNvXs_NtNtNtCsbdgPRJL8iXf_4core3ops8function5implsRNCNCNCNvNtNtCscyLA3ltjFBl_14ascii_renderer5modes19__50_gem_aetherium_220draw_gem_aetherium_20s0_00INtB6_5FnMutTTjQINtNtCseDzz0AwM82n_5alloc3vec3VecNtNtBZ_5types4CellEEEE8call_mutBZ_",
+            1
+          ],
+          [
+            "atan2f",
+            1
+          ],
+          [
+            "__psynch_mutexwait",
+            1
+          ],
+          [
+            "thread_start",
+            0
+          ],
+          [
+            "_pthread_start",
+            0
+          ],
+          [
+            "_RNvNvMs0_NtNtNtCshaMuUdr4xqv_3std3sys6thread4unixNtB7_6Thread3new12thread_start",
+            0
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_64533395",
+        "samples": 5345,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "__psynch_cvwait",
+            5330
+          ],
+          [
+            "swtch_pri",
+            6
+          ],
+          [
+            "_RNvXs_NtNtNtCsbdgPRJL8iXf_4core3ops8function5implsRNCNCNCNvNtNtCscyLA3ltjFBl_14ascii_renderer5modes19__50_gem_aetherium_220draw_gem_aetherium_20s0_00INtB6_5FnMutTTjQINtNtCseDzz0AwM82n_5alloc3vec3VecNtNtBZ_5types4CellEEEE8call_mutBZ_",
+            2
+          ],
+          [
+            "powf",
+            2
+          ],
+          [
+            "atan2f",
+            2
+          ],
+          [
+            "sinf",
+            2
+          ],
+          [
+            "__psynch_mutexwait",
+            1
+          ],
+          [
+            "thread_start",
+            0
+          ],
+          [
+            "_pthread_start",
+            0
+          ],
+          [
+            "_RNvNvMs0_NtNtNtCshaMuUdr4xqv_3std3sys6thread4unixNtB7_6Thread3new12thread_start",
+            0
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_64533396",
+        "samples": 5345,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "__psynch_cvwait",
+            5331
+          ],
+          [
+            "swtch_pri",
+            5
+          ],
+          [
+            "_RNvXs_NtNtNtCsbdgPRJL8iXf_4core3ops8function5implsRNCNCNCNvNtNtCscyLA3ltjFBl_14ascii_renderer5modes19__50_gem_aetherium_220draw_gem_aetherium_20s0_00INtB6_5FnMutTTjQINtNtCseDzz0AwM82n_5alloc3vec3VecNtNtBZ_5types4CellEEEE8call_mutBZ_",
+            3
+          ],
+          [
+            "DYLD-STUB$$atan2f",
+            2
+          ],
+          [
+            "atan2f",
+            2
+          ],
+          [
+            "powf",
+            1
+          ],
+          [
+            "sinf",
+            1
+          ],
+          [
+            "thread_start",
+            0
+          ],
+          [
+            "_pthread_start",
+            0
+          ],
+          [
+            "_RNvNvMs0_NtNtNtCshaMuUdr4xqv_3std3sys6thread4unixNtB7_6Thread3new12thread_start",
+            0
+          ]
+        ]
+      },
+      {
+        "thread": "Thread_64533397",
+        "samples": 5345,
+        "inclusive": {
+          "terminal_drawing": 0,
+          "construct_and_draw_runs": 0,
+          "build_attributed_strings": 0,
+          "draw_attributed_strings": 0,
+          "iterm_timer_instrumentation": 0,
+          "append_string": 0,
+          "worker_write_frame": 0,
+          "sleep": 0
+        },
+        "top_exclusive": [
+          [
+            "__psynch_cvwait",
+            5335
+          ],
+          [
+            "swtch_pri",
+            8
+          ],
+          [
+            "__psynch_mutexwait",
+            1
+          ],
+          [
+            "sinf",
+            1
+          ],
+          [
+            "thread_start",
+            0
+          ],
+          [
+            "_pthread_start",
+            0
+          ],
+          [
+            "_RNvNvMs0_NtNtNtCshaMuUdr4xqv_3std3sys6thread4unixNtB7_6Thread3new12thread_start",
+            0
+          ],
+          [
+            "_RNSNvYNCINvNtNtCshaMuUdr4xqv_3std6thread9lifecycle15spawn_uncheckedNCNvXs0_NtCs2fccRRW0PD6_10rayon_core8registryNtB1b_12DefaultSpawnNtB1b_11ThreadSpawn5spawn0uEs_0INtNtNtCsbdgPRJL8iXf_4core3ops8function6FnOnceuE9call_once6vtableB1d_",
+            0
+          ],
+          [
+            "_RINvNtNtCshaMuUdr4xqv_3std3sys9backtrace28___rust_begin_short_backtraceNCNvXs0_NtCs2fccRRW0PD6_10rayon_core8registryNtB1f_12DefaultSpawnNtB1f_11ThreadSpawn5spawn0uEB1h_",
+            0
+          ],
+          [
+            "_RNvMNtCs2fccRRW0PD6_10rayon_core8registryNtB2_13ThreadBuilder3run",
+            0
+          ]
+        ]
+      }
+    ]
+  },
+  "frames": {
+    "count": 43,
+    "render_us": {
+      "median": 5844,
+      "min": 5119,
+      "max": 8818,
+      "sum": 260397
+    },
+    "encoding_us": {
+      "median": 11865,
+      "min": 6338,
+      "max": 24020,
+      "sum": 601744
+    },
+    "presentation_us": {
+      "median": 466082,
+      "min": 409795,
+      "max": 516470,
+      "sum": 19875084
+    },
+    "dur_us": {
+      "median": 482939,
+      "min": 426202,
+      "max": 538478,
+      "sum": 20737269
+    },
+    "bytes": {
+      "median": 2827341,
+      "min": 2711398,
+      "max": 3816533,
+      "sum": 122448747
+    }
+  },
+  "quit": {
+    "requested_ms": 1788719762794,
+    "call_returned_ms": 1788719763689,
+    "received_ms": 1788719766114,
+    "stopped_ms": 1788719766115,
+    "request_to_receive_ms": 3320,
+    "call_return_to_receive_ms": 2425,
+    "receive_to_stopped_ms": 1,
+    "stop_us": 578
+  }
+}

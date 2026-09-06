@@ -1,0 +1,21 @@
+{
+  "created_ms": 1788719745301,
+  "scenario": "raw iTerm2 exact demo, all maxima, sampling during animation and q",
+  "binary": "/Users/chrishafley/projects/ascii-renderer/target/release/ascii-renderer",
+  "sha256": "6a690731f4b73ea0a0cd822bbf2bb85800f4da769023d3bb5bcc40c565f671d5",
+  "processes": {
+    "worker": 29669,
+    "supervisor": 29650,
+    "iterm": 1510,
+    "iterm_server": 2261
+  },
+  "window_id": 12972,
+  "terminal_size": {
+    "h": 348,
+    "w": 1718
+  },
+  "grid": {
+    "h": 347,
+    "w": 1684
+  }
+}
