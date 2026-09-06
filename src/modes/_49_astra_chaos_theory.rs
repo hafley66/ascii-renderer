@@ -1,5 +1,5 @@
 //! Chaos observatory: paired ODE trajectories and a logistic-map instrument.
-//! The integrator assigns the numeric filename and generates registration.
+//! Complete orbit history is visible at every time; time moves its light and camera.
 
 use crate::color::{lerp_color, shift_hue};
 use crate::opts::param_f32;
@@ -192,6 +192,53 @@ struct Canvas<'a> {
 }
 
 impl Canvas<'_> {
+    fn line(&mut self, panel: Panel, a: Point, b: Point, ch: char, fg: Color, z: f32) {
+        // Clip before rasterizing so offscreen trajectories cannot consume work.
+        let dx = b[0] - a[0];
+        let dy = b[1] - a[1];
+        let mut enter = 0.0_f32;
+        let mut leave = 1.0_f32;
+        for (p, q) in [
+            (-dx, a[0]),
+            (dx, panel.w.saturating_sub(1) as f32 - a[0]),
+            (-dy, a[1]),
+            (dy, panel.h.saturating_sub(1) as f32 - a[1]),
+        ] {
+            if p == 0.0 {
+                if q < 0.0 {
+                    return;
+                }
+            } else if p < 0.0 {
+                enter = enter.max(q / p);
+            } else {
+                leave = leave.min(q / p);
+            }
+        }
+        if enter > leave {
+            return;
+        }
+        let steps = ((dx.abs().max(dy.abs()) * (leave - enter)).ceil() as usize)
+            .min(panel.w.max(panel.h))
+            .max(1);
+        let ch = if ch == '\0' {
+            if dx.abs() > dy.abs() * 2.0 {
+                '-'
+            } else if dy.abs() > dx.abs() * 2.0 {
+                '|'
+            } else if dx * dy > 0.0 {
+                '\\'
+            } else {
+                '/'
+            }
+        } else {
+            ch
+        };
+        for i in 0..=steps {
+            let t = enter + (leave - enter) * i as f32 / steps as f32;
+            self.point(panel, a[0] + dx * t, a[1] + dy * t, ch, fg, z);
+        }
+    }
+
     fn put(&mut self, x: usize, y: usize, ch: char, fg: Color, z: f32) {
         if x < self.width && y < self.height {
             let index = y * self.width + x;
@@ -257,7 +304,7 @@ fn project(p: Point, family: usize, angle: f32, tilt: f32, depth: f32) -> Point 
     let [x, y, z] = match family {
         0 => [p[0] / 22.0, p[1] / 28.0, (p[2] - 25.0) / 26.0],
         1 => [p[0] / 12.0, p[2] / 20.0 - 0.35, p[1] / 12.0],
-        _ => [p[0] / 3.6, p[1] / 3.6, p[2] / 3.6],
+        _ => [p[0] / 4.5, p[1] / 4.5, p[2] / 4.5],
     };
     let (s, c) = angle.sin_cos();
     let (st, ct) = (tilt * std::f32::consts::FRAC_PI_2).sin_cos();
@@ -270,7 +317,7 @@ fn project(p: Point, family: usize, angle: f32, tilt: f32, depth: f32) -> Point 
 }
 
 fn draw_chaos(frame: &mut ModeFrame<'_>, knobs: &[f32; 24]) {
-    // Allocate a bounded canvas and draw the instrument's rear graticule.
+    // Initialize bounded frame storage, then draw the rear graticule and orbit cage.
     let &[
         family,
         orbits,
@@ -360,27 +407,53 @@ fn draw_chaos(frame: &mut ModeFrame<'_>, knobs: &[f32; 24]) {
     if graticule > 0.0 {
         for y in 0..plot.h {
             for x in 0..plot.w {
-                let cross = x == plot.w / 2 || y == plot.h / 2;
-                if (cross || (x % 8 == 0 && y % 4 == 0)) && random(19, y * plot.w + x) < graticule {
+                let cross = (x == plot.w / 2 && y % 2 == 0) || (y == plot.h / 2 && x % 4 == 0);
+                if cross || (x % 8 == 0 && y % 4 == 0) {
                     canvas.point(
                         plot,
                         x as f32,
                         y as f32,
                         if cross { '+' } else { '.' },
-                        ink(2, 0.28),
+                        ink(2, graticule * 0.32),
                         -8.0,
                     );
                 }
             }
         }
+        for ring in 0..3 {
+            let radius = 0.35 + ring as f32 * 0.055;
+            let segments = (plot.w + plot.h).clamp(24, 256);
+            let mut previous = None;
+            for i in 0..=segments {
+                let phase = i as f32 / segments as f32 * std::f32::consts::TAU;
+                let (s, c) = phase.sin_cos();
+                let p = [
+                    (plot.w - 1) as f32 * (0.5 + radius * c),
+                    (plot.h - 1) as f32 * (0.79 + radius * s * 0.28),
+                    0.0,
+                ];
+                if let Some(a) = previous {
+                    canvas.line(
+                        plot,
+                        a,
+                        p,
+                        if ring == 1 { '-' } else { '.' },
+                        ink(2, graticule * 0.4),
+                        -7.0,
+                    );
+                }
+                previous = Some(p);
+            }
+        }
     }
 
-    // Reconstruct a fixed history, then move a trailing window through it.
-    // No work grows with ASCII_T. At most 12 pairs and 12*area RK2 steps;
-    // one pair history is retained at a time, capped at 2048 samples.
+    // Reconstruct complete paths before evaluating moving light. No work grows
+    // with ASCII_T: <=12 pairs, <=2048 samples each, <=6 RK2 substeps/sample.
+    // One pair history lives for one orbit; the depth buffer lives for one frame.
     let count = (orbits.round() as usize).min((area / 80).max(1));
     let steps = (area.saturating_mul(12) / count).clamp(1, 2048);
-    let burn = (steps / 4).min(256);
+    // Thomas can settle under added damping; retain its approach orbits too.
+    let burn = if family == 2 { 0 } else { (steps / 8).min(128) };
     let tail = (trail.round() as usize).min((steps - burn).max(1));
     let travel = steps.saturating_sub(burn + tail);
     let phase = time * 0.37 + random(frame.seed, 9000) * 2.0;
@@ -405,16 +478,81 @@ fn draw_chaos(frame: &mut ModeFrame<'_>, knobs: &[f32; 24]) {
                 jitter[1] * 4.0,
                 0.2 + jitter[2].abs(),
             ],
-            _ => [1.1 + jitter[0], 0.4 + jitter[1], -0.3 + jitter[2]],
+            _ => {
+                let side = if orbit % 2 == 0 { 1.0 } else { -1.0 };
+                [
+                    side * (2.8 + jitter[0]),
+                    side * (-0.6 + jitter[1]),
+                    side * (-1.8 + jitter[2]),
+                ]
+            }
         };
         let mut pair = [base, [base[0] + divergence, base[1], base[2]]];
         let mut history = Vec::with_capacity(steps);
         // Family scaling allows slow Thomas trajectories to fill the instrument.
         let dt = step * [1.0, 2.5, 12.0][family];
+        // Small dt refines integration without shortening the visible history.
+        let substeps = (0.012 / step).ceil().clamp(1.0, 6.0) as usize;
         for _ in 0..steps {
-            pair = advance(pair, dt, family, damping, coupling);
+            for _ in 0..substeps {
+                pair = advance(pair, dt, family, damping, coupling);
+            }
             history.push(pair);
         }
+        let screen = |p| {
+            let v = project(p, family, angle, projection, depth);
+            [
+                (plot.w - 1) as f32 * (0.5 + v[0] * zoom * 0.46),
+                (plot.h - 1) as f32 * (0.46 - v[1] * zoom * 0.46),
+                v[2],
+            ]
+        };
+        // Rear paths preserve the whole attractor even for a sixteen-sample
+        // highlight. Connected strokes and periodic dashes replace point thinning.
+        let mut previous = None;
+        for (i, pair) in history.iter().enumerate().skip(burn) {
+            let projected = pair.map(screen);
+            if let Some(prev) = previous {
+                let prev: [Point; 2] = prev;
+                for j in 0..2 {
+                    let v = projected[j];
+                    let band = (i / 24 + orbit * 3 + j * 2) % 8;
+                    if band as f32 <= 2.0 + density * 5.0 {
+                        canvas.line(
+                            plot,
+                            prev[j],
+                            v,
+                            if glyphs < 0.5 { ':' } else { '\0' },
+                            ink(
+                                if j == 0 { 1 } else { 3 },
+                                0.28 + density * 0.16 - v[2] * depth * 0.06,
+                            ),
+                            -1.0 - v[2] * depth,
+                        );
+                    }
+                    if ghosts > 0.0 {
+                        let floor = |p: Point| {
+                            [
+                                p[0],
+                                (plot.h - 1) as f32 * (0.83 + p[2] * 0.055 * depth),
+                                0.0,
+                            ]
+                        };
+                        canvas.line(
+                            plot,
+                            floor(prev[j]),
+                            floor(v),
+                            if ghosts > 0.65 { ':' } else { '.' },
+                            ink(2, ghosts * 0.45),
+                            -3.0,
+                        );
+                    }
+                }
+            }
+            previous = Some(projected);
+        }
+        // Overlay a complete bright window at every t, with depth-ordered pair
+        // colors, a luminous crest and moving heads. Never join a history wrap.
         for (i, pair) in history.iter().enumerate().take(head + 1).skip(start) {
             let age = (i - start + 1) as f32 / tail as f32;
             if orbit == 0 {
@@ -426,27 +564,15 @@ fn draw_chaos(frame: &mut ModeFrame<'_>, knobs: &[f32; 24]) {
                 separation.push(((distance.max(1e-6).log10() + 6.0) / 8.0).clamp(0.0, 1.0));
             }
             for (j, &p) in pair.iter().enumerate() {
-                let v = project(p, family, angle, projection, depth);
-                let x = (plot.w - 1) as f32 * (0.5 + v[0] * zoom * 0.43);
-                let y = (plot.h - 1) as f32 * (0.5 - v[1] * zoom * 0.43);
-                if ghosts > 0.0 && i % 3 == 0 {
-                    let floor = (plot.h - 1) as f32 * (0.86 + v[2] * 0.055 * depth);
-                    canvas.point(
-                        plot,
-                        x,
-                        floor,
-                        if ghosts > 0.65 { ':' } else { '.' },
-                        ink(2, ghosts * 0.4),
-                        -3.0,
-                    );
-                }
-                if random(frame.seed, i * 29 + orbit * 4099 + j * 11) <= density {
-                    let strength = (age * 0.7 + 0.22 - v[2] * depth * 0.13).clamp(0.1, 1.0);
+                let v = screen(p);
+                let [x, y, _] = v;
+                if (i / 6 + orbit + j) % 10 <= (density * 9.0) as usize {
+                    let strength = (age * 0.48 + 0.48 - v[2] * depth * 0.13).clamp(0.1, 1.0);
                     let ch = glyph_set[(strength * 6.0) as usize] as char;
-                    canvas.point(
+                    canvas.line(
                         plot,
-                        x,
-                        y,
+                        screen(history[i.saturating_sub(1).max(start)][j]),
+                        v,
                         ch,
                         ink(if j == 0 { 1 } else { 3 }, strength),
                         2.0 + age - v[2] * depth,
@@ -623,24 +749,24 @@ mod tests {
         insta::assert_snapshot!(plain(&render(80, 24, 1701, 0.0, &defaults())), @r"
 +- ASTRA / LORENZ -------------------------------------++- LOGISTIC / r -------+
 | PHASE SPACE   A:@ B:o                                ||                      |
-|                         . +                          ||               :::::: |
-|                           +                          ||    :::::::*::::::::: |
-|                           +                          || :::       *::::::::: |
-|       ==  = =                                        ||           *::::::::: |
-|   .  =  .     = =       . +            ===      .    || ::::::::::*::::::::: |
-|      =   ==~==~~~ =       +        *~~~~~=           ||        :::*::::::::: |
-|         ~*~----~-=== ==   +     *~*=== ~~=           ||            ::::::::: |
-|         ~*~-     --~~=~  ==  **~~****=~=             ||                ::::: |
-|   ..  =  *~-    .  ,-~==~  **==*@*=**~= .       .    ||         .         :: |
-|  ++   += ~*-- ++ + + ,-~~**===*====-~=++++   +++  +  || 3.14 < r < 3.99      |
-|           ~=~-        ,****=  ***o~~==               |+- LOG10 |A-B| --------+
-|         =  ~~,~,-     **==**~   ~@=                  ||                      |
-| .            ~==--,o**--=~=*****=               .    ||                **  @ |
-|            =   ---======-~==== =                     || ***************  **  |
-|              =     ---   ~                           ||                      |
-|      .. .........==.....==........ ..  .             ||                      |
-| .       .       .  .==.=..................           ||                      |
-|                   .                                  ||                      |
+| .       .       .       . +     .       .       .    ||               :::::: |
+|                                                      ||    :::::::*::::::::: |
+|     //-----**             +             --*-         || :::       *::::::::: |
+|     ||/-  ---***                      ******         ||           *::::::::: |
+| . .||| |************    . +     . -***===-*     .    || ::::::::::*::::::::: |
+|    ||| **=~~~~=****=****        ***=***-=|*          ||        :::*::::::::: |
+|     || =*|~||/-~~==**=-***+  -*****@*=*=**           ||            ::::::::: |
+|     \\ \*=~\\   --~~=***--****=***~***=*/            ||                ::::: |
+| . .. \\ ===~\\  .  \~~==****=********/*/.       .    ||         .         :: |
+| +   +\\\+=\=~\\-+.  |-~~***==/******/*/ +   +   +    || 3.14 < r < 3.99      |
+|        \\ \==~\-------~~~=**=|\o---**                |+- LOG10 |A-B| --------+
+|         \\\\\=~~~----o~~*==**=-=--**                 ||                      |
+| .       .\\\\\-==~~~~~~**/=\*=@***........      .    ||                 *    |
+|     ......-\\--.-==~~~*~/=|\-**-.....-----.......    || * ************** **@ |
+|   ........   ------    --=+               .. -- ..   ||  *                   |
+|   .............---*****===........................   ||                      |
+| .     ................--------................  .    ||                      |
+|                   .   ........                       ||                      |
 |                           +                          ||                      |
 |                                      .               || .................... |
 | dt:0.012  pairs:2  eps:0.01200                       || -6 ... +2 / time >   |
@@ -653,29 +779,200 @@ mod tests {
         insta::assert_snapshot!(plain(&render(80, 24, 1701, 4.0, &defaults())), @r"
 +- ASTRA / LORENZ -------------------------------------++- LOGISTIC / r -------+
 | PHASE SPACE   A:@ B:o                                ||                      |
-|                         . +                          ||               :::*:: |
-|                           +                          ||    ::::::::::::::*:: |
-|                           +                          || :::       :::::::*:: |
-|           **                          =              ||           :::::::*:: |
-|   .     . * ,** .       . +         =*          .    || :::::::::::::::::*:: |
-|              -,*,*o       +       *=*                ||        ::::::::::*:: |
-|            * - **o,,      +     ==@=                 ||            ::::::*:: |
-|             * -*====,,,   +  **====                  ||                ::*:: |
-|   ..            *  ===,,.  ***=-==      .       .    ||         .         :: |
-|  ++   +  ++   +-*@ +  =+,***=--= + +++++++   +++  +  || 3.14 < r < 3.99      |
-|                  **    =**==~-==                     |+- LOG10 |A-B| --------+
-|                 *,,**= ** =~~==                      ||                      |
-| .               .* ,****  =~==  .               .    ||  *        *   *   *  |
-|                   * ,,  ,====                        || * ******** *** *** @ |
-|                    **,,,,=                           ||                      |
-|           ...........**.**....... ..                 ||                      |
-| .       .       .     .**.............. .            ||                      |
-|                   .                                  ||                      |
+| .       .       .       . +     .       .       .    ||               :::*:: |
+|                                                      ||    ::::::::::::::*:: |
+|          |--              +           *=             || :::       :::::::*:: |
+|          \|~~~-                      **              ||           :::::::*:: |
+| . .     .\\~\~~~~--     . +     .  **=  .       .    || :::::::::::::::::*:: |
+|           \~\\|/-~~~--          ****=                ||        ::::::::::*:: |
+|            \~\\****~~~--- +   *****=                 ||            ::::::*:: |
+|             \~\\\ ***~~-----****=*                   ||                ::*:: |
+| . ..    .    \~\\\  \**~~/****~=**      .       .    ||         .         :: |
+| +   +   +   + \~\\\ +\****@*=~=*/   +   +   +   +    || 3.14 < r < 3.99      |
+|               \~~\\\---**~**==**                     |+- LOG10 |A-B| --------+
+|                 ~~~\\-*o/~*===*                      ||                      |
+| .       . ......\\~~\---~**@-*............      .    ||    **       *   *    |
+|     ......-----...\~~~~~~*==- .......-----.......    || ***  ******* *** **@ |
+|   .. -- ...........\\~~~~*+               .. -- ..   ||                      |
+|   .....--...........\---o*................---.....   ||                      |
+| .     ................--------................  .    ||                      |
+|                   .   ........                       ||                      |
 |                           +                          ||                      |
 |                                      .               || .................... |
 | dt:0.012  pairs:2  eps:0.01200                       || -6 ... +2 / time >   |
 +------------------------------------------------------++----------------------+
 ");
+    }
+
+    #[test]
+    fn chaos_rossler_first_frame() {
+        let mut values = defaults();
+        for (i, value) in [
+            (0, 1.0),
+            (1, 4.0),
+            (2, 0.018),
+            (3, 160.0),
+            (11, 25.0),
+            (12, 0.35),
+            (17, 0.0),
+            (22, 0.75),
+        ] {
+            values[i] = value;
+        }
+        insta::assert_snapshot!(plain(&render(80, 24, 42, 0.0, &values)), @r"
++- ASTRA / ROSSLER ------------------------------------++- LOGISTIC / r -------+
+| PHASE SPACE   A:@ B:o                                ||                      |
+| .       . .     .       . +     .       .       .    ||               :::::: |
+|                                                      ||    :::::::*::::::::: |
+|                           +                          || :::       *::::::::  |
+|                                                      ||           *::::::::: |
+| .       .      ..       . +     .       .       .    || ::::::::::*::::::::: |
+|    .                    OOOOOOOOOOOOOOO              ||        :::*::::::::: |
+|  .                 @@@OOO:OOOO::::::::OOOO           ||            ::::::::: |
+|                  ::o:OOOOOOOO:::::::::::OOOoo        ||                ::::: |
+| .      ..      ::::@oOO:::::::::::::::::::Oooo  .    ||                   :: |
+| +   +   +   + :::::@oO :::  +   + : +:::::oo:oo +    || 3.14 < r < 3.99      |
+|              ::::::::  :  +       : ::::::o::oo      |+- LOG10 |A-B| --------+
+|              ::::::::  ::        :::::::oo:ooo       ||                      |
+| .       . ...::::::::::.:::::::::::::oooooooo   .    ||                      |
+|     ......----::oo:::ooo:::::::::oooooooooo......    ||                      |
+|   .. -- ..      ooooooooo:::::oooooooo:o  .. -- ..   ||               *      |
+|   .....---...:::::::ooooooooooooo::::::::::::::....  || ************** ****@ |
+| .     ................--------................  .    ||                      |
+|             .         ........                       ||                      |
+|                           +                          ||                      |
+|                                                      || .................... |
+| dt:0.018  pairs:4  eps:0.01200                       || -6 ... +2 / time >   |
++------------------------------------------------------++----------------------+
+");
+    }
+
+    #[test]
+    fn chaos_thomas_first_frame() {
+        let mut values = defaults();
+        for (i, value) in [
+            (0, 2.0),
+            (1, 3.0),
+            (3, 600.0),
+            (6, 0.0),
+            (11, -30.0),
+            (12, 0.65),
+            (16, 0.9),
+            (17, 2.0),
+        ] {
+            values[i] = value;
+        }
+        insta::assert_snapshot!(plain(&render(80, 24, 7, 0.0, &values)), @r"
++- ASTRA / THOMAS -------------------------------------++- LOGISTIC / r -------+
+| PHASE SPACE   A:@ B:o                                ||                      |
+| .       .       .       . +     .       .       .  . ||               :::::: |
+|                                  -#####              ||    :::::::*::::::::: |
+|                           +   OOOO--OOxOOOO          || :::       *::::: ::: |
+|                  --          OO      OOO\\###        ||           *::::::::: |
+| .       . OOOOOO.  -----. + OO  .      OOO##O#x .    || ::::::::::*::::::::: |
+|       OoOOO-----OOOOO  -----||      OOOxO###o#OO     ||        :::*::::::::: |
+|      O##           -OOOOOOOOOOOOOOOOO#####-\#@###    ||            ::::::::: |
+|      ##            . \OO     #---####-OO /--------   ||                ::::: |
+| .   O#  .       .  OO#\O. + |/####-     .     |/.    ||                   :: |
+| +  OO#  +   +   OOOOO#OO\   \|  +   +   +   + |/+    || 3.14 < r < 3.99      |
+|    ##########OOOOOOOO##OOOOOOOOo             /|      |+- LOG10 |A-B| --------+
+|     OO##OOOOOOOOOOO- O#  --O- \\--         --/       ||             .        |
+| .    OO##O##OOx.......#|...-----------------    .    ||                      |
+|     ...#######xx.....O#       .-----------.......    ||                      |
+|.  .. -- .####--x#   O## ...........       .. -- ..   ||                      |
+|   .........OO###o@OO##............................   ||.******************   |
+| .     ................--------................  .    ||                   *@ |
+|                       ........                       ||                   .  |
+|                           +                          ||                      |
+|                                                      || .................... |
+| dt:0.012  pairs:3  eps:0.01200          .            || -6 ... +2 / time >   |
++------------------------------------------------------++----------------------+
+");
+    }
+
+    #[test]
+    fn chaos_short_trail_first_frame() {
+        let mut values = defaults();
+        for (i, value) in [
+            (2, 0.002),
+            (3, 16.0),
+            (16, 0.12),
+            (20, 0.0),
+            (21, 0.35),
+            (23, 2.0),
+        ] {
+            values[i] = value;
+        }
+        insta::assert_snapshot!(plain(&render(80, 24, 1702, 0.0, &values)), @r"
++- ASTRA / LORENZ -------------------------------------++- LOGISTIC / r -------+
+| PHASE SPACE   A:@ B:o                                ||                      |
+| .       .       .       . +     .       .       .    ||               :::::: |
+|                                            --        ||    :::::::*::::::::: |
+|       -----               +             ---- |       || :::       *::::::::: |
+|      /-/--------                      -----||        ||           *::::::::: |
+| .    ||/|/---------     . +     . --------|/    .    || ::::::::::*::::::::: |
+|     |||-@-//----------         ---------||//         ||        :::*::::::::: |
+|      \||| ||//--------- | +  -------  |////          ||            ::::::::: |
+|      \\ \\\\\|-----\\\--o---------   /////           ||                ::::: |
+| .     \\\\\\\\\ . -\\\\-|-----//.  //////       .    ||                   :: |
+| +   + \\\\\\\\\\-  //--|/=|//// +--/////+   +   +    || 3.14 < r < 3.99      |
+|         \\\\\\---------@--o-||\----////              |+- LOG10 |A-B| --------+
+|          \\\\\---------|//|||\-----///               ||                      |
+| .       . .\\-----------//|\\-----//......      .    ||                      |
+|     ......--\------------/| ------...-----.......    || *******************@ |
+|   .. .....    -----------/|-----          .. -- ..   ||                      |
+|   ................------..\--.....................   ||                      |
+| .     ................--------................  .    ||                      |
+|                       ........                       ||                      |
+|                           +                          ||                      |
+|                                                      || .................... |
+| dt:0.002  pairs:2  eps:0.01200                       || -6 ... +2 / time >   |
++------------------------------------------------------++----------------------+
+");
+    }
+
+    #[test]
+    fn complete_first_frame_without_background_or_heads() {
+        // Test the actual orbit layer: decorations cannot satisfy its coverage.
+        let mut values = defaults();
+        for i in [20, 21, 22, 23] {
+            values[i] = 0.0;
+        }
+        values[3] = 16.0;
+        for family in 0..3 {
+            values[0] = family as f32;
+            for seed in [0, 1, 7, 42, 1701, 1702, u64::MAX] {
+                let grid = render(80, 24, seed, 0.0, &values);
+                let cells: Vec<_> = (2..21)
+                    .flat_map(|y| (2..54).map(move |x| (x, y)))
+                    .filter(|&(x, y)| grid[y][x].ch != ' ')
+                    .collect();
+                let columns = cells.iter().map(|p| p.0).max().unwrap_or(0)
+                    - cells.iter().map(|p| p.0).min().unwrap_or(0);
+                let rows = cells.iter().map(|p| p.1).max().unwrap_or(0)
+                    - cells.iter().map(|p| p.1).min().unwrap_or(0);
+                assert!(
+                    cells.len() >= 80 && columns >= 24 && rows >= 8,
+                    "family {family}, seed {seed}: {} cells across {columns}x{rows}",
+                    cells.len()
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn large_grid_extreme_controls() {
+        let mut values: [f32; 24] = std::array::from_fn(|i| PARAMS[i].max);
+        values[2] = PARAMS[2].min;
+        for family in 0..3 {
+            values[0] = family as f32;
+            let grid = render(2000, 1000, 1701, f32::MAX, &values);
+            assert_eq!(grid.len(), 1000);
+            assert!(
+                grid.iter()
+                    .all(|row| row.len() == 2000 && row.iter().all(|c| c.ch.is_ascii()))
+            );
+        }
     }
 
     #[test]
