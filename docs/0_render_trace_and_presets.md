@@ -131,3 +131,27 @@ and handle conditional timing/NDJSON automatically. No per-mode telemetry code
 or bespoke stress driver is required. `measure_layer` is optional for finer
 phase timing. Slow tracing remains on by default; `ASCII_TRACE_ALL=1` records
 all frames when running normally.
+
+## Input latency under terminal backpressure
+
+```bash
+cargo build --release
+python3 scripts/4_test_input_latency.py --size 286x103 --stall 10 --max-ms 250
+python3 scripts/4_test_input_latency.py --size 2000x2000 --stall 10 --max-ms 250
+python3 scripts/4_test_input_latency.py --tmux --size 286x103 --stall 10
+```
+
+The test uses isolated all-max options, waits for an animated frame, stops
+reading terminal output, and sends a knob adjustment or `q`. It observes the
+persisted option change for knob application and restored terminal input mode
+for quit completion. `process_exit_ms` is measured separately: on macOS,
+process teardown can wait for PTY output to drain even after the renderer has
+handled quit and restored terminal settings. `--key knob` or `--key quit`
+selects one case. The consumer stays blocked until the knob applies or the
+configured stall limit is reached; quit also waits for process exit.
+
+Unix animation writes bounded nonblocking chunks and checks controls between
+writes and during backpressure. Input abandons an unfinished frame; the next
+frame resets ANSI parsing and repaints from the newly applied controls. Completed
+frame traces remain replayable. These tests inject input below the terminal GUI;
+they do not measure a WebView's keyboard dispatch or painting latency.

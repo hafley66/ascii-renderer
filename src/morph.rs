@@ -1116,6 +1116,13 @@ pub(crate) fn morph_worker_session(
     let registered_native_params = registered_mode(mode_a).is_some();
     let mut encoded_strat = strat.clone();
     let mut eff = Vec::with_capacity(spec.params.len());
+    let mut interrupted_frame = false;
+    let mut clear_frame = false;
+    #[cfg(unix)]
+    let mut pipe_output = input.as_ref().map(|_| {
+        use std::os::fd::AsFd;
+        std::fs::File::from(io::stdout().as_fd().try_clone_to_owned().unwrap())
+    });
 
     'frames: loop {
         if strat != encoded_strat {
@@ -1151,6 +1158,7 @@ pub(crate) fn morph_worker_session(
             .is_none_or(|renderer| renderer.width != rw || renderer.height != h);
         if renderer_size_changed {
             iterate_renderer = IterateFrameRenderer::new(mode_a, seed_a, theme, rw, h);
+            clear_frame = true;
         }
 
         let needs_endpoints = strat != "iterate" || registered_mode(mode_a).is_none();
@@ -1225,6 +1233,11 @@ pub(crate) fn morph_worker_session(
         let generation_elapsed = generation_started.map(|started| started.elapsed());
         let encoding_started = frame_profiler.as_ref().map(|_| Instant::now());
         let encode_stats = frame_encoder.encode(g.as_ref(), false, &mut frame_buffer);
+        if interrupted_frame || clear_frame {
+            // Cancel a possible partial CSI left by the abandoned frame.
+            frame_buffer.insert_str(0, if clear_frame { "\x18\x1b[2J" } else { "\x18" });
+            interrupted_frame = false;
+        }
         let encoding_elapsed = encoding_started.map(|started| started.elapsed());
         let presentation_started = frame_profiler.as_ref().map(|_| Instant::now());
         // Overwrite in place: every grid row is full-width so it repaints every
@@ -1272,11 +1285,42 @@ pub(crate) fn morph_worker_session(
                 randomize,
             );
         }
-        let stdout = io::stdout();
-        let mut out = stdout.lock();
-        out.write_all(frame_buffer.as_bytes()).unwrap();
-        out.flush().unwrap();
-        if let Some(profiler) = frame_profiler.as_mut() {
+        let mut events = Vec::new();
+        let presented = {
+            #[cfg(unix)]
+            if let Some(receiver) = &input {
+                match crate::_1_playback::write_frame(
+                    pipe_output.as_mut().unwrap(),
+                    frame_buffer.as_bytes(),
+                    receiver,
+                    &mut events,
+                ) {
+                    Ok(done) => done,
+                    Err(_) => break 'frames,
+                }
+            } else {
+                let stdout = io::stdout();
+                let mut out = stdout.lock();
+                out.write_all(frame_buffer.as_bytes()).unwrap();
+                out.flush().unwrap();
+                true
+            }
+            #[cfg(not(unix))]
+            {
+                let stdout = io::stdout();
+                let mut out = stdout.lock();
+                out.write_all(frame_buffer.as_bytes()).unwrap();
+                out.flush().unwrap();
+                true
+            }
+        };
+        if !presented {
+            frame_encoder.invalidate();
+            interrupted_frame = true;
+        } else {
+            clear_frame = false;
+        }
+        if let Some(profiler) = frame_profiler.as_mut().filter(|_| presented) {
             profiler.record_with_context(
                 &strat,
                 crate::_0_profile::FrameSample {
@@ -1318,17 +1362,18 @@ pub(crate) fn morph_worker_session(
             );
         }
 
-        let mut events = Vec::new();
-        if let Some(receiver) = &input {
-            match receiver.recv_timeout(Duration::from_millis(16)) {
-                Ok(event) => events.push(event),
-                Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => break,
-                Err(_) => {}
-            }
-            events.extend(receiver.try_iter().take(31));
-        } else if event::poll(Duration::from_millis(16)).unwrap_or(false) {
-            if let Ok(event) = event::read() {
-                events.push(event);
+        if events.is_empty() {
+            if let Some(receiver) = &input {
+                match receiver.recv_timeout(Duration::from_millis(16)) {
+                    Ok(event) => events.push(event),
+                    Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => break,
+                    Err(_) => {}
+                }
+                events.extend(receiver.try_iter().take(31));
+            } else if event::poll(Duration::from_millis(16)).unwrap_or(false) {
+                if let Ok(event) = event::read() {
+                    events.push(event);
+                }
             }
         }
         for event in events {
@@ -1442,7 +1487,7 @@ pub(crate) fn morph_worker_session(
                     frame_encoder.invalidate();
                     phase = 0.0;
                     dir = 1.0;
-                    execute!(io::stdout(), terminal::Clear(terminal::ClearType::All)).unwrap();
+                    clear_frame = true;
                 }
                 _ => {}
             }
@@ -1450,5 +1495,5 @@ pub(crate) fn morph_worker_session(
     }
 
     // restore cursor; caller owns alt-screen/raw-mode teardown.
-    execute!(io::stdout(), cursor::Show).unwrap();
+    let _ = execute!(io::stdout(), cursor::Show);
 }

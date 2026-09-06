@@ -251,6 +251,8 @@ pub(crate) fn worker(args: &[String]) {
     if args.len() != 10 {
         return;
     }
+    // A stalled reader must not prevent the render thread from applying input.
+    nonblocking(io::stdout()).expect("nonblocking animation output");
     let (sender, receiver) = std::sync::mpsc::sync_channel(INPUT_EVENTS);
     std::thread::spawn(move || {
         for line in io::stdin().lock().lines() {
@@ -277,10 +279,120 @@ pub(crate) fn worker(args: &[String]) {
     );
 }
 
+/// Write bounded chunks while checking controls. An interrupted frame is
+/// abandoned; the caller invalidates its encoder and starts a full repaint.
+pub(crate) fn write_frame(
+    output: &mut (impl Write + AsFd),
+    mut bytes: &[u8],
+    input: &std::sync::mpsc::Receiver<Event>,
+    events: &mut Vec<Event>,
+) -> io::Result<bool> {
+    while !bytes.is_empty() {
+        for _ in 0..INPUT_EVENTS {
+            match input.try_recv() {
+                Ok(event) => events.push(event),
+                Err(std::sync::mpsc::TryRecvError::Empty) => break,
+                Err(std::sync::mpsc::TryRecvError::Disconnected) => {
+                    return Err(io::ErrorKind::BrokenPipe.into());
+                }
+            }
+        }
+        if !events.is_empty() {
+            return Ok(false);
+        }
+        match output.write(&bytes[..bytes.len().min(OUTPUT_BYTES)]) {
+            Ok(0) => return Err(io::ErrorKind::WriteZero.into()),
+            Ok(n) => bytes = &bytes[n..],
+            Err(error) if error.kind() == io::ErrorKind::Interrupted => continue,
+            Err(error) if error.kind() == io::ErrorKind::WouldBlock => {
+                // Wake immediately when the pipe accepts bytes. The timeout
+                // bounds control latency while the pipe remains saturated.
+                match poll(
+                    &mut [PollFd::new(output.as_fd(), PollFlags::POLLOUT)],
+                    INPUT_POLL.as_millis() as u16,
+                ) {
+                    Ok(_) | Err(nix::errno::Errno::EINTR) => (),
+                    Err(error) => return Err(error.into()),
+                }
+            }
+            Err(error) => return Err(error),
+        }
+    }
+    Ok(true)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crossterm::event::KeyEvent;
+
+    #[test]
+    fn controls_interrupt_partial_frames_and_disconnected_workers_stop() {
+        struct PartialWriter {
+            readiness: std::fs::File,
+            sender: std::sync::mpsc::Sender<Event>,
+            written: Vec<u8>,
+            blocked: bool,
+        }
+        impl AsFd for PartialWriter {
+            fn as_fd(&self) -> BorrowedFd<'_> {
+                self.readiness.as_fd()
+            }
+        }
+        impl Write for PartialWriter {
+            fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
+                if self.blocked {
+                    self.sender
+                        .send(Event::Key(KeyEvent::new(KeyCode::Left, KeyModifiers::NONE)))
+                        .unwrap();
+                    return Err(io::ErrorKind::WouldBlock.into());
+                }
+                self.blocked = true;
+                self.written.extend_from_slice(&bytes[..3]);
+                Ok(3)
+            }
+            fn flush(&mut self) -> io::Result<()> {
+                Ok(())
+            }
+        }
+        let (sender, receiver) = std::sync::mpsc::channel();
+        let mut writer = PartialWriter {
+            readiness: OpenOptions::new().write(true).open("/dev/null").unwrap(),
+            sender,
+            written: Vec::new(),
+            blocked: false,
+        };
+        let mut events = Vec::new();
+        assert!(!write_frame(&mut writer, b"abcdef", &receiver, &mut events).unwrap());
+        assert_eq!(writer.written, b"abc");
+        assert_eq!(
+            events,
+            [Event::Key(KeyEvent::new(KeyCode::Left, KeyModifiers::NONE))]
+        );
+
+        let mut file = tempfile::tempfile().unwrap();
+        assert!(
+            write_frame(
+                &mut file,
+                b"\x18complete replacement",
+                &receiver,
+                &mut Vec::new()
+            )
+            .unwrap()
+        );
+        use std::io::{Seek, SeekFrom};
+        file.seek(SeekFrom::Start(0)).unwrap();
+        let mut bytes = Vec::new();
+        file.read_to_end(&mut bytes).unwrap();
+        assert_eq!(bytes, b"\x18complete replacement");
+        drop(writer);
+        assert_eq!(
+            write_frame(&mut file, b"orphan", &receiver, &mut Vec::new())
+                .unwrap_err()
+                .kind(),
+            io::ErrorKind::BrokenPipe
+        );
+    }
 
     /// Complete CLI frames through the same pipe and nonblocking PTY relay as demo.
     #[test]

@@ -40,6 +40,7 @@ New standalone modes live in `src/modes/_N_name.rs`. Choose `N` from dependency 
 - Keep every output-affecting live control in `Mode::params`. The demo `s` hotkey, named presets, and NDJSON trace records use the declared keys to preserve an exact seed/theme/knob replay.
 - Test a small fixed-seed snapshot and 100 native animated frames with **every declared knob at maximum simultaneously**: `python3 scripts/3_test_animation.py --mode <mode> --max --size 2000x2000`. This builds release, isolates options, verifies every maximum on every frame, and saves input/timing NDJSON under `perf/results/`. It prints the command to replay the slowest frame. Use `--frames` for longer runs and `--size 1000x10000` for tall grids.
 - Also run the same command without `--max` to exercise random knob jumps over time. The PTY is continuously drained; measured presentation excludes emulator painting. `perf/knob_sweep.sh <mode> <width> <height> <seconds> <dt> <theme>` remains available for headless individual-knob comparisons, which do not replace the simultaneous-max test.
+- Verify input latency with blocked terminal output: `python3 scripts/4_test_input_latency.py --mode <mode> --size 2000x2000 --stall 10 --max-ms 250`. The shared worker cancels unfinished writes for controls. Report knob application, quit terminal restoration, and process exit separately. Continuously drained PTY throughput cannot establish GUI keyboard or painting latency.
 
 ## Constraints
 
