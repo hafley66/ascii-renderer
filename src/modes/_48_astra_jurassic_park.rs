@@ -1,5 +1,5 @@
-//! Astra's Fern Valley preserve. Draft filename is leased by the integrator.
-//! Geometry and inline snapshots travel together when the file is renamed.
+//! Astra's Fern Valley preserve: deterministic identities, terrain lanes and gaits.
+//! Every frame is evaluated independently from its explicit inputs.
 
 use crate::opts::param_f32;
 use crate::registry::{AnimKind, Mode, ModeFrame, Param};
@@ -20,6 +20,19 @@ const PARAMS: &[Param] = &[
     param!("DEPTH", "scene depth", 0.0, 1.0, 0.65, 0.05),
     param!("VARIATION", "seed variation", 0.0, 1.0, 0.5, 0.05),
     param!("RAIN", "rainfall", 0.0, 1.0, 0.15, 0.05),
+    param!("GAIT", "stride and bounce", 0.0, 2.0, 1.0, 0.1),
+    param!("MIGRATION", "in-slot travel", 0.0, 1.0, 0.5, 0.05),
+    param!("FORMATION", "loose / staggered herd", 0.0, 1.0, 0.5, 0.05),
+    param!("JUVENILES", "juvenile mix", 0.0, 1.0, 0.3, 0.05),
+    param!("ACTIVITY", "browsing and alert poses", 0.0, 2.0, 1.0, 0.1),
+    param!(
+        "HERD_VARIATION",
+        "individual differences",
+        0.0,
+        1.0,
+        0.8,
+        0.05
+    ),
 ];
 
 impl Mode for JurassicParkMode {
@@ -28,7 +41,7 @@ impl Mode for JurassicParkMode {
     }
 
     fn help(&self) -> &'static str {
-        "Fern Valley: procedural longnecks, ceratopsians, raptors and tyrannosaurs. [herd] [species] [scale] [ferns] [light] [speed] [depth] [variation] [rain]"
+        "Fern Valley: procedural longnecks, ceratopsians, raptors and tyrannosaurs. [herd] [species] [scale] [ferns] [light] [speed] [depth] [variation] [rain] [gait] [migration] [formation] [juveniles] [activity] [herd_variation]"
     }
 
     fn animation(&self) -> AnimKind {
@@ -146,7 +159,7 @@ impl Canvas<'_> {
 
     fn ellipse(&mut self, center: Point, radius: Point, color: Color, identity: u64) {
         let rx = radius[0].max(0.55);
-        let ry = radius[1].max(0.55);
+        let ry = radius[1].max(0.7);
         let x0 = (center[0] - rx).floor().max(0.0) as usize;
         let x1 = ((center[0] + rx).ceil().max(0.0) as usize + 1).min(self.width);
         let y0 = (center[1] - ry).floor().max(0.0) as usize;
@@ -169,7 +182,11 @@ impl Canvas<'_> {
                         } else {
                             ')'
                         }
-                    } else if random(identity, (x + y * self.width) as u64) < 0.24 {
+                    } else if random(
+                        identity,
+                        ((dx * 8.0 + 8.0) as u64) + 17 * (dy * 4.0 + 4.0) as u64,
+                    ) < 0.24
+                    {
                         ':'
                     } else {
                         ' '
@@ -218,10 +235,24 @@ struct Animal {
     scale: Point,
     phase: f32,
     pose: f32,
+    juvenile: bool,
+    build: Point,
+    tail: f32,
+    marking: char,
+    cadence: f32,
+    stride: f32,
+    // A terrain lane is fixed for the identity while its x position moves.
+    ground: f32,
+    terrain_phase: f32,
+    travel: f32,
     color: Color,
 }
 
 impl Animal {
+    fn ground_at(&self, x: f32) -> f32 {
+        self.ground + (x / (self.scale[0] * 9.0) + self.terrain_phase).sin() * self.scale[1] * 0.35
+    }
+
     fn point(&self, x: f32, y: f32) -> Point {
         [
             self.origin[0] + self.facing * x * self.scale[0],
@@ -252,43 +283,104 @@ impl Animal {
     }
 }
 
-// Positive half-cycle swings above the ground. The other half-cycle plants at y=0.
-// Opposite phases guarantee at least one planted foot for bipeds and quadrupeds.
-fn foot(hip: f32, phase: f32) -> Point {
-    [hip + 0.7 * phase.cos(), -0.65 * phase.sin().max(0.0)]
+#[derive(Debug, PartialEq)]
+struct Gait {
+    phase: f32,
+    stride: f32,
+    lift: f32,
+    bob: f32,
+    hop: f32,
+    pose: f32,
+    tail: f32,
 }
 
-fn draw_dinosaur(canvas: &mut Canvas<'_>, animal: &Animal, time: f32) {
+fn gait(a: &Animal, time: f32, k: &[f32; 15]) -> Gait {
+    // Independent clocks are identity-derived; evaluating t=0 still yields a full pose.
+    let phase = a.phase + time * a.cadence;
+    let behavior = a.pose * 2.0 + time * (0.55 + random(a.identity, 23) * 0.7);
+    let hop = if a.species == 2 {
+        behavior.sin().max(0.0).powi(8) * k[13] * k[9] * 0.7
+    } else {
+        0.0
+    };
+    Gait {
+        phase,
+        stride: a.stride * k[9],
+        lift: [0.65, 0.55, 1.1, 0.9][a.species] * k[9],
+        bob: (phase * 2.0).cos() * [0.22, 0.25, 0.38, 0.42][a.species] * k[9] + hop,
+        hop,
+        pose: a.pose * 0.3 + behavior.sin() * k[13],
+        tail: (phase * 0.7 + a.pose * 3.0).sin() * k[9] * 0.95,
+    }
+}
+
+fn foot(a: &Animal, g: &Gait, hip: f32, phase: f32) -> Point {
+    // Swing rises off the sampled terrain; the opposite half-cycle remains planted.
+    let x = hip + g.stride * phase.cos();
+    let world_x = a.point(x, 0.0)[0];
+    [
+        x,
+        (a.ground_at(world_x) - a.origin[1]) / a.scale[1] - g.lift * phase.sin().max(0.0) - g.hop,
+    ]
+}
+
+fn place_animal(a: &mut Animal, time: f32, k: &[f32; 15]) {
+    // Travel stays inside the reserved slot. Ground is resampled after the x write.
+    a.origin[0] += a.facing
+        * a.travel
+        * k[10]
+        * ((time * a.cadence * 0.24 + a.phase).sin() - a.phase.sin())
+        * 0.5;
+    a.origin[1] = a.ground_at(a.origin[0]);
+}
+
+fn draw_leg(canvas: &mut Canvas<'_>, a: &Animal, g: &Gait, leg: usize, body_y: f32, color: Color) {
+    let hip = if a.species < 2 {
+        if leg < 2 { -2.1 } else { 2.0 }
+    } else {
+        -0.8 + leg as f32 * 1.4
+    };
+    // Quadrupeds alternate diagonal pairs; bipeds alternate left and right.
+    let offset = if a.species < 2 {
+        [0.0, 1.0, 1.0, 0.0][leg]
+    } else {
+        leg as f32
+    };
+    let f = foot(a, g, hip, g.phase + offset * std::f32::consts::PI);
+    let knee = [(hip + f[0]) * 0.5 - 0.45, body_y * 0.35];
+    let toe_x = f[0] + 0.8;
+    let toe_y = f[1]
+        + (a.ground_at(a.point(toe_x, 0.0)[0]) - a.ground_at(a.point(f[0], 0.0)[0])) / a.scale[1];
+    a.line(canvas, [hip, body_y + 0.4], knee, '\0', color);
+    a.line(canvas, knee, f, '\0', color);
+    a.line(canvas, f, [toe_x, toe_y], '_', color);
+}
+
+fn draw_dinosaur(canvas: &mut Canvas<'_>, animal: &Animal, time: f32, k: &[f32; 15]) {
     // Evaluate one stable identity's pose and gait; origin.y is its ground plane.
     // Draw shadow, far limbs, tapered tail, body, neck/crest, head, near limbs, eye.
     let a = animal;
-    let phase = a.phase + time * (1.8 + random(a.identity, 18));
-    let bob = phase.sin().abs() * 0.16;
+    let g = gait(a, time, k);
+    let bob = g.bob;
     let skin = a.color;
     let shade = tint(skin, Color::Black, 0.30);
     let gleam = tint(skin, Color::White, 0.40);
     let (body_y, body_x, body_h) = match a.species {
-        0 => (-2.6 - bob, 3.4, 1.35),
-        1 => (-2.4 - bob, 3.5, 1.45),
-        2 => (-2.6 - bob, 2.5, 0.95),
-        _ => (-3.5 - bob, 3.0, 1.6),
+        0 => (-2.6 - bob, 3.4 * a.build[0], 1.35 * a.build[1]),
+        1 => (-2.4 - bob, 3.5 * a.build[0], 1.45 * a.build[1]),
+        2 => (-2.6 - bob, 2.5 * a.build[0], 0.95 * a.build[1]),
+        _ => (-3.5 - bob, 3.0 * a.build[0], 1.6 * a.build[1]),
     };
-    a.line(canvas, [-3.1, 0.4], [3.5, 0.4], '.', shade);
-    let leg_count = if a.species < 2 { 4 } else { 2 };
-    for leg in 0..leg_count {
-        let hip = if a.species < 2 {
-            if leg < 2 { -2.1 } else { 2.0 }
-        } else {
-            -0.8 + leg as f32 * 1.4
-        };
-        let f = foot(hip, phase + (leg % 2) as f32 * std::f32::consts::PI);
-        let knee = [(hip + f[0]) * 0.5 - 0.45, body_y * 0.35];
-        a.line(canvas, [hip, body_y + 0.4], knee, '\0', shade);
-        a.line(canvas, knee, f, '\0', skin);
-        a.line(canvas, f, [f[0] + 0.8, f[1]], '_', gleam);
+    for n in -4..=4 {
+        let x = a.point(n as f32, 0.0)[0];
+        canvas.put([x, a.ground_at(x) + 0.5 * a.scale[1]], '.', shade);
     }
-    let tail_y = body_y - 0.8 - a.pose * 0.7 + (phase * 0.65).sin() * 0.5;
-    let tail_length = if a.species == 2 { 7.1 } else { 6.2 };
+    let leg_count = if a.species < 2 { 4 } else { 2 };
+    for leg in (0..leg_count).step_by(2) {
+        draw_leg(canvas, a, &g, leg, body_y, shade);
+    }
+    let tail_y = body_y - 0.8 - a.pose * 0.7 + g.tail;
+    let tail_length = if a.species == 2 { 7.1 } else { 6.2 } * a.tail;
     a.triangle(
         canvas,
         [-2.4, body_y - 0.5],
@@ -297,12 +389,17 @@ fn draw_dinosaur(canvas: &mut Canvas<'_>, animal: &Animal, time: f32) {
         skin,
     );
     a.oval(canvas, [0.0, body_y], [body_x, body_h], skin);
+    // Body-local markings move with the animal, with fewer marks on small silhouettes.
+    for n in 0..if a.scale[0] < 0.75 { 1 } else { 3 } {
+        let x = (n as f32 - 1.0) * body_x * 0.48;
+        canvas.put(a.point(x, body_y), a.marking, shade);
+    }
     let head: Point;
     match a.species {
         0 => {
             // Sauropod: ascending tapered neck with a bend and a small rounded head.
-            let bend = [2.6 + a.pose * 0.35, -5.8 - bob];
-            head = [4.0 + a.pose * 0.6, -7.0 + a.pose * 0.4 - bob];
+            let bend = [2.6 + g.pose * 0.5, -5.8 + g.pose * 0.55 - bob];
+            head = [4.0 + g.pose * 0.7, -7.0 + g.pose * 1.3 - bob];
             a.triangle(canvas, [1.4, body_y + 0.4], [3.0, body_y], bend, skin);
             a.triangle(
                 canvas,
@@ -312,18 +409,23 @@ fn draw_dinosaur(canvas: &mut Canvas<'_>, animal: &Animal, time: f32) {
                 skin,
             );
             a.line(canvas, bend, head, '\0', skin);
-            a.oval(canvas, head, [1.65, 0.9], gleam);
+            a.oval(
+                canvas,
+                head,
+                [if a.juvenile { 1.95 } else { 1.65 }, 0.9],
+                gleam,
+            );
         }
         1 => {
             // Ceratopsian: deep frill, low beaked head, paired brow and nasal horns.
-            head = [4.1, body_y + 0.2 + a.pose * 0.25];
+            head = [4.1 + g.pose * 0.2, (body_y + 0.2 + g.pose * 0.85).min(-1.1)];
             a.oval(canvas, [2.5, body_y - 0.6], [1.2, 1.9], shade);
             for n in 0..3 {
                 let x = 1.6 + n as f32 * 0.65;
                 a.line(
                     canvas,
                     [x, body_y - 1.4],
-                    [x - 0.2, body_y - 2.3],
+                    [x - 0.2, body_y - if a.juvenile { 1.8 } else { 2.3 }],
                     '^',
                     gleam,
                 );
@@ -351,7 +453,7 @@ fn draw_dinosaur(canvas: &mut Canvas<'_>, animal: &Animal, time: f32) {
         }
         2 => {
             // Raptor: horizontal tail, S-neck, narrow muzzle and feathered crown.
-            head = [3.8, -4.0 + a.pose * 0.4 - bob];
+            head = [3.8 + g.pose * 0.7, -4.0 - g.pose * 0.8 - bob];
             a.triangle(
                 canvas,
                 [1.1, body_y],
@@ -375,7 +477,7 @@ fn draw_dinosaur(canvas: &mut Canvas<'_>, animal: &Animal, time: f32) {
         }
         _ => {
             // Tyrannosaur: upright haunches, thick neck, oversized jaw and tiny arms.
-            head = [3.7, -5.3 + a.pose * 0.3 - bob];
+            head = [3.7 + g.pose * 0.35, -5.3 + g.pose * 0.7 - bob];
             a.triangle(
                 canvas,
                 [0.8, body_y + 0.5],
@@ -395,11 +497,20 @@ fn draw_dinosaur(canvas: &mut Canvas<'_>, animal: &Animal, time: f32) {
             canvas.put(a.point(3.5, body_y + 0.5), 'w', gleam);
         }
     }
+    for leg in (1..leg_count).step_by(2) {
+        draw_leg(canvas, a, &g, leg, body_y, gleam);
+    }
+    canvas.put(a.point(head[0] + 1.2, head[1] + 0.65), 'u', gleam);
     canvas.put(a.point(head[0] + 0.35, head[1] - 0.15), 'o', Color::White);
-    canvas.put(a.point(head[0] + 1.2, head[1] + 0.35), 'u', gleam);
 }
 
-fn herd(width: usize, height: usize, seed: u64, k: &[f32; 9], palette: &[Color; 5]) -> Vec<Animal> {
+fn herd(
+    width: usize,
+    height: usize,
+    seed: u64,
+    k: &[f32; 15],
+    palette: &[Color; 5],
+) -> Vec<Animal> {
     let unit = (width as f32 / 80.0).min(height as f32 / 24.0).max(0.5);
     let cols = ((width as f32 / (24.0 * unit)).floor() as usize).clamp(1, 48);
     let rows = ((height as f32 * 0.62 / (7.0 * unit)).floor() as usize).clamp(1, 24);
@@ -417,28 +528,76 @@ fn herd(width: usize, height: usize, seed: u64, k: &[f32; 9], palette: &[Color; 
             let row = slot / cols;
             let identity = hash(variant.wrapping_add(i as u64 * 131));
             let depth = (row as f32 + 0.5) / rows as f32;
-            let scale = unit
-                * k[2]
-                * (0.9 + random(identity, 3) * 0.15)
-                * (1.0 - k[6] * (1.0 - depth) * 0.2);
             let balanced = (i + (hash(variant) % 4) as usize) % 4;
             let species = if random(identity, 31) < (k[1] - 0.5).abs() * 2.0 {
                 (hash(identity) % 2) as usize + if k[1] > 0.5 { 2 } else { 0 }
             } else {
                 balanced
             };
+            let variation = k[14];
+            let juvenile = random(identity, 32) < k[12];
+            let age_scale = if juvenile {
+                0.68 + random(identity, 33) * 0.1
+            } else {
+                1.0
+            };
+            let scale = unit
+                * k[2]
+                * age_scale
+                * (1.0 + (random(identity, 3) - 0.5) * 0.4 * variation)
+                * (1.0 - k[6] * (1.0 - depth) * 0.3);
+            // Reserve the full tail/head envelope and travel room within each slot.
+            let scale = scale.min(slot_w / 22.0).min(slot_h / 8.0).max(0.05);
+            let stagger = if row % 2 == 0 { -1.0 } else { 1.0 } * k[11] * 0.06;
+            let x = slot_w
+                * ((slot % cols) as f32
+                    + 0.5
+                    + stagger
+                    + (random(identity, 4) - 0.5) * 0.1 * variation);
+            let ground = height as f32 * 0.35 + slot_h * (row + 1) as f32
+                - unit * (0.3 + random(identity, 5) * variation * 0.8)
+                - k[11] * unit * ((slot % cols) as f32 * 1.5).sin() * 0.6;
+            let cadence = match species {
+                0 => 1.0 + random(identity, 18) * 0.7,
+                1 => 1.4 + random(identity, 18) * 0.9,
+                2 => 3.2 + random(identity, 18) * 1.5,
+                _ => 1.7 + random(identity, 18) * 0.8,
+            } * if juvenile { 1.2 } else { 1.0 };
             Animal {
                 identity,
                 species,
-                facing: if random(identity, 2) < 0.5 { -1.0 } else { 1.0 },
-                origin: [
-                    slot_w * (slot % cols) as f32 + slot_w * (0.44 + random(identity, 4) * 0.12),
-                    height as f32 * 0.35 + slot_h * (row + 1) as f32
-                        - random(identity, 5) * unit * 0.55,
+                facing: if random(identity, 2) < 0.5 * variation {
+                    -1.0
+                } else {
+                    1.0
+                },
+                origin: [x, ground],
+                scale: [
+                    scale,
+                    scale * (0.88 + (random(identity, 34) - 0.5) * variation * 0.18),
                 ],
-                scale: [scale, scale * 0.88],
                 phase: random(identity, 6) * TAU,
                 pose: random(identity, 7) * 2.0 - 1.0,
+                juvenile,
+                build: [
+                    1.0 + (random(identity, 35) - 0.5) * variation * 0.3,
+                    1.0 + (random(identity, 36) - 0.5) * variation * 0.4,
+                ],
+                tail: 1.0 + (random(identity, 37) - 0.5) * variation * 0.25,
+                marking: if random(identity, 38) < variation {
+                    [':', '/', '=', '.'][(hash(identity) % 4) as usize]
+                } else {
+                    ':'
+                },
+                cadence,
+                stride: [1.05, 0.85, 1.5, 1.3][species] * (0.75 + random(identity, 19) * 0.5),
+                ground,
+                terrain_phase: random(variant, 39) * TAU,
+                travel: ((x - slot_w * (slot % cols) as f32)
+                    .min(slot_w * ((slot % cols) + 1) as f32 - x)
+                    - scale * 8.0
+                    - 0.5)
+                    .max(0.0),
                 color: tint(
                     palette[(hash(identity) % 5) as usize],
                     Color::Rgb {
@@ -467,7 +626,7 @@ fn fern(canvas: &mut Canvas<'_>, base: Point, size: f32, phase: f32, color: Colo
     }
 }
 
-fn draw_preserve(frame: &mut ModeFrame<'_>, k: &[f32; 9]) {
+fn draw_preserve(frame: &mut ModeFrame<'_>, k: &[f32; 15]) {
     // Initialize the clipped canvas, seed identities, atmosphere and terrain.
     // Evaluate herd gait, water, cloud and fern phases from the explicit clock.
     // Rasterize bounded mountain columns, fence, plants and depth-sorted animals.
@@ -621,6 +780,9 @@ fn draw_preserve(frame: &mut ModeFrame<'_>, k: &[f32; 9]) {
         }
     }
     let mut animals = herd(width, height, frame.seed, k, frame.palette);
+    for animal in &mut animals {
+        place_animal(animal, time, k);
+    }
     animals.sort_by(|a, b| a.origin[1].total_cmp(&b.origin[1]));
     for animal in &mut animals {
         let distance = 1.0 - animal.origin[1] / height as f32;
@@ -629,9 +791,7 @@ fn draw_preserve(frame: &mut ModeFrame<'_>, k: &[f32; 9]) {
             sky,
             (1.0 - k[4]) * 0.38 + distance * k[6] * 0.25,
         );
-        // A short in-slot stroll leaves the composition's margins intact.
-        animal.origin[0] += (time * 0.55 + animal.phase).sin() * unit * 0.8;
-        draw_dinosaur(&mut canvas, animal, time);
+        draw_dinosaur(&mut canvas, animal, time, k);
     }
     let drops = (width.saturating_mul(height) as f32 * k[8] * 0.022) as usize;
     for i in 0..drops.min(width.saturating_mul(height)) {
@@ -694,11 +854,11 @@ mod tests {
         },
     ];
 
-    fn defaults() -> [f32; 9] {
+    fn defaults() -> [f32; 15] {
         std::array::from_fn(|i| PARAMS[i].default)
     }
 
-    fn render(width: usize, height: usize, seed: u64, time: f32, knobs: &[f32; 9]) -> Grid {
+    fn render(width: usize, height: usize, seed: u64, time: f32, knobs: &[f32; 15]) -> Grid {
         let mut grid = vec![vec![Cell::blank(); width]; height];
         let mut rng = StdRng::seed_from_u64(seed);
         MODE.render(&mut ModeFrame {
@@ -740,20 +900,20 @@ mod tests {
            \\\//.            . \\\//      .        \\\//            .  \\\//     .
         |     |     |     |     |     \\//  |     |     |     |     | /   |  \\//     |
         |\//--|-----|-----|-----|-\|\//\/[ FERN VALLEY ]|-----|-----|-----|--_//_\/---|-
-        |_/_  |  ,__|     |     |_\_\/__    |   \//     |     | /   |   o)|   __|\//  |
-                 uo-\             ,_ _           _                ,    u \\    |  _
-        ,          \\          ,             ~   ^^^                     |\
-          ,         ||__ ____,        , , _ ~  ___^^/^                   ||____,       ,
-                   .||   )_          /     __(    (/o^>                  ||   )___
-               .     |  _|                ~   -------u  ,           ,     /|  /    , ,
-               ,   ___.___              .     __ |__     .               ______ ,   .
-                                             .......                            .
-          ,      , ___       ,        ,     ///~                        ,
-           ,       uo_)                ,    o/~~                   .       , ^^
-          \|//       |_ :)____      ,      u--/\ _______                    _ ^^/^\|/\|/
-        |\\///      w_-\ -_      .          ///- -___                  ___(:  (/o\ /////
-        __// _         |/                       /_ ~~~      .  /          _------_\//__
-        _____   .   ..._...      ,           .__....~             .      .__..__  ______
+        |_/_  |  ,  |     |     |_\_\/__    |   \//     |     | /   |  o )|   __|\//  |
+                                  ,_ _           _                ,     \\     |  _
+        ,         o_           ,             ~  ^^                      |\
+          ,       u-\    /   ,        , ,_____  ()/                     ||___  ,       ,
+                   ||::\/            /     __/::|-/o^                   |\: |)__
+               .    /|/|                  ~ |__ __-u>   ,           ,    /| /|     , ,
+               ,   _____.               .  ........      .             _______. ,   .
+                                              //                                .
+          ,      ,  __       ,        ,     o//~     /                  ,
+           ,       _o_)                ,      |\_ __/              .       ,
+          \|//       |\==)___       ,         //|:)/  ,                      ^^   \|/\|/
+        |\\///      w__\:)       .             ____ ~                 _____  ^^/ \ /////
+        __// _          |                    .......~~      .  /        __\ :_//o_\//__
+        _____   .   ..___..      ,                  ~             .      .__.._.u ______
         |  |      , ,                        .                           ,  ,      |  |
         ");
     }
@@ -770,21 +930,63 @@ mod tests {
            \\\//.            . \\\//      .        \\\//            .  \\\//     .
         |     |     |     |     |     \//   |     |     |     |     |     |  \\//     |
         |-\/--|-----|-----|-----|\\\\////[ FERN VALLEY ]|-----|-----|-----|--_//_\/---|-
-        |_/__ |  , o_     |     |_/_//__    |   _//~    |     |     |  o) |   __|\/_  |
-                  u--\            ,_ _          ~_                ,    u\\     |  _
-        ,           \\         ,               ~ ^^                     |\
-          ,          ||_______        , , \\_ ~__^^)/^                  ||_______      ,
-                   . ||   )_                \(   (_/o>                  | |  )_
-               .    __/ __|                 ~/-------u  ,           ,    /_ _/     , ,
-               ,    .__.._.             .  ~~___ ___     .              __.._.. ,   .
-                                           ~~.......                            .
-          ,      ,  __       ,        ,     //                          ,
-           ,       uo_)                ,   o/    ~  ___           /.       , ^^
-         \|/         |_ : )___      ,  /  u--/\ _____ , /             ___    ^^/ ^\|/| /
-        \\///        w-\ -_      .          //- -__        /            _(:: (_o^\\/////
-        __/ __          /|                     |/           .            |------u_\//___
-        ____    .    .___..      ,          ..__...   ~~          .      ___.___  _____
+        |_/__ |  ,  |     |     |_/_//__    |   _//~    |     |     |     |   __|\/_  |
+                                  ,_ _         ^^^                ,    _o      |  _
+        ,        o_            ,        ___    ~^^/                    u-_
+          ,     u-_          ,        , , __(:: (/_^                     \\____,       ,
+                  |\ |___                   /- -|(ou                     || :\)__
+               .   | /|                     ____\_      ,           ,     /| /|    , ,
+               , ._____                 .  ._......      .              _____._.,   .
+                                           ~~~                                  .
+          ,      ,  ,        ,        ,     ~   ///     /               ,
+           ,                           ,       uo)\   //          /.       ,
+         \|/      uo_)____          ,  /        ///\:)/ /             ___   ^^^   \|/| /
+        \\///       w_|==)__     .               ~~\|      /            _(:::(//^\\/////
+        __/ __       __ |                       ..___..     .            |/--\(ou_\//___
+        ____    .  ....__..      ,                    ~~          .     .______.  _____
         |  |      , ,                        .       ~~~~                ,  ,      |  |
+        ");
+    }
+
+    #[test]
+    fn preserve_large_herd() {
+        insta::assert_snapshot!(plain(&render(120, 36, 1701, 2.25, &defaults())), @r"
+                                            /
+                                             /
+        ______                                                          /                               ____
+                                  _______                                                              (   :)
+                                                                                                         --
+                            //^^^\                   _______^^^\                        //^^^\                        //^^^\
+                         /// .    \\\                  ///      \\\                  ///      \\\                  ///  .   \\\
+        \\            /// .          \\\            ///          . \\\            ///      .     \\\            ///  .         \
+          \\\      /// .            .   \\\      ///          .       \\\      ///      .           \\\      ///  .            .
+             \\\/// .            .         \\\///          .            .\\\///      .            .    \\\///  .            .
+                 .            .            .         \\//            .            .            .            .   \ |/     .
+                                                     \/ //                                                      \\/ /
+        |  \//   |        |        |   ,    | \\//\//_\/ _    |    .   |~~~~    |   /    |        |        |   _ \//_\|/     |
+        |-_\/_---|--------|--------|--------|-\\/\\//____----[ FERN VALLEY ]----|--------|--------|--------|----_____\///----|--
+        |   _    |        |        |        | __/__/_| |    . |      _//_       |     ,  |      . |        |     ,| |_/__    |
+        |        |        |        |       ,| . |  | |    , , |     ~~_|        |    .   |        |    o:_ |     ,  | |    , |
+        ,     , ,       .           ,    .               ,         ^^^   ,                          , u( )_
+                    (o )  ..   ,                   .     ____   ___^^^)/                  ,              \\\               .
+               ,     u\_\              ,.                  ___(: : :(:/_^^    .   ,  ,,                   |\_____ ,            .
+        ,     .  ,     |\____                                _(/   :|( o^>.                  ,            ||\:: \)____
+              .        |\:::|____  ,        .   ,      ,      /|~--/|-- u,                         ,      -| : --\_
+                        \|  /|            .             ,    |~\~  |\\                                /   //|  //|      ,
+                      ________                              .__.__ ____.         ,             ,         ____.____.          , ,
+                      ,....... ,                            ~~~~~.   .           .,   .                           , , ,.
+                         .                                  ~~~~                                 ,               ,    ,      .
+                                    ,                        ,~      //   ,                        ,                          ,
+                                   /                               _o//        _/   .             ,
+                    .       ,    ., ,                              u )_\   , __/      ,        /  .   ,
+                       ( o:) __    ,, /                /        ,    ~|/\::)_//             ,         ,       .^^     .
+         \\|//         (u___:  :))_     , ,                .        ~//-\--//   /               ,    ____      ^^^   , \ |\/| /
+        \ \|/ /   ,       w_\|=:=)____    ,            ,             ~~~ \|          /                  _((: ::(:)/ ^ \,\|/\//
+        |\\///              -|---            ,                    ,    ____         ,                    (/:   | /:o>, \ / //| /
+        __//   __           __ ||       ,   ,              ,     ,  .. ...... .   ,                      |\   |\ - -u__ \// __/
+        /___|__          ... .__.. .    , ,                        .         ~~~.   ,                   ..___..___.    __|___|__
+        _   _      , ,                               .             ,        ~~~~~                             ,  ,      ._   _
+        |   |               /               .                        ,     ~~~~~           ,       ,                     |   |
         ");
     }
 
@@ -823,12 +1025,6 @@ mod tests {
                 .iter()
                 .all(|a| a.species >= 2)
         );
-        for step in 0..64 {
-            let phase = step as f32 * TAU / 64.0;
-            let feet = [foot(0.0, phase), foot(0.0, phase + std::f32::consts::PI)];
-            assert!(feet.iter().all(|f| f[1] <= 0.0));
-            assert!(feet.iter().any(|f| f[1].abs() < 0.00001));
-        }
     }
 
     #[test]
@@ -863,6 +1059,122 @@ mod tests {
     }
 
     #[test]
+    fn species_motion_and_terrain_contact() {
+        let k = defaults();
+        for (width, height) in [(80, 24), (320, 96)] {
+            let animals = herd(width, height, 1701, &k, &PALETTE);
+            for species in 0..4 {
+                let animal = animals.iter().find(|a| a.species == species).unwrap();
+                // Isolate one dinosaur so weather and vegetation cannot satisfy motion checks.
+                let isolated = |time: f32, knobs: &[f32; 15]| {
+                    let mut grid = vec![vec![Cell::blank(); width]; height];
+                    let mut a = animal.clone();
+                    place_animal(&mut a, time, knobs);
+                    draw_dinosaur(
+                        &mut Canvas {
+                            grid: &mut grid,
+                            width,
+                            height,
+                        },
+                        &a,
+                        time,
+                        knobs,
+                    );
+                    plain(&grid)
+                };
+                assert_ne!(
+                    isolated(0.0, &k),
+                    isolated(2.25, &k),
+                    "species {species} at {width}x{height}"
+                );
+                assert_eq!(isolated(2.25, &k), isolated(2.25, &k));
+                let mut still = k;
+                still[9] = 0.0;
+                still[10] = 0.0;
+                still[13] = 0.0;
+                assert_eq!(isolated(0.0, &still), isolated(2.25, &still));
+                // Each movement channel must affect silhouette with the others disabled.
+                for control in [9, 10, 13] {
+                    let mut moving = still;
+                    moving[control] = PARAMS[control].max;
+                    let zero = isolated(0.0, &moving);
+                    assert!(
+                        [0.5, 1.25, 2.25, 4.0]
+                            .into_iter()
+                            .any(|time| zero != isolated(time, &moving)),
+                        "species {species}, {} at {width}x{height}",
+                        PARAMS[control].key
+                    );
+                }
+                for step in 0..128 {
+                    let time = step as f32 * 0.125;
+                    let mut a = animal.clone();
+                    place_animal(&mut a, time, &k);
+                    assert_eq!(a.origin[1], a.ground_at(a.origin[0]));
+                    let g = gait(&a, time, &k);
+                    let mut contact = false;
+                    for offset in [0.0, std::f32::consts::PI] {
+                        let f = foot(&a, &g, 0.0, g.phase + offset);
+                        let world = a.point(f[0], f[1]);
+                        let clearance = a.ground_at(world[0]) - world[1];
+                        assert!(clearance >= -0.0001);
+                        contact |= (clearance - g.hop * a.scale[1]).abs() < 0.0001;
+                    }
+                    // During a raptor hop both feet can clear terrain by the hop height.
+                    assert!(contact);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn herd_variants_keep_identity_and_bounded_slots() {
+        let k = defaults();
+        for (w, h) in [(80, 24), (320, 96), (2000, 1000)] {
+            let animals = herd(w, h, 1701, &k, &PALETTE);
+            for (i, a) in animals.iter().enumerate() {
+                for b in &animals[i + 1..] {
+                    assert_ne!(a.identity, b.identity);
+                    assert_ne!(a.phase, b.phase);
+                    assert_ne!(a.cadence, b.cadence);
+                    assert_ne!(a.stride, b.stride);
+                    assert_ne!(a.build, b.build);
+                }
+            }
+            let mut adult = k;
+            adult[12] = 0.0;
+            let mut young = k;
+            young[12] = 1.0;
+            for (a, b) in herd(w, h, 1701, &adult, &PALETTE)
+                .iter()
+                .zip(herd(w, h, 1701, &young, &PALETTE))
+            {
+                assert_eq!(a.identity, b.identity);
+                assert!(!a.juvenile && b.juvenile);
+                assert!(b.scale[0] < a.scale[0]);
+                assert!(b.cadence > a.cadence);
+            }
+            let mut extreme = k;
+            extreme[2] = PARAMS[2].max;
+            extreme[10] = 1.0;
+            extreme[11] = 1.0;
+            extreme[14] = 1.0;
+            for seed in 0..16 {
+                for mut a in herd(w, h, seed, &extreme, &PALETTE) {
+                    let initial = a.clone();
+                    for time in [0.0, 2.25, 99.0] {
+                        a.clone_from(&initial);
+                        place_animal(&mut a, time, &extreme);
+                        assert!(a.origin[0] - a.scale[0] * 8.0 >= 0.0);
+                        assert!(a.origin[0] + a.scale[0] * 8.0 < w as f32);
+                        assert!(a.origin[1] >= 0.0 && a.origin[1] < h as f32);
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
     fn small_empty_and_large_grids_are_bounded() {
         for (w, h) in [(0, 0), (0, 4), (1, 1), (2, 3), (9, 4), (2000, 1000)] {
             for extreme in [false, true] {
@@ -881,15 +1193,29 @@ mod tests {
                 );
             }
         }
+        for w in 0..16 {
+            for h in 0..12 {
+                let max = std::array::from_fn(|i| PARAMS[i].max);
+                let grid = render(w, h, u64::MAX, f32::MAX, &max);
+                assert_eq!(grid.len(), h);
+                assert!(grid.iter().all(|row| row.len() == w));
+            }
+        }
+        for invalid in [f32::NAN, f32::INFINITY, f32::NEG_INFINITY] {
+            assert_eq!(
+                render(32, 12, 1701, invalid, &defaults()),
+                render(32, 12, 1701, 0.0, &defaults())
+            );
+        }
         insta::assert_snapshot!(plain(&render(16, 8, 1701, 0.5, &defaults())), @r"
-        __
+        __           _
         \ /_____\ /^\-/^
                      \//
         |--|-//--|--|_/_
-        |  | ||o |  |  |
-        \\/   u\\   \|//
-        _/__   || )/_/_/
-        __     ____  __
+        |  | ||  |  |  |
+        \\/   o     \|//
+        _/__  u|\__ _/_/
+        __    .___   __
         ");
     }
 }
