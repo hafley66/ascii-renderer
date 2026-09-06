@@ -22,6 +22,24 @@ src/opts.rs persisted knob values and names from registered_modes()
 
 `iterate_grid` is the low-latency native path. The subprocess fallback also forwards `ASCII_T`, so a time-aware CLI handler can animate before an in-process arm is added.
 
+## Replay and slow-render diagnostics
+
+The CLI starts one process-level render trace for ordinary mode execution. Slow
+renders append structured NDJSON records by default under the XDG state directory.
+Each record has the seed, theme, grid dimensions, time, positional arguments,
+resolved declared knobs, duration, and all `measure_layer` totals captured during
+the frame. `ASCII_TRACE=0` disables slow records; `ASCII_TRACE_ALL=1` captures
+every frame.
+
+The demo `s` hotkey saves the current mode, seed, theme, and effective declared
+knobs as a unique named preset. `ascii-renderer preset run <name>` restores that
+input set. A mode must declare every visual live control in `Mode::params` for
+these records and presets to replay it.
+
+High-resolution probes should use `ASCII_GRID_W` and `ASCII_GRID_H` for one
+headless render, or `perf/knob_sweep.sh` for repeated native frames. Redirect a
+very large grid to `/dev/null`; terminal presentation is not a performance probe.
+
 ## Registry surface
 
 Every generated-registry mode implements:

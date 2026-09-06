@@ -31,6 +31,15 @@ New standalone modes live in `src/modes/_N_name.rs`. Choose `N` from dependency 
 8. Run `scripts/0_generate_modes.sh`. Never edit `src/modes/mod.rs` directly.
 9. Run `scripts/0_generate_modes.sh --check`, the focused test, and `cargo test`. Inspect pending snapshot output before accepting it.
 
+## High-resolution behavior and triage
+
+- Treat `(width, height)` as unconstrained render inputs. Before implementation, state time complexity, dominant allocations, and the maximum count derived from every knob.
+- Keep per-frame work bounded by the grid and declared parameters. Avoid allocation, filesystem work, environment reads, map construction, or string formatting inside inner cell loops unless the output requires it.
+- Precompute geometry and seed-derived choices outside the cell loop when they are reused. Use linear grid passes and existing retained storage where it fits the renderer's frame lifetime.
+- Wrap material render phases in `measure_layer(mode_name, layer_name, || ...)` with stable static names such as `background`, `geometry`, `sprites`, or `postprocess`. Do not emit trace records from individual cells or particles: the process-level slow-render trace captures the declared inputs and these layer totals.
+- Keep every output-affecting live control in `Mode::params`. The demo `s` hotkey, named presets, and NDJSON trace records use the declared keys to preserve an exact seed/theme/knob replay.
+- Test a small fixed-seed snapshot and a bounded high-resolution render. For native modes, use `perf/knob_sweep.sh <mode> <width> <height> <seconds> <dt> <theme>` for headless stress timing; do not emit a huge grid to a terminal during that probe.
+
 ## Constraints
 
 - Keep every existing mode and alias working.
