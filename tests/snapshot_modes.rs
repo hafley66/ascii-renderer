@@ -35,6 +35,21 @@ fn strip_ansi(s: &str) -> String {
 // ── Mode snapshots ───────────────────────────────────────────────
 
 #[test]
+fn gem_aetherium_2_cli_seed_1701() {
+    let output = Command::new(env!("CARGO_BIN_EXE_ascii-renderer"))
+        .args(["1701", "gem-aetherium-2", "deep"])
+        .env("ASCII_GRID_W", "80")
+        .env("ASCII_GRID_H", "24")
+        .env("ASCII_T", "0")
+        .output()
+        .expect("run gem-aetherium-2 CLI");
+    assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
+    insta::with_settings!({snapshot_path => "../src/modes/snapshots"}, {
+        insta::assert_snapshot!("gem_aetherium_2_cli_seed_1701", strip_ansi(&String::from_utf8(output.stdout).unwrap()));
+    });
+}
+
+#[test]
 fn astra_chaos_theory_cli_seed_1701() {
     let output = Command::new(env!("CARGO_BIN_EXE_ascii-renderer"))
         .args(["1701", "astra-chaos-theory", "deep"])

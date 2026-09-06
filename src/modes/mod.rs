@@ -20,6 +20,7 @@ mod _46_volute;
 mod _47_astra_opus_1_chronofold;
 mod _48_astra_jurassic_park;
 mod _49_astra_chaos_theory;
+mod _50_gem_aetherium_2;
 
 pub(crate) fn register_all(registry: &mut crate::registry::ModeRegistry) {
     registry.add(&_30_illuminarium::MODE);
@@ -42,4 +43,5 @@ pub(crate) fn register_all(registry: &mut crate::registry::ModeRegistry) {
     registry.add(&_47_astra_opus_1_chronofold::MODE);
     registry.add(&_48_astra_jurassic_park::MODE);
     registry.add(&_49_astra_chaos_theory::MODE);
+    registry.add(&_50_gem_aetherium_2::MODE);
 }
