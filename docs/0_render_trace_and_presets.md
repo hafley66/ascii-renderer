@@ -61,6 +61,26 @@ measures application and kernel transport rather than emulator painting:
 ASCII_PERF_BIN="$PWD/target/release/ascii-renderer" cargo test --release --bin ascii-renderer perf_preview_relay_over_time -- --ignored --nocapture
 ```
 
+Animation uses the same default slow-log path and threshold. Its records have
+`kind: "slow_animation_frame"` (or `"animation_frame"` with `ASCII_TRACE_ALL=1`),
+`render_us`, `encoding_us`, `presentation_us`, emitted byte count, changed-cell
+count, repaint status, mode, seed, theme, animation `time`, morph `phase`,
+`randomize`, `roll`, effective `knobs`, terminal dimensions, and render dimensions.
+The duration excludes the deliberate wait between frames. Input maps and JSON
+are allocated only when a frame qualifies for logging.
+
+Registered native animation defers morph endpoint rendering, ink sorting, and
+distance fields until switching to a strategy that needs them. The end-to-end
+PTY regression runs 100 animated frames with repeated random knob jumps,
+including a morph-cycle boundary, at 320x103 and 2000x2000 render sizes:
+
+```bash
+python3 scripts/3_test_animation.py target/release/ascii-renderer
+```
+
+The test uses isolated `XDG_CONFIG_HOME` options and a temporary trace file.
+Live options honor `XDG_CONFIG_HOME`, falling back to `~/.config`.
+
 ## Named replay inputs
 
 ```bash

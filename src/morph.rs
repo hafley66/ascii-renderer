@@ -6,43 +6,57 @@ use rand::SeedableRng;
 use rand::rngs::StdRng;
 use std::io::{self, IsTerminal, Read as _};
 
+use crate::automata;
 use crate::automata::*;
-use crate::biomes::*;
-use crate::color::*;
-use crate::content::*;
-use crate::fills::*;
-use crate::layout::*;
-use crate::markdown::*;
-use crate::mondrian::*;
-use crate::render::*;
-use crate::scene::*;
-use crate::sprites::*;
-use crate::tree_draw::*;
-use crate::types::*;
-use crate::walker::*;
+use crate::avant;
 use crate::avant::*;
-use crate::automata; use crate::avant; use crate::biomes; use crate::borders; use crate::color; use crate::content; use crate::fills; use crate::layout; use crate::markdown; use crate::mondrian; use crate::render; use crate::scene; use crate::sprites; use crate::tree_draw; use crate::types; use crate::walker;
+use crate::biomes;
+use crate::biomes::*;
+use crate::borders;
 use crate::cli::*;
+use crate::cli_city::draw_elevator;
+use crate::cli_city::draw_ferris;
+use crate::color;
+use crate::color::*;
+use crate::content;
+use crate::content::*;
+use crate::fills;
+use crate::fills::*;
 use crate::gridio::*;
 use crate::ink::*;
+use crate::layout;
+use crate::layout::*;
+use crate::markdown;
+use crate::markdown::*;
 use crate::modes_creatures::*;
+use crate::modes_geo::draw_weave;
 use crate::modes_geo::*;
 use crate::modes_sky::*;
 use crate::modes_tree::*;
+use crate::mondrian;
+use crate::mondrian::*;
 use crate::opts::*;
 use crate::pp::*;
 use crate::registry::*;
+use crate::render;
+use crate::render::*;
+use crate::scene;
+use crate::scene::*;
+use crate::sprites;
+use crate::sprites::*;
+use crate::tree_draw;
+use crate::tree_draw::*;
+use crate::types;
+use crate::types::*;
+use crate::walker;
+use crate::walker::*;
 use crate::warps::*;
-use crate::modes_geo::draw_weave;
-use crate::cli_city::draw_elevator;
-use crate::cli_city::draw_ferris;
 
 pub(crate) const MORPH_RAMP: [char; 9] = [' ', '·', '∙', ':', '+', '*', '#', '%', '@'];
 
 pub(crate) fn morph_is_ink(c: &Cell) -> bool {
     c.ch != ' '
 }
-
 
 /// Precomputed morph between two same-size grids. Build once, sample many `t`.
 pub(crate) struct MorphState {
@@ -72,11 +86,28 @@ impl MorphState {
         };
         let mut ta = ink_points(&a);
         let mut tb = ink_points(&b);
-        ta.sort_by(|p, q| key(p).partial_cmp(&key(q)).unwrap_or(std::cmp::Ordering::Equal));
-        tb.sort_by(|p, q| key(p).partial_cmp(&key(q)).unwrap_or(std::cmp::Ordering::Equal));
+        ta.sort_by(|p, q| {
+            key(p)
+                .partial_cmp(&key(q))
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
+        tb.sort_by(|p, q| {
+            key(p)
+                .partial_cmp(&key(q))
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
         let sa = signed_df(&a, w, h);
         let sb = signed_df(&b, w, h);
-        MorphState { w, h, a, b, ta, tb, sa, sb }
+        MorphState {
+            w,
+            h,
+            a,
+            b,
+            ta,
+            tb,
+            sa,
+            sb,
+        }
     }
 
     pub(crate) fn frame(&self, t: f32, strategy: &str) -> Grid {
@@ -100,7 +131,11 @@ impl MorphState {
         for y in 0..self.h {
             for x in 0..self.w {
                 let thr = pp_hash2(x as i32, y as i32, 1234);
-                let src = if t < thr { &self.a[y][x] } else { &self.b[y][x] };
+                let src = if t < thr {
+                    &self.a[y][x]
+                } else {
+                    &self.b[y][x]
+                };
                 g[y][x] = Cell::new(src.ch, rgb_of(src.fg));
             }
         }
@@ -584,22 +619,54 @@ fn iterate_grid_into(
         }
         "mahoraga-2" => {
             let knobs = crate::mahoraga2::ShrineKnobs::from_env();
-            *grid = crate::mahoraga2::render_mahoraga2_frame(w, h, seed, palette, StdRng::seed_from_u64(seed), t, &knobs);
+            *grid = crate::mahoraga2::render_mahoraga2_frame(
+                w,
+                h,
+                seed,
+                palette,
+                StdRng::seed_from_u64(seed),
+                t,
+                &knobs,
+            );
             true
         }
         "mahoraga-3" => {
             let knobs = crate::mahoraga3::ShrineKnobs::from_env();
-            *grid = crate::mahoraga3::render_mahoraga3_frame(w, h, seed, palette, StdRng::seed_from_u64(seed), t, &knobs);
+            *grid = crate::mahoraga3::render_mahoraga3_frame(
+                w,
+                h,
+                seed,
+                palette,
+                StdRng::seed_from_u64(seed),
+                t,
+                &knobs,
+            );
             true
         }
         "mahoraga-4" => {
             let knobs = crate::mahoraga4::ShrineKnobs::from_env();
-            *grid = crate::mahoraga4::render_mahoraga4_frame(w, h, seed, palette, StdRng::seed_from_u64(seed), t, &knobs);
+            *grid = crate::mahoraga4::render_mahoraga4_frame(
+                w,
+                h,
+                seed,
+                palette,
+                StdRng::seed_from_u64(seed),
+                t,
+                &knobs,
+            );
             true
         }
         "mahoraga-5" => {
             let knobs = crate::mahoraga5::ShrineKnobs::from_env();
-            *grid = crate::mahoraga5::render_mahoraga5_frame(w, h, seed, palette, StdRng::seed_from_u64(seed), t, &knobs);
+            *grid = crate::mahoraga5::render_mahoraga5_frame(
+                w,
+                h,
+                seed,
+                palette,
+                StdRng::seed_from_u64(seed),
+                t,
+                &knobs,
+            );
             true
         }
         "tree-of-life" => {
@@ -664,17 +731,23 @@ fn iterate_grid_into(
         }
         "opus-1-quasicrystal" => {
             let knobs = crate::opus_1_quasicrystal::Opus1QuasicrystalKnobs::from_env();
-            crate::opus_1_quasicrystal::draw_opus_1_quasicrystal(grid, w, h, seed, palette, t, &knobs);
+            crate::opus_1_quasicrystal::draw_opus_1_quasicrystal(
+                grid, w, h, seed, palette, t, &knobs,
+            );
             true
         }
         "opus-2-quasicrystal" => {
             let knobs = crate::opus_2_quasicrystal::Opus2QuasicrystalKnobs::from_env();
-            crate::opus_2_quasicrystal::draw_opus_2_quasicrystal(grid, w, h, seed, palette, t, &knobs);
+            crate::opus_2_quasicrystal::draw_opus_2_quasicrystal(
+                grid, w, h, seed, palette, t, &knobs,
+            );
             true
         }
         "sonnet-1-spirograph" => {
             let knobs = crate::sonnet_1_spirograph::Sonnet1SpirographKnobs::from_env();
-            crate::sonnet_1_spirograph::draw_sonnet_1_spirograph(grid, w, h, seed, palette, t, &knobs);
+            crate::sonnet_1_spirograph::draw_sonnet_1_spirograph(
+                grid, w, h, seed, palette, t, &knobs,
+            );
             true
         }
         "sonnet-2-clifford" => {
@@ -734,12 +807,35 @@ fn iterate_grid_into(
         }
         "haiku-1-trees" => {
             let knobs = crate::haiku_1_trees::HaikuTreesKnobs::from_env();
-            crate::haiku_1_trees::draw_haiku_1_trees(grid, w, h, seed, palette, t, knobs.energy, knobs.fruit, knobs.branch);
+            crate::haiku_1_trees::draw_haiku_1_trees(
+                grid,
+                w,
+                h,
+                seed,
+                palette,
+                t,
+                knobs.energy,
+                knobs.fruit,
+                knobs.branch,
+            );
             true
         }
         "haiku-1-forest" => {
             let knobs = crate::haiku_1_forest::HaikuForestKnobs::from_env();
-            crate::haiku_1_forest::draw_haiku_1_forest(grid, w, h, seed, palette, t, knobs.density, knobs.layers, knobs.sway, knobs.speed, knobs.hue, knobs.atmos);
+            crate::haiku_1_forest::draw_haiku_1_forest(
+                grid,
+                w,
+                h,
+                seed,
+                palette,
+                t,
+                knobs.density,
+                knobs.layers,
+                knobs.sway,
+                knobs.speed,
+                knobs.hue,
+                knobs.atmos,
+            );
             true
         }
         "haiku-2-trees" => {
@@ -781,6 +877,29 @@ mod iterate_frame_tests {
     use super::*;
 
     #[test]
+    #[ignore = "release animation encoder probe with deterministic knob rerolls"]
+    fn perf_gem_animation_rerolls() {
+        for (w, h) in [(320, 103), (2000, 2000)] {
+            let spec = mode_spec("gem-aetherium-2");
+            let mut renderer = IterateFrameRenderer::new("gem-aetherium-2", 42, "", w, h).unwrap();
+            let mut encoder = AnsiFrameEncoder::new();
+            let mut output = String::new();
+            for frame in 0..60u64 {
+                let roll = frame / 4;
+                let seed = 42 ^ roll.wrapping_mul(0x9E37_79B9_7F4A_7C15);
+                let values: Vec<_> = spec.params.iter().map(|p| rand_knob(seed, p)).collect();
+                let started = std::time::Instant::now();
+                let grid = renderer.render(frame as f32 * 0.06, Some(&values)).unwrap();
+                let render = started.elapsed();
+                let started = std::time::Instant::now();
+                let stats = encoder.encode(grid, false, &mut output);
+                eprintln!("{w}x{h} frame={frame} roll={roll} render_ms={:.3} encode_ms={:.3} bytes={} changed={}", render.as_secs_f64()*1000., started.elapsed().as_secs_f64()*1000., stats.bytes, stats.changed_cells);
+                std::hint::black_box(&output);
+            }
+        }
+    }
+
+    #[test]
     fn retained_registered_frame_matches_one_shot_and_reuses_rows() {
         let mut retained = IterateFrameRenderer::new("illuminarium", 42, "deep", 64, 24).unwrap();
         let first_row = retained.grid[0].as_ptr();
@@ -800,8 +919,7 @@ mod iterate_frame_tests {
         let defaults: Vec<f32> = spec.params.iter().map(|param| param.default).collect();
         let mut tuned = defaults.clone();
         tuned[0] = 17.0;
-        let mut retained =
-            IterateFrameRenderer::new("illuminarium", 42, "deep", 64, 24).unwrap();
+        let mut retained = IterateFrameRenderer::new("illuminarium", 42, "deep", 64, 24).unwrap();
         let default_frame = retained.render(2.75, Some(&defaults)).unwrap().clone();
         let tuned_frame = retained.render(2.75, Some(&tuned)).unwrap().clone();
         assert_ne!(default_frame, tuned_frame);
@@ -809,14 +927,28 @@ mod iterate_frame_tests {
 }
 
 /// Render any (mode, seed) to a Grid by re-running this binary with the dump flag.
-pub(crate) fn render_frame(exe: &std::path::Path, seed: u64, mode: &str, theme: &str, w: usize, h: usize) -> Option<Grid> {
+pub(crate) fn render_frame(
+    exe: &std::path::Path,
+    seed: u64,
+    mode: &str,
+    theme: &str,
+    w: usize,
+    h: usize,
+) -> Option<Grid> {
     render_frame_t(exe, seed, mode, theme, w, h, 0.0)
 }
 
-
 /// Same, but pass an animation time `t` (ASCII_T) so parametric modes that read
 /// it advance their phase -- the native "iterate" path.
-pub(crate) fn render_frame_t(exe: &std::path::Path, seed: u64, mode: &str, theme: &str, w: usize, h: usize, t: f32) -> Option<Grid> {
+pub(crate) fn render_frame_t(
+    exe: &std::path::Path,
+    seed: u64,
+    mode: &str,
+    theme: &str,
+    w: usize,
+    h: usize,
+    t: f32,
+) -> Option<Grid> {
     use std::process::Command;
     let mut cmd = Command::new(exe);
     live_params_to_command(&mut cmd);
@@ -834,7 +966,6 @@ pub(crate) fn render_frame_t(exe: &std::path::Path, seed: u64, mode: &str, theme
     if g.is_empty() { None } else { Some(g) }
 }
 
-
 /// Interactive morph player (standalone CLI entry). Owns the alt-screen/raw-mode
 /// lifecycle, then delegates the loop to `morph_session`.
 ///   morph <modeA> <seedA> <modeB> <seedB> [strategy]
@@ -842,11 +973,29 @@ pub(crate) fn render_frame_t(exe: &std::path::Path, seed: u64, mode: &str, theme
 pub(crate) fn run_morph(args: &[String], default_seed: u64, theme: &str) {
     use crossterm::{cursor, execute, terminal};
 
-    let mode_a = args.get(4).map(|s| s.as_str()).unwrap_or("forest").to_string();
-    let seed_a: u64 = args.get(5).and_then(|s| s.parse().ok()).unwrap_or(default_seed);
-    let mode_b = args.get(6).map(|s| s.as_str()).unwrap_or(&mode_a).to_string();
-    let seed_b: u64 = args.get(7).and_then(|s| s.parse().ok()).unwrap_or(seed_a.wrapping_add(1));
-    let strat = args.get(8).map(|s| s.as_str()).unwrap_or("transport").to_string();
+    let mode_a = args
+        .get(4)
+        .map(|s| s.as_str())
+        .unwrap_or("forest")
+        .to_string();
+    let seed_a: u64 = args
+        .get(5)
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(default_seed);
+    let mode_b = args
+        .get(6)
+        .map(|s| s.as_str())
+        .unwrap_or(&mode_a)
+        .to_string();
+    let seed_b: u64 = args
+        .get(7)
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(seed_a.wrapping_add(1));
+    let strat = args
+        .get(8)
+        .map(|s| s.as_str())
+        .unwrap_or("transport")
+        .to_string();
 
     terminal::enable_raw_mode().unwrap();
     execute!(io::stdout(), terminal::EnterAlternateScreen).unwrap();
@@ -855,10 +1004,16 @@ pub(crate) fn run_morph(args: &[String], default_seed: u64, theme: &str) {
     terminal::disable_raw_mode().unwrap();
 }
 
-
 /// The morph player loop. Assumes raw mode + alternate screen are already active
 /// (so it composes inside `demo`). Returns true when Ctrl+C should exit demo.
-pub(crate) fn morph_session(mode_a: &str, seed_a: u64, mode_b: &str, seed_b: u64, strat0: &str, theme: &str) -> bool {
+pub(crate) fn morph_session(
+    mode_a: &str,
+    seed_a: u64,
+    mode_b: &str,
+    seed_b: u64,
+    strat0: &str,
+    theme: &str,
+) -> bool {
     #[cfg(unix)]
     {
         return match crate::_1_playback::animate(mode_a, seed_a, mode_b, seed_b, strat0, theme) {
@@ -876,13 +1031,20 @@ pub(crate) fn morph_session(mode_a: &str, seed_a: u64, mode_b: &str, seed_b: u64
     }
 }
 
-pub(crate) fn morph_worker_session(mode_a: &str, seed_a: u64, mode_b: &str, seed_b: u64, strat0: &str, theme: &str,
-    input: Option<std::sync::mpsc::Receiver<crossterm::event::Event>>, size: Option<(u16, u16)>) {
+pub(crate) fn morph_worker_session(
+    mode_a: &str,
+    seed_a: u64,
+    mode_b: &str,
+    seed_b: u64,
+    strat0: &str,
+    theme: &str,
+    input: Option<std::sync::mpsc::Receiver<crossterm::event::Event>>,
+    size: Option<(u16, u16)>,
+) {
     use crossterm::{
         cursor,
         event::{self, Event, KeyCode, KeyModifiers},
-        execute,
-        terminal,
+        execute, terminal,
     };
     use std::io::Write;
     use std::time::{Duration, Instant};
@@ -905,10 +1067,13 @@ pub(crate) fn morph_worker_session(mode_a: &str, seed_a: u64, mode_b: &str, seed
         named_theme(theme).unwrap_or_else(|| make_palette(seed_a))
     };
 
-    let mut blank = vec![vec![Cell::blank(); w]; h];
-    let fa = render_frame(&exe, seed_a, mode_a, theme, w, h).unwrap_or_else(|| blank.clone());
-    let fb = render_frame(&exe, seed_b, mode_b, theme, w, h).unwrap_or_else(|| blank.clone());
-    let mut st = MorphState::new(fa, fb);
+    // Native registered animation needs no endpoint grids, ink sorting, or SDFs.
+    // Retain the seed pair so switching to a morph strategy can build it lazily.
+    let mut st: Option<MorphState> = None;
+    let mut endpoint_a = seed_a;
+    let mut endpoint_b = seed_b;
+    let mut endpoint_mode_a = mode_a;
+    let mut endpoint_mode_b = mode_b;
 
     // walk state: when on, finishing 0->1 shifts B into A and loads the next seed.
     let mut walk = mode_a == mode_b;
@@ -956,13 +1121,19 @@ pub(crate) fn morph_worker_session(mode_a: &str, seed_a: u64, mode_b: &str, seed
         eff.clear();
         if randomize {
             let random_seed = seed_a ^ roll.wrapping_mul(0x9E37_79B9_7F4A_7C15);
-            eff.extend(spec.params.iter().map(|param| rand_knob(random_seed, param)));
+            eff.extend(
+                spec.params
+                    .iter()
+                    .map(|param| rand_knob(random_seed, param)),
+            );
         } else {
             eff.extend_from_slice(&pvals);
         }
         if !registered_native_params {
             LIVE_PARAMS.with(|values| {
-                values.borrow_mut().extend(spec.params.iter().zip(&eff).map(|(p, v)| (p.key, Some(*v))));
+                values
+                    .borrow_mut()
+                    .extend(spec.params.iter().zip(&eff).map(|(p, v)| (p.key, Some(*v))));
             });
         }
         // When the pane is open, render the animation narrower so the tree isn't
@@ -976,16 +1147,31 @@ pub(crate) fn morph_worker_session(mode_a: &str, seed_a: u64, mode_b: &str, seed
             iterate_renderer = IterateFrameRenderer::new(mode_a, seed_a, theme, rw, h);
         }
 
+        let needs_endpoints = strat != "iterate" || registered_mode(mode_a).is_none();
+        if needs_endpoints && st.is_none() {
+            let fa = render_frame(&exe, endpoint_a, endpoint_mode_a, theme, w, h)
+                .unwrap_or_else(|| vec![vec![Cell::blank(); w]; h]);
+            let fb = render_frame(&exe, endpoint_b, endpoint_mode_b, theme, w, h)
+                .unwrap_or_else(|| vec![vec![Cell::blank(); w]; h]);
+            st = Some(MorphState::new(fa, fb));
+        }
         if playing {
             clock += 0.06;
             phase += dir * speed;
             if phase >= 1.0 {
                 if walk {
                     walk_seed = walk_seed.wrapping_add(1);
-                    let next = render_frame(&exe, walk_seed, mode_a, theme, w, h)
-                        .unwrap_or_else(|| blank.clone());
-                    let prev_b = st.b.clone();
-                    st = MorphState::new(prev_b, next);
+                    endpoint_a = endpoint_b;
+                    endpoint_b = walk_seed;
+                    endpoint_mode_a = endpoint_mode_b;
+                    endpoint_mode_b = mode_a;
+                    st = if needs_endpoints {
+                        let next = render_frame(&exe, walk_seed, mode_a, theme, w, h)
+                            .unwrap_or_else(|| vec![vec![Cell::blank(); w]; h]);
+                        Some(MorphState::new(st.take().unwrap().b, next))
+                    } else {
+                        None
+                    };
                     phase = 0.0;
                     dir = 1.0;
                 } else {
@@ -1010,20 +1196,20 @@ pub(crate) fn morph_worker_session(mode_a: &str, seed_a: u64, mode_b: &str, seed
             {
                 Some(grid) => std::borrow::Cow::Borrowed(grid),
                 None => std::borrow::Cow::Owned(warp_wind(
-                    &st.a,
+                    &st.as_ref().unwrap().a,
                     clock,
                     (h as f32 * 0.12).clamp(2.0, 6.0),
                 )),
             }
         } else {
             std::borrow::Cow::Owned(match strat.as_str() {
-                "wind" => warp_wind(&st.a, clock, (h as f32 * 0.18).clamp(3.0, 8.0)),
-                "drift" => warp_drift(&st.a, clock, 1.4),
-                "swirl" => warp_swirl(&st.a, clock, 1.0),
-                "ripple" => warp_ripple(&st.a, clock, 2.2),
-                "breathe" => warp_breathe(&st.a, clock, 1.0),
+                "wind" => warp_wind(&st.as_ref().unwrap().a, clock, (h as f32 * 0.18).clamp(3.0, 8.0)),
+                "drift" => warp_drift(&st.as_ref().unwrap().a, clock, 1.4),
+                "swirl" => warp_swirl(&st.as_ref().unwrap().a, clock, 1.0),
+                "ripple" => warp_ripple(&st.as_ref().unwrap().a, clock, 2.2),
+                "breathe" => warp_breathe(&st.as_ref().unwrap().a, clock, 1.0),
                 "vflow" => voronoi_flow_frame(rw, h, seed_a, clock, &palette),
-                _ => st.frame(t, &strat),
+                _ => st.as_ref().unwrap().frame(t, &strat),
             })
         };
         let generation_elapsed = generation_started.map(|started| started.elapsed());
@@ -1081,7 +1267,7 @@ pub(crate) fn morph_worker_session(mode_a: &str, seed_a: u64, mode_b: &str, seed
         out.write_all(frame_buffer.as_bytes()).unwrap();
         out.flush().unwrap();
         if let Some(profiler) = frame_profiler.as_mut() {
-            profiler.record(
+            profiler.record_with_context(
                 &strat,
                 crate::_0_profile::FrameSample {
                     generation: generation_elapsed.unwrap(),
@@ -1094,6 +1280,12 @@ pub(crate) fn morph_worker_session(mode_a: &str, seed_a: u64, mode_b: &str, seed
                     width: rw,
                     height: h,
                 },
+                || serde_json::json!({
+                    "mode": mode_a, "theme": theme, "seed": seed_a,
+                    "time": clock, "phase": phase, "randomize": randomize, "roll": roll,
+                    "terminal_size": {"w": w, "h": th},
+                    "knobs": spec.params.iter().zip(&eff).map(|(p, v)| (p.key, *v)).collect::<std::collections::BTreeMap<_, _>>(),
+                }),
             );
         }
 
@@ -1106,13 +1298,17 @@ pub(crate) fn morph_worker_session(mode_a: &str, seed_a: u64, mode_b: &str, seed
             }
             events.extend(receiver.try_iter().take(31));
         } else if event::poll(Duration::from_millis(16)).unwrap_or(false) {
-            if let Ok(event) = event::read() { events.push(event); }
+            if let Ok(event) = event::read() {
+                events.push(event);
+            }
         }
         for event in events {
             match event {
                 Event::Key(key) => match key.code {
                     KeyCode::Char('q' | 'Q') | KeyCode::Esc => break 'frames,
-                    KeyCode::Char('c' | 'C') if key.modifiers.contains(KeyModifiers::CONTROL) => break 'frames,
+                    KeyCode::Char('c' | 'C') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                        break 'frames;
+                    }
                     KeyCode::Char('g') => {
                         randomize = !randomize;
                         store_randomize(&mut saved, randomize);
@@ -1193,10 +1389,11 @@ pub(crate) fn morph_worker_session(mode_a: &str, seed_a: u64, mode_b: &str, seed
                     KeyCode::Char('n') => {
                         // jump to next seed pair immediately
                         walk_seed = walk_seed.wrapping_add(1);
-                        let next = render_frame(&exe, walk_seed, mode_a, theme, w, h)
-                            .unwrap_or_else(|| blank.clone());
-                        let prev_b = st.b.clone();
-                        st = MorphState::new(prev_b, next);
+                        endpoint_a = endpoint_b;
+                        endpoint_b = walk_seed;
+                        endpoint_mode_a = endpoint_mode_b;
+                        endpoint_mode_b = mode_a;
+                        st = None;
                         phase = 0.0;
                         dir = 1.0;
                     }
@@ -1207,17 +1404,11 @@ pub(crate) fn morph_worker_session(mode_a: &str, seed_a: u64, mode_b: &str, seed
                     th = nh;
                     w = nw as usize;
                     h = (nh as usize).saturating_sub(1).max(1);
-                    blank = vec![vec![Cell::blank(); w]; h];
-                    let (b_seed, b_mode) = if walk {
-                        (walk_seed, mode_a)
-                    } else {
-                        (seed_b, mode_b)
-                    };
-                    let na = render_frame(&exe, seed_a, mode_a, theme, w, h)
-                        .unwrap_or_else(|| blank.clone());
-                    let nb = render_frame(&exe, b_seed, b_mode, theme, w, h)
-                        .unwrap_or_else(|| blank.clone());
-                    st = MorphState::new(na, nb);
+                    endpoint_a = seed_a;
+                    endpoint_b = if walk { walk_seed } else { seed_b };
+                    endpoint_mode_a = mode_a;
+                    endpoint_mode_b = if walk { mode_a } else { mode_b };
+                    st = None;
                     iterate_renderer = IterateFrameRenderer::new(mode_a, seed_a, theme, w, h);
                     frame_encoder.invalidate();
                     phase = 0.0;

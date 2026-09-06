@@ -93,9 +93,9 @@ pub(crate) fn live_params_to_command(command: &mut std::process::Command) {
 /// Path to the persisted-options file (`~/.config/ascii-renderer/options.tsv`),
 /// or None if HOME is unset.
 pub(crate) fn options_path() -> Option<std::path::PathBuf> {
-    let home = std::env::var_os("HOME")?;
-    let mut p = std::path::PathBuf::from(home);
-    p.push(".config");
+    let mut p = std::env::var_os("XDG_CONFIG_HOME")
+        .map(std::path::PathBuf::from)
+        .or_else(|| std::env::var_os("HOME").map(|home| std::path::PathBuf::from(home).join(".config")))?;
     p.push("ascii-renderer");
     p.push("options.tsv");
     Some(p)

@@ -142,6 +142,8 @@ pub(crate) fn measure_render<T>(
 enum TraceEventKind {
     Render,
     SlowRender,
+    AnimationFrame,
+    SlowAnimationFrame,
 }
 
 impl TraceEventKind {
@@ -149,6 +151,8 @@ impl TraceEventKind {
         match self {
             Self::Render => "render",
             Self::SlowRender => "slow_render",
+            Self::AnimationFrame => "animation_frame",
+            Self::SlowAnimationFrame => "slow_animation_frame",
         }
     }
 }
@@ -405,13 +409,47 @@ pub(crate) struct FrameProfiler {
 impl FrameProfiler {
     pub(crate) fn from_env(mode: &str, strategy: &str) -> Option<Self> {
         let settings = settings();
-        settings.enabled.then(|| Self {
+        (settings.enabled || trace_settings().path.is_some()).then(|| Self {
             mode: mode.to_owned(),
             strategy: strategy.to_owned(),
             report_every: settings.report_every,
             interval_started: Instant::now(),
             totals: FrameTotals::default(),
         })
+    }
+
+    pub(crate) fn record_with_context(
+        &mut self,
+        strategy: &str,
+        sample: FrameSample,
+        context: impl FnOnce() -> serde_json::Value,
+    ) {
+        let trace = trace_settings();
+        let total = sample.generation + sample.encoding + sample.presentation;
+        if let Some(path) = trace.path.as_ref() {
+            if trace.all || total.as_millis() >= trace.slow_ms as u128 {
+                // Resolve knob names and allocate JSON only for emitted records.
+                let mut event = context();
+                let fields = event.as_object_mut().unwrap();
+                fields.extend(serde_json::json!({
+                    "v": 1,
+                    "kind": if total.as_millis() >= trace.slow_ms as u128 { TraceEventKind::SlowAnimationFrame.as_str() } else { TraceEventKind::AnimationFrame.as_str() },
+                    "ts_ms": std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_millis() as u64,
+                    "strategy": strategy,
+                    "dur_us": total.as_micros() as u64,
+                    "render_us": sample.generation.as_micros() as u64,
+                    "encoding_us": sample.encoding.as_micros() as u64,
+                    "presentation_us": sample.presentation.as_micros() as u64,
+                    "bytes": sample.bytes,
+                    "changed_cells": sample.changed_cells,
+                    "runs": sample.runs,
+                    "full_repaint": sample.full_repaint,
+                    "grid": {"w": sample.width, "h": sample.height},
+                }).as_object().unwrap().clone());
+                append_ndjson(path, &event);
+            }
+        }
+        self.record(strategy, sample);
     }
 
     pub(crate) fn record(&mut self, strategy: &str, sample: FrameSample) {

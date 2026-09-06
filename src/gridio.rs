@@ -6,32 +6,47 @@ use rand::SeedableRng;
 use rand::rngs::StdRng;
 use std::io::{self, IsTerminal, Read as _};
 
+use crate::automata;
 use crate::automata::*;
-use crate::biomes::*;
-use crate::color::*;
-use crate::content::*;
-use crate::fills::*;
-use crate::layout::*;
-use crate::markdown::*;
-use crate::mondrian::*;
-use crate::render::*;
-use crate::scene::*;
-use crate::sprites::*;
-use crate::tree_draw::*;
-use crate::types::*;
-use crate::walker::*;
+use crate::avant;
 use crate::avant::*;
-use crate::automata; use crate::avant; use crate::biomes; use crate::borders; use crate::color; use crate::content; use crate::fills; use crate::layout; use crate::markdown; use crate::mondrian; use crate::render; use crate::scene; use crate::sprites; use crate::tree_draw; use crate::types; use crate::walker;
+use crate::biomes;
+use crate::biomes::*;
+use crate::borders;
 use crate::cli::*;
+use crate::color;
+use crate::color::*;
+use crate::content;
+use crate::content::*;
+use crate::fills;
+use crate::fills::*;
 use crate::ink::*;
+use crate::layout;
+use crate::layout::*;
+use crate::markdown;
+use crate::markdown::*;
 use crate::modes_creatures::*;
 use crate::modes_geo::*;
 use crate::modes_sky::*;
 use crate::modes_tree::*;
+use crate::mondrian;
+use crate::mondrian::*;
 use crate::morph::*;
 use crate::opts::*;
 use crate::pp::*;
 use crate::registry::*;
+use crate::render;
+use crate::render::*;
+use crate::scene;
+use crate::scene::*;
+use crate::sprites;
+use crate::sprites::*;
+use crate::tree_draw;
+use crate::tree_draw::*;
+use crate::types;
+use crate::types::*;
+use crate::walker;
+use crate::walker::*;
 use crate::warps::*;
 
 /// Render path used by every mode: dump a serialized grid when ASCII_GRID_DUMP
@@ -65,7 +80,6 @@ pub(crate) fn parse_color_code(s: &str) -> Color {
     let b = it.next().and_then(|v| v.parse().ok()).unwrap_or(0);
     Color::Rgb { r, g, b }
 }
-
 
 /// Lossless text serialization: "w h" header, then one "char_u32 fg bg" line per cell.
 pub(crate) fn serialize_grid(grid: &Grid) -> String {
@@ -111,7 +125,6 @@ pub(crate) fn parse_grid(s: &str) -> Grid {
     grid
 }
 
-
 /// Force a grid to (w, h) by truncating / padding with blanks.
 pub(crate) fn fit_grid(g: Grid, w: usize, h: usize) -> Grid {
     let mut out = vec![vec![Cell::blank(); w]; h];
@@ -127,10 +140,13 @@ pub(crate) fn fit_grid(g: Grid, w: usize, h: usize) -> Grid {
 pub(crate) fn rgb_of(c: Color) -> Color {
     match c {
         Color::Rgb { .. } => c,
-        _ => Color::Rgb { r: 10, g: 10, b: 12 },
+        _ => Color::Rgb {
+            r: 10,
+            g: 10,
+            b: 12,
+        },
     }
 }
-
 
 /// Paint a grid with each row positioned by an absolute cursor escape and NO
 /// newlines, so the terminal can never scroll (the definitive anti-scrollback
@@ -139,23 +155,7 @@ pub(crate) fn rgb_of(c: Color) -> Color {
 /// unlike crossterm's `SetForegroundColor(..).to_string()`). `fg` selects the
 /// foreground (38/39) vs background (48/49) parameter group.
 pub(crate) fn write_sgr(s: &mut String, c: Color, fg: bool) {
-    use std::fmt::Write as _;
-    match c {
-        Color::Rgb { r, g, b } => {
-            let lead = if fg { 38 } else { 48 };
-            let _ = write!(s, "\x1b[{};2;{};{};{}m", lead, r, g, b);
-        }
-        Color::Reset => s.push_str(if fg { "\x1b[39m" } else { "\x1b[49m" }),
-        other => {
-            // rare named/ansi variants: fall back to crossterm's formatter.
-            use crossterm::style::{SetBackgroundColor, SetForegroundColor};
-            if fg {
-                let _ = write!(s, "{}", SetForegroundColor(other));
-            } else {
-                let _ = write!(s, "{}", SetBackgroundColor(other));
-            }
-        }
-    }
+    crate::render::push_color(s, c, fg);
 }
 
 pub(crate) fn grid_to_ansi(grid: &Grid) -> String {
@@ -285,14 +285,19 @@ impl AnsiFrameEncoder {
             self.full_cost_hint = output.len();
         } else {
             changed_cells = self.collect_dirty_runs(grid);
-            if changed_cells > 0 {
+            if width * height >= 65_536 && changed_cells > width * height / 2 {
+                // Rerolling most cells needs a full repaint. Avoid constructing
+                // dirty runs and speculatively encoding the same frame twice.
+                encode_full_grid(grid, output);
+                self.full_cost_hint = output.len();
+                full_repaint = true;
+            } else if changed_cells > 0 {
                 encode_runs(grid, &self.runs, output);
                 // Most animation diffs are far below a full frame. Use the last
                 // exact full cost as a cheap gate, then scan the current frame
                 // only when the result is close enough to change the decision.
                 if self.full_cost_hint == 0
-                    || output.len().saturating_mul(4)
-                        >= self.full_cost_hint.saturating_mul(3)
+                    || output.len().saturating_mul(4) >= self.full_cost_hint.saturating_mul(3)
                 {
                     let full_cost = full_grid_encoded_cost(grid);
                     if output.len() >= full_cost {
@@ -336,6 +341,10 @@ impl AnsiFrameEncoder {
             }
         }
 
+        if self.width * self.height >= 65_536 && changed > self.width * self.height / 2 {
+            return changed;
+        }
+
         // A terminal-wide glyph and its reserved following cell form one visual
         // unit. Repaint both sides when either the old or new unit changes.
         for y in 0..self.height {
@@ -374,6 +383,7 @@ impl AnsiFrameEncoder {
                 }
                 let mut end = x;
 
+                let (mut fg, mut bg) = colors_after_span(row, start, end, Color::Reset, Color::Reset);
                 // Compare the exact bytes for unchanged cells in the gap with
                 // the absolute cursor escape that would skip them.
                 loop {
@@ -388,11 +398,11 @@ impl AnsiFrameEncoder {
                     while next_end < self.width && self.dirty[offset + next_end] {
                         next_end += 1;
                     }
-                    let (fg, bg) = colors_after_span(row, start, end, Color::Reset, Color::Reset);
                     let gap_cost = encoded_span_cost(row, end, next, fg, bg);
                     if gap_cost > cursor_escape_len(y + 1, next + 1) {
                         break;
                     }
+                    (fg, bg) = colors_after_span(row, end, next_end, fg, bg);
                     end = next_end;
                     x = next_end;
                 }

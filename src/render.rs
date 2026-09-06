@@ -86,7 +86,7 @@ fn push_u8(buffer: &mut String, value: u8) {
 }
 
 /// Same SGR bytes as crossterm 0.26, without nested formatting per cell.
-fn push_color(buffer: &mut String, color: Color, foreground: bool) {
+pub(crate) fn push_color(buffer: &mut String, color: Color, foreground: bool) {
     if color == Color::Reset {
         buffer.push_str(if foreground { "\x1b[39m" } else { "\x1b[49m" });
         return;
