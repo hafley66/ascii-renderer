@@ -47,6 +47,20 @@ The probe uses a deterministic 320x103 colored grid and reports microseconds per
 grid over 200 iterations. PTY write timings include kernel transport and reader
 backpressure; terminal emulator painting is outside this measurement.
 
+The Unix demo and animation supervisor waits for pipe readability or terminal
+writability after a stalled operation. Its readiness wait has a 2 ms timeout
+for keyboard checks; ready descriptors wake it immediately.
+
+The relay probe sends 12 Gem Aetherium 2 frames at `t=0.00..0.66` through the
+same child pipe and nonblocking terminal relay used by demo. It covers 320x103
+and 2000x2000, reporting generation, child emission (including pipe
+backpressure), and total relay time. The PTY is continuously drained, so this
+measures application and kernel transport rather than emulator painting:
+
+```bash
+ASCII_PERF_BIN="$PWD/target/release/ascii-renderer" cargo test --release --bin ascii-renderer perf_preview_relay_over_time -- --ignored --nocapture
+```
+
 ## Named replay inputs
 
 ```bash

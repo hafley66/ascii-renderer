@@ -21,7 +21,7 @@ tracing = "0.1"
 unicode-width = "0.2.2"
 
 [target.'cfg(unix)'.dependencies]
-nix = { version = "0.31.3", features = ["fs", "signal", "process", "term"] }
+nix = { version = "0.31.3", features = ["fs", "signal", "process", "term", "poll"] }
 
 [dev-dependencies]
 insta = "1"

@@ -1,14 +1,15 @@
 //! Input stays in the terminal process. A killable process group owns rendering,
 //! encoding, caches and any render subprocesses. Pipes provide backpressure.
 use crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers};
-use nix::fcntl::{fcntl, FcntlArg, OFlag};
-use nix::sys::signal::{killpg, Signal};
-use nix::sys::termios::{tcflush, FlushArg};
+use nix::fcntl::{FcntlArg, OFlag, fcntl};
+use nix::poll::{PollFd, PollFlags, poll};
+use nix::sys::signal::{Signal, killpg};
+use nix::sys::termios::{FlushArg, tcflush};
 use nix::unistd::Pid;
 use std::collections::VecDeque;
 use std::fs::OpenOptions;
 use std::io::{self, Read, Write};
-use std::os::fd::AsFd;
+use std::os::fd::{AsFd, BorrowedFd};
 use std::os::unix::{fs::OpenOptionsExt, process::CommandExt};
 use std::process::{Child, Command, Stdio};
 use std::time::{Duration, Instant};
@@ -60,13 +61,20 @@ pub(crate) fn supervise(command: &mut Command, animation: bool) -> io::Result<Ex
         .write(true)
         .custom_flags(OFlag::O_NONBLOCK.bits())
         .open("/dev/tty")?;
-    let result = pump(command, animation, &mut terminal, || {
-        if event::poll(Duration::ZERO)? {
-            event::read().map(Some)
-        } else {
-            Ok(None)
-        }
-    });
+    let readiness = terminal.try_clone()?;
+    let result = pump(
+        command,
+        animation,
+        &mut terminal,
+        Some(readiness.as_fd()),
+        || {
+            if event::poll(Duration::ZERO)? {
+                event::read().map(Some)
+            } else {
+                Ok(None)
+            }
+        },
+    );
     // Discard queued frame bytes on cancellation before the caller redraws or
     // leaves alternate screen. Do not wait for a congested terminal to drain.
     if !matches!(result, Ok(Exit::Finished)) {
@@ -82,6 +90,7 @@ fn pump(
     command: &mut Command,
     animation: bool,
     terminal: &mut impl Write,
+    terminal_fd: Option<BorrowedFd<'_>>,
     mut input: impl FnMut() -> io::Result<Option<Event>>,
 ) -> io::Result<Exit> {
     command
@@ -192,7 +201,22 @@ fn pump(
             return Ok(Exit::Finished);
         }
         if !progressed {
-            std::thread::sleep(INPUT_POLL);
+            // Wait for the blocked stage, waking as soon as it can progress.
+            // The timeout bounds keyboard latency even without descriptor input.
+            let waiting = if displayed == display.len() {
+                Some(PollFd::new(output.as_fd(), PollFlags::POLLIN))
+            } else {
+                terminal_fd.map(|fd| PollFd::new(fd, PollFlags::POLLOUT))
+            };
+            if let Some(fd) = waiting {
+                match poll(&mut [fd], INPUT_POLL.as_millis() as u16) {
+                    Ok(_) | Err(nix::errno::Errno::EINTR) => (),
+                    Err(error) => return Err(error.into()),
+                }
+            } else {
+                // In-memory test writers have no readiness descriptor.
+                std::thread::sleep(INPUT_POLL);
+            }
         }
     }
 }
@@ -258,6 +282,74 @@ mod tests {
     use super::*;
     use crossterm::event::KeyEvent;
 
+    /// Complete CLI frames through the same pipe and nonblocking PTY relay as demo.
+    #[test]
+    #[ignore = "release relay probe; ASCII_PERF_BIN selects the renderer executable"]
+    fn perf_preview_relay_over_time() {
+        let binary = std::env::var("ASCII_PERF_BIN").expect("set ASCII_PERF_BIN");
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("renders.ndjson");
+        for (w, h) in [(320, 103), (2000, 2000)] {
+            let pty = nix::pty::openpty(None, None).unwrap();
+            let mut attrs = nix::sys::termios::tcgetattr(&pty.slave).unwrap();
+            nix::sys::termios::cfmakeraw(&mut attrs);
+            nix::sys::termios::tcsetattr(&pty.slave, nix::sys::termios::SetArg::TCSANOW, &attrs)
+                .unwrap();
+            let mut terminal = std::fs::File::from(pty.slave);
+            nonblocking(&terminal).unwrap();
+            let reader = std::thread::spawn(move || {
+                let mut master = std::fs::File::from(pty.master);
+                let mut buffer = [0; 65536];
+                let mut total = 0usize;
+                loop {
+                    match master.read(&mut buffer) {
+                        Ok(0) => break,
+                        Ok(n) => total += n,
+                        Err(e) if e.raw_os_error() == Some(nix::libc::EIO) => break,
+                        Err(e) => panic!("{e}"),
+                    }
+                }
+                total
+            });
+            let readiness = terminal.try_clone().unwrap();
+            for frame in 0..12 {
+                let time = frame as f32 * 0.06;
+                let mut command = Command::new(&binary);
+                command
+                    .args(["42", "gem-aetherium-2"])
+                    .env("ASCII_GRID_W", w.to_string())
+                    .env("ASCII_GRID_H", h.to_string())
+                    .env("ASCII_T", time.to_string())
+                    .env("ASCII_TRACE_ALL", "1")
+                    .env("ASCII_TRACE_PATH", &path);
+                let started = Instant::now();
+                assert_eq!(
+                    pump(
+                        &mut command,
+                        false,
+                        &mut terminal,
+                        Some(readiness.as_fd()),
+                        || Ok(None)
+                    )
+                    .unwrap(),
+                    Exit::Finished
+                );
+                let log = std::fs::read_to_string(&path).unwrap();
+                let event: serde_json::Value =
+                    serde_json::from_str(log.lines().last().unwrap()).unwrap();
+                eprintln!(
+                    "{w}x{h} t={time:.2} relay_ms={:.3} render_us={} emit_us={}",
+                    started.elapsed().as_secs_f64() * 1000.0,
+                    event["render_us"],
+                    event["emit_us"]
+                );
+            }
+            drop(readiness);
+            drop(terminal);
+            eprintln!("{w}x{h} bytes={}", reader.join().unwrap());
+        }
+    }
+
     struct Congested;
     impl Write for Congested {
         fn write(&mut self, _: &[u8]) -> io::Result<usize> {
@@ -282,6 +374,7 @@ mod tests {
                     Command::new("sh").args(["-c", script]),
                     true,
                     &mut Congested,
+                    None,
                     || {
                         // Flood ordinary controls first, then quit while the child
                         // cannot consume/render them. Quit must bypass the queue.
@@ -308,6 +401,30 @@ mod tests {
     }
 
     #[test]
+    fn quit_interrupts_real_terminal_backpressure() {
+        let pty = nix::pty::openpty(None, None).unwrap();
+        let mut terminal = std::fs::File::from(pty.slave);
+        nonblocking(&terminal).unwrap();
+        let readiness = terminal.try_clone().unwrap();
+        // Keep the master open without draining it so POLLOUT remains blocked.
+        let started = Instant::now();
+        let result = pump(
+            Command::new("sh").args(["-c", "yes frame"]),
+            true,
+            &mut terminal,
+            Some(readiness.as_fd()),
+            || {
+                Ok((started.elapsed() >= Duration::from_millis(40))
+                    .then(|| Event::Key(KeyEvent::new(KeyCode::Char('q'), KeyModifiers::NONE))))
+            },
+        )
+        .unwrap();
+        assert_eq!(result, Exit::Quit);
+        assert!(started.elapsed() < Duration::from_secs(1));
+        drop(pty.master);
+    }
+
+    #[test]
     fn cancellation_kills_nested_render_children() {
         let directory = tempfile::tempdir().unwrap();
         let ready = directory.path().join("ready");
@@ -324,6 +441,7 @@ mod tests {
                 .arg(&leaked),
             true,
             &mut Vec::new(),
+            None,
             || {
                 assert!(
                     started.elapsed() < Duration::from_secs(2),
@@ -350,6 +468,7 @@ mod tests {
             Command::new("sh").args(["-c", "sleep 10"]),
             false,
             &mut Vec::new(),
+            None,
             || Ok(Some(key.clone())),
         )
         .unwrap();
@@ -363,6 +482,7 @@ mod tests {
             Command::new("sh").args(["-c", "printf 'one\\ntwo\\n'"]),
             false,
             &mut output,
+            None,
             || Ok(None),
         )
         .unwrap();
