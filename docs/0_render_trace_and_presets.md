@@ -18,6 +18,35 @@ ASCII_TRACE_SLOW_MS=8 ascii-renderer 1701 gem-aetherium-2 deep
 
 Set `ASCII_TRACE=0` to disable slow tracing. Each line is one JSON object. Fields include `kind` (`render` or `slow_render`), `ts_ms`, total `dur_us`, `render_us`, `emit_us`, mode inputs, the resolved knob map, grid dimensions, and measured layer totals when the renderer declares layers.
 
+`terminal_size` records the successful `crossterm::terminal::size()` result as
+`{"w":320,"h":103}`, captured before applying grid overrides. If the lookup
+fails, it is `null` and `terminal_size_fallback` is `true`; the CLI uses 80x45 as
+the default dimensions. A successful lookup sets `terminal_size_fallback` to
+`false`. `grid.w` and `grid.h` remain the resolved render dimensions after
+`ASCII_GRID_W` and `ASCII_GRID_H` overrides. Overrides apply independently even
+when terminal lookup fails. These additive fields retain schema version `v:1`
+and all existing timing and input fields.
+
+For example, a 120x40 terminal with 320x103 grid overrides records:
+
+```json
+{"terminal_size":{"w":120,"h":40},"terminal_size_fallback":false,"grid":{"w":320,"h":103}}
+```
+
+One-shot ANSI output uses at most 64 KiB of encoding scratch storage and writes
+complete chunks through a locked stdout. `emit_us` includes encoding, writes,
+and the final flush. The focused Unix release probe compares the previous
+formatter and the optimized encoder, then times preencoded writes and both
+complete paths through a drained raw PTY:
+
+```bash
+cargo test --release --bin ascii-renderer render::tests::perf_terminal_emission_320x103 -- --ignored --exact --nocapture
+```
+
+The probe uses a deterministic 320x103 colored grid and reports microseconds per
+grid over 200 iterations. PTY write timings include kernel transport and reader
+backpressure; terminal emulator painting is outside this measurement.
+
 ## Named replay inputs
 
 ```bash

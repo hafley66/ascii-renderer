@@ -507,7 +507,8 @@ fn run_render(args: Vec<String>) {
         return;
     }
 
-    let (term_w, term_h) = crossterm::terminal::size().unwrap_or((80, 45));
+    let terminal_size = crossterm::terminal::size().ok();
+    let (term_w, term_h) = terminal_size.unwrap_or((80, 45));
     // ASCII_GRID_W/H override the render size (used by the morph driver to dump
     // frames at a fixed size regardless of the child's piped terminal).
     let width = std::env::var("ASCII_GRID_W")
@@ -574,6 +575,7 @@ fn run_render(args: Vec<String>) {
         seed,
         width,
         height,
+        terminal_size,
         time: t_anim,
         args: args.iter().skip(4).cloned().collect(),
         knobs,
