@@ -74,10 +74,10 @@ impl TraceSettings {
         all: Option<&str>,
         slow_ms: Option<&str>,
     ) -> Self {
-        let enabled = enabled.is_some_and(env_flag);
+        let disabled = enabled.is_some_and(|value| !env_flag(value));
         let path = path
             .map(PathBuf::from)
-            .or_else(|| enabled.then(default_trace_path));
+            .or_else(|| (!disabled).then(default_trace_path));
         Self {
             path,
             all: all.is_some_and(env_flag),
@@ -166,9 +166,9 @@ pub(crate) struct RenderTraceContext {
     pub(crate) knobs: BTreeMap<String, f32>,
 }
 
-/// Conditional append-only NDJSON tracing for one CLI render. `ASCII_TRACE=1`
-/// writes slow renders to the default state file; `ASCII_TRACE_PATH` selects a
-/// file, `ASCII_TRACE_ALL=1` records every render, and `ASCII_TRACE_SLOW_MS`
+/// Conditional append-only NDJSON tracing for one CLI render. Slow renders are
+/// enabled by default; `ASCII_TRACE=0` disables them, `ASCII_TRACE_PATH` selects
+/// a file, `ASCII_TRACE_ALL=1` records every render, and `ASCII_TRACE_SLOW_MS`
 /// changes the slow threshold.
 pub(crate) struct RenderTrace {
     context: RenderTraceContext,
@@ -531,8 +531,11 @@ mod tests {
     #[test]
     fn trace_settings_enable_default_and_explicit_paths() {
         let disabled = TraceSettings::parse(None, None, None, None);
-        assert_eq!(disabled.path, None);
+        assert_eq!(disabled.path, Some(default_trace_path()));
         assert_eq!(disabled.slow_ms, 32);
+
+        let opt_out = TraceSettings::parse(None, Some("0"), None, None);
+        assert_eq!(opt_out.path, None);
 
         let explicit = TraceSettings::parse(
             Some("/tmp/ascii.ndjson".into()),

@@ -2,7 +2,7 @@
 
 ## Conditional render telemetry
 
-Set `ASCII_TRACE=1` to append only renders at or above the 32 ms default to:
+Slow tracing is enabled by default. Renders at or above the 32 ms default append to:
 
 ```text
 $XDG_STATE_HOME/ascii-renderer/renders.ndjson
@@ -11,12 +11,12 @@ $XDG_STATE_HOME/ascii-renderer/renders.ndjson
 Without `XDG_STATE_HOME`, the path is `~/.local/state/ascii-renderer/renders.ndjson`.
 
 ```bash
-ASCII_TRACE=1 ascii-renderer 1701 gem-aetherium-2 deep
+ascii-renderer 1701 gem-aetherium-2 deep
 ASCII_TRACE_PATH=/tmp/renders.ndjson ASCII_TRACE_ALL=1 ascii-renderer 1701 gem-aetherium-2 deep
-ASCII_TRACE=1 ASCII_TRACE_SLOW_MS=8 ascii-renderer 1701 gem-aetherium-2 deep
+ASCII_TRACE_SLOW_MS=8 ascii-renderer 1701 gem-aetherium-2 deep
 ```
 
-Each line is one JSON object. Fields include `kind` (`render` or `slow_render`), `ts_ms`, `dur_us`, mode inputs, the resolved knob map, grid dimensions, and measured layer totals when the renderer declares layers.
+Set `ASCII_TRACE=0` to disable slow tracing. Each line is one JSON object. Fields include `kind` (`render` or `slow_render`), `ts_ms`, `dur_us`, mode inputs, the resolved knob map, grid dimensions, and measured layer totals when the renderer declares layers.
 
 ## Named replay inputs
 
