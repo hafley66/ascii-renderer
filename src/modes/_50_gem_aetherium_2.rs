@@ -1,16 +1,109 @@
 use crossterm::style::Color;
-use rand::rngs::StdRng;
 use rand::RngExt;
 use rand::SeedableRng;
+use rand::rngs::StdRng;
+use rayon::prelude::*;
 
+use super::_33_cosmograph::FBM_OCTAVES;
 use crate::_0_profile::measure_layer;
 use crate::color::{darken, lerp_color, lighten};
 use crate::opts::param_f32;
+use crate::pp::pp_hash2;
 use crate::registry::{AnimKind, Mode, ModeFrame, Param};
 use crate::types::{Cell, Grid};
-use super::_33_cosmograph::FbmRow;
 
 const TAU: f32 = std::f32::consts::TAU;
+
+struct NebulaColumn {
+    x0: [i32; FBM_OCTAVES],
+    sx: [f32; FBM_OCTAVES],
+    edges: [[f32; 2]; FBM_OCTAVES],
+}
+
+/// Frame-owned O(width) scratch. Horizontal noise interpolation is constant
+/// throughout a y lattice band, so refresh it only when a scanline crosses an
+/// octave's lattice edge. Keep the arithmetic order of FbmRow / pp_fbm.
+struct NebulaRows {
+    columns: Vec<NebulaColumn>,
+    y0: [Option<i32>; FBM_OCTAVES],
+}
+
+impl NebulaRows {
+    fn new(nx: &[[f32; 2]], bias: f32) -> Self {
+        let columns = nx
+            .iter()
+            .map(|&[x, _]| {
+                let fx = x * 2.2 + bias;
+                let mut column = NebulaColumn {
+                    x0: [0; FBM_OCTAVES],
+                    sx: [0.0; FBM_OCTAVES],
+                    edges: [[0.0; 2]; FBM_OCTAVES],
+                };
+                let mut freq = 1.0;
+                for o in 0..FBM_OCTAVES {
+                    let fxo = fx * freq;
+                    let ix = fxo.floor() as i32;
+                    let tx = fxo - ix as f32;
+                    column.x0[o] = ix;
+                    column.sx[o] = tx * tx * (3.0 - 2.0 * tx);
+                    freq *= 2.0;
+                }
+                column
+            })
+            .collect();
+        Self {
+            columns,
+            y0: [None; FBM_OCTAVES],
+        }
+    }
+
+    fn prepare_y(&mut self, fy: f32, seed: u64) -> [f32; FBM_OCTAVES] {
+        let mut sy = [0.0; FBM_OCTAVES];
+        let mut freq = 1.0;
+        for o in 0..FBM_OCTAVES {
+            let fyo = fy * freq;
+            let iy = fyo.floor() as i32;
+            let ty = fyo - iy as f32;
+            sy[o] = ty * ty * (3.0 - 2.0 * ty);
+            freq *= 2.0;
+            if self.y0[o] == Some(iy) {
+                continue;
+            }
+            self.y0[o] = Some(iy);
+            let sd = seed.wrapping_add(o as u64 * 101);
+            let mut last_x = None;
+            let mut c = [0.0; 4];
+            for column in &mut self.columns {
+                let ix = column.x0[o];
+                if last_x != Some(ix) {
+                    c = [
+                        pp_hash2(ix, iy, sd),
+                        pp_hash2(ix + 1, iy, sd),
+                        pp_hash2(ix, iy + 1, sd),
+                        pp_hash2(ix + 1, iy + 1, sd),
+                    ];
+                    last_x = Some(ix);
+                }
+                let sx = column.sx[o];
+                column.edges[o] = [c[0] + (c[1] - c[0]) * sx, c[2] + (c[3] - c[2]) * sx];
+            }
+        }
+        sy
+    }
+}
+
+impl NebulaColumn {
+    fn at(&self, sy: &[f32; FBM_OCTAVES]) -> f32 {
+        let mut v = 0.0;
+        let mut amp = 0.5;
+        for (o, &sy) in sy.iter().enumerate() {
+            let [a, b] = self.edges[o];
+            v += amp * (a + (b - a) * sy);
+            amp *= 0.5;
+        }
+        v
+    }
+}
 
 pub(super) struct GemAetherium2Mode;
 
@@ -262,67 +355,102 @@ pub(crate) fn draw_gem_aetherium_2(
     let ray_spin = anim_t * 0.15;
     let ray_k = params.zodiac as f32 * 0.5;
 
-    let mut nx_col = Vec::with_capacity(width);
-    let mut nx2_col = Vec::with_capacity(width);
-    let mut neb_fx_col = Vec::with_capacity(width);
     let inv_half_w = 1.0 / (width as f32 * 0.5);
     let inv_half_h = 1.0 / (height as f32 * 0.5);
-    for x in 0..width {
-        let nx = (x as f32 - cx) * inv_half_w;
-        nx_col.push(nx);
-        nx2_col.push(nx * nx);
-        neb_fx_col.push(nx * 2.2 + neb_fx_bias);
-    }
-
     measure_layer("gem-aetherium-2", "background", || {
-        for y in 0..height {
-            let ny = (y as f32 - cy) * inv_half_h;
-            let ny2 = ny * ny;
-            let mut neb_noise = FbmRow::new(ny * 2.2 - neb_fy_bias, neb_seed);
-            let row = &mut grid[y];
-
-            for x in 0..width {
-                let dist_center = (nx2_col[x] + ny2).sqrt();
-                let mut cell_ch = ' ';
-                let mut cell_fg = bg_color;
-
-                if nebula_on {
-                    let fbm_val = neb_noise.at(neb_fx_col[x]);
-                    let neb_intensity = (fbm_val * 0.8 + (1.0 - dist_center * 0.85)).clamp(0.0, 1.0) * params.nebula;
-                    if neb_intensity > 0.65 {
-                        cell_ch = match ((neb_intensity - 0.65) * 8.0) as usize {
+        let nx_col: Vec<_> = if nebula_on || rays_on {
+            (0..width)
+                .map(|x| {
+                    let nx = (x as f32 - cx) * inv_half_w;
+                    [nx, nx * nx]
+                })
+                .collect()
+        } else {
+            Vec::new()
+        };
+        measure_layer("gem-aetherium-2", "nebula", || {
+            if !nebula_on {
+                for row in grid.iter_mut().take(height) {
+                    row[..width].fill(Cell::new(' ', bg_color));
+                }
+                return;
+            }
+            let mut noise = NebulaRows::new(&nx_col, neb_fx_bias);
+            for (y, row) in grid.iter_mut().take(height).enumerate() {
+                let ny = (y as f32 - cy) * inv_half_h;
+                let ny2 = ny * ny;
+                let sy = noise.prepare_y(ny * 2.2 - neb_fy_bias, neb_seed);
+                for ((cell, column), &[_, nx2]) in row.iter_mut().zip(&noise.columns).zip(&nx_col) {
+                    let dist_center = (nx2 + ny2).sqrt();
+                    let fbm_val = column.at(&sy);
+                    let neb_intensity = (fbm_val * 0.8 + (1.0 - dist_center * 0.85))
+                        .clamp(0.0, 1.0)
+                        * params.nebula;
+                    *cell = if neb_intensity > 0.65 {
+                        let ch = match ((neb_intensity - 0.65) * 8.0) as usize {
                             0 => '░',
                             1 => '▒',
                             2 => '▓',
                             _ => '▒',
                         };
-                        cell_fg = lerp_color(bg_color, aether_color, neb_intensity.min(1.0));
+                        Cell::new(
+                            ch,
+                            lerp_color(bg_color, aether_color, neb_intensity.min(1.0)),
+                        )
                     } else if neb_intensity > 0.45 {
-                        cell_ch = ' ';
-                        cell_fg = neb_dim;
-                    }
+                        Cell::new(' ', neb_dim)
+                    } else {
+                        Cell::new(' ', bg_color)
+                    };
                 }
-
-                if rays_on && dist_center < 1.4 {
-                    let atten = 1.0 / (dist_center * 1.5 + 0.3);
-                    if atten * params.rays > 0.4 {
-                        let angle = ny.atan2(nx_col[x]) + ray_spin;
-                        let ray_wave = (angle * ray_k).sin();
-                        if ray_wave > 0.0 {
-                            let ray_power = ray_wave.powf(4.0) * atten * params.rays;
-                            if ray_power > 0.4 {
-                                let r_ch = if ray_power > 1.2 { '│' } else if ray_power > 0.8 { '┆' } else { '┊' };
-                                let r_fg = lerp_color(cell_fg, palette[4], (ray_power * 0.4).min(0.9));
-                                cell_ch = r_ch;
-                                cell_fg = r_fg;
+            }
+        });
+        measure_layer("gem-aetherium-2", "rays", || {
+            if !rays_on {
+                return;
+            }
+            let shade_row = |(y, row): (usize, &mut Vec<Cell>)| {
+                let ny = (y as f32 - cy) * inv_half_h;
+                let ny2 = ny * ny;
+                for (cell, &[nx, nx2]) in row.iter_mut().zip(&nx_col) {
+                    let dist_center = (nx2 + ny2).sqrt();
+                    if dist_center < 1.4 {
+                        let atten = 1.0 / (dist_center * 1.5 + 0.3);
+                        if atten * params.rays > 0.4 {
+                            let angle = ny.atan2(nx) + ray_spin;
+                            let ray_wave = (angle * ray_k).sin();
+                            if ray_wave > 0.0 {
+                                let ray_power = ray_wave.powf(4.0) * atten * params.rays;
+                                if ray_power > 0.4 {
+                                    let ch = if ray_power > 1.2 {
+                                        '│'
+                                    } else if ray_power > 0.8 {
+                                        '┆'
+                                    } else {
+                                        '┊'
+                                    };
+                                    let fg =
+                                        lerp_color(cell.fg, palette[4], (ray_power * 0.4).min(0.9));
+                                    *cell = Cell::new(ch, fg);
+                                }
                             }
                         }
                     }
                 }
-
-                row[x] = Cell::new(cell_ch, cell_fg);
+            };
+            // Disjoint rows have no RNG or blending dependencies. Keep small
+            // previews serial to avoid scheduling overhead; time both paths here
+            // on the caller thread so layer capture includes worker completion.
+            if width * height >= 65_536 {
+                grid[..height]
+                    .par_iter_mut()
+                    .enumerate()
+                    .with_min_len(16)
+                    .for_each(shade_row);
+            } else {
+                grid.iter_mut().take(height).enumerate().for_each(shade_row);
             }
-        }
+        });
     });
 
     measure_layer("gem-aetherium-2", "starfield", || {
@@ -823,11 +951,19 @@ mod tests {
     use crate::color::make_palette;
     use crate::render::grid_to_plain;
 
-    fn render_test_grid(width: usize, height: usize, seed: u64, t: f32, params: &AetheriumParams) -> Grid {
+    fn render_test_grid(
+        width: usize,
+        height: usize,
+        seed: u64,
+        t: f32,
+        params: &AetheriumParams,
+    ) -> Grid {
         let mut grid = vec![vec![Cell::blank(); width]; height];
         let mut rng = StdRng::seed_from_u64(seed);
         let palette = make_palette(seed);
-        draw_gem_aetherium_2(&mut grid, width, height, seed, &palette, &mut rng, t, params);
+        draw_gem_aetherium_2(
+            &mut grid, width, height, seed, &palette, &mut rng, t, params,
+        );
         grid
     }
 
@@ -835,34 +971,243 @@ mod tests {
         grid_to_plain(grid).join("\n")
     }
 
+    fn max_params() -> AetheriumParams {
+        let values: Vec<_> = PARAMS.iter().map(|param| param.max).collect();
+        AetheriumParams::from_inputs(&[], Some(&values))
+    }
+
+    fn fingerprint(grid: &Grid) -> u64 {
+        use std::hash::{DefaultHasher, Hash, Hasher};
+        let mut hash = DefaultHasher::new();
+        for row in grid {
+            for cell in row {
+                cell.ch.hash(&mut hash);
+                cell.fg.hash(&mut hash);
+                cell.bg.hash(&mut hash);
+            }
+        }
+        hash.finish()
+    }
+
+    #[test]
+    fn cached_nebula_matches_reference_noise() {
+        use crate::pp::pp_fbm;
+
+        for width in [1, 2, 80, 2000] {
+            let columns: Vec<_> = (0..width)
+                .map(|x| {
+                    let nx = (x as f32 - width as f32 * 0.5) / (width as f32 * 0.5);
+                    [nx, nx * nx]
+                })
+                .collect();
+            for (seed, bias) in [(0, 0.0), (1701, -0.375), (u64::MAX, 4.25)] {
+                let mut noise = NebulaRows::new(&columns, bias);
+                // Repeated, adjacent, skipped and reversed lattice bands.
+                for fy in [-2.2, -2.199, -1.0, 0.0, 0.0, 0.125, 0.13, 2.2, -2.2] {
+                    let sy = noise.prepare_y(fy, seed);
+                    for (column, &[nx, _]) in noise.columns.iter().zip(&columns) {
+                        assert_eq!(
+                            column.at(&sy).to_bits(),
+                            pp_fbm(nx * 2.2 + bias, fy, seed).to_bits(),
+                            "width={width} seed={seed} bias={bias} nx={nx} fy={fy}"
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn parallel_rows_preserve_seeded_frames() {
+        let pools: Vec<_> = [1, 4]
+            .into_iter()
+            .map(|threads| {
+                rayon::ThreadPoolBuilder::new()
+                    .num_threads(threads)
+                    .build()
+                    .unwrap()
+            })
+            .collect();
+        for (seed, time, params) in [
+            (42, 0.0, AetheriumParams::default()),
+            (u64::MAX, -3.7, max_params()),
+        ] {
+            // Above the parallel threshold, including a partial final row batch.
+            let frames: Vec<_> = pools
+                .iter()
+                .map(|pool| pool.install(|| render_test_grid(257, 257, seed, time, &params)))
+                .collect();
+            assert_eq!(frames[0], frames[1]);
+        }
+    }
+
+    #[test]
+    fn seeded_full_cell_regression() {
+        let mut frames = String::new();
+        for (name, params) in [
+            ("default", AetheriumParams::default()),
+            ("maximum", max_params()),
+            (
+                "no-nebula",
+                AetheriumParams {
+                    nebula: 0.0,
+                    ..Default::default()
+                },
+            ),
+            (
+                "no-rays",
+                AetheriumParams {
+                    rays: 0.0,
+                    ..Default::default()
+                },
+            ),
+            (
+                "no-background",
+                AetheriumParams {
+                    nebula: 0.0,
+                    rays: 0.0,
+                    ..Default::default()
+                },
+            ),
+        ] {
+            for (width, height, seed, time) in [
+                (1, 1, 999, 3.7),
+                (80, 24, 42, 0.0),
+                (80, 24, 42, 1.5),
+                (320, 100, 1701, -2.25),
+            ] {
+                use std::fmt::Write;
+                let grid = render_test_grid(width, height, seed, time, &params);
+                writeln!(
+                    frames,
+                    "{name} {width}x{height} seed={seed} t={time}: {:016x}",
+                    fingerprint(&grid)
+                )
+                .unwrap();
+            }
+        }
+        insta::assert_snapshot!(frames, @r"
+default 1x1 seed=999 t=3.7: 62574f63114ec1b8
+default 80x24 seed=42 t=0: f748016a4d0c3209
+default 80x24 seed=42 t=1.5: 830d339dfe4a005b
+default 320x100 seed=1701 t=-2.25: 1befbae7e2df6158
+maximum 1x1 seed=999 t=3.7: 20e372eb7cab1d13
+maximum 80x24 seed=42 t=0: 064f8411ba3f250b
+maximum 80x24 seed=42 t=1.5: 4646bf27ca9b0e74
+maximum 320x100 seed=1701 t=-2.25: 07a21da96c82c19d
+no-nebula 1x1 seed=999 t=3.7: 62574f63114ec1b8
+no-nebula 80x24 seed=42 t=0: 48d6598b3b4e3e4f
+no-nebula 80x24 seed=42 t=1.5: fb67f298463d35be
+no-nebula 320x100 seed=1701 t=-2.25: 060efc8cc21bc807
+no-rays 1x1 seed=999 t=3.7: 62574f63114ec1b8
+no-rays 80x24 seed=42 t=0: bbc8a63952132e14
+no-rays 80x24 seed=42 t=1.5: dcf301aa4d71465d
+no-rays 320x100 seed=1701 t=-2.25: 148e2fcda46c3103
+no-background 1x1 seed=999 t=3.7: 62574f63114ec1b8
+no-background 80x24 seed=42 t=0: bea89baf3ddf5da1
+no-background 80x24 seed=42 t=1.5: e67a1a47425640b8
+no-background 320x100 seed=1701 t=-2.25: 606ed0d7bfc4323b
+        ");
+    }
+
+    /// Headless layer probe; grid allocation and output encoding are excluded.
+    /// Run with: cargo test --release perf_gem_aetherium_2 -- --ignored --nocapture
+    #[test]
+    #[ignore]
+    fn perf_gem_aetherium_2() {
+        use crate::_0_profile::{layer_capture_begin, layer_capture_end};
+        use std::collections::BTreeMap;
+        use std::time::Instant;
+
+        let read = |key, default| {
+            std::env::var(key)
+                .ok()
+                .and_then(|value| value.parse::<usize>().ok())
+                .filter(|value| *value > 0)
+                .unwrap_or(default)
+        };
+        let width = read("ASCII_PERF_WIDTH", 2000);
+        let height = read("ASCII_PERF_HEIGHT", 1000);
+        let frames = read("ASCII_PERF_FRAMES", 12);
+        let seed = 1701;
+        let palette = make_palette(seed);
+        let mut grid = vec![vec![Cell::blank(); width]; height];
+        for (name, params) in [
+            ("default", AetheriumParams::default()),
+            ("maximum", max_params()),
+        ] {
+            let mut times = Vec::with_capacity(frames);
+            let mut layers = BTreeMap::<_, u128>::new();
+            for frame in 0..=frames {
+                let mut rng = StdRng::seed_from_u64(seed);
+                layer_capture_begin();
+                let started = Instant::now();
+                draw_gem_aetherium_2(
+                    &mut grid,
+                    width,
+                    height,
+                    seed,
+                    &palette,
+                    &mut rng,
+                    frame as f32 * 0.06,
+                    &params,
+                );
+                let elapsed = started.elapsed().as_nanos();
+                let totals = layer_capture_end();
+                std::hint::black_box(&grid);
+                if frame == 0 {
+                    continue;
+                }
+                times.push(elapsed);
+                for layer in totals {
+                    *layers.entry(layer.layer).or_default() += layer.total_ns;
+                }
+            }
+            times.sort_unstable();
+            eprintln!(
+                "{name} {width}x{height} frames={frames} median_ms={:.3} mean_ms={:.3} checksum={:016x}",
+                times[times.len() / 2] as f64 / 1e6,
+                times.iter().sum::<u128>() as f64 / frames as f64 / 1e6,
+                fingerprint(&grid)
+            );
+            for (layer, ns) in layers {
+                eprintln!("  {layer}: {:.3} ms/frame", ns as f64 / frames as f64 / 1e6);
+            }
+        }
+    }
+
     #[test]
     fn deterministic_seeded_frame_and_visible_motion() {
         let params = AetheriumParams::default();
-        let frame_a = plain(&render_test_grid(80, 24, 42, 0.0, &params));
-        let frame_a2 = plain(&render_test_grid(80, 24, 42, 0.0, &params));
-        let frame_b = plain(&render_test_grid(80, 24, 42, 1.5, &params));
+        let frame_a = render_test_grid(80, 24, 42, 0.0, &params);
+        let frame_a2 = render_test_grid(80, 24, 42, 0.0, &params);
+        let frame_b = render_test_grid(80, 24, 42, 1.5, &params);
 
-        assert_eq!(frame_a, frame_a2, "Identical inputs must yield identical frames");
-        assert_ne!(frame_a, frame_b, "Time progression must cause visible motion in orrery/astrolabe");
+        assert_eq!(
+            frame_a, frame_a2,
+            "Identical inputs must yield identical frames"
+        );
+        assert_ne!(
+            plain(&frame_a),
+            plain(&frame_b),
+            "Time progression must cause visible motion in orrery/astrolabe"
+        );
     }
 
     #[test]
     fn tiny_grid_and_extreme_inputs_terminate() {
-        let tiny_params = AetheriumParams {
-            rings: 10,
-            planets: 12,
-            gears: 8,
-            zodiac: 24,
-            speed: 3.0,
-            tilt: 1.0,
-            nebula: 1.5,
-            rays: 1.5,
-            comets: 12,
-            runes: 1.0,
-            pulse: 2.0,
-            harmony: 8.0,
-        };
-        for (w, h) in [(10usize, 5usize), (2, 2), (1, 1), (30, 6), (0, 0)] {
+        let tiny_params = max_params();
+        for (w, h) in [
+            (10usize, 5usize),
+            (2, 2),
+            (1, 1),
+            (30, 6),
+            (0, 0),
+            (0, 5),
+            (5, 0),
+            (1, 32),
+            (32, 1),
+        ] {
             let output = render_test_grid(w, h, 999, 3.7, &tiny_params);
             assert_eq!(output.len(), h);
             assert_eq!(output.iter().map(Vec::len).collect::<Vec<_>>(), vec![w; h]);
@@ -891,5 +1236,4 @@ mod tests {
         assert!((p.speed - 1.5).abs() < 1e-4);
         assert!((p.tilt - 0.8).abs() < 1e-4);
     }
-
 }
