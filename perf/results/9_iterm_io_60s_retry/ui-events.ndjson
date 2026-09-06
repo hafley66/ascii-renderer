@@ -1,0 +1,17 @@
+{"kind": "launch_requested", "ts_ms": 1788720710031}
+{"kind": "launch_returned", "ts_ms": 1788720710179, "code": 0, "output": "", "error": ""}
+{"kind": "demo_started", "ts_ms": 1788720710774}
+{"kind": "key_/_requested", "ts_ms": 1788720710774}
+{"kind": "key_/_returned", "ts_ms": 1788720711250, "code": 0, "output": "", "error": ""}
+{"kind": "key_gem-aetherium-2_requested", "ts_ms": 1788720711256}
+{"kind": "key_gem-aetherium-2_returned", "ts_ms": 1788720711635, "code": 0, "output": "", "error": ""}
+{"kind": "search_enter_requested", "ts_ms": 1788720711636}
+{"kind": "search_enter_returned", "ts_ms": 1788720711762, "code": 0, "output": "", "error": ""}
+{"kind": "gem_preview", "ts_ms": 1788720712338}
+{"kind": "capture_disabled", "ts_ms": 1788720712338}
+{"kind": "key_a_requested", "ts_ms": 1788720712338}
+{"kind": "key_a_returned", "ts_ms": 1788720714185, "code": 0, "output": "", "error": ""}
+{"kind": "animation_started", "ts_ms": 1788720716574}
+{"kind": "capture_disabled_before_key", "ts_ms": 1788720776576}
+{"kind": "key_q_requested", "ts_ms": 1788720776577}
+{"kind": "key_q_returned", "ts_ms": 1788720776804, "code": 1, "output": "", "error": "212:237: execution error: Repro window lost focus (-2700)"}

@@ -1,0 +1,17 @@
+{
+  "binary": "/Users/chrishafley/projects/ascii-renderer/target/release/ascii-renderer",
+  "sha256": "6a690731f4b73ea0a0cd822bbf2bb85800f4da769023d3bb5bcc40c565f671d5",
+  "created_ms": 1788720546968,
+  "scenario": "same release binary, raw iTerm all-max demo, renderer-only libc interposition",
+  "renderer_pids": [
+    91825,
+    92166
+  ],
+  "iterm_pid": 1510,
+  "shared_iterm_tracing": false,
+  "window_id": 12989,
+  "vmmap_enabled": true,
+  "observer_exit_code": 0,
+  "hold_seconds": 18,
+  "cleanup": "Dedicated session stopped and closed"
+}

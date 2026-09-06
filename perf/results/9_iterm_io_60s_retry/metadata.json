@@ -1,0 +1,17 @@
+{
+  "binary": "/Users/chrishafley/projects/ascii-renderer/target/release/ascii-renderer",
+  "sha256": "6a690731f4b73ea0a0cd822bbf2bb85800f4da769023d3bb5bcc40c565f671d5",
+  "created_ms": 1788720710031,
+  "scenario": "60-second animation, foreground continuity unverified, quit rejected by focus guard",
+  "renderer_pids": [
+    21775,
+    22011
+  ],
+  "window_id": 12998,
+  "iterm_pid": 1510,
+  "vmmap_enabled": false,
+  "observer_exit_code": 1,
+  "hold_seconds": 60,
+  "shared_iterm_tracing": false,
+  "cleanup": "Dedicated session stopped and closed; renderer PIDs verified exited"
+}
