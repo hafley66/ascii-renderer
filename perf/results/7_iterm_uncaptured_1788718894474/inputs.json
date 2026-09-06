@@ -1,0 +1,39 @@
+{
+  "args": [],
+  "grid": {
+    "h": 24,
+    "w": 80
+  },
+  "kind": "inputs",
+  "knobs": {
+    "COMETS": 12.0,
+    "GEARS": 8.0,
+    "HARMONY": 8.0,
+    "NEBULA": 1.5,
+    "PLANETS": 12.0,
+    "PULSE": 2.0,
+    "RAYS": 1.5,
+    "RINGS": 10.0,
+    "RUNES": 1.0,
+    "SPEED": 3.0,
+    "TILT": 1.0,
+    "ZODIAC": 24.0
+  },
+  "mode": "gem-aetherium-2",
+  "palette": [
+    "rgb_(49,42,26)",
+    "rgb_(181,209,71)",
+    "rgb_(57,91,172)",
+    "rgb_(140,228,103)",
+    "rgb_(220,220,220)"
+  ],
+  "seed": 42,
+  "terminal_size": {
+    "h": 24,
+    "w": 80
+  },
+  "terminal_size_fallback": false,
+  "theme": "",
+  "time": 0.0,
+  "v": 1
+}

@@ -1,0 +1,6 @@
+{
+  "binary": "/Users/chrishafley/projects/ascii-renderer/target/release/ascii-renderer",
+  "sha256": "6a690731f4b73ea0a0cd822bbf2bb85800f4da769023d3bb5bcc40c565f671d5",
+  "created_ms": 1788718894475,
+  "scenario": "exact demo UI flow, recording disabled before quit"
+}

@@ -1,0 +1,6 @@
+{
+  "binary": "/Users/chrishafley/projects/ascii-renderer/target/release/ascii-renderer",
+  "sha256": "6a690731f4b73ea0a0cd822bbf2bb85800f4da769023d3bb5bcc40c565f671d5",
+  "created_ms": 1788718649885,
+  "scenario": "raw iTerm2: cargo run --release -- 42 demo, choose gem-aetherium-2, animate all-max, UI q"
+}
