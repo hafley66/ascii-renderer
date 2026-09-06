@@ -893,7 +893,13 @@ mod iterate_frame_tests {
                 let render = started.elapsed();
                 let started = std::time::Instant::now();
                 let stats = encoder.encode(grid, false, &mut output);
-                eprintln!("{w}x{h} frame={frame} roll={roll} render_ms={:.3} encode_ms={:.3} bytes={} changed={}", render.as_secs_f64()*1000., started.elapsed().as_secs_f64()*1000., stats.bytes, stats.changed_cells);
+                eprintln!(
+                    "{w}x{h} frame={frame} roll={roll} render_ms={:.3} encode_ms={:.3} bytes={} changed={}",
+                    render.as_secs_f64() * 1000.,
+                    started.elapsed().as_secs_f64() * 1000.,
+                    stats.bytes,
+                    stats.changed_cells
+                );
                 std::hint::black_box(&output);
             }
         }
@@ -1203,7 +1209,11 @@ pub(crate) fn morph_worker_session(
             }
         } else {
             std::borrow::Cow::Owned(match strat.as_str() {
-                "wind" => warp_wind(&st.as_ref().unwrap().a, clock, (h as f32 * 0.18).clamp(3.0, 8.0)),
+                "wind" => warp_wind(
+                    &st.as_ref().unwrap().a,
+                    clock,
+                    (h as f32 * 0.18).clamp(3.0, 8.0),
+                ),
                 "drift" => warp_drift(&st.as_ref().unwrap().a, clock, 1.4),
                 "swirl" => warp_swirl(&st.as_ref().unwrap().a, clock, 1.0),
                 "ripple" => warp_ripple(&st.as_ref().unwrap().a, clock, 2.2),
@@ -1280,12 +1290,31 @@ pub(crate) fn morph_worker_session(
                     width: rw,
                     height: h,
                 },
-                || serde_json::json!({
-                    "mode": mode_a, "theme": theme, "seed": seed_a,
-                    "time": clock, "phase": phase, "randomize": randomize, "roll": roll,
-                    "terminal_size": {"w": w, "h": th},
-                    "knobs": spec.params.iter().zip(&eff).map(|(p, v)| (p.key, *v)).collect::<std::collections::BTreeMap<_, _>>(),
-                }),
+                || {
+                    let mut inputs = crate::_0_profile::FrameInputs {
+                        mode: mode_a,
+                        theme,
+                        seed: seed_a,
+                        width: rw,
+                        height: h,
+                        terminal_size: Some((w as u16, th)),
+                        time: clock,
+                        args: &[],
+                        params: spec.params,
+                        values: &eff,
+                        palette: &palette,
+                    }
+                    .to_json();
+                    inputs.as_object_mut().unwrap().extend(
+                        serde_json::json!({
+                            "phase": phase, "randomize": randomize, "roll": roll,
+                        })
+                        .as_object()
+                        .unwrap()
+                        .clone(),
+                    );
+                    inputs
+                },
             );
         }
 

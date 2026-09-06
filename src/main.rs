@@ -3,6 +3,7 @@
 mod _0_profile;
 #[cfg(unix)]
 mod _1_playback;
+mod _2_replay;
 
 #[macro_use]
 mod registry;

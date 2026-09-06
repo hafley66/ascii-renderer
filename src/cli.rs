@@ -1,9 +1,9 @@
 #![allow(warnings)]
 
 use crossterm::style::Color;
-use rand::rngs::StdRng;
 use rand::RngExt;
 use rand::SeedableRng;
+use rand::rngs::StdRng;
 use std::io::{self, IsTerminal, Read as _};
 
 use crate::arboretum::cli_arboretum;
@@ -100,6 +100,9 @@ use crate::warps::*;
 pub(crate) fn run() {
     let args: Vec<String> = std::env::args().collect();
 
+    if crate::_2_replay::command(&args) {
+        return;
+    }
     if args.get(1).map(String::as_str) == Some("preset") {
         run_preset_command(&args);
         return;
@@ -245,6 +248,8 @@ fn run_render(args: Vec<String>) {
         eprintln!("  mode     Rendering mode (default: full demo)");
         eprintln!("  theme    Named color theme (default: seed-derived palette)");
         eprintln!("  preset  Named replay inputs: list, show, run, or save");
+        eprintln!("  inputs MODE [max|default]  Export declared inputs as JSON");
+        eprintln!("  replay FILE [LINE]         Replay one NDJSON frame (1-based; default: last)");
         eprintln!(
             "          ascii-renderer preset save <name> <seed> <mode> [theme] [KEY=VALUE ...]"
         );
@@ -529,7 +534,9 @@ fn run_render(args: Vec<String>) {
     let mut grid = vec![vec![Cell::blank(); width]; height];
     let mut rng = StdRng::seed_from_u64(seed);
 
-    let palette = if !theme_name.is_empty() {
+    let palette = if let Ok(value) = std::env::var("ASCII_PALETTE") {
+        serde_json::from_str::<[Color; 5]>(&value).expect("invalid ASCII_PALETTE")
+    } else if !theme_name.is_empty() {
         named_theme(&theme_name).unwrap_or_else(|| {
             let themes = [
                 "ember",
@@ -556,7 +563,7 @@ fn run_render(args: Vec<String>) {
     };
 
     let spec = mode_spec(mode);
-    let knobs = spec
+    let values: Vec<f32> = spec
         .params
         .iter()
         .enumerate()
@@ -566,19 +573,21 @@ fn run_render(args: Vec<String>) {
                 .and_then(|value| value.parse::<f32>().ok())
                 .unwrap_or_else(|| param_f32(param.key, param.default))
                 .clamp(param.min, param.max);
-            (param.key.to_string(), value)
+            value
         })
         .collect();
-    let mut trace = crate::_0_profile::RenderTrace::start(crate::_0_profile::RenderTraceContext {
-        mode: mode.to_string(),
-        theme: theme_name.to_string(),
+    let mut trace = crate::_0_profile::RenderTrace::start(crate::_0_profile::FrameInputs {
+        mode,
+        theme: theme_name,
         seed,
         width,
         height,
         terminal_size,
         time: t_anim,
-        args: args.iter().skip(4).cloned().collect(),
-        knobs,
+        args: args.get(4..).unwrap_or_default(),
+        params: spec.params,
+        values: &values,
+        palette: &palette,
     });
 
     if let Some(registered) = registered_mode(mode) {

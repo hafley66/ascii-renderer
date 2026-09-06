@@ -157,32 +157,48 @@ impl TraceEventKind {
     }
 }
 
-/// Immutable render inputs captured before mode dispatch. The trace guard owns
-/// this data so every early return from the CLI still records the same inputs.
-pub(crate) struct RenderTraceContext {
-    pub(crate) mode: String,
-    pub(crate) theme: String,
+/// Borrowed inputs shared by static rendering, animation, stress tests and replay.
+/// Mode authors declare controls once in Mode::params; the caller supplies values.
+pub(crate) struct FrameInputs<'a> {
+    pub(crate) mode: &'a str,
+    pub(crate) theme: &'a str,
     pub(crate) seed: u64,
     pub(crate) width: usize,
     pub(crate) height: usize,
     pub(crate) terminal_size: Option<(u16, u16)>,
     pub(crate) time: f32,
-    pub(crate) args: Vec<String>,
-    pub(crate) knobs: BTreeMap<String, f32>,
+    pub(crate) args: &'a [String],
+    pub(crate) params: &'a [crate::registry::Param],
+    pub(crate) values: &'a [f32],
+    pub(crate) palette: &'a [crossterm::style::Color; 5],
+}
+
+impl FrameInputs<'_> {
+    pub(crate) fn to_json(&self) -> serde_json::Value {
+        assert_eq!(self.params.len(), self.values.len());
+        serde_json::json!({
+            "mode": self.mode, "theme": self.theme, "seed": self.seed,
+            "grid": {"w": self.width, "h": self.height},
+            "terminal_size": self.terminal_size.map(|(w, h)| serde_json::json!({"w": w, "h": h})),
+            "terminal_size_fallback": self.terminal_size.is_none(),
+            "time": self.time, "args": self.args, "palette": self.palette,
+            "knobs": self.params.iter().zip(self.values).map(|(p, v)| (p.key, *v)).collect::<BTreeMap<_, _>>(),
+        })
+    }
 }
 
 /// Conditional append-only NDJSON tracing for one CLI render. Slow renders are
 /// enabled by default; `ASCII_TRACE=0` disables them, `ASCII_TRACE_PATH` selects
 /// a file, `ASCII_TRACE_ALL=1` records every render, and `ASCII_TRACE_SLOW_MS`
 /// changes the slow threshold.
-pub(crate) struct RenderTrace {
-    context: RenderTraceContext,
+pub(crate) struct RenderTrace<'a> {
+    context: FrameInputs<'a>,
     started: Instant,
     render_finished: Option<Duration>,
 }
 
-impl RenderTrace {
-    pub(crate) fn start(context: RenderTraceContext) -> Option<Self> {
+impl<'a> RenderTrace<'a> {
+    pub(crate) fn start(context: FrameInputs<'a>) -> Option<Self> {
         trace_settings().path.as_ref()?;
         layer_capture_begin();
         Some(Self {
@@ -200,7 +216,7 @@ impl RenderTrace {
     }
 }
 
-impl Drop for RenderTrace {
+impl Drop for RenderTrace<'_> {
     fn drop(&mut self) {
         let settings = trace_settings();
         let layers = layer_capture_end();
@@ -232,24 +248,21 @@ impl Drop for RenderTrace {
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap_or_default()
             .as_millis() as u64;
-        let event = serde_json::json!({
-            "v": 1,
-            "kind": kind.as_str(),
-            "ts_ms": timestamp_ms,
-            "dur_us": elapsed_us,
-            "render_us": render_us,
-            "emit_us": emit_us,
-            "mode": self.context.mode,
-            "theme": self.context.theme,
-            "seed": self.context.seed,
-            "time": self.context.time,
-            "grid": { "w": self.context.width, "h": self.context.height },
-            "terminal_size": self.context.terminal_size.map(|(w, h)| serde_json::json!({ "w": w, "h": h })),
-            "terminal_size_fallback": self.context.terminal_size.is_none(),
-            "args": self.context.args,
-            "knobs": self.context.knobs,
-            "layers": layer_values,
-        });
+        let mut event = self.context.to_json();
+        event.as_object_mut().unwrap().extend(
+            serde_json::json!({
+                "v": 1,
+                "kind": kind.as_str(),
+                "ts_ms": timestamp_ms,
+                "dur_us": elapsed_us,
+                "render_us": render_us,
+                "emit_us": emit_us,
+                "layers": layer_values,
+            })
+            .as_object()
+            .unwrap()
+            .clone(),
+        );
         append_ndjson(settings.path.as_ref().unwrap(), &event);
     }
 }

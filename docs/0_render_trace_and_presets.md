@@ -78,7 +78,8 @@ including a morph-cycle boundary, at 320x103 and 2000x2000 render sizes:
 python3 scripts/3_test_animation.py target/release/ascii-renderer
 ```
 
-The test uses isolated `XDG_CONFIG_HOME` options and a temporary trace file.
+The test uses isolated `XDG_CONFIG_HOME` options and saves its trace under
+`perf/results/`. It prints a replay command for the slowest frame.
 Live options honor `XDG_CONFIG_HOME`, falling back to `~/.config`.
 
 ## Named replay inputs
@@ -93,3 +94,40 @@ ascii-renderer preset run gem2-lab
 Presets are stored atomically in `$XDG_CONFIG_HOME/ascii-renderer/presets.json`, or `~/.config/ascii-renderer/presets.json` when `XDG_CONFIG_HOME` is unset. Saving an existing name replaces its seed, theme, and knob map.
 
 In the demo, `s` saves the current mode, seed, theme, and effective knobs without opening a dialog. The generated name is `<mode>-<seed>-<unix-ms>` and appears in the status line.
+
+## All knobs at maximum, recorded over time
+
+```bash
+python3 scripts/3_test_animation.py --mode gem-aetherium-2 --max --size 2000x2000
+```
+
+This builds release, reads all maxima from `Mode::params`, applies them
+simultaneously, and runs 100 native animation frames through the Unix PTY
+supervisor. Every recorded frame must retain every maximum. The time advances
+through a cycle boundary. Generation, ANSI encoding, and PTY presentation are
+measured separately; emulator painting is outside the measurement.
+
+Use `--frames 500` for a longer run, `--size 1000x10000` for a different render
+resolution, and `--trace perf/results/my-run.ndjson` for a named recording.
+The trace path must be new. Omit `--max` to exercise repeated random knob jumps.
+Pass an existing binary as the positional argument to skip building.
+
+```bash
+ascii-renderer inputs gem-aetherium-2 max
+ascii-renderer replay perf/results/my-run.ndjson 37
+```
+
+`inputs MODE [max|default]` exports one JSON input set from the registry.
+`replay FILE [LINE]` renders the selected record; line numbers start at 1 and
+omitting the line selects the last record. Replay restores seed, theme, actual
+palette, grid dimensions, animation time, positional arguments, and declared
+knobs. It supports registered mode renders and native `iterate` frames; other
+morph strategies need their endpoint state and are rejected. Replay renders
+one full frame; it does not recreate prior terminal diff state or emulator speed.
+
+Mode authors use `Mode::params` and `Mode::render` with the supplied frame inputs.
+The CLI and animation dispatcher capture inputs through shared `FrameInputs`
+and handle conditional timing/NDJSON automatically. No per-mode telemetry code
+or bespoke stress driver is required. `measure_layer` is optional for finer
+phase timing. Slow tracing remains on by default; `ASCII_TRACE_ALL=1` records
+all frames when running normally.

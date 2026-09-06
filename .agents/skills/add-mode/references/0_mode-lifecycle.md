@@ -24,21 +24,28 @@ src/opts.rs persisted knob values and names from registered_modes()
 
 ## Replay and slow-render diagnostics
 
-The CLI starts one process-level render trace for ordinary mode execution. Slow
-renders append structured NDJSON records by default under the XDG state directory.
-Each record has the seed, theme, grid dimensions, time, positional arguments,
-resolved declared knobs, duration, and all `measure_layer` totals captured during
-the frame. `ASCII_TRACE=0` disables slow records; `ASCII_TRACE_ALL=1` captures
-every frame.
+The CLI and native animation dispatchers capture shared `FrameInputs` and time
+each frame automatically. Slow renders append NDJSON by default under the XDG
+state directory. Records include seed, theme, actual palette, grid and terminal
+dimensions, time, arguments, resolved declared knobs, and stage durations.
+Optional `measure_layer` spans add finer totals. Mode authors need no telemetry
+wiring. `ASCII_TRACE=0` disables slow records; `ASCII_TRACE_ALL=1` captures every
+frame. `ascii-renderer replay FILE LINE` restores one registered mode or native
+iterate frame, with a 1-based line number. Other morph strategies require endpoint
+state and are rejected by single-frame replay.
 
 The demo `s` hotkey saves the current mode, seed, theme, and effective declared
 knobs as a unique named preset. `ascii-renderer preset run <name>` restores that
 input set. A mode must declare every visual live control in `Mode::params` for
 these records and presets to replay it.
 
-High-resolution probes should use `ASCII_GRID_W` and `ASCII_GRID_H` for one
-headless render, or `perf/knob_sweep.sh` for repeated native frames. Redirect a
-very large grid to `/dev/null`; terminal presentation is not a performance probe.
+For simultaneous-max stress, run `python3 scripts/3_test_animation.py --mode
+<mode> --max --size 2000x2000`. It builds release, gets maxima from `Mode::params`,
+uses isolated options, verifies 100 animated frames, and saves replayable NDJSON
+under `perf/results/`. Omit `--max` for repeated random knob jumps. No mode-specific
+driver is needed. Stage timing separates generation, encoding, and drained PTY
+presentation; it excludes emulator painting. Use `ASCII_GRID_W`/`ASCII_GRID_H`
+for a single headless render or `perf/knob_sweep.sh` for individual-knob timing.
 
 ## Registry surface
 

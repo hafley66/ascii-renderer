@@ -122,6 +122,7 @@ fn trace_preserves_terminal_and_resolved_grid_dimensions() {
                 "knobs",
                 "layers",
                 "mode",
+                "palette",
                 "render_us",
                 "seed",
                 "terminal_size",
