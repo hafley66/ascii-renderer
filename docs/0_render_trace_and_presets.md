@@ -29,4 +29,4 @@ ascii-renderer preset run gem2-lab
 
 Presets are stored atomically in `$XDG_CONFIG_HOME/ascii-renderer/presets.json`, or `~/.config/ascii-renderer/presets.json` when `XDG_CONFIG_HOME` is unset. Saving an existing name replaces its seed, theme, and knob map.
 
-In the demo, `s` saves the current mode, seed, theme, and effective knobs under `<mode>-<seed>`.
+In the demo, `s` saves the current mode, seed, theme, and effective knobs without opening a dialog. The generated name is `<mode>-<seed>-<unix-ms>` and appears in the status line.

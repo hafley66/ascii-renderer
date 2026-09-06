@@ -1,9 +1,9 @@
 #![allow(warnings)]
 
 use crossterm::style::Color;
+use rand::rngs::StdRng;
 use rand::RngExt;
 use rand::SeedableRng;
-use rand::rngs::StdRng;
 use std::io::{self, IsTerminal, Read as _};
 
 use crate::automata;
@@ -711,6 +711,7 @@ pub(crate) fn run_demo(initial_seed: u64) {
     let mut roll: u64 = 0; // re-roll nonce for randomize mode
     let mut pvals: Vec<f32> = pvals_for(&spec, all_modes[mode_idx], &saved);
     let mut psel: usize = 0;
+    let mut last_saved_preset = None::<String>;
 
     let exe = std::env::current_exe().unwrap();
 
@@ -800,6 +801,10 @@ pub(crate) fn run_demo(initial_seed: u64) {
             current_theme
         };
         let knob_tag = if randomize { "knobs:RANDOM " } else { "" };
+        let save_tag = last_saved_preset
+            .as_deref()
+            .map(|name| format!("saved:{name} | "))
+            .unwrap_or_default();
         let lr_hint = if randomize {
             "\u{2190}\u{2192}=reroll"
         } else {
@@ -807,13 +812,13 @@ pub(crate) fn run_demo(initial_seed: u64) {
         };
         let status = if pane_open {
             format!(
-                " {} | {}o=close opts  \u{2191}\u{2193}=select  {}  r=reset  s=save  g=rand-knobs  a=animate  q=quit ",
-                current_mode, knob_tag, lr_hint
+                " {} | {}{}o=close opts  \u{2191}\u{2193}=select  {}  r=reset  s=save  g=rand-knobs  a=animate  q=quit ",
+                current_mode, save_tag, knob_tag, lr_hint
             )
         } else {
             format!(
-                " {} | seed:{} | theme:{} | {}/=find  s=save  o=opts  g=rand  a=animate  f/j=prev/next  \u{2191}\u{2193}=seed  \u{2190}\u{2192}=theme  enter=reseed  q=quit ",
-                current_mode, seed, theme_label, knob_tag
+                " {} | seed:{} | theme:{} | {}{}/=find  s=save  o=opts  g=rand  a=animate  f/j=prev/next  \u{2191}\u{2193}=seed  \u{2190}\u{2192}=theme  enter=reseed  q=quit ",
+                current_mode, seed, theme_label, save_tag, knob_tag
             )
         };
         // Pad to terminal width, inverse video (char-safe truncation)
@@ -838,14 +843,20 @@ pub(crate) fn run_demo(initial_seed: u64) {
                         .zip(&eff)
                         .map(|(param, value)| (param.key.to_string(), *value))
                         .collect();
-                    let _ = save_preset(SavedPreset {
-                        name: format!("{current_mode}-{seed}"),
+                    let saved_at_ms = unix_epoch_ms();
+                    let name = format!("{current_mode}-{seed}-{saved_at_ms}");
+                    if save_preset(SavedPreset {
+                        name: name.clone(),
                         seed,
                         mode: current_mode.to_string(),
                         theme: current_theme.to_string(),
                         knobs,
-                        saved_at_ms: unix_epoch_ms(),
-                    });
+                        saved_at_ms,
+                    })
+                    .is_ok()
+                    {
+                        last_saved_preset = Some(name);
+                    }
                 }
                 KeyCode::Char('o') => pane_open = !pane_open,
                 KeyCode::Char('g') => {
