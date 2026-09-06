@@ -417,6 +417,10 @@ pub(crate) struct FrameProfiler {
     report_every: u64,
     interval_started: Instant,
     totals: FrameTotals,
+    frame_index: u64,
+    trace_started: Instant,
+    trace_frames: u64,
+    trace_bytes: u64,
 }
 
 impl FrameProfiler {
@@ -428,6 +432,10 @@ impl FrameProfiler {
             report_every: settings.report_every,
             interval_started: Instant::now(),
             totals: FrameTotals::default(),
+            frame_index: 0,
+            trace_started: Instant::now(),
+            trace_frames: 0,
+            trace_bytes: 0,
         })
     }
 
@@ -439,8 +447,13 @@ impl FrameProfiler {
     ) {
         let trace = trace_settings();
         let total = sample.generation + sample.encoding + sample.presentation;
+        self.frame_index += 1;
+        self.trace_frames += 1;
+        self.trace_bytes += sample.bytes as u64;
         if let Some(path) = trace.path.as_ref() {
-            if trace.all || total.as_millis() >= trace.slow_ms as u128 {
+            let periodic =
+                self.frame_index == 1 || self.trace_started.elapsed() >= Duration::from_secs(1);
+            if trace.all || total.as_millis() >= trace.slow_ms as u128 || periodic {
                 // Resolve knob names and allocate JSON only for emitted records.
                 let mut event = context();
                 let fields = event.as_object_mut().unwrap();
@@ -449,6 +462,12 @@ impl FrameProfiler {
                     "kind": if total.as_millis() >= trace.slow_ms as u128 { TraceEventKind::SlowAnimationFrame.as_str() } else { TraceEventKind::AnimationFrame.as_str() },
                     "ts_ms": std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_millis() as u64,
                     "strategy": strategy,
+                    "pid": std::process::id(),
+                    "frame_index": self.frame_index,
+                    "sampled": periodic,
+                    "interval_ms": self.trace_started.elapsed().as_secs_f64() * 1000.0,
+                    "interval_frames": self.trace_frames,
+                    "interval_bytes": self.trace_bytes,
                     "dur_us": total.as_micros() as u64,
                     "render_us": sample.generation.as_micros() as u64,
                     "encoding_us": sample.encoding.as_micros() as u64,
@@ -460,6 +479,9 @@ impl FrameProfiler {
                     "grid": {"w": sample.width, "h": sample.height},
                 }).as_object().unwrap().clone());
                 append_ndjson(path, &event);
+                self.trace_started = Instant::now();
+                self.trace_frames = 0;
+                self.trace_bytes = 0;
             }
         }
         self.record(strategy, sample);

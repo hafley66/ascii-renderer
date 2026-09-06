@@ -26,6 +26,7 @@ parser.add_argument('--size', default='286x103')
 parser.add_argument('--stall', type=float, default=10)
 parser.add_argument('--key', choices=['both', 'knob', 'quit'], default='both')
 parser.add_argument('--tmux', action='store_true', help='include an isolated tmux server and client')
+parser.add_argument('--sampled', action='store_true', help='verify default periodic traces with slow-frame logging suppressed')
 parser.add_argument('--max-ms', type=float, help='fail if applying an input exceeds this latency')
 args = parser.parse_args()
 binary = str(Path(args.binary).resolve())
@@ -50,6 +51,8 @@ def check(key):
             os.close(gate_read)
             env = dict(os.environ, XDG_CONFIG_HOME=str(directory),
                        ASCII_TRACE_PATH=str(trace), ASCII_TRACE_ALL='1')
+            if args.sampled:
+                env.update(ASCII_TRACE_ALL='0', ASCII_TRACE_SLOW_MS='3600000')
             command = [binary, '42', 'morph', '', args.mode, '42', args.mode, '43', 'iterate']
             if args.tmux:
                 env['TERM'] = 'xterm-256color'
@@ -94,6 +97,19 @@ def check(key):
                 assert not reaped(), tail.decode(errors='replace')
                 assert time.monotonic() < deadline, 'first frame timed out'
                 time.sleep(.002)
+            if args.sampled:
+                deadline = time.monotonic() + 5
+                while True:
+                    samples = [json.loads(line) for line in trace.read_text().split('\n')[:-1]]
+                    if len(samples) >= 3:
+                        break
+                    assert time.monotonic() < deadline, 'periodic frame samples missing'
+                    time.sleep(.01)
+                assert samples[0]['frame_index'] == 1
+                assert all(e['sampled'] and e['pid'] > 0 for e in samples)
+                assert all(e['grid'] == {'w': width, 'h': height} and e['knobs'] == fixture['knobs'] for e in samples)
+                assert all(e['interval_frames'] > 1 and e['interval_bytes'] >= e['bytes'] and e['interval_ms'] >= 1000 for e in samples[1:])
+                print(json.dumps({'periodic_samples': len(samples), 'last_frame_index': samples[-1]['frame_index']}), flush=True)
             reading.clear()
             # Let the in-flight read finish and fill the PTY and worker pipe.
             time.sleep(.25)

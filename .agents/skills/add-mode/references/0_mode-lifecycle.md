@@ -34,6 +34,11 @@ frame. `ascii-renderer replay FILE LINE` restores one registered mode or native
 iterate frame, with a 1-based line number. Other morph strategies require endpoint
 state and are rejected by single-frame replay.
 
+Default animation logs also sample the first completed frame and once per second,
+including PID, frame index, and interval frame/byte counts. This exposes output
+rate when the terminal falls behind while the renderer itself stays below the
+slow threshold. Output-write timing does not measure WebView parsing or painting.
+
 The demo `s` hotkey saves the current mode, seed, theme, and effective declared
 knobs as a unique named preset. `ascii-renderer preset run <name>` restores that
 input set. A mode must declare every visual live control in `Mode::params` for

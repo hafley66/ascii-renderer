@@ -155,3 +155,25 @@ writes and during backpressure. Input abandons an unfinished frame; the next
 frame resets ANSI parsing and repaints from the newly applied controls. Completed
 frame traces remain replayable. These tests inject input below the terminal GUI;
 they do not measure a WebView's keyboard dispatch or painting latency.
+
+## Detecting a terminal that falls behind a fast renderer
+
+Default animation tracing records the first completed frame and a periodic
+sample at least once per second of completed-frame activity, even when every
+frame is below the slow threshold. Slow frames continue to be recorded as before.
+The sampled record contains replay inputs, `pid`, monotonically increasing
+`frame_index`, `interval_ms`, `interval_frames`, and `interval_bytes`. These
+interval counters describe completed writes to the output pipe, not WebView
+painting. A terminal can accumulate an output backlog while these durations
+remain small. `ASCII_TRACE_ALL=1` still records every completed frame;
+`ASCII_TRACE=0` disables the default log.
+
+Verify sampling with slow-frame records deliberately suppressed:
+
+```bash
+python3 scripts/4_test_input_latency.py --key knob --sampled --stall 1 --max-ms 250
+```
+
+This checks three periodic records, exact all-max inputs and dimensions, PID,
+frame indices, and interval counters while the PTY is continuously consumed,
+then checks knob application under blocked output.
