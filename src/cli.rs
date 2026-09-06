@@ -6,85 +6,231 @@ use rand::SeedableRng;
 use rand::rngs::StdRng;
 use std::io::{self, IsTerminal, Read as _};
 
-use crate::automata::*;
-use crate::biomes::*;
-use crate::color::*;
-use crate::content::*;
-use crate::fills::*;
-use crate::layout::*;
-use crate::markdown::*;
-use crate::mondrian::*;
-use crate::render::*;
-use crate::scene::*;
-use crate::sprites::*;
-use crate::tree_draw::*;
-use crate::types::*;
-use crate::walker::*;
-use crate::avant::*;
-use crate::automata; use crate::avant; use crate::biomes; use crate::borders; use crate::color; use crate::content; use crate::fills; use crate::layout; use crate::markdown; use crate::mondrian; use crate::render; use crate::scene; use crate::sprites; use crate::tree_draw; use crate::types; use crate::walker;
-use crate::gridio::*;
-use crate::ink::*;
-use crate::modes_creatures::*;
-use crate::modes_geo::*;
-use crate::modes_sky::*;
-use crate::modes_tree::*;
-use crate::morph::*;
-use crate::opts::*;
-use crate::pp::*;
-use crate::registry::*;
-use crate::warps::*;
 use crate::arboretum::cli_arboretum;
 use crate::astrolabe::cli_astrolabe;
-use crate::haiku_1_forest::cli_haiku_1_forest;
-use crate::haiku_1_trees::cli_haiku_1_trees;
-use crate::sauron::cli_sauron;
-use crate::mahoraga2::cli_mahoraga2;
-use crate::mahoraga3::cli_mahoraga3;
-use crate::mahoraga4::cli_mahoraga4;
-use crate::mahoraga5::cli_mahoraga5;
-use crate::lifetree::cli_lifetree;
-use crate::lifetree2::cli_lifetree2;
-use crate::lifetree3::cli_lifetree3;
-use crate::lifetree4::cli_lifetree4;
-use crate::lifetree5::cli_lifetree5;
-use crate::lifetree6::cli_lifetree6;
+use crate::automata;
+use crate::automata::*;
+use crate::avant;
+use crate::avant::*;
+use crate::biomes;
+use crate::biomes::*;
+use crate::borders;
 use crate::braid::cli_braid;
 use crate::braid2::cli_braid2;
 use crate::chladni::cli_chladni;
-use crate::pendwave::cli_pendwave;
-use crate::polytope::cli_polytope;
-use crate::poincare::cli_poincare;
-use crate::opus_1_quasicrystal::cli_opus_1_quasicrystal;
-use crate::opus_2_quasicrystal::cli_opus_2_quasicrystal;
-use crate::sonnet_1_spirograph::cli_sonnet_1_spirograph;
-use crate::sonnet_2_clifford::cli_sonnet_2_clifford;
-use crate::haiku_1_torus::cli_haiku_1_torus;
-use crate::haiku_2_ripple::cli_haiku_2_ripple;
-use crate::fable_1_trees::cli_fable_1_trees;
-use crate::fable_1_forest::cli_fable_1_forest;
-use crate::fable_2_trees::cli_fable_2_trees;
-use crate::fable_2_forest::cli_fable_2_forest;
-use crate::opus_1_trees::cli_opus_1_trees;
-use crate::opus_1_forest::cli_opus_1_forest;
-use crate::opus_2_trees::cli_opus_2_trees;
-use crate::opus_2_forest::cli_opus_2_forest;
-use crate::haiku_2_trees::cli_haiku_2_trees;
-use crate::haiku_2_forest::cli_haiku_2_forest;
-use crate::sonnet_2_trees::cli_sonnet_2_trees;
-use crate::sonnet_2_forest::cli_sonnet_2_forest;
-use crate::sonnet_1_trees::cli_sonnet_1_trees;
-use crate::sonnet_1_forest::cli_sonnet_1_forest;
 use crate::cli_basic::*;
 use crate::cli_catalog::*;
 use crate::cli_city::*;
 use crate::cli_fa::*;
 use crate::cli_forest::*;
 use crate::cli_scenes::*;
+use crate::color;
+use crate::color::*;
+use crate::content;
+use crate::content::*;
+use crate::fable_1_forest::cli_fable_1_forest;
+use crate::fable_1_trees::cli_fable_1_trees;
+use crate::fable_2_forest::cli_fable_2_forest;
+use crate::fable_2_trees::cli_fable_2_trees;
+use crate::fills;
+use crate::fills::*;
+use crate::gridio::*;
+use crate::haiku_1_forest::cli_haiku_1_forest;
+use crate::haiku_1_torus::cli_haiku_1_torus;
+use crate::haiku_1_trees::cli_haiku_1_trees;
+use crate::haiku_2_forest::cli_haiku_2_forest;
+use crate::haiku_2_ripple::cli_haiku_2_ripple;
+use crate::haiku_2_trees::cli_haiku_2_trees;
+use crate::ink::*;
+use crate::layout;
+use crate::layout::*;
+use crate::lifetree::cli_lifetree;
+use crate::lifetree2::cli_lifetree2;
+use crate::lifetree3::cli_lifetree3;
+use crate::lifetree4::cli_lifetree4;
+use crate::lifetree5::cli_lifetree5;
+use crate::lifetree6::cli_lifetree6;
+use crate::mahoraga2::cli_mahoraga2;
+use crate::mahoraga3::cli_mahoraga3;
+use crate::mahoraga4::cli_mahoraga4;
+use crate::mahoraga5::cli_mahoraga5;
+use crate::markdown;
+use crate::markdown::*;
+use crate::modes_creatures::*;
 use crate::modes_geo::draw_weave;
+use crate::modes_geo::*;
+use crate::modes_sky::*;
+use crate::modes_tree::*;
+use crate::mondrian;
+use crate::mondrian::*;
+use crate::morph::*;
+use crate::opts::*;
+use crate::opus_1_forest::cli_opus_1_forest;
+use crate::opus_1_quasicrystal::cli_opus_1_quasicrystal;
+use crate::opus_1_trees::cli_opus_1_trees;
+use crate::opus_2_forest::cli_opus_2_forest;
+use crate::opus_2_quasicrystal::cli_opus_2_quasicrystal;
+use crate::opus_2_trees::cli_opus_2_trees;
+use crate::pendwave::cli_pendwave;
+use crate::poincare::cli_poincare;
+use crate::polytope::cli_polytope;
+use crate::pp::*;
+use crate::registry::*;
+use crate::render;
+use crate::render::*;
+use crate::sauron::cli_sauron;
+use crate::scene;
+use crate::scene::*;
+use crate::sonnet_1_forest::cli_sonnet_1_forest;
+use crate::sonnet_1_spirograph::cli_sonnet_1_spirograph;
+use crate::sonnet_1_trees::cli_sonnet_1_trees;
+use crate::sonnet_2_clifford::cli_sonnet_2_clifford;
+use crate::sonnet_2_forest::cli_sonnet_2_forest;
+use crate::sonnet_2_trees::cli_sonnet_2_trees;
+use crate::sprites;
+use crate::sprites::*;
+use crate::tree_draw;
+use crate::tree_draw::*;
+use crate::types;
+use crate::types::*;
+use crate::walker;
+use crate::walker::*;
+use crate::warps::*;
 
 pub(crate) fn run() {
     let args: Vec<String> = std::env::args().collect();
 
+    if args.get(1).map(String::as_str) == Some("preset") {
+        run_preset_command(&args);
+        return;
+    }
+
+    run_render(args);
+}
+
+fn run_preset_command(args: &[String]) {
+    match args.get(2).map(String::as_str) {
+        Some("list") => {
+            for preset in load_presets().values() {
+                println!(
+                    "{}\t{}\t{}\t{}\t{} knobs",
+                    preset.name,
+                    preset.seed,
+                    preset.mode,
+                    preset.theme,
+                    preset.knobs.len()
+                );
+            }
+        }
+        Some("show") => {
+            let Some(name) = args.get(3) else {
+                preset_usage();
+                return;
+            };
+            let presets = load_presets();
+            match presets.get(name) {
+                Some(preset) => println!(
+                    "{}",
+                    serde_json::json!({
+                        "v": 1,
+                        "name": preset.name,
+                        "seed": preset.seed,
+                        "mode": preset.mode,
+                        "theme": preset.theme,
+                        "knobs": preset.knobs,
+                        "saved_at_ms": preset.saved_at_ms,
+                    })
+                ),
+                None => eprintln!("preset not found: {name}"),
+            }
+        }
+        Some("save") => {
+            let (Some(name), Some(seed), Some(mode)) = (args.get(3), args.get(4), args.get(5))
+            else {
+                preset_usage();
+                return;
+            };
+            if !valid_preset_name(name) {
+                eprintln!("preset name must use letters, digits, '.', '_' or '-': {name}");
+                return;
+            }
+            let Ok(seed) = seed.parse::<u64>() else {
+                eprintln!("preset seed must be an unsigned integer");
+                return;
+            };
+            let mut next = 6;
+            let theme = args
+                .get(next)
+                .filter(|value| !value.contains('='))
+                .map(|value| {
+                    next += 1;
+                    value.clone()
+                })
+                .unwrap_or_default();
+            let mut knobs = std::collections::BTreeMap::new();
+            for input in &args[next..] {
+                let Some((key, value)) = input.split_once('=') else {
+                    eprintln!("preset knob must use KEY=VALUE: {input}");
+                    return;
+                };
+                let Ok(value) = value.parse::<f32>() else {
+                    eprintln!("preset knob value must be finite: {input}");
+                    return;
+                };
+                if !value.is_finite() || key.is_empty() {
+                    eprintln!("preset knob value must be finite: {input}");
+                    return;
+                }
+                knobs.insert(key.to_string(), value);
+            }
+            let preset = SavedPreset {
+                name: name.clone(),
+                seed,
+                mode: mode.clone(),
+                theme,
+                knobs,
+                saved_at_ms: unix_epoch_ms(),
+            };
+            match save_preset(preset) {
+                Ok(()) => println!("saved preset {name}"),
+                Err(error) => eprintln!("could not save preset {name}: {error}"),
+            }
+        }
+        Some("run") => {
+            let Some(name) = args.get(3) else {
+                preset_usage();
+                return;
+            };
+            let presets = load_presets();
+            let Some(preset) = presets.get(name) else {
+                eprintln!("preset not found: {name}");
+                return;
+            };
+            for (key, value) in &preset.knobs {
+                // This process renders one frame then exits. The saved knob map
+                // becomes the normal ASCII_P_ input surface used by all modes.
+                unsafe {
+                    std::env::set_var(format!("ASCII_P_{key}"), value.to_string());
+                }
+            }
+            run_render(vec![
+                args[0].clone(),
+                preset.seed.to_string(),
+                preset.mode.clone(),
+                preset.theme.clone(),
+            ]);
+        }
+        _ => preset_usage(),
+    }
+}
+
+fn preset_usage() {
+    eprintln!(
+        "ascii-renderer preset list|show <name>|run <name>|save <name> <seed> <mode> [theme] [KEY=VALUE ...]"
+    );
+}
+
+fn run_render(args: Vec<String>) {
     #[cfg(unix)]
     if args.get(1).map(String::as_str) == Some("--animation-worker") {
         crate::_1_playback::worker(&args);
@@ -98,6 +244,10 @@ pub(crate) fn run() {
         eprintln!("  seed     Integer seed for deterministic RNG (default: 42)");
         eprintln!("  mode     Rendering mode (default: full demo)");
         eprintln!("  theme    Named color theme (default: seed-derived palette)");
+        eprintln!("  preset  Named replay inputs: list, show, run, or save");
+        eprintln!(
+            "          ascii-renderer preset save <name> <seed> <mode> [theme] [KEY=VALUE ...]"
+        );
         eprintln!();
         eprintln!("MODES:");
         eprintln!(
@@ -162,7 +312,9 @@ pub(crate) fn run() {
         eprintln!("  constellation  Night sky with named, line-connected star clusters [count]");
         eprintln!("  strata    Geological cross-section with fossils [layers]");
         eprintln!("  circuit   PCB traces with pads, Manhattan routing [traces]");
-        eprintln!("  snakes    Circuit traces slithering around hidden loops, crossover knots [count]");
+        eprintln!(
+            "  snakes    Circuit traces slithering around hidden loops, crossover knots [count]"
+        );
         eprintln!("  quilt     Stitched patchwork of tile patterns [min_patch] [max_patch]");
         eprintln!("  patchwalk Quilted mondrian crossed by a waypoint trail [stops] [line_w]");
         eprintln!(
@@ -256,19 +408,45 @@ pub(crate) fn run() {
         eprintln!(
             "  mahoraga-5 Shibuya choreographed: depth-ordered rigs, Sukuna rigged and cutting, hatching, sampled Fuga, ghosts, shake [turns] [slash] [cut] [focus] [poseA] [poseB] [blend] [sukpose] (a=animate)"
         );
-        eprintln!("  braid  Plait of colored ribbons, seeded braid word scrolling down, over/under crossings (a=animate) [strands] [speed] [pitch] [gap] [width] [cross] [sway] [dust] [twist] [fill]");
-        eprintln!("  braid-2  Horizontal plait of twisted flat ribbons, beads run along each strand through the crossings (a=animate) [strands] [speed] [pitch] [gap] [width] [cross] [twist] [pulse] [beads] [trail] [slip] [fill]");
-        eprintln!("  chladni  Sand on a center-driven plate, the figure stepping through seeded resonances (a=animate) [dwell] [glide] [order] [sand] [shake] [flicker] [margin] [label] [aspect]");
-        eprintln!("  pendulum-wave  Row of pendulums each one beat faster than its neighbor, front view, top view with trails, or phase waterfall (a=animate) [count] [cycle] [base] [swing] [view] [trail] [tail] [aspect] [hue] [link] [arc] [rowdt] [bands]");
-        eprintln!("  polytope  Regular 4D polytope turning in incommensurate planes, double perspective, floor shadow and vertex trails (a=animate) [poly] [speed] [planes] [fov] [zoom] [style] [floor] [trail] [tail] [hue] [span] [orbit] [pitch] [tile] [flow] [glow] [label] [cam] [aspect] [cull] [inset]");
-        eprintln!("  poincare  {{p,q}} hyperbolic tessellation under a slow Mobius flow, disk or half-plane, glowing geodesics (a=animate) [p] [q] [depth] [speed] [twist] [hue] [model] [edge] [haze] [arcs] [glow] [petals] [fade] [aspect] [threads] [sway] [label] [span] [star] [pulse] [line] [detail] [dots] [focus] [thick] [rings] [dither]");
-        eprintln!("  opus-1-quasicrystal  de Bruijn multigrid dual: a quasiperiodic rhombic tiling that drifts, spins and reconfigures (a=animate) [speed] [hue] [sym] [scale] [drift] [spin] [shade] [wave] [worms] [pulse] [stars] [breath]");
-        eprintln!("  opus-2-quasicrystal  de Bruijn multigrid quasilattice with a faceted growth front, phason drift and a slow turn (a=animate) [speed] [cycle] [folds] [scale] [linew] [band] [edge] [turn] [phason] [facet] [density] [dust] [hue] [glow] [aspect] [phase] [blooms]");
-        eprintln!("  sonnet-1-spirograph  A rolling circle laps a closed hypotrochoid/epitrochoid track forever, comet trail and generating circles both drawn (a=animate) [speed] [hue] [depth] [trail] [glow] [arms] [echo] [label] [scale] [margin] [aspect]");
-        eprintln!("  fable-1-trees  Sample sheet of five fable-1 growth algorithms: space colonization, banyan, mangrove, baobab, coral DLA (a=animate) [energy] [fruit] [branch] [leaf] [roots] [scrub] [flicker] [sway]");
-        eprintln!("  fable-1-forest  Layered forest of the fable-1 species with hills, moon, slow light and a seeded atmosphere (a=animate) [density] [layers] [sway] [speed] [hue] [atmos] [fog] [horizon] [moon] [fruit]");
-        eprintln!("  opus-2-trees  sample sheet of five growth algorithms: mangrove, colony, banyan, bracket, coral, two energies each (a=animate) [energy] [fruit] [branch] [gnarl] [roots] [sway] [flick] [hue] [scrub]");
-        eprintln!("  opus-2-forest  depth-layered stand of the opus-2 species with sky, ridges, ground and weather (a=animate) [density] [layers] [sway] [speed] [hue] [atmos] [energy] [ground] [haze] [motes] [scale] [cycle]");
+        eprintln!(
+            "  braid  Plait of colored ribbons, seeded braid word scrolling down, over/under crossings (a=animate) [strands] [speed] [pitch] [gap] [width] [cross] [sway] [dust] [twist] [fill]"
+        );
+        eprintln!(
+            "  braid-2  Horizontal plait of twisted flat ribbons, beads run along each strand through the crossings (a=animate) [strands] [speed] [pitch] [gap] [width] [cross] [twist] [pulse] [beads] [trail] [slip] [fill]"
+        );
+        eprintln!(
+            "  chladni  Sand on a center-driven plate, the figure stepping through seeded resonances (a=animate) [dwell] [glide] [order] [sand] [shake] [flicker] [margin] [label] [aspect]"
+        );
+        eprintln!(
+            "  pendulum-wave  Row of pendulums each one beat faster than its neighbor, front view, top view with trails, or phase waterfall (a=animate) [count] [cycle] [base] [swing] [view] [trail] [tail] [aspect] [hue] [link] [arc] [rowdt] [bands]"
+        );
+        eprintln!(
+            "  polytope  Regular 4D polytope turning in incommensurate planes, double perspective, floor shadow and vertex trails (a=animate) [poly] [speed] [planes] [fov] [zoom] [style] [floor] [trail] [tail] [hue] [span] [orbit] [pitch] [tile] [flow] [glow] [label] [cam] [aspect] [cull] [inset]"
+        );
+        eprintln!(
+            "  poincare  {{p,q}} hyperbolic tessellation under a slow Mobius flow, disk or half-plane, glowing geodesics (a=animate) [p] [q] [depth] [speed] [twist] [hue] [model] [edge] [haze] [arcs] [glow] [petals] [fade] [aspect] [threads] [sway] [label] [span] [star] [pulse] [line] [detail] [dots] [focus] [thick] [rings] [dither]"
+        );
+        eprintln!(
+            "  opus-1-quasicrystal  de Bruijn multigrid dual: a quasiperiodic rhombic tiling that drifts, spins and reconfigures (a=animate) [speed] [hue] [sym] [scale] [drift] [spin] [shade] [wave] [worms] [pulse] [stars] [breath]"
+        );
+        eprintln!(
+            "  opus-2-quasicrystal  de Bruijn multigrid quasilattice with a faceted growth front, phason drift and a slow turn (a=animate) [speed] [cycle] [folds] [scale] [linew] [band] [edge] [turn] [phason] [facet] [density] [dust] [hue] [glow] [aspect] [phase] [blooms]"
+        );
+        eprintln!(
+            "  sonnet-1-spirograph  A rolling circle laps a closed hypotrochoid/epitrochoid track forever, comet trail and generating circles both drawn (a=animate) [speed] [hue] [depth] [trail] [glow] [arms] [echo] [label] [scale] [margin] [aspect]"
+        );
+        eprintln!(
+            "  fable-1-trees  Sample sheet of five fable-1 growth algorithms: space colonization, banyan, mangrove, baobab, coral DLA (a=animate) [energy] [fruit] [branch] [leaf] [roots] [scrub] [flicker] [sway]"
+        );
+        eprintln!(
+            "  fable-1-forest  Layered forest of the fable-1 species with hills, moon, slow light and a seeded atmosphere (a=animate) [density] [layers] [sway] [speed] [hue] [atmos] [fog] [horizon] [moon] [fruit]"
+        );
+        eprintln!(
+            "  opus-2-trees  sample sheet of five growth algorithms: mangrove, colony, banyan, bracket, coral, two energies each (a=animate) [energy] [fruit] [branch] [gnarl] [roots] [sway] [flick] [hue] [scrub]"
+        );
+        eprintln!(
+            "  opus-2-forest  depth-layered stand of the opus-2 species with sky, ridges, ground and weather (a=animate) [density] [layers] [sway] [speed] [hue] [atmos] [energy] [ground] [haze] [motes] [scale] [cycle]"
+        );
         for (_, mode) in registered_modes().iter() {
             eprintln!("  {:<16} {}", mode.name(), mode.help());
         }
@@ -299,9 +477,15 @@ pub(crate) fn run() {
         eprintln!("  morph:  1 dissolve  2 field  3 transport  4 sdf");
         eprintln!("  warp:   5 wind  6 vflow(voronoi)  7 swirl  8 ripple  9 breathe  0 drift");
         eprintln!("  native: i = iterate (re-render the mode with a time T -- true motion)");
-        eprintln!("  sonnet-1-trees  sample sheet of six species: krummholz, fig, colonist, proproot, bottle, stilt (a=animate) [energy] [fruit] [branch] [scrub] [roots] [wind] [sway] [speed] [detail] [hue]");
-        eprintln!("  sonnet-1-forest  depth-layered stand of the sonnet-1 species with fog, fireflies or leaf fall (a=animate) [density] [layers] [sway] [speed] [hue] [atmos] [energy] [fruit] [branch] [detail] [cycle] [horizon]");
-        eprintln!("  ascii-renderer 1 morph forest            # forest seed 1 \u{2194} 2, walks seeds");
+        eprintln!(
+            "  sonnet-1-trees  sample sheet of six species: krummholz, fig, colonist, proproot, bottle, stilt (a=animate) [energy] [fruit] [branch] [scrub] [roots] [wind] [sway] [speed] [detail] [hue]"
+        );
+        eprintln!(
+            "  sonnet-1-forest  depth-layered stand of the sonnet-1 species with fog, fireflies or leaf fall (a=animate) [density] [layers] [sway] [speed] [hue] [atmos] [energy] [fruit] [branch] [detail] [cycle] [horizon]"
+        );
+        eprintln!(
+            "  ascii-renderer 1 morph forest            # forest seed 1 \u{2194} 2, walks seeds"
+        );
         eprintln!("  ascii-renderer 1 morph forest 1 forest 1 wind   # sway one scene in the wind");
         eprintln!("  ascii-renderer 1 morph stained           # voronoi cells flow (auto)");
         eprintln!("  ascii-renderer 3 morph fullmetal-eyes2   # then press i -- the seal rotates");
@@ -370,6 +554,31 @@ pub(crate) fn run() {
         make_palette(seed)
     };
 
+    let spec = mode_spec(mode);
+    let knobs = spec
+        .params
+        .iter()
+        .enumerate()
+        .map(|(index, param)| {
+            let value = args
+                .get(index + 4)
+                .and_then(|value| value.parse::<f32>().ok())
+                .unwrap_or_else(|| param_f32(param.key, param.default))
+                .clamp(param.min, param.max);
+            (param.key.to_string(), value)
+        })
+        .collect();
+    let _trace = crate::_0_profile::RenderTrace::start(crate::_0_profile::RenderTraceContext {
+        mode: mode.to_string(),
+        theme: theme_name.to_string(),
+        seed,
+        width,
+        height,
+        time: t_anim,
+        args: args.iter().skip(4).cloned().collect(),
+        knobs,
+    });
+
     if let Some(registered) = registered_mode(mode) {
         let mut frame = ModeFrame {
             grid: &mut grid,
@@ -386,955 +595,1432 @@ pub(crate) fn run() {
             registered.render(&mut frame);
         });
     } else if mode == "swatch" {
-        let (g, done) = cli_swatch(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_swatch(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "tree" {
-        let (g, done) = cli_tree(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_tree(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "trees" {
-        let (g, done) = cli_trees(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_trees(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "aztec" {
-        let (g, done) = cli_aztec(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_aztec(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "fret" {
-        let (g, done) = cli_fret(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_fret(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "flowers" {
-        let (g, done) = cli_flowers(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_flowers(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "fruits" {
-        let (g, done) = cli_fruits(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_fruits(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "forest" {
-        let (g, done) = cli_forest(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_forest(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "layout" {
-        let (g, done) = cli_layout(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_layout(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "md" {
-        let (g, done) = cli_md(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_md(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "bsp" {
-        let (g, done) = cli_bsp(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_bsp(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "mondrian" {
-        let (g, done) = cli_mondrian(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_mondrian(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "tiles" {
-        let (g, done) = cli_tiles(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_tiles(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "tiles-rand" {
-        let (g, done) = cli_tiles_rand(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_tiles_rand(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "tiles-skew" {
-        let (g, done) = cli_tiles_skew(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_tiles_skew(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "terrain" {
-        let (g, done) = cli_terrain(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_terrain(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "flow" {
-        let (g, done) = cli_flow(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_flow(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "watershed" {
-        let (g, done) = cli_watershed(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_watershed(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "masks" {
-        let (g, done) = cli_masks(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_masks(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "ca" || (mode.starts_with("ca-") && mode != "ca-layout") {
-        let (g, done) = cli_ca(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_ca(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "ca-layout" {
-        let (g, done) = cli_ca_layout(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_ca_layout(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "shapes" {
-        let (g, done) = cli_shapes(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_shapes(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "party" {
-        let (g, done) = cli_party(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_party(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "soup" {
-        let (g, done) = cli_soup(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_soup(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "stem" {
-        let (g, done) = cli_stem(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_stem(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "scene-walk" {
-        let (g, done) = cli_scene_walk(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_scene_walk(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "scene-walk-2" {
-        let (g, done) = cli_scene_walk_2(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_scene_walk_2(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "scene-walk-3" {
-        let (g, done) = cli_scene_walk_3(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_scene_walk_3(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "forest2" {
-        let (g, done) = cli_forest2(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_forest2(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "forest3" {
-        let (g, done) = cli_forest3(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_forest3(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "forest4" {
-        let (g, done) = cli_forest4(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_forest4(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "forest5" {
-        let (g, done) = cli_forest5(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_forest5(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "forest6" {
-        let (g, done) = cli_forest6(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_forest6(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "boles1" {
-        let (g, done) = cli_boles1(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_boles1(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "boles2" {
-        let (g, done) = cli_boles2(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_boles2(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "boles3" {
-        let (g, done) = cli_boles3(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_boles3(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "boles4" {
-        let (g, done) = cli_boles4(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_boles4(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "boles5" {
-        let (g, done) = cli_boles5(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_boles5(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "trunks1" {
-        let (g, done) = cli_trunks1(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_trunks1(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "trees1" {
-        let (g, done) = cli_trees1(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_trees1(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "trees2" {
-        let (g, done) = cli_trees2(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_trees2(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "trees3" {
-        let (g, done) = cli_trees3(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_trees3(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "trees4" {
-        let (g, done) = cli_trees4(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_trees4(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "trees8" {
-        let (g, done) = cli_trees8(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_trees8(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "trees9" {
-        let (g, done) = cli_trees9(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_trees9(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "bushes" {
-        let (g, done) = cli_bushes(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_bushes(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "forest7" {
-        let (g, done) = cli_forest7(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_forest7(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "forest8" {
-        let (g, done) = cli_forest8(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_forest8(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "forest9" {
-        let (g, done) = cli_forest9(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_forest9(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "boles6" {
-        let (g, done) = cli_boles6(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_boles6(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "trees10" {
-        let (g, done) = cli_trees10(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_trees10(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "mondrian2" {
-        let (g, done) = cli_mondrian2(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_mondrian2(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "kintsugi" {
-        let (g, done) = cli_kintsugi(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_kintsugi(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "constellation" {
-        let (g, done) = cli_constellation(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_constellation(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "strata" {
-        let (g, done) = cli_strata(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_strata(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "circuit" {
-        let (g, done) = cli_circuit(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_circuit(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "snakes" {
-        let (g, done) = cli_snakes(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_snakes(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "quilt" {
-        let (g, done) = cli_quilt(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_quilt(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "patchwalk" {
-        let (g, done) = cli_patchwalk(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_patchwalk(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "aurora" {
-        let (g, done) = cli_aurora(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_aurora(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "aura2" {
-        let (g, done) = cli_aura2(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_aura2(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "harbor" {
-        let (g, done) = cli_harbor(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_harbor(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "labyrinth" {
-        let (g, done) = cli_labyrinth(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_labyrinth(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "rainfall" {
-        let (g, done) = cli_rainfall(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_rainfall(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "meadow" {
-        let (g, done) = cli_meadow(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_meadow(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "solar-system" {
-        let (g, done) = cli_solar_system(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_solar_system(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "world2" {
-        let (g, done) = cli_world2(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_world2(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "eyes" {
-        let (g, done) = cli_eyes(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_eyes(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "eyes2" {
-        let (g, done) = cli_eyes2(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_eyes2(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "eyes3" {
-        let (g, done) = cli_eyes3(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_eyes3(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "fullmetal-eyes" {
-        let (g, done) = cli_fullmetal_eyes(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_fullmetal_eyes(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "fullmetal-eyes2" {
-        let (g, done) = cli_fullmetal_eyes2(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_fullmetal_eyes2(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "fullmetal-alchemist" {
-        let (g, done) = cli_fullmetal_alchemist(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_fullmetal_alchemist(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "fullmetal-alchemist2" {
-        let (g, done) = cli_fullmetal_alchemist2(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_fullmetal_alchemist2(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "fa3" || mode == "fullmetal-alchemist3" {
-        let (g, done) = cli_fa3_fullmetal_alchemist3(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_fa3_fullmetal_alchemist3(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "fa4" || mode == "fullmetal-alchemist4" {
-        let (g, done) = cli_fa4_fullmetal_alchemist4(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_fa4_fullmetal_alchemist4(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "fa5" || mode == "fullmetal-alchemist5" {
-        let (g, done) = cli_fa5_fullmetal_alchemist5(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_fa5_fullmetal_alchemist5(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "spiro" {
-        let (g, done) = cli_spiro(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_spiro(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "spiro-tile" {
-        let (g, done) = cli_spiro_tile(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_spiro_tile(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "weave" {
-        let (g, done) = cli_weave(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_weave(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "gears" {
-        let (g, done) = cli_gears(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_gears(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "kaleido" {
-        let (g, done) = cli_kaleido(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_kaleido(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "contour" {
-        let (g, done) = cli_contour(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_contour(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "metro" {
-        let (g, done) = cli_metro(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_metro(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "koi" {
-        let (g, done) = cli_koi(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_koi(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "skyline" {
-        let (g, done) = cli_skyline(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_skyline(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "hive" {
-        let (g, done) = cli_hive(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_hive(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "jelly" {
-        let (g, done) = cli_jelly(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_jelly(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "jelly2" {
-        let (g, done) = cli_jelly2(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_jelly2(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "fa6" || mode == "fullmetal-alchemist6" {
-        let (g, done) = cli_fa6_fullmetal_alchemist6(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_fa6_fullmetal_alchemist6(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "hypercube" {
-        let (g, done) = cli_hypercube(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_hypercube(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "flux" {
-        let (g, done) = cli_flux(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_flux(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "fireworks" {
-        let (g, done) = cli_fireworks(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_fireworks(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "rhizome" {
-        let (g, done) = cli_rhizome(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_rhizome(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "effigy" {
-        let (g, done) = cli_effigy(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_effigy(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "dendrite" {
-        let (g, done) = cli_dendrite(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_dendrite(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "totem" {
-        let (g, done) = cli_totem(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_totem(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "chimera" {
-        let (g, done) = cli_chimera(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_chimera(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "murmuration" {
-        let (g, done) = cli_murmuration(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_murmuration(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "lanterns" {
-        let (g, done) = cli_lanterns(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_lanterns(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "tide" {
-        let (g, done) = cli_tide(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_tide(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "fireflies" {
-        let (g, done) = cli_fireflies(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_fireflies(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "ink" {
-        let (g, done) = cli_ink(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_ink(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "meteors" {
-        let (g, done) = cli_meteors(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_meteors(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "elevator" {
-        let (g, done) = cli_elevator(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_elevator(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "ferris" {
-        let (g, done) = cli_ferris(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_ferris(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "arboretum" {
-        let (g, done) = cli_arboretum(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_arboretum(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "astrolabe" {
-        let (g, done) = cli_astrolabe(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_astrolabe(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "sauron" {
-        let (g, done) = cli_sauron(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_sauron(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "world" {
-        let (g, done) = cli_world(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_world(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "noise" {
-        let (g, done) = cli_noise(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_noise(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "eyes++" {
-        let (g, done) = cli_eyes(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_eyes(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "fullmetal-eyes++" {
-        let (g, done) = cli_fullmetal_eyes(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_fullmetal_eyes(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "trees++" {
-        let (g, done) = cli_trees(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_trees(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "forest++" {
-        let (g, done) = cli_forest(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_forest(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "phyllotaxis" {
-        let (g, done) = cli_phyllotaxis(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_phyllotaxis(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "moire" {
-        let (g, done) = cli_moire(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_moire(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "nebula" {
-        let (g, done) = cli_nebula(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_nebula(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "delta" {
-        let (g, done) = cli_delta(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_delta(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "stained" {
-        let (g, done) = cli_stained(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_stained(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "mahoraga-2" {
-        let (g, done) = cli_mahoraga2(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_mahoraga2(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "haiku-1-trees" {
-        let (g, done) = cli_haiku_1_trees(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_haiku_1_trees(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "mahoraga-3" {
-        let (g, done) = cli_mahoraga3(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_mahoraga3(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "mahoraga-4" {
-        let (g, done) = cli_mahoraga4(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_mahoraga4(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "mahoraga-5" {
-        let (g, done) = cli_mahoraga5(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_mahoraga5(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "tree-of-life" {
-        let (g, done) = cli_lifetree(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_lifetree(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "tree-of-life-2" {
-        let (g, done) = cli_lifetree2(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_lifetree2(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "tree-of-life-3" {
-        let (g, done) = cli_lifetree3(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_lifetree3(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "tree-of-life-4" {
-        let (g, done) = cli_lifetree4(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_lifetree4(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "tree-of-life-5" {
-        let (g, done) = cli_lifetree5(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_lifetree5(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "tree-of-life-6" {
-        let (g, done) = cli_lifetree6(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_lifetree6(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "braid" {
-        let (g, done) = cli_braid(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_braid(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "braid-2" {
-        let (g, done) = cli_braid2(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_braid2(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "chladni" {
-        let (g, done) = cli_chladni(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_chladni(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "pendulum-wave" {
-        let (g, done) = cli_pendwave(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_pendwave(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "polytope" {
-        let (g, done) = cli_polytope(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_polytope(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "poincare" {
-        let (g, done) = cli_poincare(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_poincare(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "opus-1-quasicrystal" {
-        let (g, done) = cli_opus_1_quasicrystal(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_opus_1_quasicrystal(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "opus-2-quasicrystal" {
-        let (g, done) = cli_opus_2_quasicrystal(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_opus_2_quasicrystal(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "sonnet-1-spirograph" {
-        let (g, done) = cli_sonnet_1_spirograph(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_sonnet_1_spirograph(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "sonnet-2-clifford" {
-        let (g, done) = cli_sonnet_2_clifford(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_sonnet_2_clifford(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "haiku-1-torus" {
-        let (g, done) = cli_haiku_1_torus(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_haiku_1_torus(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "haiku-2-ripple" {
-        let (g, done) = cli_haiku_2_ripple(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_haiku_2_ripple(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "fable-1-trees" {
-        let (g, done) = cli_fable_1_trees(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_fable_1_trees(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "opus-2-trees" {
-        let (g, done) = cli_opus_2_trees(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_opus_2_trees(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "opus-1-trees" {
-        let (g, done) = cli_opus_1_trees(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_opus_1_trees(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "fable-2-trees" {
-        let (g, done) = cli_fable_2_trees(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_fable_2_trees(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "fable-1-forest" {
-        let (g, done) = cli_fable_1_forest(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_fable_1_forest(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "fable-2-forest" {
-        let (g, done) = cli_fable_2_forest(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_fable_2_forest(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "opus-1-forest" {
-        let (g, done) = cli_opus_1_forest(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_opus_1_forest(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "opus-2-forest" {
-        let (g, done) = cli_opus_2_forest(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_opus_2_forest(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "sonnet-1-trees" {
-        let (g, done) = cli_sonnet_1_trees(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_sonnet_1_trees(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "sonnet-2-trees" {
-        let (g, done) = cli_sonnet_2_trees(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_sonnet_2_trees(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "haiku-1-forest" {
-        let (g, done) = cli_haiku_1_forest(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_haiku_1_forest(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "haiku-2-trees" {
-        let (g, done) = cli_haiku_2_trees(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_haiku_2_trees(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "haiku-2-forest" {
-        let (g, done) = cli_haiku_2_forest(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_haiku_2_forest(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "sonnet-2-forest" {
-        let (g, done) = cli_sonnet_2_forest(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_sonnet_2_forest(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else if mode == "sonnet-1-forest" {
-        let (g, done) = cli_sonnet_1_forest(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_sonnet_1_forest(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;
         }
     } else {
-        let (g, done) = cli_default(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
+        let (g, done) = cli_default(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
         grid = g;
         if done {
             return;

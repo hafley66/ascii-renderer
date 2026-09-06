@@ -6,32 +6,47 @@ use rand::SeedableRng;
 use rand::rngs::StdRng;
 use std::io::{self, IsTerminal, Read as _};
 
+use crate::automata;
 use crate::automata::*;
-use crate::biomes::*;
-use crate::color::*;
-use crate::content::*;
-use crate::fills::*;
-use crate::layout::*;
-use crate::markdown::*;
-use crate::mondrian::*;
-use crate::render::*;
-use crate::scene::*;
-use crate::sprites::*;
-use crate::tree_draw::*;
-use crate::types::*;
-use crate::walker::*;
+use crate::avant;
 use crate::avant::*;
-use crate::automata; use crate::avant; use crate::biomes; use crate::borders; use crate::color; use crate::content; use crate::fills; use crate::layout; use crate::markdown; use crate::mondrian; use crate::render; use crate::scene; use crate::sprites; use crate::tree_draw; use crate::types; use crate::walker;
+use crate::biomes;
+use crate::biomes::*;
+use crate::borders;
 use crate::cli::*;
+use crate::color;
+use crate::color::*;
+use crate::content;
+use crate::content::*;
+use crate::fills;
+use crate::fills::*;
 use crate::gridio::*;
 use crate::ink::*;
+use crate::layout;
+use crate::layout::*;
+use crate::markdown;
+use crate::markdown::*;
 use crate::modes_creatures::*;
 use crate::modes_geo::*;
 use crate::modes_sky::*;
 use crate::modes_tree::*;
+use crate::mondrian;
+use crate::mondrian::*;
 use crate::morph::*;
 use crate::pp::*;
 use crate::registry::*;
+use crate::render;
+use crate::render::*;
+use crate::scene;
+use crate::scene::*;
+use crate::sprites;
+use crate::sprites::*;
+use crate::tree_draw;
+use crate::tree_draw::*;
+use crate::types;
+use crate::types::*;
+use crate::walker;
+use crate::walker::*;
 use crate::warps::*;
 
 // The UI thread owns live overrides. Rayon receives already-resolved render
@@ -46,7 +61,9 @@ pub(crate) fn param_f32(key: &str, default: f32) -> f32 {
     match LIVE_PARAMS.with(|values| values.borrow().get(key).copied()) {
         Some(value) => value.unwrap_or(default),
         None => std::env::var(format!("ASCII_P_{}", key))
-            .ok().and_then(|v| v.parse().ok()).unwrap_or(default),
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(default),
     }
 }
 
@@ -55,8 +72,12 @@ pub(crate) fn live_params_to_command(command: &mut std::process::Command) {
         for (key, value) in values.borrow().iter() {
             let name = format!("ASCII_P_{key}");
             match value {
-                Some(value) => { command.env(name, value.to_string()); }
-                None => { command.env_remove(name); }
+                Some(value) => {
+                    command.env(name, value.to_string());
+                }
+                None => {
+                    command.env_remove(name);
+                }
             }
         }
     });
@@ -69,7 +90,6 @@ pub(crate) fn live_params_to_command(command: &mut std::process::Command) {
 // on every change.
 // ============================================================================
 
-
 /// Path to the persisted-options file (`~/.config/ascii-renderer/options.tsv`),
 /// or None if HOME is unset.
 pub(crate) fn options_path() -> Option<std::path::PathBuf> {
@@ -81,8 +101,144 @@ pub(crate) fn options_path() -> Option<std::path::PathBuf> {
     Some(p)
 }
 
-pub(crate) type OptMap = std::collections::HashMap<String, std::collections::HashMap<String, f32>>;
+#[derive(Clone, Debug, PartialEq)]
+pub(crate) struct SavedPreset {
+    pub(crate) name: String,
+    pub(crate) seed: u64,
+    pub(crate) mode: String,
+    pub(crate) theme: String,
+    pub(crate) knobs: std::collections::BTreeMap<String, f32>,
+    pub(crate) saved_at_ms: u64,
+}
 
+/// Named deterministic render inputs. JSON is used here because the collection
+/// is rewritten atomically, while render telemetry remains append-only NDJSON.
+pub(crate) fn presets_path() -> Option<std::path::PathBuf> {
+    let mut path = std::env::var_os("XDG_CONFIG_HOME")
+        .map(std::path::PathBuf::from)
+        .or_else(|| {
+            std::env::var_os("HOME").map(|home| std::path::PathBuf::from(home).join(".config"))
+        })?;
+    path.push("ascii-renderer");
+    path.push("presets.json");
+    Some(path)
+}
+
+pub(crate) fn valid_preset_name(name: &str) -> bool {
+    !name.is_empty()
+        && name.len() <= 80
+        && name
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'_' | b'.'))
+}
+
+pub(crate) fn load_presets_from(
+    path: &std::path::Path,
+) -> std::collections::BTreeMap<String, SavedPreset> {
+    let Ok(source) = std::fs::read_to_string(path) else {
+        return Default::default();
+    };
+    let Ok(document) = serde_json::from_str::<serde_json::Value>(&source) else {
+        return Default::default();
+    };
+    let Some(records) = document
+        .get("presets")
+        .and_then(serde_json::Value::as_array)
+    else {
+        return Default::default();
+    };
+    records
+        .iter()
+        .filter_map(preset_from_json)
+        .map(|preset| (preset.name.clone(), preset))
+        .collect()
+}
+
+fn preset_from_json(value: &serde_json::Value) -> Option<SavedPreset> {
+    let name = value.get("name")?.as_str()?.to_string();
+    let seed = value.get("seed")?.as_u64()?;
+    let mode = value.get("mode")?.as_str()?.to_string();
+    let theme = value
+        .get("theme")
+        .and_then(serde_json::Value::as_str)
+        .unwrap_or_default()
+        .to_string();
+    if !valid_preset_name(&name) || mode.is_empty() {
+        return None;
+    }
+    let knobs = value
+        .get("knobs")
+        .and_then(serde_json::Value::as_object)
+        .into_iter()
+        .flat_map(|knobs| knobs.iter())
+        .filter_map(|(key, value)| {
+            value
+                .as_f64()
+                .filter(|value| value.is_finite())
+                .map(|value| (key.clone(), value as f32))
+        })
+        .collect();
+    Some(SavedPreset {
+        name,
+        seed,
+        mode,
+        theme,
+        knobs,
+        saved_at_ms: value
+            .get("saved_at_ms")
+            .and_then(serde_json::Value::as_u64)
+            .unwrap_or_default(),
+    })
+}
+
+pub(crate) fn save_presets_to(
+    path: &std::path::Path,
+    presets: &std::collections::BTreeMap<String, SavedPreset>,
+) -> std::io::Result<()> {
+    let document = serde_json::json!({
+        "v": 1,
+        "presets": presets.values().map(|preset| serde_json::json!({
+            "name": preset.name,
+            "seed": preset.seed,
+            "mode": preset.mode,
+            "theme": preset.theme,
+            "knobs": preset.knobs,
+            "saved_at_ms": preset.saved_at_ms,
+        })).collect::<Vec<_>>(),
+    });
+    let parent = path
+        .parent()
+        .ok_or_else(|| std::io::Error::other("preset path has no parent"))?;
+    std::fs::create_dir_all(parent)?;
+    let mut pending = tempfile::NamedTempFile::new_in(parent)?;
+    serde_json::to_writer(&mut pending, &document)?;
+    use std::io::Write;
+    pending.write_all(b"\n")?;
+    pending.persist(path).map_err(|error| error.error)?;
+    Ok(())
+}
+
+pub(crate) fn load_presets() -> std::collections::BTreeMap<String, SavedPreset> {
+    presets_path()
+        .map(|path| load_presets_from(&path))
+        .unwrap_or_default()
+}
+
+pub(crate) fn save_preset(preset: SavedPreset) -> std::io::Result<()> {
+    let path = presets_path().ok_or_else(|| std::io::Error::other("HOME is unset"))?;
+    let mut presets = load_presets_from(&path);
+    presets.insert(preset.name.clone(), preset);
+    save_presets_to(&path, &presets)
+}
+
+pub(crate) fn unix_epoch_ms() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_millis() as u64
+}
+
+pub(crate) type OptMap = std::collections::HashMap<String, std::collections::HashMap<String, f32>>;
 
 /// Parse the TSV at `path` into mode -> (KEY -> value). Missing/unreadable -> empty.
 pub(crate) fn load_options_from(path: &std::path::Path) -> OptMap {
@@ -92,14 +248,15 @@ pub(crate) fn load_options_from(path: &std::path::Path) -> OptMap {
             let mut it = line.splitn(3, '\t');
             if let (Some(m), Some(k), Some(v)) = (it.next(), it.next(), it.next()) {
                 if let Ok(val) = v.parse::<f32>() {
-                    map.entry(m.to_string()).or_default().insert(k.to_string(), val);
+                    map.entry(m.to_string())
+                        .or_default()
+                        .insert(k.to_string(), val);
                 }
             }
         }
     }
     map
 }
-
 
 /// Write the whole option map to `path` (creates parent dirs as needed).
 pub(crate) fn save_options_to(path: &std::path::Path, map: &OptMap) {
@@ -124,7 +281,6 @@ pub(crate) fn save_options_to(path: &std::path::Path, map: &OptMap) {
     }
 }
 
-
 /// Load all saved knob values from the default options file.
 pub(crate) fn load_options() -> OptMap {
     match options_path() {
@@ -133,14 +289,12 @@ pub(crate) fn load_options() -> OptMap {
     }
 }
 
-
 /// Persist the whole option map to the default options file.
 pub(crate) fn save_options(map: &OptMap) {
     if let Some(p) = options_path() {
         save_options_to(&p, map);
     }
 }
-
 
 /// Initial knob values for `mode`: saved value (clamped to range) if present,
 /// else the param default.
@@ -161,7 +315,6 @@ pub(crate) fn pvals_for(
         .collect()
 }
 
-
 /// A deterministic-but-random value for knob `p`, hashed from (seed, key) into the
 /// param's range and snapped to its step. Stable for a given seed; re-rolls when
 /// the seed changes -- "controlled randomness" rather than per-frame jitter.
@@ -176,11 +329,16 @@ pub(crate) fn rand_knob(seed: u64, p: &Param) -> f32 {
     snapped.clamp(p.min, p.max)
 }
 
-
 /// The values actually pushed to the renderer: the tuned `pvals` (deterministic),
 /// or random samples for every knob when `randomize` is on. `roll` is a nonce the
 /// UI bumps with left/right to re-roll a fresh random set without changing seed.
-pub(crate) fn effective_pvals(spec: &ModeSpec, pvals: &[f32], seed: u64, randomize: bool, roll: u64) -> Vec<f32> {
+pub(crate) fn effective_pvals(
+    spec: &ModeSpec,
+    pvals: &[f32],
+    seed: u64,
+    randomize: bool,
+    roll: u64,
+) -> Vec<f32> {
     if randomize {
         let s = seed ^ roll.wrapping_mul(0x9E37_79B9_7F4A_7C15);
         spec.params.iter().map(|p| rand_knob(s, p)).collect()
@@ -189,10 +347,14 @@ pub(crate) fn effective_pvals(spec: &ModeSpec, pvals: &[f32], seed: u64, randomi
     }
 }
 
-
 /// The global deterministic-vs-random toggle, stored under a reserved pseudo-mode.
 pub(crate) fn load_randomize(saved: &OptMap) -> bool {
-    saved.get("__global").and_then(|m| m.get("RAND")).copied().unwrap_or(0.0) > 0.5
+    saved
+        .get("__global")
+        .and_then(|m| m.get("RAND"))
+        .copied()
+        .unwrap_or(0.0)
+        > 0.5
 }
 
 pub(crate) fn store_randomize(saved: &mut OptMap, on: bool) {
@@ -202,7 +364,6 @@ pub(crate) fn store_randomize(saved: &mut OptMap, on: bool) {
         .insert("RAND".to_string(), if on { 1.0 } else { 0.0 });
     save_options(saved);
 }
-
 
 /// Record `mode`'s current knob values into `saved` and flush to disk.
 pub(crate) fn store_pvals(
@@ -218,7 +379,6 @@ pub(crate) fn store_pvals(
     save_options(saved);
 }
 
-
 /// Indices of modes whose name contains `query` (case-insensitive). Empty query
 /// matches all, preserving order.
 pub(crate) fn demo_filter_modes(all_modes: &[&str], query: &str) -> Vec<usize> {
@@ -230,7 +390,6 @@ pub(crate) fn demo_filter_modes(all_modes: &[&str], query: &str) -> Vec<usize> {
         .map(|(i, _)| i)
         .collect()
 }
-
 
 /// Full-screen list+filter picker. Type to filter (substring, case-insensitive),
 /// Up/Down to move, Enter to select, Esc to cancel. Returns the chosen index into
@@ -292,17 +451,28 @@ pub(crate) fn demo_pick_mode(all_modes: &[&str], current: usize) -> Option<usize
             let name = all_modes[filtered[fi]];
             if fi == sel {
                 let pad = tw.saturating_sub(name.chars().count() + 3);
-                buf.push_str(&format!("\x1b[7m \u{25b8} {}{} \x1b[0m\r\n", name, " ".repeat(pad)));
+                buf.push_str(&format!(
+                    "\x1b[7m \u{25b8} {}{} \x1b[0m\r\n",
+                    name,
+                    " ".repeat(pad)
+                ));
             } else {
                 buf.push_str(&format!("   {}\r\n", name));
             }
         }
         // divider + pinned cancel entry.
-        buf.push_str(&format!("\x1b[90m{}\x1b[0m\r\n", "\u{2500}".repeat(tw.min(40))));
+        buf.push_str(&format!(
+            "\x1b[90m{}\x1b[0m\r\n",
+            "\u{2500}".repeat(tw.min(40))
+        ));
         if sel == cancel_idx {
             let label = "\u{2715} cancel";
             let pad = tw.saturating_sub(label.chars().count() + 3);
-            buf.push_str(&format!("\x1b[7m \u{25b8} {}{} \x1b[0m", label, " ".repeat(pad)));
+            buf.push_str(&format!(
+                "\x1b[7m \u{25b8} {}{} \x1b[0m",
+                label,
+                " ".repeat(pad)
+            ));
         } else {
             buf.push_str("   \x1b[90m\u{2715} cancel\x1b[0m");
         }
@@ -342,7 +512,6 @@ pub(crate) fn demo_pick_mode(all_modes: &[&str], current: usize) -> Option<usize
         }
     }
 }
-
 
 pub(crate) fn run_demo(initial_seed: u64) {
     use crossterm::{
@@ -572,7 +741,9 @@ pub(crate) fn run_demo(initial_seed: u64) {
 
         let eff = effective_pvals(&spec, &pvals, seed, randomize, roll);
         LIVE_PARAMS.with(|values| {
-            values.borrow_mut().extend(spec.params.iter().zip(&eff).map(|(p, v)| (p.key, Some(*v))));
+            values
+                .borrow_mut()
+                .extend(spec.params.iter().zip(&eff).map(|(p, v)| (p.key, Some(*v))));
         });
 
         // Unix previews stay in raw mode with input owned by the supervisor.
@@ -599,15 +770,26 @@ pub(crate) fn run_demo(initial_seed: u64) {
         match crate::_1_playback::supervise(&mut cmd, false) {
             Ok(crate::_1_playback::Exit::Quit | crate::_1_playback::Exit::Interrupt) => break,
             Ok(crate::_1_playback::Exit::Input(event)) => pending_event = Some(event),
-            Ok(_) => {},
+            Ok(_) => {}
             Err(_) => break,
         }
         #[cfg(not(unix))]
-        { let _ = cmd.status(); terminal::enable_raw_mode().unwrap(); }
+        {
+            let _ = cmd.status();
+            terminal::enable_raw_mode().unwrap();
+        }
 
         if pane_open {
             draw_options_pane(
-                render_w, th, current_mode, &spec, &eff, psel, seed, current_theme, randomize,
+                render_w,
+                th,
+                current_mode,
+                &spec,
+                &eff,
+                psel,
+                seed,
+                current_theme,
+                randomize,
             );
         }
 
@@ -618,15 +800,19 @@ pub(crate) fn run_demo(initial_seed: u64) {
             current_theme
         };
         let knob_tag = if randomize { "knobs:RANDOM " } else { "" };
-        let lr_hint = if randomize { "\u{2190}\u{2192}=reroll" } else { "\u{2190}\u{2192}=adjust" };
+        let lr_hint = if randomize {
+            "\u{2190}\u{2192}=reroll"
+        } else {
+            "\u{2190}\u{2192}=adjust"
+        };
         let status = if pane_open {
             format!(
-                " {} | {}o=close opts  \u{2191}\u{2193}=select  {}  r=reset  g=rand-knobs  a=animate  q=quit ",
+                " {} | {}o=close opts  \u{2191}\u{2193}=select  {}  r=reset  s=save  g=rand-knobs  a=animate  q=quit ",
                 current_mode, knob_tag, lr_hint
             )
         } else {
             format!(
-                " {} | seed:{} | theme:{} | {}/=find  o=opts  g=rand  a=animate  f/j=prev/next  \u{2191}\u{2193}=seed  \u{2190}\u{2192}=theme  enter=reseed  q=quit ",
+                " {} | seed:{} | theme:{} | {}/=find  s=save  o=opts  g=rand  a=animate  f/j=prev/next  \u{2191}\u{2193}=seed  \u{2190}\u{2192}=theme  enter=reseed  q=quit ",
                 current_mode, seed, theme_label, knob_tag
             )
         };
@@ -645,6 +831,22 @@ pub(crate) fn run_demo(initial_seed: u64) {
             match key.code {
                 KeyCode::Char('q' | 'Q') => break,
                 KeyCode::Char('c' | 'C') if key.modifiers.contains(KeyModifiers::CONTROL) => break,
+                KeyCode::Char('s') => {
+                    let knobs = spec
+                        .params
+                        .iter()
+                        .zip(&eff)
+                        .map(|(param, value)| (param.key.to_string(), *value))
+                        .collect();
+                    let _ = save_preset(SavedPreset {
+                        name: format!("{current_mode}-{seed}"),
+                        seed,
+                        mode: current_mode.to_string(),
+                        theme: current_theme.to_string(),
+                        knobs,
+                        saved_at_ms: unix_epoch_ms(),
+                    });
+                }
                 KeyCode::Char('o') => pane_open = !pane_open,
                 KeyCode::Char('g') => {
                     randomize = !randomize;
@@ -671,7 +873,9 @@ pub(crate) fn run_demo(initial_seed: u64) {
                         seed.wrapping_add(1),
                         anim_strat(spec.animate),
                         current_theme,
-                    ) { break; }
+                    ) {
+                        break;
+                    }
                 }
                 KeyCode::Up => {
                     if pane_open && has_params {
@@ -726,26 +930,85 @@ mod live_param_tests {
     use super::*;
 
     #[test]
+    fn named_presets_roundtrip_and_replace_by_name() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("presets.json");
+        let mut knobs = std::collections::BTreeMap::new();
+        knobs.insert("RINGS".to_string(), 8.0);
+        let first = SavedPreset {
+            name: "aetherium-fast".to_string(),
+            seed: 1701,
+            mode: "gem-aetherium-2".to_string(),
+            theme: "deep".to_string(),
+            knobs: knobs.clone(),
+            saved_at_ms: 55,
+        };
+        let mut presets = std::collections::BTreeMap::new();
+        presets.insert(first.name.clone(), first);
+        save_presets_to(&path, &presets).unwrap();
+
+        knobs.insert("RINGS".to_string(), 10.0);
+        presets.insert(
+            "aetherium-fast".to_string(),
+            SavedPreset {
+                name: "aetherium-fast".to_string(),
+                seed: 1702,
+                mode: "gem-aetherium-2".to_string(),
+                theme: "deep".to_string(),
+                knobs,
+                saved_at_ms: 56,
+            },
+        );
+        save_presets_to(&path, &presets).unwrap();
+
+        let loaded = load_presets_from(&path);
+        assert_eq!(loaded.len(), 1);
+        assert_eq!(loaded["aetherium-fast"].seed, 1702);
+        assert_eq!(loaded["aetherium-fast"].knobs["RINGS"], 10.0);
+        assert!(valid_preset_name("aetherium-fast.2"));
+        assert!(!valid_preset_name("has spaces"));
+    }
+
+    #[test]
     fn live_values_stay_thread_local_and_are_explicit_for_children() {
         std::thread::spawn(|| {
             const KEY: &str = "CODEX_TEST_LIVE_PARAM";
             let env_name = format!("ASCII_P_{KEY}");
             let inherited = std::env::var_os(&env_name);
-            LIVE_PARAMS.with(|v| { v.borrow_mut().insert(KEY, Some(7.5)); });
+            LIVE_PARAMS.with(|v| {
+                v.borrow_mut().insert(KEY, Some(7.5));
+            });
             assert_eq!(param_f32(KEY, 2.0), 7.5);
-            let other = std::thread::spawn(|| {
-                LIVE_PARAMS.with(|v| v.borrow().get(KEY).copied())
-            }).join().unwrap();
+            let other = std::thread::spawn(|| LIVE_PARAMS.with(|v| v.borrow().get(KEY).copied()))
+                .join()
+                .unwrap();
             assert_eq!(other, None);
             let mut command = std::process::Command::new("unused-test-command");
             live_params_to_command(&mut command);
-            assert_eq!(command.get_envs().find(|(key, _)| *key == env_name.as_str()).unwrap().1,
-                Some(std::ffi::OsStr::new("7.5")));
-            LIVE_PARAMS.with(|v| { v.borrow_mut().insert(KEY, None); });
+            assert_eq!(
+                command
+                    .get_envs()
+                    .find(|(key, _)| *key == env_name.as_str())
+                    .unwrap()
+                    .1,
+                Some(std::ffi::OsStr::new("7.5"))
+            );
+            LIVE_PARAMS.with(|v| {
+                v.borrow_mut().insert(KEY, None);
+            });
             assert_eq!(param_f32(KEY, 2.0), 2.0);
             live_params_to_command(&mut command);
-            assert_eq!(command.get_envs().find(|(key, _)| *key == env_name.as_str()).unwrap().1, None);
+            assert_eq!(
+                command
+                    .get_envs()
+                    .find(|(key, _)| *key == env_name.as_str())
+                    .unwrap()
+                    .1,
+                None
+            );
             assert_eq!(std::env::var_os(env_name), inherited);
-        }).join().unwrap();
+        })
+        .join()
+        .unwrap();
     }
 }

@@ -1,5 +1,7 @@
 use std::cell::RefCell;
-use std::io::IsTerminal;
+use std::collections::BTreeMap;
+use std::io::{IsTerminal, Write};
+use std::path::PathBuf;
 use std::sync::OnceLock;
 use std::time::{Duration, Instant};
 
@@ -8,6 +10,7 @@ const LAYER_TARGET: &str = "ascii_renderer::profile::layer";
 const DEFAULT_REPORT_EVERY: u64 = 120;
 
 static SETTINGS: OnceLock<ProfileSettings> = OnceLock::new();
+static TRACE_SETTINGS: OnceLock<TraceSettings> = OnceLock::new();
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 struct ProfileSettings {
@@ -48,6 +51,55 @@ fn settings() -> &'static ProfileSettings {
     SETTINGS.get_or_init(ProfileSettings::from_env)
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct TraceSettings {
+    path: Option<PathBuf>,
+    all: bool,
+    slow_ms: u64,
+}
+
+impl TraceSettings {
+    fn from_env() -> Self {
+        Self::parse(
+            std::env::var_os("ASCII_TRACE_PATH"),
+            std::env::var("ASCII_TRACE").ok().as_deref(),
+            std::env::var("ASCII_TRACE_ALL").ok().as_deref(),
+            std::env::var("ASCII_TRACE_SLOW_MS").ok().as_deref(),
+        )
+    }
+
+    fn parse(
+        path: Option<std::ffi::OsString>,
+        enabled: Option<&str>,
+        all: Option<&str>,
+        slow_ms: Option<&str>,
+    ) -> Self {
+        let enabled = enabled.is_some_and(env_flag);
+        let path = path
+            .map(PathBuf::from)
+            .or_else(|| enabled.then(default_trace_path));
+        Self {
+            path,
+            all: all.is_some_and(env_flag),
+            slow_ms: slow_ms.and_then(|value| value.parse().ok()).unwrap_or(32),
+        }
+    }
+}
+
+fn default_trace_path() -> PathBuf {
+    let mut path = std::env::var_os("XDG_STATE_HOME")
+        .map(PathBuf::from)
+        .or_else(|| std::env::var_os("HOME").map(|home| PathBuf::from(home).join(".local/state")))
+        .unwrap_or_else(|| PathBuf::from("."));
+    path.push("ascii-renderer");
+    path.push("renders.ndjson");
+    path
+}
+
+fn trace_settings() -> &'static TraceSettings {
+    TRACE_SETTINGS.get_or_init(TraceSettings::from_env)
+}
+
 pub(crate) fn init() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let settings = *SETTINGS.get_or_init(ProfileSettings::from_env);
     let default_filter = if settings.enabled {
@@ -86,6 +138,121 @@ pub(crate) fn measure_render<T>(
     output
 }
 
+#[derive(Clone, Copy)]
+enum TraceEventKind {
+    Render,
+    SlowRender,
+}
+
+impl TraceEventKind {
+    fn as_str(self) -> &'static str {
+        match self {
+            Self::Render => "render",
+            Self::SlowRender => "slow_render",
+        }
+    }
+}
+
+/// Immutable render inputs captured before mode dispatch. The trace guard owns
+/// this data so every early return from the CLI still records the same inputs.
+pub(crate) struct RenderTraceContext {
+    pub(crate) mode: String,
+    pub(crate) theme: String,
+    pub(crate) seed: u64,
+    pub(crate) width: usize,
+    pub(crate) height: usize,
+    pub(crate) time: f32,
+    pub(crate) args: Vec<String>,
+    pub(crate) knobs: BTreeMap<String, f32>,
+}
+
+/// Conditional append-only NDJSON tracing for one CLI render. `ASCII_TRACE=1`
+/// writes slow renders to the default state file; `ASCII_TRACE_PATH` selects a
+/// file, `ASCII_TRACE_ALL=1` records every render, and `ASCII_TRACE_SLOW_MS`
+/// changes the slow threshold.
+pub(crate) struct RenderTrace {
+    context: RenderTraceContext,
+    started: Instant,
+}
+
+impl RenderTrace {
+    pub(crate) fn start(context: RenderTraceContext) -> Option<Self> {
+        trace_settings().path.as_ref()?;
+        layer_capture_begin();
+        Some(Self {
+            context,
+            started: Instant::now(),
+        })
+    }
+}
+
+impl Drop for RenderTrace {
+    fn drop(&mut self) {
+        let settings = trace_settings();
+        let layers = layer_capture_end();
+        let elapsed = self.started.elapsed();
+        let elapsed_us = elapsed.as_micros() as u64;
+        let slow = elapsed_us >= settings.slow_ms.saturating_mul(1_000);
+        if !settings.all && !slow {
+            return;
+        }
+        let kind = if slow {
+            TraceEventKind::SlowRender
+        } else {
+            TraceEventKind::Render
+        };
+        let layer_values = layers
+            .into_iter()
+            .map(|layer| {
+                serde_json::json!({
+                    "name": layer.layer,
+                    "calls": layer.calls,
+                    "total_us": layer.total_ns as f64 / 1_000.0,
+                    "max_us": layer.max_ns as f64 / 1_000.0,
+                })
+            })
+            .collect::<Vec<_>>();
+        let timestamp_ms = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_millis() as u64;
+        let event = serde_json::json!({
+            "v": 1,
+            "kind": kind.as_str(),
+            "ts_ms": timestamp_ms,
+            "dur_us": elapsed_us,
+            "mode": self.context.mode,
+            "theme": self.context.theme,
+            "seed": self.context.seed,
+            "time": self.context.time,
+            "grid": { "w": self.context.width, "h": self.context.height },
+            "args": self.context.args,
+            "knobs": self.context.knobs,
+            "layers": layer_values,
+        });
+        append_ndjson(settings.path.as_ref().unwrap(), &event);
+    }
+}
+
+fn append_ndjson(path: &std::path::Path, event: &serde_json::Value) {
+    let Some(parent) = path.parent() else {
+        return;
+    };
+    if std::fs::create_dir_all(parent).is_err() {
+        return;
+    }
+    let Ok(mut file) = std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(path)
+    else {
+        return;
+    };
+    if serde_json::to_writer(&mut file, event).is_ok() {
+        let _ = file.write_all(b"\n");
+    }
+}
+
 /// Per-layer totals gathered in-process while a capture is open.
 #[derive(Clone, Debug, Default)]
 pub(crate) struct LayerTotal {
@@ -118,7 +285,12 @@ fn layer_capture_record(layer: &'static str, elapsed_ns: u128) {
                     t.total_ns += elapsed_ns;
                     t.max_ns = t.max_ns.max(elapsed_ns);
                 }
-                None => totals.push(LayerTotal { layer, calls: 1, total_ns: elapsed_ns, max_ns: elapsed_ns }),
+                None => totals.push(LayerTotal {
+                    layer,
+                    calls: 1,
+                    total_ns: elapsed_ns,
+                    max_ns: elapsed_ns,
+                }),
             }
         }
     });
@@ -354,5 +526,22 @@ mod tests {
             },
         )
         "###);
+    }
+
+    #[test]
+    fn trace_settings_enable_default_and_explicit_paths() {
+        let disabled = TraceSettings::parse(None, None, None, None);
+        assert_eq!(disabled.path, None);
+        assert_eq!(disabled.slow_ms, 32);
+
+        let explicit = TraceSettings::parse(
+            Some("/tmp/ascii.ndjson".into()),
+            None,
+            Some("true"),
+            Some("7"),
+        );
+        assert_eq!(explicit.path, Some(PathBuf::from("/tmp/ascii.ndjson")));
+        assert!(explicit.all);
+        assert_eq!(explicit.slow_ms, 7);
     }
 }
