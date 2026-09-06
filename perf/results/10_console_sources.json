@@ -1,0 +1,35 @@
+{
+  "retrieved_ms": 1788721888376,
+  "sources": [
+    {
+      "source": "https://raw.githubusercontent.com/ratatui/ratatui/main/ratatui-crossterm/src/lib.rs",
+      "sha256": "594b9b2bc99980b0125110a6d3e4f14d90f2d5ed54987b0d437c8a41dbae05ac",
+      "bytes": 51008
+    },
+    {
+      "source": "https://raw.githubusercontent.com/wezterm/wezterm/main/termwiz/src/render/terminfo.rs",
+      "sha256": "943b859f91278e0914f4106657b9bf784a7dd300f0b4902b0de8a8538bc715a4",
+      "bytes": 50690
+    },
+    {
+      "source": "https://raw.githubusercontent.com/Dicklesworthstone/frankentui/main/crates/ftui-render/src/presenter.rs",
+      "sha256": "56fc6a7177102f87d6dacb354853f9cee56d4b852ec006be051433a00b615f6b",
+      "bytes": 193651
+    },
+    {
+      "source": "https://raw.githubusercontent.com/openai/codex/main/codex-rs/tui/src/custom_terminal.rs",
+      "sha256": "e8d8780fd5e7f091612271c46a54ecc33f00055073c3d81446da4ccc74f88e26",
+      "bytes": 51211
+    },
+    {
+      "source": "https://raw.githubusercontent.com/wezterm/wezterm/main/termwiz/src/terminal/buffered.rs",
+      "sha256": "0f76d1b1693e8bb2b5fbd1eccde2973c88f876156f9273ac972c99abc33aac3c",
+      "bytes": 4573
+    },
+    {
+      "source": "https://raw.githubusercontent.com/Dicklesworthstone/frankentui/main/crates/ftui-render/Cargo.toml",
+      "sha256": "0e6fb444f16d0407ca860bf205dec3642e3eb66e89e1f73c1adc9f3509d3ef82",
+      "bytes": 2339
+    }
+  ]
+}
