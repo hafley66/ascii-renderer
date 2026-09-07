@@ -26,7 +26,7 @@ parser.add_argument('--size', default='286x103')
 parser.add_argument('--stall', type=float, default=10)
 parser.add_argument('--key', choices=['both', 'knob', 'quit'], default='both')
 parser.add_argument('--tmux', action='store_true', help='include an isolated tmux server and client')
-parser.add_argument('--sampled', action='store_true', help='verify default periodic traces with slow-frame logging suppressed')
+parser.add_argument('--sampled', action='store_true', help='verify deterministic every-tenth-frame traces with slow-frame logging suppressed')
 parser.add_argument('--max-ms', type=float, help='fail if applying an input exceeds this latency')
 args = parser.parse_args()
 binary = str(Path(args.binary).resolve())
@@ -56,7 +56,7 @@ def check(key):
             command = [binary, '42', 'morph', '', args.mode, '42', args.mode, '43', 'iterate']
             if args.tmux:
                 env['TERM'] = 'xterm-256color'
-                os.execvpe('tmux', ['tmux', '-S', str(directory / 'tmux.sock'), '-f', '/dev/null',
+                os.execvpe('tmux', ['tmux', '-T', 'RGB', '-S', str(directory / 'tmux.sock'), '-f', '/dev/null',
                                     'new-session', '-s', 'latency', shlex.join(command)], env)
             os.execve(binary, command, env)
         os.close(gate_read)
@@ -100,19 +100,20 @@ def check(key):
             if args.sampled:
                 deadline = time.monotonic() + 5
                 while True:
-                    samples = [json.loads(line) for line in trace.read_text().split('\n')[:-1]]
+                    samples = [event for line in trace.read_text().split('\n')[:-1] if 'frame_index' in (event := json.loads(line))]
                     if len(samples) >= 3:
                         break
                     assert time.monotonic() < deadline, 'periodic frame samples missing'
                     time.sleep(.01)
                 assert samples[0]['frame_index'] == 1
+                assert [e['frame_index'] for e in samples[:3]] == [1, 11, 21]
                 assert all(e['sampled'] and e['pid'] > 0 for e in samples)
                 assert all(e['grid'] == {'w': width, 'h': height} and e['knobs'] == fixture['knobs'] for e in samples)
-                assert all(e['interval_frames'] > 1 and e['interval_bytes'] >= e['bytes'] and e['interval_ms'] >= 1000 for e in samples[1:])
+                assert all(e['interval_frames'] == 10 and e['interval_bytes'] >= e['bytes'] and e['interval_ms'] > 0 for e in samples[1:])
                 print(json.dumps({'periodic_samples': len(samples), 'last_frame_index': samples[-1]['frame_index']}), flush=True)
             reading.clear()
             # Let the in-flight read finish and fill the PTY and worker pipe.
-            time.sleep(.25)
+            time.sleep(1.25)
             before = config.read_text()
             sent = time.monotonic()
             os.write(fd, key)
@@ -150,6 +151,21 @@ def check(key):
                 while not reaped() and time.monotonic() < deadline:
                     time.sleep(.002)
             assert exited, 'quit cleanup timed out'
+            records = [json.loads(line) for line in trace.read_text().splitlines()]
+            relays = [e for e in records if e['kind'] == 'playback_relay']
+            inputs = [e for e in records if e['kind'] == 'playback_event']
+            received = [e for e in inputs if e['stage'] == 'input_received']
+            assert relays and received, 'missing parent relay/input telemetry'
+            assert any(e['stage'] == 'session_exit' for e in inputs), 'missing cleanup record'
+            if not args.tmux:
+                assert sum(e['timing']['terminal_wait_us'] for e in relays) > 500_000
+            if key == b'-':
+                assert any(e['stage'] == 'input_applied' and e['detail']['event'].get('Key', {}).get('code') == {'Char': '-'} for e in inputs), 'missing worker knob telemetry'
+            print(json.dumps({'relay_intervals': len(relays),
+                              'terminal_wait_ms': sum(e['timing']['terminal_wait_us'] for e in relays) / 1000,
+                              'child_wait_ms': sum(e['timing']['child_wait_us'] for e in relays) / 1000,
+                              'max_input_poll_gap_ms': max(e['timing']['max_input_gap_us'] for e in relays) / 1000,
+                              'input_events': inputs}), flush=True)
             restored = termios.tcgetattr(fd)
             mask = termios.ICANON | termios.ISIG
             assert restored[3] & mask == initial_term[3] & mask
@@ -165,7 +181,7 @@ def check(key):
             thread.join(timeout=1)
             os.close(fd)
             if args.tmux:
-                subprocess.run(['tmux', '-S', str(directory / 'tmux.sock'), 'kill-server'],
+                subprocess.run(['tmux', '-T', 'RGB', '-S', str(directory / 'tmux.sock'), 'kill-server'],
                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 

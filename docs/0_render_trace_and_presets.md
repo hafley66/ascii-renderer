@@ -16,7 +16,7 @@ ASCII_TRACE_PATH=/tmp/renders.ndjson ASCII_TRACE_ALL=1 ascii-renderer 1701 gem-a
 ASCII_TRACE_SLOW_MS=8 ascii-renderer 1701 gem-aetherium-2 deep
 ```
 
-Set `ASCII_TRACE=0` to disable slow tracing. Each line is one JSON object. Fields include `kind` (`render` or `slow_render`), `ts_ms`, total `dur_us`, `render_us`, `emit_us`, mode inputs, the resolved knob map, grid dimensions, and measured layer totals when the renderer declares layers.
+Tracing always writes to the default or explicitly selected path. Each line is one JSON object. Fields include `kind` (`render` or `slow_render`), `ts_ms`, total `dur_us`, `render_us`, `emit_us`, mode inputs, the resolved knob map, grid dimensions, and measured layer totals when the renderer declares layers.
 
 `terminal_size` records the successful `crossterm::terminal::size()` result as
 `{"w":320,"h":103}`, captured before applying grid overrides. If the lookup
@@ -119,7 +119,7 @@ ascii-renderer replay perf/results/my-run.ndjson 37
 
 `inputs MODE [max|default]` exports one JSON input set from the registry.
 `replay FILE [LINE]` renders the selected record; line numbers start at 1 and
-omitting the line selects the last record. Replay restores seed, theme, actual
+omitting the line selects the last frame record, skipping relay and input events. Replay restores seed, theme, actual
 palette, grid dimensions, animation time, positional arguments, and declared
 knobs. It supports registered mode renders and native `iterate` frames; other
 morph strategies need their endpoint state and are rejected. Replay renders
@@ -158,15 +158,14 @@ they do not measure a WebView's keyboard dispatch or painting latency.
 
 ## Detecting a terminal that falls behind a fast renderer
 
-Default animation tracing records the first completed frame and a periodic
-sample at least once per second of completed-frame activity, even when every
-frame is below the slow threshold. Slow frames continue to be recorded as before.
+Default animation tracing records frame 1 and then every tenth completed frame:
+1, 11, 21, and so on. Sampling depends only on the session frame index. Slow
+frames continue to be recorded as before.
 The sampled record contains replay inputs, `pid`, monotonically increasing
 `frame_index`, `interval_ms`, `interval_frames`, and `interval_bytes`. These
 interval counters describe completed writes to the output pipe, not WebView
 painting. A terminal can accumulate an output backlog while these durations
-remain small. `ASCII_TRACE_ALL=1` still records every completed frame;
-`ASCII_TRACE=0` disables the default log.
+remain small. `ASCII_TRACE_ALL=1` still records every completed frame.
 
 Verify sampling with slow-frame records deliberately suppressed:
 
@@ -174,6 +173,40 @@ Verify sampling with slow-frame records deliberately suppressed:
 python3 scripts/4_test_input_latency.py --key knob --sampled --stall 1 --max-ms 250
 ```
 
-This checks three periodic records, exact all-max inputs and dimensions, PID,
+This checks three deterministic records, exact all-max inputs and dimensions, PID,
 frame indices, and interval counters while the PTY is continuously consumed,
 then checks knob application under blocked output.
+
+
+## Locating output stalls
+
+The default log also records `playback_relay` once per second and at supervisor
+exit, even when no frame completes. `pid` identifies the input supervisor and
+`worker_pid` joins it to animation frame records. `terminal_size` tracks resizes.
+Within each relay interval, `timing` separates child-pipe reads, terminal writes,
+input polling, control forwarding, waits for child output, and waits for terminal
+writability. `unattributed_us` covers bookkeeping and timer granularity.
+`write_blocked` counts unsuccessful terminal writes; `max_input_gap_us` measures
+the gap between actual input polls. Worker `presentation_us` overlaps these
+relay stages, so do not add it to relay durations.
+
+`playback_event` records input receipt, completed worker input handling, worker
+shutdown, and session cleanup with Unix epoch milliseconds. A frame record means
+bytes entered the output pipe; neither frame nor relay records prove the screen
+has painted. Compare input receipt/application times to distinguish internal
+control delays from delays before input reaches the process or after output
+leaves it.
+
+The relay checks input every 2 ms. After eight consecutive failed terminal
+writes, subsequent retries wait at least 25 microseconds until a write succeeds. This handles a PTY reporting writable while its next
+write still returns `WouldBlock` without spinning through input polling.
+
+Reproduce the pane-size all-max workload through an isolated tmux server:
+
+```bash
+python3 scripts/3_test_animation.py --tmux --max --size 1684x356 --frames 100
+```
+
+The test drains the tmux client through a PTY and saves all frame and relay
+records. It does not include terminal-emulator painting. Input-latency tests
+also verify relay wait attribution and input lifecycle events automatically.

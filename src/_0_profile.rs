@@ -62,24 +62,14 @@ impl TraceSettings {
     fn from_env() -> Self {
         Self::parse(
             std::env::var_os("ASCII_TRACE_PATH"),
-            std::env::var("ASCII_TRACE").ok().as_deref(),
             std::env::var("ASCII_TRACE_ALL").ok().as_deref(),
             std::env::var("ASCII_TRACE_SLOW_MS").ok().as_deref(),
         )
     }
 
-    fn parse(
-        path: Option<std::ffi::OsString>,
-        enabled: Option<&str>,
-        all: Option<&str>,
-        slow_ms: Option<&str>,
-    ) -> Self {
-        let disabled = enabled.is_some_and(|value| !env_flag(value));
-        let path = path
-            .map(PathBuf::from)
-            .or_else(|| (!disabled).then(default_trace_path));
+    fn parse(path: Option<std::ffi::OsString>, all: Option<&str>, slow_ms: Option<&str>) -> Self {
         Self {
-            path,
+            path: Some(path.map(PathBuf::from).unwrap_or_else(default_trace_path)),
             all: all.is_some_and(env_flag),
             slow_ms: slow_ms.and_then(|value| value.parse().ok()).unwrap_or(32),
         }
@@ -187,9 +177,8 @@ impl FrameInputs<'_> {
     }
 }
 
-/// Conditional append-only NDJSON tracing for one CLI render. Slow renders are
-/// enabled by default; `ASCII_TRACE=0` disables them, `ASCII_TRACE_PATH` selects
-/// a file, `ASCII_TRACE_ALL=1` records every render, and `ASCII_TRACE_SLOW_MS`
+/// Append-only NDJSON tracing for one CLI render. `ASCII_TRACE_PATH` selects a
+/// file, `ASCII_TRACE_ALL=1` records every render, and `ASCII_TRACE_SLOW_MS`
 /// changes the slow threshold.
 pub(crate) struct RenderTrace<'a> {
     context: FrameInputs<'a>,
@@ -281,8 +270,127 @@ fn append_ndjson(path: &std::path::Path, event: &serde_json::Value) {
     else {
         return;
     };
-    if serde_json::to_writer(&mut file, event).is_ok() {
-        let _ = file.write_all(b"\n");
+    if let Ok(mut bytes) = serde_json::to_vec(event) {
+        bytes.push(b'\n');
+        // Parent and worker share this append-only log. Submit a complete record
+        // together instead of interleaving serde's small writes across processes.
+        let _ = file.write_all(&bytes);
+    }
+}
+
+#[derive(Clone, Copy, serde::Serialize)]
+#[serde(rename_all = "snake_case")]
+pub(crate) enum PlaybackStage {
+    InputReceived,
+    InputApplied,
+    WorkerStopped,
+    SessionExit,
+}
+
+pub(crate) fn playback_event(stage: PlaybackStage, worker_pid: u32, detail: impl serde::Serialize) {
+    let Some(path) = &trace_settings().path else {
+        return;
+    };
+    append_ndjson(
+        path,
+        &serde_json::json!({
+            "v": 1, "kind": "playback_event", "stage": stage,
+            "ts_ms": unix_ms(), "pid": std::process::id(), "worker_pid": worker_pid,
+            "detail": detail,
+        }),
+    );
+}
+
+fn unix_ms() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_millis() as u64
+}
+
+/// One interval of the parent output relay, including intervals with no frames.
+/// Timings partition work and waits; worker presentation time overlaps this work.
+#[derive(Default, serde::Serialize)]
+pub(crate) struct RelayTotals {
+    pub(crate) bytes: usize,
+    pub(crate) read_us: u64,
+    pub(crate) write_us: u64,
+    pub(crate) input_us: u64,
+    pub(crate) controls_us: u64,
+    pub(crate) child_wait_us: u64,
+    pub(crate) terminal_wait_us: u64,
+    pub(crate) write_blocked: usize,
+    pub(crate) max_write_us: u64,
+    pub(crate) max_input_gap_us: u64,
+    pub(crate) controls_dropped: usize,
+}
+
+pub(crate) struct RelayProfiler {
+    pub(crate) totals: RelayTotals,
+    pub(crate) terminal_size: Option<(u16, u16)>,
+    started: Instant,
+    last_input: Instant,
+    worker_pid: u32,
+    animation: bool,
+}
+
+impl RelayProfiler {
+    pub(crate) fn new(worker_pid: u32, animation: bool) -> Self {
+        let now = Instant::now();
+        Self {
+            totals: RelayTotals::default(),
+            terminal_size: crossterm::terminal::size().ok(),
+            started: now,
+            last_input: now,
+            worker_pid,
+            animation,
+        }
+    }
+
+    pub(crate) fn tick(&mut self) {
+        if self.started.elapsed() >= Duration::from_secs(1) {
+            self.report(false);
+        }
+    }
+
+    pub(crate) fn input_polled(&mut self) {
+        let now = Instant::now();
+        self.totals.max_input_gap_us = self
+            .totals
+            .max_input_gap_us
+            .max(now.duration_since(self.last_input).as_micros() as u64);
+        self.last_input = now;
+    }
+
+    fn report(&mut self, final_sample: bool) {
+        if let Some(path) = &trace_settings().path {
+            let interval_us = self.started.elapsed().as_micros() as u64;
+            let measured = self.totals.read_us
+                + self.totals.write_us
+                + self.totals.input_us
+                + self.totals.controls_us
+                + self.totals.child_wait_us
+                + self.totals.terminal_wait_us;
+            append_ndjson(
+                path,
+                &serde_json::json!({
+                    "v": 1, "kind": "playback_relay", "ts_ms": unix_ms(),
+                    "pid": std::process::id(), "worker_pid": self.worker_pid,
+                    "animation": self.animation, "final_sample": final_sample,
+                    "interval_us": interval_us, "unattributed_us": interval_us.saturating_sub(measured),
+                    "terminal_size": self.terminal_size.map(|(w,h)| serde_json::json!({"w":w,"h":h})),
+                    "timing": self.totals,
+                }),
+            );
+        }
+        self.totals = RelayTotals::default();
+        self.started = Instant::now();
+    }
+}
+
+impl Drop for RelayProfiler {
+    fn drop(&mut self) {
+        self.report(true);
     }
 }
 
@@ -423,6 +531,10 @@ pub(crate) struct FrameProfiler {
     trace_bytes: u64,
 }
 
+fn deterministic_animation_sample(frame_index: u64) -> bool {
+    frame_index > 0 && (frame_index - 1) % 10 == 0
+}
+
 impl FrameProfiler {
     pub(crate) fn from_env(mode: &str, strategy: &str) -> Option<Self> {
         let settings = settings();
@@ -451,8 +563,7 @@ impl FrameProfiler {
         self.trace_frames += 1;
         self.trace_bytes += sample.bytes as u64;
         if let Some(path) = trace.path.as_ref() {
-            let periodic =
-                self.frame_index == 1 || self.trace_started.elapsed() >= Duration::from_secs(1);
+            let periodic = deterministic_animation_sample(self.frame_index);
             if trace.all || total.as_millis() >= trace.slow_ms as u128 || periodic {
                 // Resolve knob names and allocate JSON only for emitted records.
                 let mut event = context();
@@ -619,21 +730,22 @@ mod tests {
 
     #[test]
     fn trace_settings_enable_default_and_explicit_paths() {
-        let disabled = TraceSettings::parse(None, None, None, None);
-        assert_eq!(disabled.path, Some(default_trace_path()));
-        assert_eq!(disabled.slow_ms, 32);
+        let defaults = TraceSettings::parse(None, None, None);
+        assert_eq!(defaults.path, Some(default_trace_path()));
+        assert_eq!(defaults.slow_ms, 32);
 
-        let opt_out = TraceSettings::parse(None, Some("0"), None, None);
-        assert_eq!(opt_out.path, None);
-
-        let explicit = TraceSettings::parse(
-            Some("/tmp/ascii.ndjson".into()),
-            None,
-            Some("true"),
-            Some("7"),
-        );
+        let explicit =
+            TraceSettings::parse(Some("/tmp/ascii.ndjson".into()), Some("true"), Some("7"));
         assert_eq!(explicit.path, Some(PathBuf::from("/tmp/ascii.ndjson")));
         assert!(explicit.all);
         assert_eq!(explicit.slow_ms, 7);
+    }
+
+    #[test]
+    fn animation_sampling_starts_at_first_draw_and_repeats_every_tenth_frame() {
+        let sampled: Vec<_> = (1..=32)
+            .filter(|frame| deterministic_animation_sample(*frame))
+            .collect();
+        assert_eq!(sampled, [1, 11, 21, 31]);
     }
 }
