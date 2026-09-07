@@ -1,9 +1,9 @@
 #![allow(warnings)]
 
 use crossterm::style::Color;
-use rand::rngs::StdRng;
 use rand::RngExt;
 use rand::SeedableRng;
+use rand::rngs::StdRng;
 use std::io::{self, IsTerminal, Read as _};
 
 use crate::automata;
@@ -876,6 +876,84 @@ fn iterate_grid_into(
 mod iterate_frame_tests {
     use super::*;
 
+    #[derive(Default)]
+    struct AnsiComposition {
+        bytes: usize,
+        glyph_bytes: usize,
+        cursor_bytes: usize,
+        foreground_bytes: usize,
+        background_bytes: usize,
+        reset_bytes: usize,
+        controls: usize,
+    }
+
+    fn classify_ansi(bytes: &[u8], totals: &mut AnsiComposition) {
+        totals.bytes += bytes.len();
+        let mut index = 0;
+        while index < bytes.len() {
+            if bytes[index] != 0x1b || bytes.get(index + 1) != Some(&b'[') {
+                totals.glyph_bytes += 1;
+                index += 1;
+                continue;
+            }
+            let start = index;
+            index += 2;
+            while index < bytes.len() && !(0x40..=0x7e).contains(&bytes[index]) {
+                index += 1;
+            }
+            if index == bytes.len() {
+                totals.glyph_bytes += bytes.len() - start;
+                break;
+            }
+            index += 1;
+            let control = &bytes[start..index];
+            let len = control.len();
+            totals.controls += 1;
+            match control.last().copied() {
+                Some(b'H' | b'G' | b'C' | b'D') => totals.cursor_bytes += len,
+                Some(b'm') if control.windows(3).any(|part| part == b"38;") => {
+                    totals.foreground_bytes += len
+                }
+                Some(b'm') if control.windows(3).any(|part| part == b"48;") => {
+                    totals.background_bytes += len
+                }
+                Some(b'm') => totals.reset_bytes += len,
+                _ => totals.glyph_bytes += len,
+            }
+        }
+    }
+
+    #[test]
+    #[ignore = "release-only 392x134 ANSI byte composition probe"]
+    fn perf_gem_ansi_composition() {
+        let (w, h) = (392, 134);
+        let spec = mode_spec("gem-aetherium-2");
+        let values = spec
+            .params
+            .iter()
+            .map(|param| param.max)
+            .collect::<Vec<_>>();
+        let mut renderer = IterateFrameRenderer::new("gem-aetherium-2", 42, "", w, h).unwrap();
+        let mut encoder = AnsiFrameEncoder::new();
+        let mut output = String::new();
+        let mut totals = AnsiComposition::default();
+        for frame in 0..20 {
+            let grid = renderer.render(frame as f32 * 0.06, Some(&values)).unwrap();
+            encoder.encode(grid, false, &mut output);
+            classify_ansi(output.as_bytes(), &mut totals);
+        }
+        eprintln!(
+            "frames=20 bytes={} glyph={} cursor={} fg={} bg={} reset={} controls={}",
+            totals.bytes,
+            totals.glyph_bytes,
+            totals.cursor_bytes,
+            totals.foreground_bytes,
+            totals.background_bytes,
+            totals.reset_bytes,
+            totals.controls,
+        );
+    }
+
     #[test]
     #[ignore = "release animation encoder probe with deterministic knob rerolls"]
     fn perf_gem_animation_rerolls() {
@@ -969,11 +1047,7 @@ pub(crate) fn render_frame_t(
     let out = cmd.output().ok()?;
     let s = String::from_utf8_lossy(&out.stdout);
     let g = parse_grid(&s);
-    if g.is_empty() {
-        None
-    } else {
-        Some(g)
-    }
+    if g.is_empty() { None } else { Some(g) }
 }
 
 /// Interactive morph player (standalone CLI entry). Owns the alt-screen/raw-mode

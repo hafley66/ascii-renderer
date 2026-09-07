@@ -447,15 +447,20 @@ fn sgr_len(color: Color, fg: bool) -> usize {
 }
 
 fn terminal_color(color: Color) -> Color {
-    fn five_bits(value: u8) -> u8 {
-        ((value as u16 + 4) & !7).min(255) as u8
+    fn cube_index(value: u8) -> u8 {
+        match value {
+            0..=47 => 0,
+            48..=114 => 1,
+            115..=154 => 2,
+            155..=194 => 3,
+            195..=234 => 4,
+            235..=255 => 5,
+        }
     }
     match color {
-        Color::Rgb { r, g, b } => Color::Rgb {
-            r: five_bits(r),
-            g: five_bits(g),
-            b: five_bits(b),
-        },
+        Color::Rgb { r, g, b } => {
+            Color::AnsiValue(16 + 36 * cube_index(r) + 6 * cube_index(g) + cube_index(b))
+        }
         other => other,
     }
 }
@@ -762,7 +767,7 @@ mod ansi_frame_tests {
             },
         )]];
         encoder.encode(&first, true, &mut output);
-        assert!(output.contains("38;2;104;152;200"));
+        assert!(output.contains("38;5;68m"));
         let stats = encoder.encode(&adjacent, false, &mut output);
         assert_eq!(stats.changed_cells, 0);
         assert_eq!(output, "");

@@ -69,3 +69,24 @@ encoder carries foreground and background state across cells and runs, omits
 foreground changes for spaces, and quantizes adjacent colors before this audit.
 Its remaining multiplicity is an output characteristic rather than one effect
 call per source cell.
+
+## Foreground fan-out experiment
+
+Following `encode_span -> write_sgr -> push_color` produced a byte-composition
+probe over 60 all-max `gem-aetherium-2` frames at 392x134. With the prior RGB
+encoding, 19,432,499 total bytes partitioned into 14,383,110 foreground-control
+bytes, 4,054,749 glyph bytes, 994,400 cursor bytes, and 240 reset bytes. The
+1,053,638 control sequences averaged 17,561 per frame. Foreground commands were
+74.0% of output; cursor commands were 5.1%.
+
+Mapping animation RGB colors to the xterm 6x6x6 indexed-color cube reduced the
+same deterministic stream to 10,296,932 bytes. Foreground bytes fell to
+5,474,748 and total controls fell to 764,426. Total bytes decreased 47.0%; the
+control count decreased 27.4%. Constant threshold comparisons implement the
+nearest cube coordinate without allocation or search.
+
+The full test run passed with 431 unit tests, three integration tests, and 186
+snapshots. The guarded raw-iTerm validator did not produce a post-change sample:
+the first dedicated window failed to launch its command, and the retry tripped
+the unchanged 768 MiB watched-iTerm RSS ceiling before renderer startup. Limits
+were not raised.
