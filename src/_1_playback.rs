@@ -1,10 +1,11 @@
 //! Input stays in the terminal process. A killable process group owns rendering,
 //! encoding, caches and any render subprocesses. Pipes provide backpressure.
+use crate::_0_profile::{playback_event, PlaybackStage, RelayProfiler};
 use crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers};
-use nix::fcntl::{FcntlArg, OFlag, fcntl};
-use nix::poll::{PollFd, PollFlags, poll};
-use nix::sys::signal::{Signal, killpg};
-use nix::sys::termios::{FlushArg, tcflush};
+use nix::fcntl::{fcntl, FcntlArg, OFlag};
+use nix::poll::{poll, PollFd, PollFlags};
+use nix::sys::signal::{killpg, Signal};
+use nix::sys::termios::{tcflush, FlushArg};
 use nix::unistd::Pid;
 use std::collections::VecDeque;
 use std::fs::OpenOptions;
@@ -15,6 +16,10 @@ use std::process::{Child, Command, Stdio};
 use std::time::{Duration, Instant};
 
 const OUTPUT_BYTES: usize = 32 * 1024;
+// POLLOUT on a macOS PTY can remain asserted while nonblocking writes return
+// EAGAIN. A sub-millisecond retry loop generated 64k write calls/second in the
+// 1718x348 repro. Keep input polling frequent, but pace terminal retries.
+const TERMINAL_RETRY: Duration = Duration::from_millis(1);
 const INPUT_EVENTS: usize = 32;
 const INPUT_POLL: Duration = Duration::from_millis(2);
 
@@ -44,8 +49,16 @@ fn quit(event: &Event) -> Option<Exit> {
 struct Job(Child);
 impl Drop for Job {
     fn drop(&mut self) {
+        let started = Instant::now();
         let _ = killpg(Pid::from_raw(self.0.id() as i32), Signal::SIGKILL);
         let _ = self.0.wait();
+        playback_event(
+            PlaybackStage::WorkerStopped,
+            self.0.id(),
+            serde_json::json!({
+                "stop_us": started.elapsed().as_micros() as u64,
+            }),
+        );
     }
 }
 
@@ -75,6 +88,7 @@ pub(crate) fn supervise(command: &mut Command, animation: bool) -> io::Result<Ex
             }
         },
     );
+    let cleanup_started = Instant::now();
     // Discard queued frame bytes on cancellation before the caller redraws or
     // leaves alternate screen. Do not wait for a congested terminal to drain.
     if !matches!(result, Ok(Exit::Finished)) {
@@ -82,7 +96,20 @@ pub(crate) fn supervise(command: &mut Command, animation: bool) -> io::Result<Ex
     }
     // A partial ANSI frame can end inside a CSI sequence. CAN cancels it; reset
     // attributes and cursor without acquiring the worker's stdout lock.
-    let _ = terminal.write_all(b"\x18\x1b[0m\x1b[?25h");
+    let sync_end = if synchronized_output() {
+        b"\x18\x1b[?2026l\x1b[0m\x1b[?25h".as_slice()
+    } else {
+        b"\x18\x1b[0m\x1b[?25h".as_slice()
+    };
+    let _ = terminal.write_all(sync_end);
+    playback_event(
+        PlaybackStage::SessionExit,
+        0,
+        serde_json::json!({
+            "result": format!("{result:?}"),
+            "cleanup_us": cleanup_started.elapsed().as_micros() as u64,
+        }),
+    );
     result
 }
 
@@ -98,6 +125,7 @@ fn pump(
         .stdin(Stdio::piped())
         .stdout(Stdio::piped());
     let mut job = Job(command.spawn()?);
+    let mut profile = RelayProfiler::new(job.0.id(), animation);
     let mut output = job.0.stdout.take().unwrap();
     let mut controls = job.0.stdin.take().unwrap();
     nonblocking(&output)?;
@@ -109,31 +137,49 @@ fn pump(
     let mut display = Vec::with_capacity(OUTPUT_BYTES * 2);
     let mut displayed = 0;
     let mut eof = false;
+    let mut consecutive_write_stalls = 0;
+    let mut next_input = Instant::now();
     loop {
-        // Quit bypasses the control queue even when rendering and output stall.
-        // Drain a bounded batch so key auto-repeat cannot starve output forever.
-        for _ in 0..256 {
-            let Some(event) = input()? else {
-                break;
-            };
-            if let Some(exit) = quit(&event) {
-                return Ok(exit);
+        profile.tick();
+        let input_started = Instant::now();
+        // Input has a 2 ms polling budget independent of output chunk count.
+        // A writable tty may still reject a larger write; that retry must not
+        // invoke crossterm millions of times per animation sequence.
+        if input_started >= next_input {
+            profile.input_polled();
+            // Quit bypasses the control queue even when rendering and output stall.
+            // Drain a bounded batch so key auto-repeat cannot starve output forever.
+            for _ in 0..256 {
+                let Some(event) = input()? else {
+                    break;
+                };
+                playback_event(PlaybackStage::InputReceived, job.0.id(), &event);
+                if let Event::Resize(w, h) = event {
+                    profile.terminal_size = Some((w, h));
+                }
+                if let Some(exit) = quit(&event) {
+                    return Ok(exit);
+                }
+                if !matches!(event, Event::Key(_) | Event::Resize(_, _)) {
+                    continue;
+                }
+                if !animation {
+                    return Ok(Exit::Input(event));
+                }
+                let mut encoded = serde_json::to_vec(&event)?;
+                encoded.push(b'\n');
+                // Under saturation retain recent controls. Never drop a partial
+                // record already being written, and never enqueue quit commands.
+                if pending.len() == INPUT_EVENTS {
+                    pending.pop_front();
+                    profile.totals.controls_dropped += 1;
+                }
+                pending.push_back(encoded);
             }
-            if !matches!(event, Event::Key(_) | Event::Resize(_, _)) {
-                continue;
-            }
-            if !animation {
-                return Ok(Exit::Input(event));
-            }
-            let mut encoded = serde_json::to_vec(&event)?;
-            encoded.push(b'\n');
-            // Under saturation retain recent controls. Never drop a partial
-            // record already being written, and never enqueue quit commands.
-            if pending.len() == INPUT_EVENTS {
-                pending.pop_front();
-            }
-            pending.push_back(encoded);
+            profile.totals.input_us += input_started.elapsed().as_micros() as u64;
+            next_input = Instant::now() + INPUT_POLL;
         }
+        let controls_started = Instant::now();
         for _ in 0..INPUT_EVENTS {
             if sent == sending.len() {
                 sending = pending.pop_front().unwrap_or_default();
@@ -158,8 +204,10 @@ fn pump(
                 break;
             }
         }
+        profile.totals.controls_us += controls_started.elapsed().as_micros() as u64;
         let mut progressed = false;
         if displayed == display.len() && !eof {
+            let read_started = Instant::now();
             match output.read(&mut bytes) {
                 Ok(0) => eof = true,
                 Ok(n) => {
@@ -181,19 +229,31 @@ fn pump(
                     ) => {}
                 Err(e) => return Err(e),
             }
+            profile.totals.read_us += read_started.elapsed().as_micros() as u64;
         }
         if displayed < display.len() {
-            match terminal.write(&display[displayed..]) {
+            let write_started = Instant::now();
+            let written = terminal.write(&display[displayed..]);
+            let write_us = write_started.elapsed().as_micros() as u64;
+            profile.totals.write_us += write_us;
+            profile.totals.max_write_us = profile.totals.max_write_us.max(write_us);
+            match written {
                 Ok(0) => return Err(io::Error::from(io::ErrorKind::WriteZero)),
                 Ok(n) => {
+                    consecutive_write_stalls = 0;
                     displayed += n;
+                    profile.totals.bytes += n;
                     progressed = true;
                 }
                 Err(e)
                     if matches!(
                         e.kind(),
                         io::ErrorKind::WouldBlock | io::ErrorKind::Interrupted
-                    ) => {}
+                    ) =>
+                {
+                    consecutive_write_stalls += 1;
+                    profile.totals.write_blocked += 1;
+                }
                 Err(e) => return Err(e),
             }
         }
@@ -201,6 +261,8 @@ fn pump(
             return Ok(Exit::Finished);
         }
         if !progressed {
+            let wait_started = Instant::now();
+            let waiting_for_child = displayed == display.len();
             // Wait for the blocked stage, waking as soon as it can progress.
             // The timeout bounds keyboard latency even without descriptor input.
             let waiting = if displayed == display.len() {
@@ -216,6 +278,20 @@ fn pump(
             } else {
                 // In-memory test writers have no readiness descriptor.
                 std::thread::sleep(INPUT_POLL);
+            }
+            if !waiting_for_child && consecutive_write_stalls >= 8 {
+                // macOS PTYs can report POLLOUT immediately while write still
+                // returns EAGAIN. Back off sustained false readiness, while
+                // allowing short bursts to resume immediately as a reader drains.
+                if let Some(remaining) = TERMINAL_RETRY.checked_sub(wait_started.elapsed()) {
+                    std::thread::sleep(remaining);
+                }
+            }
+            let waited = wait_started.elapsed().as_micros() as u64;
+            if waiting_for_child {
+                profile.totals.child_wait_us += waited;
+            } else {
+                profile.totals.terminal_wait_us += waited;
             }
         }
     }
@@ -279,8 +355,21 @@ pub(crate) fn worker(args: &[String]) {
     );
 }
 
-/// Write bounded chunks while checking controls. An interrupted frame is
-/// abandoned; the caller invalidates its encoder and starts a full repaint.
+pub(crate) fn synchronized_output() -> bool {
+    synchronized_output_for(
+        std::env::var("TERM_PROGRAM").ok().as_deref(),
+        std::env::var_os("TMUX").is_some(),
+        std::env::var_os("STY").is_some(),
+    )
+}
+
+fn synchronized_output_for(term_program: Option<&str>, in_tmux: bool, in_screen: bool) -> bool {
+    term_program == Some("iTerm.app") && !in_tmux && !in_screen
+}
+
+/// Write bounded chunks while collecting controls. The complete frame remains
+/// contiguous so synchronized-output brackets are never abandoned for an
+/// ordinary control. Quit stays supervisor-owned and kills the worker directly.
 pub(crate) fn write_frame(
     output: &mut (impl Write + AsFd),
     mut bytes: &[u8],
@@ -288,7 +377,7 @@ pub(crate) fn write_frame(
     events: &mut Vec<Event>,
 ) -> io::Result<bool> {
     while !bytes.is_empty() {
-        for _ in 0..INPUT_EVENTS {
+        for _ in events.len()..INPUT_EVENTS {
             match input.try_recv() {
                 Ok(event) => events.push(event),
                 Err(std::sync::mpsc::TryRecvError::Empty) => break,
@@ -296,9 +385,6 @@ pub(crate) fn write_frame(
                     return Err(io::ErrorKind::BrokenPipe.into());
                 }
             }
-        }
-        if !events.is_empty() {
-            return Ok(false);
         }
         match output.write(&bytes[..bytes.len().min(OUTPUT_BYTES)]) {
             Ok(0) => return Err(io::ErrorKind::WriteZero.into()),
@@ -327,12 +413,25 @@ mod tests {
     use crossterm::event::KeyEvent;
 
     #[test]
-    fn controls_interrupt_partial_frames_and_disconnected_workers_stop() {
+    fn synchronized_output_is_limited_to_direct_iterm_sessions() {
+        assert!(synchronized_output_for(Some("iTerm.app"), false, false));
+        assert!(!synchronized_output_for(Some("iTerm.app"), true, false));
+        assert!(!synchronized_output_for(Some("iTerm.app"), false, true));
+        assert!(!synchronized_output_for(
+            Some("Apple_Terminal"),
+            false,
+            false
+        ));
+        assert!(!synchronized_output_for(None, false, false));
+    }
+
+    #[test]
+    fn controls_are_collected_without_abandoning_frames_and_disconnected_workers_stop() {
         struct PartialWriter {
             readiness: std::fs::File,
             sender: std::sync::mpsc::Sender<Event>,
             written: Vec<u8>,
-            blocked: bool,
+            writes: usize,
         }
         impl AsFd for PartialWriter {
             fn as_fd(&self) -> BorrowedFd<'_> {
@@ -341,13 +440,14 @@ mod tests {
         }
         impl Write for PartialWriter {
             fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
-                if self.blocked {
+                if self.writes == 1 {
+                    self.writes += 1;
                     self.sender
                         .send(Event::Key(KeyEvent::new(KeyCode::Left, KeyModifiers::NONE)))
                         .unwrap();
                     return Err(io::ErrorKind::WouldBlock.into());
                 }
-                self.blocked = true;
+                self.writes += 1;
                 self.written.extend_from_slice(&bytes[..3]);
                 Ok(3)
             }
@@ -360,26 +460,24 @@ mod tests {
             readiness: OpenOptions::new().write(true).open("/dev/null").unwrap(),
             sender,
             written: Vec::new(),
-            blocked: false,
+            writes: 0,
         };
         let mut events = Vec::new();
-        assert!(!write_frame(&mut writer, b"abcdef", &receiver, &mut events).unwrap());
-        assert_eq!(writer.written, b"abc");
+        assert!(write_frame(&mut writer, b"abcdef", &receiver, &mut events).unwrap());
+        assert_eq!(writer.written, b"abcdef");
         assert_eq!(
             events,
             [Event::Key(KeyEvent::new(KeyCode::Left, KeyModifiers::NONE))]
         );
 
         let mut file = tempfile::tempfile().unwrap();
-        assert!(
-            write_frame(
-                &mut file,
-                b"\x18complete replacement",
-                &receiver,
-                &mut Vec::new()
-            )
-            .unwrap()
-        );
+        assert!(write_frame(
+            &mut file,
+            b"\x18complete replacement",
+            &receiver,
+            &mut Vec::new()
+        )
+        .unwrap());
         use std::io::{Seek, SeekFrom};
         file.seek(SeekFrom::Start(0)).unwrap();
         let mut bytes = Vec::new();
@@ -510,6 +608,46 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn writable_descriptor_with_rejected_writes_has_bounded_retries() {
+        struct RejectingWriter(usize);
+        impl Write for RejectingWriter {
+            fn write(&mut self, _: &[u8]) -> io::Result<usize> {
+                self.0 += 1;
+                Err(io::ErrorKind::WouldBlock.into())
+            }
+            fn flush(&mut self) -> io::Result<()> {
+                Ok(())
+            }
+        }
+        // /dev/null is continuously writable, reproducing a readiness report
+        // that does not predict whether the next terminal write will succeed.
+        let readiness = std::fs::File::options()
+            .write(true)
+            .open("/dev/null")
+            .unwrap();
+        let mut terminal = RejectingWriter(0);
+        let started = Instant::now();
+        let result = pump(
+            Command::new("sh").args(["-c", "yes frame"]),
+            true,
+            &mut terminal,
+            Some(readiness.as_fd()),
+            || {
+                Ok((started.elapsed() >= Duration::from_millis(100))
+                    .then(|| Event::Key(KeyEvent::new(KeyCode::Char('q'), KeyModifiers::NONE))))
+            },
+        )
+        .unwrap();
+        assert_eq!(result, Exit::Quit);
+        assert!(
+            terminal.0 > 0 && terminal.0 <= 250,
+            "{} retries",
+            terminal.0
+        );
+        assert!(started.elapsed() < Duration::from_secs(1));
     }
 
     #[test]

@@ -1,9 +1,9 @@
 #![allow(warnings)]
 
 use crossterm::style::Color;
+use rand::rngs::StdRng;
 use rand::RngExt;
 use rand::SeedableRng;
-use rand::rngs::StdRng;
 use std::io::{self, IsTerminal, Read as _};
 
 use crate::automata;
@@ -969,7 +969,11 @@ pub(crate) fn render_frame_t(
     let out = cmd.output().ok()?;
     let s = String::from_utf8_lossy(&out.stdout);
     let g = parse_grid(&s);
-    if g.is_empty() { None } else { Some(g) }
+    if g.is_empty() {
+        None
+    } else {
+        Some(g)
+    }
 }
 
 /// Interactive morph player (standalone CLI entry). Owns the alt-screen/raw-mode
@@ -1112,6 +1116,9 @@ pub(crate) fn morph_worker_session(
     let mut iterate_renderer = IterateFrameRenderer::new(mode_a, seed_a, theme, initial_rw, h);
     let mut frame_encoder = AnsiFrameEncoder::new();
     let mut frame_buffer = String::with_capacity(w * h * 8);
+    let mut pane_buffer = String::new();
+    let mut previous_pane = String::new();
+    let mut previous_status = String::new();
     let mut frame_profiler = crate::_0_profile::FrameProfiler::from_env(mode_a, &strat);
     let registered_native_params = registered_mode(mode_a).is_some();
     let mut encoded_strat = strat.clone();
@@ -1265,15 +1272,41 @@ pub(crate) fn morph_worker_session(
         };
         // Leave the last cell of the last row untouched to avoid corner autoscroll.
         let status_w = w.saturating_sub(1);
-        let status: String = status.chars().take(status_w).collect();
+        let mut status: String = status.chars().take(status_w).collect();
         let pad = status_w.saturating_sub(status.chars().count());
+        status.extend(std::iter::repeat_n(' ', pad));
         use std::fmt::Write as _;
-        let _ = write!(frame_buffer, "\x1b[{};1H", th);
-        let _ = write!(frame_buffer, "\x1b[7m{}{}\x1b[0m", status, " ".repeat(pad));
+        let old: Vec<char> = previous_status.chars().collect();
+        let new: Vec<char> = status.chars().collect();
+        let first = old
+            .iter()
+            .zip(&new)
+            .position(|(a, b)| a != b)
+            .unwrap_or(old.len().min(new.len()));
+        let suffix = old[first..]
+            .iter()
+            .rev()
+            .zip(new[first..].iter().rev())
+            .take_while(|(a, b)| a == b)
+            .count();
+        let end = new.len().saturating_sub(suffix);
+        if first < end {
+            let changed: String = new[first..end].iter().collect();
+            let _ = write!(
+                frame_buffer,
+                "\x1b[{};{}H\x1b[7m{}\x1b[0m",
+                th,
+                first + 1,
+                changed
+            );
+        }
+        previous_status = status;
         if pane_open {
-            // overlay the knob pane on the right; covers columns rw..w each frame.
+            // The art grid excludes this rectangle. Re-emit the panel only
+            // when its exact presentation changes.
+            pane_buffer.clear();
             options_pane_to_ansi(
-                &mut frame_buffer,
+                &mut pane_buffer,
                 rw,
                 th,
                 mode_a,
@@ -1284,6 +1317,17 @@ pub(crate) fn morph_worker_session(
                 theme,
                 randomize,
             );
+            if pane_buffer != previous_pane {
+                frame_buffer.push_str(&pane_buffer);
+                previous_pane.clone_from(&pane_buffer);
+            }
+        } else {
+            previous_pane.clear();
+        }
+        let sync_output = input.is_some() && crate::_1_playback::synchronized_output();
+        if sync_output {
+            frame_buffer.insert_str(0, "\x1b[?2026h");
+            frame_buffer.push_str("\x1b[?2026l");
         }
         let mut events = Vec::new();
         let presented = {
@@ -1377,6 +1421,8 @@ pub(crate) fn morph_worker_session(
             }
         }
         for event in events {
+            let input_started = Instant::now();
+            let recorded_event = event.clone();
             match event {
                 Event::Key(key) => match key.code {
                     KeyCode::Char('q' | 'Q') | KeyCode::Esc => break 'frames,
@@ -1491,6 +1537,12 @@ pub(crate) fn morph_worker_session(
                 }
                 _ => {}
             }
+            crate::_0_profile::playback_event(
+                crate::_0_profile::PlaybackStage::InputApplied,
+                std::process::id(),
+                serde_json::json!({"event": recorded_event,
+                    "handling_us": input_started.elapsed().as_micros() as u64}),
+            );
         }
     }
 

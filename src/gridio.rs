@@ -1,9 +1,9 @@
 #![allow(warnings)]
 
 use crossterm::style::Color;
+use rand::rngs::StdRng;
 use rand::RngExt;
 use rand::SeedableRng;
-use rand::rngs::StdRng;
 use std::io::{self, IsTerminal, Read as _};
 
 use crate::automata;
@@ -173,7 +173,7 @@ pub(crate) fn grid_to_ansi(grid: &Grid) -> String {
                 skip = false;
                 continue;
             }
-            if cell.fg != cur_fg {
+            if cell.ch != ' ' && cell.fg != cur_fg {
                 write_sgr(&mut s, cell.fg, true);
                 cur_fg = cell.fg;
             }
@@ -334,7 +334,7 @@ impl AnsiFrameEncoder {
         for (y, row) in grid.iter().enumerate() {
             let offset = y * self.width;
             for (x, cell) in row.iter().enumerate() {
-                if *cell != self.previous[offset + x] {
+                if !cells_look_equal(*cell, self.previous[offset + x]) {
                     self.dirty[offset + x] = true;
                     changed += 1;
                 }
@@ -383,7 +383,8 @@ impl AnsiFrameEncoder {
                 }
                 let mut end = x;
 
-                let (mut fg, mut bg) = colors_after_span(row, start, end, Color::Reset, Color::Reset);
+                let (mut fg, mut bg) =
+                    colors_after_span(row, start, end, Color::Reset, Color::Reset);
                 // Compare the exact bytes for unchanged cells in the gap with
                 // the absolute cursor escape that would skip them.
                 loop {
@@ -456,7 +457,7 @@ fn encoded_span_cost(
     let mut x = start;
     while x < end {
         let cell = row[x];
-        if cell.fg != cur_fg {
+        if cell.ch != ' ' && cell.fg != cur_fg {
             cost += sgr_len(cell.fg, true);
             cur_fg = cell.fg;
         }
@@ -480,7 +481,9 @@ fn colors_after_span(
     let mut x = start;
     while x < end {
         let cell = row[x];
-        cur_fg = cell.fg;
+        if cell.ch != ' ' {
+            cur_fg = cell.fg;
+        }
         cur_bg = cell.bg;
         x += if char_width(cell.ch) == 2 { 2 } else { 1 };
     }
@@ -514,7 +517,9 @@ fn encode_span(
     let mut x = start;
     while x < end {
         let cell = row[x];
-        if cell.fg != *cur_fg {
+        // A space has no foreground pixels. Preserve the last emitted
+        // foreground until a glyph makes a foreground transition visible.
+        if cell.ch != ' ' && cell.fg != *cur_fg {
             write_sgr(output, cell.fg, true);
             *cur_fg = cell.fg;
         }
@@ -525,6 +530,12 @@ fn encode_span(
         output.push(cell.ch);
         x += if char_width(cell.ch) == 2 { 2 } else { 1 };
     }
+}
+
+fn cells_look_equal(current: Cell, previous: Cell) -> bool {
+    current.ch == previous.ch
+        && current.bg == previous.bg
+        && (current.ch == ' ' || current.fg == previous.fg)
 }
 
 fn encode_full_grid(grid: &Grid, output: &mut String) {
@@ -623,5 +634,28 @@ mod ansi_frame_tests {
         let stats = encoder.encode(&narrow, false, &mut output);
         assert_eq!(stats.runs, 1);
         assert_eq!(output, "\x1b[1;1Hab\x1b[0m");
+    }
+
+    #[test]
+    fn foreground_only_changes_on_spaces_emit_no_bytes() {
+        let red = Color::Rgb { r: 255, g: 0, b: 0 };
+        let blue = Color::Rgb { r: 0, g: 0, b: 255 };
+        let mut encoder = AnsiFrameEncoder::new();
+        let mut output = String::new();
+        encoder.encode(&vec![vec![Cell::new(' ', red)]], true, &mut output);
+        let stats = encoder.encode(&vec![vec![Cell::new(' ', blue)]], false, &mut output);
+        assert_eq!(stats.changed_cells, 0);
+        assert_eq!(stats.bytes, 0);
+        assert_eq!(output, "");
+    }
+
+    #[test]
+    fn spaces_do_not_emit_invisible_foreground_sequences() {
+        let red = Color::Rgb { r: 255, g: 0, b: 0 };
+        let blue = Color::Rgb { r: 0, g: 0, b: 255 };
+        let grid = vec![vec![Cell::new(' ', red), Cell::new('x', blue)]];
+        let output = grid_to_ansi(&grid);
+        assert!(!output.contains("38;2;255;0;0"));
+        assert!(output.contains("38;2;0;0;255"));
     }
 }
