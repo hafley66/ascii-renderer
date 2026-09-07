@@ -1252,7 +1252,11 @@ pub(crate) fn morph_worker_session(
         // bottom-right autoscroll that spammed scrollback).
         let status = if pane_open && has_params {
             format!(
-                " morph {} | {} | t={:.2} | {} | o=close opts  \u{2191}\u{2193}=select  \u{2190}\u{2192}=adjust  r=reset  i=iterate  q ",
+                " term={}x{} grid={}x{} | morph {} | {} | t={:.2} | {} | o=close opts  \u{2191}\u{2193}=select  \u{2190}\u{2192}=adjust  r=reset  i=iterate  q ",
+                w,
+                th,
+                rw,
+                h,
                 mode_a,
                 strat,
                 t,
@@ -1260,7 +1264,11 @@ pub(crate) fn morph_worker_session(
             )
         } else {
             format!(
-                " morph {}:{} \u{2192} {}:{} | {} | t={:.2} | {} | space 1-4=morph 5-0=warp i=iterate o=opts \u{2190}\u{2192} w n q ",
+                " term={}x{} grid={}x{} | morph {}:{} \u{2192} {}:{} | {} | t={:.2} | {} | space 1-4=morph 5-0=warp i=iterate o=opts \u{2190}\u{2192} w n q ",
+                w,
+                th,
+                rw,
+                h,
                 mode_a,
                 seed_a,
                 if walk { mode_a } else { mode_b },
