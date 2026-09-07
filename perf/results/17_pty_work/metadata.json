@@ -1,0 +1,15 @@
+{
+  "source_log": "../16_pacing/after-direct/animation.ndjson",
+  "source_commit": "fd77cc4",
+  "scope": "Production art encoder replay from exact recorded inputs. UI/synchronization size is logged frame bytes minus art bytes. Relay counters come from actual live run.",
+  "frame_sha256": [
+    "ed85c753c75e7b3647646ffd0970e451d4061a06579a76d6b2a7bf70206fbd26",
+    "a60478834700966c6683cf3e6c3c68cba7e15aa48b3f9dc0691a4a9e9cdeee33",
+    "dda2b0d252efe8aa13baa014b73dee8f9dc9ef8bb0fe10478615343ca5f7734f",
+    "326070388cc02218eb30bb02f5271e47d344ca685132bad92ad76952aed19ef5",
+    "92a8ac068689f2f9513b19303224a2237a089d552945e48b5493450831a4289b",
+    "7851d644532e3188b3e4c4124905ac5bed43a0680dbc2ab572a2d639b0b5cea8",
+    "8f6bc2b3f9c02f90850d67e15c1b37ea7e0ea1e699169483b555c4442a3c727f",
+    "53bf9ee6b6b5800fb8889b02257694d45963ba33263474e15ca7ad32f9c1583d"
+  ]
+}

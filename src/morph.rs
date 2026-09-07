@@ -892,7 +892,7 @@ mod iterate_frame_tests {
         let seed = first["seed"].as_u64().unwrap();
         let width = first["grid"]["w"].as_u64().unwrap() as usize;
         let height = first["grid"]["h"].as_u64().unwrap() as usize;
-        assert!(width * height <= 60_000);
+        assert!(width * height <= 80_000);
         let mut renderer =
             IterateFrameRenderer::new(mode, seed, first["theme"].as_str().unwrap(), width, height)
                 .unwrap();
