@@ -1,0 +1,914 @@
+[
+  {
+    "status": "passed",
+    "backend": "crossterm",
+    "pattern": "static",
+    "consumer": "memory",
+    "terminal": [
+      400,
+      200
+    ],
+    "frames": 8,
+    "steady_frames": 7,
+    "metrics": {
+      "fill_us": {
+        "median": 1099,
+        "max": 1167
+      },
+      "library_us": {
+        "median": 719,
+        "max": 1558
+      },
+      "output_us": {
+        "median": 0,
+        "max": 0
+      },
+      "total_us": {
+        "median": 1822,
+        "max": 2726
+      },
+      "bytes": {
+        "median": 41,
+        "max": 41
+      }
+    },
+    "bytes_read": 0,
+    "parser_us": 0,
+    "elapsed_us": 440830,
+    "scope": "drawing lab; application generation and GUI painting excluded"
+  },
+  {
+    "status": "passed",
+    "backend": "crossterm",
+    "pattern": "static",
+    "consumer": "drain",
+    "terminal": [
+      400,
+      200
+    ],
+    "frames": 8,
+    "steady_frames": 7,
+    "metrics": {
+      "fill_us": {
+        "median": 1095,
+        "max": 1130
+      },
+      "library_us": {
+        "median": 708,
+        "max": 875
+      },
+      "output_us": {
+        "median": 4,
+        "max": 10
+      },
+      "total_us": {
+        "median": 1813,
+        "max": 2011
+      },
+      "bytes": {
+        "median": 41,
+        "max": 41
+      }
+    },
+    "bytes_read": 1080108,
+    "parser_us": 0,
+    "elapsed_us": 294637,
+    "scope": "drawing lab; application generation and GUI painting excluded"
+  },
+  {
+    "status": "passed",
+    "backend": "crossterm",
+    "pattern": "static",
+    "consumer": "pyte",
+    "terminal": [
+      400,
+      200
+    ],
+    "frames": 8,
+    "steady_frames": 7,
+    "metrics": {
+      "fill_us": {
+        "median": 1113,
+        "max": 1444
+      },
+      "library_us": {
+        "median": 736,
+        "max": 1094
+      },
+      "output_us": {
+        "median": 4,
+        "max": 17
+      },
+      "total_us": {
+        "median": 1836,
+        "max": 2556
+      },
+      "bytes": {
+        "median": 41,
+        "max": 41
+      }
+    },
+    "bytes_read": 1080108,
+    "parser_us": 391858,
+    "elapsed_us": 744888,
+    "scope": "drawing lab; application generation and GUI painting excluded"
+  },
+  {
+    "status": "passed",
+    "backend": "termion",
+    "pattern": "static",
+    "consumer": "memory",
+    "terminal": [
+      400,
+      200
+    ],
+    "frames": 8,
+    "steady_frames": 7,
+    "metrics": {
+      "fill_us": {
+        "median": 1166,
+        "max": 1522
+      },
+      "library_us": {
+        "median": 733,
+        "max": 885
+      },
+      "output_us": {
+        "median": 0,
+        "max": 0
+      },
+      "total_us": {
+        "median": 1896,
+        "max": 2255
+      },
+      "bytes": {
+        "median": 35,
+        "max": 35
+      }
+    },
+    "bytes_read": 0,
+    "parser_us": 0,
+    "elapsed_us": 44024,
+    "scope": "drawing lab; application generation and GUI painting excluded"
+  },
+  {
+    "status": "passed",
+    "backend": "termion",
+    "pattern": "static",
+    "consumer": "drain",
+    "terminal": [
+      400,
+      200
+    ],
+    "frames": 8,
+    "steady_frames": 7,
+    "metrics": {
+      "fill_us": {
+        "median": 1216,
+        "max": 1745
+      },
+      "library_us": {
+        "median": 812,
+        "max": 1777
+      },
+      "output_us": {
+        "median": 4,
+        "max": 9
+      },
+      "total_us": {
+        "median": 1989,
+        "max": 2728
+      },
+      "bytes": {
+        "median": 35,
+        "max": 35
+      }
+    },
+    "bytes_read": 864540,
+    "parser_us": 0,
+    "elapsed_us": 296388,
+    "scope": "drawing lab; application generation and GUI painting excluded"
+  },
+  {
+    "status": "passed",
+    "backend": "termion",
+    "pattern": "static",
+    "consumer": "pyte",
+    "terminal": [
+      400,
+      200
+    ],
+    "frames": 8,
+    "steady_frames": 7,
+    "metrics": {
+      "fill_us": {
+        "median": 1317,
+        "max": 1967
+      },
+      "library_us": {
+        "median": 786,
+        "max": 1137
+      },
+      "output_us": {
+        "median": 6,
+        "max": 25
+      },
+      "total_us": {
+        "median": 2107,
+        "max": 2866
+      },
+      "bytes": {
+        "median": 35,
+        "max": 35
+      }
+    },
+    "bytes_read": 864540,
+    "parser_us": 371055,
+    "elapsed_us": 719961,
+    "scope": "drawing lab; application generation and GUI painting excluded"
+  },
+  {
+    "status": "passed",
+    "backend": "crossterm",
+    "pattern": "sparse",
+    "consumer": "memory",
+    "terminal": [
+      400,
+      200
+    ],
+    "frames": 8,
+    "steady_frames": 7,
+    "metrics": {
+      "fill_us": {
+        "median": 1143,
+        "max": 1381
+      },
+      "library_us": {
+        "median": 1583,
+        "max": 2150
+      },
+      "output_us": {
+        "median": 0,
+        "max": 0
+      },
+      "total_us": {
+        "median": 2591,
+        "max": 3531
+      },
+      "bytes": {
+        "median": 76056,
+        "max": 76137
+      }
+    },
+    "bytes_read": 0,
+    "parser_us": 0,
+    "elapsed_us": 38618,
+    "scope": "drawing lab; application generation and GUI painting excluded"
+  },
+  {
+    "status": "passed",
+    "backend": "crossterm",
+    "pattern": "sparse",
+    "consumer": "drain",
+    "terminal": [
+      400,
+      200
+    ],
+    "frames": 8,
+    "steady_frames": 7,
+    "metrics": {
+      "fill_us": {
+        "median": 1078,
+        "max": 1245
+      },
+      "library_us": {
+        "median": 1202,
+        "max": 1728
+      },
+      "output_us": {
+        "median": 1809,
+        "max": 2344
+      },
+      "total_us": {
+        "median": 4081,
+        "max": 5141
+      },
+      "bytes": {
+        "median": 76056,
+        "max": 76137
+      }
+    },
+    "bytes_read": 585735,
+    "parser_us": 0,
+    "elapsed_us": 315658,
+    "scope": "drawing lab; application generation and GUI painting excluded"
+  },
+  {
+    "status": "passed",
+    "backend": "crossterm",
+    "pattern": "sparse",
+    "consumer": "pyte",
+    "terminal": [
+      400,
+      200
+    ],
+    "frames": 8,
+    "steady_frames": 7,
+    "metrics": {
+      "fill_us": {
+        "median": 1051,
+        "max": 1649
+      },
+      "library_us": {
+        "median": 1102,
+        "max": 1210
+      },
+      "output_us": {
+        "median": 30441,
+        "max": 49752
+      },
+      "total_us": {
+        "median": 32690,
+        "max": 51936
+      },
+      "bytes": {
+        "median": 76056,
+        "max": 76137
+      }
+    },
+    "bytes_read": 585735,
+    "parser_us": 230371,
+    "elapsed_us": 606688,
+    "scope": "drawing lab; application generation and GUI painting excluded"
+  },
+  {
+    "status": "passed",
+    "backend": "termion",
+    "pattern": "sparse",
+    "consumer": "memory",
+    "terminal": [
+      400,
+      200
+    ],
+    "frames": 8,
+    "steady_frames": 7,
+    "metrics": {
+      "fill_us": {
+        "median": 1001,
+        "max": 1132
+      },
+      "library_us": {
+        "median": 953,
+        "max": 2015
+      },
+      "output_us": {
+        "median": 0,
+        "max": 0
+      },
+      "total_us": {
+        "median": 1958,
+        "max": 2885
+      },
+      "bytes": {
+        "median": 62529,
+        "max": 62592
+      }
+    },
+    "bytes_read": 0,
+    "parser_us": 0,
+    "elapsed_us": 39009,
+    "scope": "drawing lab; application generation and GUI painting excluded"
+  },
+  {
+    "status": "passed",
+    "backend": "termion",
+    "pattern": "sparse",
+    "consumer": "drain",
+    "terminal": [
+      400,
+      200
+    ],
+    "frames": 8,
+    "steady_frames": 7,
+    "metrics": {
+      "fill_us": {
+        "median": 954,
+        "max": 1067
+      },
+      "library_us": {
+        "median": 1497,
+        "max": 2871
+      },
+      "output_us": {
+        "median": 1921,
+        "max": 2476
+      },
+      "total_us": {
+        "median": 4162,
+        "max": 6342
+      },
+      "bytes": {
+        "median": 62529,
+        "max": 62592
+      }
+    },
+    "bytes_read": 484452,
+    "parser_us": 0,
+    "elapsed_us": 315883,
+    "scope": "drawing lab; application generation and GUI painting excluded"
+  },
+  {
+    "status": "passed",
+    "backend": "termion",
+    "pattern": "sparse",
+    "consumer": "pyte",
+    "terminal": [
+      400,
+      200
+    ],
+    "frames": 8,
+    "steady_frames": 7,
+    "metrics": {
+      "fill_us": {
+        "median": 1038,
+        "max": 1101
+      },
+      "library_us": {
+        "median": 1053,
+        "max": 1899
+      },
+      "output_us": {
+        "median": 33095,
+        "max": 48845
+      },
+      "total_us": {
+        "median": 36012,
+        "max": 50917
+      },
+      "bytes": {
+        "median": 62529,
+        "max": 62592
+      }
+    },
+    "bytes_read": 484452,
+    "parser_us": 226844,
+    "elapsed_us": 589267,
+    "scope": "drawing lab; application generation and GUI painting excluded"
+  },
+  {
+    "status": "passed",
+    "backend": "crossterm",
+    "pattern": "mono",
+    "consumer": "memory",
+    "terminal": [
+      400,
+      200
+    ],
+    "frames": 8,
+    "steady_frames": 7,
+    "metrics": {
+      "fill_us": {
+        "median": 1058,
+        "max": 1091
+      },
+      "library_us": {
+        "median": 2092,
+        "max": 2359
+      },
+      "output_us": {
+        "median": 0,
+        "max": 0
+      },
+      "total_us": {
+        "median": 3183,
+        "max": 3417
+      },
+      "bytes": {
+        "median": 161545,
+        "max": 161545
+      }
+    },
+    "bytes_read": 0,
+    "parser_us": 0,
+    "elapsed_us": 37892,
+    "scope": "drawing lab; application generation and GUI painting excluded"
+  },
+  {
+    "status": "passed",
+    "backend": "crossterm",
+    "pattern": "mono",
+    "consumer": "drain",
+    "terminal": [
+      400,
+      200
+    ],
+    "frames": 8,
+    "steady_frames": 7,
+    "metrics": {
+      "fill_us": {
+        "median": 1084,
+        "max": 1303
+      },
+      "library_us": {
+        "median": 2167,
+        "max": 2909
+      },
+      "output_us": {
+        "median": 1521,
+        "max": 2463
+      },
+      "total_us": {
+        "median": 4900,
+        "max": 6594
+      },
+      "bytes": {
+        "median": 161545,
+        "max": 161545
+      }
+    },
+    "bytes_read": 1240796,
+    "parser_us": 0,
+    "elapsed_us": 311813,
+    "scope": "drawing lab; application generation and GUI painting excluded"
+  },
+  {
+    "status": "passed",
+    "backend": "crossterm",
+    "pattern": "mono",
+    "consumer": "pyte",
+    "terminal": [
+      400,
+      200
+    ],
+    "frames": 8,
+    "steady_frames": 7,
+    "metrics": {
+      "fill_us": {
+        "median": 1084,
+        "max": 1191
+      },
+      "library_us": {
+        "median": 2111,
+        "max": 2350
+      },
+      "output_us": {
+        "median": 83967,
+        "max": 101129
+      },
+      "total_us": {
+        "median": 87142,
+        "max": 104207
+      },
+      "bytes": {
+        "median": 161545,
+        "max": 161545
+      }
+    },
+    "bytes_read": 1240796,
+    "parser_us": 663157,
+    "elapsed_us": 997930,
+    "scope": "drawing lab; application generation and GUI painting excluded"
+  },
+  {
+    "status": "passed",
+    "backend": "termion",
+    "pattern": "mono",
+    "consumer": "memory",
+    "terminal": [
+      400,
+      200
+    ],
+    "frames": 8,
+    "steady_frames": 7,
+    "metrics": {
+      "fill_us": {
+        "median": 1024,
+        "max": 1034
+      },
+      "library_us": {
+        "median": 1379,
+        "max": 1663
+      },
+      "output_us": {
+        "median": 0,
+        "max": 0
+      },
+      "total_us": {
+        "median": 2406,
+        "max": 2687
+      },
+      "bytes": {
+        "median": 137536,
+        "max": 137536
+      }
+    },
+    "bytes_read": 0,
+    "parser_us": 0,
+    "elapsed_us": 40378,
+    "scope": "drawing lab; application generation and GUI painting excluded"
+  },
+  {
+    "status": "passed",
+    "backend": "termion",
+    "pattern": "mono",
+    "consumer": "drain",
+    "terminal": [
+      400,
+      200
+    ],
+    "frames": 8,
+    "steady_frames": 7,
+    "metrics": {
+      "fill_us": {
+        "median": 1063,
+        "max": 1080
+      },
+      "library_us": {
+        "median": 1435,
+        "max": 2265
+      },
+      "output_us": {
+        "median": 1436,
+        "max": 2014
+      },
+      "total_us": {
+        "median": 4018,
+        "max": 4462
+      },
+      "bytes": {
+        "median": 137536,
+        "max": 137536
+      }
+    },
+    "bytes_read": 1072727,
+    "parser_us": 0,
+    "elapsed_us": 280992,
+    "scope": "drawing lab; application generation and GUI painting excluded"
+  },
+  {
+    "status": "passed",
+    "backend": "termion",
+    "pattern": "mono",
+    "consumer": "pyte",
+    "terminal": [
+      400,
+      200
+    ],
+    "frames": 8,
+    "steady_frames": 7,
+    "metrics": {
+      "fill_us": {
+        "median": 1079,
+        "max": 1138
+      },
+      "library_us": {
+        "median": 1471,
+        "max": 1596
+      },
+      "output_us": {
+        "median": 77264,
+        "max": 80865
+      },
+      "total_us": {
+        "median": 79921,
+        "max": 83518
+      },
+      "bytes": {
+        "median": 137536,
+        "max": 137536
+      }
+    },
+    "bytes_read": 1072727,
+    "parser_us": 611670,
+    "elapsed_us": 927767,
+    "scope": "drawing lab; application generation and GUI painting excluded"
+  },
+  {
+    "status": "passed",
+    "backend": "crossterm",
+    "pattern": "color",
+    "consumer": "memory",
+    "terminal": [
+      400,
+      200
+    ],
+    "frames": 8,
+    "steady_frames": 7,
+    "metrics": {
+      "fill_us": {
+        "median": 1073,
+        "max": 1095
+      },
+      "library_us": {
+        "median": 5897,
+        "max": 6061
+      },
+      "output_us": {
+        "median": 0,
+        "max": 0
+      },
+      "total_us": {
+        "median": 6974,
+        "max": 7156
+      },
+      "bytes": {
+        "median": 1083386,
+        "max": 1083386
+      }
+    },
+    "bytes_read": 0,
+    "parser_us": 0,
+    "elapsed_us": 75675,
+    "scope": "drawing lab; application generation and GUI painting excluded"
+  },
+  {
+    "status": "passed",
+    "backend": "crossterm",
+    "pattern": "color",
+    "consumer": "drain",
+    "terminal": [
+      400,
+      200
+    ],
+    "frames": 8,
+    "steady_frames": 7,
+    "metrics": {
+      "fill_us": {
+        "median": 1079,
+        "max": 1101
+      },
+      "library_us": {
+        "median": 5786,
+        "max": 5861
+      },
+      "output_us": {
+        "median": 5762,
+        "max": 7743
+      },
+      "total_us": {
+        "median": 12684,
+        "max": 14160
+      },
+      "bytes": {
+        "median": 1083386,
+        "max": 1083386
+      }
+    },
+    "bytes_read": 8663510,
+    "parser_us": 0,
+    "elapsed_us": 350220,
+    "scope": "drawing lab; application generation and GUI painting excluded"
+  },
+  {
+    "status": "passed",
+    "backend": "crossterm",
+    "pattern": "color",
+    "consumer": "pyte",
+    "terminal": [
+      400,
+      200
+    ],
+    "frames": 8,
+    "steady_frames": 7,
+    "metrics": {
+      "fill_us": {
+        "median": 1090,
+        "max": 1245
+      },
+      "library_us": {
+        "median": 5842,
+        "max": 7083
+      },
+      "output_us": {
+        "median": 373339,
+        "max": 377153
+      },
+      "total_us": {
+        "median": 380353,
+        "max": 384283
+      },
+      "bytes": {
+        "median": 1083386,
+        "max": 1083386
+      }
+    },
+    "bytes_read": 8663510,
+    "parser_us": 2909126,
+    "elapsed_us": 3320537,
+    "scope": "drawing lab; application generation and GUI painting excluded"
+  },
+  {
+    "status": "passed",
+    "backend": "termion",
+    "pattern": "color",
+    "consumer": "memory",
+    "terminal": [
+      400,
+      200
+    ],
+    "frames": 8,
+    "steady_frames": 7,
+    "metrics": {
+      "fill_us": {
+        "median": 1036,
+        "max": 1071
+      },
+      "library_us": {
+        "median": 4047,
+        "max": 4123
+      },
+      "output_us": {
+        "median": 0,
+        "max": 0
+      },
+      "total_us": {
+        "median": 5078,
+        "max": 5163
+      },
+      "bytes": {
+        "median": 855857,
+        "max": 855857
+      }
+    },
+    "bytes_read": 0,
+    "parser_us": 0,
+    "elapsed_us": 75493,
+    "scope": "drawing lab; application generation and GUI painting excluded"
+  },
+  {
+    "status": "passed",
+    "backend": "termion",
+    "pattern": "color",
+    "consumer": "drain",
+    "terminal": [
+      400,
+      200
+    ],
+    "frames": 8,
+    "steady_frames": 7,
+    "metrics": {
+      "fill_us": {
+        "median": 1058,
+        "max": 1179
+      },
+      "library_us": {
+        "median": 4061,
+        "max": 4145
+      },
+      "output_us": {
+        "median": 4725,
+        "max": 5213
+      },
+      "total_us": {
+        "median": 9939,
+        "max": 10347
+      },
+      "bytes": {
+        "median": 855857,
+        "max": 855857
+      }
+    },
+    "bytes_read": 6855284,
+    "parser_us": 0,
+    "elapsed_us": 329296,
+    "scope": "drawing lab; application generation and GUI painting excluded"
+  },
+  {
+    "status": "passed",
+    "backend": "termion",
+    "pattern": "color",
+    "consumer": "pyte",
+    "terminal": [
+      400,
+      200
+    ],
+    "frames": 8,
+    "steady_frames": 7,
+    "metrics": {
+      "fill_us": {
+        "median": 1062,
+        "max": 1327
+      },
+      "library_us": {
+        "median": 4198,
+        "max": 4561
+      },
+      "output_us": {
+        "median": 317529,
+        "max": 324989
+      },
+      "total_us": {
+        "median": 323418,
+        "max": 329986
+      },
+      "bytes": {
+        "median": 855857,
+        "max": 855857
+      }
+    },
+    "bytes_read": 6855284,
+    "parser_us": 2493623,
+    "elapsed_us": 2870255,
+    "scope": "drawing lab; application generation and GUI painting excluded"
+  }
+]

@@ -309,10 +309,14 @@ class DemoCase:
         support.write_json(self.d/'profile-summary.json', summary)
         self.checkpoint('profile-includes-render-worker', **summary)
         if self.name != 'workflow':
-            self.result['budget'] = {'p95_frame_interval_ms': 33.34, 'max_frame_interval_ms': 100}
             measured = self.result['steady']['interval_ms']
-            assert measured['p95'] <= 33.34 and measured['max'] <= 100, f'animation cadence budget failed: {measured}'
-            self.checkpoint('animation-performance-budget', **measured)
+            if getattr(self.args, 'headless', False):
+                self.result['performance_gate'] = 'not_evaluated: pyte consumer participates in output backpressure'
+                self.result['consumer_cadence'] = measured
+            else:
+                self.result['budget'] = {'p95_frame_interval_ms': 33.34, 'max_frame_interval_ms': 100}
+                assert measured['p95'] <= 33.34 and measured['max'] <= 100, f'animation cadence budget failed: {measured}'
+                self.checkpoint('animation-performance-budget', **measured)
         self.result['status'] = 'failed' if self.failures else 'passed'
         if self.failures:
             self.result['error']='; '.join(self.failures)

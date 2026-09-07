@@ -29,6 +29,7 @@ nix = { version = "0.31.3", features = ["fs", "signal", "process", "term", "poll
 
 [dev-dependencies]
 insta = "1"
+ratatui = { version = "=0.30.2", default-features = false, features = ["crossterm", "termion", "unstable-backend-writer"] }
 
 [profile.dev]
 opt-level = 0
