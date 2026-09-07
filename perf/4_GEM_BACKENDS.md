@@ -27,3 +27,5 @@ The command limits frames to 300 and terminal area to 80,000 cells. Those bounds
 Per-frame timings separate scene generation, shared color normalization, library data conversion, and presentation. Presentation includes library diff, encoding and terminal writes. These are headless terminal measurements; GUI painting requires a separate guarded observation.
 
 Before resuming compilation, put builds under external resource limits too. `-j 1` alone did not prevent the reported machine overload. Do not repeat the unguarded release build.
+
+The subsequent background-priority, single-job build was protected by the existing watchdog. It stopped after 3.4 seconds at 269,856 KiB combined owned RSS, against the 262,144 KiB ceiling, while compiling `serde_core`. No rendering probes ran. A compiler-memory budget decision is pending; rendering probes retain their 256 MiB ceiling. The three existing watchdog/evidence-reader tests passed.

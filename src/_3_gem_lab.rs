@@ -108,6 +108,7 @@ fn run(args: &[String]) -> Result<()> {
         .finish(BufWriter::new(std::fs::File::create(&log)?));
     let subscriber = tracing_subscriber::fmt()
         .json()
+        .without_time()
         .with_ansi(false)
         .with_max_level(tracing::Level::INFO)
         .with_writer(writer)
@@ -127,7 +128,7 @@ fn run(args: &[String]) -> Result<()> {
         palette: &palette,
     }
     .to_json();
-    tracing::info!(kind="inputs", backend, inputs=%inputs, "gem lab");
+    tracing::info!(kind="inputs", ts_ms=crate::_0_profile::unix_ms(), backend, inputs=%inputs, "gem lab");
     let mut grid = vec![vec![Cell::blank(); width as usize]; height as usize];
     let mut output = Output::new(backend, width, height)?;
     let epoch = Instant::now();
@@ -168,6 +169,7 @@ fn run(args: &[String]) -> Result<()> {
             let (adapt_us, present_us) = output.draw(&grid)?;
             tracing::info!(
                 kind = "frame",
+                ts_ms = crate::_0_profile::unix_ms(),
                 backend,
                 frame = index,
                 time,
@@ -195,7 +197,7 @@ fn run(args: &[String]) -> Result<()> {
             BufWriter::new(std::fs::File::create(log.with_extension("grid"))?),
             &cells,
         )?;
-        tracing::info!(kind = "complete", backend, "gem lab");
+        tracing::info!(kind = "complete", ts_ms=crate::_0_profile::unix_ms(), backend, "gem lab");
         if args.get(8).map(String::as_str) == Some("hold") {
             quit(Duration::from_secs(2))?;
         }

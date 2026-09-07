@@ -369,7 +369,7 @@ pub(crate) fn playback_event(stage: PlaybackStage, worker_pid: u32, detail: impl
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn unix_ms() -> u64 {
+pub(crate) fn unix_ms() -> u64 {
     std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap_or_default()
