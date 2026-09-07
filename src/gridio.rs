@@ -290,7 +290,7 @@ impl AnsiFrameEncoder {
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn ratatui_color(color: Color) -> ratatui::style::Color {
+pub(crate) fn ratatui_color(color: Color) -> ratatui::style::Color {
     use ratatui::style::Color as R;
     match terminal_color(color) {
         Color::Reset => R::Reset,
@@ -316,7 +316,7 @@ fn ratatui_color(color: Color) -> ratatui::style::Color {
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn terminal_color(color: Color) -> Color {
+pub(crate) fn terminal_color(color: Color) -> Color {
     #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn cube_index(value: u8) -> u8 {
         match value {

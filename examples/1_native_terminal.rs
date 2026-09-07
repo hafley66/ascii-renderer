@@ -118,6 +118,43 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 json!({"ok":true})
             }
             "screen" => json!({"text":state.lock().unwrap().parser.screen().contents()}),
+            "cells" => {
+                let s = state.lock().unwrap();
+                let screen = s.parser.screen();
+                let (rows, cols) = screen.size();
+                let width = request["width"]
+                    .as_u64()
+                    .unwrap_or(cols as u64)
+                    .min(cols as u64) as u16;
+                let height = request["height"]
+                    .as_u64()
+                    .unwrap_or(rows as u64)
+                    .min(rows as u64) as u16;
+                let cells: Vec<_> = (0..height)
+                    .map(|y| {
+                        (0..width)
+                            .map(|x| {
+                                let cell = screen.cell(y, x).unwrap();
+                                let text = if cell.contents().is_empty() {
+                                    " "
+                                } else {
+                                    cell.contents()
+                                };
+                                json!([
+                                    text,
+                                    if text == " " {
+                                        "Default".to_string()
+                                    } else {
+                                        format!("{:?}", cell.fgcolor())
+                                    },
+                                    format!("{:?}", cell.bgcolor())
+                                ])
+                            })
+                            .collect::<Vec<_>>()
+                    })
+                    .collect();
+                json!({"cells":cells})
+            }
             "capture" => {
                 let s = state.lock().unwrap();
                 let screen = s.parser.screen();

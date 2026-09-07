@@ -101,6 +101,10 @@ use crate::warps::*;
 pub(crate) fn run() {
     let args: Vec<String> = std::env::args().collect();
 
+    if crate::_3_gem_lab::command(&args) {
+        return;
+    }
+
     if crate::_2_replay::command(&args) {
         return;
     }

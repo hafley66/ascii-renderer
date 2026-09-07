@@ -4,6 +4,7 @@ mod _0_profile;
 #[cfg(unix)]
 mod _1_playback;
 mod _2_replay;
+mod _3_gem_lab;
 
 #[macro_use]
 mod registry;
