@@ -1,0 +1,13 @@
+{
+  "encoder_commit": "cc2715acc112c383fdd6a8181c899cb82dd9ca2d",
+  "export_test_binary_sha256": "113f9ef3d839e585d891c0422fd8451d10778bf1bc45988aac55a73af08cb14f",
+  "input_sha256": "53034b0753b3ccf85511777a4f9d02f6a7027bfd86b7dfa379e4f3bdda7120ac",
+  "scope": "REP vs literal expansion with identical frame partition; excludes render, Rust relay, and paint completion",
+  "terminal": [
+    426,
+    135
+  ],
+  "measured_ab_script_sha256": "d4ba35fd2aff9cac3f0d03a131778508a15bd338e5ed120339cf2801c847efca",
+  "ab_script_sha256": "7466929aa366b136ddd8168581cf2c38ddff6cd1f413041e5abafc07d27aa90b",
+  "harness_followup": "Added exact size and input volume checks after measured run; I/O path unchanged"
+}

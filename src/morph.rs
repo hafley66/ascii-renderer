@@ -876,6 +876,47 @@ fn iterate_grid_into(
 mod iterate_frame_tests {
     use super::*;
 
+    #[test]
+    #[ignore = "exports bounded recorded frames for terminal A/B validation"]
+    fn export_recorded_terminal_frames() {
+        let input = std::env::var("ASCII_AB_INPUT").unwrap();
+        let destination = std::env::var("ASCII_AB_DIR").unwrap();
+        let records: Vec<serde_json::Value> = std::fs::read_to_string(input)
+            .unwrap()
+            .lines()
+            .map(|line| serde_json::from_str(line).unwrap())
+            .collect();
+        assert!(!records.is_empty() && records.len() <= 20);
+        let first = &records[0];
+        let mode = first["mode"].as_str().unwrap();
+        let seed = first["seed"].as_u64().unwrap();
+        let width = first["grid"]["w"].as_u64().unwrap() as usize;
+        let height = first["grid"]["h"].as_u64().unwrap() as usize;
+        assert!(width * height <= 60_000);
+        let mut renderer =
+            IterateFrameRenderer::new(mode, seed, first["theme"].as_str().unwrap(), width, height)
+                .unwrap();
+        renderer.palette = serde_json::from_value(first["palette"].clone()).unwrap();
+        let spec = mode_spec(mode);
+        let mut encoder = AnsiFrameEncoder::new();
+        let mut output = String::new();
+        for (index, record) in records.iter().enumerate() {
+            assert_eq!(record["grid"], first["grid"]);
+            assert_eq!(record["seed"], first["seed"]);
+            assert_eq!(record["mode"], first["mode"]);
+            let values: Vec<_> = spec
+                .params
+                .iter()
+                .map(|p| record["knobs"][p.key].as_f64().unwrap() as f32)
+                .collect();
+            let grid = renderer
+                .render(record["time"].as_f64().unwrap() as f32, Some(&values))
+                .unwrap();
+            encoder.encode(grid, false, &mut output);
+            std::fs::write(format!("{destination}/frame-{index:02}.ansi"), &output).unwrap();
+        }
+    }
+
     #[derive(Default)]
     struct AnsiComposition {
         bytes: usize,
@@ -993,7 +1034,7 @@ mod iterate_frame_tests {
                 totals.cursor_bytes,
                 totals.repeat_bytes,
             ),
-            (6_298_980, 630_127, 3_629_228, 1_466_818, 653_995, 548_699)
+            (7_061_339, 576_429, 3_629_228, 2_455_888, 975_983, 0)
         );
     }
 

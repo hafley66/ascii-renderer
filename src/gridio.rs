@@ -486,29 +486,8 @@ fn encoded_span_cost(
             cost += sgr_len(bg, false);
             cur_bg = bg;
         }
-        let width = if char_width(cell.ch) == 2 { 2 } else { 1 };
-        let mut count = 1;
-        if width == 1 {
-            while x + count < end {
-                let next = row[x + count];
-                if next.ch != cell.ch
-                    || terminal_color(next.bg) != bg
-                    || (cell.ch != ' ' && terminal_color(next.fg) != fg)
-                {
-                    break;
-                }
-                count += 1;
-            }
-        }
-        let repeated_bytes = (count - 1) * cell.ch.len_utf8();
-        let repeat_command = 3 + decimal_len(count - 1);
-        cost += cell.ch.len_utf8()
-            + if count > 1 && repeat_command < repeated_bytes {
-                repeat_command
-            } else {
-                repeated_bytes
-            };
-        x += count * width;
+        cost += cell.ch.len_utf8();
+        x += if char_width(cell.ch) == 2 { 2 } else { 1 };
     }
     cost
 }
@@ -571,32 +550,8 @@ fn encode_span(
             write_sgr(output, bg, false);
             *cur_bg = bg;
         }
-        let width = if char_width(cell.ch) == 2 { 2 } else { 1 };
-        let mut count = 1;
-        if width == 1 {
-            while x + count < end {
-                let next = row[x + count];
-                if next.ch != cell.ch
-                    || terminal_color(next.bg) != bg
-                    || (cell.ch != ' ' && terminal_color(next.fg) != fg)
-                {
-                    break;
-                }
-                count += 1;
-            }
-        }
         output.push(cell.ch);
-        let repeated_bytes = (count - 1) * cell.ch.len_utf8();
-        let repeat_command = 3 + decimal_len(count - 1);
-        if count > 1 && repeat_command < repeated_bytes {
-            use std::fmt::Write as _;
-            let _ = write!(output, "\x1b[{}b", count - 1);
-        } else {
-            for _ in 1..count {
-                output.push(cell.ch);
-            }
-        }
-        x += count * width;
+        x += if char_width(cell.ch) == 2 { 2 } else { 1 };
     }
 }
 
@@ -700,8 +655,8 @@ mod ansi_frame_tests {
         let after = String::from_utf8(after).unwrap();
         let stats = encoder.encode(&row(&after), false, &mut output);
         assert_eq!(stats.changed_cells, 2);
-        assert_eq!(stats.runs, 1);
-        assert_eq!(output, "\x1b[1;2HXa\x1b[32bY\x1b[0m");
+        assert_eq!(stats.runs, 2);
+        assert_eq!(output, "\x1b[1;2HX\x1b[36GY\x1b[0m");
     }
 
     #[test]
@@ -739,21 +694,13 @@ mod ansi_frame_tests {
     }
 
     #[test]
-    fn unicode_glyph_runs_use_repeat_when_shorter() {
-        let grid = vec![vec![Cell::new('▒', Color::Blue); 12]];
-        let mut output = String::new();
-        encode_full_grid(&grid, &mut output);
-        assert_eq!(output, "\x1b[1;1H\x1b[38;5;12m▒\x1b[11b\x1b[0m");
-    }
-
-    #[test]
     fn dense_change_uses_full_frame_fallback() {
         let mut encoder = AnsiFrameEncoder::new();
         let mut output = String::new();
         encoder.encode(&row("aaaaaaaaaaaaaaaa"), true, &mut output);
         let stats = encoder.encode(&row("bbbbbbbbbbbbbbbb"), false, &mut output);
         assert!(stats.full_repaint);
-        assert_eq!(output, "\x1b[1;1Hb\x1b[15b\x1b[0m");
+        assert_eq!(output, "\x1b[1;1Hbbbbbbbbbbbbbbbb\x1b[0m");
     }
 
     #[test]
