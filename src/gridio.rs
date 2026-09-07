@@ -446,6 +446,20 @@ fn sgr_len(color: Color, fg: bool) -> usize {
     }
 }
 
+fn terminal_color(color: Color) -> Color {
+    fn five_bits(value: u8) -> u8 {
+        ((value as u16 + 4) & !7).min(255) as u8
+    }
+    match color {
+        Color::Rgb { r, g, b } => Color::Rgb {
+            r: five_bits(r),
+            g: five_bits(g),
+            b: five_bits(b),
+        },
+        other => other,
+    }
+}
+
 fn encoded_span_cost(
     row: &[Cell],
     start: usize,
@@ -457,13 +471,15 @@ fn encoded_span_cost(
     let mut x = start;
     while x < end {
         let cell = row[x];
-        if cell.ch != ' ' && cell.fg != cur_fg {
-            cost += sgr_len(cell.fg, true);
-            cur_fg = cell.fg;
+        let fg = terminal_color(cell.fg);
+        let bg = terminal_color(cell.bg);
+        if cell.ch != ' ' && fg != cur_fg {
+            cost += sgr_len(fg, true);
+            cur_fg = fg;
         }
-        if cell.bg != cur_bg {
-            cost += sgr_len(cell.bg, false);
-            cur_bg = cell.bg;
+        if bg != cur_bg {
+            cost += sgr_len(bg, false);
+            cur_bg = bg;
         }
         cost += cell.ch.len_utf8();
         x += if char_width(cell.ch) == 2 { 2 } else { 1 };
@@ -482,9 +498,9 @@ fn colors_after_span(
     while x < end {
         let cell = row[x];
         if cell.ch != ' ' {
-            cur_fg = cell.fg;
+            cur_fg = terminal_color(cell.fg);
         }
-        cur_bg = cell.bg;
+        cur_bg = terminal_color(cell.bg);
         x += if char_width(cell.ch) == 2 { 2 } else { 1 };
     }
     (cur_fg, cur_bg)
@@ -517,15 +533,17 @@ fn encode_span(
     let mut x = start;
     while x < end {
         let cell = row[x];
+        let fg = terminal_color(cell.fg);
+        let bg = terminal_color(cell.bg);
         // A space has no foreground pixels. Preserve the last emitted
         // foreground until a glyph makes a foreground transition visible.
-        if cell.ch != ' ' && cell.fg != *cur_fg {
-            write_sgr(output, cell.fg, true);
-            *cur_fg = cell.fg;
+        if cell.ch != ' ' && fg != *cur_fg {
+            write_sgr(output, fg, true);
+            *cur_fg = fg;
         }
-        if cell.bg != *cur_bg {
-            write_sgr(output, cell.bg, false);
-            *cur_bg = cell.bg;
+        if bg != *cur_bg {
+            write_sgr(output, bg, false);
+            *cur_bg = bg;
         }
         output.push(cell.ch);
         x += if char_width(cell.ch) == 2 { 2 } else { 1 };
@@ -534,8 +552,8 @@ fn encode_span(
 
 fn cells_look_equal(current: Cell, previous: Cell) -> bool {
     current.ch == previous.ch
-        && current.bg == previous.bg
-        && (current.ch == ' ' || current.fg == previous.fg)
+        && terminal_color(current.bg) == terminal_color(previous.bg)
+        && (current.ch == ' ' || terminal_color(current.fg) == terminal_color(previous.fg))
 }
 
 fn encode_full_grid(grid: &Grid, output: &mut String) {
@@ -657,5 +675,32 @@ mod ansi_frame_tests {
         let output = grid_to_ansi(&grid);
         assert!(!output.contains("38;2;255;0;0"));
         assert!(output.contains("38;2;0;0;255"));
+    }
+
+    #[test]
+    fn animation_encoder_collapses_adjacent_rgb_levels() {
+        let mut encoder = AnsiFrameEncoder::new();
+        let mut output = String::new();
+        let first = vec![vec![Cell::new(
+            'x',
+            Color::Rgb {
+                r: 101,
+                g: 149,
+                b: 201,
+            },
+        )]];
+        let adjacent = vec![vec![Cell::new(
+            'x',
+            Color::Rgb {
+                r: 102,
+                g: 150,
+                b: 202,
+            },
+        )]];
+        encoder.encode(&first, true, &mut output);
+        assert!(output.contains("38;2;104;152;200"));
+        let stats = encoder.encode(&adjacent, false, &mut output);
+        assert_eq!(stats.changed_cells, 0);
+        assert_eq!(output, "");
     }
 }
