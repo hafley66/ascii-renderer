@@ -575,8 +575,37 @@ fn encode_runs(grid: &Grid, runs: &[DirtyRun], output: &mut String) {
     use std::fmt::Write as _;
     let mut cur_fg = Color::Reset;
     let mut cur_bg = Color::Reset;
+    let mut cursor: Option<(usize, usize)> = None;
     for run in runs {
-        let _ = write!(output, "\x1b[{};{}H", run.row + 1, run.start + 1);
+        let row = run.row + 1;
+        let col = run.start + 1;
+        match cursor {
+            Some((cursor_row, cursor_col)) if cursor_row == row && cursor_col == col => {}
+            Some((cursor_row, cursor_col)) if cursor_row == row => {
+                let delta = cursor_col.abs_diff(col);
+                let relative_len = if delta == 1 {
+                    3
+                } else {
+                    3 + decimal_len(delta)
+                };
+                let column_len = if col == 1 { 3 } else { 3 + decimal_len(col) };
+                if relative_len < column_len {
+                    let command = if col > cursor_col { 'C' } else { 'D' };
+                    if delta == 1 {
+                        let _ = write!(output, "\x1b[{command}");
+                    } else {
+                        let _ = write!(output, "\x1b[{delta}{command}");
+                    }
+                } else if col == 1 {
+                    output.push_str("\x1b[G");
+                } else {
+                    let _ = write!(output, "\x1b[{col}G");
+                }
+            }
+            _ => {
+                let _ = write!(output, "\x1b[{row};{col}H");
+            }
+        }
         encode_span(
             output,
             &grid[run.row],
@@ -585,6 +614,7 @@ fn encode_runs(grid: &Grid, runs: &[DirtyRun], output: &mut String) {
             &mut cur_fg,
             &mut cur_bg,
         );
+        cursor = Some((row, run.end + 1));
     }
     output.push_str("\x1b[0m");
 }
@@ -621,7 +651,7 @@ mod ansi_frame_tests {
         let stats = encoder.encode(&row(&after), false, &mut output);
         assert_eq!(stats.changed_cells, 2);
         assert_eq!(stats.runs, 2);
-        assert_eq!(output, "\x1b[1;2HX\x1b[1;36HY\x1b[0m");
+        assert_eq!(output, "\x1b[1;2HX\x1b[36GY\x1b[0m");
     }
 
     #[test]
