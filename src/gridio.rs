@@ -1,9 +1,9 @@
 #![allow(warnings)]
 
 use crossterm::style::Color;
-use rand::rngs::StdRng;
 use rand::RngExt;
 use rand::SeedableRng;
+use rand::rngs::StdRng;
 use std::io::{self, IsTerminal, Read as _};
 
 use crate::automata;
@@ -652,6 +652,40 @@ mod ansi_frame_tests {
         assert_eq!(stats.changed_cells, 2);
         assert_eq!(stats.runs, 2);
         assert_eq!(output, "\x1b[1;2HX\x1b[36GY\x1b[0m");
+    }
+
+    #[test]
+    fn retained_cursor_reduces_sparse_run_control_bytes() {
+        use std::fmt::Write as _;
+
+        let grid = vec![vec![Cell::blank(); 1_000]];
+        let runs = (0..100)
+            .map(|index| DirtyRun {
+                row: 0,
+                start: index * 10,
+                end: index * 10 + 1,
+            })
+            .collect::<Vec<_>>();
+        let mut retained = String::new();
+        encode_runs(&grid, &runs, &mut retained);
+
+        let mut absolute = String::new();
+        let mut cur_fg = Color::Reset;
+        let mut cur_bg = Color::Reset;
+        for run in &runs {
+            let _ = write!(absolute, "\x1b[{};{}H", run.row + 1, run.start + 1);
+            encode_span(
+                &mut absolute,
+                &grid[run.row],
+                run.start,
+                run.end,
+                &mut cur_fg,
+                &mut cur_bg,
+            );
+        }
+        absolute.push_str("\x1b[0m");
+
+        assert_eq!((absolute.len(), retained.len()), (893, 506));
     }
 
     #[test]

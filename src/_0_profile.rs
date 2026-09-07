@@ -2,7 +2,7 @@ use std::cell::RefCell;
 use std::collections::BTreeMap;
 use std::io::{IsTerminal, Write};
 use std::path::PathBuf;
-use std::sync::OnceLock;
+use std::sync::{Mutex, OnceLock};
 use std::time::{Duration, Instant};
 
 const FRAME_TARGET: &str = "ascii_renderer::profile";
@@ -11,6 +11,7 @@ const DEFAULT_REPORT_EVERY: u64 = 120;
 
 static SETTINGS: OnceLock<ProfileSettings> = OnceLock::new();
 static TRACE_SETTINGS: OnceLock<TraceSettings> = OnceLock::new();
+static TRACE_WRITERS: OnceLock<Mutex<TraceWriters>> = OnceLock::new();
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 struct ProfileSettings {
@@ -256,26 +257,49 @@ impl Drop for RenderTrace<'_> {
     }
 }
 
-fn append_ndjson(path: &std::path::Path, event: &serde_json::Value) {
-    let Some(parent) = path.parent() else {
-        return;
-    };
-    if std::fs::create_dir_all(parent).is_err() {
-        return;
+#[derive(Default)]
+struct TraceWriters {
+    files: BTreeMap<PathBuf, std::fs::File>,
+}
+
+impl TraceWriters {
+    fn append(&mut self, path: &std::path::Path, event: &serde_json::Value) {
+        if !self.files.contains_key(path) {
+            let Some(parent) = path.parent() else {
+                return;
+            };
+            if std::fs::create_dir_all(parent).is_err() {
+                return;
+            }
+            let Ok(file) = std::fs::OpenOptions::new()
+                .create(true)
+                .append(true)
+                .open(path)
+            else {
+                return;
+            };
+            self.files.insert(path.to_path_buf(), file);
+        }
+        let Some(file) = self.files.get_mut(path) else {
+            return;
+        };
+        if let Ok(mut bytes) = serde_json::to_vec(event) {
+            bytes.push(b'\n');
+            // O_APPEND plus one write_all call keeps records intact when the
+            // supervisor and worker share the same trace path.
+            let _ = file.write_all(&bytes);
+        }
     }
-    let Ok(mut file) = std::fs::OpenOptions::new()
-        .create(true)
-        .append(true)
-        .open(path)
+}
+
+fn append_ndjson(path: &std::path::Path, event: &serde_json::Value) {
+    let Ok(mut writers) = TRACE_WRITERS
+        .get_or_init(|| Mutex::new(TraceWriters::default()))
+        .lock()
     else {
         return;
     };
-    if let Ok(mut bytes) = serde_json::to_vec(event) {
-        bytes.push(b'\n');
-        // Parent and worker share this append-only log. Submit a complete record
-        // together instead of interleaving serde's small writes across processes.
-        let _ = file.write_all(&bytes);
-    }
+    writers.append(path, event);
 }
 
 #[derive(Clone, Copy, serde::Serialize)]
@@ -751,5 +775,21 @@ mod tests {
             .filter(|frame| deterministic_animation_sample(*frame))
             .collect();
         assert_eq!(sampled, [1, 11, 21, 31]);
+    }
+
+    #[test]
+    fn trace_writer_reuses_one_open_file_for_repeated_records() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("nested/trace.ndjson");
+        let mut writers = TraceWriters::default();
+
+        for sequence in 0..100 {
+            writers.append(&path, &serde_json::json!({"sequence": sequence}));
+        }
+
+        assert_eq!(writers.files.len(), 1);
+        drop(writers);
+        let records = std::fs::read_to_string(path).unwrap();
+        assert_eq!(records.lines().count(), 100);
     }
 }

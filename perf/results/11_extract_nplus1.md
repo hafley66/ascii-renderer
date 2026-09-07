@@ -44,6 +44,15 @@ This preserves the existing dirty-run partition and changes only cursor command
 selection. Full-frame encoding and visual cell selection retain their current
 behavior.
 
+A deterministic 1,000-column fixture with 100 sparse runs encodes to 893 bytes
+with one absolute cursor command per run and 506 bytes with retained cursor
+selection. That is 387 fewer bytes, or 43.3% of the fixture's encoded stream.
+
+The trace-writer lead was also implemented. A process now retains one O_APPEND
+file per trace path behind a mutex. A 100-record test observes one retained file
+and 100 complete lines, reducing opens from 100 to 1 while keeping the existing
+single-write record boundary.
+
 ## Remaining cost boundaries
 
 The terminal-write loop already presents the largest available pending slice.
@@ -52,8 +61,8 @@ more application buffers does not reduce its successful syscall count. Byte and
 terminal-command reduction occur before that boundary.
 
 `append_ndjson` is outside the measured `presentation_us` interval and runs only
-for selected trace records. Its open-per-record shape is present in the graph,
-with five caller edges, but it does not account for the terminal stall.
+for selected trace records. Its five caller edges now converge on the retained
+writer map.
 
 Style emission remains proportional to visual style transitions. The current
 encoder carries foreground and background state across cells and runs, omits
