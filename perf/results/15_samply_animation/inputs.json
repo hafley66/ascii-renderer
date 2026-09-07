@@ -1,0 +1,30 @@
+{
+  "mode": "gem-aetherium-2",
+  "seed": 42,
+  "theme": "",
+  "strategy": "iterate",
+  "grid": {
+    "w": 392,
+    "h": 134
+  },
+  "terminal_size": {
+    "w": 426,
+    "h": 135
+  },
+  "randomize": true,
+  "roll": 6,
+  "knobs": {
+    "COMETS": 11.0,
+    "GEARS": 7.0,
+    "HARMONY": 7.0,
+    "NEBULA": 1.25,
+    "PLANETS": 9.0,
+    "PULSE": 0.1,
+    "RAYS": 0.8,
+    "RINGS": 9.0,
+    "RUNES": 0.3,
+    "SPEED": 2.35,
+    "TILT": 0.6,
+    "ZODIAC": 19.0
+  }
+}

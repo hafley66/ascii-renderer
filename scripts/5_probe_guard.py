@@ -128,11 +128,23 @@ def run(args):
                         os.kill(pid, signal.SIGSTOP)
                     except ProcessLookupError:
                         pass
-            for pid in sorted(owned - {child.pid, args.watch_pid, os.getpid()}) + [child.pid]:
+            for pid in sorted(owned - {child.pid, args.watch_pid, os.getpid()}):
                 try:
                     os.kill(pid, signal.SIGKILL)
                 except ProcessLookupError:
                     pass
+            # Stop the workload first. An explicitly selected profiler parent
+            # may resume only to save its samples, under a fixed two-second cap.
+            if args.save_profiler_on_stop and child.poll() is None:
+                try:
+                    os.kill(child.pid, signal.SIGINT)
+                    os.kill(child.pid, signal.SIGCONT)
+                    child.wait(timeout=2)
+                    record('profiler_saved', code=child.returncode)
+                except (ProcessLookupError, subprocess.TimeoutExpired):
+                    pass
+            if child.poll() is None:
+                child.kill()
             child.wait(timeout=2)
             record('stopped', owned_pids=sorted(owned))
         if tty_state is not None:
@@ -150,6 +162,8 @@ if __name__ == '__main__':
     parser.add_argument('--state', required=True)
     parser.add_argument('--artifact-dir', required=True)
     parser.add_argument('--owner-pid', type=int)
+    parser.add_argument('--save-profiler-on-stop', action='store_true',
+                        help='after killing workload descendants, allow profiler parent 2 s to save')
     parser.add_argument('--watch-pid', type=int)
     parser.add_argument('--max-seconds', type=float, default=15)
     parser.add_argument('--max-owned-mib', type=float, default=256)

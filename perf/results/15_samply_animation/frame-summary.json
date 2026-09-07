@@ -1,0 +1,13 @@
+{
+  "frames": 8,
+  "median": {
+    "render_us": 1108.5,
+    "encoding_us": 2159.5,
+    "presentation_us": 37468.5,
+    "dur_us": 40709.5,
+    "interval_ms": 60.082458,
+    "bytes": 126417.0
+  },
+  "binary_sha256": "da18023eee60f326f2082c5f9c1cc9dc67d5be121c5a0eb86cad7f258ebeed5a",
+  "profile_sha256": "2b8488a131da17377e277e3525fa3db54f30697fc65c42cacff4c15eca9eef89"
+}

@@ -1,0 +1,3658 @@
+[
+  {
+    "pid": "72617",
+    "tid": "69089193",
+    "name": "ascii-renderer",
+    "main": true,
+    "sample_rows": 987,
+    "sample_weight": 2585,
+    "inclusive": [
+      [
+        "start",
+        2585
+      ],
+      [
+        "std::rt::lang_start_internal",
+        2585
+      ],
+      [
+        "main",
+        2585
+      ],
+      [
+        "std::rt::lang_start::<()>::{closure#0}",
+        2584
+      ],
+      [
+        "std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>",
+        2584
+      ],
+      [
+        "ascii_renderer::main",
+        2583
+      ],
+      [
+        "ascii_renderer::opts::run_demo",
+        2581
+      ],
+      [
+        "ascii_renderer::cli::run",
+        2581
+      ],
+      [
+        "ascii_renderer::cli::run_render",
+        2581
+      ],
+      [
+        "<crossterm::event::read::InternalEventReader>::poll::<crossterm::event::filter::EventFilter>",
+        1636
+      ],
+      [
+        "<crossterm::event::source::unix::mio::UnixInternalEventSource as crossterm::event::source::EventSource>::try_read",
+        1636
+      ],
+      [
+        "<mio::poll::Poll>::poll",
+        1635
+      ],
+      [
+        "kevent",
+        1635
+      ],
+      [
+        "crossterm::event::read",
+        1598
+      ],
+      [
+        "<crossterm::event::read::InternalEventReader>::read::<crossterm::event::filter::EventFilter>",
+        1598
+      ],
+      [
+        "ascii_renderer::_1_playback::supervise",
+        979
+      ],
+      [
+        "nanosleep",
+        828
+      ],
+      [
+        "std::thread::functions::sleep",
+        828
+      ],
+      [
+        "__semwait_signal",
+        826
+      ],
+      [
+        "ascii_renderer::morph::morph_session",
+        501
+      ],
+      [
+        "ascii_renderer::_1_playback::animate",
+        501
+      ],
+      [
+        "poll",
+        78
+      ],
+      [
+        "nix::poll::poll::<u16>",
+        78
+      ],
+      [
+        "crossterm::event::poll",
+        40
+      ],
+      [
+        "write",
+        29
+      ],
+      [
+        "<std::fs::File as core::io::write::Write>::write",
+        27
+      ],
+      [
+        "<std::sys::pal::unix::time::Timespec>::now",
+        4
+      ],
+      [
+        "clock_gettime_nsec_np",
+        3
+      ],
+      [
+        "clock_gettime",
+        3
+      ],
+      [
+        "mach_absolute_time",
+        3
+      ],
+      [
+        "hafley_observe::_1_init::init",
+        2
+      ],
+      [
+        "ascii_renderer::_0_profile::init",
+        2
+      ],
+      [
+        "hafley_observe::_1_init::init_with_writer",
+        2
+      ],
+      [
+        "<std::time::Instant>::elapsed",
+        2
+      ],
+      [
+        "<ascii_renderer::_0_profile::RelayProfiler>::tick",
+        2
+      ],
+      [
+        "mach_msg2_internal",
+        2
+      ],
+      [
+        "mach_msg2_trap",
+        2
+      ],
+      [
+        "clock_get_time",
+        2
+      ],
+      [
+        "<std::sys::stdio::unix::Stdout as core::io::write::Write>::write_all",
+        2
+      ],
+      [
+        "<core::io::write::default_write_fmt::Adapter<std::io::stdio::StdoutLock> as core::fmt::Write>::write_str",
+        2
+      ],
+      [
+        "std::io::stdio::_print",
+        2
+      ],
+      [
+        "<&std::io::stdio::Stdout as core::io::write::Write>::write_fmt",
+        2
+      ],
+      [
+        "<std::io::stdio::StdoutLock as core::io::write::Write>::write_all",
+        2
+      ],
+      [
+        "core::fmt::write",
+        2
+      ],
+      [
+        "std::sys::pal::unix::stack_overflow::imp::make_handler",
+        1
+      ],
+      [
+        "<tracing_subscriber::filter::env::EnvFilter>::try_from_default_env",
+        1
+      ],
+      [
+        "<tracing_subscriber::layer::layered::Layered<alloc::boxed::Box<dyn tracing_subscriber::layer::Layer<tracing_subscriber::layer::layered::Layered<tracing_subscriber::filter::env::EnvFilter, tracing_subscriber::registry::sharded::Registry>> + core::marker::Sync + core::marker::Send>, tracing_subscriber::layer::layered::Layered<tracing_subscriber::filter::env::EnvFilter, tracing_subscriber::registry::sharded::Registry>> as tracing_subscriber::util::SubscriberInitExt>::try_init",
+        1
+      ],
+      [
+        "log::set_boxed_logger",
+        1
+      ],
+      [
+        "<tracing_log::log_tracer::Builder>::init",
+        1
+      ],
+      [
+        "<ascii_renderer::registry::ModeRegistry>::add",
+        1
+      ],
+      [
+        "<std::sys::sync::once::queue::Once>::call",
+        1
+      ],
+      [
+        "_platform_memcmp",
+        1
+      ],
+      [
+        "<std::sync::once::Once>::call_once_force::<<std::sync::once_lock::OnceLock<ascii_renderer::registry::ModeRegistry>>::initialize<<std::sync::once_lock::OnceLock<ascii_renderer::registry::ModeRegistry>>::get_or_init<ascii_renderer::registry::registered_modes::{closure#0}>::{closure#0}, !>::{closure#0}>::{closure#0}",
+        1
+      ],
+      [
+        "<std::sync::once_lock::OnceLock<ascii_renderer::registry::ModeRegistry>>::initialize::<<std::sync::once_lock::OnceLock<ascii_renderer::registry::ModeRegistry>>::get_or_init<ascii_renderer::registry::registered_modes::{closure#0}>::{closure#0}, !>",
+        1
+      ],
+      [
+        "<hashbrown::map::HashMap<alloc::string::String, std::collections::hash::map::HashMap<alloc::string::String, f32>, std::hash::random::RandomState>>::rustc_entry",
+        1
+      ],
+      [
+        "<std::hash::random::RandomState as core::hash::BuildHasher>::hash_one::<&alloc::string::String>",
+        1
+      ],
+      [
+        "ascii_renderer::opts::load_options",
+        1
+      ],
+      [
+        "[1, 4672920]",
+        1
+      ],
+      [
+        "std::env::vars_os",
+        1
+      ],
+      [
+        "<std::sys::process::unix::common::Command>::capture_env",
+        1
+      ],
+      [
+        "<alloc::raw_vec::RawVecInner>::finish_grow",
+        1
+      ],
+      [
+        "nanov2_allocate_outlined",
+        1
+      ],
+      [
+        "<std::sys::process::env::CommandEnv>::capture",
+        1
+      ],
+      [
+        "<std::sys::process::unix::common::Command>::spawn",
+        1
+      ],
+      [
+        "<std::process::Command>::spawn",
+        1
+      ],
+      [
+        "<alloc::raw_vec::RawVec<addr2line::function::InlinedFunction<gimli::read::endian_slice::EndianSlice<gimli::endianity::LittleEndian>>>>::grow_one",
+        1
+      ]
+    ],
+    "leaf": [
+      [
+        "kevent",
+        1635
+      ],
+      [
+        "__semwait_signal",
+        826
+      ],
+      [
+        "poll",
+        78
+      ],
+      [
+        "write",
+        29
+      ],
+      [
+        "mach_absolute_time",
+        3
+      ],
+      [
+        "crossterm::event::poll",
+        2
+      ],
+      [
+        "mach_msg2_trap",
+        2
+      ],
+      [
+        "std::sys::pal::unix::stack_overflow::imp::make_handler",
+        1
+      ],
+      [
+        "std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>",
+        1
+      ],
+      [
+        "<tracing_subscriber::filter::env::EnvFilter>::try_from_default_env",
+        1
+      ],
+      [
+        "log::set_boxed_logger",
+        1
+      ],
+      [
+        "_platform_memcmp",
+        1
+      ],
+      [
+        "<std::hash::random::RandomState as core::hash::BuildHasher>::hash_one::<&alloc::string::String>",
+        1
+      ],
+      [
+        "ascii_renderer::_1_playback::supervise",
+        1
+      ],
+      [
+        "[1, 4672920]",
+        1
+      ],
+      [
+        "nanov2_allocate_outlined",
+        1
+      ],
+      [
+        "<crossterm::event::source::unix::mio::UnixInternalEventSource as crossterm::event::source::EventSource>::try_read",
+        1
+      ]
+    ],
+    "cpu_delta_at_sample_leaf_us": [
+      [
+        "__semwait_signal",
+        22249
+      ],
+      [
+        "std::sys::pal::unix::stack_overflow::imp::make_handler",
+        9650
+      ],
+      [
+        "poll",
+        1474
+      ],
+      [
+        "kevent",
+        987
+      ],
+      [
+        "write",
+        826
+      ],
+      [
+        "crossterm::event::poll",
+        415
+      ],
+      [
+        "ascii_renderer::_1_playback::supervise",
+        332
+      ],
+      [
+        "<std::hash::random::RandomState as core::hash::BuildHasher>::hash_one::<&alloc::string::String>",
+        293
+      ],
+      [
+        "log::set_boxed_logger",
+        224
+      ],
+      [
+        "<tracing_subscriber::filter::env::EnvFilter>::try_from_default_env",
+        202
+      ],
+      [
+        "_platform_memcmp",
+        195
+      ],
+      [
+        "std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>",
+        131
+      ],
+      [
+        "nanov2_allocate_outlined",
+        76
+      ],
+      [
+        "[1, 4672920]",
+        71
+      ],
+      [
+        "mach_msg2_trap",
+        53
+      ],
+      [
+        "mach_absolute_time",
+        36
+      ],
+      [
+        "<crossterm::event::source::unix::mio::UnixInternalEventSource as crossterm::event::source::EventSource>::try_read",
+        2
+      ]
+    ],
+    "paths": [
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> ascii_renderer::opts::run_demo -> crossterm::event::read -> <crossterm::event::read::InternalEventReader>::read::<crossterm::event::filter::EventFilter> -> <crossterm::event::read::InternalEventReader>::poll::<crossterm::event::filter::EventFilter> -> <crossterm::event::source::unix::mio::UnixInternalEventSource as crossterm::event::source::EventSource>::try_read -> <mio::poll::Poll>::poll -> kevent",
+        1598
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> ascii_renderer::opts::run_demo -> ascii_renderer::morph::morph_session -> ascii_renderer::_1_playback::animate -> ascii_renderer::_1_playback::supervise -> std::thread::functions::sleep -> nanosleep -> __semwait_signal",
+        450
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> ascii_renderer::opts::run_demo -> ascii_renderer::_1_playback::supervise -> std::thread::functions::sleep -> nanosleep -> __semwait_signal",
+        376
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> ascii_renderer::opts::run_demo -> ascii_renderer::_1_playback::supervise -> nix::poll::poll::<u16> -> poll",
+        64
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> ascii_renderer::opts::run_demo -> ascii_renderer::_1_playback::supervise -> crossterm::event::poll -> <crossterm::event::read::InternalEventReader>::poll::<crossterm::event::filter::EventFilter> -> <crossterm::event::source::unix::mio::UnixInternalEventSource as crossterm::event::source::EventSource>::try_read -> <mio::poll::Poll>::poll -> kevent",
+        22
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> ascii_renderer::opts::run_demo -> ascii_renderer::morph::morph_session -> ascii_renderer::_1_playback::animate -> ascii_renderer::_1_playback::supervise -> <std::fs::File as core::io::write::Write>::write -> write",
+        17
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> ascii_renderer::opts::run_demo -> ascii_renderer::morph::morph_session -> ascii_renderer::_1_playback::animate -> ascii_renderer::_1_playback::supervise -> crossterm::event::poll -> <crossterm::event::read::InternalEventReader>::poll::<crossterm::event::filter::EventFilter> -> <crossterm::event::source::unix::mio::UnixInternalEventSource as crossterm::event::source::EventSource>::try_read -> <mio::poll::Poll>::poll -> kevent",
+        15
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> ascii_renderer::opts::run_demo -> ascii_renderer::morph::morph_session -> ascii_renderer::_1_playback::animate -> ascii_renderer::_1_playback::supervise -> nix::poll::poll::<u16> -> poll",
+        14
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> ascii_renderer::opts::run_demo -> ascii_renderer::_1_playback::supervise -> <std::fs::File as core::io::write::Write>::write -> write",
+        10
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> ascii_renderer::opts::run_demo -> ascii_renderer::_1_playback::supervise -> crossterm::event::poll",
+        2
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> ascii_renderer::opts::run_demo -> std::io::stdio::_print -> <&std::io::stdio::Stdout as core::io::write::Write>::write_fmt -> core::fmt::write -> <core::io::write::default_write_fmt::Adapter<std::io::stdio::StdoutLock> as core::fmt::Write>::write_str -> <std::io::stdio::StdoutLock as core::io::write::Write>::write_all -> <std::sys::stdio::unix::Stdout as core::io::write::Write>::write_all -> write",
+        2
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> ascii_renderer::opts::run_demo -> ascii_renderer::morph::morph_session -> ascii_renderer::_1_playback::animate -> ascii_renderer::_1_playback::supervise -> <std::sys::pal::unix::time::Timespec>::now -> clock_gettime -> clock_gettime_nsec_np -> mach_absolute_time",
+        2
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::sys::pal::unix::stack_overflow::imp::make_handler",
+        1
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>",
+        1
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::_0_profile::init -> hafley_observe::_1_init::init -> hafley_observe::_1_init::init_with_writer -> <tracing_subscriber::filter::env::EnvFilter>::try_from_default_env",
+        1
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::_0_profile::init -> hafley_observe::_1_init::init -> hafley_observe::_1_init::init_with_writer -> <tracing_subscriber::layer::layered::Layered<alloc::boxed::Box<dyn tracing_subscriber::layer::Layer<tracing_subscriber::layer::layered::Layered<tracing_subscriber::filter::env::EnvFilter, tracing_subscriber::registry::sharded::Registry>> + core::marker::Sync + core::marker::Send>, tracing_subscriber::layer::layered::Layered<tracing_subscriber::filter::env::EnvFilter, tracing_subscriber::registry::sharded::Registry>> as tracing_subscriber::util::SubscriberInitExt>::try_init -> <tracing_log::log_tracer::Builder>::init -> log::set_boxed_logger",
+        1
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> ascii_renderer::opts::run_demo -> <std::sync::once_lock::OnceLock<ascii_renderer::registry::ModeRegistry>>::initialize::<<std::sync::once_lock::OnceLock<ascii_renderer::registry::ModeRegistry>>::get_or_init<ascii_renderer::registry::registered_modes::{closure#0}>::{closure#0}, !> -> <std::sys::sync::once::queue::Once>::call -> <std::sync::once::Once>::call_once_force::<<std::sync::once_lock::OnceLock<ascii_renderer::registry::ModeRegistry>>::initialize<<std::sync::once_lock::OnceLock<ascii_renderer::registry::ModeRegistry>>::get_or_init<ascii_renderer::registry::registered_modes::{closure#0}>::{closure#0}, !>::{closure#0}>::{closure#0} -> <ascii_renderer::registry::ModeRegistry>::add -> _platform_memcmp",
+        1
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> ascii_renderer::opts::run_demo -> ascii_renderer::opts::load_options -> <hashbrown::map::HashMap<alloc::string::String, std::collections::hash::map::HashMap<alloc::string::String, f32>, std::hash::random::RandomState>>::rustc_entry -> <std::hash::random::RandomState as core::hash::BuildHasher>::hash_one::<&alloc::string::String>",
+        1
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> ascii_renderer::opts::run_demo -> ascii_renderer::_1_playback::supervise",
+        1
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> ascii_renderer::opts::run_demo -> ascii_renderer::_1_playback::supervise -> <ascii_renderer::_0_profile::RelayProfiler>::tick -> <std::time::Instant>::elapsed -> <std::sys::pal::unix::time::Timespec>::now -> [1, 4672920]",
+        1
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> ascii_renderer::opts::run_demo -> ascii_renderer::_1_playback::supervise -> std::thread::functions::sleep -> nanosleep -> clock_get_time -> mach_msg2_internal -> mach_msg2_trap",
+        1
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> ascii_renderer::opts::run_demo -> ascii_renderer::_1_playback::supervise -> <ascii_renderer::_0_profile::RelayProfiler>::tick -> <std::time::Instant>::elapsed -> <std::sys::pal::unix::time::Timespec>::now -> clock_gettime -> clock_gettime_nsec_np -> mach_absolute_time",
+        1
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> ascii_renderer::opts::run_demo -> ascii_renderer::morph::morph_session -> ascii_renderer::_1_playback::animate -> ascii_renderer::_1_playback::supervise -> <std::process::Command>::spawn -> <std::sys::process::unix::common::Command>::spawn -> <std::sys::process::unix::common::Command>::capture_env -> <std::sys::process::env::CommandEnv>::capture -> std::env::vars_os -> <alloc::raw_vec::RawVec<addr2line::function::InlinedFunction<gimli::read::endian_slice::EndianSlice<gimli::endianity::LittleEndian>>>>::grow_one -> <alloc::raw_vec::RawVecInner>::finish_grow -> nanov2_allocate_outlined",
+        1
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> ascii_renderer::opts::run_demo -> ascii_renderer::morph::morph_session -> ascii_renderer::_1_playback::animate -> ascii_renderer::_1_playback::supervise -> std::thread::functions::sleep -> nanosleep -> clock_get_time -> mach_msg2_internal -> mach_msg2_trap",
+        1
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> ascii_renderer::opts::run_demo -> ascii_renderer::morph::morph_session -> ascii_renderer::_1_playback::animate -> ascii_renderer::_1_playback::supervise -> crossterm::event::poll -> <crossterm::event::read::InternalEventReader>::poll::<crossterm::event::filter::EventFilter> -> <crossterm::event::source::unix::mio::UnixInternalEventSource as crossterm::event::source::EventSource>::try_read",
+        1
+      ]
+    ]
+  },
+  {
+    "pid": "72619",
+    "tid": "69089209",
+    "name": "ascii-renderer",
+    "main": true,
+    "sample_rows": 49,
+    "sample_weight": 115,
+    "inclusive": [
+      [
+        "ascii_renderer::main",
+        115
+      ],
+      [
+        "start",
+        115
+      ],
+      [
+        "std::rt::lang_start::<()>::{closure#0}",
+        115
+      ],
+      [
+        "std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>",
+        115
+      ],
+      [
+        "ascii_renderer::cli::run",
+        115
+      ],
+      [
+        "main",
+        115
+      ],
+      [
+        "ascii_renderer::cli::run_render",
+        115
+      ],
+      [
+        "std::rt::lang_start_internal",
+        115
+      ],
+      [
+        "ascii_renderer::gridio::emit_grid",
+        71
+      ],
+      [
+        "<std::sys::stdio::unix::Stdout as core::io::write::Write>::write_all",
+        70
+      ],
+      [
+        "<alloc::io::buffered::bufwriter::BufWriter<std::io::stdio::StdoutRaw>>::write_all_cold",
+        70
+      ],
+      [
+        "write",
+        70
+      ],
+      [
+        "<std::io::stdio::StdoutLock as core::io::write::Write>::write_all",
+        70
+      ],
+      [
+        "ascii_renderer::cli_scenes::cli_party",
+        42
+      ],
+      [
+        "ascii_renderer::scene::fill_masked",
+        40
+      ],
+      [
+        "ascii_renderer::fills::fill_noise",
+        12
+      ],
+      [
+        "ascii_renderer::scene::mask_intersect::<ascii_renderer::scene::mask_diamond::{closure#0}, ascii_renderer::walker::party_walk::{closure#5}>::{closure#0}",
+        6
+      ],
+      [
+        "ascii_renderer::fills::fill_tile_ex",
+        4
+      ],
+      [
+        "ascii_renderer::scene::render_fill",
+        4
+      ],
+      [
+        "ascii_renderer::scene::mask_intersect::<ascii_renderer::scene::mask_rect::{closure#0}, ascii_renderer::walker::party_walk::{closure#6}>::{closure#0}",
+        3
+      ],
+      [
+        "ascii_renderer::scene::mask_intersect::<ascii_renderer::scene::mask_trapezoid::{closure#0}, ascii_renderer::walker::party_walk::{closure#7}>::{closure#0}",
+        3
+      ],
+      [
+        "<core::iter::adapters::map::Map<core::ops::range::Range<usize>, ascii_renderer::scene::fill_masked::{closure#0}> as core::iter::traits::iterator::Iterator>::fold::<(), core::iter::traits::iterator::Iterator::for_each::call<alloc::vec::Vec<ascii_renderer::types::Cell>, <alloc::vec::Vec<alloc::vec::Vec<ascii_renderer::types::Cell>>>::extend_trusted<core::iter::adapters::map::Map<core::ops::range::Range<usize>, ascii_renderer::scene::fill_masked::{closure#0}>>::{closure#0}>::{closure#0}>",
+        2
+      ],
+      [
+        "<alloc::vec::Vec<alloc::vec::Vec<ascii_renderer::types::Cell>> as alloc::vec::spec_from_iter_nested::SpecFromIterNested<alloc::vec::Vec<ascii_renderer::types::Cell>, core::iter::adapters::map::Map<core::ops::range::Range<usize>, ascii_renderer::scene::fill_masked::{closure#0}>>>::from_iter",
+        2
+      ],
+      [
+        "ascii_renderer::scene::mask_ellipse::{closure#0}",
+        2
+      ],
+      [
+        "chacha20::backends::neon::rng_inner::<chacha20::R12, chacha20::variants::Legacy>",
+        2
+      ],
+      [
+        "ascii_renderer::scene::mask_rect::{closure#0}",
+        2
+      ],
+      [
+        "<ascii_renderer::_0_profile::RenderTrace as core::ops::drop::Drop>::drop",
+        2
+      ],
+      [
+        "ascii_renderer::fills::draw_concentric",
+        1
+      ],
+      [
+        "_platform_memmove",
+        1
+      ],
+      [
+        "ascii_renderer::scene::mask_below_contour::{closure#0}",
+        1
+      ],
+      [
+        "szone_malloc_should_clear",
+        1
+      ],
+      [
+        "small_malloc_should_clear",
+        1
+      ],
+      [
+        "small_malloc_from_free_list",
+        1
+      ],
+      [
+        "small_free_list_remove_ptr",
+        1
+      ],
+      [
+        "_szone_free",
+        1
+      ],
+      [
+        "small_free_list_add_ptr",
+        1
+      ],
+      [
+        "free_small",
+        1
+      ],
+      [
+        "ascii_renderer::walker::atmosphere::apply_atmosphere",
+        1
+      ],
+      [
+        "unicode_width::tables::lookup_width",
+        1
+      ],
+      [
+        "<alloc::collections::btree::map::entry::VacantEntry<alloc::string::String, serde_json::value::Value>>::insert_entry",
+        1
+      ],
+      [
+        "<ascii_renderer::_0_profile::FrameInputs>::to_json",
+        1
+      ],
+      [
+        "<alloc::collections::btree::map::BTreeMap<alloc::string::String, serde_json::value::Value>>::insert",
+        1
+      ],
+      [
+        "ascii_renderer::_0_profile::append_ndjson",
+        1
+      ],
+      [
+        "open",
+        1
+      ],
+      [
+        "__open",
+        1
+      ],
+      [
+        "<std::fs::OpenOptions>::_open",
+        1
+      ],
+      [
+        "<std::sys::fs::unix::File>::open_c",
+        1
+      ]
+    ],
+    "leaf": [
+      [
+        "write",
+        70
+      ],
+      [
+        "ascii_renderer::fills::fill_noise",
+        10
+      ],
+      [
+        "ascii_renderer::scene::fill_masked",
+        9
+      ],
+      [
+        "ascii_renderer::scene::mask_intersect::<ascii_renderer::scene::mask_diamond::{closure#0}, ascii_renderer::walker::party_walk::{closure#5}>::{closure#0}",
+        4
+      ],
+      [
+        "ascii_renderer::scene::mask_ellipse::{closure#0}",
+        2
+      ],
+      [
+        "ascii_renderer::scene::mask_intersect::<ascii_renderer::scene::mask_trapezoid::{closure#0}, ascii_renderer::walker::party_walk::{closure#7}>::{closure#0}",
+        2
+      ],
+      [
+        "chacha20::backends::neon::rng_inner::<chacha20::R12, chacha20::variants::Legacy>",
+        2
+      ],
+      [
+        "ascii_renderer::fills::fill_tile_ex",
+        2
+      ],
+      [
+        "ascii_renderer::scene::mask_rect::{closure#0}",
+        2
+      ],
+      [
+        "ascii_renderer::cli_scenes::cli_party",
+        1
+      ],
+      [
+        "ascii_renderer::fills::draw_concentric",
+        1
+      ],
+      [
+        "_platform_memmove",
+        1
+      ],
+      [
+        "ascii_renderer::scene::mask_below_contour::{closure#0}",
+        1
+      ],
+      [
+        "small_free_list_remove_ptr",
+        1
+      ],
+      [
+        "_szone_free",
+        1
+      ],
+      [
+        "ascii_renderer::scene::mask_intersect::<ascii_renderer::scene::mask_rect::{closure#0}, ascii_renderer::walker::party_walk::{closure#6}>::{closure#0}",
+        1
+      ],
+      [
+        "small_free_list_add_ptr",
+        1
+      ],
+      [
+        "ascii_renderer::walker::atmosphere::apply_atmosphere",
+        1
+      ],
+      [
+        "unicode_width::tables::lookup_width",
+        1
+      ],
+      [
+        "<alloc::collections::btree::map::entry::VacantEntry<alloc::string::String, serde_json::value::Value>>::insert_entry",
+        1
+      ],
+      [
+        "__open",
+        1
+      ]
+    ],
+    "cpu_delta_at_sample_leaf_us": [
+      [
+        "ascii_renderer::scene::fill_masked",
+        8418
+      ],
+      [
+        "ascii_renderer::fills::fill_noise",
+        8135
+      ],
+      [
+        "ascii_renderer::scene::mask_intersect::<ascii_renderer::scene::mask_diamond::{closure#0}, ascii_renderer::walker::party_walk::{closure#5}>::{closure#0}",
+        4199
+      ],
+      [
+        "ascii_renderer::cli_scenes::cli_party",
+        3301
+      ],
+      [
+        "chacha20::backends::neon::rng_inner::<chacha20::R12, chacha20::variants::Legacy>",
+        2717
+      ],
+      [
+        "ascii_renderer::scene::mask_intersect::<ascii_renderer::scene::mask_trapezoid::{closure#0}, ascii_renderer::walker::party_walk::{closure#7}>::{closure#0}",
+        2207
+      ],
+      [
+        "ascii_renderer::scene::mask_rect::{closure#0}",
+        2184
+      ],
+      [
+        "ascii_renderer::fills::fill_tile_ex",
+        2066
+      ],
+      [
+        "ascii_renderer::scene::mask_ellipse::{closure#0}",
+        1589
+      ],
+      [
+        "ascii_renderer::walker::atmosphere::apply_atmosphere",
+        1480
+      ],
+      [
+        "small_free_list_add_ptr",
+        1020
+      ],
+      [
+        "small_free_list_remove_ptr",
+        936
+      ],
+      [
+        "ascii_renderer::scene::mask_below_contour::{closure#0}",
+        932
+      ],
+      [
+        "ascii_renderer::scene::mask_intersect::<ascii_renderer::scene::mask_rect::{closure#0}, ascii_renderer::walker::party_walk::{closure#6}>::{closure#0}",
+        856
+      ],
+      [
+        "_platform_memmove",
+        744
+      ],
+      [
+        "_szone_free",
+        681
+      ],
+      [
+        "write",
+        556
+      ],
+      [
+        "unicode_width::tables::lookup_width",
+        448
+      ],
+      [
+        "ascii_renderer::fills::draw_concentric",
+        354
+      ],
+      [
+        "__open",
+        238
+      ],
+      [
+        "<alloc::collections::btree::map::entry::VacantEntry<alloc::string::String, serde_json::value::Value>>::insert_entry",
+        185
+      ]
+    ],
+    "paths": [
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> ascii_renderer::gridio::emit_grid -> <std::io::stdio::StdoutLock as core::io::write::Write>::write_all -> <alloc::io::buffered::bufwriter::BufWriter<std::io::stdio::StdoutRaw>>::write_all_cold -> <std::sys::stdio::unix::Stdout as core::io::write::Write>::write_all -> write",
+        70
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> ascii_renderer::cli_scenes::cli_party -> ascii_renderer::scene::fill_masked -> ascii_renderer::fills::fill_noise",
+        10
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> ascii_renderer::cli_scenes::cli_party -> ascii_renderer::scene::fill_masked",
+        9
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> ascii_renderer::cli_scenes::cli_party -> ascii_renderer::scene::fill_masked -> ascii_renderer::scene::mask_intersect::<ascii_renderer::scene::mask_diamond::{closure#0}, ascii_renderer::walker::party_walk::{closure#5}>::{closure#0}",
+        3
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> ascii_renderer::cli_scenes::cli_party -> ascii_renderer::scene::fill_masked -> ascii_renderer::scene::mask_intersect::<ascii_renderer::scene::mask_trapezoid::{closure#0}, ascii_renderer::walker::party_walk::{closure#7}>::{closure#0}",
+        2
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> ascii_renderer::cli_scenes::cli_party -> ascii_renderer::scene::fill_masked -> ascii_renderer::fills::fill_noise -> chacha20::backends::neon::rng_inner::<chacha20::R12, chacha20::variants::Legacy>",
+        2
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> ascii_renderer::cli_scenes::cli_party -> ascii_renderer::scene::fill_masked -> ascii_renderer::scene::render_fill -> ascii_renderer::fills::fill_tile_ex",
+        2
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> ascii_renderer::cli_scenes::cli_party",
+        1
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> ascii_renderer::cli_scenes::cli_party -> ascii_renderer::scene::fill_masked -> ascii_renderer::fills::draw_concentric",
+        1
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> ascii_renderer::cli_scenes::cli_party -> ascii_renderer::scene::fill_masked -> <alloc::vec::Vec<alloc::vec::Vec<ascii_renderer::types::Cell>> as alloc::vec::spec_from_iter_nested::SpecFromIterNested<alloc::vec::Vec<ascii_renderer::types::Cell>, core::iter::adapters::map::Map<core::ops::range::Range<usize>, ascii_renderer::scene::fill_masked::{closure#0}>>>::from_iter -> <core::iter::adapters::map::Map<core::ops::range::Range<usize>, ascii_renderer::scene::fill_masked::{closure#0}> as core::iter::traits::iterator::Iterator>::fold::<(), core::iter::traits::iterator::Iterator::for_each::call<alloc::vec::Vec<ascii_renderer::types::Cell>, <alloc::vec::Vec<alloc::vec::Vec<ascii_renderer::types::Cell>>>::extend_trusted<core::iter::adapters::map::Map<core::ops::range::Range<usize>, ascii_renderer::scene::fill_masked::{closure#0}>>::{closure#0}>::{closure#0}> -> _platform_memmove",
+        1
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> ascii_renderer::cli_scenes::cli_party -> ascii_renderer::scene::fill_masked -> ascii_renderer::scene::render_fill -> ascii_renderer::fills::fill_tile_ex -> ascii_renderer::scene::mask_intersect::<ascii_renderer::scene::mask_rect::{closure#0}, ascii_renderer::walker::party_walk::{closure#6}>::{closure#0} -> ascii_renderer::scene::mask_ellipse::{closure#0}",
+        1
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> ascii_renderer::cli_scenes::cli_party -> ascii_renderer::scene::fill_masked -> ascii_renderer::scene::mask_intersect::<ascii_renderer::scene::mask_trapezoid::{closure#0}, ascii_renderer::walker::party_walk::{closure#7}>::{closure#0} -> ascii_renderer::scene::mask_ellipse::{closure#0}",
+        1
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> ascii_renderer::cli_scenes::cli_party -> ascii_renderer::scene::fill_masked -> ascii_renderer::scene::mask_intersect::<ascii_renderer::scene::mask_diamond::{closure#0}, ascii_renderer::walker::party_walk::{closure#5}>::{closure#0} -> ascii_renderer::scene::mask_below_contour::{closure#0}",
+        1
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> ascii_renderer::cli_scenes::cli_party -> ascii_renderer::scene::fill_masked -> <alloc::vec::Vec<alloc::vec::Vec<ascii_renderer::types::Cell>> as alloc::vec::spec_from_iter_nested::SpecFromIterNested<alloc::vec::Vec<ascii_renderer::types::Cell>, core::iter::adapters::map::Map<core::ops::range::Range<usize>, ascii_renderer::scene::fill_masked::{closure#0}>>>::from_iter -> <core::iter::adapters::map::Map<core::ops::range::Range<usize>, ascii_renderer::scene::fill_masked::{closure#0}> as core::iter::traits::iterator::Iterator>::fold::<(), core::iter::traits::iterator::Iterator::for_each::call<alloc::vec::Vec<ascii_renderer::types::Cell>, <alloc::vec::Vec<alloc::vec::Vec<ascii_renderer::types::Cell>>>::extend_trusted<core::iter::adapters::map::Map<core::ops::range::Range<usize>, ascii_renderer::scene::fill_masked::{closure#0}>>::{closure#0}>::{closure#0}> -> szone_malloc_should_clear -> small_malloc_should_clear -> small_malloc_from_free_list -> small_free_list_remove_ptr",
+        1
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> ascii_renderer::cli_scenes::cli_party -> ascii_renderer::scene::fill_masked -> _szone_free",
+        1
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> ascii_renderer::cli_scenes::cli_party -> ascii_renderer::scene::fill_masked -> ascii_renderer::scene::render_fill -> ascii_renderer::fills::fill_tile_ex -> ascii_renderer::scene::mask_intersect::<ascii_renderer::scene::mask_diamond::{closure#0}, ascii_renderer::walker::party_walk::{closure#5}>::{closure#0}",
+        1
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> ascii_renderer::cli_scenes::cli_party -> ascii_renderer::scene::fill_masked -> ascii_renderer::scene::mask_intersect::<ascii_renderer::scene::mask_diamond::{closure#0}, ascii_renderer::walker::party_walk::{closure#5}>::{closure#0} -> ascii_renderer::scene::mask_rect::{closure#0}",
+        1
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> ascii_renderer::cli_scenes::cli_party -> ascii_renderer::scene::fill_masked -> ascii_renderer::scene::mask_intersect::<ascii_renderer::scene::mask_rect::{closure#0}, ascii_renderer::walker::party_walk::{closure#6}>::{closure#0}",
+        1
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> ascii_renderer::cli_scenes::cli_party -> ascii_renderer::scene::fill_masked -> ascii_renderer::scene::mask_intersect::<ascii_renderer::scene::mask_rect::{closure#0}, ascii_renderer::walker::party_walk::{closure#6}>::{closure#0} -> ascii_renderer::scene::mask_rect::{closure#0}",
+        1
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> ascii_renderer::cli_scenes::cli_party -> ascii_renderer::scene::fill_masked -> free_small -> small_free_list_add_ptr",
+        1
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> ascii_renderer::cli_scenes::cli_party -> ascii_renderer::walker::atmosphere::apply_atmosphere",
+        1
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> ascii_renderer::gridio::emit_grid -> unicode_width::tables::lookup_width",
+        1
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> <ascii_renderer::_0_profile::RenderTrace as core::ops::drop::Drop>::drop -> <ascii_renderer::_0_profile::FrameInputs>::to_json -> <alloc::collections::btree::map::BTreeMap<alloc::string::String, serde_json::value::Value>>::insert -> <alloc::collections::btree::map::entry::VacantEntry<alloc::string::String, serde_json::value::Value>>::insert_entry",
+        1
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> <ascii_renderer::_0_profile::RenderTrace as core::ops::drop::Drop>::drop -> ascii_renderer::_0_profile::append_ndjson -> <std::fs::OpenOptions>::_open -> <std::sys::fs::unix::File>::open_c -> open -> __open",
+        1
+      ]
+    ]
+  },
+  {
+    "pid": "72635",
+    "tid": "69089300",
+    "name": "ascii-renderer",
+    "main": true,
+    "sample_rows": 18,
+    "sample_weight": 218,
+    "inclusive": [
+      [
+        "ascii_renderer::main",
+        218
+      ],
+      [
+        "start",
+        218
+      ],
+      [
+        "std::rt::lang_start::<()>::{closure#0}",
+        218
+      ],
+      [
+        "std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>",
+        218
+      ],
+      [
+        "ascii_renderer::cli::run",
+        218
+      ],
+      [
+        "main",
+        218
+      ],
+      [
+        "ascii_renderer::cli::run_render",
+        218
+      ],
+      [
+        "std::rt::lang_start_internal",
+        218
+      ],
+      [
+        "ascii_renderer::gridio::emit_grid",
+        215
+      ],
+      [
+        "<alloc::io::buffered::bufwriter::BufWriter<std::io::stdio::StdoutRaw>>::write_all_cold",
+        214
+      ],
+      [
+        "write",
+        214
+      ],
+      [
+        "<std::io::stdio::StdoutLock as core::io::write::Write>::write_all",
+        214
+      ],
+      [
+        "<std::sys::stdio::unix::Stdout as core::io::write::Write>::write_all",
+        182
+      ],
+      [
+        "<alloc::io::buffered::bufwriter::BufWriter<std::io::stdio::StdoutRaw>>::flush_buf",
+        32
+      ],
+      [
+        "<ascii_renderer::modes::_50_gem_aetherium_2::GemAetherium2Mode as ascii_renderer::registry::Mode>::render",
+        3
+      ],
+      [
+        "ascii_renderer::_0_profile::measure_layer::<(), ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}>",
+        3
+      ],
+      [
+        "ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}",
+        3
+      ],
+      [
+        "ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#1}",
+        2
+      ],
+      [
+        "<ascii_renderer::modes::_50_gem_aetherium_2::NebulaRows>::prepare_y",
+        1
+      ],
+      [
+        "<rayon_core::latch::LockLatch>::wait_and_reset",
+        1
+      ],
+      [
+        "<std::thread::local::LocalKey<rayon_core::latch::LockLatch>>::with::<<rayon_core::registry::Registry>::in_worker_cold<rayon_core::join::join_context<rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#0}, rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#1}, (), ()>::{closure#0}, ((), ())>::{closure#0}, ((), ())>",
+        1
+      ],
+      [
+        "<<rayon::iter::len::MinLen<_> as rayon::iter::IndexedParallelIterator>::with_producer::Callback<rayon::iter::plumbing::bridge::Callback<rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>> as rayon::iter::plumbing::ProducerCallback<(usize, &mut alloc::vec::Vec<ascii_renderer::types::Cell>)>>::callback::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>",
+        1
+      ],
+      [
+        "__psynch_cvwait",
+        1
+      ],
+      [
+        "_pthread_cond_wait",
+        1
+      ],
+      [
+        "rayon_core::registry::in_worker::<rayon_core::join::join_context<rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#0}, rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#1}, (), ()>::{closure#0}, ((), ())>",
+        1
+      ],
+      [
+        "<rayon::iter::plumbing::bridge::Callback<rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>> as rayon::iter::plumbing::ProducerCallback<(usize, &mut alloc::vec::Vec<ascii_renderer::types::Cell>)>>::callback::<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>>",
+        1
+      ],
+      [
+        "ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}",
+        1
+      ],
+      [
+        "ascii_renderer::render::push_color",
+        1
+      ]
+    ],
+    "leaf": [
+      [
+        "write",
+        214
+      ],
+      [
+        "ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#1}",
+        1
+      ],
+      [
+        "<ascii_renderer::modes::_50_gem_aetherium_2::NebulaRows>::prepare_y",
+        1
+      ],
+      [
+        "__psynch_cvwait",
+        1
+      ],
+      [
+        "ascii_renderer::render::push_color",
+        1
+      ]
+    ],
+    "cpu_delta_at_sample_leaf_us": [
+      [
+        "ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#1}",
+        3066
+      ],
+      [
+        "write",
+        842
+      ],
+      [
+        "__psynch_cvwait",
+        485
+      ],
+      [
+        "<ascii_renderer::modes::_50_gem_aetherium_2::NebulaRows>::prepare_y",
+        229
+      ],
+      [
+        "ascii_renderer::render::push_color",
+        172
+      ]
+    ],
+    "paths": [
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> ascii_renderer::gridio::emit_grid -> <std::io::stdio::StdoutLock as core::io::write::Write>::write_all -> <alloc::io::buffered::bufwriter::BufWriter<std::io::stdio::StdoutRaw>>::write_all_cold -> <std::sys::stdio::unix::Stdout as core::io::write::Write>::write_all -> write",
+        182
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> ascii_renderer::gridio::emit_grid -> <std::io::stdio::StdoutLock as core::io::write::Write>::write_all -> <alloc::io::buffered::bufwriter::BufWriter<std::io::stdio::StdoutRaw>>::write_all_cold -> <alloc::io::buffered::bufwriter::BufWriter<std::io::stdio::StdoutRaw>>::flush_buf -> write",
+        32
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> <ascii_renderer::modes::_50_gem_aetherium_2::GemAetherium2Mode as ascii_renderer::registry::Mode>::render -> ascii_renderer::_0_profile::measure_layer::<(), ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}> -> ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0} -> ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#1}",
+        1
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> <ascii_renderer::modes::_50_gem_aetherium_2::GemAetherium2Mode as ascii_renderer::registry::Mode>::render -> ascii_renderer::_0_profile::measure_layer::<(), ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}> -> ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0} -> ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#1} -> <ascii_renderer::modes::_50_gem_aetherium_2::NebulaRows>::prepare_y",
+        1
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> <ascii_renderer::modes::_50_gem_aetherium_2::GemAetherium2Mode as ascii_renderer::registry::Mode>::render -> ascii_renderer::_0_profile::measure_layer::<(), ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}> -> ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0} -> ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2} -> <<rayon::iter::len::MinLen<_> as rayon::iter::IndexedParallelIterator>::with_producer::Callback<rayon::iter::plumbing::bridge::Callback<rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>> as rayon::iter::plumbing::ProducerCallback<(usize, &mut alloc::vec::Vec<ascii_renderer::types::Cell>)>>::callback::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>> -> <rayon::iter::plumbing::bridge::Callback<rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>> as rayon::iter::plumbing::ProducerCallback<(usize, &mut alloc::vec::Vec<ascii_renderer::types::Cell>)>>::callback::<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>> -> rayon_core::registry::in_worker::<rayon_core::join::join_context<rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#0}, rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#1}, (), ()>::{closure#0}, ((), ())> -> <std::thread::local::LocalKey<rayon_core::latch::LockLatch>>::with::<<rayon_core::registry::Registry>::in_worker_cold<rayon_core::join::join_context<rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#0}, rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#1}, (), ()>::{closure#0}, ((), ())>::{closure#0}, ((), ())> -> <rayon_core::latch::LockLatch>::wait_and_reset -> _pthread_cond_wait -> __psynch_cvwait",
+        1
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> ascii_renderer::gridio::emit_grid -> ascii_renderer::render::push_color",
+        1
+      ]
+    ]
+  },
+  {
+    "pid": "72635",
+    "tid": "69089301",
+    "name": "Thread <69089301>",
+    "main": false,
+    "sample_rows": 3,
+    "sample_weight": 216,
+    "inclusive": [
+      [
+        "<std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}",
+        216
+      ],
+      [
+        "<rayon_core::registry::ThreadBuilder>::run",
+        216
+      ],
+      [
+        "<std::sys::thread::unix::Thread>::new::thread_start",
+        216
+      ],
+      [
+        "_pthread_start",
+        216
+      ],
+      [
+        "<rayon_core::registry::WorkerThread>::wait_until_cold",
+        216
+      ],
+      [
+        "std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>",
+        216
+      ],
+      [
+        "<rayon_core::sleep::Sleep>::sleep::<<rayon_core::registry::WorkerThread>::wait_until_cold::{closure#0}>",
+        215
+      ],
+      [
+        "__psynch_cvwait",
+        215
+      ],
+      [
+        "_pthread_cond_wait",
+        215
+      ],
+      [
+        "<rayon_core::job::StackJob<rayon_core::latch::LatchRef<rayon_core::latch::LockLatch>, <rayon_core::registry::Registry>::in_worker_cold<rayon_core::join::join_context<rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#0}, rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#1}, (), ()>::{closure#0}, ((), ())>::{closure#0}::{closure#0}, ((), ())> as rayon_core::job::Job>::execute",
+        1
+      ],
+      [
+        "cthread_yield",
+        1
+      ],
+      [
+        "swtch_pri",
+        1
+      ],
+      [
+        "rayon_core::join::join_context::<rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#0}, rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#1}, (), ()>::{closure#0}",
+        1
+      ]
+    ],
+    "leaf": [
+      [
+        "__psynch_cvwait",
+        215
+      ],
+      [
+        "swtch_pri",
+        1
+      ]
+    ],
+    "cpu_delta_at_sample_leaf_us": [
+      [
+        "swtch_pri",
+        285
+      ],
+      [
+        "__psynch_cvwait",
+        121
+      ]
+    ],
+    "paths": [
+      [
+        "_pthread_start -> <std::sys::thread::unix::Thread>::new::thread_start -> <std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()> -> <rayon_core::registry::ThreadBuilder>::run -> <rayon_core::registry::WorkerThread>::wait_until_cold -> <rayon_core::sleep::Sleep>::sleep::<<rayon_core::registry::WorkerThread>::wait_until_cold::{closure#0}> -> _pthread_cond_wait -> __psynch_cvwait",
+        215
+      ],
+      [
+        "_pthread_start -> <std::sys::thread::unix::Thread>::new::thread_start -> <std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()> -> <rayon_core::registry::ThreadBuilder>::run -> <rayon_core::registry::WorkerThread>::wait_until_cold -> <rayon_core::job::StackJob<rayon_core::latch::LatchRef<rayon_core::latch::LockLatch>, <rayon_core::registry::Registry>::in_worker_cold<rayon_core::join::join_context<rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#0}, rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#1}, (), ()>::{closure#0}, ((), ())>::{closure#0}::{closure#0}, ((), ())> as rayon_core::job::Job>::execute -> rayon_core::join::join_context::<rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#0}, rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#1}, (), ()>::{closure#0} -> <rayon_core::registry::WorkerThread>::wait_until_cold -> cthread_yield -> swtch_pri",
+        1
+      ]
+    ]
+  },
+  {
+    "pid": "72635",
+    "tid": "69089302",
+    "name": "Thread <69089302>",
+    "main": false,
+    "sample_rows": 3,
+    "sample_weight": 216,
+    "inclusive": [
+      [
+        "<std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}",
+        216
+      ],
+      [
+        "<rayon_core::registry::ThreadBuilder>::run",
+        216
+      ],
+      [
+        "<std::sys::thread::unix::Thread>::new::thread_start",
+        216
+      ],
+      [
+        "_pthread_start",
+        216
+      ],
+      [
+        "<rayon_core::registry::WorkerThread>::wait_until_cold",
+        216
+      ],
+      [
+        "std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>",
+        216
+      ],
+      [
+        "<rayon_core::sleep::Sleep>::sleep::<<rayon_core::registry::WorkerThread>::wait_until_cold::{closure#0}>",
+        215
+      ],
+      [
+        "__psynch_cvwait",
+        215
+      ],
+      [
+        "_pthread_cond_wait",
+        215
+      ],
+      [
+        "cthread_yield",
+        1
+      ],
+      [
+        "swtch_pri",
+        1
+      ],
+      [
+        "rayon_core::join::join_context::<rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#0}, rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#1}, (), ()>::{closure#0}",
+        1
+      ],
+      [
+        "<rayon_core::job::StackJob<rayon_core::latch::SpinLatch, rayon_core::join::join_context::call_b<(), rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#1}>::{closure#0}, ()> as rayon_core::job::Job>::execute",
+        1
+      ],
+      [
+        "rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>",
+        1
+      ]
+    ],
+    "leaf": [
+      [
+        "__psynch_cvwait",
+        215
+      ],
+      [
+        "swtch_pri",
+        1
+      ]
+    ],
+    "cpu_delta_at_sample_leaf_us": [
+      [
+        "swtch_pri",
+        307
+      ],
+      [
+        "__psynch_cvwait",
+        106
+      ]
+    ],
+    "paths": [
+      [
+        "_pthread_start -> <std::sys::thread::unix::Thread>::new::thread_start -> <std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()> -> <rayon_core::registry::ThreadBuilder>::run -> <rayon_core::registry::WorkerThread>::wait_until_cold -> <rayon_core::sleep::Sleep>::sleep::<<rayon_core::registry::WorkerThread>::wait_until_cold::{closure#0}> -> _pthread_cond_wait -> __psynch_cvwait",
+        215
+      ],
+      [
+        "_pthread_start -> <std::sys::thread::unix::Thread>::new::thread_start -> <std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()> -> <rayon_core::registry::ThreadBuilder>::run -> <rayon_core::registry::WorkerThread>::wait_until_cold -> <rayon_core::job::StackJob<rayon_core::latch::SpinLatch, rayon_core::join::join_context::call_b<(), rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#1}>::{closure#0}, ()> as rayon_core::job::Job>::execute -> rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>> -> rayon_core::join::join_context::<rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#0}, rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#1}, (), ()>::{closure#0} -> rayon_core::join::join_context::<rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#0}, rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#1}, (), ()>::{closure#0} -> <rayon_core::registry::WorkerThread>::wait_until_cold -> cthread_yield -> swtch_pri",
+        1
+      ]
+    ]
+  },
+  {
+    "pid": "72635",
+    "tid": "69089303",
+    "name": "Thread <69089303>",
+    "main": false,
+    "sample_rows": 3,
+    "sample_weight": 216,
+    "inclusive": [
+      [
+        "<std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}",
+        216
+      ],
+      [
+        "<rayon_core::registry::ThreadBuilder>::run",
+        216
+      ],
+      [
+        "<std::sys::thread::unix::Thread>::new::thread_start",
+        216
+      ],
+      [
+        "_pthread_start",
+        216
+      ],
+      [
+        "<rayon_core::registry::WorkerThread>::wait_until_cold",
+        216
+      ],
+      [
+        "std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>",
+        216
+      ],
+      [
+        "<rayon_core::sleep::Sleep>::sleep::<<rayon_core::registry::WorkerThread>::wait_until_cold::{closure#0}>",
+        215
+      ],
+      [
+        "__psynch_cvwait",
+        215
+      ],
+      [
+        "_pthread_cond_wait",
+        215
+      ],
+      [
+        "cthread_yield",
+        1
+      ],
+      [
+        "swtch_pri",
+        1
+      ]
+    ],
+    "leaf": [
+      [
+        "__psynch_cvwait",
+        215
+      ],
+      [
+        "swtch_pri",
+        1
+      ]
+    ],
+    "cpu_delta_at_sample_leaf_us": [
+      [
+        "swtch_pri",
+        332
+      ],
+      [
+        "__psynch_cvwait",
+        72
+      ]
+    ],
+    "paths": [
+      [
+        "_pthread_start -> <std::sys::thread::unix::Thread>::new::thread_start -> <std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()> -> <rayon_core::registry::ThreadBuilder>::run -> <rayon_core::registry::WorkerThread>::wait_until_cold -> <rayon_core::sleep::Sleep>::sleep::<<rayon_core::registry::WorkerThread>::wait_until_cold::{closure#0}> -> _pthread_cond_wait -> __psynch_cvwait",
+        215
+      ],
+      [
+        "_pthread_start -> <std::sys::thread::unix::Thread>::new::thread_start -> <std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()> -> <rayon_core::registry::ThreadBuilder>::run -> <rayon_core::registry::WorkerThread>::wait_until_cold -> cthread_yield -> swtch_pri",
+        1
+      ]
+    ]
+  },
+  {
+    "pid": "72635",
+    "tid": "69089304",
+    "name": "Thread <69089304>",
+    "main": false,
+    "sample_rows": 3,
+    "sample_weight": 216,
+    "inclusive": [
+      [
+        "<std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}",
+        216
+      ],
+      [
+        "<rayon_core::registry::ThreadBuilder>::run",
+        216
+      ],
+      [
+        "<rayon_core::sleep::Sleep>::sleep::<<rayon_core::registry::WorkerThread>::wait_until_cold::{closure#0}>",
+        216
+      ],
+      [
+        "<std::sys::thread::unix::Thread>::new::thread_start",
+        216
+      ],
+      [
+        "_pthread_start",
+        216
+      ],
+      [
+        "__psynch_cvwait",
+        216
+      ],
+      [
+        "<rayon_core::registry::WorkerThread>::wait_until_cold",
+        216
+      ],
+      [
+        "_pthread_cond_wait",
+        216
+      ],
+      [
+        "std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>",
+        216
+      ]
+    ],
+    "leaf": [
+      [
+        "__psynch_cvwait",
+        216
+      ]
+    ],
+    "cpu_delta_at_sample_leaf_us": [
+      [
+        "__psynch_cvwait",
+        343
+      ]
+    ],
+    "paths": [
+      [
+        "_pthread_start -> <std::sys::thread::unix::Thread>::new::thread_start -> <std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()> -> <rayon_core::registry::ThreadBuilder>::run -> <rayon_core::registry::WorkerThread>::wait_until_cold -> <rayon_core::sleep::Sleep>::sleep::<<rayon_core::registry::WorkerThread>::wait_until_cold::{closure#0}> -> _pthread_cond_wait -> __psynch_cvwait",
+        216
+      ]
+    ]
+  },
+  {
+    "pid": "72635",
+    "tid": "69089305",
+    "name": "Thread <69089305>",
+    "main": false,
+    "sample_rows": 3,
+    "sample_weight": 216,
+    "inclusive": [
+      [
+        "<std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}",
+        216
+      ],
+      [
+        "<rayon_core::registry::ThreadBuilder>::run",
+        216
+      ],
+      [
+        "<rayon_core::sleep::Sleep>::sleep::<<rayon_core::registry::WorkerThread>::wait_until_cold::{closure#0}>",
+        216
+      ],
+      [
+        "<std::sys::thread::unix::Thread>::new::thread_start",
+        216
+      ],
+      [
+        "_pthread_start",
+        216
+      ],
+      [
+        "__psynch_cvwait",
+        216
+      ],
+      [
+        "<rayon_core::registry::WorkerThread>::wait_until_cold",
+        216
+      ],
+      [
+        "_pthread_cond_wait",
+        216
+      ],
+      [
+        "std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>",
+        216
+      ]
+    ],
+    "leaf": [
+      [
+        "__psynch_cvwait",
+        216
+      ]
+    ],
+    "cpu_delta_at_sample_leaf_us": [
+      [
+        "__psynch_cvwait",
+        353
+      ]
+    ],
+    "paths": [
+      [
+        "_pthread_start -> <std::sys::thread::unix::Thread>::new::thread_start -> <std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()> -> <rayon_core::registry::ThreadBuilder>::run -> <rayon_core::registry::WorkerThread>::wait_until_cold -> <rayon_core::sleep::Sleep>::sleep::<<rayon_core::registry::WorkerThread>::wait_until_cold::{closure#0}> -> _pthread_cond_wait -> __psynch_cvwait",
+        216
+      ]
+    ]
+  },
+  {
+    "pid": "72635",
+    "tid": "69089306",
+    "name": "Thread <69089306>",
+    "main": false,
+    "sample_rows": 2,
+    "sample_weight": 216,
+    "inclusive": [
+      [
+        "<std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}",
+        216
+      ],
+      [
+        "<rayon_core::registry::ThreadBuilder>::run",
+        216
+      ],
+      [
+        "<rayon_core::sleep::Sleep>::sleep::<<rayon_core::registry::WorkerThread>::wait_until_cold::{closure#0}>",
+        216
+      ],
+      [
+        "<std::sys::thread::unix::Thread>::new::thread_start",
+        216
+      ],
+      [
+        "_pthread_start",
+        216
+      ],
+      [
+        "__psynch_cvwait",
+        216
+      ],
+      [
+        "<rayon_core::registry::WorkerThread>::wait_until_cold",
+        216
+      ],
+      [
+        "_pthread_cond_wait",
+        216
+      ],
+      [
+        "std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>",
+        216
+      ]
+    ],
+    "leaf": [
+      [
+        "__psynch_cvwait",
+        216
+      ]
+    ],
+    "cpu_delta_at_sample_leaf_us": [
+      [
+        "__psynch_cvwait",
+        216
+      ]
+    ],
+    "paths": [
+      [
+        "_pthread_start -> <std::sys::thread::unix::Thread>::new::thread_start -> <std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()> -> <rayon_core::registry::ThreadBuilder>::run -> <rayon_core::registry::WorkerThread>::wait_until_cold -> <rayon_core::sleep::Sleep>::sleep::<<rayon_core::registry::WorkerThread>::wait_until_cold::{closure#0}> -> _pthread_cond_wait -> __psynch_cvwait",
+        216
+      ]
+    ]
+  },
+  {
+    "pid": "72635",
+    "tid": "69089307",
+    "name": "Thread <69089307>",
+    "main": false,
+    "sample_rows": 3,
+    "sample_weight": 216,
+    "inclusive": [
+      [
+        "<std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}",
+        216
+      ],
+      [
+        "<rayon_core::registry::ThreadBuilder>::run",
+        216
+      ],
+      [
+        "<std::sys::thread::unix::Thread>::new::thread_start",
+        216
+      ],
+      [
+        "_pthread_start",
+        216
+      ],
+      [
+        "<rayon_core::registry::WorkerThread>::wait_until_cold",
+        216
+      ],
+      [
+        "std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>",
+        216
+      ],
+      [
+        "<rayon_core::sleep::Sleep>::sleep::<<rayon_core::registry::WorkerThread>::wait_until_cold::{closure#0}>",
+        215
+      ],
+      [
+        "__psynch_cvwait",
+        215
+      ],
+      [
+        "_pthread_cond_wait",
+        215
+      ],
+      [
+        "cthread_yield",
+        1
+      ],
+      [
+        "swtch_pri",
+        1
+      ]
+    ],
+    "leaf": [
+      [
+        "__psynch_cvwait",
+        215
+      ],
+      [
+        "swtch_pri",
+        1
+      ]
+    ],
+    "cpu_delta_at_sample_leaf_us": [
+      [
+        "swtch_pri",
+        372
+      ],
+      [
+        "__psynch_cvwait",
+        24
+      ]
+    ],
+    "paths": [
+      [
+        "_pthread_start -> <std::sys::thread::unix::Thread>::new::thread_start -> <std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()> -> <rayon_core::registry::ThreadBuilder>::run -> <rayon_core::registry::WorkerThread>::wait_until_cold -> <rayon_core::sleep::Sleep>::sleep::<<rayon_core::registry::WorkerThread>::wait_until_cold::{closure#0}> -> _pthread_cond_wait -> __psynch_cvwait",
+        215
+      ],
+      [
+        "_pthread_start -> <std::sys::thread::unix::Thread>::new::thread_start -> <std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()> -> <rayon_core::registry::ThreadBuilder>::run -> <rayon_core::registry::WorkerThread>::wait_until_cold -> cthread_yield -> swtch_pri",
+        1
+      ]
+    ]
+  },
+  {
+    "pid": "72635",
+    "tid": "69089308",
+    "name": "Thread <69089308>",
+    "main": false,
+    "sample_rows": 2,
+    "sample_weight": 216,
+    "inclusive": [
+      [
+        "<std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}",
+        216
+      ],
+      [
+        "<rayon_core::registry::ThreadBuilder>::run",
+        216
+      ],
+      [
+        "<rayon_core::sleep::Sleep>::sleep::<<rayon_core::registry::WorkerThread>::wait_until_cold::{closure#0}>",
+        216
+      ],
+      [
+        "<std::sys::thread::unix::Thread>::new::thread_start",
+        216
+      ],
+      [
+        "_pthread_start",
+        216
+      ],
+      [
+        "__psynch_cvwait",
+        216
+      ],
+      [
+        "<rayon_core::registry::WorkerThread>::wait_until_cold",
+        216
+      ],
+      [
+        "_pthread_cond_wait",
+        216
+      ],
+      [
+        "std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>",
+        216
+      ]
+    ],
+    "leaf": [
+      [
+        "__psynch_cvwait",
+        216
+      ]
+    ],
+    "cpu_delta_at_sample_leaf_us": [
+      [
+        "__psynch_cvwait",
+        327
+      ]
+    ],
+    "paths": [
+      [
+        "_pthread_start -> <std::sys::thread::unix::Thread>::new::thread_start -> <std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()> -> <rayon_core::registry::ThreadBuilder>::run -> <rayon_core::registry::WorkerThread>::wait_until_cold -> <rayon_core::sleep::Sleep>::sleep::<<rayon_core::registry::WorkerThread>::wait_until_cold::{closure#0}> -> _pthread_cond_wait -> __psynch_cvwait",
+        216
+      ]
+    ]
+  },
+  {
+    "pid": "72635",
+    "tid": "69089309",
+    "name": "Thread <69089309>",
+    "main": false,
+    "sample_rows": 2,
+    "sample_weight": 216,
+    "inclusive": [
+      [
+        "<std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}",
+        216
+      ],
+      [
+        "<rayon_core::registry::ThreadBuilder>::run",
+        216
+      ],
+      [
+        "<rayon_core::sleep::Sleep>::sleep::<<rayon_core::registry::WorkerThread>::wait_until_cold::{closure#0}>",
+        216
+      ],
+      [
+        "<std::sys::thread::unix::Thread>::new::thread_start",
+        216
+      ],
+      [
+        "_pthread_start",
+        216
+      ],
+      [
+        "__psynch_cvwait",
+        216
+      ],
+      [
+        "<rayon_core::registry::WorkerThread>::wait_until_cold",
+        216
+      ],
+      [
+        "_pthread_cond_wait",
+        216
+      ],
+      [
+        "std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>",
+        216
+      ]
+    ],
+    "leaf": [
+      [
+        "__psynch_cvwait",
+        216
+      ]
+    ],
+    "cpu_delta_at_sample_leaf_us": [
+      [
+        "__psynch_cvwait",
+        323
+      ]
+    ],
+    "paths": [
+      [
+        "_pthread_start -> <std::sys::thread::unix::Thread>::new::thread_start -> <std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()> -> <rayon_core::registry::ThreadBuilder>::run -> <rayon_core::registry::WorkerThread>::wait_until_cold -> <rayon_core::sleep::Sleep>::sleep::<<rayon_core::registry::WorkerThread>::wait_until_cold::{closure#0}> -> _pthread_cond_wait -> __psynch_cvwait",
+        216
+      ]
+    ]
+  },
+  {
+    "pid": "72635",
+    "tid": "69089310",
+    "name": "Thread <69089310>",
+    "main": false,
+    "sample_rows": 2,
+    "sample_weight": 216,
+    "inclusive": [
+      [
+        "<std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}",
+        216
+      ],
+      [
+        "<rayon_core::registry::ThreadBuilder>::run",
+        216
+      ],
+      [
+        "<rayon_core::sleep::Sleep>::sleep::<<rayon_core::registry::WorkerThread>::wait_until_cold::{closure#0}>",
+        216
+      ],
+      [
+        "<std::sys::thread::unix::Thread>::new::thread_start",
+        216
+      ],
+      [
+        "_pthread_start",
+        216
+      ],
+      [
+        "__psynch_cvwait",
+        216
+      ],
+      [
+        "<rayon_core::registry::WorkerThread>::wait_until_cold",
+        216
+      ],
+      [
+        "_pthread_cond_wait",
+        216
+      ],
+      [
+        "std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>",
+        216
+      ]
+    ],
+    "leaf": [
+      [
+        "__psynch_cvwait",
+        216
+      ]
+    ],
+    "cpu_delta_at_sample_leaf_us": [
+      [
+        "__psynch_cvwait",
+        135
+      ]
+    ],
+    "paths": [
+      [
+        "_pthread_start -> <std::sys::thread::unix::Thread>::new::thread_start -> <std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()> -> <rayon_core::registry::ThreadBuilder>::run -> <rayon_core::registry::WorkerThread>::wait_until_cold -> <rayon_core::sleep::Sleep>::sleep::<<rayon_core::registry::WorkerThread>::wait_until_cold::{closure#0}> -> _pthread_cond_wait -> __psynch_cvwait",
+        216
+      ]
+    ]
+  },
+  {
+    "pid": "72635",
+    "tid": "69089311",
+    "name": "Thread <69089311>",
+    "main": false,
+    "sample_rows": 2,
+    "sample_weight": 216,
+    "inclusive": [
+      [
+        "<std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}",
+        216
+      ],
+      [
+        "<rayon_core::registry::ThreadBuilder>::run",
+        216
+      ],
+      [
+        "<rayon_core::sleep::Sleep>::sleep::<<rayon_core::registry::WorkerThread>::wait_until_cold::{closure#0}>",
+        216
+      ],
+      [
+        "<std::sys::thread::unix::Thread>::new::thread_start",
+        216
+      ],
+      [
+        "_pthread_start",
+        216
+      ],
+      [
+        "__psynch_cvwait",
+        216
+      ],
+      [
+        "<rayon_core::registry::WorkerThread>::wait_until_cold",
+        216
+      ],
+      [
+        "_pthread_cond_wait",
+        216
+      ],
+      [
+        "std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>",
+        216
+      ]
+    ],
+    "leaf": [
+      [
+        "__psynch_cvwait",
+        216
+      ]
+    ],
+    "cpu_delta_at_sample_leaf_us": [
+      [
+        "__psynch_cvwait",
+        169
+      ]
+    ],
+    "paths": [
+      [
+        "_pthread_start -> <std::sys::thread::unix::Thread>::new::thread_start -> <std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()> -> <rayon_core::registry::ThreadBuilder>::run -> <rayon_core::registry::WorkerThread>::wait_until_cold -> <rayon_core::sleep::Sleep>::sleep::<<rayon_core::registry::WorkerThread>::wait_until_cold::{closure#0}> -> _pthread_cond_wait -> __psynch_cvwait",
+        216
+      ]
+    ]
+  },
+  {
+    "pid": "72635",
+    "tid": "69089312",
+    "name": "Thread <69089312>",
+    "main": false,
+    "sample_rows": 2,
+    "sample_weight": 216,
+    "inclusive": [
+      [
+        "<std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}",
+        216
+      ],
+      [
+        "<rayon_core::registry::ThreadBuilder>::run",
+        216
+      ],
+      [
+        "<rayon_core::sleep::Sleep>::sleep::<<rayon_core::registry::WorkerThread>::wait_until_cold::{closure#0}>",
+        216
+      ],
+      [
+        "<std::sys::thread::unix::Thread>::new::thread_start",
+        216
+      ],
+      [
+        "_pthread_start",
+        216
+      ],
+      [
+        "__psynch_cvwait",
+        216
+      ],
+      [
+        "<rayon_core::registry::WorkerThread>::wait_until_cold",
+        216
+      ],
+      [
+        "_pthread_cond_wait",
+        216
+      ],
+      [
+        "std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>",
+        216
+      ]
+    ],
+    "leaf": [
+      [
+        "__psynch_cvwait",
+        216
+      ]
+    ],
+    "cpu_delta_at_sample_leaf_us": [
+      [
+        "__psynch_cvwait",
+        61
+      ]
+    ],
+    "paths": [
+      [
+        "_pthread_start -> <std::sys::thread::unix::Thread>::new::thread_start -> <std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()> -> <rayon_core::registry::ThreadBuilder>::run -> <rayon_core::registry::WorkerThread>::wait_until_cold -> <rayon_core::sleep::Sleep>::sleep::<<rayon_core::registry::WorkerThread>::wait_until_cold::{closure#0}> -> _pthread_cond_wait -> __psynch_cvwait",
+        216
+      ]
+    ]
+  },
+  {
+    "pid": "72645",
+    "tid": "69089373",
+    "name": "ascii-renderer",
+    "main": true,
+    "sample_rows": 343,
+    "sample_weight": 497,
+    "inclusive": [
+      [
+        "ascii_renderer::main",
+        497
+      ],
+      [
+        "ascii_renderer::morph::morph_worker_session",
+        497
+      ],
+      [
+        "start",
+        497
+      ],
+      [
+        "std::rt::lang_start::<()>::{closure#0}",
+        497
+      ],
+      [
+        "std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>",
+        497
+      ],
+      [
+        "ascii_renderer::cli::run",
+        497
+      ],
+      [
+        "main",
+        497
+      ],
+      [
+        "ascii_renderer::cli::run_render",
+        497
+      ],
+      [
+        "std::rt::lang_start_internal",
+        497
+      ],
+      [
+        "ascii_renderer::_1_playback::write_frame::<std::fs::File>",
+        327
+      ],
+      [
+        "poll",
+        327
+      ],
+      [
+        "<std::sync::mpmc::Receiver<crossterm::event::Event>>::recv_timeout",
+        139
+      ],
+      [
+        "<std::sync::mpmc::array::Channel<crossterm::event::Event>>::recv",
+        138
+      ],
+      [
+        "<std::thread::thread::Thread>::park_timeout",
+        138
+      ],
+      [
+        "_dispatch_semaphore_wait_slow",
+        138
+      ],
+      [
+        "semaphore_timedwait_trap",
+        138
+      ],
+      [
+        "_dispatch_sema4_timedwait",
+        138
+      ],
+      [
+        "<std::sync::mpmc::array::Channel<crossterm::event::Event>>::recv::{closure#1}",
+        138
+      ],
+      [
+        "<ascii_renderer::modes::_50_gem_aetherium_2::GemAetherium2Mode as ascii_renderer::registry::Mode>::render",
+        8
+      ],
+      [
+        "ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}",
+        7
+      ],
+      [
+        "ascii_renderer::gridio::encoded_span_cost",
+        5
+      ],
+      [
+        "ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#1}",
+        4
+      ],
+      [
+        "<rayon_core::latch::LockLatch>::wait_and_reset",
+        3
+      ],
+      [
+        "<std::thread::local::LocalKey<rayon_core::latch::LockLatch>>::with::<<rayon_core::registry::Registry>::in_worker_cold<rayon_core::join::join_context<rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#0}, rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#1}, (), ()>::{closure#0}, ((), ())>::{closure#0}, ((), ())>",
+        3
+      ],
+      [
+        "<<rayon::iter::len::MinLen<_> as rayon::iter::IndexedParallelIterator>::with_producer::Callback<rayon::iter::plumbing::bridge::Callback<rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>> as rayon::iter::plumbing::ProducerCallback<(usize, &mut alloc::vec::Vec<ascii_renderer::types::Cell>)>>::callback::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>",
+        3
+      ],
+      [
+        "__psynch_cvwait",
+        3
+      ],
+      [
+        "_pthread_cond_wait",
+        3
+      ],
+      [
+        "rayon_core::registry::in_worker::<rayon_core::join::join_context<rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#0}, rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#1}, (), ()>::{closure#0}, ((), ())>",
+        3
+      ],
+      [
+        "<rayon::iter::plumbing::bridge::Callback<rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>> as rayon::iter::plumbing::ProducerCallback<(usize, &mut alloc::vec::Vec<ascii_renderer::types::Cell>)>>::callback::<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>>",
+        3
+      ],
+      [
+        "ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}",
+        3
+      ],
+      [
+        "ascii_renderer::gridio::encode_span",
+        3
+      ],
+      [
+        "_platform_memmove",
+        2
+      ],
+      [
+        "ascii_renderer::gridio::encode_full_grid",
+        1
+      ],
+      [
+        "ascii_renderer::render::push_color",
+        1
+      ],
+      [
+        "small_malloc_from_free_list",
+        1
+      ],
+      [
+        "<alloc::raw_vec::RawVecInner>::finish_grow",
+        1
+      ],
+      [
+        "szone_malloc_should_clear",
+        1
+      ],
+      [
+        "<ascii_renderer::_0_profile::FrameProfiler>::record_with_context::<ascii_renderer::morph::morph_worker_session::{closure#18}>",
+        1
+      ],
+      [
+        "ascii_renderer::_0_profile::append_ndjson",
+        1
+      ],
+      [
+        "_realloc",
+        1
+      ],
+      [
+        "small_malloc_should_clear",
+        1
+      ],
+      [
+        "<alloc::raw_vec::RawVecInner<_>>::reserve::do_reserve_and_handle::<alloc::alloc::Global>",
+        1
+      ],
+      [
+        "serde_json::ser::format_escaped_str::<&mut alloc::vec::Vec<u8>, serde_json::ser::CompactFormatter>",
+        1
+      ],
+      [
+        "_malloc_zone_realloc",
+        1
+      ],
+      [
+        "<serde_json::ser::Compound<&mut alloc::vec::Vec<u8>, serde_json::ser::CompactFormatter> as serde_core::ser::SerializeMap>::serialize_entry::<alloc::string::String, serde_json::value::Value>",
+        1
+      ],
+      [
+        "szone_realloc",
+        1
+      ],
+      [
+        "unicode_width::tables::lookup_width",
+        1
+      ],
+      [
+        "[1, 4672728]",
+        1
+      ],
+      [
+        "ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#4}",
+        1
+      ],
+      [
+        "ascii_renderer::gridio::colors_after_span",
+        1
+      ]
+    ],
+    "leaf": [
+      [
+        "poll",
+        327
+      ],
+      [
+        "semaphore_timedwait_trap",
+        138
+      ],
+      [
+        "ascii_renderer::morph::morph_worker_session",
+        11
+      ],
+      [
+        "ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#1}",
+        4
+      ],
+      [
+        "ascii_renderer::gridio::encoded_span_cost",
+        4
+      ],
+      [
+        "__psynch_cvwait",
+        3
+      ],
+      [
+        "_platform_memmove",
+        2
+      ],
+      [
+        "ascii_renderer::gridio::encode_span",
+        2
+      ],
+      [
+        "ascii_renderer::render::push_color",
+        1
+      ],
+      [
+        "<std::sync::mpmc::Receiver<crossterm::event::Event>>::recv_timeout",
+        1
+      ],
+      [
+        "small_malloc_from_free_list",
+        1
+      ],
+      [
+        "unicode_width::tables::lookup_width",
+        1
+      ],
+      [
+        "[1, 4672728]",
+        1
+      ],
+      [
+        "ascii_renderer::gridio::colors_after_span",
+        1
+      ]
+    ],
+    "cpu_delta_at_sample_leaf_us": [
+      [
+        "ascii_renderer::morph::morph_worker_session",
+        8751
+      ],
+      [
+        "poll",
+        5834
+      ],
+      [
+        "_platform_memmove",
+        2970
+      ],
+      [
+        "ascii_renderer::gridio::encoded_span_cost",
+        2510
+      ],
+      [
+        "ascii_renderer::gridio::encode_span",
+        2504
+      ],
+      [
+        "__psynch_cvwait",
+        1652
+      ],
+      [
+        "ascii_renderer::render::push_color",
+        845
+      ],
+      [
+        "[1, 4672728]",
+        568
+      ],
+      [
+        "ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#1}",
+        553
+      ],
+      [
+        "semaphore_timedwait_trap",
+        525
+      ],
+      [
+        "unicode_width::tables::lookup_width",
+        309
+      ],
+      [
+        "<std::sync::mpmc::Receiver<crossterm::event::Event>>::recv_timeout",
+        205
+      ],
+      [
+        "small_malloc_from_free_list",
+        69
+      ],
+      [
+        "ascii_renderer::gridio::colors_after_span",
+        67
+      ]
+    ],
+    "paths": [
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> ascii_renderer::morph::morph_worker_session -> ascii_renderer::_1_playback::write_frame::<std::fs::File> -> poll",
+        327
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> ascii_renderer::morph::morph_worker_session -> <std::sync::mpmc::Receiver<crossterm::event::Event>>::recv_timeout -> <std::sync::mpmc::array::Channel<crossterm::event::Event>>::recv -> <std::sync::mpmc::array::Channel<crossterm::event::Event>>::recv::{closure#1} -> <std::thread::thread::Thread>::park_timeout -> _dispatch_semaphore_wait_slow -> _dispatch_sema4_timedwait -> semaphore_timedwait_trap",
+        138
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> ascii_renderer::morph::morph_worker_session",
+        11
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> ascii_renderer::morph::morph_worker_session -> <ascii_renderer::modes::_50_gem_aetherium_2::GemAetherium2Mode as ascii_renderer::registry::Mode>::render -> ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0} -> ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#1}",
+        4
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> ascii_renderer::morph::morph_worker_session -> ascii_renderer::gridio::encoded_span_cost",
+        4
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> ascii_renderer::morph::morph_worker_session -> <ascii_renderer::modes::_50_gem_aetherium_2::GemAetherium2Mode as ascii_renderer::registry::Mode>::render -> ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0} -> ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2} -> <<rayon::iter::len::MinLen<_> as rayon::iter::IndexedParallelIterator>::with_producer::Callback<rayon::iter::plumbing::bridge::Callback<rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>> as rayon::iter::plumbing::ProducerCallback<(usize, &mut alloc::vec::Vec<ascii_renderer::types::Cell>)>>::callback::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>> -> <rayon::iter::plumbing::bridge::Callback<rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>> as rayon::iter::plumbing::ProducerCallback<(usize, &mut alloc::vec::Vec<ascii_renderer::types::Cell>)>>::callback::<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>> -> rayon_core::registry::in_worker::<rayon_core::join::join_context<rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#0}, rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#1}, (), ()>::{closure#0}, ((), ())> -> <std::thread::local::LocalKey<rayon_core::latch::LockLatch>>::with::<<rayon_core::registry::Registry>::in_worker_cold<rayon_core::join::join_context<rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#0}, rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#1}, (), ()>::{closure#0}, ((), ())>::{closure#0}, ((), ())> -> <rayon_core::latch::LockLatch>::wait_and_reset -> _pthread_cond_wait -> __psynch_cvwait",
+        3
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> ascii_renderer::morph::morph_worker_session -> _platform_memmove",
+        2
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> ascii_renderer::morph::morph_worker_session -> ascii_renderer::gridio::encode_span",
+        2
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> ascii_renderer::morph::morph_worker_session -> ascii_renderer::gridio::encode_full_grid -> ascii_renderer::gridio::encode_span -> ascii_renderer::render::push_color",
+        1
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> ascii_renderer::morph::morph_worker_session -> <std::sync::mpmc::Receiver<crossterm::event::Event>>::recv_timeout",
+        1
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> ascii_renderer::morph::morph_worker_session -> <ascii_renderer::_0_profile::FrameProfiler>::record_with_context::<ascii_renderer::morph::morph_worker_session::{closure#18}> -> ascii_renderer::_0_profile::append_ndjson -> <serde_json::ser::Compound<&mut alloc::vec::Vec<u8>, serde_json::ser::CompactFormatter> as serde_core::ser::SerializeMap>::serialize_entry::<alloc::string::String, serde_json::value::Value> -> serde_json::ser::format_escaped_str::<&mut alloc::vec::Vec<u8>, serde_json::ser::CompactFormatter> -> <alloc::raw_vec::RawVecInner<_>>::reserve::do_reserve_and_handle::<alloc::alloc::Global> -> <alloc::raw_vec::RawVecInner>::finish_grow -> _realloc -> _malloc_zone_realloc -> szone_realloc -> szone_malloc_should_clear -> small_malloc_should_clear -> small_malloc_from_free_list",
+        1
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> ascii_renderer::morph::morph_worker_session -> ascii_renderer::gridio::encoded_span_cost -> unicode_width::tables::lookup_width",
+        1
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> ascii_renderer::morph::morph_worker_session -> <ascii_renderer::modes::_50_gem_aetherium_2::GemAetherium2Mode as ascii_renderer::registry::Mode>::render -> ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#4} -> [1, 4672728]",
+        1
+      ],
+      [
+        "start -> main -> std::rt::lang_start_internal -> std::rt::lang_start::<()>::{closure#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> -> ascii_renderer::main -> ascii_renderer::cli::run -> ascii_renderer::cli::run_render -> ascii_renderer::morph::morph_worker_session -> ascii_renderer::gridio::colors_after_span",
+        1
+      ]
+    ]
+  },
+  {
+    "pid": "72645",
+    "tid": "69089374",
+    "name": "Thread <69089374>",
+    "main": false,
+    "sample_rows": 2,
+    "sample_weight": 497,
+    "inclusive": [
+      [
+        "alloc::io::buf_read::default_read_until::<alloc::io::buffered::bufreader::BufReader<std::io::stdio::StdinRaw>>",
+        497
+      ],
+      [
+        "std::sys::backtrace::__rust_begin_short_backtrace::<ascii_renderer::_1_playback::worker::{closure#0}, ()>",
+        497
+      ],
+      [
+        "<std::sys::thread::unix::Thread>::new::thread_start",
+        497
+      ],
+      [
+        "_pthread_start",
+        497
+      ],
+      [
+        "<std::io::stdio::StdinLock as alloc::io::buf_read::BufRead>::read_line",
+        497
+      ],
+      [
+        "<std::thread::lifecycle::spawn_unchecked<ascii_renderer::_1_playback::worker::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}",
+        497
+      ],
+      [
+        "read",
+        497
+      ],
+      [
+        "<alloc::io::util::Lines<std::io::stdio::StdinLock> as core::iter::traits::iterator::Iterator>::next",
+        497
+      ]
+    ],
+    "leaf": [
+      [
+        "read",
+        497
+      ]
+    ],
+    "cpu_delta_at_sample_leaf_us": [
+      [
+        "read",
+        39
+      ]
+    ],
+    "paths": [
+      [
+        "_pthread_start -> <std::sys::thread::unix::Thread>::new::thread_start -> <std::thread::lifecycle::spawn_unchecked<ascii_renderer::_1_playback::worker::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<ascii_renderer::_1_playback::worker::{closure#0}, ()> -> <alloc::io::util::Lines<std::io::stdio::StdinLock> as core::iter::traits::iterator::Iterator>::next -> <std::io::stdio::StdinLock as alloc::io::buf_read::BufRead>::read_line -> alloc::io::buf_read::default_read_until::<alloc::io::buffered::bufreader::BufReader<std::io::stdio::StdinRaw>> -> read",
+        497
+      ]
+    ]
+  },
+  {
+    "pid": "72645",
+    "tid": "69089375",
+    "name": "Thread <69089375>",
+    "main": false,
+    "sample_rows": 19,
+    "sample_weight": 496,
+    "inclusive": [
+      [
+        "<std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}",
+        496
+      ],
+      [
+        "<rayon_core::registry::ThreadBuilder>::run",
+        496
+      ],
+      [
+        "<std::sys::thread::unix::Thread>::new::thread_start",
+        496
+      ],
+      [
+        "_pthread_start",
+        496
+      ],
+      [
+        "<rayon_core::registry::WorkerThread>::wait_until_cold",
+        496
+      ],
+      [
+        "std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>",
+        496
+      ],
+      [
+        "<rayon_core::sleep::Sleep>::sleep::<<rayon_core::registry::WorkerThread>::wait_until_cold::{closure#0}>",
+        493
+      ],
+      [
+        "__psynch_cvwait",
+        493
+      ],
+      [
+        "_pthread_cond_wait",
+        493
+      ],
+      [
+        "rayon_core::join::join_context::<rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#0}, rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#1}, (), ()>::{closure#0}",
+        3
+      ],
+      [
+        "rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>",
+        2
+      ],
+      [
+        "<&ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0} as core::ops::function::FnMut<((usize, &mut alloc::vec::Vec<ascii_renderer::types::Cell>),)>>::call_mut",
+        2
+      ],
+      [
+        "<rayon_core::job::StackJob<rayon_core::latch::LatchRef<rayon_core::latch::LockLatch>, <rayon_core::registry::Registry>::in_worker_cold<rayon_core::join::join_context<rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#0}, rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#1}, (), ()>::{closure#0}, ((), ())>::{closure#0}::{closure#0}, ((), ())> as rayon_core::job::Job>::execute",
+        2
+      ],
+      [
+        "<rayon_core::job::StackJob<rayon_core::latch::SpinLatch, rayon_core::join::join_context::call_b<(), rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#1}>::{closure#0}, ()> as rayon_core::job::Job>::execute",
+        1
+      ],
+      [
+        "atan2f",
+        1
+      ]
+    ],
+    "leaf": [
+      [
+        "__psynch_cvwait",
+        493
+      ],
+      [
+        "atan2f",
+        1
+      ],
+      [
+        "rayon_core::join::join_context::<rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#0}, rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#1}, (), ()>::{closure#0}",
+        1
+      ],
+      [
+        "<&ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0} as core::ops::function::FnMut<((usize, &mut alloc::vec::Vec<ascii_renderer::types::Cell>),)>>::call_mut",
+        1
+      ]
+    ],
+    "cpu_delta_at_sample_leaf_us": [
+      [
+        "__psynch_cvwait",
+        2251
+      ],
+      [
+        "rayon_core::join::join_context::<rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#0}, rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#1}, (), ()>::{closure#0}",
+        237
+      ],
+      [
+        "atan2f",
+        56
+      ],
+      [
+        "<&ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0} as core::ops::function::FnMut<((usize, &mut alloc::vec::Vec<ascii_renderer::types::Cell>),)>>::call_mut",
+        42
+      ]
+    ],
+    "paths": [
+      [
+        "_pthread_start -> <std::sys::thread::unix::Thread>::new::thread_start -> <std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()> -> <rayon_core::registry::ThreadBuilder>::run -> <rayon_core::registry::WorkerThread>::wait_until_cold -> <rayon_core::sleep::Sleep>::sleep::<<rayon_core::registry::WorkerThread>::wait_until_cold::{closure#0}> -> _pthread_cond_wait -> __psynch_cvwait",
+        493
+      ],
+      [
+        "_pthread_start -> <std::sys::thread::unix::Thread>::new::thread_start -> <std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()> -> <rayon_core::registry::ThreadBuilder>::run -> <rayon_core::registry::WorkerThread>::wait_until_cold -> <rayon_core::job::StackJob<rayon_core::latch::SpinLatch, rayon_core::join::join_context::call_b<(), rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#1}>::{closure#0}, ()> as rayon_core::job::Job>::execute -> rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>> -> rayon_core::join::join_context::<rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#0}, rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#1}, (), ()>::{closure#0} -> <&ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0} as core::ops::function::FnMut<((usize, &mut alloc::vec::Vec<ascii_renderer::types::Cell>),)>>::call_mut -> atan2f",
+        1
+      ],
+      [
+        "_pthread_start -> <std::sys::thread::unix::Thread>::new::thread_start -> <std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()> -> <rayon_core::registry::ThreadBuilder>::run -> <rayon_core::registry::WorkerThread>::wait_until_cold -> <rayon_core::job::StackJob<rayon_core::latch::LatchRef<rayon_core::latch::LockLatch>, <rayon_core::registry::Registry>::in_worker_cold<rayon_core::join::join_context<rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#0}, rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#1}, (), ()>::{closure#0}, ((), ())>::{closure#0}::{closure#0}, ((), ())> as rayon_core::job::Job>::execute -> rayon_core::join::join_context::<rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#0}, rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#1}, (), ()>::{closure#0}",
+        1
+      ],
+      [
+        "_pthread_start -> <std::sys::thread::unix::Thread>::new::thread_start -> <std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()> -> <rayon_core::registry::ThreadBuilder>::run -> <rayon_core::registry::WorkerThread>::wait_until_cold -> <rayon_core::job::StackJob<rayon_core::latch::LatchRef<rayon_core::latch::LockLatch>, <rayon_core::registry::Registry>::in_worker_cold<rayon_core::join::join_context<rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#0}, rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#1}, (), ()>::{closure#0}, ((), ())>::{closure#0}::{closure#0}, ((), ())> as rayon_core::job::Job>::execute -> rayon_core::join::join_context::<rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#0}, rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#1}, (), ()>::{closure#0} -> rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>> -> rayon_core::join::join_context::<rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#0}, rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#1}, (), ()>::{closure#0} -> rayon_core::join::join_context::<rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#0}, rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#1}, (), ()>::{closure#0} -> <&ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0} as core::ops::function::FnMut<((usize, &mut alloc::vec::Vec<ascii_renderer::types::Cell>),)>>::call_mut",
+        1
+      ]
+    ]
+  },
+  {
+    "pid": "72645",
+    "tid": "69089376",
+    "name": "Thread <69089376>",
+    "main": false,
+    "sample_rows": 19,
+    "sample_weight": 496,
+    "inclusive": [
+      [
+        "<std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}",
+        496
+      ],
+      [
+        "<rayon_core::registry::ThreadBuilder>::run",
+        496
+      ],
+      [
+        "<std::sys::thread::unix::Thread>::new::thread_start",
+        496
+      ],
+      [
+        "_pthread_start",
+        496
+      ],
+      [
+        "<rayon_core::registry::WorkerThread>::wait_until_cold",
+        496
+      ],
+      [
+        "std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>",
+        496
+      ],
+      [
+        "<rayon_core::sleep::Sleep>::sleep::<<rayon_core::registry::WorkerThread>::wait_until_cold::{closure#0}>",
+        493
+      ],
+      [
+        "__psynch_cvwait",
+        493
+      ],
+      [
+        "_pthread_cond_wait",
+        493
+      ],
+      [
+        "cthread_yield",
+        3
+      ],
+      [
+        "swtch_pri",
+        3
+      ],
+      [
+        "rayon_core::join::join_context::<rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#0}, rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#1}, (), ()>::{closure#0}",
+        1
+      ],
+      [
+        "<rayon_core::job::StackJob<rayon_core::latch::SpinLatch, rayon_core::join::join_context::call_b<(), rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#1}>::{closure#0}, ()> as rayon_core::job::Job>::execute",
+        1
+      ],
+      [
+        "rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>",
+        1
+      ]
+    ],
+    "leaf": [
+      [
+        "__psynch_cvwait",
+        493
+      ],
+      [
+        "swtch_pri",
+        3
+      ]
+    ],
+    "cpu_delta_at_sample_leaf_us": [
+      [
+        "__psynch_cvwait",
+        1728
+      ],
+      [
+        "swtch_pri",
+        642
+      ]
+    ],
+    "paths": [
+      [
+        "_pthread_start -> <std::sys::thread::unix::Thread>::new::thread_start -> <std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()> -> <rayon_core::registry::ThreadBuilder>::run -> <rayon_core::registry::WorkerThread>::wait_until_cold -> <rayon_core::sleep::Sleep>::sleep::<<rayon_core::registry::WorkerThread>::wait_until_cold::{closure#0}> -> _pthread_cond_wait -> __psynch_cvwait",
+        493
+      ],
+      [
+        "_pthread_start -> <std::sys::thread::unix::Thread>::new::thread_start -> <std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()> -> <rayon_core::registry::ThreadBuilder>::run -> <rayon_core::registry::WorkerThread>::wait_until_cold -> cthread_yield -> swtch_pri",
+        2
+      ],
+      [
+        "_pthread_start -> <std::sys::thread::unix::Thread>::new::thread_start -> <std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()> -> <rayon_core::registry::ThreadBuilder>::run -> <rayon_core::registry::WorkerThread>::wait_until_cold -> <rayon_core::job::StackJob<rayon_core::latch::SpinLatch, rayon_core::join::join_context::call_b<(), rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#1}>::{closure#0}, ()> as rayon_core::job::Job>::execute -> rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>> -> rayon_core::join::join_context::<rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#0}, rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#1}, (), ()>::{closure#0} -> <rayon_core::registry::WorkerThread>::wait_until_cold -> cthread_yield -> swtch_pri",
+        1
+      ]
+    ]
+  },
+  {
+    "pid": "72645",
+    "tid": "69089377",
+    "name": "Thread <69089377>",
+    "main": false,
+    "sample_rows": 19,
+    "sample_weight": 496,
+    "inclusive": [
+      [
+        "<std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}",
+        496
+      ],
+      [
+        "<rayon_core::registry::ThreadBuilder>::run",
+        496
+      ],
+      [
+        "<std::sys::thread::unix::Thread>::new::thread_start",
+        496
+      ],
+      [
+        "_pthread_start",
+        496
+      ],
+      [
+        "<rayon_core::registry::WorkerThread>::wait_until_cold",
+        496
+      ],
+      [
+        "std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>",
+        496
+      ],
+      [
+        "<rayon_core::sleep::Sleep>::sleep::<<rayon_core::registry::WorkerThread>::wait_until_cold::{closure#0}>",
+        493
+      ],
+      [
+        "__psynch_cvwait",
+        493
+      ],
+      [
+        "_pthread_cond_wait",
+        493
+      ],
+      [
+        "cthread_yield",
+        2
+      ],
+      [
+        "swtch_pri",
+        2
+      ],
+      [
+        "<rayon_core::job::StackJob<rayon_core::latch::SpinLatch, rayon_core::join::join_context::call_b<(), rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#1}>::{closure#0}, ()> as rayon_core::job::Job>::execute",
+        1
+      ],
+      [
+        "rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>",
+        1
+      ],
+      [
+        "sinf",
+        1
+      ],
+      [
+        "<&ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0} as core::ops::function::FnMut<((usize, &mut alloc::vec::Vec<ascii_renderer::types::Cell>),)>>::call_mut",
+        1
+      ]
+    ],
+    "leaf": [
+      [
+        "__psynch_cvwait",
+        493
+      ],
+      [
+        "swtch_pri",
+        2
+      ],
+      [
+        "sinf",
+        1
+      ]
+    ],
+    "cpu_delta_at_sample_leaf_us": [
+      [
+        "__psynch_cvwait",
+        1799
+      ],
+      [
+        "swtch_pri",
+        573
+      ],
+      [
+        "sinf",
+        212
+      ]
+    ],
+    "paths": [
+      [
+        "_pthread_start -> <std::sys::thread::unix::Thread>::new::thread_start -> <std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()> -> <rayon_core::registry::ThreadBuilder>::run -> <rayon_core::registry::WorkerThread>::wait_until_cold -> <rayon_core::sleep::Sleep>::sleep::<<rayon_core::registry::WorkerThread>::wait_until_cold::{closure#0}> -> _pthread_cond_wait -> __psynch_cvwait",
+        493
+      ],
+      [
+        "_pthread_start -> <std::sys::thread::unix::Thread>::new::thread_start -> <std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()> -> <rayon_core::registry::ThreadBuilder>::run -> <rayon_core::registry::WorkerThread>::wait_until_cold -> cthread_yield -> swtch_pri",
+        2
+      ],
+      [
+        "_pthread_start -> <std::sys::thread::unix::Thread>::new::thread_start -> <std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()> -> <rayon_core::registry::ThreadBuilder>::run -> <rayon_core::registry::WorkerThread>::wait_until_cold -> <rayon_core::job::StackJob<rayon_core::latch::SpinLatch, rayon_core::join::join_context::call_b<(), rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#1}>::{closure#0}, ()> as rayon_core::job::Job>::execute -> rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>> -> <&ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0} as core::ops::function::FnMut<((usize, &mut alloc::vec::Vec<ascii_renderer::types::Cell>),)>>::call_mut -> <&ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0} as core::ops::function::FnMut<((usize, &mut alloc::vec::Vec<ascii_renderer::types::Cell>),)>>::call_mut -> sinf",
+        1
+      ]
+    ]
+  },
+  {
+    "pid": "72645",
+    "tid": "69089378",
+    "name": "Thread <69089378>",
+    "main": false,
+    "sample_rows": 18,
+    "sample_weight": 496,
+    "inclusive": [
+      [
+        "<std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}",
+        496
+      ],
+      [
+        "<rayon_core::registry::ThreadBuilder>::run",
+        496
+      ],
+      [
+        "<rayon_core::sleep::Sleep>::sleep::<<rayon_core::registry::WorkerThread>::wait_until_cold::{closure#0}>",
+        496
+      ],
+      [
+        "<std::sys::thread::unix::Thread>::new::thread_start",
+        496
+      ],
+      [
+        "_pthread_start",
+        496
+      ],
+      [
+        "__psynch_cvwait",
+        496
+      ],
+      [
+        "<rayon_core::registry::WorkerThread>::wait_until_cold",
+        496
+      ],
+      [
+        "_pthread_cond_wait",
+        496
+      ],
+      [
+        "std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>",
+        496
+      ]
+    ],
+    "leaf": [
+      [
+        "__psynch_cvwait",
+        496
+      ]
+    ],
+    "cpu_delta_at_sample_leaf_us": [
+      [
+        "__psynch_cvwait",
+        2299
+      ]
+    ],
+    "paths": [
+      [
+        "_pthread_start -> <std::sys::thread::unix::Thread>::new::thread_start -> <std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()> -> <rayon_core::registry::ThreadBuilder>::run -> <rayon_core::registry::WorkerThread>::wait_until_cold -> <rayon_core::sleep::Sleep>::sleep::<<rayon_core::registry::WorkerThread>::wait_until_cold::{closure#0}> -> _pthread_cond_wait -> __psynch_cvwait",
+        496
+      ]
+    ]
+  },
+  {
+    "pid": "72645",
+    "tid": "69089379",
+    "name": "Thread <69089379>",
+    "main": false,
+    "sample_rows": 19,
+    "sample_weight": 496,
+    "inclusive": [
+      [
+        "<std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}",
+        496
+      ],
+      [
+        "<rayon_core::registry::ThreadBuilder>::run",
+        496
+      ],
+      [
+        "<std::sys::thread::unix::Thread>::new::thread_start",
+        496
+      ],
+      [
+        "_pthread_start",
+        496
+      ],
+      [
+        "<rayon_core::registry::WorkerThread>::wait_until_cold",
+        496
+      ],
+      [
+        "std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>",
+        496
+      ],
+      [
+        "<rayon_core::sleep::Sleep>::sleep::<<rayon_core::registry::WorkerThread>::wait_until_cold::{closure#0}>",
+        494
+      ],
+      [
+        "__psynch_cvwait",
+        494
+      ],
+      [
+        "_pthread_cond_wait",
+        494
+      ],
+      [
+        "cthread_yield",
+        1
+      ],
+      [
+        "swtch_pri",
+        1
+      ],
+      [
+        "rayon_core::join::join_context::<rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#0}, rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#1}, (), ()>::{closure#0}",
+        1
+      ],
+      [
+        "<rayon_core::job::StackJob<rayon_core::latch::SpinLatch, rayon_core::join::join_context::call_b<(), rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#1}>::{closure#0}, ()> as rayon_core::job::Job>::execute",
+        1
+      ],
+      [
+        "rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>",
+        1
+      ],
+      [
+        "<&ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0} as core::ops::function::FnMut<((usize, &mut alloc::vec::Vec<ascii_renderer::types::Cell>),)>>::call_mut",
+        1
+      ]
+    ],
+    "leaf": [
+      [
+        "__psynch_cvwait",
+        494
+      ],
+      [
+        "swtch_pri",
+        1
+      ],
+      [
+        "<&ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0} as core::ops::function::FnMut<((usize, &mut alloc::vec::Vec<ascii_renderer::types::Cell>),)>>::call_mut",
+        1
+      ]
+    ],
+    "cpu_delta_at_sample_leaf_us": [
+      [
+        "__psynch_cvwait",
+        1876
+      ],
+      [
+        "swtch_pri",
+        187
+      ],
+      [
+        "<&ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0} as core::ops::function::FnMut<((usize, &mut alloc::vec::Vec<ascii_renderer::types::Cell>),)>>::call_mut",
+        8
+      ]
+    ],
+    "paths": [
+      [
+        "_pthread_start -> <std::sys::thread::unix::Thread>::new::thread_start -> <std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()> -> <rayon_core::registry::ThreadBuilder>::run -> <rayon_core::registry::WorkerThread>::wait_until_cold -> <rayon_core::sleep::Sleep>::sleep::<<rayon_core::registry::WorkerThread>::wait_until_cold::{closure#0}> -> _pthread_cond_wait -> __psynch_cvwait",
+        494
+      ],
+      [
+        "_pthread_start -> <std::sys::thread::unix::Thread>::new::thread_start -> <std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()> -> <rayon_core::registry::ThreadBuilder>::run -> <rayon_core::registry::WorkerThread>::wait_until_cold -> cthread_yield -> swtch_pri",
+        1
+      ],
+      [
+        "_pthread_start -> <std::sys::thread::unix::Thread>::new::thread_start -> <std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()> -> <rayon_core::registry::ThreadBuilder>::run -> <rayon_core::registry::WorkerThread>::wait_until_cold -> <rayon_core::job::StackJob<rayon_core::latch::SpinLatch, rayon_core::join::join_context::call_b<(), rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#1}>::{closure#0}, ()> as rayon_core::job::Job>::execute -> rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>> -> rayon_core::join::join_context::<rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#0}, rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#1}, (), ()>::{closure#0} -> <&ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0} as core::ops::function::FnMut<((usize, &mut alloc::vec::Vec<ascii_renderer::types::Cell>),)>>::call_mut",
+        1
+      ]
+    ]
+  },
+  {
+    "pid": "72645",
+    "tid": "69089380",
+    "name": "Thread <69089380>",
+    "main": false,
+    "sample_rows": 19,
+    "sample_weight": 496,
+    "inclusive": [
+      [
+        "<std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}",
+        496
+      ],
+      [
+        "<rayon_core::registry::ThreadBuilder>::run",
+        496
+      ],
+      [
+        "<std::sys::thread::unix::Thread>::new::thread_start",
+        496
+      ],
+      [
+        "_pthread_start",
+        496
+      ],
+      [
+        "<rayon_core::registry::WorkerThread>::wait_until_cold",
+        496
+      ],
+      [
+        "std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>",
+        496
+      ],
+      [
+        "<rayon_core::sleep::Sleep>::sleep::<<rayon_core::registry::WorkerThread>::wait_until_cold::{closure#0}>",
+        493
+      ],
+      [
+        "__psynch_cvwait",
+        493
+      ],
+      [
+        "_pthread_cond_wait",
+        493
+      ],
+      [
+        "cthread_yield",
+        2
+      ],
+      [
+        "swtch_pri",
+        2
+      ],
+      [
+        "<rayon_core::sleep::Sleep>::wake_specific_thread",
+        1
+      ],
+      [
+        "rayon_core::join::join_context::<rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#0}, rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#1}, (), ()>::{closure#0}",
+        1
+      ],
+      [
+        "<rayon_core::job::StackJob<rayon_core::latch::SpinLatch, rayon_core::join::join_context::call_b<(), rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#1}>::{closure#0}, ()> as rayon_core::job::Job>::execute",
+        1
+      ],
+      [
+        "<rayon_core::sleep::Sleep>::wake_any_threads",
+        1
+      ],
+      [
+        "rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>",
+        1
+      ],
+      [
+        "pthread_cond_signal",
+        1
+      ],
+      [
+        "__psynch_cvsignal",
+        1
+      ]
+    ],
+    "leaf": [
+      [
+        "__psynch_cvwait",
+        493
+      ],
+      [
+        "swtch_pri",
+        2
+      ],
+      [
+        "__psynch_cvsignal",
+        1
+      ]
+    ],
+    "cpu_delta_at_sample_leaf_us": [
+      [
+        "__psynch_cvwait",
+        1516
+      ],
+      [
+        "swtch_pri",
+        328
+      ],
+      [
+        "__psynch_cvsignal",
+        218
+      ]
+    ],
+    "paths": [
+      [
+        "_pthread_start -> <std::sys::thread::unix::Thread>::new::thread_start -> <std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()> -> <rayon_core::registry::ThreadBuilder>::run -> <rayon_core::registry::WorkerThread>::wait_until_cold -> <rayon_core::sleep::Sleep>::sleep::<<rayon_core::registry::WorkerThread>::wait_until_cold::{closure#0}> -> _pthread_cond_wait -> __psynch_cvwait",
+        493
+      ],
+      [
+        "_pthread_start -> <std::sys::thread::unix::Thread>::new::thread_start -> <std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()> -> <rayon_core::registry::ThreadBuilder>::run -> <rayon_core::registry::WorkerThread>::wait_until_cold -> cthread_yield -> swtch_pri",
+        2
+      ],
+      [
+        "_pthread_start -> <std::sys::thread::unix::Thread>::new::thread_start -> <std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()> -> <rayon_core::registry::ThreadBuilder>::run -> <rayon_core::registry::WorkerThread>::wait_until_cold -> <rayon_core::job::StackJob<rayon_core::latch::SpinLatch, rayon_core::join::join_context::call_b<(), rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#1}>::{closure#0}, ()> as rayon_core::job::Job>::execute -> rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>> -> rayon_core::join::join_context::<rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#0}, rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#1}, (), ()>::{closure#0} -> <rayon_core::registry::WorkerThread>::wait_until_cold -> <rayon_core::sleep::Sleep>::wake_any_threads -> <rayon_core::sleep::Sleep>::wake_specific_thread -> pthread_cond_signal -> __psynch_cvsignal",
+        1
+      ]
+    ]
+  },
+  {
+    "pid": "72645",
+    "tid": "69089381",
+    "name": "Thread <69089381>",
+    "main": false,
+    "sample_rows": 19,
+    "sample_weight": 496,
+    "inclusive": [
+      [
+        "<std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}",
+        496
+      ],
+      [
+        "<rayon_core::registry::ThreadBuilder>::run",
+        496
+      ],
+      [
+        "<std::sys::thread::unix::Thread>::new::thread_start",
+        496
+      ],
+      [
+        "_pthread_start",
+        496
+      ],
+      [
+        "<rayon_core::registry::WorkerThread>::wait_until_cold",
+        496
+      ],
+      [
+        "std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>",
+        496
+      ],
+      [
+        "<rayon_core::sleep::Sleep>::sleep::<<rayon_core::registry::WorkerThread>::wait_until_cold::{closure#0}>",
+        493
+      ],
+      [
+        "__psynch_cvwait",
+        493
+      ],
+      [
+        "_pthread_cond_wait",
+        493
+      ],
+      [
+        "cthread_yield",
+        3
+      ],
+      [
+        "swtch_pri",
+        3
+      ]
+    ],
+    "leaf": [
+      [
+        "__psynch_cvwait",
+        493
+      ],
+      [
+        "swtch_pri",
+        3
+      ]
+    ],
+    "cpu_delta_at_sample_leaf_us": [
+      [
+        "__psynch_cvwait",
+        961
+      ],
+      [
+        "swtch_pri",
+        549
+      ]
+    ],
+    "paths": [
+      [
+        "_pthread_start -> <std::sys::thread::unix::Thread>::new::thread_start -> <std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()> -> <rayon_core::registry::ThreadBuilder>::run -> <rayon_core::registry::WorkerThread>::wait_until_cold -> <rayon_core::sleep::Sleep>::sleep::<<rayon_core::registry::WorkerThread>::wait_until_cold::{closure#0}> -> _pthread_cond_wait -> __psynch_cvwait",
+        493
+      ],
+      [
+        "_pthread_start -> <std::sys::thread::unix::Thread>::new::thread_start -> <std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()> -> <rayon_core::registry::ThreadBuilder>::run -> <rayon_core::registry::WorkerThread>::wait_until_cold -> cthread_yield -> swtch_pri",
+        3
+      ]
+    ]
+  },
+  {
+    "pid": "72645",
+    "tid": "69089382",
+    "name": "Thread <69089382>",
+    "main": false,
+    "sample_rows": 18,
+    "sample_weight": 496,
+    "inclusive": [
+      [
+        "<std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}",
+        496
+      ],
+      [
+        "<rayon_core::registry::ThreadBuilder>::run",
+        496
+      ],
+      [
+        "<std::sys::thread::unix::Thread>::new::thread_start",
+        496
+      ],
+      [
+        "_pthread_start",
+        496
+      ],
+      [
+        "<rayon_core::registry::WorkerThread>::wait_until_cold",
+        496
+      ],
+      [
+        "std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>",
+        496
+      ],
+      [
+        "<rayon_core::sleep::Sleep>::sleep::<<rayon_core::registry::WorkerThread>::wait_until_cold::{closure#0}>",
+        494
+      ],
+      [
+        "__psynch_cvwait",
+        494
+      ],
+      [
+        "_pthread_cond_wait",
+        494
+      ],
+      [
+        "cthread_yield",
+        2
+      ],
+      [
+        "swtch_pri",
+        2
+      ]
+    ],
+    "leaf": [
+      [
+        "__psynch_cvwait",
+        494
+      ],
+      [
+        "swtch_pri",
+        2
+      ]
+    ],
+    "cpu_delta_at_sample_leaf_us": [
+      [
+        "__psynch_cvwait",
+        1277
+      ],
+      [
+        "swtch_pri",
+        224
+      ]
+    ],
+    "paths": [
+      [
+        "_pthread_start -> <std::sys::thread::unix::Thread>::new::thread_start -> <std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()> -> <rayon_core::registry::ThreadBuilder>::run -> <rayon_core::registry::WorkerThread>::wait_until_cold -> <rayon_core::sleep::Sleep>::sleep::<<rayon_core::registry::WorkerThread>::wait_until_cold::{closure#0}> -> _pthread_cond_wait -> __psynch_cvwait",
+        494
+      ],
+      [
+        "_pthread_start -> <std::sys::thread::unix::Thread>::new::thread_start -> <std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()> -> <rayon_core::registry::ThreadBuilder>::run -> <rayon_core::registry::WorkerThread>::wait_until_cold -> cthread_yield -> swtch_pri",
+        2
+      ]
+    ]
+  },
+  {
+    "pid": "72645",
+    "tid": "69089383",
+    "name": "Thread <69089383>",
+    "main": false,
+    "sample_rows": 18,
+    "sample_weight": 496,
+    "inclusive": [
+      [
+        "<std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}",
+        496
+      ],
+      [
+        "<rayon_core::registry::ThreadBuilder>::run",
+        496
+      ],
+      [
+        "<std::sys::thread::unix::Thread>::new::thread_start",
+        496
+      ],
+      [
+        "_pthread_start",
+        496
+      ],
+      [
+        "<rayon_core::registry::WorkerThread>::wait_until_cold",
+        496
+      ],
+      [
+        "std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>",
+        496
+      ],
+      [
+        "<rayon_core::sleep::Sleep>::sleep::<<rayon_core::registry::WorkerThread>::wait_until_cold::{closure#0}>",
+        495
+      ],
+      [
+        "__psynch_cvwait",
+        495
+      ],
+      [
+        "_pthread_cond_wait",
+        495
+      ],
+      [
+        "rayon_core::join::join_context::<rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#0}, rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#1}, (), ()>::{closure#0}",
+        1
+      ],
+      [
+        "<rayon_core::job::StackJob<rayon_core::latch::SpinLatch, rayon_core::join::join_context::call_b<(), rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#1}>::{closure#0}, ()> as rayon_core::job::Job>::execute",
+        1
+      ],
+      [
+        "rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>",
+        1
+      ],
+      [
+        "cthread_yield",
+        1
+      ],
+      [
+        "swtch_pri",
+        1
+      ]
+    ],
+    "leaf": [
+      [
+        "__psynch_cvwait",
+        495
+      ],
+      [
+        "swtch_pri",
+        1
+      ]
+    ],
+    "cpu_delta_at_sample_leaf_us": [
+      [
+        "__psynch_cvwait",
+        1444
+      ],
+      [
+        "swtch_pri",
+        5
+      ]
+    ],
+    "paths": [
+      [
+        "_pthread_start -> <std::sys::thread::unix::Thread>::new::thread_start -> <std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()> -> <rayon_core::registry::ThreadBuilder>::run -> <rayon_core::registry::WorkerThread>::wait_until_cold -> <rayon_core::sleep::Sleep>::sleep::<<rayon_core::registry::WorkerThread>::wait_until_cold::{closure#0}> -> _pthread_cond_wait -> __psynch_cvwait",
+        494
+      ],
+      [
+        "_pthread_start -> <std::sys::thread::unix::Thread>::new::thread_start -> <std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()> -> <rayon_core::registry::ThreadBuilder>::run -> <rayon_core::registry::WorkerThread>::wait_until_cold -> <rayon_core::job::StackJob<rayon_core::latch::SpinLatch, rayon_core::join::join_context::call_b<(), rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#1}>::{closure#0}, ()> as rayon_core::job::Job>::execute -> rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>> -> rayon_core::join::join_context::<rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#0}, rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#1}, (), ()>::{closure#0} -> rayon_core::join::join_context::<rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#0}, rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#1}, (), ()>::{closure#0} -> <rayon_core::registry::WorkerThread>::wait_until_cold -> <rayon_core::sleep::Sleep>::sleep::<<rayon_core::registry::WorkerThread>::wait_until_cold::{closure#0}> -> _pthread_cond_wait -> __psynch_cvwait",
+        1
+      ],
+      [
+        "_pthread_start -> <std::sys::thread::unix::Thread>::new::thread_start -> <std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()> -> <rayon_core::registry::ThreadBuilder>::run -> <rayon_core::registry::WorkerThread>::wait_until_cold -> cthread_yield -> swtch_pri",
+        1
+      ]
+    ]
+  },
+  {
+    "pid": "72645",
+    "tid": "69089384",
+    "name": "Thread <69089384>",
+    "main": false,
+    "sample_rows": 18,
+    "sample_weight": 496,
+    "inclusive": [
+      [
+        "<std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}",
+        496
+      ],
+      [
+        "<rayon_core::registry::ThreadBuilder>::run",
+        496
+      ],
+      [
+        "<std::sys::thread::unix::Thread>::new::thread_start",
+        496
+      ],
+      [
+        "_pthread_start",
+        496
+      ],
+      [
+        "<rayon_core::registry::WorkerThread>::wait_until_cold",
+        496
+      ],
+      [
+        "std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>",
+        496
+      ],
+      [
+        "<rayon_core::sleep::Sleep>::sleep::<<rayon_core::registry::WorkerThread>::wait_until_cold::{closure#0}>",
+        495
+      ],
+      [
+        "__psynch_cvwait",
+        495
+      ],
+      [
+        "_pthread_cond_wait",
+        495
+      ],
+      [
+        "<rayon_core::job::StackJob<rayon_core::latch::LatchRef<rayon_core::latch::LockLatch>, <rayon_core::registry::Registry>::in_worker_cold<rayon_core::join::join_context<rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#0}, rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#1}, (), ()>::{closure#0}, ((), ())>::{closure#0}::{closure#0}, ((), ())> as rayon_core::job::Job>::execute",
+        1
+      ],
+      [
+        "rayon_core::join::join_context::<rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#0}, rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#1}, (), ()>::{closure#0}",
+        1
+      ],
+      [
+        "cthread_yield",
+        1
+      ],
+      [
+        "swtch_pri",
+        1
+      ]
+    ],
+    "leaf": [
+      [
+        "__psynch_cvwait",
+        495
+      ],
+      [
+        "swtch_pri",
+        1
+      ]
+    ],
+    "cpu_delta_at_sample_leaf_us": [
+      [
+        "__psynch_cvwait",
+        1546
+      ],
+      [
+        "swtch_pri",
+        5
+      ]
+    ],
+    "paths": [
+      [
+        "_pthread_start -> <std::sys::thread::unix::Thread>::new::thread_start -> <std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()> -> <rayon_core::registry::ThreadBuilder>::run -> <rayon_core::registry::WorkerThread>::wait_until_cold -> <rayon_core::sleep::Sleep>::sleep::<<rayon_core::registry::WorkerThread>::wait_until_cold::{closure#0}> -> _pthread_cond_wait -> __psynch_cvwait",
+        494
+      ],
+      [
+        "_pthread_start -> <std::sys::thread::unix::Thread>::new::thread_start -> <std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()> -> <rayon_core::registry::ThreadBuilder>::run -> <rayon_core::registry::WorkerThread>::wait_until_cold -> <rayon_core::job::StackJob<rayon_core::latch::LatchRef<rayon_core::latch::LockLatch>, <rayon_core::registry::Registry>::in_worker_cold<rayon_core::join::join_context<rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#0}, rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#1}, (), ()>::{closure#0}, ((), ())>::{closure#0}::{closure#0}, ((), ())> as rayon_core::job::Job>::execute -> rayon_core::join::join_context::<rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#0}, rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::len::MinLenProducer<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<alloc::vec::Vec<ascii_renderer::types::Cell>>>>, rayon::iter::for_each::ForEachConsumer<ascii_renderer::modes::_50_gem_aetherium_2::draw_gem_aetherium_2::{closure#0}::{closure#2}::{closure#0}>>::{closure#1}, (), ()>::{closure#0} -> <rayon_core::registry::WorkerThread>::wait_until_cold -> <rayon_core::sleep::Sleep>::sleep::<<rayon_core::registry::WorkerThread>::wait_until_cold::{closure#0}> -> _pthread_cond_wait -> __psynch_cvwait",
+        1
+      ],
+      [
+        "_pthread_start -> <std::sys::thread::unix::Thread>::new::thread_start -> <std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()> -> <rayon_core::registry::ThreadBuilder>::run -> <rayon_core::registry::WorkerThread>::wait_until_cold -> cthread_yield -> swtch_pri",
+        1
+      ]
+    ]
+  },
+  {
+    "pid": "72645",
+    "tid": "69089385",
+    "name": "Thread <69089385>",
+    "main": false,
+    "sample_rows": 17,
+    "sample_weight": 496,
+    "inclusive": [
+      [
+        "<std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}",
+        496
+      ],
+      [
+        "<rayon_core::registry::ThreadBuilder>::run",
+        496
+      ],
+      [
+        "<std::sys::thread::unix::Thread>::new::thread_start",
+        496
+      ],
+      [
+        "_pthread_start",
+        496
+      ],
+      [
+        "<rayon_core::registry::WorkerThread>::wait_until_cold",
+        496
+      ],
+      [
+        "std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>",
+        496
+      ],
+      [
+        "<rayon_core::sleep::Sleep>::sleep::<<rayon_core::registry::WorkerThread>::wait_until_cold::{closure#0}>",
+        495
+      ],
+      [
+        "__psynch_cvwait",
+        495
+      ],
+      [
+        "_pthread_cond_wait",
+        495
+      ],
+      [
+        "cthread_yield",
+        1
+      ],
+      [
+        "swtch_pri",
+        1
+      ]
+    ],
+    "leaf": [
+      [
+        "__psynch_cvwait",
+        495
+      ],
+      [
+        "swtch_pri",
+        1
+      ]
+    ],
+    "cpu_delta_at_sample_leaf_us": [
+      [
+        "__psynch_cvwait",
+        1152
+      ],
+      [
+        "swtch_pri",
+        3
+      ]
+    ],
+    "paths": [
+      [
+        "_pthread_start -> <std::sys::thread::unix::Thread>::new::thread_start -> <std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()> -> <rayon_core::registry::ThreadBuilder>::run -> <rayon_core::registry::WorkerThread>::wait_until_cold -> <rayon_core::sleep::Sleep>::sleep::<<rayon_core::registry::WorkerThread>::wait_until_cold::{closure#0}> -> _pthread_cond_wait -> __psynch_cvwait",
+        495
+      ],
+      [
+        "_pthread_start -> <std::sys::thread::unix::Thread>::new::thread_start -> <std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()> -> <rayon_core::registry::ThreadBuilder>::run -> <rayon_core::registry::WorkerThread>::wait_until_cold -> cthread_yield -> swtch_pri",
+        1
+      ]
+    ]
+  },
+  {
+    "pid": "72645",
+    "tid": "69089386",
+    "name": "Thread <69089386>",
+    "main": false,
+    "sample_rows": 17,
+    "sample_weight": 496,
+    "inclusive": [
+      [
+        "<std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}",
+        496
+      ],
+      [
+        "<rayon_core::registry::ThreadBuilder>::run",
+        496
+      ],
+      [
+        "<std::sys::thread::unix::Thread>::new::thread_start",
+        496
+      ],
+      [
+        "_pthread_start",
+        496
+      ],
+      [
+        "<rayon_core::registry::WorkerThread>::wait_until_cold",
+        496
+      ],
+      [
+        "std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>",
+        496
+      ],
+      [
+        "<rayon_core::sleep::Sleep>::sleep::<<rayon_core::registry::WorkerThread>::wait_until_cold::{closure#0}>",
+        495
+      ],
+      [
+        "__psynch_cvwait",
+        495
+      ],
+      [
+        "_pthread_cond_wait",
+        495
+      ],
+      [
+        "cthread_yield",
+        1
+      ],
+      [
+        "swtch_pri",
+        1
+      ]
+    ],
+    "leaf": [
+      [
+        "__psynch_cvwait",
+        495
+      ],
+      [
+        "swtch_pri",
+        1
+      ]
+    ],
+    "cpu_delta_at_sample_leaf_us": [
+      [
+        "__psynch_cvwait",
+        1642
+      ],
+      [
+        "swtch_pri",
+        15
+      ]
+    ],
+    "paths": [
+      [
+        "_pthread_start -> <std::sys::thread::unix::Thread>::new::thread_start -> <std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()> -> <rayon_core::registry::ThreadBuilder>::run -> <rayon_core::registry::WorkerThread>::wait_until_cold -> <rayon_core::sleep::Sleep>::sleep::<<rayon_core::registry::WorkerThread>::wait_until_cold::{closure#0}> -> _pthread_cond_wait -> __psynch_cvwait",
+        495
+      ],
+      [
+        "_pthread_start -> <std::sys::thread::unix::Thread>::new::thread_start -> <std::thread::lifecycle::spawn_unchecked<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0} -> std::sys::backtrace::__rust_begin_short_backtrace::<<rayon_core::registry::DefaultSpawn as rayon_core::registry::ThreadSpawn>::spawn::{closure#0}, ()> -> <rayon_core::registry::ThreadBuilder>::run -> <rayon_core::registry::WorkerThread>::wait_until_cold -> cthread_yield -> swtch_pri",
+        1
+      ]
+    ]
+  }
+]
