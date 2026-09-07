@@ -63,6 +63,17 @@ fn registry_max_inputs_and_recorded_frames_replay_exactly() {
     assert_eq!(events[0]["args"], json!(["9"]));
     assert_eq!(events[0]["knobs"]["RINGS"], 9.0);
     assert_eq!(events[0]["palette"], palette);
+    // The parent continues logging relay/cleanup events after the last frame.
+    use std::io::Write;
+    writeln!(
+        std::fs::OpenOptions::new()
+            .append(true)
+            .open(&trace)
+            .unwrap(),
+        "{}",
+        json!({"kind": "playback_relay", "pid": 17})
+    )
+    .unwrap();
     for (line, expected) in [
         (Some("1"), &originals[0]),
         (Some("2"), &originals[1]),

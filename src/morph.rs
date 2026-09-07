@@ -1049,7 +1049,7 @@ mod iterate_frame_tests {
                 totals.cursor_bytes,
                 totals.repeat_bytes,
             ),
-            (7_061_339, 576_429, 3_629_228, 2_455_888, 975_983, 0)
+            (9_950_827, 710_305, 4_748_083, 2_019_066, 2_976_090, 0)
         );
     }
 
@@ -1422,6 +1422,12 @@ pub(crate) fn morph_worker_session(
         let generation_elapsed = generation_started.map(|started| started.elapsed());
         let encoding_started = frame_profiler.as_ref().map(|_| Instant::now());
         let encode_stats = frame_encoder.encode(g.as_ref(), false, &mut frame_buffer);
+        if clear_frame {
+            // A cleared terminal has no cached footer or options panel, even
+            // when their text is unchanged after a resize.
+            previous_status.clear();
+            previous_pane.clear();
+        }
         if interrupted_frame || clear_frame {
             // Cancel a possible partial CSI left by the abandoned frame.
             frame_buffer.insert_str(0, if clear_frame { "\x18\x1b[2J" } else { "\x18" });

@@ -66,20 +66,19 @@ fn set(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
 
 // ── Outputs ─────────────────────────────────────────────────────────
 
-
 // --- bole/trunk machinery ---
 mod bole_pattern;
 mod boles;
 mod pack;
+mod scene;
 mod species;
 mod species_exotic;
-mod scene;
 pub use bole_pattern::*;
 pub use boles::*;
 pub use pack::*;
+pub use scene::*;
 pub use species::*;
 pub use species_exotic::*;
-pub use scene::*;
 
 pub trait TreeDrawer {
     fn draw_trunk(
@@ -166,7 +165,6 @@ pub trait TreeDrawer {
         }
     }
 }
-
 
 mod tests {
     use super::*;
@@ -412,4 +410,3 @@ mod tests {
         insta::assert_snapshot!("structural_boles_42", grid_to_string(&grid));
     }
 }
-

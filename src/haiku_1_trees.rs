@@ -5,9 +5,9 @@ use crate::gridio::*;
 use crate::opts::param_f32;
 use crate::types::*;
 use crossterm::style::Color;
-use rand::{Rng, RngExt};
 use rand::SeedableRng;
 use rand::rngs::StdRng;
+use rand::{Rng, RngExt};
 
 // ── Species ────────────────────────────────────────────────────────────
 
@@ -41,7 +41,11 @@ fn grow_spiral(
 
         if i % 2 == 0 && i > height / 4 {
             let branch_len = (spread - i as i32 / 2).max(1);
-            let dir = if ((i as i32 / 2) + dx.abs()) % 2 == 0 { 1 } else { -1 };
+            let dir = if ((i as i32 / 2) + dx.abs()) % 2 == 0 {
+                1
+            } else {
+                -1
+            };
             for b in 1..=branch_len {
                 let bx = new_x + dir * b;
                 let by = y - (b / 3).max(1);
@@ -253,7 +257,10 @@ pub(crate) fn draw_haiku_1_trees(
 
     measure_layer("haiku-1-trees", "species", || {
         let species = [
-            ("Spiral", grow_spiral as fn(&mut Grid, i32, i32, f32, Color, &mut StdRng)),
+            (
+                "Spiral",
+                grow_spiral as fn(&mut Grid, i32, i32, f32, Color, &mut StdRng),
+            ),
             ("Cascade", grow_cascade),
             ("Thorns", grow_thorns),
             ("Lattice", grow_lattice),
@@ -336,7 +343,9 @@ pub(crate) fn cli_haiku_1_trees(
     let fruit: f32 = args.get(5).and_then(|s| s.parse().ok()).unwrap_or(0.25);
     let branch: f32 = args.get(6).and_then(|s| s.parse().ok()).unwrap_or(0.7);
 
-    draw_haiku_1_trees(&mut grid, width, height, seed, &palette, t_anim, energy, fruit, branch);
+    draw_haiku_1_trees(
+        &mut grid, width, height, seed, &palette, t_anim, energy, fruit, branch,
+    );
 
     emit_grid(&grid);
     (grid, true)

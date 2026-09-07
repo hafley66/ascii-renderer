@@ -5,7 +5,7 @@ use crate::_0_profile::measure_layer;
 use crate::color::{darken, lerp_color, lighten, shift_hue};
 use crate::opts::param_f32;
 use crate::opus_2_trees::{
-    GrowOpts, Ink, SLOTS, SLOT_DIM, SLOT_TIP, Species, Stamp, bake, grow_species, hash2, ink_from,
+    GrowOpts, Ink, SLOT_DIM, SLOT_TIP, SLOTS, Species, Stamp, bake, grow_species, hash2, ink_from,
     slot_ink,
 };
 use crate::types::{Cell, Grid, Rect};
@@ -153,7 +153,9 @@ fn build_stand(width: usize, height: usize, seed: u64, k: &Opus2ForestKnobs) -> 
         for si in 0..5 {
             for v in 0..VARIANTS {
                 let mut rng = StdRng::seed_from_u64(hash2(seed, (li * 97 + si * 13 + v) as u64));
-                let energy = k.energy * (0.72 + 0.28 * lf) * (0.82 + 0.3 * frac_hash(seed, (li * 31 + si * 7 + v) as u64));
+                let energy = k.energy
+                    * (0.72 + 0.28 * lf)
+                    * (0.82 + 0.3 * frac_hash(seed, (li * 31 + si * 7 + v) as u64));
                 let o = GrowOpts {
                     fruit: k.fruit * lf,
                     branch: k.branch,
@@ -252,9 +254,24 @@ fn sky_at(palette: &[Color; 5], hue: f32, phase: f32) -> Sky {
     let p = |i: usize| shift_hue(palette[i], hue as f64);
     let keys = [
         (darken(p(0), 6), lerp_color(p(0), p(2), 0.45), 0.18, p(2)),
-        (lerp_color(p(0), p(2), 0.4), lerp_color(p(3), p(1), 0.45), 0.55, p(3)),
-        (lerp_color(p(2), p(4), 0.4), lerp_color(p(4), p(3), 0.55), 1.0, p(4)),
-        (lerp_color(p(0), p(1), 0.35), lerp_color(p(1), p(3), 0.5), 0.5, p(1)),
+        (
+            lerp_color(p(0), p(2), 0.4),
+            lerp_color(p(3), p(1), 0.45),
+            0.55,
+            p(3),
+        ),
+        (
+            lerp_color(p(2), p(4), 0.4),
+            lerp_color(p(4), p(3), 0.55),
+            1.0,
+            p(4),
+        ),
+        (
+            lerp_color(p(0), p(1), 0.35),
+            lerp_color(p(1), p(3), 0.5),
+            0.5,
+            p(1),
+        ),
     ];
     let f = phase * keys.len() as f32;
     let i = (f as usize) % keys.len();
@@ -287,7 +304,11 @@ fn layer_inks(
             let base = lerp_color(palette[1], palette[2], 0.25 + 0.5 * t);
             let base = shift_hue(base, (k.hue + t * 14.0 - 7.0) as f64);
             let lit = lerp_color(darken(base, 45), lighten(base, 25), sky.light);
-            let hazed = lerp_color(sky.horizon, lit, 0.25 + 0.75 * lf.powf(0.8) * (1.0 - 0.55 * k.haze) + 0.55 * k.haze * lf);
+            let hazed = lerp_color(
+                sky.horizon,
+                lit,
+                0.25 + 0.75 * lf.powf(0.8) * (1.0 - 0.55 * k.haze) + 0.55 * k.haze * lf,
+            );
             out.push(ink_from(hazed, lerp_color(palette[3], sky.tint, 0.35)));
         }
     }
@@ -436,7 +457,11 @@ fn paint_sky(
             let h = hash2(seed, 7100 + b);
             let y = ((h % (horizon as u64).max(1)) as f32 * 0.75) as i32 + 1;
             let len = 6 + (h >> 9) as usize % (width / 3).max(6);
-            let drift = if t > 0.0 { t * 0.35 * (1.0 + b as f32 * 0.3) } else { 0.0 };
+            let drift = if t > 0.0 {
+                t * 0.35 * (1.0 + b as f32 * 0.3)
+            } else {
+                0.0
+            };
             let x0 = (h >> 21) as f32 % width as f32 + drift;
             for j in 0..len {
                 let x = (x0 as i32 + j as i32).rem_euclid(width as i32);
@@ -573,7 +598,11 @@ fn paint_ground(
     }
 
     let tufts = ((width as f32) * 0.05 * (1.0 + k.motes * 0.3)) as u64;
-    let tuft_c = lerp_color(darken(palette[1], 40), lighten(palette[2], 20), 0.4 + 0.3 * sky.light);
+    let tuft_c = lerp_color(
+        darken(palette[1], 40),
+        lighten(palette[2], 20),
+        0.4 + 0.3 * sky.light,
+    );
     for i in 0..tufts {
         let h = hash2(seed, 6600 + i);
         let x = (h % width as u64) as i32;
@@ -697,7 +726,8 @@ fn paint_atmos(
             let span = (height - horizon) as f32;
             for b in 0..bands {
                 let bf = b as f32 / bands.max(1) as f32;
-                let y = (horizon as f32 - 1.0 + span * 0.42 * bf
+                let y = (horizon as f32 - 1.0
+                    + span * 0.42 * bf
                     + 1.5 * (tt * 0.05 + b as f32 * 1.7).sin()) as i32;
                 let drift = tt * (2.0 + b as f32 * 0.7) * 0.4;
                 let mut x = 0i32;
@@ -775,7 +805,15 @@ fn paint_atmos(
                 let x = x0 + y * 0.35;
                 set_cell(grid, x as i32, y as i32, '╱', col, width, height);
                 if h % 3 == 0 {
-                    set_cell(grid, x as i32 - 1, y as i32 + 1, '╱', darken(col, 30), width, height);
+                    set_cell(
+                        grid,
+                        x as i32 - 1,
+                        y as i32 + 1,
+                        '╱',
+                        darken(col, 30),
+                        width,
+                        height,
+                    );
                 }
             }
         }
@@ -786,7 +824,8 @@ fn paint_atmos(
                 let h = hash2(seed, 13000 + i);
                 let speed = 2.2 + ((h >> 8) % 5) as f32 * 0.6;
                 let ph = ((h >> 19) % 1000) as f32 / 159.0;
-                let x = ((h % width as u64) as f32 + tt * speed).rem_euclid(width as f32 + 8.0) - 4.0;
+                let x =
+                    ((h % width as u64) as f32 + tt * speed).rem_euclid(width as f32 + 8.0) - 4.0;
                 let y = (horizon as f32 * (0.25 + 0.45 * ((h >> 29) % 100) as f32 / 100.0))
                     + 2.0 * (tt * 0.3 + ph).sin();
                 let up = (tt * 2.2 + ph).sin() > 0.0;

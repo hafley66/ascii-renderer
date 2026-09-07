@@ -49,18 +49,36 @@ fn draw_gnarled_oak(
             } else {
                 '┃'
             };
-            set(grid, root_x + offset, root_y - i, ch, if rng.random::<f32>() < 0.15 {
-                bark_color
-            } else {
-                trunk_color
-            });
+            set(
+                grid,
+                root_x + offset,
+                root_y - i,
+                ch,
+                if rng.random::<f32>() < 0.15 {
+                    bark_color
+                } else {
+                    trunk_color
+                },
+            );
         }
 
         // Branch opportunities
         if i > height / 4 && i < height - height / 3 && i % 3 == 0 {
-            let branch_dir = if rng.random_range(0..2u32) == 0 { -1 } else { 1 };
+            let branch_dir = if rng.random_range(0..2u32) == 0 {
+                -1
+            } else {
+                1
+            };
             let branch_len = ((height - i) / 4).max(2) as i32;
-            draw_branch(grid, root_x, root_y - i, branch_dir, branch_len, canopy_color, rng);
+            draw_branch(
+                grid,
+                root_x,
+                root_y - i,
+                branch_dir,
+                branch_len,
+                canopy_color,
+                rng,
+            );
         }
     }
 
@@ -246,7 +264,11 @@ fn draw_bottle_tree(
 
         // Small branches high up
         if i > height * 2 / 3 && i % 5 == 0 {
-            let branch_dir = if rng.random_range(0..2u32) == 0 { -1 } else { 1 };
+            let branch_dir = if rng.random_range(0..2u32) == 0 {
+                -1
+            } else {
+                1
+            };
             draw_branch(grid, root_x, root_y - i, branch_dir, 2, canopy_color, rng);
         }
     }
@@ -362,20 +384,20 @@ fn draw_clump_shrub(
                 '│'
             };
 
-            set(grid, (stem_x as f32 + wobble) as i32, root_y - i, ch, trunk_color);
+            set(
+                grid,
+                (stem_x as f32 + wobble) as i32,
+                root_y - i,
+                ch,
+                trunk_color,
+            );
 
             // Side branches
             if i > (stem_height / 3.0) as i32 && i % 2 == 0 && rng.random::<f32>() < 0.5 {
                 let side_dir = if rng.random::<bool>() { -1 } else { 1 };
                 let side_len = ((stem_height - i as f32) / 4.0) as i32;
                 for j in 1..=side_len {
-                    set(
-                        grid,
-                        stem_x + side_dir * j,
-                        root_y - i,
-                        '─',
-                        branch_color,
-                    );
+                    set(grid, stem_x + side_dir * j, root_y - i, '─', branch_color);
                 }
             }
         }
@@ -386,13 +408,7 @@ fn draw_clump_shrub(
         for dy in 0..(height / 6) {
             for dx in -crown_w..=crown_w {
                 if rng.random::<f32>() < 0.35 {
-                    set(
-                        grid,
-                        stem_x + dx,
-                        crown_y + dy,
-                        '◇',
-                        canopy_color,
-                    );
+                    set(grid, stem_x + dx, crown_y + dy, '◇', canopy_color);
                 }
             }
         }
@@ -554,8 +570,16 @@ mod tests {
                 g: 150,
                 b: 100,
             },
-            Color::Rgb { r: 200, g: 150, b: 100 },
-            Color::Rgb { r: 200, g: 200, b: 200 },
+            Color::Rgb {
+                r: 200,
+                g: 150,
+                b: 100,
+            },
+            Color::Rgb {
+                r: 200,
+                g: 200,
+                b: 200,
+            },
         ];
 
         let knobs = Haiku2TreesKnobs {

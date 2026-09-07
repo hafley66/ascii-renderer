@@ -1,4 +1,5 @@
 //! Scene-walk placement.
+use super::*;
 use crate::color::*;
 use crate::sprites::*;
 use crate::types::*;
@@ -6,7 +7,6 @@ use crossterm::style::Color;
 use rand::RngExt;
 use rand::rngs::StdRng;
 use std::cell::Cell;
-use super::*;
 
 /// One placed scene element with per-stop randomized params.
 /// Trees carry their OWN energy/height/spread (no per-layer banding).
@@ -143,7 +143,8 @@ pub fn scene_walk(
                 .min(height.saturating_sub(2));
 
             // per-stop color: narrow drift around the scene base hue + sat/light depth bias
-            let hue = (scene_hue + rng.random_range(-hue_drift..hue_drift) as f64).rem_euclid(360.0);
+            let hue =
+                (scene_hue + rng.random_range(-hue_drift..hue_drift) as f64).rem_euclid(360.0);
             let sat = (0.20 + lfrac * 0.35 + rng.random_range(-0.08f32..0.08f32)).clamp(0.08, 0.85);
             let light =
                 (0.12 + lfrac * 0.22 + rng.random_range(-0.05f32..0.06f32)).clamp(0.08, 0.50);
@@ -151,11 +152,12 @@ pub fn scene_walk(
             let r = rng.random::<f32>();
             let el = if r < tree_rate {
                 // per-tree energy drawn from a wide band, only gently biased by depth
-                let energy = (0.30 + lfrac * 0.45 + rng.random_range(-0.20f32..0.25f32))
-                    .clamp(0.20, 1.0);
+                let energy =
+                    (0.30 + lfrac * 0.45 + rng.random_range(-0.20f32..0.25f32)).clamp(0.20, 1.0);
                 let tree_h = rng.random_range(h_lo..=h_hi) as usize;
                 // spread tracks THIS tree's height so canopies stay proportional
-                let spread = (tree_h as f32 * rng.random_range(0.40f32..0.80)).max(1.0) as usize + 1;
+                let spread =
+                    (tree_h as f32 * rng.random_range(0.40f32..0.80)).max(1.0) as usize + 1;
                 let kind = match opts.kind_filter {
                     Some(s) => s[rng.random_range(0..s.len() as u32) as usize],
                     None => rng.random_range(0..TREE_KIND_COUNT as u32) as usize,

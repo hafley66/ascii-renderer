@@ -1,9 +1,9 @@
 #![allow(warnings)]
 
 use crossterm::style::Color;
-use rand::rngs::StdRng;
 use rand::RngExt;
 use rand::SeedableRng;
+use rand::rngs::StdRng;
 use std::io::{self, IsTerminal, Read as _};
 
 use crate::automata;
@@ -98,7 +98,9 @@ pub(crate) fn live_params_to_command(command: &mut std::process::Command) {
 pub(crate) fn options_path() -> Option<std::path::PathBuf> {
     let mut p = std::env::var_os("XDG_CONFIG_HOME")
         .map(std::path::PathBuf::from)
-        .or_else(|| std::env::var_os("HOME").map(|home| std::path::PathBuf::from(home).join(".config")))?;
+        .or_else(|| {
+            std::env::var_os("HOME").map(|home| std::path::PathBuf::from(home).join(".config"))
+        })?;
     p.push("ascii-renderer");
     p.push("options.tsv");
     Some(p)

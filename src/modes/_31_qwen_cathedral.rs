@@ -1,14 +1,14 @@
 use crossterm::style::Color;
-use rand::rngs::StdRng;
 use rand::RngExt;
+use rand::rngs::StdRng;
 
+use super::_33_cosmograph::FbmRow;
 use crate::_0_profile::measure_layer;
 use crate::color::{darken, lerp_color, lighten, shift_hue};
 use crate::opts::param_f32;
 use crate::pp::pp_line;
 use crate::registry::{AnimKind, Mode, ModeFrame, Param};
 use crate::types::{Cell, Grid};
-use super::_33_cosmograph::FbmRow;
 
 const TAU: f32 = std::f32::consts::TAU;
 
@@ -115,7 +115,11 @@ impl CathedralParams {
         let read = |index: usize, key: &str, default: f32| {
             args.get(index)
                 .and_then(|value| value.parse::<f32>().ok())
-                .or_else(|| param_values.and_then(|values| values.get(index - 4)).copied())
+                .or_else(|| {
+                    param_values
+                        .and_then(|values| values.get(index - 4))
+                        .copied()
+                })
                 .unwrap_or_else(|| param_f32(key, default))
         };
         Self {

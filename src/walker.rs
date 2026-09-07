@@ -1876,5 +1876,3 @@ pub fn walk_and_fill_leaves(
 }
 
 // ── Atmosphere overlay ─────────────────────────────────────────────
-
-

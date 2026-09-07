@@ -1,5 +1,7 @@
 //! Node-scene builders (landscape, centerpiece, cluster).
 #![allow(unused)]
+use super::shift_hue;
+use super::*;
 use crate::color::*;
 use crate::fills::*;
 use crate::scene::*;
@@ -8,8 +10,6 @@ use crate::types::*;
 use crossterm::style::Color;
 use rand::RngExt;
 use rand::rngs::StdRng;
-use super::*;
-use super::shift_hue;
 
 /// Generate a multi-layer scene for one node of a party walk.
 /// `rect` is the bounding box, `detail` is 0-100 controlling density.
@@ -59,7 +59,12 @@ fn gen_contour(
 /// Pass 2: ground below a wavy contour line (grass/tile/crosshatch).
 /// Pass 3: foreground sprites rooted ON the ground line.
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn make_landscape(rect: &Rect, palette: &[Color; 5], detail: u32, rng: &mut StdRng) -> Vec<Layer> {
+pub(crate) fn make_landscape(
+    rect: &Rect,
+    palette: &[Color; 5],
+    detail: u32,
+    rng: &mut StdRng,
+) -> Vec<Layer> {
     let mut layers = Vec::new();
 
     // Horizon: wavy contour line at 40-60% from top
@@ -345,7 +350,11 @@ pub(crate) fn make_cluster(
 /// Negative space: mostly empty box with one recognizable organic sprite.
 /// No pattern fills. Just a tree, flower, or fruit sitting in open space.
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn make_negative_space(rect: &Rect, palette: &[Color; 5], rng: &mut StdRng) -> Vec<Layer> {
+pub(crate) fn make_negative_space(
+    rect: &Rect,
+    palette: &[Color; 5],
+    rng: &mut StdRng,
+) -> Vec<Layer> {
     let mut layers = Vec::new();
     let cx = rect.x as f32 + rect.w as f32 * 0.5;
     let cy = rect.y as f32 + rect.h as f32 * 0.5;

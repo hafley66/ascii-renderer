@@ -25,7 +25,9 @@ fn hash_seed(seed: u64, x: usize, y: usize, t: f32) -> u64 {
     let mut s = seed;
     s = s.wrapping_mul(0x9E37_79B9_7F4A_7C15).wrapping_add(x as u64);
     s = s.wrapping_mul(0x9E37_79B9_7F4A_7C15).wrapping_add(y as u64);
-    s = s.wrapping_mul(0x9E37_79B9_7F4A_7C15).wrapping_add(t.to_bits() as u64);
+    s = s
+        .wrapping_mul(0x9E37_79B9_7F4A_7C15)
+        .wrapping_add(t.to_bits() as u64);
     s
 }
 
@@ -127,8 +129,13 @@ fn rhizome_branch(
     let mut bpen = pen.fork(lighten(color, (10 * (4 - depth)).min(60) as u8));
     bpen.last_dir = Some(initial_dir);
 
-    let len = element_rng(seed, bpen.x as usize + depth as usize * 17, bpen.y as usize, t)
-        .random_range(3..10u32) as i32;
+    let len = element_rng(
+        seed,
+        bpen.x as usize + depth as usize * 17,
+        bpen.y as usize,
+        t,
+    )
+    .random_range(3..10u32) as i32;
     let mut dir = initial_dir;
 
     for i in 0..len {
@@ -140,7 +147,12 @@ fn rhizome_branch(
             break;
         }
 
-        let mut er = element_rng(seed, bpen.x as usize, bpen.y as usize + depth as usize * 7, t);
+        let mut er = element_rng(
+            seed,
+            bpen.x as usize,
+            bpen.y as usize + depth as usize * 7,
+            t,
+        );
         if er.random::<f32>() < 0.3 {
             dir = match dir {
                 MoveDir::UpRight => MoveDir::UpLeft,
@@ -271,13 +283,15 @@ pub fn draw_effigy(
     t: f32,
     count: usize,
 ) {
-    let rect = Rect {
-        x: 0,
-        y: 0,
-        w,
-        h,
-    };
-    fill_noise(grid, &rect, NoiseVariant::Dot, darken(palette[0], 20), palette[0], rng);
+    let rect = Rect { x: 0, y: 0, w, h };
+    fill_noise(
+        grid,
+        &rect,
+        NoiseVariant::Dot,
+        darken(palette[0], 20),
+        palette[0],
+        rng,
+    );
 
     let count = if count == 0 { 6 } else { count };
     let margin = (w as f32 * 0.08) as i32;
@@ -295,9 +309,9 @@ pub fn draw_effigy(
             let cy = er.random_range((h as i32 / 5) as u32..(h as i32 * 4 / 5) as u32) as i32;
             let size = er.random_range(2..5u32) as i32;
 
-            let too_close = placed.iter().any(|&(px, py, ps)| {
-                ((px - cx).abs() + (py - cy).abs()) < (ps + size + 3)
-            });
+            let too_close = placed
+                .iter()
+                .any(|&(px, py, ps)| ((px - cx).abs() + (py - cy).abs()) < (ps + size + 3));
             if !too_close {
                 placed.push((cx, cy, size));
                 let style = (i + (t * 4.0) as usize) % 8;
@@ -324,8 +338,13 @@ fn dendrite_branch(
     }
     let w = grid[0].len() as i32;
     let hh = grid.len() as i32;
-    let len = element_rng(seed, pen.x as usize + depth as usize * 13, pen.y as usize, t)
-        .random_range(4..10u32) as i32;
+    let len = element_rng(
+        seed,
+        pen.x as usize + depth as usize * 13,
+        pen.y as usize,
+        t,
+    )
+    .random_range(4..10u32) as i32;
     let drift = (t * TAU * 0.15 + depth as f32).sin() * 0.3;
 
     let mut er = element_rng(seed, pen.x as usize, pen.y as usize + depth as usize * 5, t);
@@ -369,13 +388,15 @@ pub fn draw_dendrite(
     seeds: usize,
     depth: u32,
 ) {
-    let rect = Rect {
-        x: 0,
-        y: 0,
-        w,
-        h,
-    };
-    fill_noise(grid, &rect, NoiseVariant::Dot, palette[0], darken(palette[0], 10), rng);
+    let rect = Rect { x: 0, y: 0, w, h };
+    fill_noise(
+        grid,
+        &rect,
+        NoiseVariant::Dot,
+        palette[0],
+        darken(palette[0], 10),
+        rng,
+    );
 
     let seeds = if seeds == 0 { 3 } else { seeds };
     let depth = if depth == 0 { 4 } else { depth };
@@ -388,8 +409,8 @@ pub fn draw_dendrite(
         } else {
             margin + i * (w - 2 * margin) / (seeds - 1)
         };
-        let jitter = (element_rng(seed, i, 0, t).random::<f32>() - 0.5)
-            * (w as f32 / seeds.max(1) as f32);
+        let jitter =
+            (element_rng(seed, i, 0, t).random::<f32>() - 0.5) * (w as f32 / seeds.max(1) as f32);
         let root_x = (base_x as f32 + jitter).clamp(margin as f32, (w - margin) as f32) as i32;
         let color = palette[1 + (i % 3)];
         let mut pen = TreePen::new(root_x, ground_y, color);
@@ -410,13 +431,15 @@ pub fn draw_totem(
     t: f32,
     poles: usize,
 ) {
-    let rect = Rect {
-        x: 0,
-        y: 0,
-        w,
-        h,
-    };
-    fill_noise(grid, &rect, NoiseVariant::Static, palette[0], darken(palette[0], 10), rng);
+    let rect = Rect { x: 0, y: 0, w, h };
+    fill_noise(
+        grid,
+        &rect,
+        NoiseVariant::Static,
+        palette[0],
+        darken(palette[0], 10),
+        rng,
+    );
 
     let poles = if poles == 0 { 2 } else { poles };
     let ground_y = (h as f32 * 0.78) as i32;
@@ -539,9 +562,10 @@ pub fn draw_chimera(
     // Tendrils lashing selected tree tops to nearby faces
     let vine_color = darken(palette[2], 20);
     for &(tx, ty) in &tree_tops {
-        if let Some(&(fx, fy)) = face_centers.iter().min_by_key(|&&(fx, fy)| {
-            ((fx - tx as i32).abs() + (fy - ty as i32).abs()) as i32
-        }) {
+        if let Some(&(fx, fy)) = face_centers
+            .iter()
+            .min_by_key(|&&(fx, fy)| ((fx - tx as i32).abs() + (fy - ty as i32).abs()) as i32)
+        {
             if (fx - tx as i32).abs() + (fy - ty as i32).abs() < (w as i32 / 3) {
                 connect_line(grid, tx as i32, ty as i32, fx, fy, vine_color);
             }

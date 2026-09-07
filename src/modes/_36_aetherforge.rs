@@ -1,13 +1,13 @@
 use crossterm::style::Color;
 use rand::rngs::StdRng;
 
+use super::_33_cosmograph::FbmRow;
 use crate::_0_profile::measure_layer;
 use crate::color::{darken, lerp_color, lighten, shift_hue};
 use crate::opts::param_f32;
 use crate::pp::{pp_hash2, pp_stroke};
 use crate::registry::{AnimKind, Mode, ModeFrame, Param};
 use crate::types::{Cell, Grid};
-use super::_33_cosmograph::FbmRow;
 
 const PI: f32 = std::f32::consts::PI;
 const TAU: f32 = std::f32::consts::TAU;

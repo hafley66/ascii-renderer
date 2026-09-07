@@ -1,2 +1,0 @@
-{"ts_ms":1788720509486,"pid":91926,"elapsed_ns":549858334,"op":"write","fd":1,"fd_kind_now":"pipe","calls":120,"requested":3888609,"bytes":3888609,"eagain":0,"errors":0,"partial":0,"call_ns":536861325,"max_ns":12726166}
-{"ts_ms":1788720509486,"pid":91926,"elapsed_ns":549894209,"op":"write","fd":4,"fd_kind_now":"closed","calls":1,"requested":1175,"bytes":1175,"eagain":0,"errors":0,"partial":0,"call_ns":28292,"max_ns":28292}

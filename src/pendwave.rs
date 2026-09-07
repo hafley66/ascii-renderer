@@ -61,7 +61,12 @@ fn put(grid: &mut Grid, w: usize, h: usize, x: i32, y: i32, ch: char, fg: Color)
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn put_soft(grid: &mut Grid, w: usize, h: usize, x: i32, y: i32, ch: char, fg: Color) {
-    if x >= 0 && y >= 0 && (x as usize) < w && (y as usize) < h && grid[y as usize][x as usize].ch == ' ' {
+    if x >= 0
+        && y >= 0
+        && (x as usize) < w
+        && (y as usize) < h
+        && grid[y as usize][x as usize].ch == ' '
+    {
         grid[y as usize][x as usize] = Cell::new(ch, fg);
     }
 }
@@ -69,7 +74,11 @@ fn put_soft(grid: &mut Grid, w: usize, h: usize, x: i32, y: i32, ch: char, fg: C
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn pill(grid: &mut Grid, w: usize, h: usize, x: i32, y: i32, c: Color) {
     let bg = darken(c, 70);
-    let cells = [(-1, '(', darken(c, 10)), (0, '@', lighten(c, 60)), (1, ')', darken(c, 10))];
+    let cells = [
+        (-1, '(', darken(c, 10)),
+        (0, '@', lighten(c, 60)),
+        (1, ')', darken(c, 10)),
+    ];
     for (dx, ch, fg) in cells {
         if x + dx >= 0 && y >= 0 && ((x + dx) as usize) < w && (y as usize) < h {
             grid[y as usize][(x + dx) as usize] = Cell::with_bg(ch, fg, bg);
@@ -85,7 +94,15 @@ fn link(grid: &mut Grid, w: usize, h: usize, a: (i32, i32), b: (i32, i32), fg: C
         return;
     }
     let slope = dx as f32 / (dy as f32).abs().max(0.5);
-    let ch = if slope.abs() < 0.7 { '|' } else if slope.abs() > 3.0 { '-' } else if (dx > 0) == (dy > 0) { '\\' } else { '/' };
+    let ch = if slope.abs() < 0.7 {
+        '|'
+    } else if slope.abs() > 3.0 {
+        '-'
+    } else if (dx > 0) == (dy > 0) {
+        '\\'
+    } else {
+        '/'
+    };
     for s in 1..steps {
         let x = a.0 + ((dx * s) as f32 / steps as f32).round() as i32;
         let y = a.1 + ((dy * s) as f32 / steps as f32).round() as i32;
@@ -109,7 +126,11 @@ fn blob(grid: &mut Grid, w: usize, h: usize, x: i32, y: i32, rx: i32, ry: i32, c
             if r > 1.0 {
                 continue;
             }
-            let (ch, fg) = if r < 0.45 { ('@', lighten(c, 60)) } else { ('%', darken(c, 10)) };
+            let (ch, fg) = if r < 0.45 {
+                ('@', lighten(c, 60))
+            } else {
+                ('%', darken(c, 10))
+            };
             if x + dx >= 0 && y + dy >= 0 && ((x + dx) as usize) < w && ((y + dy) as usize) < h {
                 grid[(y + dy) as usize][(x + dx) as usize] = Cell::with_bg(ch, fg, bg);
             }
@@ -145,7 +166,15 @@ impl Rig {
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn draw_pendwave(grid: &mut Grid, w: usize, h: usize, seed: u64, palette: &[Color; 5], t: f32, k: &PendWaveKnobs) {
+pub(crate) fn draw_pendwave(
+    grid: &mut Grid,
+    w: usize,
+    h: usize,
+    seed: u64,
+    palette: &[Color; 5],
+    t: f32,
+    k: &PendWaveKnobs,
+) {
     for row in grid.iter_mut().take(h) {
         for cell in row.iter_mut().take(w) {
             *cell = Cell::blank();
@@ -162,7 +191,9 @@ pub(crate) fn draw_pendwave(grid: &mut Grid, w: usize, h: usize, seed: u64, pale
         flip: seed & 1 == 1,
     };
     let bob_base = shift_hue(palette[3], (seed % 360) as f64);
-    let colors: Vec<Color> = (0..rig.n).map(|i| shift_hue(bob_base, i as f64 * k.hue as f64)).collect();
+    let colors: Vec<Color> = (0..rig.n)
+        .map(|i| shift_hue(bob_base, i as f64 * k.hue as f64))
+        .collect();
     if k.view < 0.5 {
         front(grid, w, h, palette, t, k, &rig, &colors);
     } else if k.view < 1.5 {
@@ -173,7 +204,16 @@ pub(crate) fn draw_pendwave(grid: &mut Grid, w: usize, h: usize, seed: u64, pale
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn front(grid: &mut Grid, w: usize, h: usize, palette: &[Color; 5], t: f32, k: &PendWaveKnobs, rig: &Rig, colors: &[Color]) {
+fn front(
+    grid: &mut Grid,
+    w: usize,
+    h: usize,
+    palette: &[Color; 5],
+    t: f32,
+    k: &PendWaveKnobs,
+    rig: &Rig,
+    colors: &[Color],
+) {
     let n = rig.n;
     let aspect = k.aspect.max(0.25);
     let beam_y = 0;
@@ -211,7 +251,13 @@ fn front(grid: &mut Grid, w: usize, h: usize, palette: &[Color; 5], t: f32, k: &
             let (bx, by) = pos(i, rig.angle(i, t));
             let rows = (by - 1.0).max(1.0);
             let slope = (bx - px as f32) / rows;
-            let ch = if slope.abs() < 0.4 { '|' } else if slope > 0.0 { '\\' } else { '/' };
+            let ch = if slope.abs() < 0.4 {
+                '|'
+            } else if slope > 0.0 {
+                '\\'
+            } else {
+                '/'
+            };
             let last = by.floor() as i32;
             for r in 1..=last {
                 let frac = (r as f32 - 1.0) / rows;
@@ -242,7 +288,15 @@ fn front(grid: &mut Grid, w: usize, h: usize, palette: &[Color; 5], t: f32, k: &
                 let (x, y) = pos(i, rig.angle(i, t - j as f32 * tail));
                 let f = j as f32 / trail as f32;
                 let ch = if j <= 2 { 'o' } else { '.' };
-                put_soft(grid, w, h, x.round() as i32, y.round() as i32, ch, darken(c, 20 + (f * 100.0) as u8));
+                put_soft(
+                    grid,
+                    w,
+                    h,
+                    x.round() as i32,
+                    y.round() as i32,
+                    ch,
+                    darken(c, 20 + (f * 100.0) as u8),
+                );
             }
         }
     });
@@ -268,11 +322,24 @@ fn front(grid: &mut Grid, w: usize, h: usize, palette: &[Color; 5], t: f32, k: &
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn top(grid: &mut Grid, w: usize, h: usize, palette: &[Color; 5], t: f32, k: &PendWaveKnobs, rig: &Rig, colors: &[Color]) {
+fn top(
+    grid: &mut Grid,
+    w: usize,
+    h: usize,
+    palette: &[Color; 5],
+    t: f32,
+    k: &PendWaveKnobs,
+    rig: &Rig,
+    colors: &[Color],
+) {
     let n = rig.n;
     let cx = w as f32 * 0.5;
     let reach = (w as f32 * 0.5 - 3.0).max(1.0);
-    let norm = if rig.swing > 0.01 { rig.swing.sin() } else { 1.0 };
+    let norm = if rig.swing > 0.01 {
+        rig.swing.sin()
+    } else {
+        1.0
+    };
     let trail = (k.trail.round() as i32).clamp(0, 200);
     let tail = k.tail.max(0.001);
     let guide_fg = darken(palette[2], 60);
@@ -364,7 +431,15 @@ fn top(grid: &mut Grid, w: usize, h: usize, palette: &[Color; 5], t: f32, k: &Pe
             for j in (1..=total).rev() {
                 let x = bob_x(i, t - j as f32 * dt);
                 let f = j as f32 / total as f32;
-                let ch = if f < 0.25 { '*' } else if f < 0.5 { '=' } else if f < 0.75 { ':' } else { '.' };
+                let ch = if f < 0.25 {
+                    '*'
+                } else if f < 0.5 {
+                    '='
+                } else if f < 0.75 {
+                    ':'
+                } else {
+                    '.'
+                };
                 put(grid, w, h, x, y, ch, darken(c, (f * 110.0) as u8));
             }
         }
@@ -373,7 +448,15 @@ fn top(grid: &mut Grid, w: usize, h: usize, palette: &[Color; 5], t: f32, k: &Pe
     measure_layer("pendulum-wave", "top_link", || {
         if k.link > 0.5 || (tall && k.link > -0.5) {
             for i in 1..n {
-                link(grid, w, h, (bob_x(i - 1, t), lane_y(i - 1)), (bob_x(i, t), lane_y(i)), link_fg, tall);
+                link(
+                    grid,
+                    w,
+                    h,
+                    (bob_x(i - 1, t), lane_y(i - 1)),
+                    (bob_x(i, t), lane_y(i)),
+                    link_fg,
+                    tall,
+                );
             }
         }
     });
@@ -396,7 +479,16 @@ fn top(grid: &mut Grid, w: usize, h: usize, palette: &[Color; 5], t: f32, k: &Pe
 const RAMP: [char; 10] = [' ', '.', ':', '-', '=', '+', '*', '#', '%', '@'];
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn waterfall(grid: &mut Grid, w: usize, h: usize, palette: &[Color; 5], t: f32, k: &PendWaveKnobs, rig: &Rig, colors: &[Color]) {
+fn waterfall(
+    grid: &mut Grid,
+    w: usize,
+    h: usize,
+    palette: &[Color; 5],
+    t: f32,
+    k: &PendWaveKnobs,
+    rig: &Rig,
+    colors: &[Color],
+) {
     let n = rig.n;
     let dt = k.rowdt.max(0.0005);
     let bands = k.bands > 0.5;
@@ -423,7 +515,11 @@ fn waterfall(grid: &mut Grid, w: usize, h: usize, palette: &[Color; 5], t: f32, 
                 let v = cs;
                 let level = ((v + 1.0) * 0.5 * (RAMP.len() as f32 - 0.01)).floor() as usize;
                 let ch = RAMP[level.min(RAMP.len() - 1)];
-                let fg = if v >= 0.0 { lighten(c, (v * 70.0) as u8) } else { darken(c, (-v * 90.0) as u8 + 10) };
+                let fg = if v >= 0.0 {
+                    lighten(c, (v * 70.0) as u8)
+                } else {
+                    darken(c, (-v * 90.0) as u8 + 10)
+                };
                 grid[y][x] = Cell::new(ch, fg);
             }
             grid[0][x] = Cell::new('=', beam_fg);
@@ -435,14 +531,33 @@ fn waterfall(grid: &mut Grid, w: usize, h: usize, palette: &[Color; 5], t: f32, 
         for i in 0..n {
             let x = (step * (i as f32 + 1.0)).round() as i32;
             let v = rig.angle(i, t) / rig.swing.max(0.01);
-            let ch = if v > 0.33 { ')' } else if v < -0.33 { '(' } else { '|' };
+            let ch = if v > 0.33 {
+                ')'
+            } else if v < -0.33 {
+                '('
+            } else {
+                '|'
+            };
             put(grid, w, h, x, 0, ch, lighten(colors[i], 50));
         }
     });
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn cli_pendwave(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
+pub(crate) fn cli_pendwave(
+    mut grid: Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: [Color; 5],
+    rng: StdRng,
+    t_anim: f32,
+    term_w: u16,
+    term_h: u16,
+    args: &[String],
+    mode: &str,
+    theme_name: &str,
+) -> (Grid, bool) {
     let _ = (rng, term_w, term_h, mode, theme_name);
     let mut k = PendWaveKnobs::from_env();
     let pos: Vec<f32> = args.iter().skip(4).filter_map(|a| a.parse().ok()).collect();
@@ -539,7 +654,10 @@ mod tests {
             worst = worst.max(t0.elapsed().as_secs_f64() * 1000.0);
         }
         let avg = start.elapsed().as_secs_f64() * 1000.0 / 200.0;
-        eprintln!("pendulum-wave frame_cost 200x60: avg {:.3} ms, worst {:.3} ms", avg, worst);
+        eprintln!(
+            "pendulum-wave frame_cost 200x60: avg {:.3} ms, worst {:.3} ms",
+            avg, worst
+        );
         if !cfg!(debug_assertions) {
             assert!(avg < 4.0, "avg frame {:.3} ms", avg);
         }

@@ -284,9 +284,11 @@ mod tests {
                 for t in [0.0, -10.0, f32::MAX, f32::NAN] {
                     let grid = player.render(t, Some(&values)).unwrap();
                     assert_eq!(grid.len(), h);
-                    assert!(grid_to_plain(grid)
-                        .iter()
-                        .all(|r| crate::types::display_width(r) == w));
+                    assert!(
+                        grid_to_plain(grid)
+                            .iter()
+                            .all(|r| crate::types::display_width(r) == w)
+                    );
                 }
             }
         }

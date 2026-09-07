@@ -1,3 +1,0 @@
-Sampling process 1510 for 8 seconds with 1 millisecond of run time between samples
-Sampling completed, processing symbols...
-Sample analysis of process 1510 written to file /Users/chrishafley/projects/ascii-renderer/perf/results/8_iterm_profile_1/quit_iterm.sample.txt

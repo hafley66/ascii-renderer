@@ -93,7 +93,10 @@ impl C {
     }
     #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn mul(self, o: C) -> C {
-        C::new(self.re * o.re - self.im * o.im, self.re * o.im + self.im * o.re)
+        C::new(
+            self.re * o.re - self.im * o.im,
+            self.re * o.im + self.im * o.re,
+        )
     }
     #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn add(self, o: C) -> C {
@@ -103,7 +106,10 @@ impl C {
     fn div(self, o: C) -> C {
         let d = o.re * o.re + o.im * o.im;
         let inv = if d > 1e-30 { 1.0 / d } else { 0.0 };
-        C::new((self.re * o.re + self.im * o.im) * inv, (self.im * o.re - self.re * o.im) * inv)
+        C::new(
+            (self.re * o.re + self.im * o.im) * inv,
+            (self.im * o.re - self.re * o.im) * inv,
+        )
     }
     #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn norm2(self) -> f32 {
@@ -133,7 +139,9 @@ impl Mob {
     }
     #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn det(&self) -> C {
-        self.a.mul(self.d).add(C::new(-1.0, 0.0).mul(self.b.mul(self.c)))
+        self.a
+            .mul(self.d)
+            .add(C::new(-1.0, 0.0).mul(self.b.mul(self.c)))
     }
     #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn then(&self, outer: &Mob) -> Mob {
@@ -146,22 +154,42 @@ impl Mob {
     }
     #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn rotation(theta: f32) -> Mob {
-        Mob { a: C::new(theta.cos(), theta.sin()), b: C::new(0.0, 0.0), c: C::new(0.0, 0.0), d: C::new(1.0, 0.0) }
+        Mob {
+            a: C::new(theta.cos(), theta.sin()),
+            b: C::new(0.0, 0.0),
+            c: C::new(0.0, 0.0),
+            d: C::new(1.0, 0.0),
+        }
     }
     /// Hyperbolic translation by distance s along the geodesic at angle phi through the origin.
     #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn translation(s: f32, phi: f32) -> Mob {
         let tau = (s * 0.5).tanh();
         let e = C::new(phi.cos() * tau, phi.sin() * tau);
-        Mob { a: C::new(1.0, 0.0), b: e, c: C::new(e.re, -e.im), d: C::new(1.0, 0.0) }
+        Mob {
+            a: C::new(1.0, 0.0),
+            b: e,
+            c: C::new(e.re, -e.im),
+            d: C::new(1.0, 0.0),
+        }
     }
     #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn scale(f: f32) -> Mob {
-        Mob { a: C::new(f, 0.0), b: C::new(0.0, 0.0), c: C::new(0.0, 0.0), d: C::new(1.0, 0.0) }
+        Mob {
+            a: C::new(f, 0.0),
+            b: C::new(0.0, 0.0),
+            c: C::new(0.0, 0.0),
+            d: C::new(1.0, 0.0),
+        }
     }
     #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn cayley() -> Mob {
-        Mob { a: C::new(1.0, 0.0), b: C::new(0.0, -1.0), c: C::new(1.0, 0.0), d: C::new(0.0, 1.0) }
+        Mob {
+            a: C::new(1.0, 0.0),
+            b: C::new(0.0, -1.0),
+            c: C::new(1.0, 0.0),
+            d: C::new(0.0, 1.0),
+        }
     }
 }
 
@@ -206,15 +234,37 @@ impl Tiling {
         } else {
             2.0 * (om + ov + mv)
         };
-        Tiling { p, q, om, ov, r_v, c, rho, rho2: rho * rho, wrap, sin_a: a.sin(), cos_a: a.cos(), sin_2a: (2.0 * a).sin(), cos_2a: (2.0 * a).cos() }
+        Tiling {
+            p,
+            q,
+            om,
+            ov,
+            r_v,
+            c,
+            rho,
+            rho2: rho * rho,
+            wrap,
+            sin_a: a.sin(),
+            cos_a: a.cos(),
+            sin_2a: (2.0 * a).sin(),
+            cos_2a: (2.0 * a).cos(),
+        }
     }
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn pick_tiling(seed: u64, k: &PoincareKnobs) -> (u32, u32) {
     let auto = TILINGS[((seed_bits(seed, 0) * 5.0) as usize).min(4)];
-    let p = if k.p >= 3.0 { (k.p.round() as u32).clamp(3, 16) } else { auto.0 };
-    let mut q = if k.q >= 3.0 { (k.q.round() as u32).clamp(3, 16) } else { auto.1 };
+    let p = if k.p >= 3.0 {
+        (k.p.round() as u32).clamp(3, 16)
+    } else {
+        auto.0
+    };
+    let mut q = if k.q >= 3.0 {
+        (k.q.round() as u32).clamp(3, 16)
+    } else {
+        auto.1
+    };
     if k.p >= 3.0 && k.q < 3.0 {
         q = auto.1;
     }
@@ -226,7 +276,10 @@ fn pick_tiling(seed: u64, k: &PoincareKnobs) -> (u32, u32) {
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn hash(x: u32, y: u32, k: u32, seed: u64) -> f32 {
-    let mut h = (x as u64).wrapping_mul(0x9E37_79B9_7F4A_7C15) ^ (y as u64).wrapping_mul(0xBF58_476D_1CE4_E5B9) ^ (k as u64).wrapping_mul(0x94D0_49BB_1331_11EB) ^ seed;
+    let mut h = (x as u64).wrapping_mul(0x9E37_79B9_7F4A_7C15)
+        ^ (y as u64).wrapping_mul(0xBF58_476D_1CE4_E5B9)
+        ^ (k as u64).wrapping_mul(0x94D0_49BB_1331_11EB)
+        ^ seed;
     h ^= h >> 31;
     h = h.wrapping_mul(0xD6E8_FEB8_6659_FD93);
     h ^= h >> 32;
@@ -245,7 +298,14 @@ struct Reduced {
 /// Reflect a disk point into the fundamental triangle, then replay the word on the
 /// origin to recover the tile center in the tiling frame.
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn reduce(tl: &Tiling, mut x: f32, mut y: f32, depth: u32, ops: &mut [u8; MAX_OPS], d0: C) -> Option<Reduced> {
+fn reduce(
+    tl: &Tiling,
+    mut x: f32,
+    mut y: f32,
+    depth: u32,
+    ops: &mut [u8; MAX_OPS],
+    d0: C,
+) -> Option<Reduced> {
     let mut n = 0usize;
     let mut da = d0;
     let mut ring = 0u32;
@@ -303,7 +363,14 @@ fn reduce(tl: &Tiling, mut x: f32, mut y: f32, depth: u32, ops: &mut [u8; MAX_OP
             break;
         }
     }
-    Some(Reduced { x, y, ring, par, n, da })
+    Some(Reduced {
+        x,
+        y,
+        ring,
+        par,
+        n,
+        da,
+    })
 }
 
 /// Replay the word on the origin: the tile center in the tiling frame.
@@ -392,7 +459,15 @@ fn seed_bits(seed: u64, k: u32) -> f32 {
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn build_frame(w: usize, h: usize, seed: u64, palette: &[Color; 5], t: f32, k: &PoincareKnobs, focus_y: f32) -> Frame {
+fn build_frame(
+    w: usize,
+    h: usize,
+    seed: u64,
+    palette: &[Color; 5],
+    t: f32,
+    k: &PoincareKnobs,
+    focus_y: f32,
+) -> Frame {
     let (p, q) = pick_tiling(seed, k);
     let tl = Tiling::new(p, q);
     let half = match k.model.round() as i32 {
@@ -410,13 +485,24 @@ fn build_frame(w: usize, h: usize, seed: u64, palette: &[Color; 5], t: f32, k: &
     let sway_t = 37.0 + 11.0 * seed_bits(seed, 4);
     let sigma = k.sway * (2.0 * PI * t / sway_t + seed_bits(seed, 5) * 2.0 * PI).sin();
     let theta = theta0 + k.twist.to_radians() * t;
-    let fwd = Mob::translation(s, 0.0).then(&Mob::translation(sigma, PI * 0.5)).then(&Mob::rotation(theta));
-    let inv = Mob::rotation(-theta).then(&Mob::translation(-sigma, PI * 0.5)).then(&Mob::translation(-s, 0.0));
-    let pre = if half { Mob::scale(1.0 / focus_y).then(&Mob::cayley()).then(&inv) } else { inv };
+    let fwd = Mob::translation(s, 0.0)
+        .then(&Mob::translation(sigma, PI * 0.5))
+        .then(&Mob::rotation(theta));
+    let inv = Mob::rotation(-theta)
+        .then(&Mob::translation(-sigma, PI * 0.5))
+        .then(&Mob::translation(-s, 0.0));
+    let pre = if half {
+        Mob::scale(1.0 / focus_y).then(&Mob::cayley()).then(&inv)
+    } else {
+        inv
+    };
 
     // comets: posts spread along the axis, one lights up whenever it passes the center
     let n_comets = (k.arcs.round() as usize).min(MAX_ARCS);
-    let mut comets = [Comet { tau: 0.0, glow: 0.0 }; MAX_ARCS];
+    let mut comets = [Comet {
+        tau: 0.0,
+        glow: 0.0,
+    }; MAX_ARCS];
     let glow_w = k.glow.max(0.01);
     for (i, cm) in comets.iter_mut().enumerate().take(n_comets) {
         let a = (i as f32 + seed_bits(seed, 20 + i as u32)) / n_comets as f32 * tl.wrap;
@@ -533,12 +619,23 @@ struct TileMemo {
 impl TileMemo {
     #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn new() -> TileMemo {
-        TileMemo { n: usize::MAX, ops: [0; MAX_OPS], shade: 0.0, tile_h: 0.0 }
+        TileMemo {
+            n: usize::MAX,
+            ops: [0; MAX_OPS],
+            shade: 0.0,
+            tile_h: 0.0,
+        }
     }
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn shade_cell(fr: &Frame, x: usize, y: usize, ops: &mut [u8; MAX_OPS], memo: &mut TileMemo) -> Cell {
+fn shade_cell(
+    fr: &Frame,
+    x: usize,
+    y: usize,
+    ops: &mut [u8; MAX_OPS],
+    memo: &mut TileMemo,
+) -> Cell {
     let (z, sc) = if fr.half {
         let zx = (x as f32 + 0.5 - fr.cx) * fr.unit;
         let zy = (fr.cy * 2.0 - y as f32 - 0.5) * fr.unit * fr.aspect;
@@ -572,13 +669,22 @@ fn shade_cell(fr: &Frame, x: usize, y: usize, ops: &mut [u8; MAX_OPS], memo: &mu
         memo.n = rd.n;
         memo.ops[..rd.n].copy_from_slice(&ops[..rd.n]);
         memo.shade = fr.shade_lut[level(cv.norm2().sqrt(), LUT)];
-        memo.tile_h = hash((cx * 4096.0).round() as i32 as u32, (cy * 4096.0).round() as i32 as u32, 9, fr.seed);
+        memo.tile_h = hash(
+            (cx * 4096.0).round() as i32 as u32,
+            (cy * 4096.0).round() as i32 as u32,
+            9,
+            fr.seed,
+        );
     }
     let shade = memo.shade;
     let tile_h = memo.tile_h;
     let pulse = 1.0 - fr.pulse + fr.pulse * fr.sin_lut[level((fr.pulse_ph + tile_h).fract(), LUT)];
     let shade = shade * pulse;
-    let family = if fr.checker_gen { rd.ring & 1 } else { (tile_h < 0.5) as u32 };
+    let family = if fr.checker_gen {
+        rd.ring & 1
+    } else {
+        (tile_h < 0.5) as u32
+    };
     let bg = if family == 0 { fr.bg_a } else { fr.bg_b };
 
     let r2 = rd.x * rd.x + rd.y * rd.y;
@@ -610,7 +716,11 @@ fn shade_cell(fr: &Frame, x: usize, y: usize, ops: &mut [u8; MAX_OPS], memo: &mu
             if shade > 0.5 { '#' } else { '%' }
         } else {
             let tv = C::new(-rd.y, dxc).div(rd.da);
-            let (vx, vy) = if rd.par == 1 { (tv.re, -tv.im) } else { (tv.re, tv.im) };
+            let (vx, vy) = if rd.par == 1 {
+                (tv.re, -tv.im)
+            } else {
+                (tv.re, tv.im)
+            };
             let (ex, ey) = ((vx * fr.aspect).abs(), vy.abs());
             if ey < 0.42 * ex {
                 '-'
@@ -624,8 +734,16 @@ fn shade_cell(fr: &Frame, x: usize, y: usize, ops: &mut [u8; MAX_OPS], memo: &mu
         };
         Cell::with_bg(ch, fr.lut_edge[li], bg)
     } else if lod <= 0.0 {
-        let ch = if radial < fr.dot_r { if family == 0 { 'o' } else { '•' } } else { ' ' };
-        let fg = if family == 0 { fr.lut_a[level(shade, LEVELS)] } else { fr.lut_b[level(shade, LEVELS)] };
+        let ch = if radial < fr.dot_r {
+            if family == 0 { 'o' } else { '•' }
+        } else {
+            ' '
+        };
+        let fg = if family == 0 {
+            fr.lut_a[level(shade, LEVELS)]
+        } else {
+            fr.lut_b[level(shade, LEVELS)]
+        };
         Cell::with_bg(ch, fg, bg)
     } else {
         let ang = rd.y.atan2(rd.x) * fr.inv_sector;
@@ -688,7 +806,11 @@ fn paint_field(grid: &mut Grid, w: usize, h: usize, fr: &Frame, threads: usize) 
         return;
     }
     let chunk = 4usize;
-    let mut queue: Vec<(usize, &mut [Vec<Cell>])> = grid[..h].chunks_mut(chunk).enumerate().map(|(i, c)| (i * chunk, c)).collect();
+    let mut queue: Vec<(usize, &mut [Vec<Cell>])> = grid[..h]
+        .chunks_mut(chunk)
+        .enumerate()
+        .map(|(i, c)| (i * chunk, c))
+        .collect();
     queue.reverse();
     let queue = std::sync::Mutex::new(queue);
     std::thread::scope(|s| {
@@ -717,7 +839,15 @@ fn put_text(grid: &mut Grid, w: usize, h: usize, x: i32, y: i32, text: &str, fg:
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn draw_poincare(grid: &mut Grid, w: usize, h: usize, seed: u64, palette: &[Color; 5], t: f32, k: &PoincareKnobs) {
+pub(crate) fn draw_poincare(
+    grid: &mut Grid,
+    w: usize,
+    h: usize,
+    seed: u64,
+    palette: &[Color; 5],
+    t: f32,
+    k: &PoincareKnobs,
+) {
     measure_layer("poincare", "clear", || {
         for row in grid.iter_mut().take(h) {
             for cell in row.iter_mut().take(w) {
@@ -732,7 +862,9 @@ pub(crate) fn draw_poincare(grid: &mut Grid, w: usize, h: usize, seed: u64, pale
     let aspect = k.aspect.clamp(0.25, 4.0);
     let unit = 2.0 * k.span.max(0.2) / w as f32;
     let focus_y = (h as f32 * unit * aspect * k.focus.clamp(0.05, 0.95)).max(1e-3);
-    let mut fr = measure_layer("poincare", "setup", || build_frame(w, h, seed, palette, t, k, focus_y));
+    let mut fr = measure_layer("poincare", "setup", || {
+        build_frame(w, h, seed, palette, t, k, focus_y)
+    });
     let mut ry = (h as f32) * 0.5 - 0.5;
     let mut rx = ry * fr.aspect;
     if rx * 2.0 > w as f32 - 1.0 {
@@ -745,15 +877,27 @@ pub(crate) fn draw_poincare(grid: &mut Grid, w: usize, h: usize, seed: u64, pale
 
     let threads = {
         let want = k.threads.round() as usize;
-        if want >= 1 { want.min(64) } else { std::thread::available_parallelism().map(|n| n.get()).unwrap_or(1) }
+        if want >= 1 {
+            want.min(64)
+        } else {
+            std::thread::available_parallelism()
+                .map(|n| n.get())
+                .unwrap_or(1)
+        }
     };
-    measure_layer("poincare", "field", || paint_field(grid, w, h, &fr, threads));
+    measure_layer("poincare", "field", || {
+        paint_field(grid, w, h, &fr, threads)
+    });
 
     measure_layer("poincare", "rim", || {
         if fr.half {
             let fg = fr.lut_haze[0];
             for x in 0..w {
-                let ch = if hash(x as u32, 0, 5, seed) < 0.5 { '=' } else { '-' };
+                let ch = if hash(x as u32, 0, 5, seed) < 0.5 {
+                    '='
+                } else {
+                    '-'
+                };
                 grid[h - 1][x] = Cell::new(ch, fg);
             }
         }
@@ -768,7 +912,20 @@ pub(crate) fn draw_poincare(grid: &mut Grid, w: usize, h: usize, seed: u64, pale
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn cli_poincare(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
+pub(crate) fn cli_poincare(
+    mut grid: Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: [Color; 5],
+    rng: StdRng,
+    t_anim: f32,
+    term_w: u16,
+    term_h: u16,
+    args: &[String],
+    mode: &str,
+    theme_name: &str,
+) -> (Grid, bool) {
     let _ = (rng, term_w, term_h, mode, theme_name);
     let mut k = PoincareKnobs::from_env();
     let pos: Vec<f32> = args.iter().skip(4).filter_map(|a| a.parse().ok()).collect();
@@ -841,7 +998,10 @@ mod tests {
     fn tilings_are_hyperbolic() {
         for (p, q) in TILINGS {
             let tl = Tiling::new(p, q);
-            assert!(tl.om.is_finite() && tl.ov.is_finite() && tl.wrap > 0.0, "{{{p},{q}}}");
+            assert!(
+                tl.om.is_finite() && tl.ov.is_finite() && tl.wrap > 0.0,
+                "{{{p},{q}}}"
+            );
             assert!(tl.c > 1.0 && tl.rho > 0.0);
         }
     }
@@ -858,7 +1018,14 @@ mod tests {
                 let a = reduce(&tl, z.re, z.im, 64, &mut ops, C::new(1.0, 0.0)).unwrap();
                 let zs = shift.apply(z);
                 let b = reduce(&tl, zs.re, zs.im, 64, &mut ops, C::new(1.0, 0.0)).unwrap();
-                assert!((a.x - b.x).abs() < 2e-3 && (a.y - b.y).abs() < 2e-3, "{{{p},{q}}} {i} {} {} vs {} {}", a.x, a.y, b.x, b.y);
+                assert!(
+                    (a.x - b.x).abs() < 2e-3 && (a.y - b.y).abs() < 2e-3,
+                    "{{{p},{q}}} {i} {} {} vs {} {}",
+                    a.x,
+                    a.y,
+                    b.x,
+                    b.y
+                );
                 assert_eq!(a.par, b.par, "{{{p},{q}}} parity {i}");
             }
         }
@@ -893,7 +1060,10 @@ mod tests {
             worst = worst.max(t0.elapsed().as_secs_f64() * 1000.0);
         }
         let avg = start.elapsed().as_secs_f64() * 1000.0 / 200.0;
-        eprintln!("poincare frame_cost 200x60: avg {:.3} ms, worst {:.3} ms", avg, worst);
+        eprintln!(
+            "poincare frame_cost 200x60: avg {:.3} ms, worst {:.3} ms",
+            avg, worst
+        );
         if !cfg!(debug_assertions) {
             assert!(avg < 4.0, "avg frame {:.3} ms", avg);
         }
@@ -912,6 +1082,9 @@ mod tests {
         for f in 0..10 {
             draw_poincare(&mut g, w, h, 42, &p, 3.0 + f as f32 * 0.06, &k);
         }
-        eprintln!("poincare bench 2000x1000: {:.2} ms/frame", start.elapsed().as_secs_f64() * 100.0);
+        eprintln!(
+            "poincare bench 2000x1000: {:.2} ms/frame",
+            start.elapsed().as_secs_f64() * 100.0
+        );
     }
 }

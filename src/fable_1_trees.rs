@@ -328,7 +328,13 @@ fn grow_colonize(b: &mut Brush, energy: f32, ink: &Ink, g: &Growth, rng: &mut St
                 continue;
             }
             occ[(ly * pw_i + lx) as usize] = true;
-            nodes.push(CNode { x: nx, y: ny, parent: i as i32, kids: 0, size: 0 });
+            nodes.push(CNode {
+                x: nx,
+                y: ny,
+                parent: i as i32,
+                kids: 0,
+                size: 0,
+            });
             nodes[i].kids += 1;
             added += 1;
         }
@@ -661,7 +667,11 @@ fn grow_baobab(b: &mut Brush, energy: f32, ink: &Ink, g: &Growth, rng: &mut StdR
             b.put(cx - hw, y, lch, ink.trunk);
             b.put(cx + hw, y, rch, ink.trunk);
             for x in cx - hw + 1..cx + hw {
-                let mut ch = if (x + i / 3).rem_euclid(3) == 0 { '▒' } else { '░' };
+                let mut ch = if (x + i / 3).rem_euclid(3) == 0 {
+                    '▒'
+                } else {
+                    '░'
+                };
                 if rng.random::<f32>() < 0.06 {
                     ch = '▓';
                 }
@@ -842,11 +852,7 @@ fn grow_coral(b: &mut Brush, energy: f32, ink: &Ink, g: &Growth, rng: &mut StdRn
         } else {
             let p = &cells[c.2 as usize];
             let (dx, dy) = (c.0 - p.0, c.1 - p.1);
-            if dx == 0 {
-                '│'
-            } else {
-                '─'
-            }
+            if dx == 0 { '│' } else { '─' }
         };
         b.put(c.0, c.1, ch, fg);
     }
@@ -861,7 +867,15 @@ fn grow_coral(b: &mut Brush, energy: f32, ink: &Ink, g: &Growth, rng: &mut StdRn
 
 /// Grow one species into `grid`, clipped to `plot`; the root sits at the plot's bottom center.
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn grow(sp: Species, grid: &mut Grid, plot: Rect, energy: f32, ink: &Ink, g: &Growth, rng: &mut StdRng) {
+pub(crate) fn grow(
+    sp: Species,
+    grid: &mut Grid,
+    plot: Rect,
+    energy: f32,
+    ink: &Ink,
+    g: &Growth,
+    rng: &mut StdRng,
+) {
     if plot.w < 3 || plot.h < 3 {
         return;
     }
@@ -935,14 +949,35 @@ thread_local! {
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn sheet_key(w: usize, h: usize, seed: u64, palette: &[Color; 5], k: &SheetKnobs) -> (usize, usize, u64, [u32; 6], [Color; 5]) {
-    let bits = [k.energy.to_bits(), k.fruit.to_bits(), k.branch.to_bits(), k.leaf.to_bits(), k.roots.to_bits(), k.scrub.to_bits()];
+fn sheet_key(
+    w: usize,
+    h: usize,
+    seed: u64,
+    palette: &[Color; 5],
+    k: &SheetKnobs,
+) -> (usize, usize, u64, [u32; 6], [Color; 5]) {
+    let bits = [
+        k.energy.to_bits(),
+        k.fruit.to_bits(),
+        k.branch.to_bits(),
+        k.leaf.to_bits(),
+        k.roots.to_bits(),
+        k.scrub.to_bits(),
+    ];
     (w, h, seed, bits, *palette)
 }
 
 /// Grow the sheet once per (size, seed, knobs, palette); each frame copies it and flickers.
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn draw_fable_1_trees(grid: &mut Grid, w: usize, h: usize, seed: u64, palette: &[Color; 5], t: f32, k: &SheetKnobs) {
+pub(crate) fn draw_fable_1_trees(
+    grid: &mut Grid,
+    w: usize,
+    h: usize,
+    seed: u64,
+    palette: &[Color; 5],
+    t: f32,
+    k: &SheetKnobs,
+) {
     let key = sheet_key(w, h, seed, palette, k);
     SHEET.with(|cell| {
         let mut slot = cell.borrow_mut();
@@ -953,7 +988,9 @@ pub(crate) fn draw_fable_1_trees(grid: &mut Grid, w: usize, h: usize, seed: u64,
             *slot = Some(SheetCache { key, page });
         }
         let page = &slot.as_ref().unwrap().page;
-        measure_layer("fable-1-trees", "sway", || copy_swayed(grid, page, w, h, t, k));
+        measure_layer("fable-1-trees", "sway", || {
+            copy_swayed(grid, page, w, h, t, k)
+        });
     });
     flicker(grid, w, h, seed, t, k);
 }
@@ -970,7 +1007,11 @@ fn copy_swayed(grid: &mut Grid, page: &Grid, w: usize, h: usize, t: f32, k: &She
         let n = w.min(dst.len()).min(src.len());
         let (top, rh) = if y < rows[1].0 { rows[0] } else { rows[1] };
         let gy = top + rh - 2;
-        let frac = if y < gy { (gy - y) as f32 / rh.max(1) as f32 } else { 0.0 };
+        let frac = if y < gy {
+            (gy - y) as f32 / rh.max(1) as f32
+        } else {
+            0.0
+        };
         if amp <= 0.0 || frac <= 0.0 {
             dst[..n].copy_from_slice(&src[..n]);
             continue;
@@ -983,14 +1024,29 @@ fn copy_swayed(grid: &mut Grid, page: &Grid, w: usize, h: usize, t: f32, k: &She
             let i = (x / cell_w).min(cols - 1);
             let sx = x as i32 - shifts[i];
             let lo = (i * cell_w) as i32;
-            let hi = if i == cols - 1 { n as i32 } else { lo + cell_w as i32 };
-            *cell = if sx >= lo && sx < hi { src[sx as usize] } else { Cell::blank() };
+            let hi = if i == cols - 1 {
+                n as i32
+            } else {
+                lo + cell_w as i32
+            };
+            *cell = if sx >= lo && sx < hi {
+                src[sx as usize]
+            } else {
+                Cell::blank()
+            };
         }
     }
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn grow_sheet(grid: &mut Grid, w: usize, h: usize, seed: u64, palette: &[Color; 5], k: &SheetKnobs) {
+fn grow_sheet(
+    grid: &mut Grid,
+    w: usize,
+    h: usize,
+    seed: u64,
+    palette: &[Color; 5],
+    k: &SheetKnobs,
+) {
     let cols = SPECIES.len();
     if w < cols * 4 || h < 6 {
         return;
@@ -1015,16 +1071,30 @@ fn grow_sheet(grid: &mut Grid, w: usize, h: usize, seed: u64, palette: &[Color; 
         }
     });
     let mut rng = StdRng::seed_from_u64(seed ^ 0x00FA_B1E5);
-    let growth = Growth { fruit: k.fruit, branch: k.branch, leaf: k.leaf, roots: k.roots };
+    let growth = Growth {
+        fruit: k.fruit,
+        branch: k.branch,
+        leaf: k.leaf,
+        roots: k.roots,
+    };
     measure_layer("fable-1-trees", "trees", || {
         for row in 0..rows {
-            let energy = if row == 0 { k.energy } else { k.energy * k.scrub };
+            let energy = if row == 0 {
+                k.energy
+            } else {
+                k.energy * k.scrub
+            };
             for (i, sp) in SPECIES.iter().enumerate() {
                 let px = i * cell_w;
                 let py = row_y(row);
                 let leaf = shift_hue(palette[1], (i as f64 - 2.0) * 16.0 + row as f64 * 8.0);
                 let ink = Ink::from_base(palette[2], leaf, palette[3]);
-                let plot = Rect { x: px + 1, y: py + 1, w: cell_w.saturating_sub(2), h: row_h(row).saturating_sub(3) };
+                let plot = Rect {
+                    x: px + 1,
+                    y: py + 1,
+                    w: cell_w.saturating_sub(2),
+                    h: row_h(row).saturating_sub(3),
+                };
                 grow(*sp, grid, plot, energy, &ink, &growth, &mut rng);
             }
         }
@@ -1076,7 +1146,20 @@ fn flicker(grid: &mut Grid, w: usize, h: usize, seed: u64, t: f32, k: &SheetKnob
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn cli_fable_1_trees(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
+pub(crate) fn cli_fable_1_trees(
+    mut grid: Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: [Color; 5],
+    rng: StdRng,
+    t_anim: f32,
+    term_w: u16,
+    term_h: u16,
+    args: &[String],
+    mode: &str,
+    theme_name: &str,
+) -> (Grid, bool) {
     let _ = (rng, term_w, term_h, mode, theme_name);
     let mut k = SheetKnobs::from_env();
     let pos: Vec<f32> = args.iter().skip(4).filter_map(|a| a.parse().ok()).collect();
@@ -1131,10 +1214,32 @@ mod tests {
     fn every_species_draws_a_trunk_and_canopy() {
         for sp in SPECIES {
             let mut g = vec![vec![Cell::blank(); 30]; 20];
-            let ink = Ink::from_base(crate::color::rgb(90, 70, 40), crate::color::rgb(60, 140, 60), crate::color::rgb(200, 80, 60));
-            let growth = Growth { fruit: 0.3, branch: 0.7, leaf: 0.9, roots: 0.7 };
+            let ink = Ink::from_base(
+                crate::color::rgb(90, 70, 40),
+                crate::color::rgb(60, 140, 60),
+                crate::color::rgb(200, 80, 60),
+            );
+            let growth = Growth {
+                fruit: 0.3,
+                branch: 0.7,
+                leaf: 0.9,
+                roots: 0.7,
+            };
             let mut rng = StdRng::seed_from_u64(5);
-            grow(sp, &mut g, Rect { x: 1, y: 1, w: 28, h: 18 }, 0.9, &ink, &growth, &mut rng);
+            grow(
+                sp,
+                &mut g,
+                Rect {
+                    x: 1,
+                    y: 1,
+                    w: 28,
+                    h: 18,
+                },
+                0.9,
+                &ink,
+                &growth,
+                &mut rng,
+            );
             let filled = g.iter().flatten().filter(|c| c.ch != ' ').count();
             assert!(filled > 20, "{:?} drew only {} cells", sp, filled);
             let top_half = g.iter().take(10).flatten().filter(|c| c.ch != ' ').count();
@@ -1147,11 +1252,46 @@ mod tests {
     fn tiny_plots_do_not_panic() {
         for sp in SPECIES {
             let mut g = vec![vec![Cell::blank(); 6]; 5];
-            let ink = Ink::from_base(crate::color::rgb(90, 70, 40), crate::color::rgb(60, 140, 60), crate::color::rgb(200, 80, 60));
-            let growth = Growth { fruit: 1.0, branch: 1.5, leaf: 1.5, roots: 1.0 };
+            let ink = Ink::from_base(
+                crate::color::rgb(90, 70, 40),
+                crate::color::rgb(60, 140, 60),
+                crate::color::rgb(200, 80, 60),
+            );
+            let growth = Growth {
+                fruit: 1.0,
+                branch: 1.5,
+                leaf: 1.5,
+                roots: 1.0,
+            };
             let mut rng = StdRng::seed_from_u64(9);
-            grow(sp, &mut g, Rect { x: 0, y: 0, w: 6, h: 5 }, 1.0, &ink, &growth, &mut rng);
-            grow(sp, &mut g, Rect { x: 0, y: 0, w: 2, h: 2 }, 1.0, &ink, &growth, &mut rng);
+            grow(
+                sp,
+                &mut g,
+                Rect {
+                    x: 0,
+                    y: 0,
+                    w: 6,
+                    h: 5,
+                },
+                1.0,
+                &ink,
+                &growth,
+                &mut rng,
+            );
+            grow(
+                sp,
+                &mut g,
+                Rect {
+                    x: 0,
+                    y: 0,
+                    w: 2,
+                    h: 2,
+                },
+                1.0,
+                &ink,
+                &growth,
+                &mut rng,
+            );
         }
     }
 }

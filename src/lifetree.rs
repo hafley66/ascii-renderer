@@ -155,7 +155,11 @@ fn hue_of(c: Color) -> f64 {
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn scale(c: (u8, u8, u8), k: f32) -> Color {
     let f = |v: u8| ((v as f32 * k).round().clamp(0.0, 255.0)) as u8;
-    Color::Rgb { r: f(c.0), g: f(c.1), b: f(c.2) }
+    Color::Rgb {
+        r: f(c.0),
+        g: f(c.1),
+        b: f(c.2),
+    }
 }
 
 #[inline]
@@ -197,7 +201,16 @@ fn grow(
     }
     let x1 = x + ang.cos() * len;
     let y1 = y - ang.sin() * len;
-    segs.push(Seg { x0: x, y0: y, x1, y1, lvl, thick, ord0, ord1: ord0 + len });
+    segs.push(Seg {
+        x0: x,
+        y0: y,
+        x1,
+        y1,
+        lvl,
+        thick,
+        ord0,
+        ord1: ord0 + len,
+    });
     let n = if lvl == 0 {
         2
     } else if lvl <= 3 && rng.random::<f32>() < 0.3 {
@@ -205,17 +218,39 @@ fn grow(
     } else {
         2
     };
-    let keep = if lvl >= 5 { 0.68 } else if lvl >= 3 { 0.82 } else { 1.0 };
+    let keep = if lvl >= 5 {
+        0.68
+    } else if lvl >= 3 {
+        0.82
+    } else {
+        1.0
+    };
     for i in 0..n {
         if rng.random::<f32>() > keep {
             continue;
         }
-        let side = if n == 2 { if i == 0 { -1.0 } else { 1.0 } } else { i as f32 - 1.0 };
+        let side = if n == 2 {
+            if i == 0 { -1.0 } else { 1.0 }
+        } else {
+            i as f32 - 1.0
+        };
         let sp = spread * (0.55 + rng.random::<f32>() * 0.9);
         let jitter = (rng.random::<f32>() - 0.5) * 0.35;
         let na = ang + side * sp + jitter;
         let nl = len * (0.66 + rng.random::<f32>() * 0.14);
-        grow(rng, segs, x1, y1, na, nl, lvl + 1, max_lvl, thick * 0.62, ord0 + len, spread);
+        grow(
+            rng,
+            segs,
+            x1,
+            y1,
+            na,
+            nl,
+            lvl + 1,
+            max_lvl,
+            thick * 0.62,
+            ord0 + len,
+            spread,
+        );
     }
 }
 
@@ -272,7 +307,11 @@ fn raster(
         }
         let tex = slope_code(dx, dy);
         let kind = if is_root {
-            if s.lvl + 1 >= max_lvl { Kind::RootTip } else { Kind::Root }
+            if s.lvl + 1 >= max_lvl {
+                Kind::RootTip
+            } else {
+                Kind::Root
+            }
         } else if s.lvl <= 1 {
             Kind::Trunk
         } else if s.lvl + 2 >= max_lvl {
@@ -291,7 +330,13 @@ fn raster(
                 if x < 0 || py < 0 || x >= w as i32 || py >= h as i32 {
                     continue;
                 }
-                let tex_k = if k == -half && half > 0 { 4 } else if k == half && half > 0 { 5 } else { tex };
+                let tex_k = if k == -half && half > 0 {
+                    4
+                } else if k == half && half > 0 {
+                    5
+                } else {
+                    tex
+                };
                 map[py as usize * w + x as usize] = Some(TreeCell {
                     x,
                     y: py,
@@ -308,7 +353,16 @@ fn raster(
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn blob(map: &mut Vec<Option<TreeCell>>, w: usize, h: usize, cx: i32, cy: i32, r: i32, ord: f32, rng: &mut StdRng) {
+fn blob(
+    map: &mut Vec<Option<TreeCell>>,
+    w: usize,
+    h: usize,
+    cx: i32,
+    cy: i32,
+    r: i32,
+    ord: f32,
+    rng: &mut StdRng,
+) {
     for dy in -r..=r {
         for dx in -(r * 2)..=(r * 2) {
             let d = (dx as f32 * 0.5).powi(2) + (dy as f32).powi(2);
@@ -343,7 +397,9 @@ fn build(w: usize, h: usize, seed: u64, palette: &[Color; 5], k: &LifeKnobs) -> 
     let mut rng = StdRng::seed_from_u64(seed ^ 0x1F3D_5B79_9E37_79B9);
     let cx = (w / 2) as i32;
     let divide = ((w as f32) * k.seam).round() as i32;
-    let ground = ((h as f32) * (1.0 - k.roots)).round().clamp(4.0, h as f32 - 3.0) as usize;
+    let ground = ((h as f32) * (1.0 - k.roots))
+        .round()
+        .clamp(4.0, h as f32 - 3.0) as usize;
 
     // colors
     let eth_hue = (hue_of(palette[3]) + 150.0).rem_euclid(360.0);
@@ -360,21 +416,66 @@ fn build(w: usize, h: usize, seed: u64, palette: &[Color; 5], k: &LifeKnobs) -> 
     // canopy
     let mut canopy: Vec<Seg> = Vec::new();
     let base_thick = (w as f32 / 30.0).clamp(1.0, 7.0);
-    grow(&mut rng, &mut canopy, 0.0, 0.0, std::f32::consts::FRAC_PI_2, 10.0, 0, k.depth, base_thick, 0.0, k.spread);
+    grow(
+        &mut rng,
+        &mut canopy,
+        0.0,
+        0.0,
+        std::f32::consts::FRAC_PI_2,
+        10.0,
+        0,
+        k.depth,
+        base_thick,
+        0.0,
+        k.spread,
+    );
     let half_w = (w as f32 * 0.47).max(4.0);
-    fit(&mut canopy, cx as f32, ground as f32, half_w, (ground as f32 - 1.5).max(2.0));
+    fit(
+        &mut canopy,
+        cx as f32,
+        ground as f32,
+        half_w,
+        (ground as f32 - 1.5).max(2.0),
+    );
     let ord_max = canopy.iter().fold(1.0_f32, |m, s| m.max(s.ord1));
 
     // roots
     let mut roots: Vec<Seg> = Vec::new();
     let root_lvl = (k.depth.saturating_sub(3)).max(2);
-    grow(&mut rng, &mut roots, 0.0, 0.0, -std::f32::consts::FRAC_PI_2, 8.0, 0, root_lvl, base_thick * 0.55, 0.0, k.spread * 1.2);
+    grow(
+        &mut rng,
+        &mut roots,
+        0.0,
+        0.0,
+        -std::f32::consts::FRAC_PI_2,
+        8.0,
+        0,
+        root_lvl,
+        base_thick * 0.55,
+        0.0,
+        k.spread * 1.2,
+    );
     let root_span = (h as f32 - ground as f32 - 1.0).max(1.0);
-    fit(&mut roots, cx as f32, ground as f32, half_w * 0.45, root_span);
+    fit(
+        &mut roots,
+        cx as f32,
+        ground as f32,
+        half_w * 0.45,
+        root_span,
+    );
     let root_ord_max = roots.iter().fold(1.0_f32, |m, s| m.max(s.ord1));
 
     let mut map: Vec<Option<TreeCell>> = vec![None; w * h];
-    raster(&roots, root_lvl, true, root_ord_max, w, h, &mut rng, &mut map);
+    raster(
+        &roots,
+        root_lvl,
+        true,
+        root_ord_max,
+        w,
+        h,
+        &mut rng,
+        &mut map,
+    );
     raster(&canopy, k.depth, false, ord_max, w, h, &mut rng, &mut map);
     // leaf blobs at outer tips
     for s in canopy.iter().filter(|s| s.lvl + 1 >= k.depth) {
@@ -382,7 +483,16 @@ fn build(w: usize, h: usize, seed: u64, palette: &[Color; 5], k: &LifeKnobs) -> 
             continue;
         }
         let r = if rng.random::<f32>() < 0.15 { 2 } else { 1 };
-        blob(&mut map, w, h, s.x1.round() as i32, s.y1.round() as i32, r, (s.ord1 / ord_max).min(1.0), &mut rng);
+        blob(
+            &mut map,
+            w,
+            h,
+            s.x1.round() as i32,
+            s.y1.round() as i32,
+            r,
+            (s.ord1 / ord_max).min(1.0),
+            &mut rng,
+        );
     }
     // leaf edge detection: a leaf with any missing 4-neighbour leaf/branch is an edge
     let mut edge_idx: Vec<usize> = Vec::new();
@@ -431,7 +541,13 @@ fn build(w: usize, h: usize, seed: u64, palette: &[Color; 5], k: &LifeKnobs) -> 
         } else {
             match c.kind {
                 Kind::Trunk | Kind::Branch => {
-                    let light = if c.tex == 5 { 0.55 } else if c.tex == 4 { 0.0 } else { 0.25 };
+                    let light = if c.tex == 5 {
+                        0.55
+                    } else if c.tex == 4 {
+                        0.0
+                    } else {
+                        0.25
+                    };
                     c.rgb = mix(bark, bark_hi, light + c.ord * 0.2);
                     c.alt = bark_hi;
                 }
@@ -494,7 +610,13 @@ fn build(w: usize, h: usize, seed: u64, palette: &[Color; 5], k: &LifeKnobs) -> 
     for y in 0..h {
         for x in 0..w {
             let eth = (x as i32) < divide;
-            let p = if eth { 0.02 } else if y < ground { 0.012 } else { 0.0 };
+            let p = if eth {
+                0.02
+            } else if y < ground {
+                0.012
+            } else {
+                0.0
+            };
             if rng.random::<f32>() < p {
                 stars.push(Star {
                     x,
@@ -551,14 +673,29 @@ fn build(w: usize, h: usize, seed: u64, palette: &[Color; 5], k: &LifeKnobs) -> 
 const ETH_TRUNK: [char; 3] = ['░', '▒', '▓'];
 const ETH_TWIG: [char; 2] = ['·', '∙'];
 const ETH_LEAF: [char; 3] = ['°', '○', '◦'];
-const BARK: [[char; 2]; 6] = [['│', '║'], ['─', '═'], ['/', '╱'], ['\\', '╲'], ['▌', '║'], ['▐', '║']];
+const BARK: [[char; 2]; 6] = [
+    ['│', '║'],
+    ['─', '═'],
+    ['/', '╱'],
+    ['\\', '╲'],
+    ['▌', '║'],
+    ['▐', '║'],
+];
 const LEAF: [[char; 2]; 4] = [['♠', '♣'], ['♣', '♠'], ['*', '♣'], ['♠', '*']];
 const MOTE: [char; 4] = ['·', '∙', '°', '○'];
 const FALL: [char; 4] = [',', '\'', '`', '"'];
 
 /// Frame render. t == 0 is the canonical static frame.
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn draw_lifetree(grid: &mut Grid, w: usize, h: usize, seed: u64, palette: &[Color; 5], t: f32, k: &LifeKnobs) {
+pub(crate) fn draw_lifetree(
+    grid: &mut Grid,
+    w: usize,
+    h: usize,
+    seed: u64,
+    palette: &[Color; 5],
+    t: f32,
+    k: &LifeKnobs,
+) {
     if w == 0 || h == 0 {
         return;
     }
@@ -592,9 +729,21 @@ fn frame(grid: &mut Grid, c: &Cached, t: f32, k: &LifeKnobs) {
             let v = (ts * s.rate + s.phase).sin();
             let (ch, col) = if eth {
                 let b = 0.35 + 0.65 * v.max(0.0);
-                (if v > 0.75 { '✦' } else if v > 0.1 { '·' } else { '·' }, scale(c.eth_rgb, b * 0.9))
+                (
+                    if v > 0.75 {
+                        '✦'
+                    } else if v > 0.1 {
+                        '·'
+                    } else {
+                        '·'
+                    },
+                    scale(c.eth_rgb, b * 0.9),
+                )
             } else {
-                (if v > 0.9 { '✧' } else { '·' }, scale(c.eth_hi, 0.35 + 0.15 * v))
+                (
+                    if v > 0.9 { '✧' } else { '·' },
+                    scale(c.eth_hi, 0.35 + 0.15 * v),
+                )
             };
             put(grid, s.x as i32, s.y as i32, ch, col);
         }
@@ -624,7 +773,13 @@ fn frame(grid: &mut Grid, c: &Cached, t: f32, k: &LifeKnobs) {
                 let pulse = p.max(0.0);
                 let pulse = pulse * pulse;
                 let b = 0.42 + 0.58 * k.glow * pulse + 0.1 * (1.0 - k.glow);
-                let idx = if pulse > 0.55 { 2 } else if pulse > 0.15 { 1 } else { 0 };
+                let idx = if pulse > 0.55 {
+                    2
+                } else if pulse > 0.15 {
+                    1
+                } else {
+                    0
+                };
                 let ch = match cell.kind {
                     Kind::Trunk | Kind::Branch => ETH_TRUNK[idx],
                     Kind::Root => ETH_TRUNK[idx.min(1)],
@@ -639,7 +794,8 @@ fn frame(grid: &mut Grid, c: &Cached, t: f32, k: &LifeKnobs) {
                 let dx = if matches!(cell.kind, Kind::Root | Kind::RootTip) {
                     0
                 } else {
-                    let s = (ts * 0.9 + cell.ord * 2.6).sin() + 0.35 * (ts * 2.1 + cell.y as f32 * 0.21).sin();
+                    let s = (ts * 0.9 + cell.ord * 2.6).sin()
+                        + 0.35 * (ts * 2.1 + cell.y as f32 * 0.21).sin();
                     (k.sway * hf * hf.sqrt() * s * 0.74).round() as i32
                 };
                 let (ch, col) = match cell.kind {
@@ -647,7 +803,9 @@ fn frame(grid: &mut Grid, c: &Cached, t: f32, k: &LifeKnobs) {
                         let r = (ts * 3.1 + cell.phase * 6.2832).sin();
                         let pair = LEAF[(cell.tex & 3) as usize];
                         let ch = if r > 0.62 { pair[1] } else { pair[0] };
-                        let light = 0.82 + 0.22 * r.max(0.0) + 0.1 * (ts * 0.4 + cell.x as f32 * 0.05).sin();
+                        let light = 0.82
+                            + 0.22 * r.max(0.0)
+                            + 0.1 * (ts * 0.4 + cell.x as f32 * 0.05).sin();
                         (ch, scale(mix(cell.rgb, cell.alt, r.max(0.0) * 0.4), light))
                     }
                     Kind::Trunk | Kind::Branch => {
@@ -664,7 +822,10 @@ fn frame(grid: &mut Grid, c: &Cached, t: f32, k: &LifeKnobs) {
                     }
                     Kind::Root => {
                         let pair = BARK[(cell.tex as usize).min(5)];
-                        (if cell.phase > 0.7 { pair[1] } else { pair[0] }, scale(cell.rgb, 0.9))
+                        (
+                            if cell.phase > 0.7 { pair[1] } else { pair[0] },
+                            scale(cell.rgb, 0.9),
+                        )
                     }
                     Kind::RootTip => ('·', scale(cell.rgb, 0.85)),
                 };
@@ -680,7 +841,8 @@ fn frame(grid: &mut Grid, c: &Cached, t: f32, k: &LifeKnobs) {
             for m in &c.motes {
                 let life = (ts * m.rate * 0.35 + m.phase).fract();
                 let y = (c.ground as f32 + 1.0 - life * span).round() as i32;
-                let x = (m.x0 + m.amp * (life * m.freq * 6.2832 + m.phase * 6.2832).sin()).round() as i32;
+                let x = (m.x0 + m.amp * (life * m.freq * 6.2832 + m.phase * 6.2832).sin()).round()
+                    as i32;
                 if x >= c.divide || y < 0 {
                     continue;
                 }
@@ -695,12 +857,18 @@ fn frame(grid: &mut Grid, c: &Cached, t: f32, k: &LifeKnobs) {
             for m in &c.leaves {
                 let life = (ts * m.rate * 0.3 + m.phase).fract();
                 let y = (2.0 + life * fall_span).round() as i32;
-                let x = (m.x0 + m.amp * (life * m.freq * 6.2832 + m.phase * 6.2832).sin() + k.sway * life * 1.5).round() as i32;
+                let x = (m.x0
+                    + m.amp * (life * m.freq * 6.2832 + m.phase * 6.2832).sin()
+                    + k.sway * life * 1.5)
+                    .round() as i32;
                 if x < c.divide || y >= c.ground as i32 {
                     continue;
                 }
                 let ch = FALL[((life * m.freq * 12.0) as usize) & 3];
-                let col = scale(mix(c.leaf_rgb, c.leaf_hi, m.tint), 0.75 + 0.25 * (life * 6.28).sin().abs());
+                let col = scale(
+                    mix(c.leaf_rgb, c.leaf_hi, m.tint),
+                    0.75 + 0.25 * (life * 6.28).sin().abs(),
+                );
                 put(grid, x, y, ch, col);
             }
         }
@@ -726,7 +894,20 @@ fn frame(grid: &mut Grid, c: &Cached, t: f32, k: &LifeKnobs) {
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn cli_lifetree(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
+pub(crate) fn cli_lifetree(
+    mut grid: Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: [Color; 5],
+    rng: StdRng,
+    t_anim: f32,
+    term_w: u16,
+    term_h: u16,
+    args: &[String],
+    mode: &str,
+    theme_name: &str,
+) -> (Grid, bool) {
     let _ = (rng, term_w, term_h, mode, theme_name);
     let mut k = LifeKnobs::from_env();
     if let Some(v) = args.get(4).and_then(|s| s.parse::<f32>().ok()) {
@@ -789,8 +970,16 @@ mod tests {
         let a = run(90, 30, 42, 0.0);
         let b = run(90, 30, 42, 2.0);
         assert_ne!(a, b);
-        let left = |s: &str| s.lines().map(|l| l.chars().take(45).collect::<String>()).collect::<Vec<_>>();
-        let right = |s: &str| s.lines().map(|l| l.chars().skip(45).collect::<String>()).collect::<Vec<_>>();
+        let left = |s: &str| {
+            s.lines()
+                .map(|l| l.chars().take(45).collect::<String>())
+                .collect::<Vec<_>>()
+        };
+        let right = |s: &str| {
+            s.lines()
+                .map(|l| l.chars().skip(45).collect::<String>())
+                .collect::<Vec<_>>()
+        };
         assert_ne!(left(&a), left(&b));
         assert_ne!(right(&a), right(&b));
     }
@@ -799,11 +988,26 @@ mod tests {
     #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn halves_have_distinct_glyph_pools() {
         let s = run(90, 30, 42, 0.0);
-        let left: String = s.lines().map(|l| l.chars().take(45).collect::<String>()).collect();
-        let right: String = s.lines().map(|l| l.chars().skip(45).collect::<String>()).collect();
-        assert!(left.contains('░') || left.contains('▒'), "ethereal trunk fill");
-        assert!(!left.contains('♠') && !left.contains('♣'), "no solid leaves on the ethereal side");
-        assert!(right.contains('♠') || right.contains('♣') || right.contains('*'), "living leaves");
+        let left: String = s
+            .lines()
+            .map(|l| l.chars().take(45).collect::<String>())
+            .collect();
+        let right: String = s
+            .lines()
+            .map(|l| l.chars().skip(45).collect::<String>())
+            .collect();
+        assert!(
+            left.contains('░') || left.contains('▒'),
+            "ethereal trunk fill"
+        );
+        assert!(
+            !left.contains('♠') && !left.contains('♣'),
+            "no solid leaves on the ethereal side"
+        );
+        assert!(
+            right.contains('♠') || right.contains('♣') || right.contains('*'),
+            "living leaves"
+        );
         assert!(right.contains('─'), "ground line");
     }
 
@@ -820,6 +1024,10 @@ mod tests {
         }
         let per = start.elapsed().as_secs_f64() / 200.0;
         eprintln!("lifetree frame 200x60: {:.3}ms", per * 1000.0);
-        assert!(per < 0.004, "frame {:.3}ms exceeds 4ms budget at 200x60", per * 1000.0);
+        assert!(
+            per < 0.004,
+            "frame {:.3}ms exceeds 4ms budget at 200x60",
+            per * 1000.0
+        );
     }
 }

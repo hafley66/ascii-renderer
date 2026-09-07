@@ -1,14 +1,14 @@
 use crossterm::style::Color;
-use rand::rngs::StdRng;
 use rand::RngExt;
+use rand::rngs::StdRng;
 
+use super::_33_cosmograph::FbmRow;
 use crate::_0_profile::measure_layer;
 use crate::color::{darken, lerp_color, lighten, shift_hue};
 use crate::opts::param_f32;
 use crate::pp::{pp_fbm, pp_line};
 use crate::registry::{AnimKind, Mode, ModeFrame, Param};
 use crate::types::{Cell, Grid};
-use super::_33_cosmograph::FbmRow;
 
 const TAU: f32 = std::f32::consts::TAU;
 
@@ -115,7 +115,11 @@ impl ApotheosisParams {
         let read = |index: usize, key: &str, default: f32| {
             args.get(index)
                 .and_then(|value| value.parse::<f32>().ok())
-                .or_else(|| param_values.and_then(|values| values.get(index - 4)).copied())
+                .or_else(|| {
+                    param_values
+                        .and_then(|values| values.get(index - 4))
+                        .copied()
+                })
                 .unwrap_or_else(|| param_f32(key, default))
         };
         Self {
@@ -236,7 +240,11 @@ fn draw_sky(
         let dx = (x as f32 - plan.cx as f32) / denom_x;
         dx2_col.push(dx * dx);
         let m = 2 * plan.cx - x as i32;
-        mirror_col.push(if m >= 0 && (m as usize) < x { m as usize } else { usize::MAX });
+        mirror_col.push(if m >= 0 && (m as usize) < x {
+            m as usize
+        } else {
+            usize::MAX
+        });
     }
     let mut falloff = vec![0.0f32; width];
     for y in 0..height {
@@ -291,7 +299,9 @@ fn draw_sky(
     }
 }
 
-const GLYPHS: [char; 16] = ['ᚠ', 'ᚢ', 'ᚦ', 'ᚨ', 'ᚱ', 'ᚲ', 'ᚷ', 'ᚹ', 'ᚺ', 'ᚾ', 'ᛁ', 'ᛃ', 'ᛇ', 'ᛈ', 'ᛉ', 'ᛋ'];
+const GLYPHS: [char; 16] = [
+    'ᚠ', 'ᚢ', 'ᚦ', 'ᚨ', 'ᚱ', 'ᚲ', 'ᚷ', 'ᚹ', 'ᚺ', 'ᚾ', 'ᛁ', 'ᛃ', 'ᛇ', 'ᛈ', 'ᛉ', 'ᛋ',
+];
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_mandala(
@@ -395,8 +405,7 @@ fn draw_wings(
             let ang = -std::f32::consts::FRAC_PI_2
                 + side as f32 * (0.55 + spread * 1.05)
                 + flap * side as f32;
-            let len = plan.halo_rx * (0.55 + spread * 0.42) * (1.0 - spread * 0.18)
-                + h * 2.0;
+            let len = plan.halo_rx * (0.55 + spread * 0.42) * (1.0 - spread * 0.18) + h * 2.0;
             let x1 = plan.cx as f32 + ang.cos() * len;
             let y1 = (plan.fig_y - 2) as f32 + ang.sin() * len * 0.62;
             let col = if spread > 0.7 {
@@ -404,10 +413,23 @@ fn draw_wings(
             } else {
                 plume
             };
-            pp_line(grid, plan.cx, plan.fig_y - 2, x1.round() as i32, y1.round() as i32, col);
+            pp_line(
+                grid,
+                plan.cx,
+                plan.fig_y - 2,
+                x1.round() as i32,
+                y1.round() as i32,
+                col,
+            );
             let tip_x = x1.round() as i32;
             let tip_y = y1.round() as i32;
-            put(grid, tip_x, tip_y, if h > 0.6 { '✧' } else { '∙' }, lighten(col, 10));
+            put(
+                grid,
+                tip_x,
+                tip_y,
+                if h > 0.6 { '✧' } else { '∙' },
+                lighten(col, 10),
+            );
             let mid_x = (plan.cx as f32 + x1) / 2.0;
             let mid_y = (plan.fig_y - 2) as f32 + y1;
             put(
@@ -439,7 +461,11 @@ fn draw_figure(
     put(grid, plan.cx + 1, head + 1, '╮', shade);
     put(grid, plan.cx, head + 1, '┄', shade);
     for y in head + 2..=fy - 1 {
-        let robe = if (y + fy).rem_euclid(2) == 0 { '▓' } else { '▒' };
+        let robe = if (y + fy).rem_euclid(2) == 0 {
+            '▓'
+        } else {
+            '▒'
+        };
         put(grid, plan.cx, y, robe, shade);
     }
     for y in fy..=fy + 3 {
@@ -539,13 +565,25 @@ fn draw_motes(
         let h3 = hash01(seed, 3000 + i as u64 * 41);
         let orbit_r = plan.halo_rx * (0.55 + h1 * 1.35);
         let orbit_rv = plan.halo_ry * (0.55 + h1 * 1.20);
-        let a = t * params.speed * (0.25 + h2 * 0.55) * (if h3 > 0.5 { 1.0 } else { -1.0 })
-            + h2 * TAU;
+        let a =
+            t * params.speed * (0.25 + h2 * 0.55) * (if h3 > 0.5 { 1.0 } else { -1.0 }) + h2 * TAU;
         let x = plan.cx as f32 + a.cos() * orbit_r;
         let y = plan.halo_cy as f32 + a.sin() * orbit_rv + (h3 - 0.5) * 3.0;
         let fade = 18 + (h3 * 34.0) as u8;
-        let ch = if h3 > 0.85 { '✦' } else if h3 > 0.45 { '∙' } else { '·' };
-        put(grid, x.round() as i32, y.round() as i32, ch, darken(warm, fade));
+        let ch = if h3 > 0.85 {
+            '✦'
+        } else if h3 > 0.45 {
+            '∙'
+        } else {
+            '·'
+        };
+        put(
+            grid,
+            x.round() as i32,
+            y.round() as i32,
+            ch,
+            darken(warm, fade),
+        );
     }
 }
 

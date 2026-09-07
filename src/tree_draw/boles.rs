@@ -1,4 +1,5 @@
 //! Bole/trunk styles and taper caps.
+use super::*;
 use crate::color::*;
 use crate::sprites::*;
 use crate::types::*;
@@ -6,7 +7,6 @@ use crossterm::style::Color;
 use rand::RngExt;
 use rand::rngs::StdRng;
 use std::cell::Cell;
-use super::*;
 
 pub struct BoleExit {
     pub x: i32,
@@ -54,7 +54,12 @@ impl Default for TaperKind {
     }
 }
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn draw_taper(grid: &mut Grid, exit: &BoleExit, color: Color, kind: TaperKind) -> (i32, i32) {
+pub(crate) fn draw_taper(
+    grid: &mut Grid,
+    exit: &BoleExit,
+    color: Color,
+    kind: TaperKind,
+) -> (i32, i32) {
     if exit.left == 0 && exit.right == 0 {
         set(grid, exit.x, exit.y, '│', color);
         return (exit.x, exit.y);
@@ -811,4 +816,3 @@ impl<T: TreeDrawer> TreeDrawer for TreeWithTrunk<T> {
         self.tree.draw_fruit(grid, x, y, params, rng);
     }
 }
-

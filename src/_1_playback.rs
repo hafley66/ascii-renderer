@@ -1,11 +1,11 @@
 //! Input stays in the terminal process. A killable process group owns rendering,
 //! encoding, caches and any render subprocesses. Pipes provide backpressure.
-use crate::_0_profile::{playback_event, PlaybackStage, RelayProfiler};
+use crate::_0_profile::{PlaybackStage, RelayProfiler, playback_event};
 use crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers};
-use nix::fcntl::{fcntl, FcntlArg, OFlag};
-use nix::poll::{poll, PollFd, PollFlags};
-use nix::sys::signal::{killpg, Signal};
-use nix::sys::termios::{tcflush, FlushArg};
+use nix::fcntl::{FcntlArg, OFlag, fcntl};
+use nix::poll::{PollFd, PollFlags, poll};
+use nix::sys::signal::{Signal, killpg};
+use nix::sys::termios::{FlushArg, tcflush};
 use nix::unistd::Pid;
 use std::collections::VecDeque;
 use std::fs::OpenOptions;
@@ -494,13 +494,15 @@ mod tests {
         );
 
         let mut file = tempfile::tempfile().unwrap();
-        assert!(write_frame(
-            &mut file,
-            b"\x18complete replacement",
-            &receiver,
-            &mut Vec::new()
-        )
-        .unwrap());
+        assert!(
+            write_frame(
+                &mut file,
+                b"\x18complete replacement",
+                &receiver,
+                &mut Vec::new()
+            )
+            .unwrap()
+        );
         use std::io::{Seek, SeekFrom};
         file.seek(SeekFrom::Start(0)).unwrap();
         let mut bytes = Vec::new();

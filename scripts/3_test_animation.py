@@ -24,6 +24,7 @@ import threading
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('binary', nargs='?', help='existing binary; otherwise build release automatically')
 parser.add_argument('--mode', default='gem-aetherium-2')
+parser.add_argument('--tmux', action='store_true', help='include an isolated tmux server and drained PTY client')
 parser.add_argument('--max', action='store_true', help='set every declared knob to maximum simultaneously')
 parser.add_argument('--size', action='append', help='render WIDTHxHEIGHT; repeat for multiple sizes')
 parser.add_argument('--frames', type=int, default=100)
@@ -67,9 +68,13 @@ def check(width, height):
             os.close(gate_read)
             env = dict(os.environ, ASCII_TRACE_PATH=str(trace), ASCII_TRACE_ALL='1',
                        XDG_CONFIG_HOME=directory)
-            os.execve(binary, [binary, '42', 'morph', 'auto', args.mode,
-                               '42', args.mode, '43', 'iterate'], env)
-        fcntl.ioctl(fd, termios.TIOCSWINSZ, struct.pack('HHHH', height + 1, width + 34, 0, 0))
+            command = [binary, '42', 'morph', 'auto', args.mode, '42', args.mode, '43', 'iterate']
+            if args.tmux:
+                env['TERM'] = 'xterm-256color'
+                os.execvpe('tmux', ['tmux', '-T', 'RGB', '-S', str(Path(directory) / 'tmux.sock'), '-f', '/dev/null',
+                                    'new-session', '-s', 'animation', shlex.join(command)], env)
+            os.execve(binary, command, env)
+        fcntl.ioctl(fd, termios.TIOCSWINSZ, struct.pack('HHHH', height + 1 + int(args.tmux), width + 34, 0, 0))
         initial = termios.tcgetattr(fd)
         os.close(gate_read)
         os.write(gate_write, b'1')
@@ -117,7 +122,7 @@ def check(width, height):
                         sent_roll = len(frames) // 4
                     seen = len(frames)
             # No endpoint CLI render should run during native startup or cycle wrap.
-            assert all(event['kind'] in ('animation_frame', 'slow_animation_frame') for event in events)
+            assert all(event['kind'] not in ('render', 'slow_render') for event in events)
             if args.frames >= 100:
                 assert frames[-1]['time'] > 5.4, frames[-1]
             if args.max:
@@ -131,7 +136,7 @@ def check(width, height):
                 values = [event[stage] / 1000 for event in frames]
                 print(f'{width}x{height} {stage}: median={statistics.median(values):.3f} ms max={max(values):.3f} ms')
             print(f'{width}x{height}: {len(frames)} frames, {len({e["roll"] for e in frames})} rolls, wall={time.monotonic()-started:.3f}s')
-            slowest = max(range(len(events)), key=lambda i: events[i]['dur_us'])
+            slowest = max((i for i, event in enumerate(events) if 'frame_index' in event), key=lambda i: events[i]['dur_us'])
             print('Replay slowest frame: ' + shlex.join([binary, 'replay', str(trace), str(first_line + slowest + 1)]), flush=True)
             if width == 320 and not args.max:
                 # Deferred endpoints must still initialize when leaving native mode.
@@ -176,6 +181,9 @@ def check(width, height):
             stop.set()
             reader.join(timeout=1)
             os.close(fd)
+            if args.tmux:
+                subprocess.run(['tmux', '-T', 'RGB', '-S', str(Path(directory) / 'tmux.sock'), 'kill-server'],
+                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
 for width, height in sizes:

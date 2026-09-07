@@ -99,7 +99,12 @@ impl HyperKnobs {
     }
     #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn geometry_key(&self) -> (u32, u32, u32, usize) {
-        (self.depth, self.spread.to_bits(), self.len.to_bits(), self.motes)
+        (
+            self.depth,
+            self.spread.to_bits(),
+            self.len.to_bits(),
+            self.motes,
+        )
     }
 }
 
@@ -192,7 +197,11 @@ fn hue_of(c: Color) -> f64 {
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn scale(c: (u8, u8, u8), k: f32) -> Color {
     let f = |v: u8| ((v as f32 * k).round().clamp(0.0, 255.0)) as u8;
-    Color::Rgb { r: f(c.0), g: f(c.1), b: f(c.2) }
+    Color::Rgb {
+        r: f(c.0),
+        g: f(c.1),
+        b: f(c.2),
+    }
 }
 
 #[inline]
@@ -257,14 +266,23 @@ fn grow(
     } else {
         Kind::Branch
     };
-    segs.push(HSeg { p, kind, ord: ord0, phase: rng.random::<f32>() });
+    segs.push(HSeg {
+        p,
+        kind,
+        ord: ord0,
+        phase: rng.random::<f32>(),
+    });
     let end = p[SEG_N - 1];
     if lvl == max_lvl && !is_root {
         for _ in 0..5 {
             let ang = rng.random::<f32>() * 6.2832;
             let r = 0.12 + rng.random::<f32>() * 0.28;
             let w = polar((r * 0.5).tanh(), ang);
-            leaves.push(HLeaf { z: from_origin(w, end), phase: rng.random::<f32>(), tex: rng.random_range(0..4u32) as u8 });
+            leaves.push(HLeaf {
+                z: from_origin(w, end),
+                phase: rng.random::<f32>(),
+                tex: rng.random_range(0..4u32) as u8,
+            });
         }
         return;
     }
@@ -275,24 +293,48 @@ fn grow(
     } else {
         2
     };
-    let keep = if lvl >= 5 { 0.72 } else if lvl >= 3 { 0.85 } else { 1.0 };
+    let keep = if lvl >= 5 {
+        0.72
+    } else if lvl >= 3 {
+        0.85
+    } else {
+        1.0
+    };
     for i in 0..n {
         if rng.random::<f32>() > keep {
             continue;
         }
-        let side = if n == 2 { if i == 0 { -1.0 } else { 1.0 } } else { i as f32 - 1.0 };
+        let side = if n == 2 {
+            if i == 0 { -1.0 } else { 1.0 }
+        } else {
+            i as f32 - 1.0
+        };
         let sp = spread * (0.6 + rng.random::<f32>() * 0.8);
         let jitter = (rng.random::<f32>() - 0.5) * 0.3;
         let na = theta_end + side * sp + jitter;
         let nl = len * (0.82 + rng.random::<f32>() * 0.12);
-        grow(rng, segs, leaves, end, na, nl, lvl + 1, max_lvl, spread, ord0 + len, is_root);
+        grow(
+            rng,
+            segs,
+            leaves,
+            end,
+            na,
+            nl,
+            lvl + 1,
+            max_lvl,
+            spread,
+            ord0 + len,
+            is_root,
+        );
     }
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn build(w: usize, h: usize, seed: u64, palette: &[Color; 5], k: &HyperKnobs) -> Cached {
     let mut rng = StdRng::seed_from_u64(seed ^ 0x4D0B_1E5F_9E37_79B9);
-    let rx = ((w as f32) * 0.5 - 1.0).min(((h as f32) * 0.5 - 0.5) * 2.1).max(4.0);
+    let rx = ((w as f32) * 0.5 - 1.0)
+        .min(((h as f32) * 0.5 - 0.5) * 2.1)
+        .max(4.0);
     let ry = rx / 2.1;
     let cx = (w as f32) * 0.5;
     let cy = (h as f32) * 0.5;
@@ -310,9 +352,33 @@ fn build(w: usize, h: usize, seed: u64, palette: &[Color; 5], k: &HyperKnobs) ->
     let mut segs = Vec::new();
     let mut leaves = Vec::new();
     let up = std::f32::consts::FRAC_PI_2;
-    grow(&mut rng, &mut segs, &mut leaves, (0.0, -0.15), up, k.len, 0, k.depth, k.spread, 0.0, false);
+    grow(
+        &mut rng,
+        &mut segs,
+        &mut leaves,
+        (0.0, -0.15),
+        up,
+        k.len,
+        0,
+        k.depth,
+        k.spread,
+        0.0,
+        false,
+    );
     let root_lvl = k.depth.saturating_sub(3).max(2);
-    grow(&mut rng, &mut segs, &mut leaves, (0.0, -0.15), -up, k.len * 0.7, 0, root_lvl, k.spread * 1.3, 0.0, true);
+    grow(
+        &mut rng,
+        &mut segs,
+        &mut leaves,
+        (0.0, -0.15),
+        -up,
+        k.len * 0.7,
+        0,
+        root_lvl,
+        k.spread * 1.3,
+        0.0,
+        true,
+    );
     let ord_max = segs.iter().fold(0.1_f32, |m, s| m.max(s.ord));
     for s in segs.iter_mut() {
         s.ord /= ord_max;
@@ -408,7 +474,10 @@ fn slope_glyph(dx: i32, dy: i32, heavy: bool) -> char {
 #[inline]
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn to_screen(c: &Cached, z: C) -> (i32, i32) {
-    ((c.cx + z.0 * c.rx).round() as i32, (c.cy - z.1 * c.ry).round() as i32)
+    (
+        (c.cx + z.0 * c.rx).round() as i32,
+        (c.cy - z.1 * c.ry).round() as i32,
+    )
 }
 
 /// DDA line, calling `f(x, y, i, n)` per cell.
@@ -418,12 +487,23 @@ fn line(x0: i32, y0: i32, x1: i32, y1: i32, mut f: impl FnMut(i32, i32)) {
     let n = (x1 - x0).abs().max((y1 - y0).abs()).max(1);
     for i in 0..=n {
         let t = i as f32 / n as f32;
-        f((x0 as f32 + (x1 - x0) as f32 * t).round() as i32, (y0 as f32 + (y1 - y0) as f32 * t).round() as i32);
+        f(
+            (x0 as f32 + (x1 - x0) as f32 * t).round() as i32,
+            (y0 as f32 + (y1 - y0) as f32 * t).round() as i32,
+        );
     }
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn draw_lifetree4(grid: &mut Grid, w: usize, h: usize, seed: u64, palette: &[Color; 5], t: f32, k: &HyperKnobs) {
+pub(crate) fn draw_lifetree4(
+    grid: &mut Grid,
+    w: usize,
+    h: usize,
+    seed: u64,
+    palette: &[Color; 5],
+    t: f32,
+    k: &HyperKnobs,
+) {
     if w == 0 || h == 0 {
         return;
     }
@@ -445,7 +525,10 @@ fn frame(grid: &mut Grid, c: &Cached, t: f32, k: &HyperKnobs) {
     let h = grid.len();
     let ts = t * k.speed;
     // view: drift point a wanders inside the disk, rot spins, the seam geodesic turns
-    let a = (k.drift * (ts * 0.13).sin() * 0.9, k.drift * (ts * 0.09 + 1.0).sin() * 0.7);
+    let a = (
+        k.drift * (ts * 0.13).sin() * 0.9,
+        k.drift * (ts * 0.09 + 1.0).sin() * 0.7,
+    );
     let rot = polar(1.0, ts * k.spin);
     let seam_dir = polar(1.0, -(ts * k.seam));
     let side_of = |zo: C| -> bool { cmul(zo, seam_dir).0 < 0.0 };
@@ -466,7 +549,10 @@ fn frame(grid: &mut Grid, c: &Cached, t: f32, k: &HyperKnobs) {
                 let eth = side_of(zo);
                 let fade = 1.0 - r2 * r2;
                 let base = if eth { c.eth_dark } else { c.live_dark };
-                let col = scale(base, 0.35 + 0.65 * fade + if eth { flash * 0.6 } else { 0.0 });
+                let col = scale(
+                    base,
+                    0.35 + 0.65 * fade + if eth { flash * 0.6 } else { 0.0 },
+                );
                 grid[y][x] = Cell::with_bg(' ', col, col);
             }
         }
@@ -499,9 +585,18 @@ fn frame(grid: &mut Grid, c: &Cached, t: f32, k: &HyperKnobs) {
                     let s = to_screen(c, z);
                     if let Some(p) = prev {
                         let eth = side_of(zo);
-                        let col = if eth { scale(c.eth_rgb, 0.32 * k.tile) } else { scale(c.bark, 0.55 * k.tile) };
+                        let col = if eth {
+                            scale(c.eth_rgb, 0.32 * k.tile)
+                        } else {
+                            scale(c.bark, 0.55 * k.tile)
+                        };
                         line(p.0, p.1, s.0, s.1, |x, y| {
-                            if x >= 0 && y >= 0 && (x as usize) < w && (y as usize) < h && grid[y as usize][x as usize].ch == ' ' {
+                            if x >= 0
+                                && y >= 0
+                                && (x as usize) < w
+                                && (y as usize) < h
+                                && grid[y as usize][x as usize].ch == ' '
+                            {
                                 grid[y as usize][x as usize].ch = '·';
                                 grid[y as usize][x as usize].fg = col;
                             }
@@ -536,9 +631,21 @@ fn frame(grid: &mut Grid, c: &Cached, t: f32, k: &HyperKnobs) {
                 if eth {
                     let p = (s.ord * 9.0 - ts * 1.6 + s.phase).sin().max(0.0);
                     let pulse = p * p;
-                    let idx = if pulse > 0.55 { 2 } else if pulse > 0.15 { 1 } else { 0 };
+                    let idx = if pulse > 0.55 {
+                        2
+                    } else if pulse > 0.15 {
+                        1
+                    } else {
+                        0
+                    };
                     let ch = match s.kind {
-                        Kind::Twig => if idx > 0 { '∙' } else { '·' },
+                        Kind::Twig => {
+                            if idx > 0 {
+                                '∙'
+                            } else {
+                                '·'
+                            }
+                        }
                         _ => ETH_FILL[idx],
                     };
                     let b = (0.4 + 0.6 * k.glow * pulse.max(flash)) * (0.45 + 0.55 * local);
@@ -582,12 +689,21 @@ fn frame(grid: &mut Grid, c: &Cached, t: f32, k: &HyperKnobs) {
             if side_of(l.z) {
                 let p = (ts * 1.3 + l.phase * 6.28).sin();
                 let ch = if p > 0.5 { '○' } else { '°' };
-                put(grid, x, y, ch, scale(c.eth_hi, (0.45 + 0.4 * p.max(0.0)) * (0.5 + 0.5 * local)));
+                put(
+                    grid,
+                    x,
+                    y,
+                    ch,
+                    scale(c.eth_hi, (0.45 + 0.4 * p.max(0.0)) * (0.5 + 0.5 * local)),
+                );
             } else {
                 let r = (ts * 2.7 + l.phase * 6.2832).sin();
                 let pair = LEAF[(l.tex & 3) as usize];
                 let ch = if r > 0.6 { pair[1] } else { pair[0] };
-                let col = scale(mix(c.leaf_rgb, c.leaf_hi, l.phase * 0.5 + r.max(0.0) * 0.3), (0.7 + 0.3 * local) * (0.85 + 0.15 * r));
+                let col = scale(
+                    mix(c.leaf_rgb, c.leaf_hi, l.phase * 0.5 + r.max(0.0) * 0.3),
+                    (0.7 + 0.3 * local) * (0.85 + 0.15 * r),
+                );
                 put(grid, x, y, ch, col);
             }
         }
@@ -598,7 +714,10 @@ fn frame(grid: &mut Grid, c: &Cached, t: f32, k: &HyperKnobs) {
         for m in &c.motes {
             let life = (ts * m.rate * 0.4 + m.phase).fract();
             let d = life * 6.0;
-            let zo = polar((d * 0.5).tanh(), m.ang + 0.4 * (life * 6.28 + m.phase).sin());
+            let zo = polar(
+                (d * 0.5).tanh(),
+                m.ang + 0.4 * (life * 6.28 + m.phase).sin(),
+            );
             if !side_of(zo) {
                 continue;
             }
@@ -610,7 +729,13 @@ fn frame(grid: &mut Grid, c: &Cached, t: f32, k: &HyperKnobs) {
             let (x, y) = to_screen(c, z);
             let stage = ((life * 4.0) as usize).min(3);
             let b = (life * 3.1416).sin() * (0.5 + 0.5 * local);
-            put(grid, x, y, MOTE[[0, 1, 2, 1][stage]], scale(mix(c.eth_rgb, c.eth_hi, m.tint), 0.35 + 0.65 * b));
+            put(
+                grid,
+                x,
+                y,
+                MOTE[[0, 1, 2, 1][stage]],
+                scale(mix(c.eth_rgb, c.eth_hi, m.tint), 0.35 + 0.65 * b),
+            );
         }
     });
 
@@ -624,7 +749,12 @@ fn frame(grid: &mut Grid, c: &Cached, t: f32, k: &HyperKnobs) {
                 continue;
             }
             let (x, y) = to_screen(c, z);
-            if x >= 0 && y >= 0 && (x as usize) < w && (y as usize) < h && grid[y as usize][x as usize].ch == ' ' {
+            if x >= 0
+                && y >= 0
+                && (x as usize) < w
+                && (y as usize) < h
+                && grid[y as usize][x as usize].ch == ' '
+            {
                 let p = (s * 2.0 - ts * 2.5).sin();
                 if p > 0.1 {
                     put(grid, x, y, '┆', scale(c.eth_hi, 0.35 + 0.5 * k.glow * p));
@@ -635,7 +765,20 @@ fn frame(grid: &mut Grid, c: &Cached, t: f32, k: &HyperKnobs) {
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn cli_lifetree4(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
+pub(crate) fn cli_lifetree4(
+    mut grid: Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: [Color; 5],
+    rng: StdRng,
+    t_anim: f32,
+    term_w: u16,
+    term_h: u16,
+    args: &[String],
+    mode: &str,
+    theme_name: &str,
+) -> (Grid, bool) {
     let _ = (rng, term_w, term_h, mode, theme_name);
     let mut k = HyperKnobs::from_env();
     let f = |i: usize| args.get(i).and_then(|s| s.parse::<f32>().ok());
@@ -712,8 +855,14 @@ mod tests {
     #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn both_sides_present() {
         let s = run(100, 32, 42, 0.0);
-        assert!(s.contains('░') || s.contains('▒') || s.contains('▓'), "ethereal fill");
-        assert!(s.contains('║') || s.contains('│') || s.contains('╱') || s.contains('╲'), "living bark");
+        assert!(
+            s.contains('░') || s.contains('▒') || s.contains('▓'),
+            "ethereal fill"
+        );
+        assert!(
+            s.contains('║') || s.contains('│') || s.contains('╱') || s.contains('╲'),
+            "living bark"
+        );
     }
 
     #[test]
@@ -739,6 +888,10 @@ mod tests {
         }
         let per = start.elapsed().as_secs_f64() / 200.0;
         eprintln!("lifetree4 frame 200x60: {:.3}ms", per * 1000.0);
-        assert!(per < 0.006, "frame {:.3}ms exceeds 6ms budget at 200x60", per * 1000.0);
+        assert!(
+            per < 0.006,
+            "frame {:.3}ms exceeds 6ms budget at 200x60",
+            per * 1000.0
+        );
     }
 }

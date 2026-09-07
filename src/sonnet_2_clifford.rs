@@ -74,7 +74,10 @@ thread_local! {
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn step(a: f32, b: f32, c: f32, d: f32, x: f32, y: f32) -> (f32, f32) {
-    ((a * y).sin() + c * (a * x).cos(), (b * x).sin() + d * (b * y).cos())
+    (
+        (a * y).sin() + c * (a * x).cos(),
+        (b * x).sin() + d * (b * y).cos(),
+    )
 }
 
 const QUICK_ITERS: u32 = 2200;
@@ -126,11 +129,20 @@ fn quick_bbox(a: f32, b: f32, c: f32, d: f32, x0: f32, y0: f32) -> Quick {
         if i >= BURN_IN {
             let u = ((x2 - minx) / spanx).clamp(0.0, 0.999);
             let v = ((y2 - miny) / spany).clamp(0.0, 0.999);
-            seen[(v * QUICK_GRID as f32) as usize * QUICK_GRID + (u * QUICK_GRID as f32) as usize] = true;
+            seen[(v * QUICK_GRID as f32) as usize * QUICK_GRID
+                + (u * QUICK_GRID as f32) as usize] = true;
         }
     }
     let occ = seen.iter().filter(|s| **s).count();
-    Quick { minx, maxx, miny, maxy, x_end, y_end, occ }
+    Quick {
+        minx,
+        maxx,
+        miny,
+        maxy,
+        x_end,
+        y_end,
+        occ,
+    }
 }
 
 struct Trial {
@@ -186,7 +198,16 @@ fn trial(a: f32, b: f32, c: f32, d: f32) -> Option<Trial> {
     let nf = fine.iter().filter(|b| **b).count().max(1);
     let nc = coarse.iter().filter(|b| **b).count().max(1);
     let dim = (nf as f32 / nc as f32).ln() / (FINE as f32 / COARSE as f32).ln();
-    Some(Trial { minx, maxx, miny, maxy, x_end: x2, y_end: y2, dim, occ: nf })
+    Some(Trial {
+        minx,
+        maxx,
+        miny,
+        maxy,
+        x_end: x2,
+        y_end: y2,
+        dim,
+        occ: nf,
+    })
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
@@ -204,12 +225,17 @@ fn build(seed: u64) -> Geom {
         let b = rng.random_range(-PARAM_RANGE..PARAM_RANGE);
         let c = rng.random_range(-PARAM_RANGE..PARAM_RANGE);
         let d = rng.random_range(-PARAM_RANGE..PARAM_RANGE);
-        let Some(tr) = trial(a, b, c, d) else { continue };
+        let Some(tr) = trial(a, b, c, d) else {
+            continue;
+        };
         if tr.occ < MIN_OCC {
             continue;
         }
         let score = -((tr.dim - TARGET_DIM).abs());
-        let better = best.as_ref().map(|(_, _, _, _, _, s)| score > *s).unwrap_or(true);
+        let better = best
+            .as_ref()
+            .map(|(_, _, _, _, _, s)| score > *s)
+            .unwrap_or(true);
         if better {
             best = Some((a, b, c, d, tr, score));
         }
@@ -218,12 +244,29 @@ fn build(seed: u64) -> Geom {
         Some((a, b, c, d, tr, _)) => (a, b, c, d, tr),
         None => {
             let (a, b, c, d) = (-1.4, 1.6, 1.0, 0.7);
-            let tr = trial(a, b, c, d)
-                .unwrap_or(Trial { minx: -1.7, maxx: 1.7, miny: -1.7, maxy: 1.7, x_end: 0.1, y_end: 0.1, dim: 1.0, occ: 0 });
+            let tr = trial(a, b, c, d).unwrap_or(Trial {
+                minx: -1.7,
+                maxx: 1.7,
+                miny: -1.7,
+                maxy: 1.7,
+                x_end: 0.1,
+                y_end: 0.1,
+                dim: 1.0,
+                occ: 0,
+            });
             (a, b, c, d, tr)
         }
     };
-    Geom { a, b, c, d, x0: tr.x_end, y0: tr.y_end, hue0: seed_hue(seed), variant: seed & 1 == 1 }
+    Geom {
+        a,
+        b,
+        c,
+        d,
+        x0: tr.x_end,
+        y0: tr.y_end,
+        hue0: seed_hue(seed),
+        variant: seed & 1 == 1,
+    }
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
@@ -247,7 +290,11 @@ pub(crate) fn draw_sonnet_2_clifford(
         let mut slot = cell.borrow_mut();
         let stale = slot.as_ref().map(|c| c.seed != seed).unwrap_or(true);
         if stale {
-            *slot = Some(Cached { seed, geom: build(seed), counts: Vec::new() });
+            *slot = Some(Cached {
+                seed,
+                geom: build(seed),
+                counts: Vec::new(),
+            });
         }
         let c = slot.as_mut().unwrap();
         render(grid, w, h, palette, t, k, c);
@@ -255,7 +302,15 @@ pub(crate) fn draw_sonnet_2_clifford(
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn render(grid: &mut Grid, w: usize, h: usize, palette: &[Color; 5], t: f32, k: &CliffordKnobs, c: &mut Cached) {
+fn render(
+    grid: &mut Grid,
+    w: usize,
+    h: usize,
+    palette: &[Color; 5],
+    t: f32,
+    k: &CliffordKnobs,
+    c: &mut Cached,
+) {
     measure_layer("sonnet-2-clifford", "clear", || {
         let vign_steps = 20usize;
         let core = lighten(palette[0], 10);
@@ -267,7 +322,12 @@ fn render(grid: &mut Grid, w: usize, h: usize, palette: &[Color; 5], t: f32, k: 
         let cy_f = h as f32 * 0.5;
         let rx = cx_f.max(1.0);
         let ry = cy_f.max(1.0);
-        let col_r2: Vec<f32> = (0..w).map(|x| { let nx = (x as f32 + 0.5 - cx_f) / rx; nx * nx }).collect();
+        let col_r2: Vec<f32> = (0..w)
+            .map(|x| {
+                let nx = (x as f32 + 0.5 - cx_f) / rx;
+                nx * nx
+            })
+            .collect();
         for y in 0..h {
             let ny = (y as f32 + 0.5 - cy_f) / ry;
             let ry2 = ny * ny;
@@ -302,7 +362,9 @@ fn render(grid: &mut Grid, w: usize, h: usize, palette: &[Color; 5], t: f32, k: 
     let cx = w as f32 * 0.5;
     let cy = h as f32 * 0.5;
     let zoom = k.scale.max(0.05);
-    let mut q = measure_layer("sonnet-2-clifford", "aim", || quick_bbox(a, b, c_param, d, geom.x0, geom.y0));
+    let mut q = measure_layer("sonnet-2-clifford", "aim", || {
+        quick_bbox(a, b, c_param, d, geom.x0, geom.y0)
+    });
     if q.occ < MIN_QUICK_OCC {
         a = geom.a;
         b = geom.b;
@@ -359,7 +421,8 @@ fn render(grid: &mut Grid, w: usize, h: usize, palette: &[Color; 5], t: f32, k: 
         lut.push((' ', Color::Reset));
         for cnt in 1..=cap {
             let density_norm = (cnt as f32 / cap as f32).powf(1.0 / glow).clamp(0.0, 1.0);
-            let gi = ((density_norm * (glyphs.len() - 1) as f32).round() as usize).min(glyphs.len() - 1);
+            let gi =
+                ((density_norm * (glyphs.len() - 1) as f32).round() as usize).min(glyphs.len() - 1);
             let hue = (base_hue + spread * (1.0 - density_norm as f64)).rem_euclid(360.0);
             let light = 0.30 + 0.35 * density_norm as f64;
             lut.push((glyphs[gi], hsl_to_rgb(hue, 0.62, light)));
@@ -396,7 +459,18 @@ fn render(grid: &mut Grid, w: usize, h: usize, palette: &[Color; 5], t: f32, k: 
             } else {
                 '.'
             };
-            put(grid, w, h, *px as i32, *py as i32, Cell::with_bg(ch, fg, grid[(*py as usize).min(h - 1)][(*px as usize).min(w - 1)].bg));
+            put(
+                grid,
+                w,
+                h,
+                *px as i32,
+                *py as i32,
+                Cell::with_bg(
+                    ch,
+                    fg,
+                    grid[(*py as usize).min(h - 1)][(*px as usize).min(w - 1)].bg,
+                ),
+            );
         }
     });
 

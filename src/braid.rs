@@ -63,7 +63,15 @@ thread_local! {
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn build(w: usize, h: usize, seed: u64, n: usize, twist: f32, fill: f32, palette: &[Color; 5]) -> Cached {
+fn build(
+    w: usize,
+    h: usize,
+    seed: u64,
+    n: usize,
+    twist: f32,
+    fill: f32,
+    palette: &[Color; 5],
+) -> Cached {
     let mut rng = StdRng::seed_from_u64(seed ^ 0xB2A1D);
     let mut half: Vec<(u16, u16)> = Vec::with_capacity(WORD_HALF);
     for k in 0..WORD_HALF {
@@ -122,7 +130,8 @@ fn build(w: usize, h: usize, seed: u64, n: usize, twist: f32, fill: f32, palette
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn hash2(x: i32, y: i32, seed: u64) -> u32 {
-    let mut v = (x as u32).wrapping_mul(0x9E37_79B9) ^ (y as u32).wrapping_mul(0x85EB_CA6B) ^ (seed as u32);
+    let mut v =
+        (x as u32).wrapping_mul(0x9E37_79B9) ^ (y as u32).wrapping_mul(0x85EB_CA6B) ^ (seed as u32);
     v ^= v >> 15;
     v = v.wrapping_mul(0x2C1B_3C6D);
     v ^= v >> 12;
@@ -181,13 +190,27 @@ fn paint_lane(grid: &mut Grid, w: usize, h: usize, y: i32, lane: &Lane, half: i3
         } else {
             '#'
         };
-        let fg = if is_edge { edge } else if dx == 0 { core } else { fill };
+        let fg = if is_edge {
+            edge
+        } else if dx == 0 {
+            core
+        } else {
+            fill
+        };
         put(grid, w, h, x, y, ch, fg);
     }
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn draw_braid(grid: &mut Grid, w: usize, h: usize, seed: u64, palette: &[Color; 5], t: f32, k: &BraidKnobs) {
+pub(crate) fn draw_braid(
+    grid: &mut Grid,
+    w: usize,
+    h: usize,
+    seed: u64,
+    palette: &[Color; 5],
+    t: f32,
+    k: &BraidKnobs,
+) {
     let n = k.n();
     let twist = k.twist.clamp(0.0, 1.0);
     let fill = k.fill.clamp(0.0, 1.0);
@@ -204,7 +227,16 @@ pub(crate) fn draw_braid(grid: &mut Grid, w: usize, h: usize, seed: u64, palette
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn render(grid: &mut Grid, w: usize, h: usize, seed: u64, palette: &[Color; 5], t: f32, k: &BraidKnobs, c: &Cached) {
+fn render(
+    grid: &mut Grid,
+    w: usize,
+    h: usize,
+    seed: u64,
+    palette: &[Color; 5],
+    t: f32,
+    k: &BraidKnobs,
+    c: &Cached,
+) {
     let n = c.n;
     let pitch = k.pitch.max(2.0);
     let speed = k.speed;
@@ -247,13 +279,27 @@ fn render(grid: &mut Grid, w: usize, h: usize, seed: u64, palette: &[Color; 5], 
                 }
             }
 
-            let mut lanes: [Lane; MAX_STRANDS] = std::array::from_fn(|_| Lane { x: 0.0, strand: 0, slope: 0, over: false, under: false, knot: false });
+            let mut lanes: [Lane; MAX_STRANDS] = std::array::from_fn(|_| Lane {
+                x: 0.0,
+                strand: 0,
+                slope: 0,
+                over: false,
+                under: false,
+                knot: false,
+            });
             for i in 0..n {
                 let strand = c.perm[ki * n + i] as usize;
                 let ph = c.phase[strand];
                 let wob = sway * (t * 0.9 + ph + y as f32 * 0.12).sin();
                 let lx = |lane: usize| cx0 + (lane as f32 - (n as f32 - 1.0) * 0.5) * gap + wob;
-                let mut l = Lane { x: lx(i), strand, slope: 0, over: false, under: false, knot: false };
+                let mut l = Lane {
+                    x: lx(i),
+                    strand,
+                    slope: 0,
+                    over: false,
+                    under: false,
+                    knot: false,
+                };
                 if lanes_bits & (1 << i) != 0 {
                     l.x = lx(i) + (lx(i + 1) - lx(i)) * s;
                     l.slope = if moving { 1 } else { 0 };
@@ -285,7 +331,20 @@ fn render(grid: &mut Grid, w: usize, h: usize, seed: u64, palette: &[Color; 5], 
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn cli_braid(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
+pub(crate) fn cli_braid(
+    mut grid: Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: [Color; 5],
+    rng: StdRng,
+    t_anim: f32,
+    term_w: u16,
+    term_h: u16,
+    args: &[String],
+    mode: &str,
+    theme_name: &str,
+) -> (Grid, bool) {
     let _ = (rng, term_w, term_h, mode, theme_name);
     let mut k = BraidKnobs::from_env();
     let pos: Vec<f32> = args.iter().skip(4).filter_map(|a| a.parse().ok()).collect();
@@ -366,7 +425,10 @@ mod tests {
             worst = worst.max(t0.elapsed().as_secs_f64() * 1000.0);
         }
         let avg = start.elapsed().as_secs_f64() * 1000.0 / 200.0;
-        eprintln!("braid frame_cost 200x60: avg {:.3} ms, worst {:.3} ms", avg, worst);
+        eprintln!(
+            "braid frame_cost 200x60: avg {:.3} ms, worst {:.3} ms",
+            avg, worst
+        );
         if !cfg!(debug_assertions) {
             assert!(avg < 4.0, "avg frame {:.3} ms", avg);
         }

@@ -196,7 +196,9 @@ pub(crate) fn draw_haiku_2_forest(
             let swayed_x = ((tx as f32) + far_sway) as i32;
             let tree_y = (height as f32 * 0.25) as i32;
             let tree_type = rng.random_range(0..6usize);
-            draw_simple_tree(grid, swayed_x, tree_y, far_h, far_color, tree_type, &mut rng);
+            draw_simple_tree(
+                grid, swayed_x, tree_y, far_h, far_color, tree_type, &mut rng,
+            );
         }
     });
 
@@ -213,7 +215,9 @@ pub(crate) fn draw_haiku_2_forest(
             let swayed_x = ((tx as f32) + mid_sway) as i32;
             let tree_y = (height as f32 * 0.45) as i32;
             let tree_type = rng.random_range(0..6usize);
-            draw_simple_tree(grid, swayed_x, tree_y, mid_h, mid_color, tree_type, &mut rng);
+            draw_simple_tree(
+                grid, swayed_x, tree_y, mid_h, mid_color, tree_type, &mut rng,
+            );
         }
     });
 
@@ -230,7 +234,9 @@ pub(crate) fn draw_haiku_2_forest(
             let swayed_x = ((tx as f32) + near_sway) as i32;
             let tree_y = (height as f32 * 0.65) as i32;
             let tree_type = rng.random_range(0..6usize);
-            draw_simple_tree(grid, swayed_x, tree_y, near_h, near_color, tree_type, &mut rng);
+            draw_simple_tree(
+                grid, swayed_x, tree_y, near_h, near_color, tree_type, &mut rng,
+            );
         }
     });
 
@@ -347,9 +353,21 @@ mod tests {
                 g: 100,
                 b: 50,
             },
-            Color::Rgb { r: 100, g: 150, b: 80 },
-            Color::Rgb { r: 150, g: 100, b: 50 },
-            Color::Rgb { r: 200, g: 200, b: 200 },
+            Color::Rgb {
+                r: 100,
+                g: 150,
+                b: 80,
+            },
+            Color::Rgb {
+                r: 150,
+                g: 100,
+                b: 50,
+            },
+            Color::Rgb {
+                r: 200,
+                g: 200,
+                b: 200,
+            },
         ];
 
         let knobs = Haiku2ForestKnobs {
@@ -383,9 +401,21 @@ mod tests {
                 g: 100,
                 b: 50,
             },
-            Color::Rgb { r: 100, g: 150, b: 80 },
-            Color::Rgb { r: 150, g: 100, b: 50 },
-            Color::Rgb { r: 200, g: 200, b: 200 },
+            Color::Rgb {
+                r: 100,
+                g: 150,
+                b: 80,
+            },
+            Color::Rgb {
+                r: 150,
+                g: 100,
+                b: 50,
+            },
+            Color::Rgb {
+                r: 200,
+                g: 200,
+                b: 200,
+            },
         ];
 
         let knobs = Haiku2ForestKnobs {

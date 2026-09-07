@@ -6,32 +6,47 @@ use rand::SeedableRng;
 use rand::rngs::StdRng;
 use std::io::{self, IsTerminal, Read as _};
 
+use crate::automata;
 use crate::automata::*;
-use crate::biomes::*;
-use crate::color::*;
-use crate::content::*;
-use crate::fills::*;
-use crate::layout::*;
-use crate::markdown::*;
-use crate::mondrian::*;
-use crate::render::*;
-use crate::scene::*;
-use crate::sprites::*;
-use crate::tree_draw::*;
-use crate::types::*;
-use crate::walker::*;
+use crate::avant;
 use crate::avant::*;
-use crate::automata; use crate::avant; use crate::biomes; use crate::borders; use crate::color; use crate::content; use crate::fills; use crate::layout; use crate::markdown; use crate::mondrian; use crate::render; use crate::scene; use crate::sprites; use crate::tree_draw; use crate::types; use crate::walker;
+use crate::biomes;
+use crate::biomes::*;
+use crate::borders;
 use crate::cli::*;
+use crate::color;
+use crate::color::*;
+use crate::content;
+use crate::content::*;
+use crate::fills;
+use crate::fills::*;
 use crate::gridio::*;
+use crate::layout;
+use crate::layout::*;
+use crate::markdown;
+use crate::markdown::*;
 use crate::modes_creatures::*;
 use crate::modes_geo::*;
 use crate::modes_sky::*;
 use crate::modes_tree::*;
+use crate::mondrian;
+use crate::mondrian::*;
 use crate::morph::*;
 use crate::opts::*;
 use crate::pp::*;
 use crate::registry::*;
+use crate::render;
+use crate::render::*;
+use crate::scene;
+use crate::scene::*;
+use crate::sprites;
+use crate::sprites::*;
+use crate::tree_draw;
+use crate::tree_draw::*;
+use crate::types;
+use crate::types::*;
+use crate::walker;
+use crate::walker::*;
 use crate::warps::*;
 
 /// Approximate ink density of a glyph, for the `field` strategy.
@@ -74,7 +89,6 @@ pub(crate) fn ink_points(g: &Grid) -> Vec<Ink> {
     }
     v
 }
-
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn draw_ink(

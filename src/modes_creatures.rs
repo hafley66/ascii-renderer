@@ -6,33 +6,48 @@ use rand::SeedableRng;
 use rand::rngs::StdRng;
 use std::io::{self, IsTerminal, Read as _};
 
-use crate::automata::*;
-use crate::biomes::*;
 use crate::_0_profile::measure_layer;
-use crate::color::*;
-use crate::content::*;
-use crate::fills::*;
-use crate::layout::*;
-use crate::markdown::*;
-use crate::mondrian::*;
-use crate::render::*;
-use crate::scene::*;
-use crate::sprites::*;
-use crate::tree_draw::*;
-use crate::types::*;
-use crate::walker::*;
+use crate::automata;
+use crate::automata::*;
+use crate::avant;
 use crate::avant::*;
-use crate::automata; use crate::avant; use crate::biomes; use crate::borders; use crate::color; use crate::content; use crate::fills; use crate::layout; use crate::markdown; use crate::mondrian; use crate::render; use crate::scene; use crate::sprites; use crate::tree_draw; use crate::types; use crate::walker;
+use crate::biomes;
+use crate::biomes::*;
+use crate::borders;
 use crate::cli::*;
+use crate::color;
+use crate::color::*;
+use crate::content;
+use crate::content::*;
+use crate::fills;
+use crate::fills::*;
 use crate::gridio::*;
 use crate::ink::*;
+use crate::layout;
+use crate::layout::*;
+use crate::markdown;
+use crate::markdown::*;
 use crate::modes_geo::*;
 use crate::modes_sky::*;
 use crate::modes_tree::*;
+use crate::mondrian;
+use crate::mondrian::*;
 use crate::morph::*;
 use crate::opts::*;
 use crate::pp::*;
 use crate::registry::*;
+use crate::render;
+use crate::render::*;
+use crate::scene;
+use crate::scene::*;
+use crate::sprites;
+use crate::sprites::*;
+use crate::tree_draw;
+use crate::tree_draw::*;
+use crate::types;
+use crate::types::*;
+use crate::walker;
+use crate::walker::*;
 use crate::warps::*;
 
 /// Box-drawing glyph for a cell given the in/out step directions, plus axis bits
@@ -52,7 +67,6 @@ pub(crate) fn snake_seg(din: (i32, i32), dout: (i32, i32)) -> (char, bool, bool)
     let v = din.1 != 0 || dout.1 != 0;
     (ch, h, v)
 }
-
 
 /// Build a random-walking, wrap-around (toroidal) closed loop for a snake. The
 /// walk meanders -- mostly continuing straight, sometimes turning 90 degrees,
@@ -131,10 +145,26 @@ pub(crate) fn snake_walk(
         nx += dx;
         ny += dy;
     }
-    while nx > 0 { moves.push((-1, 0)); block.push(false); nx -= 1; }
-    while nx < 0 { moves.push((1, 0)); block.push(false); nx += 1; }
-    while ny > 0 { moves.push((0, -1)); block.push(false); ny -= 1; }
-    while ny < 0 { moves.push((0, 1)); block.push(false); ny += 1; }
+    while nx > 0 {
+        moves.push((-1, 0));
+        block.push(false);
+        nx -= 1;
+    }
+    while nx < 0 {
+        moves.push((1, 0));
+        block.push(false);
+        nx += 1;
+    }
+    while ny > 0 {
+        moves.push((0, -1));
+        block.push(false);
+        ny -= 1;
+    }
+    while ny < 0 {
+        moves.push((0, 1));
+        block.push(false);
+        ny += 1;
+    }
 
     let start = (rng.random_range(0..w), rng.random_range(0..h));
     let (mut cx, mut cy) = start;
@@ -177,7 +207,9 @@ pub(crate) fn draw_snakes(
     let colors = [palette[1], palette[2], palette[3], lighten(palette[2], 25)];
 
     // Live knobs (demo panel via ASCII_P_*); fall back to the CLI-arg count.
-    let count = param_f32("COUNT", snake_count as f32).round().clamp(1.0, 80.0) as usize;
+    let count = param_f32("COUNT", snake_count as f32)
+        .round()
+        .clamp(1.0, 80.0) as usize;
     let turn_prob = param_f32("TURN", 0.35).clamp(0.0, 0.9);
     let speed_base = param_f32("SPEED", 4.0);
     let body_len = param_f32("LEN", 22.0).round().clamp(4.0, 40.0) as usize;
@@ -218,7 +250,15 @@ pub(crate) fn draw_snakes(
             let speed = (speed_base * (0.8 + rng.random::<f32>() * 0.4)).max(0.5);
             let phase = rng.random_range(0.0..n as f32);
             let body = body_len.clamp(4, 40).min(n.saturating_sub(1));
-            snakes.push(Snake { cells, dirs, block, color, speed, phase, body });
+            snakes.push(Snake {
+                cells,
+                dirs,
+                block,
+                color,
+                speed,
+                phase,
+                body,
+            });
         }
     });
 
@@ -244,10 +284,13 @@ pub(crate) fn draw_snakes(
                 }
                 let fade = 1.0 - k as f32 / bl as f32; // 1 at head -> ~0 at tail
                 let amt = (25.0 + 70.0 * fade) as u8;
-                claims
-                    .entry((px, py))
-                    .or_default()
-                    .push((ch, lighten(s.color, amt), hb, vb, k == 0));
+                claims.entry((px, py)).or_default().push((
+                    ch,
+                    lighten(s.color, amt),
+                    hb,
+                    vb,
+                    k == 0,
+                ));
             }
         }
     });
@@ -281,32 +324,67 @@ pub(crate) fn draw_snakes(
 
 /// Dispatch arm for mode(s): snakes (moved verbatim from run()).
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn cli_snakes(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
-        // snakes [count] -- PCB traces that slither around hidden loops; where two
-        // cross, a bright crossover knot. Native time T (see draw_snakes).
-        let snake_count: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(8);
-        let snake_count = snake_count.clamp(1, 80);
-        draw_snakes(&mut grid, width, height, seed, &palette, &mut rng, t_anim, snake_count);
+pub(crate) fn cli_snakes(
+    mut grid: Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: [Color; 5],
+    mut rng: StdRng,
+    t_anim: f32,
+    term_w: u16,
+    term_h: u16,
+    args: &[String],
+    mode: &str,
+    theme_name: &str,
+) -> (Grid, bool) {
+    // snakes [count] -- PCB traces that slither around hidden loops; where two
+    // cross, a bright crossover knot. Native time T (see draw_snakes).
+    let snake_count: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(8);
+    let snake_count = snake_count.clamp(1, 80);
+    draw_snakes(
+        &mut grid,
+        width,
+        height,
+        seed,
+        &palette,
+        &mut rng,
+        t_anim,
+        snake_count,
+    );
     (grid, false)
 }
 
 /// Dispatch arm for mode(s): ink (moved verbatim from run()).
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn cli_ink(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
-        let drops: usize = args
-            .get(4)
-            .and_then(|s| s.parse().ok())
-            .unwrap_or_else(|| param_f32("DROPS", 5.0) as usize);
-        let swirl: f32 = args
-            .get(5)
-            .and_then(|s| s.parse().ok())
-            .unwrap_or_else(|| param_f32("SWIRL", 1.0));
-        let speed: f32 = args
-            .get(6)
-            .and_then(|s| s.parse().ok())
-            .unwrap_or_else(|| param_f32("SPEED", 1.0));
-        draw_ink(
-            &mut grid, width, height, seed, &palette, &mut rng, t_anim, drops, swirl, speed,
-        );
+pub(crate) fn cli_ink(
+    mut grid: Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: [Color; 5],
+    mut rng: StdRng,
+    t_anim: f32,
+    term_w: u16,
+    term_h: u16,
+    args: &[String],
+    mode: &str,
+    theme_name: &str,
+) -> (Grid, bool) {
+    let drops: usize = args
+        .get(4)
+        .and_then(|s| s.parse().ok())
+        .unwrap_or_else(|| param_f32("DROPS", 5.0) as usize);
+    let swirl: f32 = args
+        .get(5)
+        .and_then(|s| s.parse().ok())
+        .unwrap_or_else(|| param_f32("SWIRL", 1.0));
+    let speed: f32 = args
+        .get(6)
+        .and_then(|s| s.parse().ok())
+        .unwrap_or_else(|| param_f32("SPEED", 1.0));
+    draw_ink(
+        &mut grid, width, height, seed, &palette, &mut rng, t_anim, drops, swirl, speed,
+    );
     (grid, false)
 }

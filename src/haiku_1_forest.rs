@@ -5,9 +5,9 @@ use crate::gridio::*;
 use crate::opts::param_f32;
 use crate::types::*;
 use crossterm::style::Color;
-use rand::{Rng, RngExt};
 use rand::SeedableRng;
 use rand::rngs::StdRng;
+use rand::{Rng, RngExt};
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn set(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
@@ -69,7 +69,15 @@ fn draw_layer(
             0
         };
 
-        draw_tree(grid, x_int + sway_offset, y_base, tree_h, 3 + layer as i32, color, &mut rng);
+        draw_tree(
+            grid,
+            x_int + sway_offset,
+            y_base,
+            tree_h,
+            3 + layer as i32,
+            color,
+            &mut rng,
+        );
 
         x += tree_spacing + rng.random_range(1..=2) as usize;
     }
@@ -77,14 +85,7 @@ fn draw_layer(
 
 /// Draw mist that drifts and occludes.
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn draw_mist(
-    grid: &mut Grid,
-    width: usize,
-    height: usize,
-    seed: u64,
-    t: f32,
-    opacity: f32,
-) {
+fn draw_mist(grid: &mut Grid, width: usize, height: usize, seed: u64, t: f32, opacity: f32) {
     let mut rng = StdRng::seed_from_u64(seed);
     let mist_chars = ['·', '∙', '°'];
 
@@ -123,25 +124,38 @@ fn draw_ground(grid: &mut Grid, width: usize, height: usize, palette: &[Color; 5
 
 /// Draw sky with light cycle.
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn draw_sky(
-    grid: &mut Grid,
-    width: usize,
-    height: usize,
-    seed: u64,
-    t: f32,
-    palette: &[Color; 5],
-) {
+fn draw_sky(grid: &mut Grid, width: usize, height: usize, seed: u64, t: f32, palette: &[Color; 5]) {
     let cycle = t.sin() * 0.5 + 0.5;
     let sky_col = if cycle < 0.2 {
-        Color::Rgb { r: 40, g: 20, b: 50 }
+        Color::Rgb {
+            r: 40,
+            g: 20,
+            b: 50,
+        }
     } else if cycle < 0.4 {
-        Color::Rgb { r: 60, g: 40, b: 80 }
+        Color::Rgb {
+            r: 60,
+            g: 40,
+            b: 80,
+        }
     } else if cycle < 0.6 {
-        Color::Rgb { r: 80, g: 100, b: 140 }
+        Color::Rgb {
+            r: 80,
+            g: 100,
+            b: 140,
+        }
     } else if cycle < 0.8 {
-        Color::Rgb { r: 100, g: 120, b: 100 }
+        Color::Rgb {
+            r: 100,
+            g: 120,
+            b: 100,
+        }
     } else {
-        Color::Rgb { r: 40, g: 20, b: 50 }
+        Color::Rgb {
+            r: 40,
+            g: 20,
+            b: 50,
+        }
     };
 
     for y in 0..height / 3 {
@@ -256,8 +270,7 @@ pub(crate) fn cli_haiku_1_forest(
     let atmos: f32 = args.get(9).and_then(|s| s.parse().ok()).unwrap_or(0.4);
 
     draw_haiku_1_forest(
-        &mut grid, width, height, seed, &palette, t_anim, density, layers, sway, speed, hue,
-        atmos,
+        &mut grid, width, height, seed, &palette, t_anim, density, layers, sway, speed, hue, atmos,
     );
 
     emit_grid(&grid);

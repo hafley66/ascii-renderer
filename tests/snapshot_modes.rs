@@ -43,7 +43,11 @@ fn gem_aetherium_2_cli_seed_1701() {
         .env("ASCII_T", "0")
         .output()
         .expect("run gem-aetherium-2 CLI");
-    assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
     insta::with_settings!({snapshot_path => "../src/modes/snapshots"}, {
         insta::assert_snapshot!("gem_aetherium_2_cli_seed_1701", strip_ansi(&String::from_utf8(output.stdout).unwrap()));
     });
@@ -58,7 +62,11 @@ fn astra_chaos_theory_cli_seed_1701() {
         .env("ASCII_T", "0")
         .output()
         .expect("run astra-chaos-theory CLI");
-    assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
     insta::with_settings!({snapshot_path => "../src/modes/snapshots"}, {
         insta::assert_snapshot!("astra_chaos_theory_cli_seed_1701", strip_ansi(&String::from_utf8(output.stdout).unwrap()));
     });
@@ -73,7 +81,11 @@ fn astra_jurassic_park_cli_seed_1701() {
         .env("ASCII_T", "0")
         .output()
         .expect("run astra-jurassic-park CLI");
-    assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
     insta::with_settings!({snapshot_path => "../src/modes/snapshots"}, {
         insta::assert_snapshot!("astra_jurassic_park_cli_seed_1701", strip_ansi(&String::from_utf8(output.stdout).unwrap()));
     });
@@ -88,7 +100,11 @@ fn tideglass_cli_seed_42() {
         .env("ASCII_T", "0")
         .output()
         .expect("run tideglass CLI");
-    assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
     insta::with_settings!({snapshot_path => "../src/modes/snapshots"}, {
         insta::assert_snapshot!(strip_ansi(&String::from_utf8(output.stdout).unwrap()));
     });
@@ -97,14 +113,20 @@ fn tideglass_cli_seed_42() {
 #[test]
 fn volute_cli_seed42() {
     let output = Command::new(env!("CARGO_BIN_EXE_ascii-renderer"))
-        .args(["42", "volute", "deep", "1", "0.13", "18", "0.65", "0.55", "0.6"])
+        .args([
+            "42", "volute", "deep", "1", "0.13", "18", "0.65", "0.55", "0.6",
+        ])
         .env("ASCII_GRID_W", "80")
         .env("ASCII_GRID_H", "24")
         .env("ASCII_T", "0")
         .env_remove("ASCII_GRID_DUMP")
         .output()
         .expect("volute CLI render");
-    assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
     insta::with_settings!({snapshot_path => "../src/modes/snapshots"}, {
         insta::assert_snapshot!("volute_cli_seed42", strip_ansi(&String::from_utf8(output.stdout).unwrap()));
     });
@@ -431,9 +453,7 @@ fn fa5_seed_42() {
 
 #[test]
 fn fa6_seed_42() {
-    insta::assert_snapshot!(render(&[
-        "42", "fa6", "nerv", "8", "55", "0.8", "42"
-    ]));
+    insta::assert_snapshot!(render(&["42", "fa6", "nerv", "8", "55", "0.8", "42"]));
 }
 
 #[test]
@@ -563,14 +583,7 @@ fn flux_seed_42() {
 
 #[test]
 fn fireworks_seed_42() {
-    insta::assert_snapshot!(render(&[
-        "42",
-        "fireworks",
-        "ember",
-        "6",
-        "22",
-        "1",
-    ]));
+    insta::assert_snapshot!(render(&["42", "fireworks", "ember", "6", "22", "1",]));
 }
 
 #[test]
@@ -737,7 +750,15 @@ fn mahoraga2_seed_42() {
 
 #[test]
 fn mahoraga2_fuga_close_focus() {
-    insta::assert_snapshot!(render(&["42", "mahoraga-2", "deep", "8", "4", "2.5", "0.9"]));
+    insta::assert_snapshot!(render(&[
+        "42",
+        "mahoraga-2",
+        "deep",
+        "8",
+        "4",
+        "2.5",
+        "0.9"
+    ]));
 }
 
 #[test]
@@ -752,7 +773,18 @@ fn mahoraga4_seed_42() {
 
 #[test]
 fn mahoraga4_guard_to_lunge() {
-    insta::assert_snapshot!(render(&["42", "mahoraga-4", "deep", "8", "7", "1.5", "0.45", "2", "3", "0.6"]));
+    insta::assert_snapshot!(render(&[
+        "42",
+        "mahoraga-4",
+        "deep",
+        "8",
+        "7",
+        "1.5",
+        "0.45",
+        "2",
+        "3",
+        "0.6"
+    ]));
 }
 
 #[test]
@@ -762,7 +794,19 @@ fn mahoraga5_seed_42() {
 
 #[test]
 fn mahoraga5_swing_vs_crouch() {
-    insta::assert_snapshot!(render(&["42", "mahoraga-5", "deep", "8", "7", "1.5", "0.45", "5", "3", "0.4", "3"]));
+    insta::assert_snapshot!(render(&[
+        "42",
+        "mahoraga-5",
+        "deep",
+        "8",
+        "7",
+        "1.5",
+        "0.45",
+        "5",
+        "3",
+        "0.4",
+        "3"
+    ]));
 }
 
 #[test]
@@ -772,7 +816,16 @@ fn tree_of_life_seed_42() {
 
 #[test]
 fn tree_of_life_deep_wide_seam() {
-    insta::assert_snapshot!(render(&["42", "tree-of-life", "ember", "10", "3", "1", "60", "0.4"]));
+    insta::assert_snapshot!(render(&[
+        "42",
+        "tree-of-life",
+        "ember",
+        "10",
+        "3",
+        "1",
+        "60",
+        "0.4"
+    ]));
 }
 
 #[test]
@@ -782,7 +835,18 @@ fn tree_of_life_2_seed_42() {
 
 #[test]
 fn tree_of_life_2_autumn_veil() {
-    insta::assert_snapshot!(render(&["42", "tree-of-life-2", "ember", "9", "3", "1", "60", "0.45", "9", "0.5"]));
+    insta::assert_snapshot!(render(&[
+        "42",
+        "tree-of-life-2",
+        "ember",
+        "9",
+        "3",
+        "1",
+        "60",
+        "0.45",
+        "9",
+        "0.5"
+    ]));
 }
 
 #[test]
@@ -792,7 +856,22 @@ fn tree_of_life_3_seed_42() {
 
 #[test]
 fn tree_of_life_3_many_eyes() {
-    insta::assert_snapshot!(render(&["42", "tree-of-life-3", "ember", "9", "2", "1", "40", "0.5", "4", "0.12", "0.3", "0.5", "1", "60"]));
+    insta::assert_snapshot!(render(&[
+        "42",
+        "tree-of-life-3",
+        "ember",
+        "9",
+        "2",
+        "1",
+        "40",
+        "0.5",
+        "4",
+        "0.12",
+        "0.3",
+        "0.5",
+        "1",
+        "60"
+    ]));
 }
 
 #[test]
@@ -802,7 +881,16 @@ fn tree_of_life_4_seed_42() {
 
 #[test]
 fn tree_of_life_4_deep_drift() {
-    insta::assert_snapshot!(render(&["42", "tree-of-life-4", "deep", "9", "0.6", "0.2", "1.4", "120"]));
+    insta::assert_snapshot!(render(&[
+        "42",
+        "tree-of-life-4",
+        "deep",
+        "9",
+        "0.6",
+        "0.2",
+        "1.4",
+        "120"
+    ]));
 }
 
 #[test]
@@ -812,7 +900,17 @@ fn tree_of_life_5_seed_42() {
 
 #[test]
 fn tree_of_life_5_klein_spin() {
-    insta::assert_snapshot!(render(&["42", "tree-of-life-5", "ember", "8", "0.7", "0.9", "0.15", "0.06", "80"]));
+    insta::assert_snapshot!(render(&[
+        "42",
+        "tree-of-life-5",
+        "ember",
+        "8",
+        "0.7",
+        "0.9",
+        "0.15",
+        "0.06",
+        "80"
+    ]));
 }
 
 #[test]
@@ -822,7 +920,16 @@ fn tree_of_life_6_seed_42() {
 
 #[test]
 fn tree_of_life_6_zoom_flow() {
-    insta::assert_snapshot!(render(&["42", "tree-of-life-6", "deep", "8", "0.8", "0.5", "0.8", "90"]));
+    insta::assert_snapshot!(render(&[
+        "42",
+        "tree-of-life-6",
+        "deep",
+        "8",
+        "0.8",
+        "0.5",
+        "0.8",
+        "90"
+    ]));
 }
 
 #[test]
@@ -832,7 +939,9 @@ fn braid_seed_42() {
 
 #[test]
 fn braid_wide_ribbons() {
-    insta::assert_snapshot!(render(&["42", "braid", "ember", "7", "4", "8", "9", "5", "0.7", "0.5", "0.1", "1.0", "0.9"]));
+    insta::assert_snapshot!(render(&[
+        "42", "braid", "ember", "7", "4", "8", "9", "5", "0.7", "0.5", "0.1", "1.0", "0.9"
+    ]));
 }
 
 #[test]
@@ -842,7 +951,10 @@ fn braid_2_seed_42() {
 
 #[test]
 fn braid_2_thick_slow_twist() {
-    insta::assert_snapshot!(render(&["42", "braid-2", "ember", "4", "6", "16", "5", "5", "0.6", "48", "12", "30", "9", "0.1", "0.9"]));
+    insta::assert_snapshot!(render(&[
+        "42", "braid-2", "ember", "4", "6", "16", "5", "5", "0.6", "48", "12", "30", "9", "0.1",
+        "0.9"
+    ]));
 }
 
 #[test]
@@ -852,7 +964,9 @@ fn chladni_seed_42() {
 
 #[test]
 fn chladni_high_order_thin_sand() {
-    insta::assert_snapshot!(render(&["42", "chladni", "ember", "4", "1", "11", "0.03", "0.5", "6", "2", "0", "2"]));
+    insta::assert_snapshot!(render(&[
+        "42", "chladni", "ember", "4", "1", "11", "0.03", "0.5", "6", "2", "0", "2"
+    ]));
 }
 
 #[test]
@@ -862,7 +976,20 @@ fn pendulum_wave_seed_42() {
 
 #[test]
 fn pendulum_wave_top_view_trails() {
-    insta::assert_snapshot!(render(&["42", "pendulum-wave", "ember", "10", "20", "12", "0.6", "1", "20", "0.05", "2", "30"]));
+    insta::assert_snapshot!(render(&[
+        "42",
+        "pendulum-wave",
+        "ember",
+        "10",
+        "20",
+        "12",
+        "0.6",
+        "1",
+        "20",
+        "0.05",
+        "2",
+        "30"
+    ]));
 }
 
 #[test]
@@ -889,7 +1016,9 @@ fn poincare_seed_42() {
 
 #[test]
 fn poincare_half_plane_54() {
-    insta::assert_snapshot!(render(&["7", "poincare", "ember", "5", "4", "24", "0.05", "2", "0", "2"]));
+    insta::assert_snapshot!(render(&[
+        "7", "poincare", "ember", "5", "4", "24", "0.05", "2", "0", "2"
+    ]));
 }
 
 #[test]
@@ -899,7 +1028,23 @@ fn opus_1_quasicrystal_seed_42() {
 
 #[test]
 fn opus_1_quasicrystal_octagonal_dense() {
-    insta::assert_snapshot!(render(&["7", "opus-1-quasicrystal", "ember", "1", "40", "4", "7", "0.05", "3", "1", "8", "3", "0.1", "0.4", "0.2"]));
+    insta::assert_snapshot!(render(&[
+        "7",
+        "opus-1-quasicrystal",
+        "ember",
+        "1",
+        "40",
+        "4",
+        "7",
+        "0.05",
+        "3",
+        "1",
+        "8",
+        "3",
+        "0.1",
+        "0.4",
+        "0.2"
+    ]));
 }
 
 /// Same as `render` but with the animation clock set, for modes that move.
@@ -922,7 +1067,28 @@ fn opus_2_quasicrystal_seed_42() {
 #[test]
 fn opus_2_quasicrystal_seven_fold_moving() {
     insta::assert_snapshot!(render_t(
-        &["7", "opus-2-quasicrystal", "ember", "1", "90", "7", "6", "1.1", "0.6", "0.05", "0.6", "0.03", "1", "0.9", "0.45", "80", "1", "2", "0.35", "3"],
+        &[
+            "7",
+            "opus-2-quasicrystal",
+            "ember",
+            "1",
+            "90",
+            "7",
+            "6",
+            "1.1",
+            "0.6",
+            "0.05",
+            "0.6",
+            "0.03",
+            "1",
+            "0.9",
+            "0.45",
+            "80",
+            "1",
+            "2",
+            "0.35",
+            "3"
+        ],
         "45"
     ));
 }
@@ -934,7 +1100,22 @@ fn sonnet_1_spirograph_seed_42() {
 
 #[test]
 fn sonnet_1_spirograph_seed_7_knobs() {
-    insta::assert_snapshot!(render(&["7", "sonnet-1-spirograph", "ember", "1.6", "45", "1.2", "0.8", "1.8", "1", "0.3", "1", "0.85", "1", "2.3"]));
+    insta::assert_snapshot!(render(&[
+        "7",
+        "sonnet-1-spirograph",
+        "ember",
+        "1.6",
+        "45",
+        "1.2",
+        "0.8",
+        "1.8",
+        "1",
+        "0.3",
+        "1",
+        "0.85",
+        "1",
+        "2.3"
+    ]));
 }
 
 #[test]
@@ -979,7 +1160,17 @@ fn fable_1_trees_seed_42() {
 
 #[test]
 fn fable_1_trees_seed_7_knobs() {
-    insta::assert_snapshot!(render(&["7", "fable-1-trees", "ember", "0.8", "0.6", "1.2", "1.1", "1.0", "0.5"]));
+    insta::assert_snapshot!(render(&[
+        "7",
+        "fable-1-trees",
+        "ember",
+        "0.8",
+        "0.6",
+        "1.2",
+        "1.1",
+        "1.0",
+        "0.5"
+    ]));
 }
 
 #[test]
@@ -989,7 +1180,21 @@ fn fable_1_forest_seed_42() {
 
 #[test]
 fn fable_1_forest_seed_7_knobs() {
-    insta::assert_snapshot!(render(&["7", "fable-1-forest", "deep", "1.4", "4", "2", "1", "40", "3", "0.8", "0.55", "1", "0.4"]));
+    insta::assert_snapshot!(render(&[
+        "7",
+        "fable-1-forest",
+        "deep",
+        "1.4",
+        "4",
+        "2",
+        "1",
+        "40",
+        "3",
+        "0.8",
+        "0.55",
+        "1",
+        "0.4"
+    ]));
 }
 
 #[test]
@@ -1004,7 +1209,19 @@ fn fable_2_trees_seed_42() {
 
 #[test]
 fn fable_2_trees_seed_7_knobs() {
-    insta::assert_snapshot!(render(&["7", "fable-2-trees", "ember", "1.1", "0.6", "1.4", "0.5", "1", "0.5", "1.6", "1"]));
+    insta::assert_snapshot!(render(&[
+        "7",
+        "fable-2-trees",
+        "ember",
+        "1.1",
+        "0.6",
+        "1.4",
+        "0.5",
+        "1",
+        "0.5",
+        "1.6",
+        "1"
+    ]));
 }
 
 #[test]
@@ -1014,7 +1231,26 @@ fn fable_2_forest_seed_42() {
 
 #[test]
 fn fable_2_forest_seed_7_moving_t12() {
-    insta::assert_snapshot!(render_t(&["7", "fable-2-forest", "ember", "1.4", "4", "1.0", "1", "0", "2", "0.6", "1", "1", "0.7", "0.3", "0.5"], "12"));
+    insta::assert_snapshot!(render_t(
+        &[
+            "7",
+            "fable-2-forest",
+            "ember",
+            "1.4",
+            "4",
+            "1.0",
+            "1",
+            "0",
+            "2",
+            "0.6",
+            "1",
+            "1",
+            "0.7",
+            "0.3",
+            "0.5"
+        ],
+        "12"
+    ));
 }
 
 #[test]
@@ -1079,7 +1315,19 @@ fn sonnet_2_trees_seed_42() {
 
 #[test]
 fn sonnet_2_trees_seed_7_knobs() {
-    insta::assert_snapshot!(render(&["7", "sonnet-2-trees", "ember", "1.1", "0.6", "1.4", "0.5", "1", "0.5", "1.6", "1"]));
+    insta::assert_snapshot!(render(&[
+        "7",
+        "sonnet-2-trees",
+        "ember",
+        "1.1",
+        "0.6",
+        "1.4",
+        "0.5",
+        "1",
+        "0.5",
+        "1.6",
+        "1"
+    ]));
 }
 
 #[test]
@@ -1099,7 +1347,17 @@ fn sonnet_1_trees_seed_42() {
 
 #[test]
 fn sonnet_1_trees_seed_7_knobs() {
-    insta::assert_snapshot!(render(&["7", "sonnet-1-trees", "ember", "1.0", "0.3", "0.7", "0.5", "1", "-0.6"]));
+    insta::assert_snapshot!(render(&[
+        "7",
+        "sonnet-1-trees",
+        "ember",
+        "1.0",
+        "0.3",
+        "0.7",
+        "0.5",
+        "1",
+        "-0.6"
+    ]));
 }
 
 #[test]

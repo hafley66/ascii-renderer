@@ -1,10 +1,10 @@
 //! Flowers, fruit vines, cloud puffs.
+use super::*;
 use crate::color::*;
 use crate::types::*;
 use crossterm::style::Color;
 use rand::RngExt;
 use rand::rngs::StdRng;
-use super::*;
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn draw_cloud(

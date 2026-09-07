@@ -134,7 +134,8 @@ fn put_blank(grid: &mut Grid, x: i32, y: i32, ch: char, c: Color) {
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn hash3(a: u32, b: u32, c: u32) -> u32 {
-    let mut h = a.wrapping_mul(0x9E37_79B9) ^ b.wrapping_mul(0x85EB_CA6B) ^ c.wrapping_mul(0xC2B2_AE35);
+    let mut h =
+        a.wrapping_mul(0x9E37_79B9) ^ b.wrapping_mul(0x85EB_CA6B) ^ c.wrapping_mul(0xC2B2_AE35);
     h ^= h >> 15;
     h = h.wrapping_mul(0x2C1B_3C6D);
     h ^= h >> 12;
@@ -193,7 +194,11 @@ fn seg(grid: &mut Grid, x0: i32, y0: i32, x1: i32, y1: i32, c: Color, thick: boo
             continue;
         }
         let heading = (px as f32 - x as f32).atan2(py as f32 - y as f32) + std::f32::consts::PI;
-        let ch = if thick && dx == 0 { '┃' } else { dir_glyph(heading) };
+        let ch = if thick && dx == 0 {
+            '┃'
+        } else {
+            dir_glyph(heading)
+        };
         put(grid, x, y, ch, c);
         px = x;
         py = y;
@@ -203,7 +208,17 @@ fn seg(grid: &mut Grid, x0: i32, y0: i32, x1: i32, y1: i32, c: Color, thick: boo
 /// Multi-column tapering trunk: half-width shrinks with height; wide rows get a
 /// bark-fill interior, narrow rows are a bare edge stroke.
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn taper_trunk(grid: &mut Grid, x0: i32, y0: i32, rows: i32, base_half: i32, lean: f32, wobble: f32, ink: &Ink, rng: &mut StdRng) -> Vec<(i32, i32)> {
+fn taper_trunk(
+    grid: &mut Grid,
+    x0: i32,
+    y0: i32,
+    rows: i32,
+    base_half: i32,
+    lean: f32,
+    wobble: f32,
+    ink: &Ink,
+    rng: &mut StdRng,
+) -> Vec<(i32, i32)> {
     let mut pts = Vec::with_capacity(rows.max(1) as usize);
     let mut xf = x0 as f32;
     let mut x = x0;
@@ -215,11 +230,21 @@ fn taper_trunk(grid: &mut Grid, x0: i32, y0: i32, rows: i32, base_half: i32, lea
         let half = ((base_half as f32) * (1.0 - prog * 0.78)).round() as i32;
         for d in 1..=half {
             let edge = d == half;
-            let ch = if !edge && half >= 3 { if (nx + d + y) % 5 == 0 { '▓' } else { '▒' } } else { '│' };
+            let ch = if !edge && half >= 3 {
+                if (nx + d + y) % 5 == 0 { '▓' } else { '▒' }
+            } else {
+                '│'
+            };
             put(grid, nx - d, y, ch, ink.bark);
             put(grid, nx + d, y, ch, ink.bark);
         }
-        let ch = if i == 0 || nx == x { if half >= 2 { '┃' } else { '│' } } else if nx > x { '╱' } else { '╲' };
+        let ch = if i == 0 || nx == x {
+            if half >= 2 { '┃' } else { '│' }
+        } else if nx > x {
+            '╱'
+        } else {
+            '╲'
+        };
         put(grid, nx, y, ch, ink.trunk);
         x = nx;
         pts.push((nx, y));
@@ -229,17 +254,34 @@ fn taper_trunk(grid: &mut Grid, x0: i32, y0: i32, rows: i32, base_half: i32, lea
 
 /// Elliptical leaf cluster; density thins toward the rim. Never covers structure.
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn leaf_blob(grid: &mut Grid, cx: i32, cy: i32, rx: i32, ry: i32, density: f32, glyphs: [char; 3], ink: &Ink, rng: &mut StdRng) {
+fn leaf_blob(
+    grid: &mut Grid,
+    cx: i32,
+    cy: i32,
+    rx: i32,
+    ry: i32,
+    density: f32,
+    glyphs: [char; 3],
+    ink: &Ink,
+    rng: &mut StdRng,
+) {
     let rx = rx.max(1);
     let ry = ry.max(1);
     for dy in -ry..=ry {
         for dx in -rx..=rx {
-            let d = (dx as f32 / (rx as f32 + 0.5)).powi(2) + (dy as f32 / (ry as f32 + 0.5)).powi(2);
+            let d =
+                (dx as f32 / (rx as f32 + 0.5)).powi(2) + (dy as f32 / (ry as f32 + 0.5)).powi(2);
             if d > 1.0 {
                 continue;
             }
             if rf(rng) < density * (1.0 - d * 0.75) {
-                let ch = if d < 0.3 { glyphs[0] } else if d < 0.65 { glyphs[1] } else { glyphs[2] };
+                let ch = if d < 0.3 {
+                    glyphs[0]
+                } else if d < 0.65 {
+                    glyphs[1]
+                } else {
+                    glyphs[2]
+                };
                 let c = if d < 0.5 { ink.leaf } else { ink.leaf2 };
                 put_blank(grid, cx + dx, cy + dy, ch, c);
             }
@@ -249,7 +291,10 @@ fn leaf_blob(grid: &mut Grid, cx: i32, cy: i32, rx: i32, ry: i32, density: f32, 
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn root_of(plot: Rect) -> (i32, i32) {
-    (plot.x as i32 + plot.w as i32 / 2, plot.y as i32 + plot.h as i32 - 1)
+    (
+        plot.x as i32 + plot.w as i32 / 2,
+        plot.y as i32 + plot.h as i32 - 1,
+    )
 }
 
 struct Frame {
@@ -274,7 +319,16 @@ fn frame_of(plot: Rect, energy: f32) -> Frame {
 /// Two to four roots fanning down from the root row; `bias` skews the fan
 /// toward one side (used by wind-driven species). `bias == 0` is symmetric.
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn root_fan(grid: &mut Grid, rx: i32, ry: i32, spread: i32, depth: i32, bias: f32, color: Color, rng: &mut StdRng) {
+fn root_fan(
+    grid: &mut Grid,
+    rx: i32,
+    ry: i32,
+    spread: i32,
+    depth: i32,
+    bias: f32,
+    color: Color,
+    rng: &mut StdRng,
+) {
     put(grid, rx - 1, ry, '╱', color);
     put(grid, rx + 1, ry, '╲', color);
     if depth <= 0 {
@@ -341,7 +395,16 @@ pub(crate) fn palette_hue(palette: &[Color; 5]) -> f64 {
 /// Grow one tree. `plot` is the above-ground box whose bottom row is the root row;
 /// `root_depth` rows below it are free for roots.
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn grow_species(kind: Species, grid: &mut Grid, plot: Rect, root_depth: i32, energy: f32, ink: &Ink, k: &GrowKnobs, rng: &mut StdRng) {
+pub(crate) fn grow_species(
+    kind: Species,
+    grid: &mut Grid,
+    plot: Rect,
+    root_depth: i32,
+    energy: f32,
+    ink: &Ink,
+    k: &GrowKnobs,
+    rng: &mut StdRng,
+) {
     if plot.w < 3 || plot.h < 3 {
         return;
     }
@@ -376,7 +439,15 @@ fn spire_expand(iters: u32) -> String {
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn needle_stamp(grid: &mut Grid, x: f32, y: f32, heading: f32, ink: &Ink, depth: i32, rng: &mut StdRng) {
+fn needle_stamp(
+    grid: &mut Grid,
+    x: f32,
+    y: f32,
+    heading: f32,
+    ink: &Ink,
+    depth: i32,
+    rng: &mut StdRng,
+) {
     let glyphs = ['▪', '▫', '▲'];
     let n = (4 - depth.min(3)).max(1);
     for i in 0..n {
@@ -395,7 +466,15 @@ fn needle_stamp(grid: &mut Grid, x: f32, y: f32, heading: f32, ink: &Ink, depth:
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn grow_spire(grid: &mut Grid, plot: Rect, root_depth: i32, energy: f32, ink: &Ink, k: &GrowKnobs, rng: &mut StdRng) {
+fn grow_spire(
+    grid: &mut Grid,
+    plot: Rect,
+    root_depth: i32,
+    energy: f32,
+    ink: &Ink,
+    k: &GrowKnobs,
+    rng: &mut StdRng,
+) {
     let f = frame_of(plot, energy);
     let iters = 2 + (f.th > 10.0) as u32 + (k.detail > 1.3) as u32;
     let grammar = spire_expand(iters.min(4));
@@ -430,7 +509,11 @@ fn grow_spire(grid: &mut Grid, plot: Rect, root_depth: i32, energy: f32, ink: &I
                 if in_plot(nx, ny) {
                     let thick = depth == 0 && (leader_moves as f32) < f.th * 0.42;
                     let glyph = dir_glyph(heading);
-                    let color = if depth == 0 { ink.trunk } else { darken(ink.branch, (depth as u8 * 6).min(50)) };
+                    let color = if depth == 0 {
+                        ink.trunk
+                    } else {
+                        darken(ink.branch, (depth as u8 * 6).min(50))
+                    };
                     put(grid, nx.round() as i32, ny.round() as i32, glyph, color);
                     if thick {
                         let ix = nx.round() as i32;
@@ -448,13 +531,25 @@ fn grow_spire(grid: &mut Grid, plot: Rect, root_depth: i32, energy: f32, ink: &I
             '+' => {
                 heading += branch_angle * (0.85 + rf(rng) * 0.3);
                 if let Some(from) = pending_from.take() {
-                    put(grid, x.round() as i32, y.round() as i32, split_glyph(from, heading), ink.branch);
+                    put(
+                        grid,
+                        x.round() as i32,
+                        y.round() as i32,
+                        split_glyph(from, heading),
+                        ink.branch,
+                    );
                 }
             }
             '-' => {
                 heading -= branch_angle * (0.85 + rf(rng) * 0.3);
                 if let Some(from) = pending_from.take() {
-                    put(grid, x.round() as i32, y.round() as i32, split_glyph(from, heading), ink.branch);
+                    put(
+                        grid,
+                        x.round() as i32,
+                        y.round() as i32,
+                        split_glyph(from, heading),
+                        ink.branch,
+                    );
                 }
             }
             '[' => {
@@ -466,7 +561,13 @@ fn grow_spire(grid: &mut Grid, plot: Rect, root_depth: i32, energy: f32, ink: &I
                 if depth >= 1 && rf(rng) < (0.95 / depth as f32).max(0.45) {
                     needle_stamp(grid, x, y, heading, ink, depth, rng);
                     if rf(rng) < k.fruit * 0.3 {
-                        put_blank(grid, x.round() as i32, (y + 1.0).round() as i32, '◆', darken(ink.fruit, 10));
+                        put_blank(
+                            grid,
+                            x.round() as i32,
+                            (y + 1.0).round() as i32,
+                            '◆',
+                            darken(ink.fruit, 10),
+                        );
                     }
                 }
                 if let Some((sx, sy, sh, sd)) = stack.pop() {
@@ -480,13 +581,30 @@ fn grow_spire(grid: &mut Grid, plot: Rect, root_depth: i32, energy: f32, ink: &I
             _ => {}
         }
     }
-    root_fan(grid, f.rx, f.ry, (f.half * k.roots) as i32, ((root_depth as f32) * k.roots) as i32, 0.0, ink.root, rng);
+    root_fan(
+        grid,
+        f.rx,
+        f.ry,
+        (f.half * k.roots) as i32,
+        ((root_depth as f32) * k.roots) as i32,
+        0.0,
+        ink.root,
+        rng,
+    );
 }
 
 // ---------------------------------------------------------------- 2. krummholz (wind-flagged dwarf, novel)
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn grow_krummholz(grid: &mut Grid, plot: Rect, root_depth: i32, energy: f32, ink: &Ink, k: &GrowKnobs, rng: &mut StdRng) {
+fn grow_krummholz(
+    grid: &mut Grid,
+    plot: Rect,
+    root_depth: i32,
+    energy: f32,
+    ink: &Ink,
+    k: &GrowKnobs,
+    rng: &mut StdRng,
+) {
     let f = frame_of(plot, (energy * 0.62).max(0.25));
     let wind_dir: f32 = if rf(rng) < 0.5 { -1.0 } else { 1.0 };
     let wind_strength = 0.5 + rf(rng) * 0.4;
@@ -511,7 +629,13 @@ fn grow_krummholz(grid: &mut Grid, plot: Rect, root_depth: i32, energy: f32, ink
             let glyph = dir_glyph(heading);
             put(grid, nx.round() as i32, ny.round() as i32, glyph, ink.trunk);
             if thick && hash3(nx as u32, ny as u32, s as u32) % 6 == 0 {
-                put(grid, nx.round() as i32, ny.round() as i32, '▓', darken(ink.bark, 15));
+                put(
+                    grid,
+                    nx.round() as i32,
+                    ny.round() as i32,
+                    '▓',
+                    darken(ink.bark, 15),
+                );
             }
             x = nx;
             y = ny;
@@ -533,19 +657,52 @@ fn grow_krummholz(grid: &mut Grid, plot: Rect, root_depth: i32, energy: f32, ink
             let lx = x + ang.sin() * d;
             let ly = y - ang.cos() * d * 0.5 - rf(rng) * 0.4;
             let ch = if d < 1.0 { '▪' } else { '∙' };
-            put_blank(grid, lx.round() as i32, ly.round() as i32, ch, if wind_align > 0.5 { ink.leaf } else { ink.leaf2 });
+            put_blank(
+                grid,
+                lx.round() as i32,
+                ly.round() as i32,
+                ch,
+                if wind_align > 0.5 {
+                    ink.leaf
+                } else {
+                    ink.leaf2
+                },
+            );
         }
         if rf(rng) < k.fruit * 0.15 {
-            put_blank(grid, x.round() as i32, (y - 1.0).round() as i32, '▫', ink.fruit);
+            put_blank(
+                grid,
+                x.round() as i32,
+                (y - 1.0).round() as i32,
+                '▫',
+                ink.fruit,
+            );
         }
     }
-    root_fan(grid, f.rx, f.ry, (f.half * k.roots) as i32, ((root_depth as f32) * k.roots) as i32, -wind_dir, ink.root, rng);
+    root_fan(
+        grid,
+        f.rx,
+        f.ry,
+        (f.half * k.roots) as i32,
+        ((root_depth as f32) * k.roots) as i32,
+        -wind_dir,
+        ink.root,
+        rng,
+    );
 }
 
 // ---------------------------------------------------------------- 3. strangler (fig lattice on a dead host, novel)
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn grow_strangler(grid: &mut Grid, plot: Rect, root_depth: i32, energy: f32, ink: &Ink, k: &GrowKnobs, rng: &mut StdRng) {
+fn grow_strangler(
+    grid: &mut Grid,
+    plot: Rect,
+    root_depth: i32,
+    energy: f32,
+    ink: &Ink,
+    k: &GrowKnobs,
+    rng: &mut StdRng,
+) {
     let f = frame_of(plot, energy);
     let host_h = ((f.th * (0.68 + 0.22 * rf(rng))) as i32).max(3);
     let lean = (rf(rng) - 0.5) * 0.12;
@@ -554,11 +711,23 @@ fn grow_strangler(grid: &mut Grid, plot: Rect, root_depth: i32, energy: f32, ink
     for i in 0..host_h {
         xf += lean;
         let y = f.ry - i;
-        put(grid, xf.round() as i32, y, if i == 0 { '┃' } else { '│' }, ink.accent);
+        put(
+            grid,
+            xf.round() as i32,
+            y,
+            if i == 0 { '┃' } else { '│' },
+            ink.accent,
+        );
         host_pts.push((xf.round() as i32, y));
     }
     let &(hx, hy) = host_pts.last().unwrap();
-    put(grid, hx, hy - 1, if rf(rng) < 0.5 { '╱' } else { '╲' }, darken(ink.accent, 20));
+    put(
+        grid,
+        hx,
+        hy - 1,
+        if rf(rng) < 0.5 { '╱' } else { '╲' },
+        darken(ink.accent, 20),
+    );
 
     let n_strands = 4 + (k.branch * 4.0) as i32;
     let mut occupied: HashMap<i32, Vec<i32>> = HashMap::new();
@@ -592,14 +761,28 @@ fn grow_strangler(grid: &mut Grid, plot: Rect, root_depth: i32, energy: f32, ink
         let y = f.ry - i;
         let hw = (2 + i / 2).max(1);
         for d in -hw..=hw {
-            let ch = if d.abs() == hw { if hw >= 3 { '▓' } else { '▒' } } else { '░' };
+            let ch = if d.abs() == hw {
+                if hw >= 3 { '▓' } else { '▒' }
+            } else {
+                '░'
+            };
             put(grid, f.rx + d, y, ch, darken(ink.root, (i * 6) as u8));
         }
     }
 
     // canopy fed by the strands, propagules hanging below.
     let cr = (f.half * 0.5).max(2.0) as i32;
-    leaf_blob(grid, hx, hy - 1, cr, (cr / 2).max(1), 0.65, ['●', '•', '∙'], ink, rng);
+    leaf_blob(
+        grid,
+        hx,
+        hy - 1,
+        cr,
+        (cr / 2).max(1),
+        0.65,
+        ['●', '•', '∙'],
+        ink,
+        rng,
+    );
     for _ in 0..(3 + (k.fruit * 5.0) as i32) {
         let dx = (rf(rng) - 0.5) * cr as f32 * 1.6;
         let px = hx + dx as i32;
@@ -608,17 +791,44 @@ fn grow_strangler(grid: &mut Grid, plot: Rect, root_depth: i32, energy: f32, ink
             put_blank(grid, px, hy + 1, '•', ink.fruit);
         }
     }
-    root_fan(grid, f.rx, f.ry, (f.half * k.roots) as i32, ((root_depth as f32) * k.roots) as i32, 0.0, ink.root, rng);
+    root_fan(
+        grid,
+        f.rx,
+        f.ry,
+        (f.half * k.roots) as i32,
+        ((root_depth as f32) * k.roots) as i32,
+        0.0,
+        ink.root,
+        rng,
+    );
 }
 
 // ---------------------------------------------------------------- 4. windrake (radial angle-sweep fan)
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn grow_windrake(grid: &mut Grid, plot: Rect, root_depth: i32, energy: f32, ink: &Ink, k: &GrowKnobs, rng: &mut StdRng) {
+fn grow_windrake(
+    grid: &mut Grid,
+    plot: Rect,
+    root_depth: i32,
+    energy: f32,
+    ink: &Ink,
+    k: &GrowKnobs,
+    rng: &mut StdRng,
+) {
     let f = frame_of(plot, energy);
     let trunk_h = ((f.th * (0.3 + 0.1 * rf(rng))) as i32).max(2);
     let tw = ((f.th / 12.0) as i32).max(1);
-    let trunk = taper_trunk(grid, f.rx, f.ry, trunk_h, tw, (rf(rng) - 0.5) * 0.45, 0.55, ink, rng);
+    let trunk = taper_trunk(
+        grid,
+        f.rx,
+        f.ry,
+        trunk_h,
+        tw,
+        (rf(rng) - 0.5) * 0.45,
+        0.55,
+        ink,
+        rng,
+    );
     let &(tx, ty) = trunk.last().unwrap();
 
     let wind_side: f32 = if rf(rng) < 0.5 { -1.0 } else { 1.0 };
@@ -630,12 +840,25 @@ fn grow_windrake(grid: &mut Grid, plot: Rect, root_depth: i32, energy: f32, ink:
     put(grid, tx, ty, joint, ink.branch);
 
     for i in 0..n_rays {
-        let frac = if n_rays > 1 { i as f32 / (n_rays - 1) as f32 } else { 0.5 };
-        let ang = base_angle - wind_side * sweep * 0.5 + wind_side * sweep * frac + (rf(rng) - 0.5) * 0.1;
+        let frac = if n_rays > 1 {
+            i as f32 / (n_rays - 1) as f32
+        } else {
+            0.5
+        };
+        let ang =
+            base_angle - wind_side * sweep * 0.5 + wind_side * sweep * frac + (rf(rng) - 0.5) * 0.1;
         let len = crown_r * (0.55 + 0.45 * rf(rng));
         let ex = tx as f32 + ang.sin() * len;
         let ey = ty as f32 - ang.cos() * len;
-        seg(grid, tx, ty, ex.round() as i32, ey.round() as i32, ink.branch, true);
+        seg(
+            grid,
+            tx,
+            ty,
+            ex.round() as i32,
+            ey.round() as i32,
+            ink.branch,
+            true,
+        );
 
         if rf(rng) < k.branch * 0.5 {
             let fu = 0.55 + rf(rng) * 0.2;
@@ -645,9 +868,23 @@ fn grow_windrake(grid: &mut Grid, plot: Rect, root_depth: i32, energy: f32, ink:
             let flen = len * 0.4;
             let fx = mx + fork_ang.sin() * flen;
             let fy = my - fork_ang.cos() * flen;
-            seg(grid, mx.round() as i32, my.round() as i32, fx.round() as i32, fy.round() as i32, ink.branch, false);
+            seg(
+                grid,
+                mx.round() as i32,
+                my.round() as i32,
+                fx.round() as i32,
+                fy.round() as i32,
+                ink.branch,
+                false,
+            );
             if rf(rng) < 0.5 {
-                put_blank(grid, fx.round() as i32, (fy - 1.0).round() as i32, '▪', ink.leaf2);
+                put_blank(
+                    grid,
+                    fx.round() as i32,
+                    (fy - 1.0).round() as i32,
+                    '▪',
+                    ink.leaf2,
+                );
             }
         }
 
@@ -660,7 +897,13 @@ fn grow_windrake(grid: &mut Grid, plot: Rect, root_depth: i32, energy: f32, ink:
             }
             let px = tx as f32 + ang.sin() * d;
             let py = ty as f32 - ang.cos() * d;
-            let ch = if density > 0.5 { '▪' } else if density > 0.25 { '▫' } else { '∙' };
+            let ch = if density > 0.5 {
+                '▪'
+            } else if density > 0.25 {
+                '▫'
+            } else {
+                '∙'
+            };
             let c = if density > 0.5 { ink.leaf } else { ink.leaf2 };
             put_blank(grid, px.round() as i32, py.round() as i32, ch, c);
         }
@@ -668,7 +911,16 @@ fn grow_windrake(grid: &mut Grid, plot: Rect, root_depth: i32, energy: f32, ink:
             put_blank(grid, ex.round() as i32, ey.round() as i32, '◆', ink.fruit);
         }
     }
-    root_fan(grid, f.rx, f.ry, (f.half * k.roots) as i32, ((root_depth as f32) * k.roots) as i32, -wind_side * 0.5, ink.root, rng);
+    root_fan(
+        grid,
+        f.rx,
+        f.ry,
+        (f.half * k.roots) as i32,
+        ((root_depth as f32) * k.roots) as i32,
+        -wind_side * 0.5,
+        ink.root,
+        rng,
+    );
 }
 
 // ---------------------------------------------------------------- 5. bracket (fungal shelf stack on a snag)
@@ -679,17 +931,47 @@ fn cap_glyph(dy: i32, hgt: i32) -> char {
         return '▤';
     }
     let f = dy as f32 / hgt as f32;
-    if f < 0.4 { '◍' } else if f < 0.8 { '▤' } else { '░' }
+    if f < 0.4 {
+        '◍'
+    } else if f < 0.8 {
+        '▤'
+    } else {
+        '░'
+    }
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn grow_bracket(grid: &mut Grid, plot: Rect, root_depth: i32, energy: f32, ink: &Ink, k: &GrowKnobs, rng: &mut StdRng) {
+fn grow_bracket(
+    grid: &mut Grid,
+    plot: Rect,
+    root_depth: i32,
+    energy: f32,
+    ink: &Ink,
+    k: &GrowKnobs,
+    rng: &mut StdRng,
+) {
     let f = frame_of(plot, energy);
     let snag_h = ((f.th * (0.55 + 0.35 * rf(rng))) as i32).max(4);
     let tw = ((f.th / 11.0) as i32).max(1);
-    let trunk = taper_trunk(grid, f.rx, f.ry, snag_h, tw, (rf(rng) - 0.5) * 0.1, 0.2, ink, rng);
+    let trunk = taper_trunk(
+        grid,
+        f.rx,
+        f.ry,
+        snag_h,
+        tw,
+        (rf(rng) - 0.5) * 0.1,
+        0.2,
+        ink,
+        rng,
+    );
     let &(tx, ty) = trunk.last().unwrap();
-    put(grid, tx, ty - 1, if rf(rng) < 0.5 { '╱' } else { '╲' }, darken(ink.bark, 15));
+    put(
+        grid,
+        tx,
+        ty - 1,
+        if rf(rng) < 0.5 { '╱' } else { '╲' },
+        darken(ink.bark, 15),
+    );
 
     let n_brackets = (4.0 + k.detail * 6.0) as i32;
     let usable = (trunk.len() as i32 - 3).max(1);
@@ -715,7 +997,13 @@ fn grow_bracket(grid: &mut Grid, plot: Rect, root_depth: i32, energy: f32, ink: 
                 put(grid, bx + side * (dx + 1), by - dy, ch, c);
             }
         }
-        put(grid, bx + side, by, if side > 0 { '├' } else { '┤' }, ink.bark);
+        put(
+            grid,
+            bx + side,
+            by,
+            if side > 0 { '├' } else { '┤' },
+            ink.bark,
+        );
         if rf(rng) < k.fruit {
             put_blank(grid, bx + side * (w + 1), by + 1, '✶', ink.fruit);
         }
@@ -736,7 +1024,13 @@ fn grow_bracket(grid: &mut Grid, plot: Rect, root_depth: i32, energy: f32, ink: 
         for s in 0..len {
             y += 1;
             x += side * (s as i32 % 2);
-            put(grid, x, y, if s % 2 == 0 { '╌' } else { '·' }, darken(ink.root, (s * 8) as u8));
+            put(
+                grid,
+                x,
+                y,
+                if s % 2 == 0 { '╌' } else { '·' },
+                darken(ink.root, (s * 8) as u8),
+            );
         }
     }
 }
@@ -744,7 +1038,15 @@ fn grow_bracket(grid: &mut Grid, plot: Rect, root_depth: i32, energy: f32, ink: 
 // ---------------------------------------------------------------- 6. cypress (buttressed trunk, root knees)
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn grow_cypress(grid: &mut Grid, plot: Rect, root_depth: i32, energy: f32, ink: &Ink, k: &GrowKnobs, rng: &mut StdRng) {
+fn grow_cypress(
+    grid: &mut Grid,
+    plot: Rect,
+    root_depth: i32,
+    energy: f32,
+    ink: &Ink,
+    k: &GrowKnobs,
+    rng: &mut StdRng,
+) {
     let f = frame_of(plot, energy);
     let base_flare = f.half * (0.45 + 0.3 * rf(rng));
     let trunk_h = ((f.th * (0.62 + 0.15 * rf(rng))) as i32).max(4);
@@ -779,7 +1081,13 @@ fn grow_cypress(grid: &mut Grid, plot: Rect, root_depth: i32, energy: f32, ink: 
         let ky = f.ry + (rf(rng) * (root_depth as f32 * 0.5).max(0.5)) as i32;
         let h = 1 + rng.random_range(0..3u32) as i32;
         for dy in 0..h {
-            put(grid, kx, ky - dy, if dy == h - 1 { '╷' } else { '│' }, ink.root);
+            put(
+                grid,
+                kx,
+                ky - dy,
+                if dy == h - 1 { '╷' } else { '│' },
+                ink.root,
+            );
         }
         if rf(rng) < 0.5 {
             put(grid, kx, ky - h, '·', darken(ink.root, 20));
@@ -790,11 +1098,30 @@ fn grow_cypress(grid: &mut Grid, plot: Rect, root_depth: i32, energy: f32, ink: 
     let cr = (f.half * (0.8 + 0.3 * rf(rng))).max(2.0) as i32;
     let ch = ((f.th - trunk_h as f32).max(2.0) as i32 / 2).max(1);
     leaf_blob(grid, tx, ty, cr, ch, 0.75, ['▓', '▒', '░'], ink, rng);
-    leaf_blob(grid, tx, ty - 1, (cr as f32 * 0.7) as i32, (ch as f32 * 0.6).max(1.0) as i32, 0.5, ['●', '•', '∙'], ink, rng);
+    leaf_blob(
+        grid,
+        tx,
+        ty - 1,
+        (cr as f32 * 0.7) as i32,
+        (ch as f32 * 0.6).max(1.0) as i32,
+        0.5,
+        ['●', '•', '∙'],
+        ink,
+        rng,
+    );
     if rf(rng) < k.fruit {
         put_blank(grid, tx, ty - ch - 1, '◆', ink.fruit);
     }
-    root_fan(grid, f.rx, f.ry, (f.half * k.roots) as i32, ((root_depth as f32) * k.roots) as i32, 0.0, ink.root, rng);
+    root_fan(
+        grid,
+        f.rx,
+        f.ry,
+        (f.half * k.roots) as i32,
+        ((root_depth as f32) * k.roots) as i32,
+        0.0,
+        ink.root,
+        rng,
+    );
 }
 
 // ---------------------------------------------------------------- sprites
@@ -808,7 +1135,10 @@ pub(crate) struct Palette {
 impl Palette {
     #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub(crate) fn new() -> Self {
-        Palette { colors: Vec::new(), index: HashMap::new() }
+        Palette {
+            colors: Vec::new(),
+            index: HashMap::new(),
+        }
     }
 
     #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
@@ -840,7 +1170,10 @@ pub(crate) struct Sprite {
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn is_leaf_glyph(ch: char) -> bool {
-    matches!(ch, '●' | '•' | '∙' | '·' | '◆' | '◇' | '○' | '◦' | '▪' | '▫' | '▓' | '▒' | '░')
+    matches!(
+        ch,
+        '●' | '•' | '∙' | '·' | '◆' | '◇' | '○' | '◦' | '▪' | '▫' | '▓' | '▒' | '░'
+    )
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
@@ -871,25 +1204,52 @@ pub(crate) fn sprite_from_grid(scratch: &Grid, root_row: usize, pal: &mut Palett
             row.iter()
                 .enumerate()
                 .filter(|(_, c)| c.ch != ' ')
-                .map(|(x, c)| SpriteCell { dx: x as u16, ch: c.ch, slot: pal.intern(c.fg), leaf: is_leaf_glyph(c.ch) })
+                .map(|(x, c)| SpriteCell {
+                    dx: x as u16,
+                    ch: c.ch,
+                    slot: pal.intern(c.fg),
+                    leaf: is_leaf_glyph(c.ch),
+                })
                 .collect()
         })
         .collect();
     let spans = rows
         .iter()
         .map(|row| {
-            let (Some(a), Some(b)) = (row.first(), row.last()) else { return None };
+            let (Some(a), Some(b)) = (row.first(), row.last()) else {
+                return None;
+            };
             let span = (b.dx - a.dx + 1) as usize;
-            if row.len() >= 3 && row.len() * 10 >= span * 3 { Some((a.dx, b.dx)) } else { None }
+            if row.len() >= 3 && row.len() * 10 >= span * 3 {
+                Some((a.dx, b.dx))
+            } else {
+                None
+            }
         })
         .collect();
-    Sprite { root_row, rows, spans }
+    Sprite {
+        root_row,
+        rows,
+        spans,
+    }
 }
 
 /// Paint a sprite with its root row at (x0, y0 + root_row). Rows above the root
 /// shear by `sway` scaled with height squared; leaf glyphs flicker by `flicker`.
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn blit_sprite(grid: &mut Grid, gw: usize, gh: usize, sp: &Sprite, x0: i32, y0: i32, sway: f32, flicker: f32, tick: u32, lit: &[Color], mask: Option<Cell>) {
+pub(crate) fn blit_sprite(
+    grid: &mut Grid,
+    gw: usize,
+    gh: usize,
+    sp: &Sprite,
+    x0: i32,
+    y0: i32,
+    sway: f32,
+    flicker: f32,
+    tick: u32,
+    lit: &[Color],
+    mask: Option<Cell>,
+) {
     let rr = sp.root_row.max(1) as f32;
     let fl = (flicker * 300.0) as u32;
     for (dy, row) in sp.rows.iter().enumerate() {
@@ -995,7 +1355,12 @@ fn build_sheet(key: SheetKey, k: &SheetKnobs) -> Sheet {
     let mut trees = Vec::new();
     let mut labels = Vec::new();
     let mut ground = Vec::new();
-    let gk = GrowKnobs { fruit: k.fruit, branch: k.branch, detail: k.detail, roots: k.roots };
+    let gk = GrowKnobs {
+        fruit: k.fruit,
+        branch: k.branch,
+        detail: k.detail,
+        roots: k.roots,
+    };
     for row in 0..2usize {
         let energy = if row == 0 { k.energy } else { k.energy * 0.6 };
         for (i, &sp) in SPECIES.iter().enumerate() {
@@ -1007,14 +1372,26 @@ fn build_sheet(key: SheetKey, k: &SheetKnobs) -> Sheet {
             let plot_h = (gy - py).max(3) as usize;
             let plot_w = cell_w.saturating_sub(2).max(3);
             let mut scratch = vec![vec![Cell::blank(); plot_w]; plot_h + rd as usize];
-            let mut rng = StdRng::seed_from_u64(key.seed ^ hash3(i as u32 + 1, row as u32 + 1, 0x50EE) as u64);
+            let mut rng = StdRng::seed_from_u64(
+                key.seed ^ hash3(i as u32 + 1, row as u32 + 1, 0x50EE) as u64,
+            );
             let hue = (base_hue + i as f64 * 26.0 + row as f64 * 30.0 - 30.0).rem_euclid(360.0);
             let ink = Ink::from_hue(hue, 0.55, 0.4);
-            let plot = Rect { x: 0, y: 0, w: plot_w, h: plot_h };
+            let plot = Rect {
+                x: 0,
+                y: 0,
+                w: plot_w,
+                h: plot_h,
+            };
             grow_species(sp, &mut scratch, plot, rd, energy, &ink, &gk, &mut rng);
             let sprite = sprite_from_grid(&scratch, plot_h - 1, &mut pal);
             let phase = rf(&mut rng) * TAU;
-            trees.push(Placed { sprite, x: px + 1, y: py + 1, phase });
+            trees.push(Placed {
+                sprite,
+                x: px + 1,
+                y: py + 1,
+                phase,
+            });
             let dim = pal.intern(darken(ink.bark, 10));
             ground.push((gy, px + 1, px + cell_w as i32 - 2, dim));
             let label = sp.label().to_string();
@@ -1023,11 +1400,25 @@ fn build_sheet(key: SheetKey, k: &SheetKnobs) -> Sheet {
             labels.push((label, lx, label_y, ls));
         }
     }
-    Sheet { key, pal, trees, labels, ground }
+    Sheet {
+        key,
+        pal,
+        trees,
+        labels,
+        ground,
+    }
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn draw_sonnet_2_trees(grid: &mut Grid, width: usize, height: usize, seed: u64, palette: &[Color; 5], t: f32, k: &SheetKnobs) {
+pub(crate) fn draw_sonnet_2_trees(
+    grid: &mut Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: &[Color; 5],
+    t: f32,
+    k: &SheetKnobs,
+) {
     let gh = height.min(grid.len());
     let gw = width.min(grid.first().map(|r| r.len()).unwrap_or(0));
     if gw < 4 || gh < 4 {
@@ -1038,7 +1429,17 @@ pub(crate) fn draw_sonnet_2_trees(grid: &mut Grid, width: usize, height: usize, 
             row[..gw].fill(Cell::blank());
         }
     });
-    let key = SheetKey { w: gw, h: gh, seed, palette: *palette, energy: k.energy, fruit: k.fruit, branch: k.branch, detail: k.detail, roots: k.roots };
+    let key = SheetKey {
+        w: gw,
+        h: gh,
+        seed,
+        palette: *palette,
+        energy: k.energy,
+        fruit: k.fruit,
+        branch: k.branch,
+        detail: k.detail,
+        roots: k.roots,
+    };
     let hit = SHEET.with(|c| c.borrow().as_ref().map(|s| s.key == key).unwrap_or(false));
     if !hit {
         let sheet = measure_layer("sonnet-2-trees", "grow", || build_sheet(key.clone(), k));
@@ -1075,21 +1476,48 @@ pub(crate) fn draw_sonnet_2_trees(grid: &mut Grid, width: usize, height: usize, 
             let tick = (t * 3.0) as u32;
             for p in &s.trees {
                 let sway = if animating {
-                    k.sway * p.sprite.root_row as f32 * 0.08 * (TAU * t * k.speed / 24.0 + p.phase).sin()
+                    k.sway
+                        * p.sprite.root_row as f32
+                        * 0.08
+                        * (TAU * t * k.speed / 24.0 + p.phase).sin()
                 } else {
                     0.0
                 };
                 let flicker = if animating { k.flicker } else { 0.0 };
-                blit_sprite(grid, gw, gh, &p.sprite, p.x, p.y, sway, flicker, tick, lit, None);
+                blit_sprite(
+                    grid, gw, gh, &p.sprite, p.x, p.y, sway, flicker, tick, lit, None,
+                );
             }
         });
     });
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn cli_sonnet_2_trees(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], _rng: StdRng, t_anim: f32, _term_w: u16, _term_h: u16, args: &[String], _mode: &str, _theme_name: &str) -> (Grid, bool) {
+pub(crate) fn cli_sonnet_2_trees(
+    mut grid: Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: [Color; 5],
+    _rng: StdRng,
+    t_anim: f32,
+    _term_w: u16,
+    _term_h: u16,
+    args: &[String],
+    _mode: &str,
+    _theme_name: &str,
+) -> (Grid, bool) {
     let mut k = SheetKnobs::from_env();
-    let slots: [&mut f32; 8] = [&mut k.energy, &mut k.fruit, &mut k.branch, &mut k.sway, &mut k.speed, &mut k.flicker, &mut k.detail, &mut k.roots];
+    let slots: [&mut f32; 8] = [
+        &mut k.energy,
+        &mut k.fruit,
+        &mut k.branch,
+        &mut k.sway,
+        &mut k.speed,
+        &mut k.flicker,
+        &mut k.detail,
+        &mut k.roots,
+    ];
     for (i, slot) in slots.into_iter().enumerate() {
         if let Some(v) = args.get(4 + i).and_then(|s| s.parse().ok()) {
             *slot = v;
@@ -1109,7 +1537,10 @@ mod tests {
         let p = crate::color::make_palette(seed);
         let k = SheetKnobs::from_env();
         draw_sonnet_2_trees(&mut g, w, h, seed, &p, t, &k);
-        g.iter().map(|row| row.iter().map(|c| c.ch).collect::<String>()).collect::<Vec<_>>().join("\n")
+        g.iter()
+            .map(|row| row.iter().map(|c| c.ch).collect::<String>())
+            .collect::<Vec<_>>()
+            .join("\n")
     }
 
     #[test]
@@ -1134,10 +1565,36 @@ mod tests {
                 let mut g = vec![vec![Cell::blank(); 40]; 24];
                 let mut rng = StdRng::seed_from_u64(seed);
                 let ink = Ink::from_hue(120.0, 0.5, 0.4);
-                let k = GrowKnobs { fruit: 0.2, branch: 1.0, detail: 1.0, roots: 1.0 };
-                grow_species(sp, &mut g, Rect { x: 0, y: 0, w: 40, h: 20 }, 3, 0.9, &ink, &k, &mut rng);
-                let s: String = g.iter().map(|r| r.iter().map(|c| c.ch).collect::<String>()).collect();
-                assert!(s.chars().filter(|c| *c != ' ').count() > 15, "{:?} drew nothing", sp);
+                let k = GrowKnobs {
+                    fruit: 0.2,
+                    branch: 1.0,
+                    detail: 1.0,
+                    roots: 1.0,
+                };
+                grow_species(
+                    sp,
+                    &mut g,
+                    Rect {
+                        x: 0,
+                        y: 0,
+                        w: 40,
+                        h: 20,
+                    },
+                    3,
+                    0.9,
+                    &ink,
+                    &k,
+                    &mut rng,
+                );
+                let s: String = g
+                    .iter()
+                    .map(|r| r.iter().map(|c| c.ch).collect::<String>())
+                    .collect();
+                assert!(
+                    s.chars().filter(|c| *c != ' ').count() > 15,
+                    "{:?} drew nothing",
+                    sp
+                );
                 outs.push(s);
             }
             assert_ne!(outs[0], outs[1], "{:?} identical across seeds", sp);

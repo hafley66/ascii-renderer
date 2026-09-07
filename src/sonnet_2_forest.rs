@@ -71,7 +71,13 @@ enum Atmos {
     Birds,
 }
 
-const ATMOS_KINDS: [Atmos; 5] = [Atmos::Fogbanks, Atmos::Fireflies, Atmos::Leaves, Atmos::Snow, Atmos::Birds];
+const ATMOS_KINDS: [Atmos; 5] = [
+    Atmos::Fogbanks,
+    Atmos::Fireflies,
+    Atmos::Leaves,
+    Atmos::Snow,
+    Atmos::Birds,
+];
 
 struct Particle {
     x: f32,
@@ -149,7 +155,10 @@ fn hue_of_or(c: Color, fallback: f64) -> f64 {
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn is_canopy_glyph(ch: char) -> bool {
-    matches!(ch, '●' | '•' | '∙' | '·' | '◆' | '◇' | '○' | '◦' | '▪' | '▫')
+    matches!(
+        ch,
+        '●' | '•' | '∙' | '·' | '◆' | '◇' | '○' | '◦' | '▪' | '▫'
+    )
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
@@ -158,17 +167,22 @@ fn build_scene(key: Key, k: &ForestKnobs) -> Scene {
     let h = key.h;
     let mut rng = StdRng::seed_from_u64(key.seed ^ 0x50EE_2F02);
     let mut pal = Palette::new();
-    let hue0 = (palette_hue(&key.palette) + key.hue as f64 + (rf(&mut rng) as f64 - 0.5) * 30.0).rem_euclid(360.0);
+    let hue0 = (palette_hue(&key.palette) + key.hue as f64 + (rf(&mut rng) as f64 - 0.5) * 30.0)
+        .rem_euclid(360.0);
     let sky_hue = (hue_of_or(key.palette[0], hue0 + 200.0) + key.hue as f64).rem_euclid(360.0);
     let horizon = ((h as f32 * key.ground) as usize).clamp(2, h - 2);
 
     let a1 = h as f32 * 0.02;
     let a2 = h as f32 * 0.01;
-    let (f1, f2) = (0.9 / w as f32 * TAU * (0.6 + rf(&mut rng)), 2.7 / w as f32 * TAU * (0.6 + rf(&mut rng)));
+    let (f1, f2) = (
+        0.9 / w as f32 * TAU * (0.6 + rf(&mut rng)),
+        2.7 / w as f32 * TAU * (0.6 + rf(&mut rng)),
+    );
     let (p1, p2) = (rf(&mut rng) * TAU, rf(&mut rng) * TAU);
     let gl: Vec<usize> = (0..w)
         .map(|x| {
-            let v = horizon as f32 + a1 * (x as f32 * f1 + p1).sin() + a2 * (x as f32 * f2 + p2).sin();
+            let v =
+                horizon as f32 + a1 * (x as f32 * f1 + p1).sin() + a2 * (x as f32 * f2 + p2).sin();
             (v.round() as i32).clamp(1, h as i32 - 2) as usize
         })
         .collect();
@@ -199,7 +213,11 @@ fn build_scene(key: Key, k: &ForestKnobs) -> Scene {
                 let f = y as f32 / horizon.max(1) as f32;
                 bg_slot[i] = sky_slots[((f * (sky_bands - 1) as f32) as usize).min(sky_bands - 1)];
             } else if y == gl[x] {
-                bg_ch[i] = if hash3(x as u32, 7, key.seed as u32) % 5 == 0 { ' ' } else { '╌' };
+                bg_ch[i] = if hash3(x as u32, 7, key.seed as u32) % 5 == 0 {
+                    ' '
+                } else {
+                    '╌'
+                };
                 bg_slot[i] = line_slot;
             } else {
                 let depth = (y - gl[x]) as f32 / (h - horizon).max(1) as f32;
@@ -213,12 +231,19 @@ fn build_scene(key: Key, k: &ForestKnobs) -> Scene {
             }
         }
     }
-    let star_slots = [pal.intern(hsl_to_rgb(sky_hue, 0.2, 0.55)), pal.intern(hsl_to_rgb(sky_hue, 0.2, 0.3))];
+    let star_slots = [
+        pal.intern(hsl_to_rgb(sky_hue, 0.2, 0.55)),
+        pal.intern(hsl_to_rgb(sky_hue, 0.2, 0.3)),
+    ];
     let mut stars = Vec::new();
     for y in 0..(horizon * 3 / 4) {
         for x in 0..w {
             if hash3(x as u32, y as u32, key.seed as u32 ^ 0x57A5) % 45 == 0 {
-                stars.push((x as u16, y as u16, (hash3(x as u32, y as u32, 9) % 250) as u8));
+                stars.push((
+                    x as u16,
+                    y as u16,
+                    (hash3(x as u32, y as u32, 9) % 250) as u8,
+                ));
             }
         }
     }
@@ -229,7 +254,15 @@ fn build_scene(key: Key, k: &ForestKnobs) -> Scene {
         sec = (sec + 1) % SPECIES.len();
     }
     let weights: Vec<f32> = (0..SPECIES.len())
-        .map(|i| if i == dom { 0.42 } else if i == sec { 0.24 } else { 0.34 / (SPECIES.len() as f32 - 2.0) })
+        .map(|i| {
+            if i == dom {
+                0.42
+            } else if i == sec {
+                0.24
+            } else {
+                0.34 / (SPECIES.len() as f32 - 2.0)
+            }
+        })
         .collect();
     let pick_species = |rng: &mut StdRng| {
         let mut u = rf(rng);
@@ -244,12 +277,21 @@ fn build_scene(key: Key, k: &ForestKnobs) -> Scene {
 
     let layers = (key.layers.round() as usize).clamp(1, 5);
     let haze_color = hsl_to_rgb(sky_hue, 0.3, 0.2);
-    let gk = GrowKnobs { fruit: key.fruit, branch: 0.85, detail: 1.0, roots: 1.0 };
+    let gk = GrowKnobs {
+        fruit: key.fruit,
+        branch: 0.85,
+        detail: 1.0,
+        roots: 1.0,
+    };
     let ovl = 0.05 + 0.4 * ((key.density - 0.2) / 1.8).clamp(0.0, 1.0);
     let mut trees: Vec<Tree> = Vec::new();
     let mut canopy_cells: Vec<(f32, f32)> = Vec::new();
     for li in 0..layers {
-        let lfrac = if layers > 1 { li as f32 / (layers - 1) as f32 } else { 1.0 };
+        let lfrac = if layers > 1 {
+            li as f32 / (layers - 1) as f32
+        } else {
+            1.0
+        };
         let th_max = (h as f32 * key.energy * (0.3 + 0.48 * lfrac)).max(5.0);
         let avg_w = th_max * 1.5;
         let n = (((w as f32 / avg_w) * key.density * 0.75) as usize).clamp(1, 400);
@@ -276,13 +318,31 @@ fn build_scene(key: Key, k: &ForestKnobs) -> Scene {
             let root_y = root_y.min(h - 2);
             let rd = ((th / 8).max(1) as i32).min((h - 1 - root_y) as i32);
             let sp = pick_species(&mut rng);
-            let hue = (hue0 + (rf(&mut rng) as f64 - 0.5) * 40.0 + lfrac as f64 * 10.0).rem_euclid(360.0);
+            let hue =
+                (hue0 + (rf(&mut rng) as f64 - 0.5) * 40.0 + lfrac as f64 * 10.0).rem_euclid(360.0);
             let sat = 0.3 + 0.35 * lfrac as f64;
             let light = 0.18 + 0.22 * lfrac as f64;
-            let ink = Ink::from_hue(hue, sat, light).fade(haze_color, key.haze * (1.0 - lfrac) * 0.7);
+            let ink =
+                Ink::from_hue(hue, sat, light).fade(haze_color, key.haze * (1.0 - lfrac) * 0.7);
             let mut scratch = vec![vec![Cell::blank(); pw]; th + rd as usize];
-            let mut trng = StdRng::seed_from_u64(key.seed ^ hash3(li as u32, layer_trees.len() as u32, 0x7EE) as u64);
-            grow_species(sp, &mut scratch, Rect { x: 0, y: 0, w: pw, h: th }, rd, 0.88 + 0.12 * rf(&mut rng), &ink, &gk, &mut trng);
+            let mut trng = StdRng::seed_from_u64(
+                key.seed ^ hash3(li as u32, layer_trees.len() as u32, 0x7EE) as u64,
+            );
+            grow_species(
+                sp,
+                &mut scratch,
+                Rect {
+                    x: 0,
+                    y: 0,
+                    w: pw,
+                    h: th,
+                },
+                rd,
+                0.88 + 0.12 * rf(&mut rng),
+                &ink,
+                &gk,
+                &mut trng,
+            );
             let sprite = sprite_from_grid(&scratch, th - 1, &mut pal);
             let phase = cx as f32 / w as f32 * 2.0 + rf(&mut rng) * 0.6;
             let ty = root_y as i32 - (th as i32 - 1);
@@ -295,18 +355,32 @@ fn build_scene(key: Key, k: &ForestKnobs) -> Scene {
                     }
                 }
             }
-            layer_trees.push(Tree { sprite, x: x0, y: ty, lfrac, phase });
+            layer_trees.push(Tree {
+                sprite,
+                x: x0,
+                y: ty,
+                lfrac,
+                phase,
+            });
         }
         layer_trees.sort_by_key(|t| t.y + t.sprite.root_row as i32);
         trees.extend(layer_trees);
     }
 
-    let tuft_slots = [pal.intern(hsl_to_rgb(hue0 + 10.0, 0.45, 0.26)), pal.intern(hsl_to_rgb(hue0 - 5.0, 0.4, 0.34))];
+    let tuft_slots = [
+        pal.intern(hsl_to_rgb(hue0 + 10.0, 0.45, 0.26)),
+        pal.intern(hsl_to_rgb(hue0 - 5.0, 0.4, 0.34)),
+    ];
     let mut tufts = Vec::new();
     let front_drop = ((h - horizon) as f32 * 0.5) as usize;
     for x in 0..w {
         if rf(&mut rng) < 0.18 {
-            tufts.push((x as i32, gl[x] as i32 - 1, tuft_slots[0], (rf(&mut rng) * 250.0) as u8));
+            tufts.push((
+                x as i32,
+                gl[x] as i32 - 1,
+                tuft_slots[0],
+                (rf(&mut rng) * 250.0) as u8,
+            ));
         }
         if rf(&mut rng) < 0.3 {
             let y = (gl[x] + front_drop).min(h - 1) as i32;
@@ -314,7 +388,11 @@ fn build_scene(key: Key, k: &ForestKnobs) -> Scene {
         }
     }
 
-    let atmos = if key.atmos >= 1.0 { ATMOS_KINDS[(key.atmos.round() as usize - 1).min(4)] } else { ATMOS_KINDS[rng.random_range(0..5u32) as usize] };
+    let atmos = if key.atmos >= 1.0 {
+        ATMOS_KINDS[(key.atmos.round() as usize - 1).min(4)]
+    } else {
+        ATMOS_KINDS[rng.random_range(0..5u32) as usize]
+    };
     let accent = key.palette[3];
     let pale = key.palette[4];
     let mut banks = Vec::new();
@@ -330,35 +408,92 @@ fn build_scene(key: Key, k: &ForestKnobs) -> Scene {
                     speed: 0.15 + rf(&mut rng) * 0.2,
                 });
             }
-            ([pal.intern(hsl_to_rgb(sky_hue, 0.22, 0.24)), pal.intern(hsl_to_rgb(sky_hue, 0.22, 0.32)), 0], Vec::new())
+            (
+                [
+                    pal.intern(hsl_to_rgb(sky_hue, 0.22, 0.24)),
+                    pal.intern(hsl_to_rgb(sky_hue, 0.22, 0.32)),
+                    0,
+                ],
+                Vec::new(),
+            )
         }
         Atmos::Fireflies => {
             let n = ((w * h) / 900).clamp(8, 500);
             let ps = (0..n)
                 .map(|i| {
-                    let (hx, hy) = if !canopy_cells.is_empty() { canopy_cells[i % canopy_cells.len()] } else { (rf(&mut rng) * w as f32, horizon as f32) };
-                    Particle { x: hx, y: hy + rf(&mut rng) * 2.0, phase: rf(&mut rng), rate: 0.12 + rf(&mut rng) * 0.25, amp: 1.5 + rf(&mut rng) * 3.0, var: 0 }
+                    let (hx, hy) = if !canopy_cells.is_empty() {
+                        canopy_cells[i % canopy_cells.len()]
+                    } else {
+                        (rf(&mut rng) * w as f32, horizon as f32)
+                    };
+                    Particle {
+                        x: hx,
+                        y: hy + rf(&mut rng) * 2.0,
+                        phase: rf(&mut rng),
+                        rate: 0.12 + rf(&mut rng) * 0.25,
+                        amp: 1.5 + rf(&mut rng) * 3.0,
+                        var: 0,
+                    }
                 })
                 .collect();
-            ([pal.intern(darken(accent, 60)), pal.intern(accent), pal.intern(lighten(accent, 40))], ps)
+            (
+                [
+                    pal.intern(darken(accent, 60)),
+                    pal.intern(accent),
+                    pal.intern(lighten(accent, 40)),
+                ],
+                ps,
+            )
         }
         Atmos::Leaves => {
             let n = ((w * h) / 1500).clamp(6, 400);
             let warm = hsl_to_rgb(hue0 + 40.0, 0.6, 0.45);
             let ps = (0..n)
                 .map(|i| {
-                    let (sx, sy) = if !canopy_cells.is_empty() { canopy_cells[(i * 7) % canopy_cells.len()] } else { (rf(&mut rng) * w as f32, 0.0) };
-                    Particle { x: sx, y: sy, phase: rf(&mut rng) * TAU, rate: 0.5 + rf(&mut rng) * 0.7, amp: 2.5 + rf(&mut rng) * 4.0, var: (rf(&mut rng) * 4.0) as u8 }
+                    let (sx, sy) = if !canopy_cells.is_empty() {
+                        canopy_cells[(i * 7) % canopy_cells.len()]
+                    } else {
+                        (rf(&mut rng) * w as f32, 0.0)
+                    };
+                    Particle {
+                        x: sx,
+                        y: sy,
+                        phase: rf(&mut rng) * TAU,
+                        rate: 0.5 + rf(&mut rng) * 0.7,
+                        amp: 2.5 + rf(&mut rng) * 4.0,
+                        var: (rf(&mut rng) * 4.0) as u8,
+                    }
                 })
                 .collect();
-            ([pal.intern(darken(warm, 30)), pal.intern(warm), pal.intern(lighten(warm, 30))], ps)
+            (
+                [
+                    pal.intern(darken(warm, 30)),
+                    pal.intern(warm),
+                    pal.intern(lighten(warm, 30)),
+                ],
+                ps,
+            )
         }
         Atmos::Snow => {
             let n = ((w * h) / 700).clamp(10, 1200);
             let ps = (0..n)
-                .map(|_| Particle { x: rf(&mut rng) * w as f32, y: rf(&mut rng) * h as f32, phase: rf(&mut rng) * TAU, rate: 0.8 + rf(&mut rng) * 0.8, amp: 2.0 + rf(&mut rng) * 2.0, var: (rf(&mut rng) * 3.0) as u8 })
+                .map(|_| Particle {
+                    x: rf(&mut rng) * w as f32,
+                    y: rf(&mut rng) * h as f32,
+                    phase: rf(&mut rng) * TAU,
+                    rate: 0.8 + rf(&mut rng) * 0.8,
+                    amp: 2.0 + rf(&mut rng) * 2.0,
+                    var: (rf(&mut rng) * 3.0) as u8,
+                })
                 .collect();
-            ([pal.intern(darken(pale, 70)), pal.intern(darken(pale, 20)), 0], ps)
+            (
+                [
+                    pal.intern(darken(pale, 70)),
+                    pal.intern(darken(pale, 20)),
+                    0,
+                ],
+                ps,
+            )
         }
         Atmos::Birds => {
             let flocks = 2 + rng.random_range(0..3u32);
@@ -372,14 +507,43 @@ fn build_scene(key: Key, k: &ForestKnobs) -> Scene {
                 for i in 0..n {
                     let k = (i + 1) / 2;
                     let sgn = if i % 2 == 0 { 1.0 } else { -1.0 };
-                    ps.push(Particle { x: fx - k as f32 * 3.0, y: fy + sgn * k as f32 * (if i == 0 { 0.0 } else { 1.0 }), phase, rate, amp: rf(&mut rng) * TAU, var: 0 });
+                    ps.push(Particle {
+                        x: fx - k as f32 * 3.0,
+                        y: fy + sgn * k as f32 * (if i == 0 { 0.0 } else { 1.0 }),
+                        phase,
+                        rate,
+                        amp: rf(&mut rng) * TAU,
+                        var: 0,
+                    });
                 }
             }
-            ([pal.intern(darken(pale, 90)), pal.intern(darken(pale, 50)), 0], ps)
+            (
+                [
+                    pal.intern(darken(pale, 90)),
+                    pal.intern(darken(pale, 50)),
+                    0,
+                ],
+                ps,
+            )
         }
     };
 
-    Scene { key, pal, bg_ch, bg_slot, stars, star_slots, horizon, trees, canopy_cells, atmos, parts, banks, atm_slots, tufts }
+    Scene {
+        key,
+        pal,
+        bg_ch,
+        bg_slot,
+        stars,
+        star_slots,
+        horizon,
+        trees,
+        canopy_cells,
+        atmos,
+        parts,
+        banks,
+        atm_slots,
+        tufts,
+    }
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
@@ -390,7 +554,16 @@ fn set(grid: &mut Grid, gw: usize, gh: usize, x: i32, y: i32, ch: char, c: Color
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn paint_atmos(grid: &mut Grid, gw: usize, gh: usize, s: &Scene, lit: &[Color], t: f32, ts: f32, animating: bool) {
+fn paint_atmos(
+    grid: &mut Grid,
+    gw: usize,
+    gh: usize,
+    s: &Scene,
+    lit: &[Color],
+    t: f32,
+    ts: f32,
+    animating: bool,
+) {
     let c0 = lit[s.atm_slots[0] as usize];
     let c1 = lit[s.atm_slots[1] as usize];
     let c2 = lit[s.atm_slots[2].min(lit.len() as u16 - 1) as usize];
@@ -398,30 +571,53 @@ fn paint_atmos(grid: &mut Grid, gw: usize, gh: usize, s: &Scene, lit: &[Color], 
         Atmos::Fogbanks => {
             for b in &s.banks {
                 let span = gw as f32 + 3.0 * b.rx;
-                let bx = if animating { (b.x0 + ts * b.speed * gw as f32 / 30.0).rem_euclid(span) - b.rx } else { b.x0 };
+                let bx = if animating {
+                    (b.x0 + ts * b.speed * gw as f32 / 30.0).rem_euclid(span) - b.rx
+                } else {
+                    b.x0
+                };
                 for dy in -(b.ry as i32)..=(b.ry as i32) {
                     let row_scale = (1.0 - (dy as f32 / b.ry).powi(2)).max(0.0).sqrt();
                     let hw = b.rx * row_scale;
                     for dx in -(hw as i32)..=(hw as i32) {
-                        let d = ((dx as f32 / hw.max(1.0)).powi(2) + (dy as f32 / b.ry).powi(2)).sqrt();
+                        let d =
+                            ((dx as f32 / hw.max(1.0)).powi(2) + (dy as f32 / b.ry).powi(2)).sqrt();
                         if d > 1.0 {
                             continue;
                         }
                         let (ch, c) = if d < 0.5 { ('▒', c1) } else { ('░', c0) };
-                        set(grid, gw, gh, (bx + dx as f32).round() as i32, (b.y + dy as f32).round() as i32, ch, c);
+                        set(
+                            grid,
+                            gw,
+                            gh,
+                            (bx + dx as f32).round() as i32,
+                            (b.y + dy as f32).round() as i32,
+                            ch,
+                            c,
+                        );
                     }
                 }
             }
         }
         Atmos::Fireflies => {
             for p in &s.parts {
-                let b = if animating { 0.5 + 0.5 * (TAU * (p.rate * ts + p.phase)).sin() } else { 0.5 + 0.5 * (TAU * p.phase).sin() };
+                let b = if animating {
+                    0.5 + 0.5 * (TAU * (p.rate * ts + p.phase)).sin()
+                } else {
+                    0.5 + 0.5 * (TAU * p.phase).sin()
+                };
                 if b < 0.35 {
                     continue;
                 }
                 let x = p.x + p.amp * (ts * 0.2 + p.phase * 3.0).sin();
                 let y = p.y + p.amp * 0.35 * (ts * 0.13 + p.phase * 5.0).sin();
-                let (ch, c) = if b < 0.6 { ('·', c0) } else if b < 0.85 { ('•', c1) } else { ('✦', c2) };
+                let (ch, c) = if b < 0.6 {
+                    ('·', c0)
+                } else if b < 0.85 {
+                    ('•', c1)
+                } else {
+                    ('✦', c2)
+                };
                 set(grid, gw, gh, x.round() as i32, y.round() as i32, ch, c);
             }
         }
@@ -431,8 +627,22 @@ fn paint_atmos(grid: &mut Grid, gw: usize, gh: usize, s: &Scene, lit: &[Color], 
                 let y = (p.y + ts * p.rate).rem_euclid(gh as f32 + 2.0) - 1.0;
                 let x = p.x + p.amp * (ts * 0.5 + p.phase).sin();
                 let tumble = ((t * 2.0) as u32 + i as u32 + p.var as u32) % 4;
-                let c = if i % 3 == 0 { c0 } else if i % 3 == 1 { c1 } else { c2 };
-                set(grid, gw, gh, x.round() as i32, y.round() as i32, glyphs[tumble as usize], c);
+                let c = if i % 3 == 0 {
+                    c0
+                } else if i % 3 == 1 {
+                    c1
+                } else {
+                    c2
+                };
+                set(
+                    grid,
+                    gw,
+                    gh,
+                    x.round() as i32,
+                    y.round() as i32,
+                    glyphs[tumble as usize],
+                    c,
+                );
             }
         }
         Atmos::Snow => {
@@ -441,7 +651,15 @@ fn paint_atmos(grid: &mut Grid, gw: usize, gh: usize, s: &Scene, lit: &[Color], 
                 let y = (p.y + ts * p.rate).rem_euclid(gh as f32);
                 let x = p.x + p.amp * (ts * 0.35 + p.phase).sin();
                 let c = if p.var == 0 { c1 } else { c0 };
-                set(grid, gw, gh, x.round() as i32, y as i32, glyphs[p.var as usize % 3], c);
+                set(
+                    grid,
+                    gw,
+                    gh,
+                    x.round() as i32,
+                    y as i32,
+                    glyphs[p.var as usize % 3],
+                    c,
+                );
             }
         }
         Atmos::Birds => {
@@ -459,13 +677,34 @@ fn paint_atmos(grid: &mut Grid, gw: usize, gh: usize, s: &Scene, lit: &[Color], 
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn draw_sonnet_2_forest(grid: &mut Grid, width: usize, height: usize, seed: u64, palette: &[Color; 5], t: f32, k: &ForestKnobs) {
+pub(crate) fn draw_sonnet_2_forest(
+    grid: &mut Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: &[Color; 5],
+    t: f32,
+    k: &ForestKnobs,
+) {
     let gh = height.min(grid.len());
     let gw = width.min(grid.first().map(|r| r.len()).unwrap_or(0));
     if gw < 4 || gh < 6 {
         return;
     }
-    let key = Key { w: gw, h: gh, seed, palette: *palette, density: k.density, layers: k.layers, hue: k.hue, atmos: k.atmos, haze: k.haze, energy: k.energy, ground: k.ground, fruit: k.fruit };
+    let key = Key {
+        w: gw,
+        h: gh,
+        seed,
+        palette: *palette,
+        density: k.density,
+        layers: k.layers,
+        hue: k.hue,
+        atmos: k.atmos,
+        haze: k.haze,
+        energy: k.energy,
+        ground: k.ground,
+        fruit: k.fruit,
+    };
     let hit = SCENE.with(|c| c.borrow().as_ref().map(|s| s.key == key).unwrap_or(false));
     if !hit {
         let scene = measure_layer("sonnet-2-forest", "build", || build_scene(key.clone(), k));
@@ -486,8 +725,16 @@ pub(crate) fn draw_sonnet_2_forest(grid: &mut Grid, width: usize, height: usize,
                 .colors
                 .iter()
                 .map(|&c| {
-                    let stage1 = if bright >= 0.0 { lerp_color(c, lighten(c, 40), bright) } else { lerp_color(c, darken(c, 40), -bright) };
-                    if warmth >= 0.0 { lerp_color(stage1, warm_target, warmth.min(0.3)) } else { lerp_color(stage1, cool_target, (-warmth).min(0.3)) }
+                    let stage1 = if bright >= 0.0 {
+                        lerp_color(c, lighten(c, 40), bright)
+                    } else {
+                        lerp_color(c, darken(c, 40), -bright)
+                    };
+                    if warmth >= 0.0 {
+                        lerp_color(stage1, warm_target, warmth.min(0.3))
+                    } else {
+                        lerp_color(stage1, cool_target, (-warmth).min(0.3))
+                    }
                 })
                 .collect()
         });
@@ -503,8 +750,16 @@ pub(crate) fn draw_sonnet_2_forest(grid: &mut Grid, width: usize, height: usize,
         });
         measure_layer("sonnet-2-forest", "sky", || {
             for &(x, y, ph) in &s.stars {
-                let tw = if animating { (ts * 0.7 + ph as f32 * 0.1).sin() } else { (ph as f32 * 0.1).sin() };
-                let c = if tw > 0.2 { lit[s.star_slots[0] as usize] } else { lit[s.star_slots[1] as usize] };
+                let tw = if animating {
+                    (ts * 0.7 + ph as f32 * 0.1).sin()
+                } else {
+                    (ph as f32 * 0.1).sin()
+                };
+                let c = if tw > 0.2 {
+                    lit[s.star_slots[0] as usize]
+                } else {
+                    lit[s.star_slots[1] as usize]
+                };
                 grid[y as usize][x as usize] = Cell::new('·', c);
             }
         });
@@ -512,10 +767,27 @@ pub(crate) fn draw_sonnet_2_forest(grid: &mut Grid, width: usize, height: usize,
             let tick = (t * 1.5) as u32;
             for tr in &s.trees {
                 let amp = k.sway * (0.3 + 0.7 * tr.lfrac) * tr.sprite.root_row as f32 * 0.07;
-                let wind = 0.6 * (TAU * ts / 22.0 + tr.phase).sin() + 0.4 * (TAU * ts / 9.5 + tr.phase * 1.7).sin();
+                let wind = 0.6 * (TAU * ts / 22.0 + tr.phase).sin()
+                    + 0.4 * (TAU * ts / 9.5 + tr.phase * 1.7).sin();
                 let sway = if animating { amp * wind } else { 0.0 };
-                let flicker = if animating { 0.1 + 0.1 * wind.abs() } else { 0.0 };
-                blit_sprite(grid, gw, gh, &tr.sprite, tr.x, tr.y, sway, flicker, tick, &lit, Some(Cell::blank()));
+                let flicker = if animating {
+                    0.1 + 0.1 * wind.abs()
+                } else {
+                    0.0
+                };
+                blit_sprite(
+                    grid,
+                    gw,
+                    gh,
+                    &tr.sprite,
+                    tr.x,
+                    tr.y,
+                    sway,
+                    flicker,
+                    tick,
+                    &lit,
+                    Some(Cell::blank()),
+                );
             }
         });
         measure_layer("sonnet-2-forest", "undergrowth", || {
@@ -524,18 +796,49 @@ pub(crate) fn draw_sonnet_2_forest(grid: &mut Grid, width: usize, height: usize,
                 if y < 0 || y >= gh as i32 || x < 0 || x >= gw as i32 {
                     continue;
                 }
-                let idx = if animating { (((ts * 1.2 + ph as f32 * 0.05).sin() * 0.5 + 0.5) * 4.99) as usize } else { (ph as usize) % 5 };
+                let idx = if animating {
+                    (((ts * 1.2 + ph as f32 * 0.05).sin() * 0.5 + 0.5) * 4.99) as usize
+                } else {
+                    (ph as usize) % 5
+                };
                 grid[y as usize][x as usize] = Cell::new(glyphs[idx.min(4)], lit[slot as usize]);
             }
         });
-        measure_layer("sonnet-2-forest", "atmos", || paint_atmos(grid, gw, gh, s, &lit, t, ts, animating));
+        measure_layer("sonnet-2-forest", "atmos", || {
+            paint_atmos(grid, gw, gh, s, &lit, t, ts, animating)
+        });
     });
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn cli_sonnet_2_forest(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], _rng: StdRng, t_anim: f32, _term_w: u16, _term_h: u16, args: &[String], _mode: &str, _theme_name: &str) -> (Grid, bool) {
+pub(crate) fn cli_sonnet_2_forest(
+    mut grid: Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: [Color; 5],
+    _rng: StdRng,
+    t_anim: f32,
+    _term_w: u16,
+    _term_h: u16,
+    args: &[String],
+    _mode: &str,
+    _theme_name: &str,
+) -> (Grid, bool) {
     let mut k = ForestKnobs::from_env();
-    let slots: [&mut f32; 11] = [&mut k.density, &mut k.layers, &mut k.sway, &mut k.speed, &mut k.hue, &mut k.atmos, &mut k.haze, &mut k.energy, &mut k.ground, &mut k.fruit, &mut k.light];
+    let slots: [&mut f32; 11] = [
+        &mut k.density,
+        &mut k.layers,
+        &mut k.sway,
+        &mut k.speed,
+        &mut k.hue,
+        &mut k.atmos,
+        &mut k.haze,
+        &mut k.energy,
+        &mut k.ground,
+        &mut k.fruit,
+        &mut k.light,
+    ];
     for (i, slot) in slots.into_iter().enumerate() {
         if let Some(v) = args.get(4 + i).and_then(|s| s.parse().ok()) {
             *slot = v;
@@ -555,7 +858,10 @@ mod tests {
         let p = crate::color::make_palette(seed);
         let k = ForestKnobs::from_env();
         draw_sonnet_2_forest(&mut g, w, h, seed, &p, t, &k);
-        g.iter().map(|row| row.iter().map(|c| c.ch).collect::<String>()).collect::<Vec<_>>().join("\n")
+        g.iter()
+            .map(|row| row.iter().map(|c| c.ch).collect::<String>())
+            .collect::<Vec<_>>()
+            .join("\n")
     }
 
     #[test]

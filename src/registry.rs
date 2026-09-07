@@ -7,32 +7,47 @@ use rand::rngs::StdRng;
 use std::io::{self, IsTerminal, Read as _};
 use std::sync::OnceLock;
 
+use crate::automata;
 use crate::automata::*;
-use crate::biomes::*;
-use crate::color::*;
-use crate::content::*;
-use crate::fills::*;
-use crate::layout::*;
-use crate::markdown::*;
-use crate::mondrian::*;
-use crate::render::*;
-use crate::scene::*;
-use crate::sprites::*;
-use crate::tree_draw::*;
-use crate::types::*;
-use crate::walker::*;
+use crate::avant;
 use crate::avant::*;
-use crate::automata; use crate::avant; use crate::biomes; use crate::borders; use crate::color; use crate::content; use crate::fills; use crate::layout; use crate::markdown; use crate::mondrian; use crate::render; use crate::scene; use crate::sprites; use crate::tree_draw; use crate::types; use crate::walker;
+use crate::biomes;
+use crate::biomes::*;
+use crate::borders;
 use crate::cli::*;
+use crate::color;
+use crate::color::*;
+use crate::content;
+use crate::content::*;
+use crate::fills;
+use crate::fills::*;
 use crate::gridio::*;
 use crate::ink::*;
+use crate::layout;
+use crate::layout::*;
+use crate::markdown;
+use crate::markdown::*;
 use crate::modes_creatures::*;
 use crate::modes_geo::*;
 use crate::modes_sky::*;
 use crate::modes_tree::*;
+use crate::mondrian;
+use crate::mondrian::*;
 use crate::morph::*;
 use crate::opts::*;
 use crate::pp::*;
+use crate::render;
+use crate::render::*;
+use crate::scene;
+use crate::scene::*;
+use crate::sprites;
+use crate::sprites::*;
+use crate::tree_draw;
+use crate::tree_draw::*;
+use crate::types;
+use crate::types::*;
+use crate::walker;
+use crate::walker::*;
 use crate::warps::*;
 
 /// One tunable knob. `key` is the env suffix (ASCII_P_<KEY>) and the renderer
@@ -47,7 +62,6 @@ pub(crate) struct Param {
     pub(crate) step: f32,
 }
 
-
 /// How the `a` key animates a mode.
 #[derive(Clone, Copy, PartialEq)]
 pub(crate) enum AnimKind {
@@ -56,13 +70,11 @@ pub(crate) enum AnimKind {
     Morph,   // tween across adjacent seeds (transport)
 }
 
-
 /// Declared config for a mode.
 pub(crate) struct ModeSpec {
     pub(crate) animate: AnimKind,
     pub(crate) params: &'static [Param],
 }
-
 
 /// Explicit inputs for one deterministic mode frame.
 pub(crate) struct ModeFrame<'a> {
@@ -80,7 +92,6 @@ pub(crate) struct ModeFrame<'a> {
     pub(crate) param_values: Option<&'a [f32]>,
 }
 
-
 /// Standalone modes implement this object-safe surface. The generated
 /// `modes/mod.rs` registers one file-owned static per implementation.
 pub(crate) trait Mode: Sync {
@@ -91,13 +102,11 @@ pub(crate) trait Mode: Sync {
     fn render(&self, frame: &mut ModeFrame<'_>);
 }
 
-
 #[derive(Default)]
 pub(crate) struct ModeRegistry {
     // Generated registration order follows the author-assigned file numbers.
     modes: Vec<&'static dyn Mode>,
 }
-
 
 impl ModeRegistry {
     #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
@@ -121,9 +130,7 @@ impl ModeRegistry {
     }
 }
 
-
 static REGISTERED_MODES: OnceLock<ModeRegistry> = OnceLock::new();
-
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn registered_modes() -> &'static ModeRegistry {
@@ -134,21 +141,25 @@ pub(crate) fn registered_modes() -> &'static ModeRegistry {
     })
 }
 
-
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn registered_mode(name: &str) -> Option<&'static dyn Mode> {
     registered_modes().get(name)
 }
 
-
 /// One knob: `param!(KEY, label, min, max, default, step)`. KEY is the env suffix
 /// (ASCII_P_<KEY>); the renderer reads it via `param_f32(KEY, default)`.
 macro_rules! param {
     ($key:literal, $label:literal, $min:expr, $max:expr, $default:expr, $step:expr) => {
-        Param { key: $key, label: $label, min: $min, max: $max, default: $default, step: $step }
+        Param {
+            key: $key,
+            label: $label,
+            min: $min,
+            max: $max,
+            default: $default,
+            step: $step,
+        }
     };
 }
-
 
 /// A reusable config form: the mode name(s) it applies to, how they animate, and
 /// their tunable knobs. The demo panel renders the knobs and the `a` key picks the
@@ -158,7 +169,6 @@ pub(crate) struct ModeForm {
     pub(crate) animate: AnimKind,
     pub(crate) params: &'static [Param],
 }
-
 
 /// The form registry. To give a mode a config form, add ONE row: list its name(s),
 /// the animate kind, and its knobs (inline via `param!`). Modes absent here get the
@@ -346,9 +356,11 @@ pub(crate) static MODE_FORMS: &[ModeForm] = &[
             param!("TURB", "turbulence", 0.0, 3.0, 1.0, 0.1),
         ],
     },
-
-
-    ModeForm { names: &["stained"], animate: AnimKind::Vflow, params: &[] },
+    ModeForm {
+        names: &["stained"],
+        animate: AnimKind::Vflow,
+        params: &[],
+    },
     ModeForm {
         names: &["chimera"],
         animate: AnimKind::Iterate,
@@ -401,7 +413,8 @@ pub(crate) static MODE_FORMS: &[ModeForm] = &[
             param!("VIG", "vignette", 0.0, 1.0, 0.45, 0.05),
             param!("SPEED", "anim speed", 0.1, 3.0, 1.0, 0.1),
         ],
-    },    ModeForm {
+    },
+    ModeForm {
         names: &["mahoraga-4"],
         animate: AnimKind::Iterate,
         params: &[
@@ -433,7 +446,8 @@ pub(crate) static MODE_FORMS: &[ModeForm] = &[
             param!("VIG", "vignette", 0.0, 1.0, 0.45, 0.05),
             param!("SPEED", "anim speed", 0.1, 3.0, 1.0, 0.1),
         ],
-    },    ModeForm {
+    },
+    ModeForm {
         names: &["mahoraga-5"],
         animate: AnimKind::Iterate,
         params: &[
@@ -471,7 +485,6 @@ pub(crate) static MODE_FORMS: &[ModeForm] = &[
             param!("SPEED", "anim speed", 0.1, 3.0, 1.0, 0.1),
         ],
     },
-
     ModeForm {
         names: &["tree-of-life"],
         animate: AnimKind::Iterate,
@@ -655,12 +668,33 @@ pub(crate) static MODE_FORMS: &[ModeForm] = &[
         names: &["polytope"],
         animate: AnimKind::Iterate,
         params: &[
-            param!("POLY", "0 seed, 1 5-cell, 2 tesseract, 3 16-cell, 4 24-cell, 5 600-cell, 6 120-cell, 7 duoprism", 0.0, 7.0, 0.0, 1.0),
-            param!("SPEED", "seconds per turn, primary plane", 5.0, 180.0, 40.0, 5.0),
+            param!(
+                "POLY",
+                "0 seed, 1 5-cell, 2 tesseract, 3 16-cell, 4 24-cell, 5 600-cell, 6 120-cell, 7 duoprism",
+                0.0,
+                7.0,
+                0.0,
+                1.0
+            ),
+            param!(
+                "SPEED",
+                "seconds per turn, primary plane",
+                5.0,
+                180.0,
+                40.0,
+                5.0
+            ),
             param!("PLANES", "rotation planes", 1.0, 3.0, 3.0, 1.0),
             param!("FOV", "4D eye distance", 1.2, 8.0, 3.0, 0.2),
             param!("ZOOM", "fit fraction", 0.1, 1.5, 0.46, 0.05),
-            param!("STYLE", "0 seed, 1 floor, 2 trails, 3 both", 0.0, 3.0, 0.0, 1.0),
+            param!(
+                "STYLE",
+                "0 seed, 1 floor, 2 trails, 3 both",
+                0.0,
+                3.0,
+                0.0,
+                1.0
+            ),
             param!("FLOOR", "floor depth under the center", 0.0, 4.0, 0.8, 0.1),
             param!("TRAIL", "trail samples per vertex", 0.0, 240.0, 40.0, 4.0),
             param!("TAIL", "seconds per trail sample", 0.005, 1.0, 0.3, 0.01),
@@ -674,8 +708,22 @@ pub(crate) static MODE_FORMS: &[ModeForm] = &[
             param!("LABEL", "name and planes caption", 0.0, 1.0, 1.0, 1.0),
             param!("CAM", "3D eye distance", 2.5, 12.0, 4.5, 0.5),
             param!("ASPECT", "cols per row", 0.25, 4.0, 2.0, 0.25),
-            param!("CULL", "far-side cut for dense polytopes", 0.0, 0.9, 0.35, 0.05),
-            param!("INSET", "plan-view inset radius, fraction of height", 0.0, 0.5, 0.2, 0.02),
+            param!(
+                "CULL",
+                "far-side cut for dense polytopes",
+                0.0,
+                0.9,
+                0.35,
+                0.05
+            ),
+            param!(
+                "INSET",
+                "plan-view inset radius, fraction of height",
+                0.0,
+                0.5,
+                0.2,
+                0.02
+            ),
         ],
     },
     ModeForm {
@@ -775,10 +823,31 @@ pub(crate) static MODE_FORMS: &[ModeForm] = &[
         params: &[
             param!("SPEED", "time scale", 0.0, 4.0, 1.0, 0.1),
             param!("HUE", "hue rotation deg", 0.0, 360.0, 0.0, 15.0),
-            param!("SPREAD", "hue spread core to mist deg", 0.0, 180.0, 60.0, 5.0),
-            param!("DRIFT", "map constant breathing amplitude", 0.0, 1.5, 0.5, 0.05),
+            param!(
+                "SPREAD",
+                "hue spread core to mist deg",
+                0.0,
+                180.0,
+                60.0,
+                5.0
+            ),
+            param!(
+                "DRIFT",
+                "map constant breathing amplitude",
+                0.0,
+                1.5,
+                0.5,
+                0.05
+            ),
             param!("PERIOD", "breathing cycle seconds", 10.0, 90.0, 36.0, 2.0),
-            param!("DENSITY", "orbit points per frame", 20000.0, 600000.0, 180000.0, 5000.0),
+            param!(
+                "DENSITY",
+                "orbit points per frame",
+                20000.0,
+                600000.0,
+                180000.0,
+                5000.0
+            ),
             param!("COMET", "trailing comet length", 20.0, 600.0, 220.0, 10.0),
             param!("GLOW", "density contrast gamma", 0.2, 3.0, 1.0, 0.1),
             param!("SCALE", "zoom into the attractor", 0.3, 2.0, 1.0, 0.05),
@@ -805,7 +874,14 @@ pub(crate) static MODE_FORMS: &[ModeForm] = &[
             param!("FREQ", "ring frequency", 2.0, 12.0, 5.0, 0.5),
             param!("DECAY", "amplitude decay", 0.1, 1.0, 0.5, 0.1),
             param!("PDENSE", "particle density", 0.1, 1.2, 1.0, 0.1),
-            param!("WFORM", "waveform 0=sine 1=square 2=saw", 0.0, 2.0, 0.0, 1.0),
+            param!(
+                "WFORM",
+                "waveform 0=sine 1=square 2=saw",
+                0.0,
+                2.0,
+                0.0,
+                1.0
+            ),
         ],
     },
     ModeForm {
@@ -818,7 +894,14 @@ pub(crate) static MODE_FORMS: &[ModeForm] = &[
             param!("LEAF", "canopy density", 0.2, 1.5, 0.9, 0.1),
             param!("ROOTS", "aerial and prop root rate", 0.0, 1.0, 0.7, 0.1),
             param!("SCRUB", "second row energy factor", 0.3, 0.9, 0.55, 0.05),
-            param!("FLICKER", "leaf flicker steps per second", 0.0, 4.0, 1.0, 0.5),
+            param!(
+                "FLICKER",
+                "leaf flicker steps per second",
+                0.0,
+                4.0,
+                1.0,
+                0.5
+            ),
             param!("SWAY", "column lean amplitude", 0.0, 3.0, 1.0, 0.25),
         ],
     },
@@ -831,7 +914,14 @@ pub(crate) static MODE_FORMS: &[ModeForm] = &[
             param!("SWAY", "sway amplitude", 0.0, 3.0, 1.0, 0.25),
             param!("SPEED", "clock multiplier", 0.2, 3.0, 1.0, 0.1),
             param!("HUE", "palette hue shift deg", 0.0, 360.0, 0.0, 15.0),
-            param!("ATMOS", "0=seeded 1=fireflies 2=leaves 3=mist 4=rain 5=snow", 0.0, 5.0, 0.0, 1.0),
+            param!(
+                "ATMOS",
+                "0=seeded 1=fireflies 2=leaves 3=mist 4=rain 5=snow",
+                0.0,
+                5.0,
+                0.0,
+                1.0
+            ),
             param!("FOG", "depth fade strength", 0.0, 1.0, 0.6, 0.1),
             param!("HORIZON", "horizon row fraction", 0.3, 0.85, 0.6, 0.05),
             param!("MOON", "draw the moon", 0.0, 1.0, 1.0, 1.0),
@@ -848,7 +938,14 @@ pub(crate) static MODE_FORMS: &[ModeForm] = &[
             param!("SWAY", "sway amplitude", 0.0, 2.0, 0.5, 0.1),
             param!("SPEED", "clock multiplier", 0.2, 3.0, 1.0, 0.1),
             param!("FLICKER", "leaf flicker fraction", 0.0, 1.0, 0.5, 0.1),
-            param!("DETAIL", "attractor and particle budget", 0.4, 2.0, 1.0, 0.1),
+            param!(
+                "DETAIL",
+                "attractor and particle budget",
+                0.4,
+                2.0,
+                1.0,
+                0.1
+            ),
             param!("ROOTS", "root reach and depth", 0.0, 1.0, 1.0, 0.1),
         ],
     },
@@ -861,7 +958,14 @@ pub(crate) static MODE_FORMS: &[ModeForm] = &[
             param!("SWAY", "sway amplitude", 0.0, 2.0, 0.6, 0.1),
             param!("SPEED", "clock multiplier", 0.2, 3.0, 1.0, 0.1),
             param!("HUE", "hue rotation deg", 0.0, 360.0, 0.0, 15.0),
-            param!("ATMOS", "0 seed 1 mist 2 fireflies 3 leaves 4 rain 5 snow 6 birds", 0.0, 6.0, 0.0, 1.0),
+            param!(
+                "ATMOS",
+                "0 seed 1 mist 2 fireflies 3 leaves 4 rain 5 snow 6 birds",
+                0.0,
+                6.0,
+                0.0,
+                1.0
+            ),
             param!("HAZE", "aerial perspective", 0.0, 1.0, 0.5, 0.1),
             param!("MOON", "moon size, 0 hides", 0.0, 2.0, 1.0, 0.1),
             param!("ENERGY", "tree height scale", 0.4, 1.2, 0.9, 0.1),
@@ -883,7 +987,14 @@ pub(crate) static MODE_FORMS: &[ModeForm] = &[
             param!("SPEED", "time scale", 0.0, 3.0, 1.0, 0.1),
             param!("DETAIL", "growth sample count factor", 0.2, 2.0, 1.0, 0.1),
             param!("HUE", "hue rotation deg", -180.0, 180.0, 0.0, 10.0),
-            param!("BARE", "bare trunk fraction of height", 0.08, 0.60, 0.26, 0.02),
+            param!(
+                "BARE",
+                "bare trunk fraction of height",
+                0.08,
+                0.60,
+                0.26,
+                0.02
+            ),
         ],
     },
     ModeForm {
@@ -895,14 +1006,28 @@ pub(crate) static MODE_FORMS: &[ModeForm] = &[
             param!("SWAY", "sway amplitude in cells", 0.0, 4.0, 1.1, 0.1),
             param!("SPEED", "time scale", 0.0, 3.0, 1.0, 0.1),
             param!("HUE", "hue rotation deg", -180.0, 180.0, 0.0, 10.0),
-            param!("ATMOS", "0 seed 1 mist 2 flies 3 leaves 4 rain 5 snow", 0.0, 5.0, 0.0, 1.0),
+            param!(
+                "ATMOS",
+                "0 seed 1 mist 2 flies 3 leaves 4 rain 5 snow",
+                0.0,
+                5.0,
+                0.0,
+                1.0
+            ),
             param!("ENERGY", "crown energy", 0.3, 1.0, 0.9, 0.02),
             param!("FRUIT", "fruit and bloom rate", 0.0, 1.0, 0.12, 0.02),
             param!("BRANCH", "branch keep probability", 0.05, 1.0, 0.6, 0.05),
             param!("DETAIL", "growth sample count factor", 0.2, 2.0, 1.0, 0.1),
             param!("CYCLE", "day cycle seconds", 20.0, 60.0, 42.0, 2.0),
             param!("HORIZON", "horizon height fraction", 0.2, 0.7, 0.40, 0.02),
-            param!("BARE", "bare trunk fraction of height", 0.08, 0.60, 0.30, 0.02),
+            param!(
+                "BARE",
+                "bare trunk fraction of height",
+                0.08,
+                0.60,
+                0.30,
+                0.02
+            ),
         ],
     },
     ModeForm {
@@ -929,7 +1054,14 @@ pub(crate) static MODE_FORMS: &[ModeForm] = &[
             param!("SWAY", "sway columns", 0.0, 5.0, 1.2, 0.25),
             param!("SPEED", "clock multiplier", 0.0, 4.0, 1.0, 0.1),
             param!("HUE", "hue shift degrees", -180.0, 180.0, 0.0, 10.0),
-            param!("ATMOS", "0 seed, 1 mist, 2 fireflies, 3 leaves, 4 rain, 5 birds", 0.0, 5.0, 0.0, 1.0),
+            param!(
+                "ATMOS",
+                "0 seed, 1 mist, 2 fireflies, 3 leaves, 4 rain, 5 birds",
+                0.0,
+                5.0,
+                0.0,
+                1.0
+            ),
             param!("ENERGY", "tree growth energy", 0.2, 1.0, 0.86, 0.05),
             param!("GROUND", "ground fraction of canvas", 0.12, 0.6, 0.34, 0.02),
             param!("HAZE", "aerial fade with depth", 0.0, 1.0, 0.7, 0.05),
@@ -1007,7 +1139,14 @@ pub(crate) static MODE_FORMS: &[ModeForm] = &[
             param!("SWAY", "sway amplitude in cells", 0.0, 2.0, 0.6, 0.1),
             param!("SPEED", "time scale", 0.2, 3.0, 1.0, 0.1),
             param!("HUE", "hue rotation deg", 0.0, 360.0, 0.0, 10.0),
-            param!("ATMOS", "0 seed 1 fog 2 flies 3 leaves 4 snow 5 birds", 0.0, 5.0, 0.0, 1.0),
+            param!(
+                "ATMOS",
+                "0 seed 1 fog 2 flies 3 leaves 4 snow 5 birds",
+                0.0,
+                5.0,
+                0.0,
+                1.0
+            ),
             param!("HAZE", "aerial perspective fade", 0.0, 1.0, 0.5, 0.05),
             param!("ENERGY", "crown energy", 0.4, 1.2, 0.9, 0.02),
             param!("GROUND", "horizon fraction of height", 0.5, 0.9, 0.64, 0.02),
@@ -1024,12 +1163,26 @@ pub(crate) static MODE_FORMS: &[ModeForm] = &[
             param!("BRANCH", "branch density", 0.05, 1.0, 0.6, 0.05),
             param!("SCRUB", "bottom row energy factor", 0.2, 1.0, 0.56, 0.02),
             param!("ROOTS", "root and flare style offset", 0.0, 3.0, 0.0, 1.0),
-            param!("WIND", "prevailing wind, negative blows left", -1.0, 1.0, 0.35, 0.05),
+            param!(
+                "WIND",
+                "prevailing wind, negative blows left",
+                -1.0,
+                1.0,
+                0.35,
+                0.05
+            ),
             param!("SWAY", "sway amplitude in cells", 0.0, 4.0, 0.9, 0.1),
             param!("SPEED", "time scale", 0.0, 3.0, 1.0, 0.1),
             param!("DETAIL", "growth sample count factor", 0.2, 2.0, 1.0, 0.1),
             param!("HUE", "hue rotation deg", -180.0, 180.0, 0.0, 10.0),
-            param!("BARE", "bare trunk fraction of height", 0.08, 0.60, 0.26, 0.02),
+            param!(
+                "BARE",
+                "bare trunk fraction of height",
+                0.08,
+                0.60,
+                0.26,
+                0.02
+            ),
         ],
     },
     ModeForm {
@@ -1041,19 +1194,39 @@ pub(crate) static MODE_FORMS: &[ModeForm] = &[
             param!("SWAY", "sway amplitude in cells", 0.0, 4.0, 1.1, 0.1),
             param!("SPEED", "time scale", 0.0, 3.0, 1.0, 0.1),
             param!("HUE", "hue rotation deg", -180.0, 180.0, 0.0, 10.0),
-            param!("ATMOS", "0 seed 1 fog 2 fireflies 3 leaffall", 0.0, 3.0, 0.0, 1.0),
+            param!(
+                "ATMOS",
+                "0 seed 1 fog 2 fireflies 3 leaffall",
+                0.0,
+                3.0,
+                0.0,
+                1.0
+            ),
             param!("ENERGY", "crown energy", 0.3, 1.0, 0.88, 0.02),
             param!("FRUIT", "fruit and bloom rate", 0.0, 1.0, 0.12, 0.02),
             param!("BRANCH", "branch density", 0.05, 1.0, 0.58, 0.05),
             param!("DETAIL", "growth sample count factor", 0.2, 2.0, 1.0, 0.1),
             param!("CYCLE", "day cycle seconds", 20.0, 60.0, 40.0, 2.0),
             param!("HORIZON", "horizon height fraction", 0.2, 0.7, 0.40, 0.02),
-            param!("BARE", "bare trunk fraction of height", 0.08, 0.60, 0.28, 0.02),
-            param!("WIND", "prevailing wind, negative blows left", -1.0, 1.0, 0.35, 0.05),
+            param!(
+                "BARE",
+                "bare trunk fraction of height",
+                0.08,
+                0.60,
+                0.28,
+                0.02
+            ),
+            param!(
+                "WIND",
+                "prevailing wind, negative blows left",
+                -1.0,
+                1.0,
+                0.35,
+                0.05
+            ),
         ],
     },
 ];
-
 
 /// Look up a mode's declared config. Unlisted modes default to iterate, no knobs:
 /// T animates the mode natively if it reads it (in-process via iterate_grid),
@@ -1061,16 +1234,24 @@ pub(crate) static MODE_FORMS: &[ModeForm] = &[
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn mode_spec(name: &str) -> ModeSpec {
     if let Some(mode) = registered_mode(name) {
-        return ModeSpec { animate: mode.animation(), params: mode.params() };
+        return ModeSpec {
+            animate: mode.animation(),
+            params: mode.params(),
+        };
     }
     for f in MODE_FORMS {
         if f.names.contains(&name) {
-            return ModeSpec { animate: f.animate, params: f.params };
+            return ModeSpec {
+                animate: f.animate,
+                params: f.params,
+            };
         }
     }
-    ModeSpec { animate: AnimKind::Iterate, params: &[] }
+    ModeSpec {
+        animate: AnimKind::Iterate,
+        params: &[],
+    }
 }
-
 
 #[cfg(test)]
 mod registered_mode_tests {
@@ -1079,13 +1260,21 @@ mod registered_mode_tests {
     struct NamedMode(&'static str);
     impl Mode for NamedMode {
         #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-        fn name(&self) -> &'static str { self.0 }
+        fn name(&self) -> &'static str {
+            self.0
+        }
         #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-        fn help(&self) -> &'static str { "registry ordering fixture" }
+        fn help(&self) -> &'static str {
+            "registry ordering fixture"
+        }
         #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-        fn animation(&self) -> AnimKind { AnimKind::Iterate }
+        fn animation(&self) -> AnimKind {
+            AnimKind::Iterate
+        }
         #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-        fn params(&self) -> &'static [Param] { &[] }
+        fn params(&self) -> &'static [Param] {
+            &[]
+        }
         #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
         fn render(&self, _: &mut ModeFrame<'_>) {}
     }
@@ -1100,7 +1289,10 @@ mod registered_mode_tests {
         registry.add(&NEWER);
         assert_eq!(registry.get("a-second").unwrap().name(), "a-second");
         assert!(registry.get("missing").is_none());
-        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| registry.add(&OLDER))).is_err());
+        assert!(
+            std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| registry.add(&OLDER)))
+                .is_err()
+        );
         insta::assert_debug_snapshot!(registry.iter().map(|(name, _)| name).collect::<Vec<_>>(), @r#"
         [
             "z-first",
@@ -1115,10 +1307,13 @@ mod registered_mode_tests {
         let names: Vec<_> = registered_modes().iter().map(|(name, _)| name).collect();
         assert!(names.contains(&"illuminarium"));
         assert!(names.contains(&"qwen-cathedral"));
-        assert!(registered_modes().iter().all(|(_, mode)| !mode.help().is_empty()));
+        assert!(
+            registered_modes()
+                .iter()
+                .all(|(_, mode)| !mode.help().is_empty())
+        );
     }
 }
-
 
 /// Strategy string the morph player understands for a given animate kind.
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
@@ -1129,7 +1324,6 @@ pub(crate) fn anim_strat(k: AnimKind) -> &'static str {
         AnimKind::Morph => "transport",
     }
 }
-
 
 /// Paint the options pane into the right region (columns >= `x0`). Shows the
 /// mode's declared animate kind and its tunable knobs as labelled sliders, with
@@ -1175,7 +1369,11 @@ pub(crate) fn options_pane_to_ansi(
     let col = x0 + 2; // 1-based content column (column x0+1 holds the divider)
     let rows = th.saturating_sub(1) as usize; // last terminal row is the status bar
     for r in 0..rows {
-        out.push_str(&format!("\x1b[{};{}H\x1b[90m\u{2502}\x1b[0m", r + 1, x0 + 1));
+        out.push_str(&format!(
+            "\x1b[{};{}H\x1b[90m\u{2502}\x1b[0m",
+            r + 1,
+            x0 + 1
+        ));
     }
     let mut line = |r: usize, text: &str| {
         if r < rows {
@@ -1198,7 +1396,10 @@ pub(crate) fn options_pane_to_ansi(
     line(2, &format!("anim  {}", kind));
     line(3, &format!("seed  {}  theme {}", seed, theme_label));
     line(5, &format!("knobs {}", knobs_mode));
-    line(4, "\x1b[90m\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\x1b[0m");
+    line(
+        4,
+        "\x1b[90m\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\x1b[0m",
+    );
     if spec.params.is_empty() {
         line(6, "\x1b[90mno tunables for this mode\x1b[0m");
         line(8, "press \x1b[1ma\x1b[0m to animate");

@@ -1,5 +1,6 @@
 //! Weather overlay.
 #![allow(unused)]
+use super::*;
 use crate::color::*;
 use crate::fills::*;
 use crate::scene::*;
@@ -8,7 +9,6 @@ use crate::types::*;
 use crossterm::style::Color;
 use rand::RngExt;
 use rand::rngs::StdRng;
-use super::*;
 
 /// Weather type for atmosphere overlay.
 #[derive(Clone, Copy)]
@@ -141,4 +141,3 @@ pub fn apply_atmosphere(
         Weather::None => {}
     }
 }
-

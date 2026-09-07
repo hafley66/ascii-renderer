@@ -116,15 +116,36 @@ const PARAMS: &[Param] = &[
     param!("RINGS", "astrolabe armillary rings", 2.0, 10.0, 6.0, 1.0),
     param!("PLANETS", "orrery celestial bodies", 1.0, 12.0, 7.0, 1.0),
     param!("GEARS", "mechanical epicyclic gears", 0.0, 8.0, 4.0, 1.0),
-    param!("ZODIAC", "zodiac constellation points", 4.0, 24.0, 12.0, 1.0),
-    param!("SPEED", "celestial mechanics velocity", 0.05, 3.0, 0.75, 0.05),
+    param!(
+        "ZODIAC",
+        "zodiac constellation points",
+        4.0,
+        24.0,
+        12.0,
+        1.0
+    ),
+    param!(
+        "SPEED",
+        "celestial mechanics velocity",
+        0.05,
+        3.0,
+        0.75,
+        0.05
+    ),
     param!("TILT", "axial orbital inclination", 0.0, 1.0, 0.45, 0.05),
     param!("NEBULA", "aetherial cosmic dust fog", 0.0, 1.5, 0.7, 0.05),
     param!("RAYS", "mystic chronos ray bursts", 0.0, 1.5, 0.8, 0.05),
     param!("COMETS", "hyperbolic orbital comets", 0.0, 12.0, 4.0, 1.0),
     param!("RUNES", "arcane glyph ring density", 0.0, 1.0, 0.85, 0.05),
     param!("PULSE", "harmonic resonance pulse", 0.0, 2.0, 1.0, 0.1),
-    param!("HARMONY", "pythagorean celestial ratios", 1.0, 8.0, 3.0, 1.0),
+    param!(
+        "HARMONY",
+        "pythagorean celestial ratios",
+        1.0,
+        8.0,
+        3.0,
+        1.0
+    ),
 ];
 
 impl Mode for GemAetherium2Mode {
@@ -211,7 +232,11 @@ impl AetheriumParams {
         let read = |index: usize, key: &str, default: f32| {
             args.get(index)
                 .and_then(|value| value.parse::<f32>().ok())
-                .or_else(|| param_values.and_then(|values| values.get(index - 4)).copied())
+                .or_else(|| {
+                    param_values
+                        .and_then(|values| values.get(index - 4))
+                        .copied()
+                })
                 .unwrap_or_else(|| param_f32(key, default))
         };
         Self {
@@ -266,13 +291,14 @@ struct GearDef {
 }
 
 const ZODIAC_SYMBOLS: &[char] = &[
-    '♈', '♉', '♊', '♋', '♌', '♍', '♎', '♏', '♐', '♑', '♒', '♓',
-    '☉', '☽', '☿', '♀', '♂', '♃', '♄', '♅', '♆', '♇', '✧', '✦',
+    '♈', '♉', '♊', '♋', '♌', '♍', '♎', '♏', '♐', '♑', '♒', '♓', '☉', '☽', '☿', '♀',
+    '♂', '♃', '♄', '♅', '♆', '♇', '✧', '✦',
 ];
 
 const RUNIC_CHARS: &[char] = &[
-    'ᚠ', 'ᚢ', 'ᚦ', 'ᚨ', 'ᚱ', 'ᚲ', 'ᚷ', 'ᚹ', 'ᚺ', 'ᚾ', 'ᛁ', 'ᛃ', 'ᛈ', 'ᛉ', 'ᛋ', 'ᛏ', 'ᛒ', 'ᛖ', 'ᛗ', 'ᛚ', 'ᛜ', 'ᛞ', 'ᛟ',
-    'α', 'β', 'γ', 'δ', 'ε', 'ζ', 'η', 'θ', 'ι', 'κ', 'λ', 'μ', 'ν', 'ξ', 'ο', 'π', 'ρ', 'σ', 'τ', 'υ', 'φ', 'χ', 'ψ', 'ω',
+    'ᚠ', 'ᚢ', 'ᚦ', 'ᚨ', 'ᚱ', 'ᚲ', 'ᚷ', 'ᚹ', 'ᚺ', 'ᚾ', 'ᛁ', 'ᛃ', 'ᛈ', 'ᛉ', 'ᛋ', 'ᛏ', 'ᛒ', 'ᛖ', 'ᛗ',
+    'ᛚ', 'ᛜ', 'ᛞ', 'ᛟ', 'α', 'β', 'γ', 'δ', 'ε', 'ζ', 'η', 'θ', 'ι', 'κ', 'λ', 'μ', 'ν', 'ξ', 'ο',
+    'π', 'ρ', 'σ', 'τ', 'υ', 'φ', 'χ', 'ψ', 'ω',
 ];
 
 #[inline(always)]
@@ -301,7 +327,15 @@ fn rotate_3d(x: f32, y: f32, z: f32, pitch: f32, yaw: f32, roll: f32) -> (f32, f
 
 #[inline(always)]
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn project(x: f32, y: f32, z: f32, cx: f32, cy: f32, aspect: f32, fov: f32) -> Option<(i32, i32, f32)> {
+fn project(
+    x: f32,
+    y: f32,
+    z: f32,
+    cx: f32,
+    cy: f32,
+    aspect: f32,
+    fov: f32,
+) -> Option<(i32, i32, f32)> {
     let dist = fov + z;
     if dist <= 0.1 {
         return None;
@@ -525,7 +559,11 @@ pub(crate) fn draw_gem_aetherium_2(
             for g in 0..num_gears {
                 let gr = scale * (0.2 + (g as f32) * 0.18);
                 let g_teeth = (12 + g * 8) * (params.harmony as usize).max(1);
-                let c_dist = if g == 0 { 0.0 } else { scale * (0.35 + (g as f32) * 0.15) };
+                let c_dist = if g == 0 {
+                    0.0
+                } else {
+                    scale * (0.35 + (g as f32) * 0.15)
+                };
                 let c_ang = (g as f32) * TAU / (num_gears as f32) + gear_rng.random_range(0.0..0.5);
                 let s_ratio = if g % 2 == 0 { 1.0 } else { -1.33 } * (1.0 + (g as f32) * 0.3);
                 let spokes = 4 + (g % 3) * 2;
@@ -566,8 +604,18 @@ pub(crate) fn draw_gem_aetherium_2(
 
                     let (rx, ry, rz) = rotate_3d(gx, gy, gz, tilt_pitch, yaw_rot, 0.0);
                     if let Some((px, py, pz)) = project(rx, ry, rz, cx, cy, aspect, fov) {
-                        let ch = if tooth_wave > 0.4 { '⚙' } else if s % 2 == 0 { '▪' } else { '▫' };
-                        let col = if tooth_wave > 0.6 { gear_highlight } else { gear_color };
+                        let ch = if tooth_wave > 0.4 {
+                            '⚙'
+                        } else if s % 2 == 0 {
+                            '▪'
+                        } else {
+                            '▫'
+                        };
+                        let col = if tooth_wave > 0.6 {
+                            gear_highlight
+                        } else {
+                            gear_color
+                        };
                         put_z(grid, px, py, pz, ch, col);
                     }
                 }
@@ -642,7 +690,11 @@ pub(crate) fn draw_gem_aetherium_2(
                     } else if is_minor_tick {
                         ('┼', ring_color)
                     } else {
-                        let stroke_ch = if phi.sin().abs() > 0.707 { '│' } else { '─' };
+                        let stroke_ch = if phi.sin().abs() > 0.707 {
+                            '│'
+                        } else {
+                            '─'
+                        };
                         (stroke_ch, regular_col)
                     };
 
@@ -678,7 +730,13 @@ pub(crate) fn draw_gem_aetherium_2(
             let (wx, wy, wz) = rotate_3d(lx, ly, lz, tilt_pitch, 0.0, 0.0);
             if let Some((px, py, pz)) = project(wx, wy, wz, cx, cy, aspect, fov) {
                 let is_cardinal = (i % card_mod) == 0;
-                let ch = if is_cardinal { '❖' } else if i % 2 == 0 { '═' } else { '─' };
+                let ch = if is_cardinal {
+                    '❖'
+                } else if i % 2 == 0 {
+                    '═'
+                } else {
+                    '─'
+                };
                 put_z(grid, px, py, pz, ch, border_col);
             }
         }
@@ -732,7 +790,11 @@ pub(crate) fn draw_gem_aetherium_2(
             let _sz = orrery_rng.random_range(0.8..1.8);
             let glyph = planet_glyphs[p % planet_glyphs.len()];
             let has_ring = p == 5 || (p > 2 && orrery_rng.random_bool(0.3));
-            let moons = if p > 3 { orrery_rng.random_range(1..=3) } else { 0 };
+            let moons = if p > 3 {
+                orrery_rng.random_range(1..=3)
+            } else {
+                0
+            };
 
             planet_defs.push(PlanetDef {
                 orbit_r: orb_r,
@@ -789,7 +851,9 @@ pub(crate) fn draw_gem_aetherium_2(
                         let rx = r_amp_x * r_angle.cos();
                         let ry = r_amp_y * r_angle.sin();
                         let (rw_x, rw_y, rw_z) = rotate_3d(rx, ry, 0.0, 0.8, ring_yaw, 0.0);
-                        if let Some((rpx, rpy, rpz)) = project(pw_x + rw_x, pw_y + rw_y, pw_z + rw_z, cx, cy, aspect, fov) {
+                        if let Some((rpx, rpy, rpz)) =
+                            project(pw_x + rw_x, pw_y + rw_y, pw_z + rw_z, cx, cy, aspect, fov)
+                        {
                             put_z(grid, rpx, rpy, rpz + 1.5, '═', p_col);
                         }
                     }
@@ -803,7 +867,9 @@ pub(crate) fn draw_gem_aetherium_2(
                     let my = m_dist * m_speed.sin();
                     let mz = m_dist * (m_speed * 0.5).sin() * 0.5;
                     let (mw_x, mw_y, mw_z) = rotate_3d(mx, my, mz, 0.3, 0.0, 0.0);
-                    if let Some((mpx, mpy, mpz)) = project(pw_x + mw_x, pw_y + mw_y, pw_z + mw_z, cx, cy, aspect, fov) {
+                    if let Some((mpx, mpy, mpz)) =
+                        project(pw_x + mw_x, pw_y + mw_y, pw_z + mw_z, cx, cy, aspect, fov)
+                    {
                         put_z(grid, mpx, mpy, mpz + 2.5, '∘', moon_col);
                     }
                 }
@@ -845,12 +911,20 @@ pub(crate) fn draw_gem_aetherium_2(
                 let sqrt_1_plus_e = (1.0 + comet.eccentricity).sqrt();
                 let sqrt_1_minus_e = (1.0 - comet.eccentricity).sqrt();
                 let half_ecc = ecc_anomaly * 0.5;
-                let true_anomaly = 2.0 * ((sqrt_1_plus_e * half_ecc.sin()).atan2(sqrt_1_minus_e * half_ecc.cos()));
+                let true_anomaly =
+                    2.0 * ((sqrt_1_plus_e * half_ecc.sin()).atan2(sqrt_1_minus_e * half_ecc.cos()));
                 let r = comet.semi_major * (1.0 - comet.eccentricity * ecc_anomaly.cos());
 
                 let head_x = r * true_anomaly.cos();
                 let head_y = r * true_anomaly.sin();
-                let (hw_x, hw_y, hw_z) = rotate_3d(head_x, head_y, 0.0, comet.inclination, comet.node_angle, 0.0);
+                let (hw_x, hw_y, hw_z) = rotate_3d(
+                    head_x,
+                    head_y,
+                    0.0,
+                    comet.inclination,
+                    comet.node_angle,
+                    0.0,
+                );
 
                 if let Some((px, py, pz)) = project(hw_x, hw_y, hw_z, cx, cy, aspect, fov) {
                     put_z(grid, px, py, pz + 4.0, '✷', palette[4]);
@@ -862,14 +936,19 @@ pub(crate) fn draw_gem_aetherium_2(
                         let t_mean = (mean_anomaly - lag + TAU) % TAU;
                         let t_ecc = t_mean + comet.eccentricity * t_mean.sin();
                         let half_t_ecc = t_ecc * 0.5;
-                        let t_true = 2.0 * ((sqrt_1_plus_e * half_t_ecc.sin()).atan2(sqrt_1_minus_e * half_t_ecc.cos()));
+                        let t_true = 2.0
+                            * ((sqrt_1_plus_e * half_t_ecc.sin())
+                                .atan2(sqrt_1_minus_e * half_t_ecc.cos()));
                         let tr = comet.semi_major * (1.0 - comet.eccentricity * t_ecc.cos());
 
                         let tx = tr * t_true.cos();
                         let ty = tr * t_true.sin();
-                        let (tw_x, tw_y, tw_z) = rotate_3d(tx, ty, 0.0, comet.inclination, comet.node_angle, 0.0);
+                        let (tw_x, tw_y, tw_z) =
+                            rotate_3d(tx, ty, 0.0, comet.inclination, comet.node_angle, 0.0);
 
-                        if let Some((tpx, tpy, tpz)) = project(tw_x, tw_y, tw_z, cx, cy, aspect, fov) {
+                        if let Some((tpx, tpy, tpz)) =
+                            project(tw_x, tw_y, tw_z, cx, cy, aspect, fov)
+                        {
                             let tail_frac = tail_step as f32 * inv_tlen;
                             let ch = if tail_step < 4 {
                                 '※'

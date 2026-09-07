@@ -1,10 +1,10 @@
 //! Tree-pen growth algorithms.
+use super::*;
 use crate::color::*;
 use crate::types::*;
 use crossterm::style::Color;
 use rand::RngExt;
 use rand::rngs::StdRng;
-use super::*;
 
 /// Movement direction for connected drawing.
 #[derive(Clone, Copy, PartialEq, Debug)]

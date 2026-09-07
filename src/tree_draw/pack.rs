@@ -103,7 +103,9 @@ pub fn pack_forest(
 
         // slot width grows toward the front (closer trees are wider)
         let slot_min = (6 + (lfrac * 6.0) as usize).max(4);
-        let slot_max = (slot_min + 8 + (lfrac * 10.0) as usize).min(width / 2).max(slot_min);
+        let slot_max = (slot_min + 8 + (lfrac * 10.0) as usize)
+            .min(width / 2)
+            .max(slot_min);
 
         // canopy reaches higher toward the front
         let canopy_top = ((sky as i32) - (band as i32) * (li as i32 + 1)).max(1) as usize;
@@ -163,5 +165,3 @@ pub fn pack_forest(
     slots.sort_by(|a, b| a.layer.cmp(&b.layer).then(a.root_y.cmp(&b.root_y)));
     (ground_y, slots)
 }
-
-

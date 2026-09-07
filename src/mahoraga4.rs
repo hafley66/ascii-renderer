@@ -133,12 +133,22 @@ struct Aabb {
 const SLACK: f32 = 1e-4;
 
 impl Aabb {
-    const EMPTY: Aabb = Aabb { x0: f32::MAX, y0: f32::MAX, x1: f32::MIN, y1: f32::MIN };
+    const EMPTY: Aabb = Aabb {
+        x0: f32::MAX,
+        y0: f32::MAX,
+        x1: f32::MIN,
+        y1: f32::MIN,
+    };
 
     #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn seg(a: P, b: P, r: f32) -> Aabb {
         let r = r + SLACK;
-        Aabb { x0: a.0.min(b.0) - r, y0: a.1.min(b.1) - r, x1: a.0.max(b.0) + r, y1: a.1.max(b.1) + r }
+        Aabb {
+            x0: a.0.min(b.0) - r,
+            y0: a.1.min(b.1) - r,
+            x1: a.0.max(b.0) + r,
+            y1: a.1.max(b.1) + r,
+        }
     }
 
     #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
@@ -148,18 +158,30 @@ impl Aabb {
 
     #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn grow(self, o: Aabb) -> Aabb {
-        Aabb { x0: self.x0.min(o.x0), y0: self.y0.min(o.y0), x1: self.x1.max(o.x1), y1: self.y1.max(o.y1) }
+        Aabb {
+            x0: self.x0.min(o.x0),
+            y0: self.y0.min(o.y0),
+            x1: self.x1.max(o.x1),
+            y1: self.y1.max(o.y1),
+        }
     }
 
     #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn pad(self, m: f32) -> Aabb {
-        Aabb { x0: self.x0 - m, y0: self.y0 - m, x1: self.x1 + m, y1: self.y1 + m }
+        Aabb {
+            x0: self.x0 - m,
+            y0: self.y0 - m,
+            x1: self.x1 + m,
+            y1: self.y1 + m,
+        }
     }
 
     /// Lower bound on the distance from p to the enclosed shape; exact box SDF inside.
     #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn lb(&self, p: P) -> f32 {
-        (self.x0 - p.0).max(p.0 - self.x1).max((self.y0 - p.1).max(p.1 - self.y1))
+        (self.x0 - p.0)
+            .max(p.0 - self.x1)
+            .max((self.y0 - p.1).max(p.1 - self.y1))
     }
 
     #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
@@ -193,7 +215,9 @@ struct RowSlice<'a> {
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn hash01(seed: u64, x: i64, y: i64) -> f32 {
-    let mut h = seed ^ (x as u64).wrapping_mul(0x9E37_79B9_7F4A_7C15) ^ (y as u64).wrapping_mul(0xC2B2_AE3D_27D4_EB4F);
+    let mut h = seed
+        ^ (x as u64).wrapping_mul(0x9E37_79B9_7F4A_7C15)
+        ^ (y as u64).wrapping_mul(0xC2B2_AE3D_27D4_EB4F);
     h ^= h >> 29;
     h = h.wrapping_mul(0xBF58_476D_1CE4_E5B9);
     h ^= h >> 32;
@@ -263,8 +287,28 @@ struct BoneDef {
     drawn: bool,
 }
 
-const fn bone(parent: Option<usize>, anchor: f32, off: P, len: f32, rest: f32, r0: f32, r1: f32, part: Part, drawn: bool) -> BoneDef {
-    BoneDef { parent, anchor, off, len, rest, r0, r1, part, drawn }
+const fn bone(
+    parent: Option<usize>,
+    anchor: f32,
+    off: P,
+    len: f32,
+    rest: f32,
+    r0: f32,
+    r1: f32,
+    part: Part,
+    drawn: bool,
+) -> BoneDef {
+    BoneDef {
+        parent,
+        anchor,
+        off,
+        len,
+        rest,
+        r0,
+        r1,
+        part,
+        drawn,
+    }
 }
 
 const UP: f32 = PI;
@@ -298,27 +342,237 @@ const ROOT: P = (0.0, 0.66);
 const WHEEL_R: f32 = 0.105;
 
 static BONES: [BoneDef; NBONES] = [
-    bone(None, 0.0, (0.0, 0.0), 0.24, UP, 0.095, 0.13, Part::Skin, true),
-    bone(Some(SPINE), 1.0, (0.0, 0.0), 0.06, UP, 0.032, 0.032, Part::Skin, true),
-    bone(Some(NECK), 1.0, (0.0, 0.0), 0.11, UP, 0.056, 0.05, Part::Skin, true),
-    bone(Some(SPINE), 0.9, (0.0, 0.0), 0.2, RIGHT, 0.07, 0.06, Part::Skin, true),
-    bone(Some(CLAV_R), 1.0, (0.0, 0.0), 0.17, 0.4, 0.046, 0.046, Part::Skin, true),
-    bone(Some(UPPER_R), 1.0, (0.0, 0.0), 0.2, 0.15, 0.058, 0.058, Part::Wrap, true),
-    bone(Some(FORE_R), 1.0, (0.0, 0.0), 0.08, 0.15, 0.052, 0.045, Part::Skin, true),
-    bone(Some(HAND_R), 1.0, (0.0, 0.0), 0.1, 0.15, 0.015, 0.012, Part::Skin, true),
-    bone(Some(SPINE), 0.9, (0.0, 0.0), 0.2, LEFT, 0.07, 0.06, Part::Skin, true),
-    bone(Some(CLAV_L), 1.0, (0.0, 0.0), 0.17, -0.4, 0.046, 0.046, Part::Skin, true),
-    bone(Some(UPPER_L), 1.0, (0.0, 0.0), 0.2, -0.15, 0.058, 0.058, Part::Wrap, true),
-    bone(Some(FORE_L), 1.0, (0.0, 0.0), 0.08, -0.15, 0.052, 0.045, Part::Skin, true),
-    bone(Some(HAND_L), 1.0, (0.0, 0.0), 0.1, -0.15, 0.015, 0.012, Part::Skin, true),
-    bone(None, 0.0, (0.06, 0.02), 0.16, 0.08, 0.056, 0.05, Part::Skin, true),
-    bone(Some(THIGH_R), 1.0, (0.0, 0.0), 0.14, 0.0, 0.05, 0.045, Part::Skin, true),
-    bone(Some(SHIN_R), 1.0, (0.0, 0.0), 0.06, RIGHT, 0.042, 0.035, Part::Skin, true),
-    bone(None, 0.0, (-0.06, 0.02), 0.16, -0.08, 0.056, 0.05, Part::Skin, true),
-    bone(Some(THIGH_L), 1.0, (0.0, 0.0), 0.14, 0.0, 0.05, 0.045, Part::Skin, true),
-    bone(Some(SHIN_L), 1.0, (0.0, 0.0), 0.06, LEFT, 0.042, 0.035, Part::Skin, true),
-    bone(None, 0.0, (0.0, -0.02), 0.18, 0.0, 0.13, 0.08, Part::Cloth, true),
-    bone(Some(HEAD), 1.0, (0.0, 0.0), 0.14, UP, 0.0, 0.0, Part::Skin, false),
+    bone(
+        None,
+        0.0,
+        (0.0, 0.0),
+        0.24,
+        UP,
+        0.095,
+        0.13,
+        Part::Skin,
+        true,
+    ),
+    bone(
+        Some(SPINE),
+        1.0,
+        (0.0, 0.0),
+        0.06,
+        UP,
+        0.032,
+        0.032,
+        Part::Skin,
+        true,
+    ),
+    bone(
+        Some(NECK),
+        1.0,
+        (0.0, 0.0),
+        0.11,
+        UP,
+        0.056,
+        0.05,
+        Part::Skin,
+        true,
+    ),
+    bone(
+        Some(SPINE),
+        0.9,
+        (0.0, 0.0),
+        0.2,
+        RIGHT,
+        0.07,
+        0.06,
+        Part::Skin,
+        true,
+    ),
+    bone(
+        Some(CLAV_R),
+        1.0,
+        (0.0, 0.0),
+        0.17,
+        0.4,
+        0.046,
+        0.046,
+        Part::Skin,
+        true,
+    ),
+    bone(
+        Some(UPPER_R),
+        1.0,
+        (0.0, 0.0),
+        0.2,
+        0.15,
+        0.058,
+        0.058,
+        Part::Wrap,
+        true,
+    ),
+    bone(
+        Some(FORE_R),
+        1.0,
+        (0.0, 0.0),
+        0.08,
+        0.15,
+        0.052,
+        0.045,
+        Part::Skin,
+        true,
+    ),
+    bone(
+        Some(HAND_R),
+        1.0,
+        (0.0, 0.0),
+        0.1,
+        0.15,
+        0.015,
+        0.012,
+        Part::Skin,
+        true,
+    ),
+    bone(
+        Some(SPINE),
+        0.9,
+        (0.0, 0.0),
+        0.2,
+        LEFT,
+        0.07,
+        0.06,
+        Part::Skin,
+        true,
+    ),
+    bone(
+        Some(CLAV_L),
+        1.0,
+        (0.0, 0.0),
+        0.17,
+        -0.4,
+        0.046,
+        0.046,
+        Part::Skin,
+        true,
+    ),
+    bone(
+        Some(UPPER_L),
+        1.0,
+        (0.0, 0.0),
+        0.2,
+        -0.15,
+        0.058,
+        0.058,
+        Part::Wrap,
+        true,
+    ),
+    bone(
+        Some(FORE_L),
+        1.0,
+        (0.0, 0.0),
+        0.08,
+        -0.15,
+        0.052,
+        0.045,
+        Part::Skin,
+        true,
+    ),
+    bone(
+        Some(HAND_L),
+        1.0,
+        (0.0, 0.0),
+        0.1,
+        -0.15,
+        0.015,
+        0.012,
+        Part::Skin,
+        true,
+    ),
+    bone(
+        None,
+        0.0,
+        (0.06, 0.02),
+        0.16,
+        0.08,
+        0.056,
+        0.05,
+        Part::Skin,
+        true,
+    ),
+    bone(
+        Some(THIGH_R),
+        1.0,
+        (0.0, 0.0),
+        0.14,
+        0.0,
+        0.05,
+        0.045,
+        Part::Skin,
+        true,
+    ),
+    bone(
+        Some(SHIN_R),
+        1.0,
+        (0.0, 0.0),
+        0.06,
+        RIGHT,
+        0.042,
+        0.035,
+        Part::Skin,
+        true,
+    ),
+    bone(
+        None,
+        0.0,
+        (-0.06, 0.02),
+        0.16,
+        -0.08,
+        0.056,
+        0.05,
+        Part::Skin,
+        true,
+    ),
+    bone(
+        Some(THIGH_L),
+        1.0,
+        (0.0, 0.0),
+        0.14,
+        0.0,
+        0.05,
+        0.045,
+        Part::Skin,
+        true,
+    ),
+    bone(
+        Some(SHIN_L),
+        1.0,
+        (0.0, 0.0),
+        0.06,
+        LEFT,
+        0.042,
+        0.035,
+        Part::Skin,
+        true,
+    ),
+    bone(
+        None,
+        0.0,
+        (0.0, -0.02),
+        0.18,
+        0.0,
+        0.13,
+        0.08,
+        Part::Cloth,
+        true,
+    ),
+    bone(
+        Some(HEAD),
+        1.0,
+        (0.0, 0.0),
+        0.14,
+        UP,
+        0.0,
+        0.0,
+        Part::Skin,
+        false,
+    ),
 ];
 
 pub const POSE_NAMES: [&str; 6] = ["stand", "point", "guard", "lunge", "adapt", "swing"];
@@ -334,7 +588,14 @@ fn keyframe(idx: usize) -> [f32; NBONES] {
     };
     match idx % 6 {
         1 => set(&[(UPPER_R, 1.5), (FORE_R, -0.1), (SPINE, 0.06), (NECK, 0.12)]),
-        2 => set(&[(UPPER_R, 0.9), (FORE_R, 2.0), (UPPER_L, -0.9), (FORE_L, -2.0), (SPINE, -0.05), (NECK, -0.1)]),
+        2 => set(&[
+            (UPPER_R, 0.9),
+            (FORE_R, 2.0),
+            (UPPER_L, -0.9),
+            (FORE_L, -2.0),
+            (SPINE, -0.05),
+            (NECK, -0.1),
+        ]),
         3 => set(&[
             (SPINE, 0.4),
             (NECK, 0.15),
@@ -360,7 +621,15 @@ fn keyframe(idx: usize) -> [f32; NBONES] {
             (THIGH_L, -0.35),
             (SHIN_L, 0.3),
         ]),
-        5 => set(&[(UPPER_R, 3.0), (FORE_R, 0.7), (UPPER_L, -0.5), (FORE_L, -0.4), (SPINE, -0.2), (NECK, -0.2), (THIGH_L, -0.2)]),
+        5 => set(&[
+            (UPPER_R, 3.0),
+            (FORE_R, 0.7),
+            (UPPER_L, -0.5),
+            (FORE_L, -0.4),
+            (SPINE, -0.2),
+            (NECK, -0.2),
+            (THIGH_L, -0.2),
+        ]),
         _ => {}
     }
     d
@@ -381,12 +650,19 @@ struct Seg {
 /// Forward kinematics: world segment per bone from the joint deltas.
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn solve(deltas: &[f32; NBONES]) -> [Seg; NBONES] {
-    let mut out = [Seg { a: ROOT, b: ROOT, ang: 0.0 }; NBONES];
+    let mut out = [Seg {
+        a: ROOT,
+        b: ROOT,
+        ang: 0.0,
+    }; NBONES];
     for (i, bd) in BONES.iter().enumerate() {
         let (start, parent_ang, parent_rest) = match bd.parent {
             Some(pi) => {
                 let ps = out[pi];
-                let s = (ps.a.0 + (ps.b.0 - ps.a.0) * bd.anchor, ps.a.1 + (ps.b.1 - ps.a.1) * bd.anchor);
+                let s = (
+                    ps.a.0 + (ps.b.0 - ps.a.0) * bd.anchor,
+                    ps.a.1 + (ps.b.1 - ps.a.1) * bd.anchor,
+                );
                 (s, ps.ang, BONES[pi].rest)
             }
             None => (ROOT, 0.0, 0.0),
@@ -394,7 +670,11 @@ fn solve(deltas: &[f32; NBONES]) -> [Seg; NBONES] {
         let ang = parent_ang + (bd.rest - parent_rest) + deltas[i];
         let a = (start.0 + bd.off.0, start.1 + bd.off.1);
         let d = dir(ang);
-        out[i] = Seg { a, b: (a.0 + d.0 * bd.len, a.1 + d.1 * bd.len), ang };
+        out[i] = Seg {
+            a,
+            b: (a.0 + d.0 * bd.len, a.1 + d.1 * bd.len),
+            ang,
+        };
     }
     out
 }
@@ -426,11 +706,21 @@ fn aim_arm(deltas: &mut [f32; NBONES], target: P, chain: [usize; 5], bend_sign: 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn aim_right_arm(deltas: &mut [f32; NBONES], target: P) {
     if target.0 >= 0.0 {
-        aim_arm(deltas, target, [CLAV_R, UPPER_R, FORE_R, HAND_R, FINGER_R], 1.0);
+        aim_arm(
+            deltas,
+            target,
+            [CLAV_R, UPPER_R, FORE_R, HAND_R, FINGER_R],
+            1.0,
+        );
     } else {
         deltas[UPPER_R] = 0.0;
         deltas[FORE_R] = 0.0;
-        aim_arm(deltas, target, [CLAV_L, UPPER_L, FORE_L, HAND_L, FINGER_L], -1.0);
+        aim_arm(
+            deltas,
+            target,
+            [CLAV_L, UPPER_L, FORE_L, HAND_L, FINGER_L],
+            -1.0,
+        );
     }
 }
 
@@ -470,20 +760,42 @@ impl Figure {
         for (k, sp) in spokes.iter_mut().enumerate() {
             let a = rot + k as f32 * TAU / 8.0;
             let d = (a.cos(), a.sin());
-            *sp = ((c.0 + d.0 * WHEEL_R * 0.25, c.1 + d.1 * WHEEL_R * 0.25), (c.0 + d.0 * WHEEL_R * 1.32, c.1 + d.1 * WHEEL_R * 1.32));
+            *sp = (
+                (c.0 + d.0 * WHEEL_R * 0.25, c.1 + d.1 * WHEEL_R * 0.25),
+                (c.0 + d.0 * WHEEL_R * 1.32, c.1 + d.1 * WHEEL_R * 1.32),
+            );
         }
         let head = segs[HEAD];
         let hd = dir(head.ang);
         let side = (hd.1, -hd.0);
         let eye_c = (head.a.0 + hd.0 * 0.055, head.a.1 + hd.1 * 0.055);
         let eyes = [
-            (eye_c.0 + side.0 * 0.022 * -1.0, eye_c.1 + side.1 * 0.022 * -1.0),
+            (
+                eye_c.0 + side.0 * 0.022 * -1.0,
+                eye_c.1 + side.1 * 0.022 * -1.0,
+            ),
             (eye_c.0 + side.0 * 0.022, eye_c.1 + side.1 * 0.022),
         ];
         let m = (head.a.0 + hd.0 * 0.02, head.a.1 + hd.1 * 0.02);
-        let mouth = ((m.0 - side.0 * 0.024, m.1 - side.1 * 0.024), (m.0 + side.0 * 0.024, m.1 + side.1 * 0.024));
-        let face_box = Aabb::disc(eyes[0], 0.011).grow(Aabb::disc(eyes[1], 0.011)).grow(Aabb::seg(mouth.0, mouth.1, 0.006));
-        Figure { lean, lit, segs, boxes, wheel_c: c, spokes, wheel_box: Aabb::disc(c, WHEEL_R * 1.32 + 0.02), eyes, mouth, face_box }
+        let mouth = (
+            (m.0 - side.0 * 0.024, m.1 - side.1 * 0.024),
+            (m.0 + side.0 * 0.024, m.1 + side.1 * 0.024),
+        );
+        let face_box = Aabb::disc(eyes[0], 0.011)
+            .grow(Aabb::disc(eyes[1], 0.011))
+            .grow(Aabb::seg(mouth.0, mouth.1, 0.006));
+        Figure {
+            lean,
+            lit,
+            segs,
+            boxes,
+            wheel_c: c,
+            spokes,
+            wheel_box: Aabb::disc(c, WHEEL_R * 1.32 + 0.02),
+            eyes,
+            mouth,
+            face_box,
+        }
     }
 
     #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
@@ -495,7 +807,11 @@ impl Figure {
     #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn tile_mask(&self, t: Tile, care: f32, out: &mut Vec<u16>) -> Aabb {
         out.clear();
-        let mut span = if t.holds(&self.face_box, care) { self.face_box } else { Aabb::EMPTY };
+        let mut span = if t.holds(&self.face_box, care) {
+            self.face_box
+        } else {
+            Aabb::EMPTY
+        };
         for (i, bd) in BONES.iter().enumerate() {
             if bd.drawn && t.holds(&self.boxes[i], care) {
                 out.push(i as u16);
@@ -508,7 +824,9 @@ impl Figure {
     /// Widest sideways offset `warp` can apply inside a row band.
     #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn warp_shift(&self, lo: f32, hi: f32) -> f32 {
-        (self.lean * (0.62 - lo)).abs().max((self.lean * (0.62 - hi)).abs())
+        (self.lean * (0.62 - lo))
+            .abs()
+            .max((self.lean * (0.62 - hi)).abs())
     }
 
     /// Bones further than `care` are skipped: the caller only reads d below it.
@@ -646,7 +964,13 @@ fn pose_deltas(seed: u64, t: f32, knobs: &ShrineKnobs, aim: Option<P>) -> [f32; 
 /// Box holding every Sukuna limb, with room for the gradient taps.
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn sukuna_bound(c: P, s: f32) -> Aabb {
-    Aabb { x0: c.0 - 0.485 * s, y0: c.1, x1: c.0 + 0.465 * s, y1: c.1 + 1.01 * s }.pad(0.02)
+    Aabb {
+        x0: c.0 - 0.485 * s,
+        y0: c.1,
+        x1: c.0 + 0.465 * s,
+        y1: c.1 + 1.01 * s,
+    }
+    .pad(0.02)
 }
 
 /// Four-armed silhouette anchored at `c`, `s` = height in figure units.
@@ -697,7 +1021,12 @@ impl ShrinePrim {
     #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn bound(&self) -> Aabb {
         match *self {
-            ShrinePrim::Slab { c, hx, hy } => Aabb { x0: c.0 - hx - SLACK, y0: c.1 - hy - SLACK, x1: c.0 + hx + SLACK, y1: c.1 + hy + SLACK },
+            ShrinePrim::Slab { c, hx, hy } => Aabb {
+                x0: c.0 - hx - SLACK,
+                y0: c.1 - hy - SLACK,
+                x1: c.0 + hx + SLACK,
+                y1: c.1 + hy + SLACK,
+            },
             ShrinePrim::Beam { a, b, r } => Aabb::seg(a, b, r),
             ShrinePrim::Shell { c, r, w } => Aabb::disc(c, r + w),
         }
@@ -718,19 +1047,81 @@ fn make_shrine(presence: f32) -> Option<ShrineGeo> {
     }
     let w = 0.75 + presence * 0.5;
     let mut prims: Vec<(ShrinePrim, ShrinePart)> = vec![
-        (ShrinePrim::Slab { c: (0.0, -0.02), hx: w * 0.55, hy: 0.012 }, ShrinePart::Roof),
-        (ShrinePrim::Slab { c: (0.0, 0.05), hx: w * 0.55, hy: 0.012 }, ShrinePart::Roof),
-        (ShrinePrim::Beam { a: (w * 0.5, 0.06), b: (w, 0.0), r: 0.014 }, ShrinePart::Eave),
-        (ShrinePrim::Beam { a: (-w * 0.5, 0.06), b: (-w, 0.0), r: 0.014 }, ShrinePart::Eave),
-        (ShrinePrim::Shell { c: (0.0, -0.12), r: 0.07, w: 0.012 }, ShrinePart::Skull),
-        (ShrinePrim::Beam { a: (0.05, -0.16), b: (0.16, -0.32), r: 0.014 }, ShrinePart::Horn),
-        (ShrinePrim::Beam { a: (-0.05, -0.16), b: (-0.16, -0.32), r: 0.014 }, ShrinePart::Horn),
+        (
+            ShrinePrim::Slab {
+                c: (0.0, -0.02),
+                hx: w * 0.55,
+                hy: 0.012,
+            },
+            ShrinePart::Roof,
+        ),
+        (
+            ShrinePrim::Slab {
+                c: (0.0, 0.05),
+                hx: w * 0.55,
+                hy: 0.012,
+            },
+            ShrinePart::Roof,
+        ),
+        (
+            ShrinePrim::Beam {
+                a: (w * 0.5, 0.06),
+                b: (w, 0.0),
+                r: 0.014,
+            },
+            ShrinePart::Eave,
+        ),
+        (
+            ShrinePrim::Beam {
+                a: (-w * 0.5, 0.06),
+                b: (-w, 0.0),
+                r: 0.014,
+            },
+            ShrinePart::Eave,
+        ),
+        (
+            ShrinePrim::Shell {
+                c: (0.0, -0.12),
+                r: 0.07,
+                w: 0.012,
+            },
+            ShrinePart::Skull,
+        ),
+        (
+            ShrinePrim::Beam {
+                a: (0.05, -0.16),
+                b: (0.16, -0.32),
+                r: 0.014,
+            },
+            ShrinePart::Horn,
+        ),
+        (
+            ShrinePrim::Beam {
+                a: (-0.05, -0.16),
+                b: (-0.16, -0.32),
+                r: 0.014,
+            },
+            ShrinePart::Horn,
+        ),
     ];
     for k in 0..5 {
         let x = (k as f32 - 2.0) * w * 0.25;
-        prims.push((ShrinePrim::Slab { c: (x, 0.45), hx: 0.012, hy: 0.4 }, ShrinePart::Pillar));
+        prims.push((
+            ShrinePrim::Slab {
+                c: (x, 0.45),
+                hx: 0.012,
+                hy: 0.4,
+            },
+            ShrinePart::Pillar,
+        ));
     }
-    Some(ShrineGeo { prims: prims.into_iter().map(|(pr, part)| (pr, part, pr.bound())).collect(), half_w: w * 0.55 })
+    Some(ShrineGeo {
+        prims: prims
+            .into_iter()
+            .map(|(pr, part)| (pr, part, pr.bound()))
+            .collect(),
+        half_w: w * 0.55,
+    })
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
@@ -764,7 +1155,13 @@ struct Slash {
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn make_slashes(seed: u64, count: usize, cut_uv: f32, u_span: f32, v_span: (f32, f32)) -> Vec<Slash> {
+fn make_slashes(
+    seed: u64,
+    count: usize,
+    cut_uv: f32,
+    u_span: f32,
+    v_span: (f32, f32),
+) -> Vec<Slash> {
     let mut rng = side_rng(seed, 1);
     let mut out = Vec::with_capacity(count);
     for i in 0..count {
@@ -774,8 +1171,16 @@ fn make_slashes(seed: u64, count: usize, cut_uv: f32, u_span: f32, v_span: (f32,
         let qu = rng.random_range(-u_span * 0.7..u_span * 0.7) * rng.random::<f32>().sqrt();
         let qv = rng.random_range(v_span.0 * 0.6..v_span.1 * 0.95);
         let half = rng.random_range(0.35..0.75) * u_span.max(0.8);
-        let slip = cut_uv * rng.random_range(0.5..1.4) * if rng.random::<bool>() { 1.0 } else { -1.0 };
-        out.push(Slash { q: (qu, qv), d, n: (-d.1, d.0), half, slip, bright: rng.random() });
+        let slip =
+            cut_uv * rng.random_range(0.5..1.4) * if rng.random::<bool>() { 1.0 } else { -1.0 };
+        out.push(Slash {
+            q: (qu, qv),
+            d,
+            n: (-d.1, d.0),
+            half,
+            slip,
+            bright: rng.random(),
+        });
     }
     out
 }
@@ -827,7 +1232,14 @@ fn make_city(seed: u64, count: usize, u_span: f32, v_bot: f32, horizon: f32) -> 
             u = (corridor + rng.random_range(0.0..0.25)) * if u < 0.0 { -1.0 } else { 1.0 };
         }
         let base = horizon + (v_bot - horizon) * z.powf(1.7);
-        out.push(Building { u0: u - wide * 0.5, u1: u + wide * 0.5, top: base - tall, base, z, id: i as u64 });
+        out.push(Building {
+            u0: u - wide * 0.5,
+            u1: u + wide * 0.5,
+            top: base - tall,
+            base,
+            z,
+            id: i as u64,
+        });
     }
     out.sort_by(|a, b| b.z.partial_cmp(&a.z).unwrap());
     out
@@ -835,7 +1247,9 @@ fn make_city(seed: u64, count: usize, u_span: f32, v_bot: f32, horizon: f32) -> 
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn sample_city<'a>(city: &'a [Building], rows: &[u16], p: P) -> Option<&'a Building> {
-    rows.iter().map(|&i| &city[i as usize]).find(|b| p.0 >= b.u0 && p.0 <= b.u1 && p.1 >= b.top && p.1 <= b.base)
+    rows.iter()
+        .map(|&i| &city[i as usize])
+        .find(|b| p.0 >= b.u0 && p.0 <= b.u1 && p.1 >= b.top && p.1 <= b.base)
 }
 
 // ── the clock ───────────────────────────────────────────────────────
@@ -843,7 +1257,11 @@ fn sample_city<'a>(city: &'a [Building], rows: &[u16], p: P) -> Option<&'a Build
 /// t=0 shows `turns` adaptations; t>0 replays the fight on a loop.
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn progress(t: f32, knobs: &ShrineKnobs) -> f32 {
-    if t <= 0.0 { knobs.turns } else { (t * knobs.speed).rem_euclid(knobs.fuga as f32 + 3.0) }
+    if t <= 0.0 {
+        knobs.turns
+    } else {
+        (t * knobs.speed).rem_euclid(knobs.fuga as f32 + 3.0)
+    }
 }
 
 // ── render ──────────────────────────────────────────────────────────
@@ -913,7 +1331,10 @@ impl RowCtx {
 
     #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn slice(pair: &(Vec<u16>, Aabb)) -> RowSlice<'_> {
-        RowSlice { mask: &pair.0, span: pair.1 }
+        RowSlice {
+            mask: &pair.0,
+            span: pair.1,
+        }
     }
 }
 
@@ -933,11 +1354,21 @@ struct Ink {
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn block_cell(sc: &Scene, ink: &Ink, b: &Building, pu: P, x: usize, y: usize) -> Option<(char, Color)> {
+fn block_cell(
+    sc: &Scene,
+    ink: &Ink,
+    b: &Building,
+    pu: P,
+    x: usize,
+    y: usize,
+) -> Option<(char, Color)> {
     let k = sc.knobs;
     let defocus = ((b.z - k.focus).abs() * k.blur * 2.2).min(1.0);
     let fade = (1.0 - b.z) * k.haze;
-    let base = darken(lerp_color(ink.block_far, ink.block_near, b.z), (fade * 110.0) as u8);
+    let base = darken(
+        lerp_color(ink.block_far, ink.block_near, b.z),
+        (fade * 110.0) as u8,
+    );
     let col = ((pu.0 - b.u0) * 2.0 * sc.fig_h).floor() as i64;
     let row = ((pu.1 - b.top) * sc.fig_h).floor() as i64;
     let width_cols = ((b.u1 - b.u0) * 2.0 * sc.fig_h).floor() as i64;
@@ -955,12 +1386,19 @@ fn block_cell(sc: &Scene, ink: &Ink, b: &Building, pu: P, x: usize, y: usize) ->
         } else if on_edge {
             ('│', lighten(base, 20))
         } else if window {
-            if lit { ('=', lighten(base, 70)) } else { ('.', base) }
+            if lit {
+                ('=', lighten(base, 70))
+            } else {
+                ('.', base)
+            }
         } else {
             (' ', base)
         }
     } else if window && lit && jitter < 1.0 - defocus * 0.4 {
-        (if defocus > 0.8 { 'O' } else { 'o' }, darken(lighten(base, 60), (defocus * 50.0) as u8))
+        (
+            if defocus > 0.8 { 'O' } else { 'o' },
+            darken(lighten(base, 60), (defocus * 50.0) as u8),
+        )
     } else if (on_edge || on_roof) && jitter > defocus * 0.9 {
         ('·', base)
     } else {
@@ -969,7 +1407,13 @@ fn block_cell(sc: &Scene, ink: &Ink, b: &Building, pu: P, x: usize, y: usize) ->
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn shrine_cell(sc: &Scene, ink: &Ink, part: ShrinePart, pu: P, noise: f32) -> Option<(char, Color)> {
+fn shrine_cell(
+    sc: &Scene,
+    ink: &Ink,
+    part: ShrinePart,
+    pu: P,
+    noise: f32,
+) -> Option<(char, Color)> {
     let k = sc.knobs;
     let dim = darken(ink.shrine, (60.0 * (1.0 - k.shrine)) as u8);
     Some(match part {
@@ -989,13 +1433,25 @@ fn shrine_cell(sc: &Scene, ink: &Ink, part: ShrinePart, pu: P, noise: f32) -> Op
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn figure_cell(sc: &Scene, ink: &Ink, rows: RowSlice, d: f32, part: Part, pu: P, noise: f32) -> (char, Color) {
+fn figure_cell(
+    sc: &Scene,
+    ink: &Ink,
+    rows: RowSlice,
+    d: f32,
+    part: Part,
+    pu: P,
+    noise: f32,
+) -> (char, Color) {
     let k = sc.knobs;
     match part {
         Part::Ring => ('#', ink.ring),
         Part::Hub => ('◉', lighten(ink.ring, 40)),
         Part::Handle(i) => {
-            if i < sc.fig.lit { ('◆', lighten(ink.ring, 45)) } else { ('·', darken(ink.ring, 30)) }
+            if i < sc.fig.lit {
+                ('◆', lighten(ink.ring, 45))
+            } else {
+                ('·', darken(ink.ring, 30))
+            }
         }
         Part::Spoke => {
             let rel = sub(sc.fig.warp(pu), sc.fig.wheel_c);
@@ -1011,11 +1467,20 @@ fn figure_cell(sc: &Scene, ink: &Ink, rows: RowSlice, d: f32, part: Part, pu: P,
             match part {
                 Part::Cloth => {
                     let i = (shade * CLOTH_RAMP.len() as f32) as usize;
-                    (CLOTH_RAMP[i], lerp_color(darken(ink.cloth, 60), ink.cloth, shade))
+                    (
+                        CLOTH_RAMP[i],
+                        lerp_color(darken(ink.cloth, 60), ink.cloth, shade),
+                    )
                 }
                 Part::Wrap => {
                     let band = ((pu.1 * sc.fig_h * 0.9) as i32).rem_euclid(3);
-                    let ch = if band == 0 { '=' } else if shade > 0.5 { '-' } else { '.' };
+                    let ch = if band == 0 {
+                        '='
+                    } else if shade > 0.5 {
+                        '-'
+                    } else {
+                        '.'
+                    };
                     (ch, lerp_color(darken(ink.wrap, 50), ink.wrap, shade))
                 }
                 _ => {
@@ -1029,7 +1494,14 @@ fn figure_cell(sc: &Scene, ink: &Ink, rows: RowSlice, d: f32, part: Part, pu: P,
 
 /// One cell of the scene, front to back. None = leave blank.
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn shade_cell(sc: &Scene, ink: &Ink, row: &RowCtx, x: usize, y: usize, p0: P) -> Option<(char, Color)> {
+fn shade_cell(
+    sc: &Scene,
+    ink: &Ink,
+    row: &RowCtx,
+    x: usize,
+    y: usize,
+    p0: P,
+) -> Option<(char, Color)> {
     let k = sc.knobs;
     let (pu, hit) = displace(p0, &sc.slashes, sc.live, sc.blade);
     if let Some((i, along)) = hit {
@@ -1038,7 +1510,11 @@ fn shade_cell(sc: &Scene, ink: &Ink, row: &RowCtx, x: usize, y: usize, p0: P) ->
         if glow < 0.12 {
             return None;
         }
-        let fg = if glow > 0.55 { ink.cut } else { darken(ink.cut, ((1.0 - glow) * 120.0) as u8) };
+        let fg = if glow > 0.55 {
+            ink.cut
+        } else {
+            darken(ink.cut, ((1.0 - glow) * 120.0) as u8)
+        };
         return Some((stroke_glyph(s.d.0 * 2.0, s.d.1), fg));
     }
     let noise = hash01(sc.seed, x as i64, y as i64) - 0.5;
@@ -1048,13 +1524,19 @@ fn shade_cell(sc: &Scene, ink: &Ink, row: &RowCtx, x: usize, y: usize, p0: P) ->
         let rim = 0.45 / sc.fig_h;
         if d < -rim {
             let i = ((noise + 0.5) * (DARK_RAMP.len() as f32 - 0.01)) as usize;
-            let ch = if noise + 0.5 < 0.12 { DARK_RAMP[i] } else { ' ' };
+            let ch = if noise + 0.5 < 0.12 {
+                DARK_RAMP[i]
+            } else {
+                ' '
+            };
             return Some((ch, darken(ink.sukuna, 60)));
         }
         if d < 0.0 {
             let e = 0.003;
-            let gx = sd_sukuna((pu.0 + e, pu.1), sc.sukuna_c, sc.sukuna_s) - sd_sukuna((pu.0 - e, pu.1), sc.sukuna_c, sc.sukuna_s);
-            let gy = sd_sukuna((pu.0, pu.1 + e), sc.sukuna_c, sc.sukuna_s) - sd_sukuna((pu.0, pu.1 - e), sc.sukuna_c, sc.sukuna_s);
+            let gx = sd_sukuna((pu.0 + e, pu.1), sc.sukuna_c, sc.sukuna_s)
+                - sd_sukuna((pu.0 - e, pu.1), sc.sukuna_c, sc.sukuna_s);
+            let gy = sd_sukuna((pu.0, pu.1 + e), sc.sukuna_c, sc.sukuna_s)
+                - sd_sukuna((pu.0, pu.1 - e), sc.sukuna_c, sc.sukuna_s);
             let lit = 0.5 + 0.5 * dot((gx, gy), sc.light) / len((gx, gy)).max(1e-6);
             let ch = stroke_glyph(-gy * 2.0, gx);
             return Some((ch, lerp_color(ink.sukuna, ink.cut, lit * 0.8)));
@@ -1070,7 +1552,10 @@ fn shade_cell(sc: &Scene, ink: &Ink, row: &RowCtx, x: usize, y: usize, p0: P) ->
     if d < edge_eps && matches!(part, Part::Skin | Part::Cloth | Part::Wrap) {
         let n = sc.fig.normal(pu, sc.care, rows);
         if n.0.abs() > 0.45 {
-            return Some((stroke_glyph(-n.1 * 2.0, n.0), lerp_color(ink.bone, ink.pale, 0.6)));
+            return Some((
+                stroke_glyph(-n.1 * 2.0, n.0),
+                lerp_color(ink.bone, ink.pale, 0.6),
+            ));
         }
     }
 
@@ -1080,7 +1565,11 @@ fn shade_cell(sc: &Scene, ink: &Ink, row: &RowCtx, x: usize, y: usize, p0: P) ->
         for ring in 0..sc.fig.lit {
             let target = 1.0 + ring as f32 * 0.09;
             if (rr - target).abs() < 0.012 + k.aura * 0.01 {
-                let pulse = if sc.t > 0.0 { ((sc.t * 2.0 - ring as f32 * 0.5).sin() * 0.5 + 0.5) * 0.4 } else { 0.0 };
+                let pulse = if sc.t > 0.0 {
+                    ((sc.t * 2.0 - ring as f32 * 0.5).sin() * 0.5 + 0.5) * 0.4
+                } else {
+                    0.0
+                };
                 if noise + 0.5 < k.aura * 0.55 + pulse {
                     let ch = if ring % 2 == 0 { '·' } else { ':' };
                     return Some((ch, darken(ink.ring, (60 - ring as u8 * 6).max(10))));
@@ -1142,7 +1631,9 @@ fn draw_ash(grid: &mut Grid, width: usize, height: usize, seed: u64, t: f32, ash
         let phase: f32 = rng.random();
         let speed = rng.random_range(0.6..1.6);
         let length = rng.random_range(1..4);
-        let head = ((phase + if t > 0.0 { t * speed * 0.35 } else { 0.0 }) * (height as f32 + 6.0)).rem_euclid(height as f32 + 6.0) as i32 - 3;
+        let head = ((phase + if t > 0.0 { t * speed * 0.35 } else { 0.0 }) * (height as f32 + 6.0))
+            .rem_euclid(height as f32 + 6.0) as i32
+            - 3;
         for k in 0..length {
             let y = head - k;
             if y < 0 || y >= height as i32 || grid[y as usize][x as usize].ch != ' ' {
@@ -1173,8 +1664,15 @@ fn draw_debris(grid: &mut Grid, sc: &Scene, ink: &Ink, cx: f32, top: f32) {
             for j in 0..n {
                 let spread: f32 = rng.random_range(0.0..0.12);
                 let side: f32 = rng.random_range(-0.06..0.06);
-                let drift = if sc.t > 0.0 { (sc.t * 0.7 + j as f32).sin() * 0.02 } else { 0.0 };
-                let pu = (base.0 + s.d.0 * spread * end + s.n.0 * side + drift, base.1 + s.d.1 * spread * end + s.n.1 * side);
+                let drift = if sc.t > 0.0 {
+                    (sc.t * 0.7 + j as f32).sin() * 0.02
+                } else {
+                    0.0
+                };
+                let pu = (
+                    base.0 + s.d.0 * spread * end + s.n.0 * side + drift,
+                    base.1 + s.d.1 * spread * end + s.n.1 * side,
+                );
                 let x = (cx + pu.0 * 2.0 * sc.fig_h).round() as i32;
                 let y = (top + pu.1 * sc.fig_h).round() as i32;
                 let g = glyphs[rng.random_range(0..glyphs.len())];
@@ -1203,13 +1701,26 @@ fn vignette(grid: &mut Grid, width: usize, height: usize, amount: f32) {
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub fn draw_mahoraga4(grid: &mut Grid, width: usize, height: usize, seed: u64, palette: &[Color; 5], rng: &mut StdRng, t: f32, knobs: &ShrineKnobs) {
+pub fn draw_mahoraga4(
+    grid: &mut Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: &[Color; 5],
+    rng: &mut StdRng,
+    t: f32,
+    knobs: &ShrineKnobs,
+) {
     let _ = rng;
     let p = progress(t, knobs);
     let adaptations = (p.floor() as usize).min(8);
     let reach = (p - knobs.fuga as f32 + 1.0).clamp(0.0, 1.0);
     let frac = p.fract();
-    let turn = if t > 0.0 && frac < 0.3 { ease_in_out(frac / 0.3) } else { 1.0 };
+    let turn = if t > 0.0 && frac < 0.3 {
+        ease_in_out(frac / 0.3)
+    } else {
+        1.0
+    };
     let rot = (adaptations as f32 - 1.0 + turn).max(0.0) * (TAU / 8.0) - PI / 2.0;
 
     let fig_h = (height as f32 * knobs.scale).max(6.0);
@@ -1225,19 +1736,40 @@ pub fn draw_mahoraga4(grid: &mut Grid, width: usize, height: usize, seed: u64, p
     } else {
         knobs.slash.round() as usize
     };
-    let sukuna_s = if knobs.sukuna > 0.0 && height >= 20 { knobs.sukuna } else { 0.0 };
+    let sukuna_s = if knobs.sukuna > 0.0 && height >= 20 {
+        knobs.sukuna
+    } else {
+        0.0
+    };
     let sukuna_c = (-u_span * 0.62, v_bot - sukuna_s * 0.98);
-    let aim = if knobs.aim > 0.5 && sukuna_s > 0.0 { Some((sukuna_c.0 + 0.05, sukuna_c.1 + sukuna_s * 0.1)) } else { Some((0.62, 0.3)) };
+    let aim = if knobs.aim > 0.5 && sukuna_s > 0.0 {
+        Some((sukuna_c.0 + 0.05, sukuna_c.1 + sukuna_s * 0.1))
+    } else {
+        Some((0.62, 0.3))
+    };
     let deltas = measure_layer("mahoraga-4", "pose", || pose_deltas(seed, t, knobs, aim));
     let fig = Figure::new(rot, knobs.lean, adaptations, &deltas);
     let wheel_c = fig.wheel_c;
     let sc = Scene {
         fig,
-        slashes: measure_layer("mahoraga-4", "slashes", || make_slashes(seed, knobs.slash.round() as usize, knobs.cut / (2.0 * fig_h), u_span, (v_top, v_bot))),
+        slashes: measure_layer("mahoraga-4", "slashes", || {
+            make_slashes(
+                seed,
+                knobs.slash.round() as usize,
+                knobs.cut / (2.0 * fig_h),
+                u_span,
+                (v_top, v_bot),
+            )
+        }),
         live,
         blade: 0.26 / fig_h,
-        city: measure_layer("mahoraga-4", "city", || make_city(seed, knobs.density.round() as usize, u_span, v_bot, horizon)),
-        light: (knobs.light.to_radians().cos(), knobs.light.to_radians().sin()),
+        city: measure_layer("mahoraga-4", "city", || {
+            make_city(seed, knobs.density.round() as usize, u_span, v_bot, horizon)
+        }),
+        light: (
+            knobs.light.to_radians().cos(),
+            knobs.light.to_radians().sin(),
+        ),
         knobs,
         seed,
         fig_h,
@@ -1268,7 +1800,13 @@ pub fn draw_mahoraga4(grid: &mut Grid, width: usize, height: usize, seed: u64, p
     };
 
     measure_layer("mahoraga-4", "shade", || {
-        let slip_max = sc.slashes.iter().take(sc.live).map(|s| s.slip.abs()).sum::<f32>() + 1e-4;
+        let slip_max = sc
+            .slashes
+            .iter()
+            .take(sc.live)
+            .map(|s| s.slip.abs())
+            .sum::<f32>()
+            + 1e-4;
         let mut row = RowCtx::new(&sc);
         for y in 0..height {
             let v = (y as f32 - top) / fig_h;
@@ -1289,19 +1827,61 @@ pub fn draw_mahoraga4(grid: &mut Grid, width: usize, height: usize, seed: u64, p
         }
     });
 
-    measure_layer("mahoraga-4", "ash", || draw_ash(grid, width, height, seed, t, knobs.ash, lighten(palette[3], 10)));
-    measure_layer("mahoraga-4", "debris", || draw_debris(grid, &sc, &ink, cx, top));
-    measure_layer("mahoraga-4", "vignette", || vignette(grid, width, height, knobs.vignette));
+    measure_layer("mahoraga-4", "ash", || {
+        draw_ash(
+            grid,
+            width,
+            height,
+            seed,
+            t,
+            knobs.ash,
+            lighten(palette[3], 10),
+        )
+    });
+    measure_layer("mahoraga-4", "debris", || {
+        draw_debris(grid, &sc, &ink, cx, top)
+    });
+    measure_layer("mahoraga-4", "vignette", || {
+        vignette(grid, width, height, knobs.vignette)
+    });
     let wx = cx + (wheel_c.0 + knobs.lean * (0.62 - wheel_c.1)) * 2.0 * fig_h;
     let wy = top + fig_h * wheel_c.1;
-    measure_layer("mahoraga-4", "fuga", || draw_fuga(grid, width, height, seed, cx, wy, fig_h * WHEEL_R * 1.3, t, reach));
+    measure_layer("mahoraga-4", "fuga", || {
+        draw_fuga(
+            grid,
+            width,
+            height,
+            seed,
+            cx,
+            wy,
+            fig_h * WHEEL_R * 1.3,
+            t,
+            reach,
+        )
+    });
     if reach >= 1.0 {
-        set(grid, wx.round() as i32, wy.round() as i32, '◉', hsl_to_rgb(48.0, 1.0, 0.8));
+        set(
+            grid,
+            wx.round() as i32,
+            wy.round() as i32,
+            '◉',
+            hsl_to_rgb(48.0, 1.0, 0.8),
+        );
     }
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn draw_fuga(grid: &mut Grid, width: usize, height: usize, seed: u64, cx: f32, cy: f32, r: f32, t: f32, reach: f32) {
+fn draw_fuga(
+    grid: &mut Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    cx: f32,
+    cy: f32,
+    r: f32,
+    t: f32,
+    reach: f32,
+) {
     if reach <= 0.0 {
         return;
     }
@@ -1316,7 +1896,11 @@ fn draw_fuga(grid: &mut Grid, width: usize, height: usize, seed: u64, cx: f32, c
     let outer = hsl_to_rgb(8.0, 0.95, 0.42);
     let shimmer = if t > 0.0 { (t * 9.0) as usize } else { 0 };
     let n = (tx - ox).abs().max((ty - oy).abs()).ceil().max(1.0) as usize;
-    let bands: &[i32] = if height >= 30 { &[-2, -1, 0, 1, 2] } else { &[-1, 0, 1] };
+    let bands: &[i32] = if height >= 30 {
+        &[-2, -1, 0, 1, 2]
+    } else {
+        &[-1, 0, 1]
+    };
     for &band in bands {
         for i in 0..=n {
             let f = i as f32 / n as f32;
@@ -1343,23 +1927,54 @@ fn draw_fuga(grid: &mut Grid, width: usize, height: usize, seed: u64, cx: f32, c
     for i in 0..count {
         let a = sparks.random_range(0.0..TAU);
         let d = sparks.random_range(1.2..3.0) * r;
-        let spin = if t > 0.0 { t * 0.8 + i as f32 * 0.05 } else { 0.0 };
+        let spin = if t > 0.0 {
+            t * 0.8 + i as f32 * 0.05
+        } else {
+            0.0
+        };
         let x = cx + (a + spin).cos() * d * 2.0;
         let y = cy + (a + spin).sin() * d;
         let ch = if i % 4 == 0 { '+' } else { '*' };
-        set(grid, x.round() as i32, y.round() as i32, ch, if i % 3 == 0 { core } else { mid });
+        set(
+            grid,
+            x.round() as i32,
+            y.round() as i32,
+            ch,
+            if i % 3 == 0 { core } else { mid },
+        );
     }
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub fn render_mahoraga4_frame(width: usize, height: usize, seed: u64, palette: &[Color; 5], mut rng: StdRng, t: f32, knobs: &ShrineKnobs) -> Grid {
+pub fn render_mahoraga4_frame(
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: &[Color; 5],
+    mut rng: StdRng,
+    t: f32,
+    knobs: &ShrineKnobs,
+) -> Grid {
     let mut grid = vec![vec![Cell::blank(); width]; height];
     draw_mahoraga4(&mut grid, width, height, seed, palette, &mut rng, t, knobs);
     grid
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn cli_mahoraga4(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
+pub(crate) fn cli_mahoraga4(
+    mut grid: Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: [Color; 5],
+    mut rng: StdRng,
+    t_anim: f32,
+    term_w: u16,
+    term_h: u16,
+    args: &[String],
+    mode: &str,
+    theme_name: &str,
+) -> (Grid, bool) {
     // mahoraga-4 [turns] [slash] [cut] [focus] [pose_a] [pose_b] [blend] -- positional overrides win over env/defaults
     let mut knobs = ShrineKnobs::from_env();
     if let Some(v) = args.get(4).and_then(|v| v.parse::<f32>().ok()) {
@@ -1384,7 +1999,9 @@ pub(crate) fn cli_mahoraga4(mut grid: Grid, width: usize, height: usize, seed: u
         knobs.blend = v.clamp(0.0, 1.0);
     }
     let _ = (term_w, term_h, mode, theme_name);
-    draw_mahoraga4(&mut grid, width, height, seed, &palette, &mut rng, t_anim, &knobs);
+    draw_mahoraga4(
+        &mut grid, width, height, seed, &palette, &mut rng, t_anim, &knobs,
+    );
     (grid, false)
 }
 
@@ -1393,7 +2010,16 @@ mod tests {
     use super::*;
 
     #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-    fn run(w: usize, h: usize, seed: u64, t: f32, turns: f32, pa: u8, pb: u8, blend: f32) -> String {
+    fn run(
+        w: usize,
+        h: usize,
+        seed: u64,
+        t: f32,
+        turns: f32,
+        pa: u8,
+        pb: u8,
+        blend: f32,
+    ) -> String {
         let p = crate::color::make_palette(seed);
         let mut knobs = ShrineKnobs::from_env();
         knobs.turns = turns;
@@ -1416,16 +2042,30 @@ mod tests {
     #[test]
     #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_mahoraga4_lunge_swing_blend_tall() {
-        insta::assert_snapshot!("mahoraga4_100x40_blend", run(100, 40, 42, 0.0, 8.0, 3, 5, 0.5));
+        insta::assert_snapshot!(
+            "mahoraga4_100x40_blend",
+            run(100, 40, 42, 0.0, 8.0, 3, 5, 0.5)
+        );
     }
 
     #[test]
     #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn fk_rest_pose_is_upright() {
         let segs = solve(&[0.0; NBONES]);
-        assert!((segs[HEAD].b.1 - 0.25).abs() < 0.02, "head top at {}", segs[HEAD].b.1);
-        assert!(segs[CLAV_R].b.0 > 0.15 && segs[CLAV_L].b.0 < -0.15, "shoulders spread");
-        assert!(segs[FOOT_R].a.1 > 0.95, "feet on the ground: {}", segs[FOOT_R].a.1);
+        assert!(
+            (segs[HEAD].b.1 - 0.25).abs() < 0.02,
+            "head top at {}",
+            segs[HEAD].b.1
+        );
+        assert!(
+            segs[CLAV_R].b.0 > 0.15 && segs[CLAV_L].b.0 < -0.15,
+            "shoulders spread"
+        );
+        assert!(
+            segs[FOOT_R].a.1 > 0.95,
+            "feet on the ground: {}",
+            segs[FOOT_R].a.1
+        );
         assert!((segs[WHEEL].b.1 - 0.11).abs() < 0.02, "wheel above head");
     }
 
@@ -1437,7 +2077,13 @@ mod tests {
             aim_right_arm(&mut d, target);
             let segs = solve(&d);
             let miss = len(sub(segs[finger].b, target));
-            assert!(miss < 0.03, "finger tip {:?} misses {:?} by {}", segs[finger].b, target, miss);
+            assert!(
+                miss < 0.03,
+                "finger tip {:?} misses {:?} by {}",
+                segs[finger].b,
+                target,
+                miss
+            );
         }
     }
 
@@ -1455,9 +2101,18 @@ mod tests {
     #[test]
     #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn deterministic_seed_sensitive_and_t_moves() {
-        assert_eq!(run(90, 30, 42, 0.0, 7.0, 1, 4, 0.0), run(90, 30, 42, 0.0, 7.0, 1, 4, 0.0));
-        assert_ne!(run(90, 30, 42, 0.0, 7.0, 1, 4, 0.0), run(90, 30, 7, 0.0, 7.0, 1, 4, 0.0));
-        assert_ne!(run(90, 30, 42, 1.0, 7.0, 1, 4, 0.0), run(90, 30, 42, 3.0, 7.0, 1, 4, 0.0));
+        assert_eq!(
+            run(90, 30, 42, 0.0, 7.0, 1, 4, 0.0),
+            run(90, 30, 42, 0.0, 7.0, 1, 4, 0.0)
+        );
+        assert_ne!(
+            run(90, 30, 42, 0.0, 7.0, 1, 4, 0.0),
+            run(90, 30, 7, 0.0, 7.0, 1, 4, 0.0)
+        );
+        assert_ne!(
+            run(90, 30, 42, 1.0, 7.0, 1, 4, 0.0),
+            run(90, 30, 42, 3.0, 7.0, 1, 4, 0.0)
+        );
     }
 
     #[test]
@@ -1467,6 +2122,9 @@ mod tests {
         assert!(s.contains('◉'), "hub");
         assert!(s.contains('◆'), "handles");
         assert!(s.contains("~--~--~--"), "fire arrow band");
-        assert!(!run(80, 24, 42, 0.0, 3.0, 1, 4, 0.0).contains("~--~--~--"), "no arrow before fuga");
+        assert!(
+            !run(80, 24, 42, 0.0, 3.0, 1, 4, 0.0).contains("~--~--~--"),
+            "no arrow before fuga"
+        );
     }
 }

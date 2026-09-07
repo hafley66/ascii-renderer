@@ -6,39 +6,62 @@ use rand::SeedableRng;
 use rand::rngs::StdRng;
 use std::io::{self, IsTerminal, Read as _};
 
-use crate::automata::*;
-use crate::biomes::*;
 use crate::_0_profile::measure_layer;
-use crate::color::*;
-use crate::content::*;
-use crate::fills::*;
-use crate::layout::*;
-use crate::markdown::*;
-use crate::mondrian::*;
-use crate::render::*;
-use crate::scene::*;
-use crate::sprites::*;
-use crate::tree_draw::*;
-use crate::types::*;
-use crate::walker::*;
+use crate::automata;
+use crate::automata::*;
+use crate::avant;
 use crate::avant::*;
-use crate::automata; use crate::avant; use crate::biomes; use crate::borders; use crate::color; use crate::content; use crate::fills; use crate::layout; use crate::markdown; use crate::mondrian; use crate::render; use crate::scene; use crate::sprites; use crate::tree_draw; use crate::types; use crate::walker;
+use crate::biomes;
+use crate::biomes::*;
+use crate::borders;
 use crate::cli::*;
+use crate::color;
+use crate::color::*;
+use crate::content;
+use crate::content::*;
+use crate::fills;
+use crate::fills::*;
 use crate::gridio::*;
 use crate::ink::*;
+use crate::layout;
+use crate::layout::*;
+use crate::markdown;
+use crate::markdown::*;
 use crate::modes_creatures::*;
 use crate::modes_geo::*;
 use crate::modes_tree::*;
+use crate::mondrian;
+use crate::mondrian::*;
 use crate::morph::*;
 use crate::opts::*;
 use crate::pp::*;
 use crate::registry::*;
+use crate::render;
+use crate::render::*;
+use crate::scene;
+use crate::scene::*;
+use crate::sprites;
+use crate::sprites::*;
+use crate::tree_draw;
+use crate::tree_draw::*;
+use crate::types;
+use crate::types::*;
+use crate::walker;
+use crate::walker::*;
 use crate::warps::*;
 
 // --- nebula : fbm cloud field with a shade ramp, palette gradient, scattered
 //     stars in the dark voids. ---
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn draw_nebula(grid: &mut Grid, width: usize, height: usize, seed: u64, palette: &[Color; 5], rng: &mut StdRng, t: f32) {
+pub(crate) fn draw_nebula(
+    grid: &mut Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: &[Color; 5],
+    rng: &mut StdRng,
+    t: f32,
+) {
     let ramp = [' ', ' ', '·', '∙', ':', '*', '▒', '▓'];
     // t pans the cloud field; the starfield (rng-placed) stays put behind it.
     for y in 0..height {
@@ -69,367 +92,375 @@ pub(crate) fn draw_nebula(grid: &mut Grid, width: usize, height: usize, seed: u6
     }
 }
 
-
 // --- delta : recursive branching river/lightning system fanning down-screen. ---
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn draw_solar_system(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, args: &[String]) -> Grid {
-        // solar-system [bodies] -- 3D-ish orbital diagram with planets, cubes, and space hardware
-        let body_count: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(8);
-        let body_count = body_count.clamp(3, 12);
+pub(crate) fn draw_solar_system(
+    mut grid: Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: [Color; 5],
+    mut rng: StdRng,
+    t_anim: f32,
+    args: &[String],
+) -> Grid {
+    // solar-system [bodies] -- 3D-ish orbital diagram with planets, cubes, and space hardware
+    let body_count: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(8);
+    let body_count = body_count.clamp(3, 12);
 
-        macro_rules! set_cell {
-            ($x:expr, $y:expr, $ch:expr, $fg:expr) => {{
-                let sx = $x;
-                let sy = $y;
-                if sx >= 0 && sy >= 0 && (sx as usize) < width && (sy as usize) < height {
-                    grid[sy as usize][sx as usize] = Cell::new($ch, $fg);
-                }
-            }};
-        }
+    macro_rules! set_cell {
+        ($x:expr, $y:expr, $ch:expr, $fg:expr) => {{
+            let sx = $x;
+            let sy = $y;
+            if sx >= 0 && sy >= 0 && (sx as usize) < width && (sy as usize) < height {
+                grid[sy as usize][sx as usize] = Cell::new($ch, $fg);
+            }
+        }};
+    }
 
-        let space = Rect {
-            x: 0,
-            y: 0,
-            w: width,
-            h: height,
-        };
-        fill_noise(
-            &mut grid,
-            &space,
-            NoiseVariant::Dot,
-            darken(palette[2], 94),
-            darken(palette[3], 88),
-            &mut rng,
+    let space = Rect {
+        x: 0,
+        y: 0,
+        w: width,
+        h: height,
+    };
+    fill_noise(
+        &mut grid,
+        &space,
+        NoiseVariant::Dot,
+        darken(palette[2], 94),
+        darken(palette[3], 88),
+        &mut rng,
+    );
+
+    for _ in 0..(width * height / 36).max(8) {
+        let x = rng.random_range(0..width);
+        let y = rng.random_range(0..height);
+        let ch = ['·', '∙', '°', '*', '✦'][rng.random_range(0..5usize)];
+        grid[y][x] = Cell::new(
+            ch,
+            darken(lighten(palette[4], 10), rng.random_range(15..75)),
         );
+    }
 
-        for _ in 0..(width * height / 36).max(8) {
-            let x = rng.random_range(0..width);
-            let y = rng.random_range(0..height);
-            let ch = ['·', '∙', '°', '*', '✦'][rng.random_range(0..5usize)];
-            grid[y][x] = Cell::new(
-                ch,
-                darken(lighten(palette[4], 10), rng.random_range(15..75)),
-            );
-        }
+    let center_phase = seed as f32 * 0.073 + t_anim * 0.25;
+    let center_x_ratio = (0.47 + center_phase.sin() * 0.12).clamp(0.34, 0.62);
+    let center_y_ratio = (0.51 + (center_phase * 1.41).cos() * 0.14).clamp(0.34, 0.66);
+    let cx = width as f32 * center_x_ratio;
+    let cy = height as f32 * center_y_ratio;
+    let max_rx = ((cx - 3.0).min(width as f32 - cx - 3.0))
+        .max(12.0)
+        .min(width as f32 * 0.46);
+    let min_rx = (width as f32 * 0.10).max(5.0);
+    let max_ry = ((cy - 2.0).min(height as f32 - cy - 2.0))
+        .max(4.0)
+        .min(height as f32 * 0.38);
+    let min_ry = (height as f32 * 0.08).max(2.0).min(max_ry * 0.55);
+    let orbit_count = body_count.min(10);
+    let sun_rx = (width as f32 / 16.0).clamp(4.0, 8.0);
+    let sun_ry = (height as f32 / 8.0).clamp(2.0, 4.0);
 
-        let center_phase = seed as f32 * 0.073 + t_anim * 0.25;
-        let center_x_ratio = (0.47 + center_phase.sin() * 0.12).clamp(0.34, 0.62);
-        let center_y_ratio = (0.51 + (center_phase * 1.41).cos() * 0.14).clamp(0.34, 0.66);
-        let cx = width as f32 * center_x_ratio;
-        let cy = height as f32 * center_y_ratio;
-        let max_rx = ((cx - 3.0).min(width as f32 - cx - 3.0))
-            .max(12.0)
-            .min(width as f32 * 0.46);
-        let min_rx = (width as f32 * 0.10).max(5.0);
-        let max_ry = ((cy - 2.0).min(height as f32 - cy - 2.0))
-            .max(4.0)
-            .min(height as f32 * 0.38);
-        let min_ry = (height as f32 * 0.08).max(2.0).min(max_ry * 0.55);
-        let orbit_count = body_count.min(10);
-        let sun_rx = (width as f32 / 16.0).clamp(4.0, 8.0);
-        let sun_ry = (height as f32 / 8.0).clamp(2.0, 4.0);
-
-        // Perspective orbital plane: rear arcs now complete behind the solar sphere.
-        for i in 0..orbit_count {
-            let t = i as f32 / orbit_count.max(1) as f32;
-            let rx = min_rx + (max_rx - min_rx) * t;
-            let ry = min_ry + (max_ry - min_ry) * t;
-            let tilt = (i as f32 - orbit_count as f32 * 0.5) * 0.22;
-            for s in 0..360 {
-                if s % 3 == 1 && i > 6 {
-                    continue;
-                }
-                let a = s as f32 / 360.0 * std::f32::consts::TAU;
-                let x = cx + a.cos() * rx + a.sin() * tilt;
-                let y = cy + a.sin() * ry;
-                if x < 0.0 || y < 0.0 || x >= width as f32 || y >= height as f32 {
-                    continue;
-                }
-                let near = a.sin() > 0.0;
-                let ch = if near {
-                    if s % 7 == 0 { '═' } else { '─' }
-                } else if s % 11 == 0 {
-                    '∙'
-                } else if s % 4 == 0 {
-                    '·'
-                } else {
-                    ' '
-                };
-                if ch != ' ' {
-                    let color = if near {
-                        darken(palette[4], 45)
-                    } else {
-                        darken(palette[2], 72)
-                    };
-                    set_cell!(x.round() as i32, y.round() as i32, ch, color);
-                }
+    // Perspective orbital plane: rear arcs now complete behind the solar sphere.
+    for i in 0..orbit_count {
+        let t = i as f32 / orbit_count.max(1) as f32;
+        let rx = min_rx + (max_rx - min_rx) * t;
+        let ry = min_ry + (max_ry - min_ry) * t;
+        let tilt = (i as f32 - orbit_count as f32 * 0.5) * 0.22;
+        for s in 0..360 {
+            if s % 3 == 1 && i > 6 {
+                continue;
             }
-        }
-
-        // Solar sphere with shaded cells.
-        for yy in (cy - sun_ry - 1.0).floor() as i32..=(cy + sun_ry + 1.0).ceil() as i32 {
-            for xx in (cx - sun_rx - 1.0).floor() as i32..=(cx + sun_rx + 1.0).ceil() as i32 {
-                let dx = (xx as f32 - cx) / sun_rx;
-                let dy = (yy as f32 - cy) / sun_ry;
-                let d = (dx * dx + dy * dy).sqrt();
-                if d > 1.0 {
-                    continue;
-                }
-                let ch = if d < 0.28 {
-                    '◉'
-                } else if dx < -0.2 || dy > 0.35 {
-                    '▒'
-                } else if d > 0.78 {
-                    '░'
-                } else {
-                    '●'
-                };
-                let color = if d < 0.35 {
-                    lighten(palette[3], 35)
-                } else if dx < -0.2 || dy > 0.35 {
-                    darken(palette[3], 25)
-                } else {
-                    lighten(palette[3], 10)
-                };
-                set_cell!(xx, yy, ch, color);
+            let a = s as f32 / 360.0 * std::f32::consts::TAU;
+            let x = cx + a.cos() * rx + a.sin() * tilt;
+            let y = cy + a.sin() * ry;
+            if x < 0.0 || y < 0.0 || x >= width as f32 || y >= height as f32 {
+                continue;
             }
-        }
-
-        // Planets, moons, and little labels/ticks.
-        let planet_glyphs = ['●', '◐', '◑', '◉', '◆', '○'];
-        for i in 0..body_count {
-            let t = i as f32 / body_count.max(1) as f32;
-            let rx = min_rx + (max_rx - min_rx) * (0.12 + t * 0.88);
-            let ry = min_ry + (max_ry - min_ry) * (0.12 + t * 0.88);
-            let angle = seed as f32 * 0.017 + i as f32 * 1.37 + rng.random::<f32>() * 0.35;
-            let px = cx + angle.cos() * rx + angle.sin() * (i as f32 - 3.0) * 0.18;
-            let py = cy + angle.sin() * ry;
-            let radius = match i % 5 {
-                0 => 1,
-                1 => 2,
-                2 => 1,
-                3 => 3,
-                _ => 2,
-            };
-            let color = shift_hue(lighten(palette[1 + i % 3], 12), (i * 37) as f64);
-
-            if radius == 1 {
-                set_cell!(
-                    px.round() as i32,
-                    py.round() as i32,
-                    planet_glyphs[i % planet_glyphs.len()],
-                    color
-                );
+            let near = a.sin() > 0.0;
+            let ch = if near {
+                if s % 7 == 0 { '═' } else { '─' }
+            } else if s % 11 == 0 {
+                '∙'
+            } else if s % 4 == 0 {
+                '·'
             } else {
-                for dy in -(radius as i32)..=(radius as i32) {
-                    for dx in -(radius as i32 * 2)..=(radius as i32 * 2) {
-                        let nx = dx as f32 / (radius as f32 * 2.0);
-                        let ny = dy as f32 / radius as f32;
-                        if nx * nx + ny * ny > 1.0 {
-                            continue;
-                        }
-                        let shade = nx * -0.7 + ny * 0.45;
-                        let ch = if shade > 0.35 {
-                            '░'
-                        } else if shade < -0.35 {
-                            '▓'
-                        } else if dx == 0 && dy == 0 {
-                            '◉'
-                        } else {
-                            '●'
-                        };
-                        let fg = if shade > 0.35 {
-                            darken(color, 35)
-                        } else if shade < -0.35 {
-                            lighten(color, 25)
-                        } else {
-                            color
-                        };
-                        set_cell!(px.round() as i32 + dx, py.round() as i32 + dy, ch, fg);
-                    }
-                }
-            }
-
-            if i % 3 == 1 {
-                let moon_angle = angle * 1.9 + 0.8;
-                let mx = px + moon_angle.cos() * (radius as f32 * 3.2 + 3.0);
-                let my = py + moon_angle.sin() * (radius as f32 * 1.3 + 1.4);
-                set_cell!(
-                    mx.round() as i32,
-                    my.round() as i32,
-                    '○',
-                    lighten(palette[4], 5)
-                );
-                set_cell!(
-                    ((px + mx) * 0.5).round() as i32,
-                    ((py + my) * 0.5).round() as i32,
-                    '·',
+                ' '
+            };
+            if ch != ' ' {
+                let color = if near {
                     darken(palette[4], 45)
-                );
+                } else {
+                    darken(palette[2], 72)
+                };
+                set_cell!(x.round() as i32, y.round() as i32, ch, color);
             }
+        }
+    }
 
-            if i % 4 == 2 {
-                let lx = px.round() as i32 + radius as i32 * 2 + 2;
-                let ly = py.round() as i32;
-                for (j, ch) in format!("p{}", i + 1).chars().enumerate() {
-                    set_cell!(lx + j as i32, ly, ch, darken(palette[4], 38));
+    // Solar sphere with shaded cells.
+    for yy in (cy - sun_ry - 1.0).floor() as i32..=(cy + sun_ry + 1.0).ceil() as i32 {
+        for xx in (cx - sun_rx - 1.0).floor() as i32..=(cx + sun_rx + 1.0).ceil() as i32 {
+            let dx = (xx as f32 - cx) / sun_rx;
+            let dy = (yy as f32 - cy) / sun_ry;
+            let d = (dx * dx + dy * dy).sqrt();
+            if d > 1.0 {
+                continue;
+            }
+            let ch = if d < 0.28 {
+                '◉'
+            } else if dx < -0.2 || dy > 0.35 {
+                '▒'
+            } else if d > 0.78 {
+                '░'
+            } else {
+                '●'
+            };
+            let color = if d < 0.35 {
+                lighten(palette[3], 35)
+            } else if dx < -0.2 || dy > 0.35 {
+                darken(palette[3], 25)
+            } else {
+                lighten(palette[3], 10)
+            };
+            set_cell!(xx, yy, ch, color);
+        }
+    }
+
+    // Planets, moons, and little labels/ticks.
+    let planet_glyphs = ['●', '◐', '◑', '◉', '◆', '○'];
+    for i in 0..body_count {
+        let t = i as f32 / body_count.max(1) as f32;
+        let rx = min_rx + (max_rx - min_rx) * (0.12 + t * 0.88);
+        let ry = min_ry + (max_ry - min_ry) * (0.12 + t * 0.88);
+        let angle = seed as f32 * 0.017 + i as f32 * 1.37 + rng.random::<f32>() * 0.35;
+        let px = cx + angle.cos() * rx + angle.sin() * (i as f32 - 3.0) * 0.18;
+        let py = cy + angle.sin() * ry;
+        let radius = match i % 5 {
+            0 => 1,
+            1 => 2,
+            2 => 1,
+            3 => 3,
+            _ => 2,
+        };
+        let color = shift_hue(lighten(palette[1 + i % 3], 12), (i * 37) as f64);
+
+        if radius == 1 {
+            set_cell!(
+                px.round() as i32,
+                py.round() as i32,
+                planet_glyphs[i % planet_glyphs.len()],
+                color
+            );
+        } else {
+            for dy in -(radius as i32)..=(radius as i32) {
+                for dx in -(radius as i32 * 2)..=(radius as i32 * 2) {
+                    let nx = dx as f32 / (radius as f32 * 2.0);
+                    let ny = dy as f32 / radius as f32;
+                    if nx * nx + ny * ny > 1.0 {
+                        continue;
+                    }
+                    let shade = nx * -0.7 + ny * 0.45;
+                    let ch = if shade > 0.35 {
+                        '░'
+                    } else if shade < -0.35 {
+                        '▓'
+                    } else if dx == 0 && dy == 0 {
+                        '◉'
+                    } else {
+                        '●'
+                    };
+                    let fg = if shade > 0.35 {
+                        darken(color, 35)
+                    } else if shade < -0.35 {
+                        lighten(color, 25)
+                    } else {
+                        color
+                    };
+                    set_cell!(px.round() as i32 + dx, py.round() as i32 + dy, ch, fg);
                 }
             }
         }
 
-        // Isometric orbital stations: seed-driven boxes riding different orbital lanes.
-        let station_count = 2 + (seed as usize % 2);
-        for s in 0..station_count {
-            let lane = (0.56 + s as f32 * 0.17).min(0.92);
-            let station_angle = center_phase * (0.52 + s as f32 * 0.21)
-                + s as f32 * std::f32::consts::TAU / station_count as f32
-                + 0.85;
-            let sx = cx + station_angle.cos() * max_rx * lane;
-            let sy = cy + station_angle.sin() * max_ry * (0.66 + s as f32 * 0.08);
-            let cube_w = (width as i32 / (10 + s as i32)).clamp(6, 13);
-            let cube_h = (height as i32 / (5 + s as i32)).clamp(4, 8);
-            let max_cube_x = (width as i32 - cube_w - 7).max(1);
-            let max_cube_y = (height as i32 - cube_h - 4).max(2);
-            let cube_x = (sx.round() as i32 - cube_w / 2).clamp(1, max_cube_x);
-            let cube_y = (sy.round() as i32 - cube_h / 2).clamp(2, max_cube_y);
-            let off_x: i32 = if sx >= cx { 4 } else { -4 };
-            let off_y: i32 = if s % 2 == 0 { -2 } else { 2 };
-            let back_x = cube_x + off_x;
-            let back_y = cube_y + off_y;
-            let cube_color = shift_hue(lighten(palette[2], 25), s as f64 * 46.0);
-            let back_color = darken(cube_color, 18);
-
-            for x in 0..=cube_w {
-                set_cell!(cube_x + x, cube_y, '─', cube_color);
-                set_cell!(cube_x + x, cube_y + cube_h, '─', cube_color);
-                set_cell!(back_x + x, back_y, '─', back_color);
-                set_cell!(back_x + x, back_y + cube_h, '─', back_color);
-            }
-            for y in 0..=cube_h {
-                set_cell!(cube_x, cube_y + y, '│', cube_color);
-                set_cell!(cube_x + cube_w, cube_y + y, '│', cube_color);
-                set_cell!(back_x, back_y + y, '│', back_color);
-                set_cell!(back_x + cube_w, back_y + y, '│', back_color);
-            }
-            for &(x, y, ch) in &[
-                (cube_x, cube_y, '┌'),
-                (cube_x + cube_w, cube_y, '┐'),
-                (cube_x, cube_y + cube_h, '└'),
-                (cube_x + cube_w, cube_y + cube_h, '┘'),
-                (back_x, back_y, '┌'),
-                (back_x + cube_w, back_y, '┐'),
-                (back_x, back_y + cube_h, '└'),
-                (back_x + cube_w, back_y + cube_h, '┘'),
-            ] {
-                set_cell!(x, y, ch, lighten(cube_color, 10));
-            }
-
-            let connector = if off_x > 0 { '╱' } else { '╲' };
-            for k in 1..=off_x.abs() {
-                let dx = if off_x > 0 { k } else { -k };
-                let dy = off_y * k / off_x.abs();
-                set_cell!(cube_x + dx, cube_y + dy, connector, darken(cube_color, 5));
-                set_cell!(
-                    cube_x + cube_w + dx,
-                    cube_y + dy,
-                    connector,
-                    darken(cube_color, 5)
-                );
-                set_cell!(
-                    cube_x + dx,
-                    cube_y + cube_h + dy,
-                    connector,
-                    darken(cube_color, 5)
-                );
-                set_cell!(
-                    cube_x + cube_w + dx,
-                    cube_y + cube_h + dy,
-                    connector,
-                    darken(cube_color, 5)
-                );
-            }
-            for y in 1..cube_h {
-                for x in 1..cube_w {
-                    if (x * 2 + y + s as i32) % 4 == 0 {
-                        set_cell!(cube_x + x, cube_y + y, '▪', darken(cube_color, 30));
-                    }
-                }
-            }
-
-            let dock_dir: i32 = if sx < cx { 1 } else { -1 };
-            let dock_y = cube_y + cube_h / 2;
-            for k in 1..=5 {
-                set_cell!(
-                    cube_x + if dock_dir > 0 { cube_w + k } else { -k },
-                    dock_y,
-                    '─',
-                    darken(cube_color, 20)
-                );
-            }
+        if i % 3 == 1 {
+            let moon_angle = angle * 1.9 + 0.8;
+            let mx = px + moon_angle.cos() * (radius as f32 * 3.2 + 3.0);
+            let my = py + moon_angle.sin() * (radius as f32 * 1.3 + 1.4);
             set_cell!(
-                cube_x + if dock_dir > 0 { cube_w + 6 } else { -6 },
-                dock_y,
-                '◇',
-                lighten(palette[3], 20)
+                mx.round() as i32,
+                my.round() as i32,
+                '○',
+                lighten(palette[4], 5)
+            );
+            set_cell!(
+                ((px + mx) * 0.5).round() as i32,
+                ((py + my) * 0.5).round() as i32,
+                '·',
+                darken(palette[4], 45)
             );
         }
 
-        // Solar panel squares and a probe mast, also attached to a seed-shifting lane.
-        let panel_angle = (center_phase * 0.88 - 0.20).rem_euclid(std::f32::consts::TAU);
-        let panel_anchor_x = cx + panel_angle.cos() * max_rx * 0.78;
-        let panel_anchor_y = cy + panel_angle.sin() * max_ry * 0.86;
-        let panel_x_max = (width as i32 - 32).max(2);
-        let panel_y_max = (height as i32 - 7).max(2);
-        let panel_x = (panel_anchor_x.round() as i32 - 13).clamp(2, panel_x_max);
-        let panel_y = (panel_anchor_y.round() as i32 - 2).clamp(2, panel_y_max);
-        for p in 0..3 {
-            let x0 = panel_x + p * 9;
-            let y0 = panel_y + if p % 2 == 0 { 0 } else { -1 };
-            for x in 0..7 {
-                set_cell!(x0 + x, y0, '─', lighten(palette[1], 20));
-                set_cell!(x0 + x, y0 + 4, '─', lighten(palette[1], 20));
-            }
-            for y in 0..=4 {
-                set_cell!(x0, y0 + y, '│', lighten(palette[1], 20));
-                set_cell!(x0 + 7, y0 + y, '│', lighten(palette[1], 20));
-            }
-            set_cell!(x0, y0, '┌', lighten(palette[1], 35));
-            set_cell!(x0 + 7, y0, '┐', lighten(palette[1], 35));
-            set_cell!(x0, y0 + 4, '└', lighten(palette[1], 35));
-            set_cell!(x0 + 7, y0 + 4, '┘', lighten(palette[1], 35));
-            for x in 1..7 {
-                for y in 1..4 {
-                    if (x + y + p) % 2 == 0 {
-                        set_cell!(x0 + x, y0 + y, '□', darken(palette[1], 15));
-                    }
-                }
+        if i % 4 == 2 {
+            let lx = px.round() as i32 + radius as i32 * 2 + 2;
+            let ly = py.round() as i32;
+            for (j, ch) in format!("p{}", i + 1).chars().enumerate() {
+                set_cell!(lx + j as i32, ly, ch, darken(palette[4], 38));
             }
         }
-        let mast_x = panel_x + 27;
-        for y in panel_y - 5..=panel_y + 2 {
-            set_cell!(mast_x, y, '│', palette[4]);
-        }
-        set_cell!(mast_x, panel_y - 6, '◇', lighten(palette[3], 25));
-        set_cell!(mast_x - 1, panel_y - 3, '╱', palette[4]);
-        set_cell!(mast_x + 1, panel_y - 3, '╲', palette[4]);
+    }
 
-        // Perspective rays from the star through the orbital plane.
-        for ray in -3..=3 {
-            let angle = ray as f32 * 0.18 + 0.9;
-            for step in 6..(width / 3).max(8) {
-                let x = cx as i32 + (angle.cos() * step as f32 * 1.8).round() as i32;
-                let y = cy as i32 + (angle.sin() * step as f32 * 0.55).round() as i32;
-                if x >= 0
-                    && y >= 0
-                    && (x as usize) < width
-                    && (y as usize) < height
-                    && grid[y as usize][x as usize].ch == ' '
-                    && step % 4 == 0
-                {
-                    set_cell!(x, y, '·', darken(palette[3], 55));
+    // Isometric orbital stations: seed-driven boxes riding different orbital lanes.
+    let station_count = 2 + (seed as usize % 2);
+    for s in 0..station_count {
+        let lane = (0.56 + s as f32 * 0.17).min(0.92);
+        let station_angle = center_phase * (0.52 + s as f32 * 0.21)
+            + s as f32 * std::f32::consts::TAU / station_count as f32
+            + 0.85;
+        let sx = cx + station_angle.cos() * max_rx * lane;
+        let sy = cy + station_angle.sin() * max_ry * (0.66 + s as f32 * 0.08);
+        let cube_w = (width as i32 / (10 + s as i32)).clamp(6, 13);
+        let cube_h = (height as i32 / (5 + s as i32)).clamp(4, 8);
+        let max_cube_x = (width as i32 - cube_w - 7).max(1);
+        let max_cube_y = (height as i32 - cube_h - 4).max(2);
+        let cube_x = (sx.round() as i32 - cube_w / 2).clamp(1, max_cube_x);
+        let cube_y = (sy.round() as i32 - cube_h / 2).clamp(2, max_cube_y);
+        let off_x: i32 = if sx >= cx { 4 } else { -4 };
+        let off_y: i32 = if s % 2 == 0 { -2 } else { 2 };
+        let back_x = cube_x + off_x;
+        let back_y = cube_y + off_y;
+        let cube_color = shift_hue(lighten(palette[2], 25), s as f64 * 46.0);
+        let back_color = darken(cube_color, 18);
+
+        for x in 0..=cube_w {
+            set_cell!(cube_x + x, cube_y, '─', cube_color);
+            set_cell!(cube_x + x, cube_y + cube_h, '─', cube_color);
+            set_cell!(back_x + x, back_y, '─', back_color);
+            set_cell!(back_x + x, back_y + cube_h, '─', back_color);
+        }
+        for y in 0..=cube_h {
+            set_cell!(cube_x, cube_y + y, '│', cube_color);
+            set_cell!(cube_x + cube_w, cube_y + y, '│', cube_color);
+            set_cell!(back_x, back_y + y, '│', back_color);
+            set_cell!(back_x + cube_w, back_y + y, '│', back_color);
+        }
+        for &(x, y, ch) in &[
+            (cube_x, cube_y, '┌'),
+            (cube_x + cube_w, cube_y, '┐'),
+            (cube_x, cube_y + cube_h, '└'),
+            (cube_x + cube_w, cube_y + cube_h, '┘'),
+            (back_x, back_y, '┌'),
+            (back_x + cube_w, back_y, '┐'),
+            (back_x, back_y + cube_h, '└'),
+            (back_x + cube_w, back_y + cube_h, '┘'),
+        ] {
+            set_cell!(x, y, ch, lighten(cube_color, 10));
+        }
+
+        let connector = if off_x > 0 { '╱' } else { '╲' };
+        for k in 1..=off_x.abs() {
+            let dx = if off_x > 0 { k } else { -k };
+            let dy = off_y * k / off_x.abs();
+            set_cell!(cube_x + dx, cube_y + dy, connector, darken(cube_color, 5));
+            set_cell!(
+                cube_x + cube_w + dx,
+                cube_y + dy,
+                connector,
+                darken(cube_color, 5)
+            );
+            set_cell!(
+                cube_x + dx,
+                cube_y + cube_h + dy,
+                connector,
+                darken(cube_color, 5)
+            );
+            set_cell!(
+                cube_x + cube_w + dx,
+                cube_y + cube_h + dy,
+                connector,
+                darken(cube_color, 5)
+            );
+        }
+        for y in 1..cube_h {
+            for x in 1..cube_w {
+                if (x * 2 + y + s as i32) % 4 == 0 {
+                    set_cell!(cube_x + x, cube_y + y, '▪', darken(cube_color, 30));
                 }
             }
         }
+
+        let dock_dir: i32 = if sx < cx { 1 } else { -1 };
+        let dock_y = cube_y + cube_h / 2;
+        for k in 1..=5 {
+            set_cell!(
+                cube_x + if dock_dir > 0 { cube_w + k } else { -k },
+                dock_y,
+                '─',
+                darken(cube_color, 20)
+            );
+        }
+        set_cell!(
+            cube_x + if dock_dir > 0 { cube_w + 6 } else { -6 },
+            dock_y,
+            '◇',
+            lighten(palette[3], 20)
+        );
+    }
+
+    // Solar panel squares and a probe mast, also attached to a seed-shifting lane.
+    let panel_angle = (center_phase * 0.88 - 0.20).rem_euclid(std::f32::consts::TAU);
+    let panel_anchor_x = cx + panel_angle.cos() * max_rx * 0.78;
+    let panel_anchor_y = cy + panel_angle.sin() * max_ry * 0.86;
+    let panel_x_max = (width as i32 - 32).max(2);
+    let panel_y_max = (height as i32 - 7).max(2);
+    let panel_x = (panel_anchor_x.round() as i32 - 13).clamp(2, panel_x_max);
+    let panel_y = (panel_anchor_y.round() as i32 - 2).clamp(2, panel_y_max);
+    for p in 0..3 {
+        let x0 = panel_x + p * 9;
+        let y0 = panel_y + if p % 2 == 0 { 0 } else { -1 };
+        for x in 0..7 {
+            set_cell!(x0 + x, y0, '─', lighten(palette[1], 20));
+            set_cell!(x0 + x, y0 + 4, '─', lighten(palette[1], 20));
+        }
+        for y in 0..=4 {
+            set_cell!(x0, y0 + y, '│', lighten(palette[1], 20));
+            set_cell!(x0 + 7, y0 + y, '│', lighten(palette[1], 20));
+        }
+        set_cell!(x0, y0, '┌', lighten(palette[1], 35));
+        set_cell!(x0 + 7, y0, '┐', lighten(palette[1], 35));
+        set_cell!(x0, y0 + 4, '└', lighten(palette[1], 35));
+        set_cell!(x0 + 7, y0 + 4, '┘', lighten(palette[1], 35));
+        for x in 1..7 {
+            for y in 1..4 {
+                if (x + y + p) % 2 == 0 {
+                    set_cell!(x0 + x, y0 + y, '□', darken(palette[1], 15));
+                }
+            }
+        }
+    }
+    let mast_x = panel_x + 27;
+    for y in panel_y - 5..=panel_y + 2 {
+        set_cell!(mast_x, y, '│', palette[4]);
+    }
+    set_cell!(mast_x, panel_y - 6, '◇', lighten(palette[3], 25));
+    set_cell!(mast_x - 1, panel_y - 3, '╱', palette[4]);
+    set_cell!(mast_x + 1, panel_y - 3, '╲', palette[4]);
+
+    // Perspective rays from the star through the orbital plane.
+    for ray in -3..=3 {
+        let angle = ray as f32 * 0.18 + 0.9;
+        for step in 6..(width / 3).max(8) {
+            let x = cx as i32 + (angle.cos() * step as f32 * 1.8).round() as i32;
+            let y = cy as i32 + (angle.sin() * step as f32 * 0.55).round() as i32;
+            if x >= 0
+                && y >= 0
+                && (x as usize) < width
+                && (y as usize) < height
+                && grid[y as usize][x as usize].ch == ' '
+                && step % 4 == 0
+            {
+                set_cell!(x, y, '·', darken(palette[3], 55));
+            }
+        }
+    }
     grid
 }
 
@@ -468,7 +499,11 @@ pub(crate) fn draw_hypercube(
         for _ in 0..(width * height / 70).max(3) {
             let x = rng.random_range(0..width);
             let y = rng.random_range(0..height);
-            let ch = if rng.random_range(0..5) == 0 { '∙' } else { '·' };
+            let ch = if rng.random_range(0..5) == 0 {
+                '∙'
+            } else {
+                '·'
+            };
             grid[y][x] = Cell::new(ch, star);
         }
     });
@@ -575,7 +610,6 @@ pub(crate) fn draw_hypercube(
         }
     });
 }
-
 
 // --- flux : seed-stable particles advected through a looping vector field. ---
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
@@ -687,7 +721,6 @@ pub(crate) fn draw_flux(
     });
 }
 
-
 // --- fireworks : phased rockets and ballistic sparks in a seamless loop. ---
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn draw_fireworks(
@@ -725,7 +758,13 @@ pub(crate) fn draw_fireworks(
             let y = rng.random_range(0..height.saturating_sub(2).max(1));
             let phase = rng.random_range(0.0..TAU);
             let glow = (t * 0.8 + phase).sin();
-            let ch = if glow > 0.72 { '✦' } else if glow > 0.0 { '∙' } else { '·' };
+            let ch = if glow > 0.72 {
+                '✦'
+            } else if glow > 0.0 {
+                '∙'
+            } else {
+                '·'
+            };
             let col = if glow > 0.72 {
                 darken(palette[4], 28)
             } else {
@@ -789,7 +828,13 @@ pub(crate) fn draw_fireworks(
                         darken(color, (tail * 12).min(70) as u8),
                     );
                 }
-                pp_put(grid, x.round() as i32, y.round() as i32, '▲', lighten(color, 12));
+                pp_put(
+                    grid,
+                    x.round() as i32,
+                    y.round() as i32,
+                    '▲',
+                    lighten(color, 12),
+                );
                 continue;
             }
 
@@ -838,7 +883,6 @@ pub(crate) fn draw_fireworks(
         }
     });
 }
-
 
 /// murmuration: starling flocks pouring across a banded dusk sky. Every bird
 /// is a pure function of (seed, t): flock centers wander wide slow loops while
@@ -977,7 +1021,6 @@ pub(crate) fn draw_murmuration(
     });
 }
 
-
 /// lanterns: paper lanterns lifting off dark water. Each lantern rises on its
 /// own wrapped cycle with a swaying two-ring halo, a flicker, and a squashed
 /// jittered reflection; spawn, drift, and fade are all pure (seed, t).
@@ -1023,7 +1066,11 @@ pub(crate) fn draw_lanterns(
             let x = rng.random_range(0..width);
             let y = rng.random_range(0..(height * 2 / 3).max(1));
             let phase = rng.random_range(0.0..TAU);
-            let ch = if (t * 0.6 + phase).sin() > 0.8 { '✦' } else { '·' };
+            let ch = if (t * 0.6 + phase).sin() > 0.8 {
+                '✦'
+            } else {
+                '·'
+            };
             lput(grid, x as i32, y as i32, ch, darken(palette[4], 45));
         }
     });
@@ -1108,7 +1155,6 @@ pub(crate) fn draw_lanterns(
     });
 }
 
-
 /// tide: surf washing a seeded shore. Sand, speckle, and shells are hashed
 /// structure; the waterline is up to four superposed sines of t around a
 /// seeded shoreline, and freshly exposed sand stays dark and "wet" by sampling
@@ -1143,7 +1189,9 @@ pub(crate) fn draw_tide(
     let shore_p1 = rng.random_range(0.0..TAU);
     let shore_p2 = rng.random_range(0.0..TAU);
     let shore_at = |x: f32| {
-        shore_base + shore_a1 * (x * 0.045 + shore_p1).sin() + shore_a2 * (x * 0.11 + shore_p2).sin()
+        shore_base
+            + shore_a1 * (x * 0.045 + shore_p1).sin()
+            + shore_a2 * (x * 0.11 + shore_p2).sin()
     };
     let mut wp = [(0.0f32, 0.0f32, 0.0f32); 4];
     measure_layer("tide", "waves", || {
@@ -1412,7 +1460,13 @@ pub(crate) fn draw_fireflies(
                 let hb = pp_hash2(x as i32, y as i32, seed ^ 0x60A5_5A60);
                 let blade = hb + sway * 0.18;
                 if blade > 0.78 {
-                    ch = if hb > 0.93 { 'ʌ' } else if hb > 0.85 { '|' } else { '/' };
+                    ch = if hb > 0.93 {
+                        'ʌ'
+                    } else if hb > 0.85 {
+                        '|'
+                    } else {
+                        '/'
+                    };
                     col = if hb > 0.90 { grass_hi } else { grass_col };
                 } else if blade > 0.62 {
                     ch = '·';
@@ -1535,8 +1589,7 @@ pub(crate) fn draw_meteors(
             let mut zbg = lerp_color(sky_top, sky_low, fy / height as f32);
 
             // Milky way: a diagonal band of dim dust.
-            let band_d =
-                ((fy / height as f32) - 0.35 - 0.25 * (fx / width as f32)).abs();
+            let band_d = ((fy / height as f32) - 0.35 - 0.25 * (fx / width as f32)).abs();
             let h = pp_hash2(x as i32, y as i32, seed ^ 0x5E10_5E10);
             let mut ch = ' ';
             let mut col = zbg;
@@ -1578,7 +1631,10 @@ pub(crate) fn draw_meteors(
         let (ch, col) = if s.big {
             ('✦', lerp_color(darken(star_col, 30), star_col, tw))
         } else if tw > 0.25 {
-            ('·', lerp_color(darken(star_col, 45), darken(star_col, 10), tw))
+            (
+                '·',
+                lerp_color(darken(star_col, 45), darken(star_col, 10), tw),
+            )
         } else {
             continue;
         };
@@ -1642,290 +1698,484 @@ pub(crate) fn draw_meteors(
             }
         }
         if hxi >= 0 && hyi >= 0 && hxi < width as i32 && hyi < height as i32 {
-            grid[hyi as usize][hxi as usize] =
-                Cell::with_bg('✦', lighten(hot_col, 8), grid[hyi as usize][hxi as usize].bg);
+            grid[hyi as usize][hxi as usize] = Cell::with_bg(
+                '✦',
+                lighten(hot_col, 8),
+                grid[hyi as usize][hxi as usize].bg,
+            );
         }
     }
 }
 
 /// Dispatch arm for mode(s): solar-system (moved verbatim from run()).
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn cli_solar_system(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
-        grid = draw_solar_system(grid, width, height, seed, palette, rng, t_anim, &args);
+pub(crate) fn cli_solar_system(
+    mut grid: Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: [Color; 5],
+    mut rng: StdRng,
+    t_anim: f32,
+    term_w: u16,
+    term_h: u16,
+    args: &[String],
+    mode: &str,
+    theme_name: &str,
+) -> (Grid, bool) {
+    grid = draw_solar_system(grid, width, height, seed, palette, rng, t_anim, &args);
     (grid, false)
 }
 
 /// Dispatch arm for mode(s): hypercube (moved verbatim from run()).
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn cli_hypercube(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
-        let copies: usize = args
-            .get(4)
-            .and_then(|s| s.parse().ok())
-            .unwrap_or_else(|| param_f32("COPIES", 3.0) as usize);
-        let speed: f32 = args
-            .get(5)
-            .and_then(|s| s.parse().ok())
-            .unwrap_or_else(|| param_f32("SPEED", 1.0));
-        let ghosts: usize = args
-            .get(6)
-            .and_then(|s| s.parse().ok())
-            .unwrap_or_else(|| param_f32("GHOSTS", 2.0) as usize);
-        draw_hypercube(
-            &mut grid,
-            width,
-            height,
-            seed,
-            &palette,
-            &mut rng,
-            t_anim,
-            copies,
-            speed,
-            ghosts,
-        );
+pub(crate) fn cli_hypercube(
+    mut grid: Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: [Color; 5],
+    mut rng: StdRng,
+    t_anim: f32,
+    term_w: u16,
+    term_h: u16,
+    args: &[String],
+    mode: &str,
+    theme_name: &str,
+) -> (Grid, bool) {
+    let copies: usize = args
+        .get(4)
+        .and_then(|s| s.parse().ok())
+        .unwrap_or_else(|| param_f32("COPIES", 3.0) as usize);
+    let speed: f32 = args
+        .get(5)
+        .and_then(|s| s.parse().ok())
+        .unwrap_or_else(|| param_f32("SPEED", 1.0));
+    let ghosts: usize = args
+        .get(6)
+        .and_then(|s| s.parse().ok())
+        .unwrap_or_else(|| param_f32("GHOSTS", 2.0) as usize);
+    draw_hypercube(
+        &mut grid, width, height, seed, &palette, &mut rng, t_anim, copies, speed, ghosts,
+    );
     (grid, false)
 }
 
 /// Dispatch arm for mode(s): flux (moved verbatim from run()).
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn cli_flux(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
-        let count: usize = args
-            .get(4)
-            .and_then(|s| s.parse().ok())
-            .unwrap_or_else(|| param_f32("COUNT", 58.0) as usize);
-        let trail: usize = args
-            .get(5)
-            .and_then(|s| s.parse().ok())
-            .unwrap_or_else(|| param_f32("TRAIL", 8.0) as usize);
-        let speed: f32 = args
-            .get(6)
-            .and_then(|s| s.parse().ok())
-            .unwrap_or_else(|| param_f32("SPEED", 1.0));
-        draw_flux(
-            &mut grid,
-            width,
-            height,
-            seed,
-            &palette,
-            &mut rng,
-            t_anim,
-            count,
-            trail,
-            speed,
-        );
+pub(crate) fn cli_flux(
+    mut grid: Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: [Color; 5],
+    mut rng: StdRng,
+    t_anim: f32,
+    term_w: u16,
+    term_h: u16,
+    args: &[String],
+    mode: &str,
+    theme_name: &str,
+) -> (Grid, bool) {
+    let count: usize = args
+        .get(4)
+        .and_then(|s| s.parse().ok())
+        .unwrap_or_else(|| param_f32("COUNT", 58.0) as usize);
+    let trail: usize = args
+        .get(5)
+        .and_then(|s| s.parse().ok())
+        .unwrap_or_else(|| param_f32("TRAIL", 8.0) as usize);
+    let speed: f32 = args
+        .get(6)
+        .and_then(|s| s.parse().ok())
+        .unwrap_or_else(|| param_f32("SPEED", 1.0));
+    draw_flux(
+        &mut grid, width, height, seed, &palette, &mut rng, t_anim, count, trail, speed,
+    );
     (grid, false)
 }
 
 /// Dispatch arm for mode(s): fireworks (moved verbatim from run()).
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn cli_fireworks(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
-        let bursts: usize = args
-            .get(4)
-            .and_then(|s| s.parse().ok())
-            .unwrap_or_else(|| param_f32("BURSTS", 6.0) as usize);
-        let sparks: usize = args
-            .get(5)
-            .and_then(|s| s.parse().ok())
-            .unwrap_or_else(|| param_f32("SPARKS", 22.0) as usize);
-        let speed: f32 = args
-            .get(6)
-            .and_then(|s| s.parse().ok())
-            .unwrap_or_else(|| param_f32("SPEED", 1.0));
-        draw_fireworks(
-            &mut grid,
-            width,
-            height,
-            seed,
-            &palette,
-            &mut rng,
-            t_anim,
-            bursts,
-            sparks,
-            speed,
-        );
+pub(crate) fn cli_fireworks(
+    mut grid: Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: [Color; 5],
+    mut rng: StdRng,
+    t_anim: f32,
+    term_w: u16,
+    term_h: u16,
+    args: &[String],
+    mode: &str,
+    theme_name: &str,
+) -> (Grid, bool) {
+    let bursts: usize = args
+        .get(4)
+        .and_then(|s| s.parse().ok())
+        .unwrap_or_else(|| param_f32("BURSTS", 6.0) as usize);
+    let sparks: usize = args
+        .get(5)
+        .and_then(|s| s.parse().ok())
+        .unwrap_or_else(|| param_f32("SPARKS", 22.0) as usize);
+    let speed: f32 = args
+        .get(6)
+        .and_then(|s| s.parse().ok())
+        .unwrap_or_else(|| param_f32("SPEED", 1.0));
+    draw_fireworks(
+        &mut grid, width, height, seed, &palette, &mut rng, t_anim, bursts, sparks, speed,
+    );
     (grid, false)
 }
 
 /// Dispatch arm for mode(s): rhizome (moved verbatim from run()).
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn cli_rhizome(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
-        let count: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(5);
-        let depth: u32 = args.get(5).and_then(|s| s.parse().ok()).unwrap_or(3);
-        draw_rhizome(&mut grid, width, height, seed, &palette, &mut rng, t_anim, count, depth);
+pub(crate) fn cli_rhizome(
+    mut grid: Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: [Color; 5],
+    mut rng: StdRng,
+    t_anim: f32,
+    term_w: u16,
+    term_h: u16,
+    args: &[String],
+    mode: &str,
+    theme_name: &str,
+) -> (Grid, bool) {
+    let count: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(5);
+    let depth: u32 = args.get(5).and_then(|s| s.parse().ok()).unwrap_or(3);
+    draw_rhizome(
+        &mut grid, width, height, seed, &palette, &mut rng, t_anim, count, depth,
+    );
     (grid, false)
 }
 
 /// Dispatch arm for mode(s): effigy (moved verbatim from run()).
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn cli_effigy(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
-        let count: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(6);
-        draw_effigy(&mut grid, width, height, seed, &palette, &mut rng, t_anim, count);
+pub(crate) fn cli_effigy(
+    mut grid: Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: [Color; 5],
+    mut rng: StdRng,
+    t_anim: f32,
+    term_w: u16,
+    term_h: u16,
+    args: &[String],
+    mode: &str,
+    theme_name: &str,
+) -> (Grid, bool) {
+    let count: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(6);
+    draw_effigy(
+        &mut grid, width, height, seed, &palette, &mut rng, t_anim, count,
+    );
     (grid, false)
 }
 
 /// Dispatch arm for mode(s): dendrite (moved verbatim from run()).
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn cli_dendrite(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
-        let seeds: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(3);
-        let depth: u32 = args.get(5).and_then(|s| s.parse().ok()).unwrap_or(4);
-        draw_dendrite(&mut grid, width, height, seed, &palette, &mut rng, t_anim, seeds, depth);
+pub(crate) fn cli_dendrite(
+    mut grid: Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: [Color; 5],
+    mut rng: StdRng,
+    t_anim: f32,
+    term_w: u16,
+    term_h: u16,
+    args: &[String],
+    mode: &str,
+    theme_name: &str,
+) -> (Grid, bool) {
+    let seeds: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(3);
+    let depth: u32 = args.get(5).and_then(|s| s.parse().ok()).unwrap_or(4);
+    draw_dendrite(
+        &mut grid, width, height, seed, &palette, &mut rng, t_anim, seeds, depth,
+    );
     (grid, false)
 }
 
 /// Dispatch arm for mode(s): totem (moved verbatim from run()).
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn cli_totem(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
-        let poles: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(2);
-        draw_totem(&mut grid, width, height, seed, &palette, &mut rng, t_anim, poles);
+pub(crate) fn cli_totem(
+    mut grid: Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: [Color; 5],
+    mut rng: StdRng,
+    t_anim: f32,
+    term_w: u16,
+    term_h: u16,
+    args: &[String],
+    mode: &str,
+    theme_name: &str,
+) -> (Grid, bool) {
+    let poles: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(2);
+    draw_totem(
+        &mut grid, width, height, seed, &palette, &mut rng, t_anim, poles,
+    );
     (grid, false)
 }
 
 /// Dispatch arm for mode(s): chimera (moved verbatim from run()).
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn cli_chimera(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
-        let density: u32 = args
-            .get(4)
-            .and_then(|s| s.parse().ok())
-            .unwrap_or_else(|| param_f32("DENS", 50.0) as u32);
-        let drift: f32 = param_f32("DRIFT", 2.0);
-        draw_chimera(&mut grid, width, height, seed, &palette, &mut rng, t_anim, density, drift);
+pub(crate) fn cli_chimera(
+    mut grid: Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: [Color; 5],
+    mut rng: StdRng,
+    t_anim: f32,
+    term_w: u16,
+    term_h: u16,
+    args: &[String],
+    mode: &str,
+    theme_name: &str,
+) -> (Grid, bool) {
+    let density: u32 = args
+        .get(4)
+        .and_then(|s| s.parse().ok())
+        .unwrap_or_else(|| param_f32("DENS", 50.0) as u32);
+    let drift: f32 = param_f32("DRIFT", 2.0);
+    draw_chimera(
+        &mut grid, width, height, seed, &palette, &mut rng, t_anim, density, drift,
+    );
     (grid, false)
 }
 
 /// Dispatch arm for mode(s): murmuration (moved verbatim from run()).
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn cli_murmuration(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
-        let birds: usize = args
-            .get(4)
-            .and_then(|s| s.parse().ok())
-            .unwrap_or_else(|| param_f32("BIRDS", 140.0) as usize);
-        let flocks: usize = args
-            .get(5)
-            .and_then(|s| s.parse().ok())
-            .unwrap_or_else(|| param_f32("FLOCKS", 3.0) as usize);
-        let speed: f32 = args
-            .get(6)
-            .and_then(|s| s.parse().ok())
-            .unwrap_or_else(|| param_f32("SPEED", 1.0));
-        draw_murmuration(
-            &mut grid, width, height, seed, &palette, &mut rng, t_anim, birds, flocks, speed,
-        );
+pub(crate) fn cli_murmuration(
+    mut grid: Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: [Color; 5],
+    mut rng: StdRng,
+    t_anim: f32,
+    term_w: u16,
+    term_h: u16,
+    args: &[String],
+    mode: &str,
+    theme_name: &str,
+) -> (Grid, bool) {
+    let birds: usize = args
+        .get(4)
+        .and_then(|s| s.parse().ok())
+        .unwrap_or_else(|| param_f32("BIRDS", 140.0) as usize);
+    let flocks: usize = args
+        .get(5)
+        .and_then(|s| s.parse().ok())
+        .unwrap_or_else(|| param_f32("FLOCKS", 3.0) as usize);
+    let speed: f32 = args
+        .get(6)
+        .and_then(|s| s.parse().ok())
+        .unwrap_or_else(|| param_f32("SPEED", 1.0));
+    draw_murmuration(
+        &mut grid, width, height, seed, &palette, &mut rng, t_anim, birds, flocks, speed,
+    );
     (grid, false)
 }
 
 /// Dispatch arm for mode(s): lanterns (moved verbatim from run()).
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn cli_lanterns(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
-        let count: usize = args
-            .get(4)
-            .and_then(|s| s.parse().ok())
-            .unwrap_or_else(|| param_f32("COUNT", 7.0) as usize);
-        let rise: f32 = args
-            .get(5)
-            .and_then(|s| s.parse().ok())
-            .unwrap_or_else(|| param_f32("RISE", 1.0));
-        let sway: f32 = args
-            .get(6)
-            .and_then(|s| s.parse().ok())
-            .unwrap_or_else(|| param_f32("SWAY", 1.0));
-        draw_lanterns(
-            &mut grid, width, height, seed, &palette, &mut rng, t_anim, count, rise, sway,
-        );
+pub(crate) fn cli_lanterns(
+    mut grid: Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: [Color; 5],
+    mut rng: StdRng,
+    t_anim: f32,
+    term_w: u16,
+    term_h: u16,
+    args: &[String],
+    mode: &str,
+    theme_name: &str,
+) -> (Grid, bool) {
+    let count: usize = args
+        .get(4)
+        .and_then(|s| s.parse().ok())
+        .unwrap_or_else(|| param_f32("COUNT", 7.0) as usize);
+    let rise: f32 = args
+        .get(5)
+        .and_then(|s| s.parse().ok())
+        .unwrap_or_else(|| param_f32("RISE", 1.0));
+    let sway: f32 = args
+        .get(6)
+        .and_then(|s| s.parse().ok())
+        .unwrap_or_else(|| param_f32("SWAY", 1.0));
+    draw_lanterns(
+        &mut grid, width, height, seed, &palette, &mut rng, t_anim, count, rise, sway,
+    );
     (grid, false)
 }
 
 /// Dispatch arm for mode(s): tide (moved verbatim from run()).
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn cli_tide(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
-        let waves: usize = args
-            .get(4)
-            .and_then(|s| s.parse().ok())
-            .unwrap_or_else(|| param_f32("WAVES", 2.0) as usize);
-        let amp: f32 = args
-            .get(5)
-            .and_then(|s| s.parse().ok())
-            .unwrap_or_else(|| param_f32("AMP", 1.0));
-        let speed: f32 = args
-            .get(6)
-            .and_then(|s| s.parse().ok())
-            .unwrap_or_else(|| param_f32("SPEED", 1.0));
-        draw_tide(
-            &mut grid, width, height, seed, &palette, &mut rng, t_anim, waves, amp, speed,
-        );
+pub(crate) fn cli_tide(
+    mut grid: Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: [Color; 5],
+    mut rng: StdRng,
+    t_anim: f32,
+    term_w: u16,
+    term_h: u16,
+    args: &[String],
+    mode: &str,
+    theme_name: &str,
+) -> (Grid, bool) {
+    let waves: usize = args
+        .get(4)
+        .and_then(|s| s.parse().ok())
+        .unwrap_or_else(|| param_f32("WAVES", 2.0) as usize);
+    let amp: f32 = args
+        .get(5)
+        .and_then(|s| s.parse().ok())
+        .unwrap_or_else(|| param_f32("AMP", 1.0));
+    let speed: f32 = args
+        .get(6)
+        .and_then(|s| s.parse().ok())
+        .unwrap_or_else(|| param_f32("SPEED", 1.0));
+    draw_tide(
+        &mut grid, width, height, seed, &palette, &mut rng, t_anim, waves, amp, speed,
+    );
     (grid, false)
 }
 
 /// Dispatch arm for mode(s): fireflies (moved verbatim from run()).
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn cli_fireflies(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
-        let count: usize = args
-            .get(4)
-            .and_then(|s| s.parse().ok())
-            .unwrap_or_else(|| param_f32("COUNT", 14.0) as usize);
-        let glow: f32 = args
-            .get(5)
-            .and_then(|s| s.parse().ok())
-            .unwrap_or_else(|| param_f32("GLOW", 1.0));
-        let speed: f32 = args
-            .get(6)
-            .and_then(|s| s.parse().ok())
-            .unwrap_or_else(|| param_f32("SPEED", 1.0));
-        draw_fireflies(
-            &mut grid, width, height, seed, &palette, &mut rng, t_anim, count, glow, speed,
-        );
+pub(crate) fn cli_fireflies(
+    mut grid: Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: [Color; 5],
+    mut rng: StdRng,
+    t_anim: f32,
+    term_w: u16,
+    term_h: u16,
+    args: &[String],
+    mode: &str,
+    theme_name: &str,
+) -> (Grid, bool) {
+    let count: usize = args
+        .get(4)
+        .and_then(|s| s.parse().ok())
+        .unwrap_or_else(|| param_f32("COUNT", 14.0) as usize);
+    let glow: f32 = args
+        .get(5)
+        .and_then(|s| s.parse().ok())
+        .unwrap_or_else(|| param_f32("GLOW", 1.0));
+    let speed: f32 = args
+        .get(6)
+        .and_then(|s| s.parse().ok())
+        .unwrap_or_else(|| param_f32("SPEED", 1.0));
+    draw_fireflies(
+        &mut grid, width, height, seed, &palette, &mut rng, t_anim, count, glow, speed,
+    );
     (grid, false)
 }
 
 /// Dispatch arm for mode(s): meteors (moved verbatim from run()).
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn cli_meteors(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
-        let stars: usize = args
-            .get(4)
-            .and_then(|s| s.parse().ok())
-            .unwrap_or_else(|| param_f32("STARS", 90.0) as usize);
-        let rate: f32 = args
-            .get(5)
-            .and_then(|s| s.parse().ok())
-            .unwrap_or_else(|| param_f32("RATE", 1.0));
-        let speed: f32 = args
-            .get(6)
-            .and_then(|s| s.parse().ok())
-            .unwrap_or_else(|| param_f32("SPEED", 1.0));
-        draw_meteors(
-            &mut grid, width, height, seed, &palette, &mut rng, t_anim, stars, rate, speed,
-        );
+pub(crate) fn cli_meteors(
+    mut grid: Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: [Color; 5],
+    mut rng: StdRng,
+    t_anim: f32,
+    term_w: u16,
+    term_h: u16,
+    args: &[String],
+    mode: &str,
+    theme_name: &str,
+) -> (Grid, bool) {
+    let stars: usize = args
+        .get(4)
+        .and_then(|s| s.parse().ok())
+        .unwrap_or_else(|| param_f32("STARS", 90.0) as usize);
+    let rate: f32 = args
+        .get(5)
+        .and_then(|s| s.parse().ok())
+        .unwrap_or_else(|| param_f32("RATE", 1.0));
+    let speed: f32 = args
+        .get(6)
+        .and_then(|s| s.parse().ok())
+        .unwrap_or_else(|| param_f32("SPEED", 1.0));
+    draw_meteors(
+        &mut grid, width, height, seed, &palette, &mut rng, t_anim, stars, rate, speed,
+    );
     (grid, false)
 }
 
 /// Dispatch arm for mode(s): noise (moved verbatim from run()).
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn cli_noise(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
-        let names = ["truchet", "higaki", "higaki-s", "grass", "static", "dot"];
-        let cols = NOISE_VARIANT_COUNT;
-        let cell_w = width / cols;
-        for i in 0..NOISE_VARIANT_COUNT {
-            let x0 = i * cell_w;
-            let r = Rect {
-                x: x0,
-                y: 1,
-                w: cell_w,
-                h: height - 1,
-            };
-            let variant = noise_variant_from_index(i);
-            let c1 = palette[(i % 3) + 1];
-            let c2 = darken(c1, 30);
-            fill_noise(&mut grid, &r, variant, c1, c2, &mut rng);
-            for (j, ch) in names[i].chars().enumerate() {
-                if x0 + j < width {
-                    grid[0][x0 + j] = Cell::new(ch, palette[4]);
-                }
+pub(crate) fn cli_noise(
+    mut grid: Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: [Color; 5],
+    mut rng: StdRng,
+    t_anim: f32,
+    term_w: u16,
+    term_h: u16,
+    args: &[String],
+    mode: &str,
+    theme_name: &str,
+) -> (Grid, bool) {
+    let names = ["truchet", "higaki", "higaki-s", "grass", "static", "dot"];
+    let cols = NOISE_VARIANT_COUNT;
+    let cell_w = width / cols;
+    for i in 0..NOISE_VARIANT_COUNT {
+        let x0 = i * cell_w;
+        let r = Rect {
+            x: x0,
+            y: 1,
+            w: cell_w,
+            h: height - 1,
+        };
+        let variant = noise_variant_from_index(i);
+        let c1 = palette[(i % 3) + 1];
+        let c2 = darken(c1, 30);
+        fill_noise(&mut grid, &r, variant, c1, c2, &mut rng);
+        for (j, ch) in names[i].chars().enumerate() {
+            if x0 + j < width {
+                grid[0][x0 + j] = Cell::new(ch, palette[4]);
             }
         }
+    }
     (grid, false)
 }
 
 /// Dispatch arm for mode(s): nebula (moved verbatim from run()).
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn cli_nebula(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
-        draw_nebula(&mut grid, width, height, seed, &palette, &mut rng, t_anim);
+pub(crate) fn cli_nebula(
+    mut grid: Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: [Color; 5],
+    mut rng: StdRng,
+    t_anim: f32,
+    term_w: u16,
+    term_h: u16,
+    args: &[String],
+    mode: &str,
+    theme_name: &str,
+) -> (Grid, bool) {
+    draw_nebula(&mut grid, width, height, seed, &palette, &mut rng, t_anim);
     (grid, false)
 }

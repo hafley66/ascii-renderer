@@ -181,7 +181,13 @@ fn bake_forest(w: usize, h: usize, seed: u64, k: &ForestKnobs, key: ForestKey) -
             if n > 0.006 + 0.020 * up {
                 continue;
             }
-            let g = if n < 0.004 { '·' } else if n < 0.010 { '∙' } else { '◦' };
+            let g = if n < 0.004 {
+                '·'
+            } else if n < 0.010 {
+                '∙'
+            } else {
+                '◦'
+            };
             band.put(x, y, g, BAND_AIR, (12.0 + up * 16.0) as u8);
         }
     }
@@ -229,7 +235,13 @@ fn bake_forest(w: usize, h: usize, seed: u64, k: &ForestKnobs, key: ForestKey) -
             } else {
                 '·'
             };
-            band.put(disc_x + dx, disc_y + dy, g, BAND_AIR, (30.0 - d * 14.0) as u8);
+            band.put(
+                disc_x + dx,
+                disc_y + dy,
+                g,
+                BAND_AIR,
+                (30.0 - d * 14.0) as u8,
+            );
         }
     }
     capture(&band, 0, 0, air_slot, 0, 0, &mut sky);
@@ -243,7 +255,11 @@ fn bake_forest(w: usize, h: usize, seed: u64, k: &ForestKnobs, key: ForestKey) -
     }
     let mut gcan = Canvas::new(w, (h as i32 - horizon).max(1) as usize);
     for li in 0..layers {
-        let top = if li == 0 { horizon } else { ground_rows[li - 1] };
+        let top = if li == 0 {
+            horizon
+        } else {
+            ground_rows[li - 1]
+        };
         let bot = ground_rows[li];
         let f = (li + 1) as f32 / layers as f32;
         let dense = (0.05 + f * 0.13) * (0.6 + k.density * 0.5);
@@ -264,7 +280,13 @@ fn bake_forest(w: usize, h: usize, seed: u64, k: &ForestKnobs, key: ForestKey) -
             if n < 0.30 {
                 continue;
             }
-            gcan.put(x, 0, if n > 0.88 { '╴' } else { '─' }, BAND_ROOT, (10.0 + f * 12.0) as u8);
+            gcan.put(
+                x,
+                0,
+                if n > 0.88 { '╴' } else { '─' },
+                BAND_ROOT,
+                (10.0 + f * 12.0) as u8,
+            );
         }
         let tuft_rows = (bot - top).max(1);
         for x in 0..w as i32 {
@@ -281,8 +303,20 @@ fn bake_forest(w: usize, h: usize, seed: u64, k: &ForestKnobs, key: ForestKey) -
                     if n < 0.34 {
                         continue;
                     }
-                    let g = if d == 0 { '▒' } else if n > 0.72 { '░' } else { '∙' };
-                    gcan.put(x + dx, ly - d, g, BAND_LEAF, (10.0 + f * 10.0 + d as f32 * 3.0) as u8);
+                    let g = if d == 0 {
+                        '▒'
+                    } else if n > 0.72 {
+                        '░'
+                    } else {
+                        '∙'
+                    };
+                    gcan.put(
+                        x + dx,
+                        ly - d,
+                        g,
+                        BAND_LEAF,
+                        (10.0 + f * 10.0 + d as f32 * 3.0) as u8,
+                    );
                 }
             }
         }
@@ -292,7 +326,11 @@ fn bake_forest(w: usize, h: usize, seed: u64, k: &ForestKnobs, key: ForestKey) -
     // trees: one pass per layer, back to front
     let mut canvas = Canvas::new(8, 8);
     'layers: for li in 0..layers {
-        let f = if layers > 1 { li as f32 / (layers - 1) as f32 } else { 1.0 };
+        let f = if layers > 1 {
+            li as f32 / (layers - 1) as f32
+        } else {
+            1.0
+        };
         let base_y = ground_rows[li];
         let tree_h = ((base_y - horizon) as f32 * 1.15).max(5.0);
         let slot_w = (tree_h * 0.85).max(5.0);
@@ -319,8 +357,14 @@ fn bake_forest(w: usize, h: usize, seed: u64, k: &ForestKnobs, key: ForestKey) -
             let sp = pick_species(&mix, rng.random::<f32>(), li, layers);
             canvas.reset(pw as usize, (ph + 2) as usize);
             let plot = Plot {
-                rect: Rect { x: 0, y: 0, w: pw as usize, h: ph as usize },
-                energy: (k.energy * (0.72 + 0.34 * f) * (0.82 + rng.random::<f32>() * 0.32)).clamp(0.25, 1.0),
+                rect: Rect {
+                    x: 0,
+                    y: 0,
+                    w: pw as usize,
+                    h: ph as usize,
+                },
+                energy: (k.energy * (0.72 + 0.34 * f) * (0.82 + rng.random::<f32>() * 0.32))
+                    .clamp(0.25, 1.0),
                 fruit: k.fruit * (0.3 + f),
                 branch: k.branch,
                 roots: rng.random_range(0..4u32) as usize,
@@ -343,7 +387,10 @@ fn bake_forest(w: usize, h: usize, seed: u64, k: &ForestKnobs, key: ForestKey) -
     let mut motes: Vec<Mote> = Vec::with_capacity(mote_count);
     for _ in 0..mote_count {
         let y0 = match kind {
-            1 => horizon as f32 - rng.random::<f32>() * (horizon as f32 * 0.35) + rng.random::<f32>() * (h as f32 - horizon as f32) * 0.55,
+            1 => {
+                horizon as f32 - rng.random::<f32>() * (horizon as f32 * 0.35)
+                    + rng.random::<f32>() * (h as f32 - horizon as f32) * 0.55
+            }
             2 => horizon as f32 + rng.random::<f32>() * (h as f32 - horizon as f32) * 0.95,
             _ => rng.random::<f32>() * h as f32,
         };
@@ -357,7 +404,19 @@ fn bake_forest(w: usize, h: usize, seed: u64, k: &ForestKnobs, key: ForestKey) -
         });
     }
 
-    ForestBake { key, sky, ground, trees, motes, phase, layers, slots, horizon, kind, tint }
+    ForestBake {
+        key,
+        sky,
+        ground,
+        trees,
+        motes,
+        phase,
+        layers,
+        slots,
+        horizon,
+        kind,
+        tint,
+    }
 }
 
 // ── color ───────────────────────────────────────────────────────────
@@ -390,7 +449,13 @@ fn day_stop(p: f32, palette: &[Color; 5]) -> (Color, Color, f32) {
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn build_forest_lut(palette: &[Color; 5], k: &ForestKnobs, b: &ForestBake, light: f32, haze: Color) -> Vec<Color> {
+fn build_forest_lut(
+    palette: &[Color; 5],
+    k: &ForestKnobs,
+    b: &ForestBake,
+    light: f32,
+    haze: Color,
+) -> Vec<Color> {
     let mut lut = Vec::with_capacity(b.slots * PAL_STRIDE);
     let hue = k.hue as f64 + b.tint;
     let dim = (light * 255.0) as i32;
@@ -432,7 +497,16 @@ fn build_forest_lut(palette: &[Color; 5], k: &ForestKnobs, b: &ForestBake, light
 // ── frame ───────────────────────────────────────────────────────────
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn paint_atmos(grid: &mut Grid, w: usize, h: usize, b: &ForestBake, t: f32, speed: f32, col: Color, warm: Color) {
+fn paint_atmos(
+    grid: &mut Grid,
+    w: usize,
+    h: usize,
+    b: &ForestBake,
+    t: f32,
+    speed: f32,
+    col: Color,
+    warm: Color,
+) {
     let ts = t * speed;
     for m in &b.motes {
         let (x, y, g, bright) = match b.kind {
@@ -446,13 +520,25 @@ fn paint_atmos(grid: &mut Grid, w: usize, h: usize, b: &ForestBake, t: f32, spee
                 let x = m.x0 + (ts * m.sp * 0.5 + m.ph).sin() * m.amp;
                 let y = m.y0 + (ts * m.sp * 0.37 + m.ph * 1.7).cos() * m.amp * 0.45;
                 let pulse = 0.5 + 0.5 * (ts * m.sp * 1.9 + m.ph).sin();
-                let g = if pulse > 0.78 { '◦' } else if pulse > 0.42 { '∙' } else { '·' };
+                let g = if pulse > 0.78 {
+                    '◦'
+                } else if pulse > 0.42 {
+                    '∙'
+                } else {
+                    '·'
+                };
                 (x, y, g, pulse)
             }
             3 => {
                 let fall = (m.y0 + ts * m.sp * 2.4) % m.span;
                 let x = m.x0 + (ts * m.sp * 0.9 + m.ph).sin() * m.amp;
-                let g = if m.amp > 4.0 { '◆' } else if m.amp > 2.5 { '◇' } else { '·' };
+                let g = if m.amp > 4.0 {
+                    '◆'
+                } else if m.amp > 2.5 {
+                    '◇'
+                } else {
+                    '·'
+                };
                 (x, fall, g, 0.7)
             }
             4 => {
@@ -464,7 +550,13 @@ fn paint_atmos(grid: &mut Grid, w: usize, h: usize, b: &ForestBake, t: f32, spee
             _ => {
                 let fall = (m.y0 + ts * m.sp * 1.7) % m.span;
                 let x = m.x0 + (ts * m.sp * 0.55 + m.ph).sin() * m.amp;
-                let g = if m.amp > 4.2 { '◦' } else if m.amp > 2.4 { '∙' } else { '·' };
+                let g = if m.amp > 4.2 {
+                    '◦'
+                } else if m.amp > 2.4 {
+                    '∙'
+                } else {
+                    '·'
+                };
                 (x, fall, g, 0.85)
             }
         };
@@ -507,7 +599,9 @@ pub(crate) fn draw_opus_1_forest(
         let mut store = store.borrow_mut();
         let key = forest_key(w, h, seed, k);
         if store.as_ref().map(|b| b.key) != Some(key) {
-            *store = Some(measure_layer("opus-1-forest", "bake", || bake_forest(w, h, seed, k, key)));
+            *store = Some(measure_layer("opus-1-forest", "bake", || {
+                bake_forest(w, h, seed, k, key)
+            }));
         }
         let b = store.as_ref().unwrap();
 
@@ -522,9 +616,15 @@ pub(crate) fn draw_opus_1_forest(
             }
         }
 
-        measure_layer("opus-1-forest", "sky", || blit(grid, w, h, &b.sky, &lut, &offs));
-        measure_layer("opus-1-forest", "ground", || blit(grid, w, h, &b.ground, &lut, &offs));
-        measure_layer("opus-1-forest", "trees", || blit(grid, w, h, &b.trees, &lut, &offs));
+        measure_layer("opus-1-forest", "sky", || {
+            blit(grid, w, h, &b.sky, &lut, &offs)
+        });
+        measure_layer("opus-1-forest", "ground", || {
+            blit(grid, w, h, &b.ground, &lut, &offs)
+        });
+        measure_layer("opus-1-forest", "trees", || {
+            blit(grid, w, h, &b.trees, &lut, &offs)
+        });
         measure_layer("opus-1-forest", "atmos", || {
             let cool = lerp_color(sky_top, haze, 0.5);
             let warm = lerp_color(haze, palette[4], 0.55);

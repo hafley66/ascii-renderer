@@ -67,7 +67,15 @@ fn run(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
     let line = if let Some(n) = line_number {
         lines.skip(n - 1).next()
     } else {
-        lines.last()
+        // Relay and input records share the file; default to the last frame.
+        lines
+            .filter(|line| match line {
+                Ok(line) => serde_json::from_str::<serde_json::Value>(line)
+                    .map(|event| event.get("mode").is_some() && event.get("grid").is_some())
+                    .unwrap_or(false),
+                Err(_) => true,
+            })
+            .last()
     }
     .ok_or("trace record not found")??;
     let event: serde_json::Value = serde_json::from_str(&line)?;

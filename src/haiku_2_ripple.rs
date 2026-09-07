@@ -39,7 +39,13 @@ fn wave_value(distance: f32, phase: f32, freq: f32, waveform: u32) -> f32 {
     let angle = distance * freq * TAU / 24.0 - phase;
     match waveform {
         0 => angle.sin(),
-        1 => if angle.sin() > 0.0 { 1.0 } else { -1.0 },
+        1 => {
+            if angle.sin() > 0.0 {
+                1.0
+            } else {
+                -1.0
+            }
+        }
         _ => {
             let frac = (angle / TAU).fract();
             (frac * 2.0 - 1.0).clamp(-1.0, 1.0)

@@ -1,5 +1,11 @@
 # perf
 
+Function entry/exit recording and its bounded library writer:
+[function tracing](1_FUNCTION_TRACING.md).
+
+For the actual demo, live controls, terminal pixels, profiling, and safety gates, run
+`scripts/13_e2e.sh`. See [terminal E2E tests](0_E2E.md).
+
 Headless knob sweeps and layer hotspots for one mode at a time.
 
 ## Run

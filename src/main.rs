@@ -14,6 +14,9 @@ mod automata;
 mod avant;
 mod biomes;
 mod borders;
+mod braid;
+mod braid2;
+mod chladni;
 mod cli;
 mod cli_basic;
 mod cli_catalog;
@@ -23,12 +26,30 @@ mod cli_forest;
 mod cli_scenes;
 mod color;
 mod content;
+mod fable_1_forest;
+mod fable_1_trees;
+mod fable_2_forest;
+mod fable_2_trees;
 mod fills;
 mod gridio;
 mod haiku_1_forest;
+mod haiku_1_torus;
 mod haiku_1_trees;
+mod haiku_2_forest;
+mod haiku_2_ripple;
+mod haiku_2_trees;
 mod ink;
 mod layout;
+mod lifetree;
+mod lifetree2;
+mod lifetree3;
+mod lifetree4;
+mod lifetree5;
+mod lifetree6;
+mod mahoraga2;
+mod mahoraga3;
+mod mahoraga4;
+mod mahoraga5;
 mod markdown;
 mod modes;
 mod modes_creatures;
@@ -38,53 +59,32 @@ mod modes_tree;
 mod mondrian;
 mod morph;
 mod opts;
+mod opus_1_forest;
+mod opus_1_quasicrystal;
+mod opus_1_trees;
+mod opus_2_forest;
+mod opus_2_quasicrystal;
+mod opus_2_trees;
+mod pendwave;
+#[cfg(test)]
+mod perf_sweep;
+mod poincare;
+mod polytope;
 mod pp;
 mod render;
 mod sauron;
 mod scene;
+mod sonnet_1_forest;
+mod sonnet_1_spirograph;
+mod sonnet_1_trees;
+mod sonnet_2_clifford;
+mod sonnet_2_forest;
+mod sonnet_2_trees;
 mod sprites;
 mod tree_draw;
 mod types;
 mod walker;
 mod warps;
-mod mahoraga2;
-mod mahoraga3;
-mod mahoraga4;
-mod mahoraga5;
-mod lifetree;
-mod lifetree2;
-mod lifetree3;
-mod lifetree4;
-mod lifetree5;
-mod lifetree6;
-mod braid;
-mod braid2;
-mod chladni;
-mod pendwave;
-mod polytope;
-mod poincare;
-mod opus_1_quasicrystal;
-mod opus_2_quasicrystal;
-mod sonnet_1_spirograph;
-mod sonnet_2_clifford;
-mod haiku_1_torus;
-mod haiku_2_ripple;
-mod fable_1_trees;
-mod fable_1_forest;
-mod fable_2_trees;
-mod fable_2_forest;
-mod opus_1_trees;
-mod opus_1_forest;
-mod opus_2_trees;
-mod opus_2_forest;
-mod haiku_2_trees;
-mod haiku_2_forest;
-mod sonnet_2_trees;
-mod sonnet_2_forest;
-mod sonnet_1_trees;
-mod sonnet_1_forest;
-#[cfg(test)]
-mod perf_sweep;
 
 use crossterm::style::Color;
 use rand::RngExt;
@@ -97,7 +97,6 @@ use astrolabe::*;
 use automata::*;
 use avant::*;
 use biomes::*;
-use sauron::*;
 use borders::*;
 use cli::*;
 use cli_basic::*;
@@ -120,9 +119,10 @@ use modes_tree::*;
 use mondrian::*;
 use morph::*;
 use opts::*;
-use registry::*;
 use pp::*;
+use registry::*;
 use render::*;
+use sauron::*;
 use scene::*;
 use sprites::*;
 use tree_draw::*;
@@ -205,9 +205,17 @@ mod tests {
         draw_nebula(&mut g, 80, 24, 4, &pal, &mut rng, 0.0);
         for warp in [warp_drift, warp_swirl, warp_ripple, warp_breathe, warp_wind] {
             let a = warp(&g, 1.0, 2.0);
-            assert_eq!(grid_to_string(&a), grid_to_string(&warp(&g, 1.0, 2.0)), "deterministic");
+            assert_eq!(
+                grid_to_string(&a),
+                grid_to_string(&warp(&g, 1.0, 2.0)),
+                "deterministic"
+            );
             let b = warp(&g, 4.5, 2.0);
-            assert_ne!(grid_to_string(&a), grid_to_string(&b), "time should animate the warp");
+            assert_ne!(
+                grid_to_string(&a),
+                grid_to_string(&b),
+                "time should animate the warp"
+            );
         }
     }
 
@@ -218,15 +226,26 @@ mod tests {
         let f0 = voronoi_flow_frame(80, 24, 3, 0.0, &pal);
         let f0b = voronoi_flow_frame(80, 24, 3, 0.0, &pal);
         let f1 = voronoi_flow_frame(80, 24, 3, 5.0, &pal);
-        assert_eq!(grid_to_string(&f0), grid_to_string(&f0b), "same args -> same frame");
-        assert_ne!(grid_to_string(&f0), grid_to_string(&f1), "time should move the cells");
+        assert_eq!(
+            grid_to_string(&f0),
+            grid_to_string(&f0b),
+            "same args -> same frame"
+        );
+        assert_ne!(
+            grid_to_string(&f0),
+            grid_to_string(&f1),
+            "time should move the cells"
+        );
     }
 
     #[test]
     #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn voronoi_flow_snapshot() {
         let pal = make_palette(3);
-        insta::assert_snapshot!("voronoi_flow_t2", grid_to_string(&voronoi_flow_frame(80, 24, 3, 2.0, &pal)));
+        insta::assert_snapshot!(
+            "voronoi_flow_t2",
+            grid_to_string(&voronoi_flow_frame(80, 24, 3, 2.0, &pal))
+        );
     }
 
     #[test]
@@ -236,10 +255,18 @@ mod tests {
         draw_elevator(&mut a, 80, 24, 9, &pal, &mut ra, 0.0, 3, 1.0, 1.0);
         let (mut b, mut rb, _) = make_grid(80, 24, 9);
         draw_elevator(&mut b, 80, 24, 9, &pal, &mut rb, 0.0, 3, 1.0, 1.0);
-        assert_eq!(grid_to_string(&a), grid_to_string(&b), "same args -> same frame");
+        assert_eq!(
+            grid_to_string(&a),
+            grid_to_string(&b),
+            "same args -> same frame"
+        );
         let (mut c, mut rc, _) = make_grid(80, 24, 9);
         draw_elevator(&mut c, 80, 24, 9, &pal, &mut rc, 2.0, 3, 1.0, 1.0);
-        assert_ne!(grid_to_string(&a), grid_to_string(&c), "T should move the cabs");
+        assert_ne!(
+            grid_to_string(&a),
+            grid_to_string(&c),
+            "T should move the cabs"
+        );
     }
 
     #[test]
@@ -249,10 +276,18 @@ mod tests {
         draw_ferris(&mut a, 80, 24, 5, &pal, &mut ra, 1.3, 8, 10, 1.0);
         let (mut b, mut rb, _) = make_grid(80, 24, 5);
         draw_ferris(&mut b, 80, 24, 5, &pal, &mut rb, 1.3, 8, 10, 1.0);
-        assert_eq!(grid_to_string(&a), grid_to_string(&b), "same args -> same frame");
+        assert_eq!(
+            grid_to_string(&a),
+            grid_to_string(&b),
+            "same args -> same frame"
+        );
         let (mut c, mut rc, _) = make_grid(80, 24, 5);
         draw_ferris(&mut c, 80, 24, 5, &pal, &mut rc, 2.9, 8, 10, 1.0);
-        assert_ne!(grid_to_string(&a), grid_to_string(&c), "T should turn the wheel");
+        assert_ne!(
+            grid_to_string(&a),
+            grid_to_string(&c),
+            "T should turn the wheel"
+        );
     }
 
     #[test]
@@ -296,25 +331,37 @@ mod tests {
     #[test]
     #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn morph_dissolve_mid() {
-        insta::assert_snapshot!("morph_dissolve_mid", grid_to_string(&morph_pair().frame(0.5, "dissolve")));
+        insta::assert_snapshot!(
+            "morph_dissolve_mid",
+            grid_to_string(&morph_pair().frame(0.5, "dissolve"))
+        );
     }
 
     #[test]
     #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn morph_field_mid() {
-        insta::assert_snapshot!("morph_field_mid", grid_to_string(&morph_pair().frame(0.5, "field")));
+        insta::assert_snapshot!(
+            "morph_field_mid",
+            grid_to_string(&morph_pair().frame(0.5, "field"))
+        );
     }
 
     #[test]
     #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn morph_transport_mid() {
-        insta::assert_snapshot!("morph_transport_mid", grid_to_string(&morph_pair().frame(0.5, "transport")));
+        insta::assert_snapshot!(
+            "morph_transport_mid",
+            grid_to_string(&morph_pair().frame(0.5, "transport"))
+        );
     }
 
     #[test]
     #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn morph_sdf_mid() {
-        insta::assert_snapshot!("morph_sdf_mid", grid_to_string(&morph_pair().frame(0.5, "sdf")));
+        insta::assert_snapshot!(
+            "morph_sdf_mid",
+            grid_to_string(&morph_pair().frame(0.5, "sdf"))
+        );
     }
 
     #[test]
@@ -452,7 +499,10 @@ mod tests {
         }
         save_options_to(&path, &map);
         let back = load_options_from(&path);
-        assert_eq!(back.get("snakes").and_then(|m| m.get("COUNT")).copied(), Some(30.0));
+        assert_eq!(
+            back.get("snakes").and_then(|m| m.get("COUNT")).copied(),
+            Some(30.0)
+        );
 
         // pvals_for applies saved values, clamped to each param's range.
         let spec = mode_spec("snakes");
@@ -461,8 +511,14 @@ mod tests {
         let hop_i = spec.params.iter().position(|p| p.key == "HOP").unwrap();
         let turn_i = spec.params.iter().position(|p| p.key == "TURN").unwrap();
         assert_eq!(pv[count_i], 30.0, "saved value applied");
-        assert_eq!(pv[hop_i], spec.params[hop_i].max, "out-of-range clamped to max");
-        assert_eq!(pv[turn_i], spec.params[turn_i].default, "unset falls back to default");
+        assert_eq!(
+            pv[hop_i], spec.params[hop_i].max,
+            "out-of-range clamped to max"
+        );
+        assert_eq!(
+            pv[turn_i], spec.params[turn_i].default,
+            "unset falls back to default"
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 
@@ -507,8 +563,16 @@ mod tests {
             grid_to_string(&g)
         };
         assert_eq!(frame(42, 1.25), frame(42, 1.25));
-        assert_ne!(frame(42, 0.0), frame(42, 2.0), "T should rotate the projection");
-        assert_ne!(frame(42, 0.0), frame(43, 0.0), "seed should change the projection");
+        assert_ne!(
+            frame(42, 0.0),
+            frame(42, 2.0),
+            "T should rotate the projection"
+        );
+        assert_ne!(
+            frame(42, 0.0),
+            frame(43, 0.0),
+            "seed should change the projection"
+        );
     }
 
     #[test]
@@ -520,8 +584,16 @@ mod tests {
             grid_to_string(&g)
         };
         assert_eq!(frame(42, 1.25), frame(42, 1.25));
-        assert_ne!(frame(42, 0.0), frame(42, 1.0), "T should advect the particles");
-        assert_ne!(frame(42, 0.0), frame(43, 0.0), "seed should change the currents");
+        assert_ne!(
+            frame(42, 0.0),
+            frame(42, 1.0),
+            "T should advect the particles"
+        );
+        assert_ne!(
+            frame(42, 0.0),
+            frame(43, 0.0),
+            "seed should change the currents"
+        );
     }
 
     #[test]
@@ -533,8 +605,16 @@ mod tests {
             grid_to_string(&g)
         };
         assert_eq!(frame(42, 1.25), frame(42, 1.25));
-        assert_ne!(frame(42, 0.0), frame(42, 1.0), "T should advance the bursts");
-        assert_ne!(frame(42, 0.0), frame(43, 0.0), "seed should change the show");
+        assert_ne!(
+            frame(42, 0.0),
+            frame(42, 1.0),
+            "T should advance the bursts"
+        );
+        assert_ne!(
+            frame(42, 0.0),
+            frame(43, 0.0),
+            "seed should change the show"
+        );
     }
 
     #[test]
@@ -546,8 +626,16 @@ mod tests {
             grid_to_string(&g)
         };
         assert_eq!(frame(42, 1.25), frame(42, 1.25));
-        assert_ne!(frame(42, 0.0), frame(42, 1.5), "T should animate the ritual field");
-        assert_ne!(frame(42, 0.0), frame(43, 0.0), "seed should restructure the chambers");
+        assert_ne!(
+            frame(42, 0.0),
+            frame(42, 1.5),
+            "T should animate the ritual field"
+        );
+        assert_ne!(
+            frame(42, 0.0),
+            frame(43, 0.0),
+            "seed should restructure the chambers"
+        );
     }
 
     #[test]
@@ -560,7 +648,11 @@ mod tests {
         };
         assert_eq!(frame(42, 1.25), frame(42, 1.25));
         assert_ne!(frame(42, 0.0), frame(42, 2.0), "T should wheel the flocks");
-        assert_ne!(frame(42, 0.0), frame(43, 0.0), "seed should reshape the murmuration");
+        assert_ne!(
+            frame(42, 0.0),
+            frame(43, 0.0),
+            "seed should reshape the murmuration"
+        );
     }
 
     #[test]
@@ -573,7 +665,11 @@ mod tests {
         };
         assert_eq!(frame(42, 1.25), frame(42, 1.25));
         assert_ne!(frame(42, 0.0), frame(42, 2.0), "T should lift the lanterns");
-        assert_ne!(frame(42, 0.0), frame(43, 0.0), "seed should relayout the launch");
+        assert_ne!(
+            frame(42, 0.0),
+            frame(43, 0.0),
+            "seed should relayout the launch"
+        );
     }
 
     #[test]
@@ -586,7 +682,11 @@ mod tests {
         };
         assert_eq!(frame(42, 1.25), frame(42, 1.25));
         assert_ne!(frame(42, 0.0), frame(42, 2.0), "T should move the surf");
-        assert_ne!(frame(42, 0.0), frame(43, 0.0), "seed should reshape the shoreline");
+        assert_ne!(
+            frame(42, 0.0),
+            frame(43, 0.0),
+            "seed should reshape the shoreline"
+        );
     }
 
     #[test]
@@ -598,7 +698,11 @@ mod tests {
         draw_circuit(&mut g0, 80, 24, 42, &p0, &mut r0, 0.0, 14);
         let (mut g1, mut r1, p1) = make_grid(80, 24, 42);
         draw_circuit(&mut g1, 80, 24, 42, &p1, &mut r1, 2.5, 14);
-        assert_eq!(grid_to_string(&g0), grid_to_string(&g1), "chars stable over t");
+        assert_eq!(
+            grid_to_string(&g0),
+            grid_to_string(&g1),
+            "chars stable over t"
+        );
     }
 
     #[test]

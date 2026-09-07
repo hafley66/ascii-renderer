@@ -88,7 +88,18 @@ fn build(seed: u64) -> Geom {
     let base_hue = (rng.random::<f32>() * 360.0) as f64;
     let bloom = rng.random_range(0..3u32) as usize;
     let dotted_arm = rng.random::<f32>() < 0.5;
-    Geom { seed, r, rr, inside, dist, ratio: dist / r, q, base_hue, bloom, dotted_arm }
+    Geom {
+        seed,
+        r,
+        rr,
+        inside,
+        dist,
+        ratio: dist / r,
+        q,
+        base_hue,
+        bloom,
+        dotted_arm,
+    }
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
@@ -144,12 +155,25 @@ struct View {
 impl View {
     #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn map(&self, mx: f32, my: f32) -> (i32, i32) {
-        ((self.cx + mx * self.unit * self.aspect).round() as i32, (self.cy + my * self.unit).round() as i32)
+        (
+            (self.cx + mx * self.unit * self.aspect).round() as i32,
+            (self.cy + my * self.unit).round() as i32,
+        )
     }
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn draw_ring(grid: &mut Grid, w: usize, h: usize, view: &View, cx: f32, cy: f32, r: f32, col: Color, bg: Color) {
+fn draw_ring(
+    grid: &mut Grid,
+    w: usize,
+    h: usize,
+    view: &View,
+    cx: f32,
+    cy: f32,
+    r: f32,
+    col: Color,
+    bg: Color,
+) {
     let n = ((r * view.unit * TAU / 1.1).round() as i32).clamp(24, 240) as usize;
     for i in 0..n {
         let theta = TAU * i as f32 / n as f32;
@@ -159,7 +183,19 @@ fn draw_ring(grid: &mut Grid, w: usize, h: usize, view: &View, cx: f32, cy: f32,
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn draw_arm(grid: &mut Grid, w: usize, h: usize, view: &View, ax: f32, ay: f32, bx: f32, by: f32, col: Color, bg: Color, dotted: bool) {
+fn draw_arm(
+    grid: &mut Grid,
+    w: usize,
+    h: usize,
+    view: &View,
+    ax: f32,
+    ay: f32,
+    bx: f32,
+    by: f32,
+    col: Color,
+    bg: Color,
+    dotted: bool,
+) {
     let (x0, y0) = view.map(ax, ay);
     let (x1, y1) = view.map(bx, by);
     let (dx, dy) = (x1 - x0, y1 - y0);
@@ -187,7 +223,15 @@ fn draw_arm(grid: &mut Grid, w: usize, h: usize, view: &View, ax: f32, ay: f32, 
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn draw_sonnet_1_spirograph(grid: &mut Grid, w: usize, h: usize, seed: u64, palette: &[Color; 5], t: f32, k: &Sonnet1SpirographKnobs) {
+pub(crate) fn draw_sonnet_1_spirograph(
+    grid: &mut Grid,
+    w: usize,
+    h: usize,
+    seed: u64,
+    palette: &[Color; 5],
+    t: f32,
+    k: &Sonnet1SpirographKnobs,
+) {
     CACHE.with(|cell| {
         let mut slot = cell.borrow_mut();
         let stale = slot.as_ref().map(|c| c.seed != seed).unwrap_or(true);
@@ -200,7 +244,16 @@ pub(crate) fn draw_sonnet_1_spirograph(grid: &mut Grid, w: usize, h: usize, seed
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn render(grid: &mut Grid, w: usize, h: usize, seed: u64, palette: &[Color; 5], t: f32, k: &Sonnet1SpirographKnobs, g: &Geom) {
+fn render(
+    grid: &mut Grid,
+    w: usize,
+    h: usize,
+    seed: u64,
+    palette: &[Color; 5],
+    t: f32,
+    k: &Sonnet1SpirographKnobs,
+    g: &Geom,
+) {
     let canvas_bg = darken(palette[0], 8);
     measure_layer("sonnet-1-spirograph", "clear", || {
         for row in grid.iter_mut().take(h) {
@@ -224,7 +277,12 @@ fn render(grid: &mut Grid, w: usize, h: usize, seed: u64, palette: &[Color; 5], 
     let half_h = avail_h * 0.5 * scale;
     let half_w = avail_w * 0.5 * scale;
     let unit = (half_h.min(half_w / aspect) / extent).max(0.05);
-    let view = View { cx: w as f32 * 0.5, cy: h as f32 * 0.5, unit, aspect };
+    let view = View {
+        cx: w as f32 * 0.5,
+        cy: h as f32 * 0.5,
+        unit,
+        aspect,
+    };
 
     let cycle = (BASE_CYCLE / k.speed.max(0.05)).max(1.0);
     let av = TAU * g.q as f32 / cycle;
@@ -255,9 +313,31 @@ fn render(grid: &mut Grid, w: usize, h: usize, seed: u64, palette: &[Color; 5], 
         if k.arms > 0.5 {
             draw_ring(grid, w, h, &view, 0.0, 0.0, g.rr, mech_col, canvas_bg);
             let (rcx, rcy) = roll_center(g, theta_now);
-            draw_ring(grid, w, h, &view, rcx, rcy, g.r, lighten(mech_col, 20), canvas_bg);
+            draw_ring(
+                grid,
+                w,
+                h,
+                &view,
+                rcx,
+                rcy,
+                g.r,
+                lighten(mech_col, 20),
+                canvas_bg,
+            );
             let (px, py) = pen_point(g, d, theta_now);
-            draw_arm(grid, w, h, &view, rcx, rcy, px, py, mech_col, canvas_bg, g.dotted_arm);
+            draw_arm(
+                grid,
+                w,
+                h,
+                &view,
+                rcx,
+                rcy,
+                px,
+                py,
+                mech_col,
+                canvas_bg,
+                g.dotted_arm,
+            );
         }
     });
 
@@ -282,7 +362,14 @@ fn render(grid: &mut Grid, w: usize, h: usize, seed: u64, palette: &[Color; 5], 
             } else {
                 ':'
             };
-            put(grid, w, h, x, y, Cell::with_bg(ch, darken(trail_col, fade), canvas_bg));
+            put(
+                grid,
+                w,
+                h,
+                x,
+                y,
+                Cell::with_bg(ch, darken(trail_col, fade), canvas_bg),
+            );
         }
     });
 
@@ -291,7 +378,14 @@ fn render(grid: &mut Grid, w: usize, h: usize, seed: u64, palette: &[Color; 5], 
         if glow > 0.01 {
             let (px, py) = pen_point(g, d, theta_now);
             let (cx, cy) = view.map(px, py);
-            put(grid, w, h, cx, cy, Cell::with_bg('@', lighten(pen_col, 40), canvas_bg));
+            put(
+                grid,
+                w,
+                h,
+                cx,
+                cy,
+                Cell::with_bg('@', lighten(pen_col, 40), canvas_bg),
+            );
             let n = (16.0 * glow).round() as u32;
             let frame = (t * 6.0).floor() as u32;
             let set = BLOOM_SETS[g.bloom];
@@ -305,7 +399,14 @@ fn render(grid: &mut Grid, w: usize, h: usize, seed: u64, palette: &[Color; 5], 
                 let y = cy + (ang.sin() * rad * 0.5).round() as i32;
                 let ch = set[(s * 3.0) as usize % 3];
                 let bright = 90 - (v * 70.0) as u8;
-                put(grid, w, h, x, y, Cell::with_bg(ch, darken(pen_col, bright), canvas_bg));
+                put(
+                    grid,
+                    w,
+                    h,
+                    x,
+                    y,
+                    Cell::with_bg(ch, darken(pen_col, bright), canvas_bg),
+                );
             }
         }
     });
@@ -332,13 +433,35 @@ fn render(grid: &mut Grid, w: usize, h: usize, seed: u64, palette: &[Color; 5], 
         if k.label > 0.5 {
             let side = if g.inside { "in" } else { "out" };
             let text = format!("R{}:r{} {} d{:.2}", g.rr as i32, g.r as i32, side, depth);
-            put_text(grid, w, h, mg.max(1), h as i32 - mg.max(1) - 1, &text, palette[4], canvas_bg);
+            put_text(
+                grid,
+                w,
+                h,
+                mg.max(1),
+                h as i32 - mg.max(1) - 1,
+                &text,
+                palette[4],
+                canvas_bg,
+            );
         }
     });
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn cli_sonnet_1_spirograph(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
+pub(crate) fn cli_sonnet_1_spirograph(
+    mut grid: Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: [Color; 5],
+    rng: StdRng,
+    t_anim: f32,
+    term_w: u16,
+    term_h: u16,
+    args: &[String],
+    mode: &str,
+    theme_name: &str,
+) -> (Grid, bool) {
     let _ = (rng, term_w, term_h, mode, theme_name);
     let mut k = Sonnet1SpirographKnobs::from_env();
     let pos: Vec<f32> = args.iter().skip(4).filter_map(|a| a.parse().ok()).collect();
@@ -372,7 +495,10 @@ mod tests {
         let p = crate::color::make_palette(seed);
         let k = Sonnet1SpirographKnobs::from_env();
         draw_sonnet_1_spirograph(&mut g, w, h, seed, &p, t, &k);
-        g.iter().map(|row| row.iter().map(|c| c.ch).collect::<String>()).collect::<Vec<_>>().join("\n")
+        g.iter()
+            .map(|row| row.iter().map(|c| c.ch).collect::<String>())
+            .collect::<Vec<_>>()
+            .join("\n")
     }
 
     #[test]
@@ -418,7 +544,10 @@ mod tests {
             worst = worst.max(t0.elapsed().as_secs_f64() * 1000.0);
         }
         let avg = start.elapsed().as_secs_f64() * 1000.0 / 200.0;
-        eprintln!("sonnet-1-spirograph frame_cost 200x60: avg {:.3} ms, worst {:.3} ms", avg, worst);
+        eprintln!(
+            "sonnet-1-spirograph frame_cost 200x60: avg {:.3} ms, worst {:.3} ms",
+            avg, worst
+        );
         if !cfg!(debug_assertions) {
             assert!(avg < 4.0, "avg frame {:.3} ms", avg);
         }

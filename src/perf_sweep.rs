@@ -28,7 +28,10 @@ impl RunStats {
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn env_or<T: std::str::FromStr>(name: &str, default: T) -> T {
-    std::env::var(name).ok().and_then(|v| v.parse().ok()).unwrap_or(default)
+    std::env::var(name)
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(default)
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
@@ -39,7 +42,16 @@ fn set_knob(key: &'static str, value: Option<f32>) {
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn run_for(label: &str, mode: &str, theme: &str, w: usize, h: usize, secs: f64, dt: f32, capture: bool) -> Option<RunStats> {
+fn run_for(
+    label: &str,
+    mode: &str,
+    theme: &str,
+    w: usize,
+    h: usize,
+    secs: f64,
+    dt: f32,
+    capture: bool,
+) -> Option<RunStats> {
     let mut r = IterateFrameRenderer::new(mode, 42, theme, w, h)?;
     r.render(0.0, None)?;
     if capture {
@@ -59,7 +71,14 @@ fn run_for(label: &str, mode: &str, theme: &str, w: usize, h: usize, secs: f64, 
     let wall = started.elapsed();
     samples.sort_unstable();
     let pick = |q: f64| samples[((samples.len() - 1) as f64 * q) as usize] as f64 / 1e6;
-    Some(RunStats { label: label.to_string(), frames, wall, p50_ms: pick(0.5), p99_ms: pick(0.99), max_ms: pick(1.0) })
+    Some(RunStats {
+        label: label.to_string(),
+        frames,
+        wall,
+        p50_ms: pick(0.5),
+        p99_ms: pick(0.99),
+        max_ms: pick(1.0),
+    })
 }
 
 #[test]
@@ -78,13 +97,24 @@ fn perf_knob_sweep() {
     }
 
     let Some(base) = run_for("baseline", &mode, &theme, w, h, secs, dt, false) else {
-        println!("# knob sweep: {mode} does not render natively through iterate_grid; nothing measured");
+        println!(
+            "# knob sweep: {mode} does not render natively through iterate_grid; nothing measured"
+        );
         return;
     };
     let mut runs: Vec<(RunStats, f32)> = Vec::new();
     for p in spec.params {
         set_knob(p.key, Some(p.max));
-        if let Some(r) = run_for(&format!("{}={}", p.key, p.max), &mode, &theme, w, h, secs, dt, false) {
+        if let Some(r) = run_for(
+            &format!("{}={}", p.key, p.max),
+            &mode,
+            &theme,
+            w,
+            h,
+            secs,
+            dt,
+            false,
+        ) {
             runs.push((r, p.max));
         }
         set_knob(p.key, None);
@@ -97,7 +127,14 @@ fn perf_knob_sweep() {
     let row = |s: &RunStats| {
         println!(
             "| {} | {} | {:.1} | {:.2} | {:.2} | {:.2} | {:.2} | {:.2}x |",
-            s.label, s.frames, s.fps(), s.avg_ms(), s.p50_ms, s.p99_ms, s.max_ms, base.fps() / s.fps().max(f64::EPSILON)
+            s.label,
+            s.frames,
+            s.fps(),
+            s.avg_ms(),
+            s.p50_ms,
+            s.p99_ms,
+            s.max_ms,
+            base.fps() / s.fps().max(f64::EPSILON)
         );
     };
     row(&base);
@@ -105,20 +142,34 @@ fn perf_knob_sweep() {
         row(s);
     }
 
-    let worst_key = runs.first().map(|(s, _)| s.label.clone()).unwrap_or_else(|| "baseline".to_string());
+    let worst_key = runs
+        .first()
+        .map(|(s, _)| s.label.clone())
+        .unwrap_or_else(|| "baseline".to_string());
     println!("\nworst: {worst_key}\n");
-    if let Some(p) = spec.params.iter().find(|p| worst_key.starts_with(&format!("{}=", p.key))) {
+    if let Some(p) = spec
+        .params
+        .iter()
+        .find(|p| worst_key.starts_with(&format!("{}=", p.key)))
+    {
         set_knob(p.key, Some(p.max));
     }
-    let worst = run_for(&worst_key, &mode, &theme, w, h, secs, dt, true).expect("worst run rendered once already");
+    let worst = run_for(&worst_key, &mode, &theme, w, h, secs, dt, true)
+        .expect("worst run rendered once already");
     let layers = layer_capture_end();
     for p in spec.params {
         set_knob(p.key, None);
     }
     let frame_ns = worst.wall.as_nanos() as f64 / worst.frames.max(1) as f64;
-    println!("## hotspots at {worst_key}: {} frames, {:.1} fps\n", worst.frames, worst.fps());
+    println!(
+        "## hotspots at {worst_key}: {} frames, {:.1} fps\n",
+        worst.frames,
+        worst.fps()
+    );
     if layers.is_empty() {
-        println!("no measure_layer timers fired for {mode}; wrap its painters in crate::_0_profile::measure_layer");
+        println!(
+            "no measure_layer timers fired for {mode}; wrap its painters in crate::_0_profile::measure_layer"
+        );
         return;
     }
     let mut layers = layers;
@@ -139,11 +190,45 @@ fn perf_knob_sweep() {
 }
 
 const NATIVE_MODES: &[&str] = &[
-    "delta", "snakes", "fullmetal-eyes", "hypercube", "flux", "fireworks", "murmuration", "lanterns", "tide",
-    "elevator", "ferris", "arboretum", "astrolabe", "sauron", "mahoraga-2", "mahoraga-3", "mahoraga-4",
-    "mahoraga-5", "tree-of-life", "tree-of-life-2", "tree-of-life-3", "tree-of-life-4", "tree-of-life-5",
-    "tree-of-life-6", "braid", "braid-2", "chladni", "pendulum-wave", "glm-apotheosis", "cosmograph",
-    "illuminarium", "qwen-cathedral", "aetherforge", "gem-aetherium", "hyperloom", "singularity", "thunderhead", "mandelbox", "fa6",
+    "delta",
+    "snakes",
+    "fullmetal-eyes",
+    "hypercube",
+    "flux",
+    "fireworks",
+    "murmuration",
+    "lanterns",
+    "tide",
+    "elevator",
+    "ferris",
+    "arboretum",
+    "astrolabe",
+    "sauron",
+    "mahoraga-2",
+    "mahoraga-3",
+    "mahoraga-4",
+    "mahoraga-5",
+    "tree-of-life",
+    "tree-of-life-2",
+    "tree-of-life-3",
+    "tree-of-life-4",
+    "tree-of-life-5",
+    "tree-of-life-6",
+    "braid",
+    "braid-2",
+    "chladni",
+    "pendulum-wave",
+    "glm-apotheosis",
+    "cosmograph",
+    "illuminarium",
+    "qwen-cathedral",
+    "aetherforge",
+    "gem-aetherium",
+    "hyperloom",
+    "singularity",
+    "thunderhead",
+    "mandelbox",
+    "fa6",
     "polytope",
     "poincare",
     "opus-1-quasicrystal",
@@ -159,7 +244,9 @@ const NATIVE_MODES: &[&str] = &[
     "opus-1-trees",
     "opus-1-forest",
     "opus-2-trees",
-    "opus-2-forest", "haiku-1-trees", "haiku-1-forest",
+    "opus-2-forest",
+    "haiku-1-trees",
+    "haiku-1-forest",
     "opus-2-forest",
     "haiku-2-trees",
     "haiku-2-forest",
@@ -185,5 +272,9 @@ fn every_native_mode_has_layer_timers() {
             missing.push(mode.to_string());
         }
     }
-    assert!(missing.is_empty(), "modes without layer timers: {}", missing.join(", "));
+    assert!(
+        missing.is_empty(),
+        "modes without layer timers: {}",
+        missing.join(", ")
+    );
 }

@@ -20,7 +20,15 @@ const RDIRS: usize = 16;
 const RSEC: f32 = 1.004_82;
 const INV12: f32 = 1.0 / 4096.0;
 const LUT_Q: f32 = 1.25;
-const MIX: [u32; MAXN] = [0x9E37_79B1, 0x85EB_CA6B, 0xC2B2_AE35, 0x27D4_EB2F, 0x1656_67B1, 0xD3A2_646C, 0xFD70_46C5];
+const MIX: [u32; MAXN] = [
+    0x9E37_79B1,
+    0x85EB_CA6B,
+    0xC2B2_AE35,
+    0x27D4_EB2F,
+    0x1656_67B1,
+    0xD3A2_646C,
+    0xFD70_46C5,
+];
 
 #[derive(Clone, Copy)]
 struct FrontLut {
@@ -69,7 +77,6 @@ fn build_lut(f: &Frame, out: &mut Vec<FrontLut>, n: usize) {
         out.push(FrontLut { pack, formed });
     }
 }
-
 
 const RAMP_SOLID: [char; LEVELS] = ['.', ':', ';', '=', '*', '8', '#', '%'];
 const RAMP_STIPPLE: [char; LEVELS] = ['.', ',', ';', ':', 'o', 'O', '&', '@'];
@@ -122,7 +129,11 @@ impl Opus2QuasicrystalKnobs {
     #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn folds_n(&self, seeded: usize) -> usize {
         let f = self.folds.round() as i32;
-        if f < 4 { seeded } else { (f as usize).min(MAXN) }
+        if f < 4 {
+            seeded
+        } else {
+            (f as usize).min(MAXN)
+        }
     }
 }
 
@@ -149,7 +160,11 @@ fn build(seed: u64, folds_knob: usize) -> Cached {
     let mut rng = StdRng::seed_from_u64(seed ^ 0x0_9A5C_2117);
     let picks = [5usize, 5, 7, 5, 4, 7, 6, 5];
     let seeded = picks[rng.random_range(0..picks.len())];
-    let n = if folds_knob >= 4 { folds_knob.min(MAXN) } else { seeded };
+    let n = if folds_knob >= 4 {
+        folds_knob.min(MAXN)
+    } else {
+        seeded
+    };
     let mut gamma0 = [0.0f32; MAXN];
     let mut drift = [0.0f32; MAXN];
     for j in 0..MAXN {
@@ -220,7 +235,15 @@ fn line_glyph(theta: f32, aspect: f32) -> char {
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn draw_opus_2_quasicrystal(grid: &mut Grid, w: usize, h: usize, seed: u64, palette: &[Color; 5], t: f32, k: &Opus2QuasicrystalKnobs) {
+pub(crate) fn draw_opus_2_quasicrystal(
+    grid: &mut Grid,
+    w: usize,
+    h: usize,
+    seed: u64,
+    palette: &[Color; 5],
+    t: f32,
+    k: &Opus2QuasicrystalKnobs,
+) {
     let folds_knob = k.folds.round().clamp(0.0, MAXN as f32) as usize;
     CACHE.with(|cell| {
         let mut slot = cell.borrow_mut();
@@ -268,7 +291,11 @@ fn geometry(w: usize, h: usize, t: f32, k: &Opus2QuasicrystalKnobs, c: &Cached) 
     let n = k.folds_n(c.n).clamp(4, MAXN);
     let aspect = k.aspect.clamp(0.25, 4.0);
     let d = k.scale.clamp(1.2, 40.0);
-    let tt = if t > 0.0 { t * k.speed.clamp(0.0, 8.0) } else { 0.0 };
+    let tt = if t > 0.0 {
+        t * k.speed.clamp(0.0, 8.0)
+    } else {
+        0.0
+    };
     let rot = tt * k.turn.clamp(-30.0, 30.0) * PI / 180.0;
     let ncx = w as f32 * (0.5 + c.nudge_x);
     let ncy = h as f32 * (0.5 + c.nudge_y);
@@ -320,11 +347,18 @@ fn geometry(w: usize, h: usize, t: f32, k: &Opus2QuasicrystalKnobs, c: &Cached) 
     let wide = f.linew * (5.0 / n as f32).powf(0.55);
     for j in 0..n {
         let theta = PI * j as f32 / n as f32 + rot;
-        let len = ((theta.cos() * aspect).powi(2) + theta.sin().powi(2)).sqrt().max(1e-3);
+        let len = ((theta.cos() * aspect).powi(2) + theta.sin().powi(2))
+            .sqrt()
+            .max(1e-3);
         f.invthr[j] = len * d / wide.max(0.05);
     }
     let mut rmax = 1.0f32;
-    for (cx, cy) in [(0.0f32, 0.0f32), (w as f32, 0.0), (0.0, h as f32), (w as f32, h as f32)] {
+    for (cx, cy) in [
+        (0.0f32, 0.0f32),
+        (w as f32, 0.0),
+        (0.0, h as f32),
+        (w as f32, h as f32),
+    ] {
         let (dx, dy) = (cx - ncx, cy - ncy);
         for j in 0..n {
             let v = dx * f.colstep[j] + dy * f.rowstep[j];
@@ -357,7 +391,13 @@ struct Paint {
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn paints(palette: &[Color; 5], k: &Opus2QuasicrystalKnobs, c: &Cached, n: usize, pulse: f32) -> Paint {
+fn paints(
+    palette: &[Color; 5],
+    k: &Opus2QuasicrystalKnobs,
+    c: &Cached,
+    n: usize,
+    pulse: f32,
+) -> Paint {
     let bg = palette[0];
     let spread = k.hue.clamp(0.0, 240.0) as f64;
     let base = c.base_hue as f64;
@@ -373,7 +413,10 @@ fn paints(palette: &[Color; 5], k: &Opus2QuasicrystalKnobs, c: &Cached, n: usize
             tile[ty][l] = lerp_color(bg, full, amt);
         }
     }
-    let web_full = lighten(shift_hue(palette[1], base + spread * 0.35), (30.0 * glow) as u8);
+    let web_full = lighten(
+        shift_hue(palette[1], base + spread * 0.35),
+        (30.0 * glow) as u8,
+    );
     let mut web = [bg; LEVELS];
     for l in 0..LEVELS {
         let amt = 0.3 + 0.7 * (l as f32 + 1.0) / LEVELS as f32;
@@ -392,7 +435,16 @@ fn paints(palette: &[Color; 5], k: &Opus2QuasicrystalKnobs, c: &Cached, n: usize
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn render(grid: &mut Grid, w: usize, h: usize, seed: u64, palette: &[Color; 5], t: f32, k: &Opus2QuasicrystalKnobs, c: &mut Cached) {
+fn render(
+    grid: &mut Grid,
+    w: usize,
+    h: usize,
+    seed: u64,
+    palette: &[Color; 5],
+    t: f32,
+    k: &Opus2QuasicrystalKnobs,
+    c: &mut Cached,
+) {
     measure_layer("opus-2-quasicrystal", "clear", || {
         for row in grid.iter_mut().take(h) {
             for cell in row.iter_mut().take(w) {
@@ -404,7 +456,11 @@ fn render(grid: &mut Grid, w: usize, h: usize, seed: u64, palette: &[Color; 5], 
         return;
     }
     let f = geometry(w, h, t, k, c);
-    let tt = if t > 0.0 { t * k.speed.clamp(0.0, 8.0) } else { 0.0 };
+    let tt = if t > 0.0 {
+        t * k.speed.clamp(0.0, 8.0)
+    } else {
+        0.0
+    };
     let pulse = 0.5 + 0.5 * (tt * 0.18).sin();
     let ramp = c.ramp;
     let seed32 = (seed ^ (seed >> 32)) as u32;
@@ -487,7 +543,13 @@ impl Envelope {
             brk[i] = (hb[i + 1] - hb[i]) / (hm[i] - hm[i + 1]);
         }
         brk[len.saturating_sub(1)] = f32::INFINITY;
-        Envelope { m: hm, b: hb, brk, len: len.max(1), at: 0 }
+        Envelope {
+            m: hm,
+            b: hb,
+            brk,
+            len: len.max(1),
+            at: 0,
+        }
     }
 
     #[inline(always)]
@@ -501,7 +563,18 @@ impl Envelope {
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn lattice_pass(grid: &mut Grid, w: usize, h: usize, f: &Frame, p: &Paint, k: &Opus2QuasicrystalKnobs, ramp: &[char; LEVELS], seed32: u32, twinkle: u32, lut: &[FrontLut]) {
+fn lattice_pass(
+    grid: &mut Grid,
+    w: usize,
+    h: usize,
+    f: &Frame,
+    p: &Paint,
+    k: &Opus2QuasicrystalKnobs,
+    ramp: &[char; LEVELS],
+    seed32: u32,
+    twinkle: u32,
+    lut: &[FrontLut],
+) {
     match f.n {
         0..=4 => lattice_rows::<4>(grid, w, h, f, p, k, ramp, seed32, twinkle, lut),
         5 => lattice_rows::<5>(grid, w, h, f, p, k, ramp, seed32, twinkle, lut),
@@ -511,7 +584,18 @@ fn lattice_pass(grid: &mut Grid, w: usize, h: usize, f: &Frame, p: &Paint, k: &O
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn lattice_rows<const N: usize>(grid: &mut Grid, w: usize, h: usize, f: &Frame, p: &Paint, k: &Opus2QuasicrystalKnobs, ramp: &[char; LEVELS], seed32: u32, twinkle: u32, lut: &[FrontLut]) {
+fn lattice_rows<const N: usize>(
+    grid: &mut Grid,
+    w: usize,
+    h: usize,
+    f: &Frame,
+    p: &Paint,
+    k: &Opus2QuasicrystalKnobs,
+    ramp: &[char; LEVELS],
+    seed32: u32,
+    twinkle: u32,
+    lut: &[FrontLut],
+) {
     let facet = f.facet;
     let one_facet = 1.0 - f.facet;
     let inv_rmax = f.inv_rmax;
@@ -532,127 +616,168 @@ fn lattice_rows<const N: usize>(grid: &mut Grid, w: usize, h: usize, f: &Frame, 
         glyph[j] = f.glyph[j];
         mix[j] = MIX[j];
     }
-    grid[..h].par_iter_mut().enumerate().for_each(|(y, grid_row)| {
-        let mut a0 = [0.0f32; N];
-        let mut fr = [0.0f32; N];
-        let mut ksum = 0i32;
-        let mut hsh = seed32;
-        let dy = y as f32 + 0.5 - f.ncy;
-        let dx0 = 0.5 - f.ncx;
-        for j in 0..N {
-            a0[j] = dx0 * step[j] + dy * f.rowstep[j];
-            let u = a0[j] + f.gamma[j];
-            let fl = u.floor();
-            let kj = fl as i32;
-            ksum = ksum.wrapping_add(kj);
-            hsh = hsh.wrapping_add((kj as u32).wrapping_mul(mix[j]));
-            fr[j] = u - fl;
-        }
-        let mut env = Envelope::build(&a0, &step, N);
-        let mut renv = if one_facet > 0.0 {
-            let mut ra = [0.0f32; RDIRS];
-            for i in 0..RDIRS {
-                ra[i] = dx0 * f.rcol[i] + dy * f.rrow[i];
+    grid[..h]
+        .par_iter_mut()
+        .enumerate()
+        .for_each(|(y, grid_row)| {
+            let mut a0 = [0.0f32; N];
+            let mut fr = [0.0f32; N];
+            let mut ksum = 0i32;
+            let mut hsh = seed32;
+            let dy = y as f32 + 0.5 - f.ncy;
+            let dx0 = 0.5 - f.ncx;
+            for j in 0..N {
+                a0[j] = dx0 * step[j] + dy * f.rowstep[j];
+                let u = a0[j] + f.gamma[j];
+                let fl = u.floor();
+                let kj = fl as i32;
+                ksum = ksum.wrapping_add(kj);
+                hsh = hsh.wrapping_add((kj as u32).wrapping_mul(mix[j]));
+                fr[j] = u - fl;
             }
-            Envelope::build(&ra, &f.rcol, RDIRS)
-        } else {
-            Envelope::build(&a0, &step, N)
-        };
-        let row = &mut grid_row[..w];
-        for (x, cell) in row.iter_mut().enumerate() {
-            let rad = env.at(x as f32);
-            let q = if one_facet > 0.0 {
-                let round = renv.at(x as f32) * RSEC;
-                (rad * facet + round * one_facet) * inv_rmax
-            } else {
-                rad * inv_rmax
-            };
-            let e = lut[((q * lut_scale) as usize).min(lut_top)];
-            let pack = e.pack;
-            let formed = e.formed;
-
-            let mut quick = None;
-            let lead = (pack & 0xFF) as f32 * glow;
-            if lead > 0.5 {
-                let ch = if lead > 0.92 { '@' } else if lead > 0.74 { '#' } else { '%' };
-                quick = Some(Cell::new(ch, p.rim));
-            } else if (pack >> 24) & 1 == 1 {
-                quick = Some(Cell::new(' ', p.bg));
-            } else if formed <= 0.02 {
-                let gate = ((pack >> 16) & 0xFF) as f32 * inv255;
-                let prob = if gate > 0.0 { ghost * gate.max(0.13) * gate.max(0.13) } else { ghost_low };
-                let hb = hash_bits(x as u32, y as u32, twinkle);
-                if prob <= 0.0 || (hb & 0xFFF) as f32 * INV12 >= prob {
-                    let melt = ((pack >> 8) & 0xFF) as f32 * glow;
-                    quick = Some(if melt > 0.4 {
-                        Cell::new(if melt > 0.8 { ':' } else { '.' }, p.melt)
-                    } else if dust > 0.0 && gate > 0.0 && ((hb >> 12) & 0xFFF) as f32 * INV12 < dust * gate * gate {
-                        let v = (hb >> 24) as f32 * (1.0 / 256.0);
-                        let ch = if v < 0.5 { '.' } else if v < 0.82 { '`' } else { ',' };
-                        Cell::new(ch, p.dust)
-                    } else {
-                        Cell::new(' ', p.bg)
-                    });
+            let mut env = Envelope::build(&a0, &step, N);
+            let mut renv = if one_facet > 0.0 {
+                let mut ra = [0.0f32; RDIRS];
+                for i in 0..RDIRS {
+                    ra[i] = dx0 * f.rcol[i] + dy * f.rrow[i];
                 }
-            }
-            if let Some(c) = quick {
-                *cell = c;
+                Envelope::build(&ra, &f.rcol, RDIRS)
+            } else {
+                Envelope::build(&a0, &step, N)
+            };
+            let row = &mut grid_row[..w];
+            for (x, cell) in row.iter_mut().enumerate() {
+                let rad = env.at(x as f32);
+                let q = if one_facet > 0.0 {
+                    let round = renv.at(x as f32) * RSEC;
+                    (rad * facet + round * one_facet) * inv_rmax
+                } else {
+                    rad * inv_rmax
+                };
+                let e = lut[((q * lut_scale) as usize).min(lut_top)];
+                let pack = e.pack;
+                let formed = e.formed;
+
+                let mut quick = None;
+                let lead = (pack & 0xFF) as f32 * glow;
+                if lead > 0.5 {
+                    let ch = if lead > 0.92 {
+                        '@'
+                    } else if lead > 0.74 {
+                        '#'
+                    } else {
+                        '%'
+                    };
+                    quick = Some(Cell::new(ch, p.rim));
+                } else if (pack >> 24) & 1 == 1 {
+                    quick = Some(Cell::new(' ', p.bg));
+                } else if formed <= 0.02 {
+                    let gate = ((pack >> 16) & 0xFF) as f32 * inv255;
+                    let prob = if gate > 0.0 {
+                        ghost * gate.max(0.13) * gate.max(0.13)
+                    } else {
+                        ghost_low
+                    };
+                    let hb = hash_bits(x as u32, y as u32, twinkle);
+                    if prob <= 0.0 || (hb & 0xFFF) as f32 * INV12 >= prob {
+                        let melt = ((pack >> 8) & 0xFF) as f32 * glow;
+                        quick = Some(if melt > 0.4 {
+                            Cell::new(if melt > 0.8 { ':' } else { '.' }, p.melt)
+                        } else if dust > 0.0
+                            && gate > 0.0
+                            && ((hb >> 12) & 0xFFF) as f32 * INV12 < dust * gate * gate
+                        {
+                            let v = (hb >> 24) as f32 * (1.0 / 256.0);
+                            let ch = if v < 0.5 {
+                                '.'
+                            } else if v < 0.82 {
+                                '`'
+                            } else {
+                                ','
+                            };
+                            Cell::new(ch, p.dust)
+                        } else {
+                            Cell::new(' ', p.bg)
+                        });
+                    }
+                }
+                if let Some(c) = quick {
+                    *cell = c;
+                    for j in 0..N {
+                        let nf = fr[j] + step[j];
+                        let fl = nf.floor();
+                        fr[j] = nf - fl;
+                        let dk = fl as i32;
+                        ksum = ksum.wrapping_add(dk);
+                        hsh = hsh.wrapping_add((dk as u32).wrapping_mul(mix[j]));
+                    }
+                    continue;
+                }
+
+                let mut d1 = f32::INFINITY;
+                let mut d2 = f32::INFINITY;
+                let mut i1 = 0usize;
                 for j in 0..N {
-                    let nf = fr[j] + step[j];
+                    let g = fr[j];
+                    let dist = g.min(1.0 - g) * invthr[j];
+                    let better = dist < d1;
+                    d2 = if better { d1 } else { d2.min(dist) };
+                    i1 = if better { j } else { i1 };
+                    d1 = if better { dist } else { d1 };
+                    let nf = g + step[j];
                     let fl = nf.floor();
                     fr[j] = nf - fl;
                     let dk = fl as i32;
                     ksum = ksum.wrapping_add(dk);
                     hsh = hsh.wrapping_add((dk as u32).wrapping_mul(mix[j]));
                 }
-                continue;
-            }
 
-            let mut d1 = f32::INFINITY;
-            let mut d2 = f32::INFINITY;
-            let mut i1 = 0usize;
-            for j in 0..N {
-                let g = fr[j];
-                let dist = g.min(1.0 - g) * invthr[j];
-                let better = dist < d1;
-                d2 = if better { d1 } else { d2.min(dist) };
-                i1 = if better { j } else { i1 };
-                d1 = if better { dist } else { d1 };
-                let nf = g + step[j];
-                let fl = nf.floor();
-                fr[j] = nf - fl;
-                let dk = fl as i32;
-                ksum = ksum.wrapping_add(dk);
-                hsh = hsh.wrapping_add((dk as u32).wrapping_mul(mix[j]));
+                if formed <= 0.02 {
+                    let gate = ((pack >> 16) & 0xFF) as f32 * inv255;
+                    let thr = if gate > 0.0 {
+                        0.5 + 1.7 * gate.max(0.13)
+                    } else {
+                        0.45
+                    };
+                    *cell = if d1 < thr {
+                        Cell::new(glyph[i1], p.dust)
+                    } else {
+                        Cell::new(' ', p.bg)
+                    };
+                    continue;
+                }
+                let wthr = 0.4 + 0.6 * formed;
+                if d1 < wthr {
+                    *cell = if d2 < wthr * 1.35 {
+                        Cell::new(if d1 < wthr * 0.45 { '+' } else { 'x' }, p.node)
+                    } else {
+                        let lv =
+                            (((0.45 + 0.55 * formed) * LEVELS as f32) as usize).min(LEVELS - 1);
+                        Cell::new(glyph[i1], p.web[lv])
+                    };
+                    continue;
+                }
+                let ty =
+                    (((ksum.wrapping_add(0x0010_0000) as u32) % N as u32) as usize).min(TYPES - 1);
+                let shade = ((hsh >> 11) & 0x7) as f32 * (1.0 / 7.0);
+                let level = f.lvl[ty] * (0.72 + 0.56 * shade) * formed;
+                let li = ((level * LEVELS as f32) as usize).min(LEVELS - 1);
+                *cell = Cell::new(ramp[li], p.tile[ty][li]);
             }
-
-            if formed <= 0.02 {
-                let gate = ((pack >> 16) & 0xFF) as f32 * inv255;
-                let thr = if gate > 0.0 { 0.5 + 1.7 * gate.max(0.13) } else { 0.45 };
-                *cell = if d1 < thr { Cell::new(glyph[i1], p.dust) } else { Cell::new(' ', p.bg) };
-                continue;
-            }
-            let wthr = 0.4 + 0.6 * formed;
-            if d1 < wthr {
-                *cell = if d2 < wthr * 1.35 {
-                    Cell::new(if d1 < wthr * 0.45 { '+' } else { 'x' }, p.node)
-                } else {
-                    let lv = (((0.45 + 0.55 * formed) * LEVELS as f32) as usize).min(LEVELS - 1);
-                    Cell::new(glyph[i1], p.web[lv])
-                };
-                continue;
-            }
-            let ty = (((ksum.wrapping_add(0x0010_0000) as u32) % N as u32) as usize).min(TYPES - 1);
-            let shade = ((hsh >> 11) & 0x7) as f32 * (1.0 / 7.0);
-            let level = f.lvl[ty] * (0.72 + 0.56 * shade) * formed;
-            let li = ((level * LEVELS as f32) as usize).min(LEVELS - 1);
-            *cell = Cell::new(ramp[li], p.tile[ty][li]);
-        }
-    });
+        });
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn nucleus_pass(grid: &mut Grid, w: usize, h: usize, f: &Frame, p: &Paint, star: f32, pulse: f32, k: &Opus2QuasicrystalKnobs) {
+fn nucleus_pass(
+    grid: &mut Grid,
+    w: usize,
+    h: usize,
+    f: &Frame,
+    p: &Paint,
+    star: f32,
+    pulse: f32,
+    k: &Opus2QuasicrystalKnobs,
+) {
     let glow = k.glow.clamp(0.0, 1.5);
     if glow <= 0.01 {
         return;
@@ -688,20 +813,40 @@ fn nucleus_pass(grid: &mut Grid, w: usize, h: usize, f: &Frame, p: &Paint, star:
                 }
                 let fade = 1.0 - (i as f32 - 1.0) / steps.max(1) as f32;
                 let ch = if i == steps { '*' } else { f.glyph[j] };
-                grid[py as usize][px as usize] = Cell::new(ch, lerp_color(p.bg, p.star, 0.4 + 0.6 * fade));
+                grid[py as usize][px as usize] =
+                    Cell::new(ch, lerp_color(p.bg, p.star, 0.4 + 0.6 * fade));
             }
         }
     }
     let px = cx.round() as i32;
     let py = cy.round() as i32;
     if px >= 0 && py >= 0 && (px as usize) < w && (py as usize) < h {
-        let ch = if pulse > 0.66 { '@' } else if pulse > 0.33 { '*' } else { 'o' };
+        let ch = if pulse > 0.66 {
+            '@'
+        } else if pulse > 0.33 {
+            '*'
+        } else {
+            'o'
+        };
         grid[py as usize][px as usize] = Cell::new(ch, p.star);
     }
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn cli_opus_2_quasicrystal(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
+pub(crate) fn cli_opus_2_quasicrystal(
+    mut grid: Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: [Color; 5],
+    rng: StdRng,
+    t_anim: f32,
+    term_w: u16,
+    term_h: u16,
+    args: &[String],
+    mode: &str,
+    theme_name: &str,
+) -> (Grid, bool) {
     let _ = (rng, term_w, term_h, mode, theme_name);
     let mut k = Opus2QuasicrystalKnobs::from_env();
     let pos: Vec<f32> = args.iter().skip(4).filter_map(|a| a.parse().ok()).collect();
@@ -815,19 +960,23 @@ mod tests {
     #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn parallel_lattice_preserves_full_colored_grid() {
         let render = |threads| {
-            rayon::ThreadPoolBuilder::new().num_threads(threads).build().unwrap().install(|| {
-                let (w, h) = (320, 180);
-                let mut g = vec![vec![Cell::blank(); w]; h];
-                let p = crate::color::make_palette(91);
-                let mut k = Opus2QuasicrystalKnobs::from_env();
-                k.folds = 7.0;
-                k.dust = 0.91;
-                k.band = 0.88;
-                k.facet = 0.37;
-                k.phase = 0.61;
-                draw_opus_2_quasicrystal(&mut g, w, h, 91, &p, 47.25, &k);
-                g
-            })
+            rayon::ThreadPoolBuilder::new()
+                .num_threads(threads)
+                .build()
+                .unwrap()
+                .install(|| {
+                    let (w, h) = (320, 180);
+                    let mut g = vec![vec![Cell::blank(); w]; h];
+                    let p = crate::color::make_palette(91);
+                    let mut k = Opus2QuasicrystalKnobs::from_env();
+                    k.folds = 7.0;
+                    k.dust = 0.91;
+                    k.band = 0.88;
+                    k.facet = 0.37;
+                    k.phase = 0.61;
+                    draw_opus_2_quasicrystal(&mut g, w, h, 91, &p, 47.25, &k);
+                    g
+                })
         };
         assert_eq!(render(1), render(4));
     }
@@ -843,7 +992,9 @@ mod tests {
             let p99 = samples[(samples.len() * 99 / 100).min(samples.len() - 1)];
             let max = *samples.last().unwrap();
             let avg = samples.iter().sum::<f64>() / samples.len() as f64;
-            eprintln!("{label}: cold {cold:.3} ms, avg {avg:.3} ms, p50 {p50:.3} ms, p99 {p99:.3} ms, max {max:.3} ms");
+            eprintln!(
+                "{label}: cold {cold:.3} ms, avg {avg:.3} ms, p50 {p50:.3} ms, p99 {p99:.3} ms, max {max:.3} ms"
+            );
         }
 
         let (w, h) = (1000, 500);
@@ -861,7 +1012,15 @@ mod tests {
             k1.shade = (i * 19 % 101) as f32 * 0.01;
             k1.worms = (i * 5 % 7) as f32;
             let started = std::time::Instant::now();
-            crate::opus_1_quasicrystal::draw_opus_1_quasicrystal(&mut grid, w, h, 317, &p, i as f32 * 0.06, &k1);
+            crate::opus_1_quasicrystal::draw_opus_1_quasicrystal(
+                &mut grid,
+                w,
+                h,
+                317,
+                &p,
+                i as f32 * 0.06,
+                &k1,
+            );
             s1.push(started.elapsed().as_secs_f64() * 1000.0);
         }
         report("opus-1 random hops 1000x500", cold1, s1);
@@ -900,7 +1059,10 @@ mod tests {
             worst = worst.max(t0.elapsed().as_secs_f64() * 1000.0);
         }
         let avg = start.elapsed().as_secs_f64() * 1000.0 / 200.0;
-        eprintln!("opus-2-quasicrystal frame_cost 200x60: avg {:.3} ms, worst {:.3} ms", avg, worst);
+        eprintln!(
+            "opus-2-quasicrystal frame_cost 200x60: avg {:.3} ms, worst {:.3} ms",
+            avg, worst
+        );
         if !cfg!(debug_assertions) {
             assert!(avg < 4.0, "avg frame {:.3} ms", avg);
         }

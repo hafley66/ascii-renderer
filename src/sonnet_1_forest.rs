@@ -151,7 +151,13 @@ fn species_mix(rng: &mut StdRng) -> [f32; 6] {
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn pick_species(mix: &[f32; 6], r: f32, layer: usize, layers: usize, colonist_left: &mut usize) -> Species {
+fn pick_species(
+    mix: &[f32; 6],
+    r: f32,
+    layer: usize,
+    layers: usize,
+    colonist_left: &mut usize,
+) -> Species {
     let back = layer == 0;
     let front = layers > 1 && layer + 1 == layers;
     let mut i = 0;
@@ -205,7 +211,13 @@ fn bake_forest(w: usize, h: usize, seed: u64, k: &ForestKnobs, key: ForestKey) -
             if n > 0.006 + 0.018 * up {
                 continue;
             }
-            let g = if n < 0.004 { '·' } else if n < 0.010 { '∙' } else { '◦' };
+            let g = if n < 0.004 {
+                '·'
+            } else if n < 0.010 {
+                '∙'
+            } else {
+                '◦'
+            };
             band.put(x, y, g, BAND_AIR, (12.0 + up * 16.0) as u8);
         }
     }
@@ -220,8 +232,20 @@ fn bake_forest(w: usize, h: usize, seed: u64, k: &ForestKnobs, key: ForestKey) -
             if d > 1.15 {
                 continue;
             }
-            let g = if d < 0.6 { '▒' } else if d < 0.92 { '░' } else { '·' };
-            band.put(disc_x + dx, disc_y + dy, g, BAND_AIR, (30.0 - d * 14.0) as u8);
+            let g = if d < 0.6 {
+                '▒'
+            } else if d < 0.92 {
+                '░'
+            } else {
+                '·'
+            };
+            band.put(
+                disc_x + dx,
+                disc_y + dy,
+                g,
+                BAND_AIR,
+                (30.0 - d * 14.0) as u8,
+            );
         }
     }
     capture(&band, 0, 0, air_slot, 0, 0, &mut sky);
@@ -234,7 +258,11 @@ fn bake_forest(w: usize, h: usize, seed: u64, k: &ForestKnobs, key: ForestKey) -
     }
     let mut gcan = Canvas::new(w, (h as i32 - horizon).max(1) as usize);
     for li in 0..layers {
-        let top = if li == 0 { horizon } else { ground_rows[li - 1] };
+        let top = if li == 0 {
+            horizon
+        } else {
+            ground_rows[li - 1]
+        };
         let bot = ground_rows[li];
         let f = (li + 1) as f32 / layers as f32;
         let dense = (0.05 + f * 0.13) * (0.6 + k.density * 0.5);
@@ -255,7 +283,13 @@ fn bake_forest(w: usize, h: usize, seed: u64, k: &ForestKnobs, key: ForestKey) -
             if n < 0.55 {
                 continue;
             }
-            gcan.put(x, 0, if n > 0.88 { '╴' } else { '─' }, BAND_ROOT, (10.0 + f * 12.0) as u8);
+            gcan.put(
+                x,
+                0,
+                if n > 0.88 { '╴' } else { '─' },
+                BAND_ROOT,
+                (10.0 + f * 12.0) as u8,
+            );
         }
         capture(&gcan, 0, top, li as u16, 0, 0, &mut ground);
     }
@@ -263,7 +297,11 @@ fn bake_forest(w: usize, h: usize, seed: u64, k: &ForestKnobs, key: ForestKey) -
     let mut canvas = Canvas::new(8, 8);
     let mut colonist_left = MAX_COLONIST;
     'layers: for li in 0..layers {
-        let f = if layers > 1 { li as f32 / (layers - 1) as f32 } else { 1.0 };
+        let f = if layers > 1 {
+            li as f32 / (layers - 1) as f32
+        } else {
+            1.0
+        };
         let base_y = ground_rows[li];
         let tree_h = ((base_y - horizon) as f32 * 1.15).max(5.0);
         let slot_w = (tree_h * 0.85).max(5.0);
@@ -291,8 +329,14 @@ fn bake_forest(w: usize, h: usize, seed: u64, k: &ForestKnobs, key: ForestKey) -
             let sp = pick_species(&mix, rng.random::<f32>(), li, layers, &mut colonist_left);
             canvas.reset(pw as usize, (ph + 2) as usize);
             let plot = Plot {
-                rect: Rect { x: 0, y: 0, w: pw as usize, h: ph as usize },
-                energy: (k.energy * (0.72 + 0.34 * f) * (0.82 + rng.random::<f32>() * 0.32)).clamp(0.25, 1.0),
+                rect: Rect {
+                    x: 0,
+                    y: 0,
+                    w: pw as usize,
+                    h: ph as usize,
+                },
+                energy: (k.energy * (0.72 + 0.34 * f) * (0.82 + rng.random::<f32>() * 0.32))
+                    .clamp(0.25, 1.0),
                 fruit: k.fruit * (0.3 + f),
                 branch: k.branch,
                 roots: rng.random_range(0..4u32) as usize,
@@ -300,7 +344,9 @@ fn bake_forest(w: usize, h: usize, seed: u64, k: &ForestKnobs, key: ForestKey) -
                 bare: (k.bare * (0.75 + 0.85 * f)).clamp(0.10, 0.58),
                 wind: (wind_base + (rng.random::<f32>() - 0.5) * 0.25).clamp(-1.0, 1.0),
             };
-            let mut trng = StdRng::seed_from_u64(seed ^ ((li as u64) << 40) ^ ((cx.abs() as u64) << 8) ^ phase.len() as u64);
+            let mut trng = StdRng::seed_from_u64(
+                seed ^ ((li as u64) << 40) ^ ((cx.abs() as u64) << 8) ^ phase.len() as u64,
+            );
             grow_species(sp, &mut canvas, &plot, &mut trng);
             let group = phase.len() as u16;
             let start = trees.len();
@@ -313,9 +359,18 @@ fn bake_forest(w: usize, h: usize, seed: u64, k: &ForestKnobs, key: ForestKey) -
                     trunks.push(idx as u32);
                 }
             }
-            canopy.push((px as f32 + pw as f32 * 0.5, py as f32 + ph as f32 * 0.35, pw as f32 * 0.5, ph as f32 * 0.3));
+            canopy.push((
+                px as f32 + pw as f32 * 0.5,
+                py as f32 + ph as f32 * 0.35,
+                pw as f32 * 0.5,
+                ph as f32 * 0.3,
+            ));
             let period = 8.0 + rng.random::<f32>() * 12.0 - f * 2.0;
-            phase.push((TAU / period.max(4.0), rng.random::<f32>() * TAU, depth_scale));
+            phase.push((
+                TAU / period.max(4.0),
+                rng.random::<f32>() * TAU,
+                depth_scale,
+            ));
         }
     }
 
@@ -343,7 +398,23 @@ fn bake_forest(w: usize, h: usize, seed: u64, k: &ForestKnobs, key: ForestKey) -
         }
     }
 
-    ForestBake { key, sky, ground, trees, trunks, leaves, canopy, fog, flies, phase, layers, slots, horizon, kind, tint }
+    ForestBake {
+        key,
+        sky,
+        ground,
+        trees,
+        trunks,
+        leaves,
+        canopy,
+        fog,
+        flies,
+        phase,
+        layers,
+        slots,
+        horizon,
+        kind,
+        tint,
+    }
 }
 
 // ── color ───────────────────────────────────────────────────────────
@@ -376,7 +447,13 @@ fn light_stop(p: f32, palette: &[Color; 5]) -> (Color, Color, f32) {
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn build_forest_lut(palette: &[Color; 5], k: &ForestKnobs, b: &ForestBake, light: f32, haze: Color) -> Vec<Color> {
+fn build_forest_lut(
+    palette: &[Color; 5],
+    k: &ForestKnobs,
+    b: &ForestBake,
+    light: f32,
+    haze: Color,
+) -> Vec<Color> {
     let mut lut = Vec::with_capacity(b.slots * PAL_STRIDE);
     let hue = k.hue as f64 + b.tint;
     let dim = (light * 255.0) as i32;
@@ -385,7 +462,11 @@ fn build_forest_lut(palette: &[Color; 5], k: &ForestKnobs, b: &ForestBake, light
         darken(c, d)
     };
     for li in 0..b.layers {
-        let far = if b.layers > 1 { 1.0 - li as f32 / (b.layers - 1) as f32 } else { 0.0 };
+        let far = if b.layers > 1 {
+            1.0 - li as f32 / (b.layers - 1) as f32
+        } else {
+            0.0
+        };
         let fog = far * 0.76;
         let bark = lerp_color(sink(shift_hue(palette[2], hue)), haze, fog);
         let limb = lerp_color(sink(shift_hue(palette[1], hue)), haze, fog);
@@ -412,7 +493,16 @@ fn build_forest_lut(palette: &[Color; 5], k: &ForestKnobs, b: &ForestBake, light
 // ── frame ───────────────────────────────────────────────────────────
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn paint_fog(grid: &mut Grid, w: usize, h: usize, b: &ForestBake, offs: &[i32], t: f32, speed: f32, col: Color) {
+fn paint_fog(
+    grid: &mut Grid,
+    w: usize,
+    h: usize,
+    b: &ForestBake,
+    offs: &[i32],
+    t: f32,
+    speed: f32,
+    col: Color,
+) {
     let ts = t * speed;
     for band in &b.fog {
         let cx = (band.x0 + ts * band.sp * 3.0).rem_euclid(w as f32 + 20.0) - 10.0;
@@ -423,7 +513,8 @@ fn paint_fog(grid: &mut Grid, w: usize, h: usize, b: &ForestBake, offs: &[i32], 
             }
             for dx in -14i32..=14 {
                 let x = (cx as i32 + dx).rem_euclid(w as i32) as usize;
-                let n = hashf(x as i32, y as i32, 0x0F06) + (0.4 * (dx as f32 * 0.3 + band.ph + ts * 0.6).sin());
+                let n = hashf(x as i32, y as i32, 0x0F06)
+                    + (0.4 * (dx as f32 * 0.3 + band.ph + ts * 0.6).sin());
                 if n < 0.65 {
                     continue;
                 }
@@ -459,7 +550,15 @@ fn paint_fog(grid: &mut Grid, w: usize, h: usize, b: &ForestBake, offs: &[i32], 
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn paint_flies(grid: &mut Grid, w: usize, h: usize, b: &ForestBake, t: f32, speed: f32, warm: Color) {
+fn paint_flies(
+    grid: &mut Grid,
+    w: usize,
+    h: usize,
+    b: &ForestBake,
+    t: f32,
+    speed: f32,
+    warm: Color,
+) {
     let ts = t * speed;
     for fly in &b.flies {
         let (cx, cy, rx, ry) = b.canopy[fly.box_i as usize];
@@ -471,13 +570,28 @@ fn paint_flies(grid: &mut Grid, w: usize, h: usize, b: &ForestBake, t: f32, spee
         if xi < 0 || xi as usize >= w || yi < 0 || yi as usize >= h {
             continue;
         }
-        let g = if pulse > 0.8 { '◦' } else if pulse > 0.5 { '∙' } else { continue };
+        let g = if pulse > 0.8 {
+            '◦'
+        } else if pulse > 0.5 {
+            '∙'
+        } else {
+            continue;
+        };
         grid[yi as usize][xi as usize] = Cell::new(g, warm);
     }
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn paint_leaffall(grid: &mut Grid, w: usize, h: usize, b: &ForestBake, offs: &[i32], t: f32, speed: f32, lut: &[Color]) {
+fn paint_leaffall(
+    grid: &mut Grid,
+    w: usize,
+    h: usize,
+    b: &ForestBake,
+    offs: &[i32],
+    t: f32,
+    speed: f32,
+    lut: &[Color],
+) {
     if b.leaves.is_empty() {
         return;
     }
@@ -501,7 +615,10 @@ fn paint_leaffall(grid: &mut Grid, w: usize, h: usize, b: &ForestBake, offs: &[i
         }
         let base = c.pal - (c.pal % TONES as u16);
         let tone = (c.pal % TONES as u16).min(TONES as u16 - 1);
-        grid[yi as usize][xi as usize] = Cell::new(if seed_f > 0.5 { '◇' } else { '·' }, lut[(base + tone) as usize]);
+        grid[yi as usize][xi as usize] = Cell::new(
+            if seed_f > 0.5 { '◇' } else { '·' },
+            lut[(base + tone) as usize],
+        );
     }
 }
 
@@ -531,7 +648,9 @@ pub(crate) fn draw_sonnet_1_forest(
         let mut store = store.borrow_mut();
         let key = forest_key(w, h, seed, k);
         if store.as_ref().map(|b| b.key) != Some(key) {
-            *store = Some(measure_layer("sonnet-1-forest", "bake", || bake_forest(w, h, seed, k, key)));
+            *store = Some(measure_layer("sonnet-1-forest", "bake", || {
+                bake_forest(w, h, seed, k, key)
+            }));
         }
         let b = store.as_ref().unwrap();
 
@@ -546,9 +665,15 @@ pub(crate) fn draw_sonnet_1_forest(
             }
         }
 
-        measure_layer("sonnet-1-forest", "sky", || blit(grid, w, h, &b.sky, &lut, &offs));
-        measure_layer("sonnet-1-forest", "ground", || blit(grid, w, h, &b.ground, &lut, &offs));
-        measure_layer("sonnet-1-forest", "trees", || blit(grid, w, h, &b.trees, &lut, &offs));
+        measure_layer("sonnet-1-forest", "sky", || {
+            blit(grid, w, h, &b.sky, &lut, &offs)
+        });
+        measure_layer("sonnet-1-forest", "ground", || {
+            blit(grid, w, h, &b.ground, &lut, &offs)
+        });
+        measure_layer("sonnet-1-forest", "trees", || {
+            blit(grid, w, h, &b.trees, &lut, &offs)
+        });
 
         if t > 0.0 {
             measure_layer("sonnet-1-forest", "atmos", || {

@@ -90,7 +90,12 @@ impl Knobs6 {
     }
     #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn geom_key(&self) -> (u32, u32, u32, usize) {
-        (self.depth, self.spread.to_bits(), self.lattice.to_bits(), self.motes)
+        (
+            self.depth,
+            self.spread.to_bits(),
+            self.lattice.to_bits(),
+            self.motes,
+        )
     }
 }
 
@@ -190,7 +195,11 @@ fn color_hue(c: Color) -> f64 {
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn scale_rgb(c: (u8, u8, u8), factor: f32) -> Color {
     let conv = |v: u8| ((v as f32 * factor).round().clamp(0.0, 255.0)) as u8;
-    Color::Rgb { r: conv(c.0), g: conv(c.1), b: conv(c.2) }
+    Color::Rgb {
+        r: conv(c.0),
+        g: conv(c.1),
+        b: conv(c.2),
+    }
 }
 
 #[inline]
@@ -217,7 +226,11 @@ fn h_step(start: HPoint, heading_rad: f32, dist: f32) -> (HPoint, f32) {
     let cos_t = heading_rad.cos();
     let sin_t = heading_rad.sin();
     if cos_t.abs() < 1e-4 {
-        let next_y = if sin_t > 0.0 { start.1 * dist.exp() } else { start.1 * (-dist).exp() };
+        let next_y = if sin_t > 0.0 {
+            start.1 * dist.exp()
+        } else {
+            start.1 * (-dist).exp()
+        };
         return ((start.0, next_y), heading_rad);
     }
     let c = start.0 - start.1 * sin_t / cos_t;
@@ -553,7 +566,9 @@ fn render_frame6(grid: &mut Grid, c: &Cached6, t: f32, k: &Knobs6) {
     let unproj_den = (c.scale_x * 0.45).max(1.0);
 
     measure_layer("tree-of-life-6", "plane", || {
-        let xn: Vec<f32> = (0..w).map(|x| ((x as i32) as f32 - c.c_x) / unproj_den).collect();
+        let xn: Vec<f32> = (0..w)
+            .map(|x| ((x as i32) as f32 - c.c_x) / unproj_den)
+            .collect();
         for y in 0..h {
             let y_norm = ((c.c_y - (y as i32) as f32) / c.scale_y).clamp(0.01, 1.1);
             let yv = ((y_norm * 5.5) - 2.5).exp();
@@ -622,15 +637,33 @@ fn render_frame6(grid: &mut Grid, c: &Cached6, t: f32, k: &Knobs6) {
                 let thick = if heavy && depth_ratio > 0.6 { 1 } else { 0 };
 
                 if eth {
-                    let p = (seg.depth as f32 * 1.5 - ts * 1.8 + seg.phase * 6.28).sin().max(0.0);
+                    let p = (seg.depth as f32 * 1.5 - ts * 1.8 + seg.phase * 6.28)
+                        .sin()
+                        .max(0.0);
                     let pulse = p * p;
-                    let b_idx = if pulse > 0.6 { 2 } else if pulse > 0.2 { 1 } else { 0 };
+                    let b_idx = if pulse > 0.6 {
+                        2
+                    } else if pulse > 0.2 {
+                        1
+                    } else {
+                        0
+                    };
                     let ch = match seg.kind {
-                        SegmentKind::Twig => if b_idx > 0 { '∙' } else { '·' },
+                        SegmentKind::Twig => {
+                            if b_idx > 0 {
+                                '∙'
+                            } else {
+                                '·'
+                            }
+                        }
                         _ => ETH_BLOCKS[b_idx],
                     };
-                    let intensity = (0.45 + 0.55 * k.glow * pulse.max(flash)) * (0.5 + 0.5 * depth_ratio);
-                    let col = scale_rgb(blend_rgb(c.col_eth_core, c.col_eth_glow, pulse * 0.75), intensity);
+                    let intensity =
+                        (0.45 + 0.55 * k.glow * pulse.max(flash)) * (0.5 + 0.5 * depth_ratio);
+                    let col = scale_rgb(
+                        blend_rgb(c.col_eth_core, c.col_eth_glow, pulse * 0.75),
+                        intensity,
+                    );
                     raster_line(x0, y0, x1, y1, |lx, ly| {
                         for off in -thick..=thick {
                             set_cell(grid, lx + off, ly, ch, col);
@@ -673,7 +706,11 @@ fn render_frame6(grid: &mut Grid, c: &Cached6, t: f32, k: &Knobs6) {
                 let pair = CANOPY_PAIRS[(leaf.glyph_idx & 3) as usize];
                 let ch = if r > 0.55 { pair[1] } else { pair[0] };
                 let col = scale_rgb(
-                    blend_rgb(c.col_leaf, c.col_leaf_accent, leaf.phase * 0.6 + r.max(0.0) * 0.3),
+                    blend_rgb(
+                        c.col_leaf,
+                        c.col_leaf_accent,
+                        leaf.phase * 0.6 + r.max(0.0) * 0.3,
+                    ),
                     0.8 + 0.2 * r,
                 );
                 set_cell(grid, px, py, ch, col);
@@ -714,7 +751,13 @@ fn render_frame6(grid: &mut Grid, c: &Cached6, t: f32, k: &Knobs6) {
                 if grid[py as usize][px as usize].ch == ' ' {
                     let pulse = (frac * 10.0 - ts * 2.2).sin();
                     if pulse > 0.1 {
-                        set_cell(grid, px, py, '┆', scale_rgb(c.col_eth_glow, 0.4 + 0.5 * k.glow * pulse));
+                        set_cell(
+                            grid,
+                            px,
+                            py,
+                            '┆',
+                            scale_rgb(c.col_eth_glow, 0.4 + 0.5 * k.glow * pulse),
+                        );
                     }
                 }
             }
@@ -804,8 +847,14 @@ mod tests {
     #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn both_halves_rendered() {
         let s = run_test(100, 32, 42, 0.0);
-        assert!(s.contains('░') || s.contains('▒') || s.contains('▓'), "ethereal half missing");
-        assert!(s.contains('║') || s.contains('│') || s.contains('╱') || s.contains('╲'), "living bark missing");
+        assert!(
+            s.contains('░') || s.contains('▒') || s.contains('▓'),
+            "ethereal half missing"
+        );
+        assert!(
+            s.contains('║') || s.contains('│') || s.contains('╱') || s.contains('╲'),
+            "living bark missing"
+        );
     }
 
     #[test]
@@ -821,6 +870,10 @@ mod tests {
         }
         let per = start.elapsed().as_secs_f64() / 200.0;
         eprintln!("lifetree6 frame 200x60: {:.3}ms", per * 1000.0);
-        assert!(per < 0.006, "frame {:.3}ms exceeds 6ms budget at 200x60", per * 1000.0);
+        assert!(
+            per < 0.006,
+            "frame {:.3}ms exceeds 6ms budget at 200x60",
+            per * 1000.0
+        );
     }
 }

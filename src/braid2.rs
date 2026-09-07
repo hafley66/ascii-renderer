@@ -68,7 +68,15 @@ thread_local! {
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn build(w: usize, h: usize, seed: u64, n: usize, slip: f32, fill: f32, palette: &[Color; 5]) -> Cached {
+fn build(
+    w: usize,
+    h: usize,
+    seed: u64,
+    n: usize,
+    slip: f32,
+    fill: f32,
+    palette: &[Color; 5],
+) -> Cached {
     let mut rng = StdRng::seed_from_u64(seed ^ 0x2B2A1D);
     let mut half: Vec<(u16, u16)> = Vec::with_capacity(WORD_HALF);
     for k in 0..WORD_HALF {
@@ -155,9 +163,17 @@ fn paint_lane(grid: &mut Grid, w: usize, h: usize, x: i32, l: &Lane, c: &Cached)
     let (core, rim, fill) = if l.under {
         (darken(body, 55), darken(body, 70), darken(body, 60))
     } else if l.over {
-        (lighten(body, 18 + glow), lighten(body, glow), lighten(body, 8 + glow))
+        (
+            lighten(body, 18 + glow),
+            lighten(body, glow),
+            lighten(body, 8 + glow),
+        )
     } else {
-        (lighten(body, glow), lighten(darken(body, 25), glow), lighten(darken(body, 10), glow))
+        (
+            lighten(body, glow),
+            lighten(darken(body, 25), glow),
+            lighten(darken(body, 10), glow),
+        )
     };
     let diag = match l.slope {
         1 => '\\',
@@ -198,13 +214,27 @@ fn paint_lane(grid: &mut Grid, w: usize, h: usize, x: i32, l: &Lane, c: &Cached)
         } else {
             '#'
         };
-        let fg = if is_rim && l.half > 0 { rim } else if dy == 0 { core } else { fill };
+        let fg = if is_rim && l.half > 0 {
+            rim
+        } else if dy == 0 {
+            core
+        } else {
+            fill
+        };
         put(grid, w, h, x, y, ch, fg);
     }
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn draw_braid2(grid: &mut Grid, w: usize, h: usize, seed: u64, palette: &[Color; 5], t: f32, k: &Braid2Knobs) {
+pub(crate) fn draw_braid2(
+    grid: &mut Grid,
+    w: usize,
+    h: usize,
+    seed: u64,
+    palette: &[Color; 5],
+    t: f32,
+    k: &Braid2Knobs,
+) {
     let n = k.n();
     let slip = k.slip.clamp(0.0, 1.0);
     let fill = k.fill.clamp(0.0, 1.0);
@@ -258,15 +288,37 @@ fn render(grid: &mut Grid, w: usize, h: usize, t: f32, k: &Braid2Knobs, c: &Cach
             let moving = s > 0.0 && s < 1.0;
             let mid_col = (frac - pitch * 0.5).abs() < 0.5;
 
-            let mut lanes: [Lane; MAX_STRANDS] = std::array::from_fn(|_| Lane { y: 0.0, strand: 0, slope: 0, over: false, under: false, knot: false, half: 0, bead: 0.0, trail: 1.0 });
+            let mut lanes: [Lane; MAX_STRANDS] = std::array::from_fn(|_| Lane {
+                y: 0.0,
+                strand: 0,
+                slope: 0,
+                over: false,
+                under: false,
+                knot: false,
+                half: 0,
+                bead: 0.0,
+                trail: 1.0,
+            });
             for i in 0..n {
                 let strand = c.perm[ki * n + i] as usize;
                 let ly = |lane: usize| cy0 + (lane as f32 - (n as f32 - 1.0) * 0.5) * gap;
-                let face = (std::f32::consts::TAU * u / twist + c.phase[strand]).cos().abs();
+                let face = (std::f32::consts::TAU * u / twist + c.phase[strand])
+                    .cos()
+                    .abs();
                 let half = (face * (half_max as f32 + 0.49)).floor() as i32;
                 let d = (t * pulse + c.bead_off[strand] * beads - u).rem_euclid(beads);
                 let bead = if d < trail { 1.0 - d / trail } else { 0.0 };
-                let mut l = Lane { y: ly(i), strand, slope: 0, over: false, under: false, knot: false, half: half.min(half_max), bead, trail };
+                let mut l = Lane {
+                    y: ly(i),
+                    strand,
+                    slope: 0,
+                    over: false,
+                    under: false,
+                    knot: false,
+                    half: half.min(half_max),
+                    bead,
+                    trail,
+                };
                 if lanes_bits & (1 << i) != 0 {
                     l.y = ly(i) + (ly(i + 1) - ly(i)) * s;
                     l.slope = if moving { 1 } else { 0 };
@@ -298,7 +350,20 @@ fn render(grid: &mut Grid, w: usize, h: usize, t: f32, k: &Braid2Knobs, c: &Cach
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn cli_braid2(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
+pub(crate) fn cli_braid2(
+    mut grid: Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: [Color; 5],
+    rng: StdRng,
+    t_anim: f32,
+    term_w: u16,
+    term_h: u16,
+    args: &[String],
+    mode: &str,
+    theme_name: &str,
+) -> (Grid, bool) {
     let _ = (rng, term_w, term_h, mode, theme_name);
     let mut k = Braid2Knobs::from_env();
     let pos: Vec<f32> = args.iter().skip(4).filter_map(|a| a.parse().ok()).collect();
@@ -381,7 +446,10 @@ mod tests {
             worst = worst.max(t0.elapsed().as_secs_f64() * 1000.0);
         }
         let avg = start.elapsed().as_secs_f64() * 1000.0 / 200.0;
-        eprintln!("braid-2 frame_cost 200x60: avg {:.3} ms, worst {:.3} ms", avg, worst);
+        eprintln!(
+            "braid-2 frame_cost 200x60: avg {:.3} ms, worst {:.3} ms",
+            avg, worst
+        );
         if !cfg!(debug_assertions) {
             assert!(avg < 4.0, "avg frame {:.3} ms", avg);
         }

@@ -517,11 +517,10 @@ fn tset_over(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
 // TreePen tracks position + direction so consecutive draws use the
 // correct connecting glyph. No more disconnected gibberish.
 
-
-mod trees;
 mod flora;
-pub use trees::*;
+mod trees;
 pub use flora::*;
+pub use trees::*;
 
 /// Mask/firework sprite: two eyes on a vertical stem with radiating diagonals.
 /// Emergent pattern captured from flower + tree + diamond lattice overlap.

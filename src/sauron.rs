@@ -44,7 +44,12 @@ fn arc(grid: &mut Grid, cx: f32, cy: f32, rx: f32, ry: f32, a0: f32, a1: f32, co
     let mut pen = TreePen::new(sx, sy, color);
     for i in 1..=steps {
         let a = a0 + (a1 - a0) * i as f32 / steps as f32;
-        step_toward(&mut pen, grid, (cx + a.cos() * rx) as i32, (cy + a.sin() * ry) as i32);
+        step_toward(
+            &mut pen,
+            grid,
+            (cx + a.cos() * rx) as i32,
+            (cy + a.sin() * ry) as i32,
+        );
     }
 }
 
@@ -95,7 +100,17 @@ fn fire_color(heat: f32, hue_off: f64) -> Color {
 /// Fire wall: per-column flames with fixed base heights and sin flicker.
 /// The columns part around the eye, flanking it with taller fire.
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn draw_fire(grid: &mut Grid, w: usize, h: usize, seed: u64, t: f32, blaze: f32, ex: f32, erx: f32, hue_off: f64) {
+fn draw_fire(
+    grid: &mut Grid,
+    w: usize,
+    h: usize,
+    seed: u64,
+    t: f32,
+    blaze: f32,
+    ex: f32,
+    erx: f32,
+    hue_off: f64,
+) {
     let turb = param_f32("TURB", 1.0).clamp(0.0, 3.0);
     let gh = grid.len();
     let gw = if gh > 0 { grid[0].len() } else { 0 };
@@ -202,20 +217,68 @@ fn draw_embers(grid: &mut Grid, w: usize, h: usize, seed: u64, t: f32, count: us
         } else {
             '·'
         };
-        set(grid, x as i32, y as i32, ch, fire_color((0.55 + fade * 0.4).min(1.0), hue_off));
+        set(
+            grid,
+            x as i32,
+            y as i32,
+            ch,
+            fire_color((0.55 + fade * 0.4).min(1.0), hue_off),
+        );
     }
 }
 
 /// The eye: lens lids, iris gradient, slit pupil with wandering gaze.
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn draw_eye(grid: &mut Grid, cx: f32, cy: f32, rx: f32, ry: f32, t: f32, gaze: f32, slit: usize, iris_r: f32, hue_off: f64) {
-    let gaze_x = ((t * 0.55).sin() * 0.6 + (t * 1.7).sin() * 0.25 + (t * 0.23).cos() * 0.5).clamp(-1.0, 1.0);
+fn draw_eye(
+    grid: &mut Grid,
+    cx: f32,
+    cy: f32,
+    rx: f32,
+    ry: f32,
+    t: f32,
+    gaze: f32,
+    slit: usize,
+    iris_r: f32,
+    hue_off: f64,
+) {
+    let gaze_x =
+        ((t * 0.55).sin() * 0.6 + (t * 1.7).sin() * 0.25 + (t * 0.23).cos() * 0.5).clamp(-1.0, 1.0);
     let px = cx + gaze_x * gaze * rx * 0.5;
     // lids
-    arc(grid, cx, cy, rx, ry, std::f32::consts::PI, std::f32::consts::TAU, hsl_to_rgb((12.0 + hue_off).rem_euclid(360.0), 0.9, 0.5));
-    arc(grid, cx, cy, rx, ry, 0.0, std::f32::consts::PI, hsl_to_rgb((8.0 + hue_off).rem_euclid(360.0), 0.9, 0.42));
-    set(grid, (cx - rx) as i32, cy as i32, '◆', hsl_to_rgb((5.0 + hue_off).rem_euclid(360.0), 0.95, 0.55));
-    set(grid, (cx + rx) as i32, cy as i32, '◆', hsl_to_rgb((5.0 + hue_off).rem_euclid(360.0), 0.95, 0.55));
+    arc(
+        grid,
+        cx,
+        cy,
+        rx,
+        ry,
+        std::f32::consts::PI,
+        std::f32::consts::TAU,
+        hsl_to_rgb((12.0 + hue_off).rem_euclid(360.0), 0.9, 0.5),
+    );
+    arc(
+        grid,
+        cx,
+        cy,
+        rx,
+        ry,
+        0.0,
+        std::f32::consts::PI,
+        hsl_to_rgb((8.0 + hue_off).rem_euclid(360.0), 0.9, 0.42),
+    );
+    set(
+        grid,
+        (cx - rx) as i32,
+        cy as i32,
+        '◆',
+        hsl_to_rgb((5.0 + hue_off).rem_euclid(360.0), 0.95, 0.55),
+    );
+    set(
+        grid,
+        (cx + rx) as i32,
+        cy as i32,
+        '◆',
+        hsl_to_rgb((5.0 + hue_off).rem_euclid(360.0), 0.95, 0.55),
+    );
     // iris + lens fill
     let iris_f = iris_r.clamp(0.15, 0.95);
     let pupil = px;
@@ -235,7 +298,9 @@ fn draw_eye(grid: &mut Grid, cx: f32, cy: f32, rx: f32, ry: f32, t: f32, gaze: f
             let flick = (t * 9.0 + (x * 7 + y * 13) as f32 * 0.35).sin() * 0.05;
             let ch = if pd < 1.0 {
                 // the slit pupil: near-black core with a live ember center
-                if (x as f32 - pupil).abs() < (slit as f32 * 0.6).max(0.9) && (y as f32 - cy).abs() < ry * 0.45 {
+                if (x as f32 - pupil).abs() < (slit as f32 * 0.6).max(0.9)
+                    && (y as f32 - cy).abs() < ry * 0.45
+                {
                     '◉'
                 } else {
                     '┃'
@@ -259,7 +324,11 @@ fn draw_eye(grid: &mut Grid, cx: f32, cy: f32, rx: f32, ry: f32, t: f32, gaze: f
                 (1.2 - (dxp * dxp + dyp * dyp)).clamp(0.0, 1.0) * 0.9 + flick
             };
             let c = if pd < 1.0 {
-                hsl_to_rgb((hue_off + 18.0).rem_euclid(360.0), 0.95, if ch == '◉' { 0.5 } else { 0.06 })
+                hsl_to_rgb(
+                    (hue_off + 18.0).rem_euclid(360.0),
+                    0.95,
+                    if ch == '◉' { 0.5 } else { 0.06 },
+                )
             } else {
                 fire_color(heat.clamp(0.0, 1.0), hue_off)
             };
@@ -284,14 +353,27 @@ fn draw_smoke(grid: &mut Grid, w: usize, h: usize, seed: u64, t: f32, hue_off: f
         for x in 0..w {
             let v = (x as f32 * 0.7 + y as f32 * 3.1 + t * 1.4).sin();
             if v > 0.55 - y as f32 * 0.1 {
-                set(grid, x as i32, y as i32, if v > 0.8 { '▒' } else { '░' }, smoke);
+                set(
+                    grid,
+                    x as i32,
+                    y as i32,
+                    if v > 0.8 { '▒' } else { '░' },
+                    smoke,
+                );
             }
         }
     }
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub fn draw_sauron(grid: &mut Grid, width: usize, height: usize, seed: u64, palette: &[Color; 5], t: f32) {
+pub fn draw_sauron(
+    grid: &mut Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: &[Color; 5],
+    t: f32,
+) {
     let blaze = param_f32("BLAZE", 1.0).clamp(0.0, 2.0);
     let gaze = param_f32("GAZE", 0.8).clamp(0.0, 1.0);
     let slit = param_f32("SLIT", 2.0).clamp(1.0, 5.0) as usize;
@@ -308,14 +390,35 @@ pub fn draw_sauron(grid: &mut Grid, width: usize, height: usize, seed: u64, pale
     let rx = (width as f32 * 0.30).max(8.0);
     let ry = (height as f32 * 0.13).max(4.0);
 
-    measure_layer("sauron", "fire", || draw_fire(grid, width, height, seed, t, blaze, cx, rx, hue_off));
-    measure_layer("sauron", "embers", || draw_embers(grid, width, height, seed, t, embers, hue_off));
-    measure_layer("sauron", "eye", || draw_eye(grid, cx, cy, rx, ry, t, gaze, slit, iris_r, hue_off));
-    measure_layer("sauron", "smoke", || draw_smoke(grid, width, height, seed, t, hue_off));
+    measure_layer("sauron", "fire", || {
+        draw_fire(grid, width, height, seed, t, blaze, cx, rx, hue_off)
+    });
+    measure_layer("sauron", "embers", || {
+        draw_embers(grid, width, height, seed, t, embers, hue_off)
+    });
+    measure_layer("sauron", "eye", || {
+        draw_eye(grid, cx, cy, rx, ry, t, gaze, slit, iris_r, hue_off)
+    });
+    measure_layer("sauron", "smoke", || {
+        draw_smoke(grid, width, height, seed, t, hue_off)
+    });
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn cli_sauron(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
+pub(crate) fn cli_sauron(
+    mut grid: Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: [Color; 5],
+    rng: StdRng,
+    t_anim: f32,
+    term_w: u16,
+    term_h: u16,
+    args: &[String],
+    mode: &str,
+    theme_name: &str,
+) -> (Grid, bool) {
     let _ = (rng, term_w, term_h, args, mode, theme_name);
     draw_sauron(&mut grid, width, height, seed, &palette, t_anim);
     (grid, false)

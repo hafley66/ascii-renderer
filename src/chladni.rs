@@ -84,9 +84,20 @@ fn build(seed: u64, order: u32) -> Cached {
         }
         last = pair;
         let sign = if rng.random::<f32>() < 0.5 { -1.0 } else { 1.0 };
-        seq.push(Figure { n: pair.0 as f32, m: pair.1 as f32, sign });
+        seq.push(Figure {
+            n: pair.0 as f32,
+            m: pair.1 as f32,
+            sign,
+        });
     }
-    Cached { key: (seed, order), seq, col_n: Vec::new(), col_m: Vec::new(), row_n: Vec::new(), row_m: Vec::new() }
+    Cached {
+        key: (seed, order),
+        seq,
+        col_n: Vec::new(),
+        col_m: Vec::new(),
+        row_n: Vec::new(),
+        row_m: Vec::new(),
+    }
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
@@ -121,13 +132,22 @@ fn drive_at(t: f32, dwell: f32, glide: f32, seq: &[Figure]) -> Drive {
     let tau = t - i as f32 * period;
     let from = seq[i % seq.len()];
     let to = seq[(i + 1) % seq.len()];
-    let s = if glide > 0.0 { smooth((tau - dwell) / glide) } else { 0.0 };
+    let s = if glide > 0.0 {
+        smooth((tau - dwell) / glide)
+    } else {
+        0.0
+    };
     let fig = Figure {
         n: from.n + (to.n - from.n) * s,
         m: from.m + (to.m - from.m) * s,
         sign: from.sign + (to.sign - from.sign) * s,
     };
-    Drive { fig, from, to, glide: s }
+    Drive {
+        fig,
+        from,
+        to,
+        glide: s,
+    }
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
@@ -152,7 +172,15 @@ fn put_text(grid: &mut Grid, w: usize, h: usize, x: i32, y: i32, text: &str, fg:
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn draw_chladni(grid: &mut Grid, w: usize, h: usize, seed: u64, palette: &[Color; 5], t: f32, k: &ChladniKnobs) {
+pub(crate) fn draw_chladni(
+    grid: &mut Grid,
+    w: usize,
+    h: usize,
+    seed: u64,
+    palette: &[Color; 5],
+    t: f32,
+    k: &ChladniKnobs,
+) {
     let order = k.order_n();
     CACHE.with(|cell| {
         let mut slot = cell.borrow_mut();
@@ -167,7 +195,16 @@ pub(crate) fn draw_chladni(grid: &mut Grid, w: usize, h: usize, seed: u64, palet
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn render(grid: &mut Grid, w: usize, h: usize, seed: u64, palette: &[Color; 5], t: f32, k: &ChladniKnobs, c: &mut Cached) {
+fn render(
+    grid: &mut Grid,
+    w: usize,
+    h: usize,
+    seed: u64,
+    palette: &[Color; 5],
+    t: f32,
+    k: &ChladniKnobs,
+    c: &mut Cached,
+) {
     measure_layer("chladni", "clear", || {
         for row in grid.iter_mut().take(h) {
             for cell in row.iter_mut().take(w) {
@@ -256,7 +293,13 @@ fn render(grid: &mut Grid, w: usize, h: usize, seed: u64, palette: &[Color; 5], 
                     let v = hash(x as u32, y as u32, frame + 1, seed);
                     if v < hop_scale * amp * amp {
                         let g = hash(x as u32, y as u32, frame + 7, seed);
-                        let ch = if g < 0.45 { '.' } else if g < 0.8 { '`' } else { '~' };
+                        let ch = if g < 0.45 {
+                            '.'
+                        } else if g < 0.8 {
+                            '`'
+                        } else {
+                            '~'
+                        };
                         Cell::with_bg(ch, hop_fg, plate_bg)
                     } else {
                         Cell::with_bg(' ', hop_fg, plate_bg)
@@ -287,7 +330,14 @@ fn render(grid: &mut Grid, w: usize, h: usize, seed: u64, palette: &[Color; 5], 
         put(grid, w, h, cx, cy, Cell::with_bg('@', drive_fg, plate_bg));
         let ring = if pulse > 0.5 { 'o' } else { '*' };
         for (dx, dy) in [(-2, 0), (2, 0), (0, -1), (0, 1)] {
-            put(grid, w, h, cx + dx, cy + dy, Cell::with_bg(ring, darken(drive_fg, 40), plate_bg));
+            put(
+                grid,
+                w,
+                h,
+                cx + dx,
+                cy + dy,
+                Cell::with_bg(ring, darken(drive_fg, 40), plate_bg),
+            );
         }
     });
 
@@ -303,7 +353,20 @@ fn render(grid: &mut Grid, w: usize, h: usize, seed: u64, palette: &[Color; 5], 
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn cli_chladni(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
+pub(crate) fn cli_chladni(
+    mut grid: Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: [Color; 5],
+    rng: StdRng,
+    t_anim: f32,
+    term_w: u16,
+    term_h: u16,
+    args: &[String],
+    mode: &str,
+    theme_name: &str,
+) -> (Grid, bool) {
     let _ = (rng, term_w, term_h, mode, theme_name);
     let mut k = ChladniKnobs::from_env();
     let pos: Vec<f32> = args.iter().skip(4).filter_map(|a| a.parse().ok()).collect();
@@ -393,7 +456,10 @@ mod tests {
             worst = worst.max(t0.elapsed().as_secs_f64() * 1000.0);
         }
         let avg = start.elapsed().as_secs_f64() * 1000.0 / 200.0;
-        eprintln!("chladni frame_cost 200x60: avg {:.3} ms, worst {:.3} ms", avg, worst);
+        eprintln!(
+            "chladni frame_cost 200x60: avg {:.3} ms, worst {:.3} ms",
+            avg, worst
+        );
         if !cfg!(debug_assertions) {
             assert!(avg < 4.0, "avg frame {:.3} ms", avg);
         }

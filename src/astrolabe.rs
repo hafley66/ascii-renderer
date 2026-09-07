@@ -54,7 +54,17 @@ fn step_toward(pen: &mut TreePen, grid: &mut Grid, tx: i32, ty: i32) {
 /// Ellipse arc from angle a0 to a1 (radians, CCW math convention), drawn as
 /// connected box-drawing glyphs. Returns the pen at the end point.
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn arc(grid: &mut Grid, cx: f32, cy: f32, rx: f32, ry: f32, a0: f32, a1: f32, color: Color, start: Option<(i32, i32)>) -> TreePen {
+fn arc(
+    grid: &mut Grid,
+    cx: f32,
+    cy: f32,
+    rx: f32,
+    ry: f32,
+    a0: f32,
+    a1: f32,
+    color: Color,
+    start: Option<(i32, i32)>,
+) -> TreePen {
     let steps = (((a1 - a0).abs() * rx.max(ry)).ceil() as usize).clamp(8, 400);
     let mut pen = if let Some((sx, sy)) = start {
         let mut p = TreePen::new(sx, sy, color);
@@ -74,7 +84,17 @@ fn arc(grid: &mut Grid, cx: f32, cy: f32, rx: f32, ry: f32, a0: f32, a1: f32, co
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn ellipse(grid: &mut Grid, cx: f32, cy: f32, rx: f32, ry: f32, color: Color) {
-    let mut pen = arc(grid, cx, cy, rx, ry, -std::f32::consts::PI, std::f32::consts::PI, color, None);
+    let mut pen = arc(
+        grid,
+        cx,
+        cy,
+        rx,
+        ry,
+        -std::f32::consts::PI,
+        std::f32::consts::PI,
+        color,
+        None,
+    );
     let (sx, sy) = pt(cx, cy, rx, ry, -std::f32::consts::PI);
     step_toward(&mut pen, grid, sx, sy);
 }
@@ -134,7 +154,13 @@ fn draw_limb(grid: &mut Grid, cx: f32, cy: f32, rx: f32, ry: f32, b: &Brass, rng
         let a = i as f32 / 72.0 * std::f32::consts::TAU;
         let coarse = i % 6 == 0;
         let (x1, y1) = pt(cx, cy, rx * 0.94, ry * 0.94, a);
-        let (x2, y2) = pt(cx, cy, rx * (if coarse { 0.86 } else { 0.90 }), ry * (if coarse { 0.86 } else { 0.90 }), a);
+        let (x2, y2) = pt(
+            cx,
+            cy,
+            rx * (if coarse { 0.86 } else { 0.90 }),
+            ry * (if coarse { 0.86 } else { 0.90 }),
+            a,
+        );
         let ch = if coarse { '┼' } else { '·' };
         let c = if coarse { b.limb_hi } else { b.limb };
         let mut pen = TreePen::new(x1, y1, c);
@@ -142,12 +168,18 @@ fn draw_limb(grid: &mut Grid, cx: f32, cy: f32, rx: f32, ry: f32, b: &Brass, rng
         set(grid, x2, y2, ch, c);
     }
     // hour numerals inside the limb
-    let hours = ["XII", "I", "II", "III", "IIII", "V", "VI", "VII", "VIII", "IX", "X", "XI"];
+    let hours = [
+        "XII", "I", "II", "III", "IIII", "V", "VI", "VII", "VIII", "IX", "X", "XI",
+    ];
     for (i, h) in hours.iter().enumerate() {
         let a = -std::f32::consts::FRAC_PI_2 + i as f32 / 12.0 * std::f32::consts::TAU;
         let (hx, hy) = pt(cx, cy, rx * 0.79, ry * 0.79, a);
         let dir_right = a.cos() >= 0.0;
-        let start = if dir_right { hx } else { hx - h.chars().count() as i32 + 1 };
+        let start = if dir_right {
+            hx
+        } else {
+            hx - h.chars().count() as i32 + 1
+        };
         for (k, ch) in h.chars().enumerate() {
             set(grid, start + k as i32, hy, ch, lighten(b.limb_hi, 10));
         }
@@ -156,13 +188,27 @@ fn draw_limb(grid: &mut Grid, cx: f32, cy: f32, rx: f32, ry: f32, b: &Brass, rng
 
 /// Tympan: stereographic plate -- almucantar rings, azimuth spokes, tropics.
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn draw_tympan(grid: &mut Grid, cx: f32, cy: f32, rx: f32, ry: f32, b: &Brass, rings: usize, spokes: usize, rng: &mut StdRng) {
+fn draw_tympan(
+    grid: &mut Grid,
+    cx: f32,
+    cy: f32,
+    rx: f32,
+    ry: f32,
+    b: &Brass,
+    rings: usize,
+    spokes: usize,
+    rng: &mut StdRng,
+) {
     let inner_r = rx * 0.70 * 0.92;
     let inner_ry = ry * 0.70 * 0.92;
     // almucantars: concentric altitude rings, engraved fine
     for i in 1..=rings {
         let f = i as f32 / (rings + 1) as f32;
-        let c = if i % 2 == 0 { b.tympan } else { darken(b.tympan, 8) };
+        let c = if i % 2 == 0 {
+            b.tympan
+        } else {
+            darken(b.tympan, 8)
+        };
         ellipse(grid, cx, cy, inner_r * f, inner_ry * f, c);
         // altitude marker at the east point
         let (mx, my) = pt(cx, cy, inner_r * f, inner_ry * f, 0.0);
@@ -193,14 +239,32 @@ fn draw_tympan(grid: &mut Grid, cx: f32, cy: f32, rx: f32, ry: f32, b: &Brass, r
         }
     }
     // zenith mark
-    set(grid, cx as i32, (cy - inner_ry * 0.5) as i32, '❉', darken(b.tympan, 0));
+    set(
+        grid,
+        cx as i32,
+        (cy - inner_ry * 0.5) as i32,
+        '❉',
+        darken(b.tympan, 0),
+    );
     let _ = rng;
 }
 
 /// Rete: rotating star cage -- ecliptic band, star pointers, labels. All
 /// geometry is a pure rotation by `rot` of seeded placements.
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn draw_rete(grid: &mut Grid, cx: f32, cy: f32, rx: f32, ry: f32, b: &Brass, rot: f32, stars: usize, twinkle: f32, t: f32, ecliptic_amt: f32) {
+fn draw_rete(
+    grid: &mut Grid,
+    cx: f32,
+    cy: f32,
+    rx: f32,
+    ry: f32,
+    b: &Brass,
+    rot: f32,
+    stars: usize,
+    twinkle: f32,
+    t: f32,
+    ecliptic_amt: f32,
+) {
     let mut srng = StdRng::seed_from_u64((stars as u64).wrapping_mul(0x51A5) ^ 0x9E37);
     let inner_r = rx * 0.66;
     let inner_ry = ry * 0.66;
@@ -218,12 +282,22 @@ fn draw_rete(grid: &mut Grid, cx: f32, cy: f32, rx: f32, ry: f32, b: &Brass, rot
         } else {
             glyphs[gi]
         };
-        let c = if tw > 0.0 { lighten(b.star, 10) } else { b.star };
+        let c = if tw > 0.0 {
+            lighten(b.star, 10)
+        } else {
+            b.star
+        };
         if blank_at(grid, x, y) {
             set(grid, x, y, g, c);
         }
         // pointer tick leaning toward the limb
-        let (px, py) = pt(cx, cy, inner_r * f * 1.08 + 0.5, inner_ry * f * 1.08 + 0.5, a);
+        let (px, py) = pt(
+            cx,
+            cy,
+            inner_r * f * 1.08 + 0.5,
+            inner_ry * f * 1.08 + 0.5,
+            a,
+        );
         if blank_at(grid, px, py) && srng.random::<f32>() < 0.7 {
             set(grid, px, py, '·', darken(b.rete, 5));
         }
@@ -258,7 +332,11 @@ fn draw_rule(grid: &mut Grid, cx: f32, cy: f32, rx: f32, ry: f32, b: &Brass, phi
             let dx = tx - pen.x;
             let dy = ty - pen.y;
             let dir = if dx.abs() >= dy.abs() {
-                if dx > 0 { MoveDir::Right } else { MoveDir::Left }
+                if dx > 0 {
+                    MoveDir::Right
+                } else {
+                    MoveDir::Left
+                }
             } else if dy > 0 {
                 MoveDir::Down
             } else {
@@ -267,8 +345,18 @@ fn draw_rule(grid: &mut Grid, cx: f32, cy: f32, rx: f32, ry: f32, b: &Brass, phi
             pen.step(grid, dir);
             k += 1;
             if k % 4 == 0 {
-                let nx = pen.x + if dir == MoveDir::Up || dir == MoveDir::Down { 1 } else { 0 };
-                let ny = pen.y + if dir == MoveDir::Left || dir == MoveDir::Right { 1 } else { 0 };
+                let nx = pen.x
+                    + if dir == MoveDir::Up || dir == MoveDir::Down {
+                        1
+                    } else {
+                        0
+                    };
+                let ny = pen.y
+                    + if dir == MoveDir::Left || dir == MoveDir::Right {
+                        1
+                    } else {
+                        0
+                    };
                 if blank_at(grid, nx, ny) {
                     set(grid, nx, ny, '·', darken(b.rule, 8));
                 }
@@ -300,7 +388,14 @@ fn draw_throne(grid: &mut Grid, cx: f32, cy: f32, ry: f32, b: &Brass) {
 // ── Renderer ────────────────────────────────────────────────────────
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub fn draw_astrolabe(grid: &mut Grid, width: usize, height: usize, seed: u64, palette: &[Color; 5], t: f32) {
+pub fn draw_astrolabe(
+    grid: &mut Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: &[Color; 5],
+    t: f32,
+) {
     let stars = param_f32("STARS", 42.0).clamp(10.0, 110.0) as usize;
     let rings = param_f32("RINGS", 5.0).clamp(2.0, 9.0) as usize;
     let spokes = param_f32("SPOKES", 8.0).clamp(4.0, 16.0) as usize;
@@ -312,7 +407,9 @@ pub fn draw_astrolabe(grid: &mut Grid, width: usize, height: usize, seed: u64, p
     let b = brass(palette, seed);
     let cy = height as f32 / 2.0 - 0.5;
     let cx = width as f32 / 2.0 - 0.5;
-    let ry = (height as f32 / 2.0 - 2.5).min(width as f32 / 4.0 - 1.0).max(3.0);
+    let ry = (height as f32 / 2.0 - 2.5)
+        .min(width as f32 / 4.0 - 1.0)
+        .max(3.0);
     let rx = ry * 2.0;
 
     // plate rng: every roll happens unconditionally, so no frame re-rolls
@@ -322,15 +419,48 @@ pub fn draw_astrolabe(grid: &mut Grid, width: usize, height: usize, seed: u64, p
     let spokes = if small { 6 } else { spokes };
     let stars = if small { stars / 2 } else { stars };
 
-    measure_layer("astrolabe", "tympan", || draw_tympan(grid, cx, cy, rx, ry, &b, rings, spokes, &mut plate_rng));
-    measure_layer("astrolabe", "rete", || draw_rete(grid, cx, cy, rx, ry, &b, t * rate, stars, twinkle, t, ecliptic_amt));
-    measure_layer("astrolabe", "rule", || draw_rule(grid, cx, cy, rx, ry, &b, t * rule_rate + 0.6));
-    measure_layer("astrolabe", "limb", || draw_limb(grid, cx, cy, rx, ry, &b, &mut plate_rng));
+    measure_layer("astrolabe", "tympan", || {
+        draw_tympan(grid, cx, cy, rx, ry, &b, rings, spokes, &mut plate_rng)
+    });
+    measure_layer("astrolabe", "rete", || {
+        draw_rete(
+            grid,
+            cx,
+            cy,
+            rx,
+            ry,
+            &b,
+            t * rate,
+            stars,
+            twinkle,
+            t,
+            ecliptic_amt,
+        )
+    });
+    measure_layer("astrolabe", "rule", || {
+        draw_rule(grid, cx, cy, rx, ry, &b, t * rule_rate + 0.6)
+    });
+    measure_layer("astrolabe", "limb", || {
+        draw_limb(grid, cx, cy, rx, ry, &b, &mut plate_rng)
+    });
     measure_layer("astrolabe", "throne", || draw_throne(grid, cx, cy, ry, &b));
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn cli_astrolabe(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
+pub(crate) fn cli_astrolabe(
+    mut grid: Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: [Color; 5],
+    mut rng: StdRng,
+    t_anim: f32,
+    term_w: u16,
+    term_h: u16,
+    args: &[String],
+    mode: &str,
+    theme_name: &str,
+) -> (Grid, bool) {
     let _ = (rng, term_w, term_h, args, mode, theme_name);
     draw_astrolabe(&mut grid, width, height, seed, &palette, t_anim);
     (grid, false)
@@ -392,6 +522,11 @@ mod tests {
         }
         assert!(changed > 0, "motion expected");
         let frac = changed as f64 / ra.len() as f64;
-        assert!(frac < 0.10, "{} of {} chars changed in 10 ticks", changed, ra.len());
+        assert!(
+            frac < 0.10,
+            "{} of {} chars changed in 10 ticks",
+            changed,
+            ra.len()
+        );
     }
 }

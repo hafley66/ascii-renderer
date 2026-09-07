@@ -112,7 +112,15 @@ fn glyph_for_depth(depth: f32, v_norm: f32, density: f32) -> char {
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn draw_haiku_1_torus(grid: &mut Grid, w: usize, h: usize, seed: u64, palette: &[Color; 5], t: f32, k: &TorusKnobs) {
+pub(crate) fn draw_haiku_1_torus(
+    grid: &mut Grid,
+    w: usize,
+    h: usize,
+    seed: u64,
+    palette: &[Color; 5],
+    t: f32,
+    k: &TorusKnobs,
+) {
     measure_layer("haiku-1-torus", "clear", || {
         for row in grid.iter_mut().take(h) {
             for cell in row.iter_mut().take(w) {
@@ -269,7 +277,20 @@ pub(crate) fn draw_haiku_1_torus(grid: &mut Grid, w: usize, h: usize, seed: u64,
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn cli_haiku_1_torus(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
+pub(crate) fn cli_haiku_1_torus(
+    mut grid: Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: [Color; 5],
+    rng: StdRng,
+    t_anim: f32,
+    term_w: u16,
+    term_h: u16,
+    args: &[String],
+    mode: &str,
+    theme_name: &str,
+) -> (Grid, bool) {
     let mut knobs = TorusKnobs::from_env();
 
     if let Some(s) = args.get(4) {

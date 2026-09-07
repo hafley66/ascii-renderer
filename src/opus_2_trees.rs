@@ -258,14 +258,7 @@ fn hang_fruit(g: &mut Grid, x: i32, y: i32, ink: &Ink) {
 // Prop roots are power-curve arcs from a raised collar down to splayed feet.
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn grow_mangrove(
-    g: &mut Grid,
-    plot: Rect,
-    energy: f32,
-    ink: &Ink,
-    o: &GrowOpts,
-    rng: &mut StdRng,
-) {
+fn grow_mangrove(g: &mut Grid, plot: Rect, energy: f32, ink: &Ink, o: &GrowOpts, rng: &mut StdRng) {
     let root_y = plot.y as i32 + plot.h as i32 - 1;
     let cx = plot.x as i32 + plot.w as i32 / 2;
     let hw = (plot.w as i32 / 2).max(2);
@@ -302,7 +295,13 @@ fn grow_mangrove(
 
     let collar_w = ((hw as f32) * 0.35) as i32;
     for dx in -collar_w..=collar_w {
-        put(g, cx + dx, collar, if dx == 0 { '┴' } else { '─' }, ink[SLOT_BARK as usize]);
+        put(
+            g,
+            cx + dx,
+            collar,
+            if dx == 0 { '┴' } else { '─' },
+            ink[SLOT_BARK as usize],
+        );
     }
 
     let spikes = ((hw as f32) * o.roots * 0.9) as i32;
@@ -339,7 +338,13 @@ fn grow_mangrove(
         let len = len.max(2);
         let end_x = tx + side * len;
         let end_y = (y - len / 3).max(top - 1);
-        put(g, tx, y, if side < 0 { '┤' } else { '├' }, ink[SLOT_BARK as usize]);
+        put(
+            g,
+            tx,
+            y,
+            if side < 0 { '┤' } else { '├' },
+            ink[SLOT_BARK as usize],
+        );
         stroke(g, tx, y, end_x, end_y, ink[SLOT_BRANCH as usize], false);
         let rx = ((len as f32) * 0.75).max(2.0) as i32;
         let ry = ((hgt as f32) * 0.13).clamp(1.0, rx as f32 * 0.7) as i32;
@@ -390,7 +395,11 @@ fn grow_colony(g: &mut Grid, plot: Rect, energy: f32, ink: &Ink, o: &GrowOpts, r
         if u * u + v * v > 1.0 {
             continue;
         }
-        let side_scale = if (u < 0.0) == squash_left { squash } else { 1.0 };
+        let side_scale = if (u < 0.0) == squash_left {
+            squash
+        } else {
+            1.0
+        };
         att.push((
             cx as f32 + lean + u * rx * side_scale,
             crown_cy + v * ry * 0.92,
@@ -475,7 +484,9 @@ fn grow_colony(g: &mut Grid, plot: Rect, energy: f32, ink: &Ink, o: &GrowOpts, r
             if pull[i].2 == 0 {
                 continue;
             }
-            let len = (pull[i].0 * pull[i].0 + pull[i].1 * pull[i].1).sqrt().max(0.001);
+            let len = (pull[i].0 * pull[i].0 + pull[i].1 * pull[i].1)
+                .sqrt()
+                .max(0.001);
             let jx = (rf(rng) - 0.5) * 0.55;
             let jy = (rf(rng) - 0.5) * 0.3;
             let nx = nodes[i].x + (pull[i].0 / len + jx) * step * 1.8;
@@ -578,7 +589,13 @@ fn grow_colony(g: &mut Grid, plot: Rect, energy: f32, ink: &Ink, o: &GrowOpts, r
         if n.weight > 1 || rf(rng) >= o.fruit * 0.35 {
             continue;
         }
-        put(g, n.x.round() as i32, n.y.round() as i32, '●', ink[SLOT_FRUIT as usize]);
+        put(
+            g,
+            n.x.round() as i32,
+            n.y.round() as i32,
+            '●',
+            ink[SLOT_FRUIT as usize],
+        );
     }
 
     let flare = ((plot.w as f32) * 0.16).clamp(1.0, 6.0) as i32;
@@ -633,14 +650,26 @@ fn grow_banyan(g: &mut Grid, plot: Rect, energy: f32, ink: &Ink, o: &GrowOpts, r
         }
         let len = ((hw as f32) * (0.45 + 0.55 * rf(rng)) * (0.45 + o.branch * 0.8)) as i32;
         let len = len.max(3);
-        put(g, tx, y, if side < 0 { '┤' } else { '├' }, ink[SLOT_BARK as usize]);
+        put(
+            g,
+            tx,
+            y,
+            if side < 0 { '┤' } else { '├' },
+            ink[SLOT_BARK as usize],
+        );
         let mut bx = tx;
         let mut by = y;
         for s in 1..=len {
             bx += side;
             if s % 3 == 0 && by > top + 1 {
                 by -= 1;
-                put(g, bx, by, if side < 0 { '╱' } else { '╲' }, ink[SLOT_BRANCH as usize]);
+                put(
+                    g,
+                    bx,
+                    by,
+                    if side < 0 { '╱' } else { '╲' },
+                    ink[SLOT_BRANCH as usize],
+                );
             } else {
                 put(g, bx, by, '─', ink[SLOT_BRANCH as usize]);
             }
@@ -676,7 +705,13 @@ fn grow_banyan(g: &mut Grid, plot: Rect, energy: f32, ink: &Ink, o: &GrowOpts, r
                 }
             }
         }
-        put(g, bx + side, by, if side < 0 { '╴' } else { '╶' }, ink[SLOT_BRANCH as usize]);
+        put(
+            g,
+            bx + side,
+            by,
+            if side < 0 { '╴' } else { '╶' },
+            ink[SLOT_BRANCH as usize],
+        );
         if rf(rng) < o.fruit {
             hang_fruit(g, bx, by + 1, ink);
         }
@@ -788,7 +823,13 @@ fn grow_bracket(g: &mut Grid, plot: Rect, energy: f32, ink: &Ink, o: &GrowOpts, 
                 }
             }
             let tipx = sx + s * (r + 1);
-            put_soft(g, tipx, y + droop as i32, if s < 0 { '╴' } else { '╶' }, ink[SLOT_TIP as usize]);
+            put_soft(
+                g,
+                tipx,
+                y + droop as i32,
+                if s < 0 { '╴' } else { '╶' },
+                ink[SLOT_TIP as usize],
+            );
         }
         side = -side;
         shelf += 1;
@@ -942,7 +983,11 @@ fn grow_coral(g: &mut Grid, plot: Rect, energy: f32, ink: &Ink, o: &GrowOpts, rn
             let occ_at = |dx: i32, dy: i32| -> bool {
                 let nx = lx as i32 + dx;
                 let ny = ly as i32 + dy;
-                nx >= 0 && ny >= 0 && nx < w as i32 && ny < h as i32 && occ[ny as usize * w + nx as usize]
+                nx >= 0
+                    && ny >= 0
+                    && nx < w as i32
+                    && ny < h as i32
+                    && occ[ny as usize * w + nx as usize]
             };
             let vert = occ_at(0, -1) || occ_at(0, 1);
             let horiz = occ_at(-1, 0) || occ_at(1, 0);
@@ -974,15 +1019,33 @@ fn grow_coral(g: &mut Grid, plot: Rect, energy: f32, ink: &Ink, o: &GrowOpts, rn
             };
             put(g, ox + lx as i32, oy + ly as i32, ch, ink[slot as usize]);
             if n <= 1 && f < 0.6 && rf(rng) < o.fruit * 0.25 {
-                put(g, ox + lx as i32, oy + ly as i32, '●', ink[SLOT_FRUIT as usize]);
+                put(
+                    g,
+                    ox + lx as i32,
+                    oy + ly as i32,
+                    '●',
+                    ink[SLOT_FRUIT as usize],
+                );
             }
         }
     }
 
     let flare = ((w as f32) * 0.12).clamp(1.0, 5.0) as i32;
     for k in 1..=flare {
-        put_soft(g, ox + lc - k, root_y - (flare - k) / 2, '╱', ink[SLOT_TRUNK as usize]);
-        put_soft(g, ox + lc + k, root_y - (flare - k) / 2, '╲', ink[SLOT_TRUNK as usize]);
+        put_soft(
+            g,
+            ox + lc - k,
+            root_y - (flare - k) / 2,
+            '╱',
+            ink[SLOT_TRUNK as usize],
+        );
+        put_soft(
+            g,
+            ox + lc + k,
+            root_y - (flare - k) / 2,
+            '╲',
+            ink[SLOT_TRUNK as usize],
+        );
     }
     for j in 0..stalk.min(3) {
         put_soft(g, ox + lc, root_y - j, '┃', ink[SLOT_TRUNK as usize]);
@@ -1254,10 +1317,7 @@ fn blit_sheet(
         }
         let mut ch = c.ch;
         if flick_step > 0 && c.slot == SLOT_TIP && ch != ' ' {
-            let hh = hash2(
-                (c.x as u64) << 20 | c.y as u64,
-                flick_step + seed,
-            );
+            let hh = hash2((c.x as u64) << 20 | c.y as u64, flick_step + seed);
             if hh % 11 == 0 {
                 ch = twinkle[(hh >> 8) as usize % twinkle.len()];
             }

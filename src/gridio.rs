@@ -204,13 +204,6 @@ pub(crate) fn grid_to_ansi(grid: &Grid) -> String {
     s
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-struct DirtyRun {
-    row: usize,
-    start: usize,
-    end: usize,
-}
-
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub(crate) struct FrameEncodeStats {
     pub(crate) bytes: usize,
@@ -219,37 +212,26 @@ pub(crate) struct FrameEncodeStats {
     pub(crate) full_repaint: bool,
 }
 
-/// Retained terminal state for fixed-grid animation.
-///
-/// Lifetime: one instance belongs to one interactive playback session. A size
-/// change invalidates its prior frame. Pause/resume callers may explicitly call
-/// `invalidate` when terminal contents could have changed while suspended.
-///
-/// Storage: `previous` is a contiguous copy of the last final composed frame;
-/// `dirty` and `runs` are reused scratch; caller-owned `output` retains its ANSI
-/// allocation. Each encode reads the current grid, writes only `output` and the
-/// retained comparison state, then makes the current cells uniquely previous.
+/// Adapts the art grid to Ratatui's retained buffers and Crossterm backend.
+/// Ratatui owns cell comparison, wide-character handling and ANSI generation.
+/// Output stays in a reusable byte buffer for the cancellable playback relay.
 pub(crate) struct AnsiFrameEncoder {
-    width: usize,
-    height: usize,
-    previous: Vec<Cell>,
-    dirty: Vec<bool>,
-    runs: Vec<DirtyRun>,
+    previous: ratatui::buffer::Buffer,
+    current: ratatui::buffer::Buffer,
+    bytes: Vec<u8>,
     initialized: bool,
-    full_cost_hint: usize,
 }
 
 impl AnsiFrameEncoder {
     #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub(crate) fn new() -> Self {
+        // This encoder creates colored art payloads even when stdout is a pipe.
+        ratatui::crossterm::style::force_color_output(true);
         Self {
-            width: 0,
-            height: 0,
-            previous: Vec::new(),
-            dirty: Vec::new(),
-            runs: Vec::new(),
+            previous: ratatui::buffer::Buffer::empty(ratatui::layout::Rect::default()),
+            current: ratatui::buffer::Buffer::empty(ratatui::layout::Rect::default()),
+            bytes: Vec::new(),
             initialized: false,
-            full_cost_hint: 0,
         }
     }
 
@@ -258,207 +240,78 @@ impl AnsiFrameEncoder {
         self.initialized = false;
     }
 
-    /// Encode one final composed grid into `output`.
-    ///
-    /// Pseudocode:
-    /// 1. Rebuild retained storage on a size change and force a full repaint.
-    /// 2. Compare final cells, expanding changes around double-width glyphs.
-    /// 3. Form row-local dirty runs and absorb gaps whose bytes cost no more
-    ///    than another absolute cursor-position escape.
-    /// 4. Encode dirty runs, falling back to a full frame when it is cheaper.
-    /// 5. Copy current cells into contiguous previous-frame storage.
     #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-    pub(crate) fn encode(
-        &mut self,
-        grid: &Grid,
-        force_full: bool,
-        output: &mut String,
-    ) -> FrameEncodeStats {
-        output.clear();
+    pub(crate) fn encode(&mut self, grid: &Grid, force_full: bool, output: &mut String) -> FrameEncodeStats {
+        use ratatui::backend::{Backend, TermionBackend};
+        use ratatui::buffer::CellDiffOption;
         let height = grid.len();
         let width = grid.first().map_or(0, Vec::len);
-        debug_assert!(grid.iter().all(|row| row.len() == width));
-        if width != self.width || height != self.height {
-            self.width = width;
-            self.height = height;
-            self.previous.resize(width * height, Cell::blank());
-            self.dirty.resize(width * height, false);
+        let area = ratatui::layout::Rect::new(0, 0,
+            width.try_into().expect("terminal columns fit u16"),
+            height.try_into().expect("terminal rows fit u16"));
+        if self.current.area != area {
+            self.current.resize(area);
+            self.previous.resize(area);
             self.initialized = false;
-            self.full_cost_hint = 0;
         }
-
-        let full = force_full || !self.initialized;
-        let mut changed_cells = width * height;
-        self.runs.clear();
-
-        let mut full_repaint = full;
-        if full {
-            encode_full_grid(grid, output);
-            self.full_cost_hint = output.len();
-        } else {
-            changed_cells = self.collect_dirty_runs(grid);
-            if width * height >= 65_536 && changed_cells > width * height / 2 {
-                // Rerolling most cells needs a full repaint. Avoid constructing
-                // dirty runs and speculatively encoding the same frame twice.
-                encode_full_grid(grid, output);
-                self.full_cost_hint = output.len();
-                full_repaint = true;
-            } else if changed_cells > 0 {
-                encode_runs(grid, &self.runs, output);
-                // Most animation diffs are far below a full frame. Use the last
-                // exact full cost as a cheap gate, then scan the current frame
-                // only when the result is close enough to change the decision.
-                if self.full_cost_hint == 0
-                    || output.len().saturating_mul(4) >= self.full_cost_hint.saturating_mul(3)
-                {
-                    let full_cost = full_grid_encoded_cost(grid);
-                    if output.len() >= full_cost {
-                        output.clear();
-                        encode_full_grid(grid, output);
-                        self.full_cost_hint = output.len();
-                        full_repaint = true;
-                    }
+        let full_repaint = force_full || !self.initialized;
+        let option = if full_repaint { CellDiffOption::AlwaysUpdate } else { CellDiffOption::None };
+        for (source, target) in grid.iter().flatten().zip(&mut self.current.content) {
+            target.set_char(source.ch)
+                .set_fg(if source.ch == ' ' { ratatui::style::Color::Reset } else { ratatui_color(source.fg) })
+                .set_bg(ratatui_color(source.bg))
+                .set_diff_option(option);
+        }
+        self.bytes.clear();
+        let mut changed_cells = 0;
+        let mut runs = 0;
+        let mut last = None;
+        let mut updates = self.previous.diff_iter(&self.current).peekable();
+        if updates.peek().is_some() {
+            TermionBackend::new(&mut self.bytes).draw(updates.inspect(|(x, y, _)| {
+                changed_cells += 1;
+                if last != x.checked_sub(1).map(|x| (x, *y)) || last.is_none() {
+                    runs += 1;
                 }
-            }
+                last = Some((*x, *y));
+            })).expect("writing Ratatui output into Vec cannot fail");
         }
-
-        for (row_index, row) in grid.iter().enumerate() {
-            let start = row_index * width;
-            self.previous[start..start + width].copy_from_slice(row);
+        output.clear();
+        output.push_str(std::str::from_utf8(&self.bytes).expect("Ratatui emits UTF-8"));
+        std::mem::swap(&mut self.previous, &mut self.current);
+        if full_repaint {
+            for cell in &mut self.previous.content {
+                cell.set_diff_option(CellDiffOption::None);
+            }
         }
         self.initialized = true;
-
-        FrameEncodeStats {
-            bytes: output.len(),
-            changed_cells,
-            runs: if full_repaint {
-                height
-            } else {
-                self.runs.len()
-            },
-            full_repaint,
-        }
-    }
-
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-    fn collect_dirty_runs(&mut self, grid: &Grid) -> usize {
-        self.dirty.fill(false);
-        let mut changed = 0;
-        for (y, row) in grid.iter().enumerate() {
-            let offset = y * self.width;
-            for (x, cell) in row.iter().enumerate() {
-                if !cells_look_equal(*cell, self.previous[offset + x]) {
-                    self.dirty[offset + x] = true;
-                    changed += 1;
-                }
-            }
-        }
-
-        if self.width * self.height >= 65_536 && changed > self.width * self.height / 2 {
-            return changed;
-        }
-
-        // A terminal-wide glyph and its reserved following cell form one visual
-        // unit. Repaint both sides when either the old or new unit changes.
-        for y in 0..self.height {
-            let offset = y * self.width;
-            for x in 0..self.width {
-                if !self.dirty[offset + x] {
-                    continue;
-                }
-                if x > 0
-                    && (char_width(grid[y][x - 1].ch) == 2
-                        || char_width(self.previous[offset + x - 1].ch) == 2)
-                {
-                    self.dirty[offset + x - 1] = true;
-                }
-                if (char_width(grid[y][x].ch) == 2 || char_width(self.previous[offset + x].ch) == 2)
-                    && x + 1 < self.width
-                {
-                    self.dirty[offset + x + 1] = true;
-                }
-            }
-        }
-
-        for (y, row) in grid.iter().enumerate() {
-            let offset = y * self.width;
-            let mut x = 0;
-            while x < self.width {
-                while x < self.width && !self.dirty[offset + x] {
-                    x += 1;
-                }
-                if x == self.width {
-                    break;
-                }
-                let start = x;
-                while x < self.width && self.dirty[offset + x] {
-                    x += 1;
-                }
-                let mut end = x;
-
-                let (mut fg, mut bg) =
-                    colors_after_span(row, start, end, Color::Reset, Color::Reset);
-                // Compare the exact bytes for unchanged cells in the gap with
-                // the absolute cursor escape that would skip them.
-                loop {
-                    let mut next = end;
-                    while next < self.width && !self.dirty[offset + next] {
-                        next += 1;
-                    }
-                    if next == self.width {
-                        break;
-                    }
-                    let mut next_end = next;
-                    while next_end < self.width && self.dirty[offset + next_end] {
-                        next_end += 1;
-                    }
-                    let gap_cost = encoded_span_cost(row, end, next, fg, bg);
-                    if gap_cost > cursor_escape_len(y + 1, next + 1) {
-                        break;
-                    }
-                    (fg, bg) = colors_after_span(row, end, next_end, fg, bg);
-                    end = next_end;
-                    x = next_end;
-                }
-
-                self.runs.push(DirtyRun { row: y, start, end });
-            }
-        }
-        changed
+        FrameEncodeStats { bytes: output.len(), changed_cells, runs, full_repaint }
     }
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn decimal_len(mut value: usize) -> usize {
-    let mut len = 1;
-    while value >= 10 {
-        value /= 10;
-        len += 1;
-    }
-    len
-}
-
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn cursor_escape_len(row: usize, col: usize) -> usize {
-    4 + decimal_len(row) + decimal_len(col)
-}
-
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn sgr_len(color: Color, fg: bool) -> usize {
-    match color {
-        Color::Rgb { r, g, b } => {
-            // ESC [ 38|48 ; 2 ; r ; g ; b m
-            10 + decimal_len(r as usize) + decimal_len(g as usize) + decimal_len(b as usize)
-        }
-        Color::Reset => 5,
-        other => {
-            use crossterm::style::{SetBackgroundColor, SetForegroundColor};
-            if fg {
-                SetForegroundColor(other).to_string().len()
-            } else {
-                SetBackgroundColor(other).to_string().len()
-            }
-        }
+fn ratatui_color(color: Color) -> ratatui::style::Color {
+    use ratatui::style::Color as R;
+    match terminal_color(color) {
+        Color::Reset => R::Reset,
+        Color::Black => R::Black,
+        Color::DarkGrey => R::DarkGray,
+        Color::Red => R::LightRed,
+        Color::DarkRed => R::Red,
+        Color::Green => R::LightGreen,
+        Color::DarkGreen => R::Green,
+        Color::Yellow => R::LightYellow,
+        Color::DarkYellow => R::Yellow,
+        Color::Blue => R::LightBlue,
+        Color::DarkBlue => R::Blue,
+        Color::Magenta => R::LightMagenta,
+        Color::DarkMagenta => R::Magenta,
+        Color::Cyan => R::LightCyan,
+        Color::DarkCyan => R::Cyan,
+        Color::White => R::White,
+        Color::Grey => R::Gray,
+        Color::AnsiValue(value) => R::Indexed(value),
+        Color::Rgb {r,g,b} => R::Rgb(r,g,b),
     }
 }
 
@@ -483,172 +336,6 @@ fn terminal_color(color: Color) -> Color {
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn encoded_span_cost(
-    row: &[Cell],
-    start: usize,
-    end: usize,
-    mut cur_fg: Color,
-    mut cur_bg: Color,
-) -> usize {
-    let mut cost = 0;
-    let mut x = start;
-    while x < end {
-        let cell = row[x];
-        let fg = terminal_color(cell.fg);
-        let bg = terminal_color(cell.bg);
-        if cell.ch != ' ' && fg != cur_fg {
-            cost += sgr_len(fg, true);
-            cur_fg = fg;
-        }
-        if bg != cur_bg {
-            cost += sgr_len(bg, false);
-            cur_bg = bg;
-        }
-        cost += cell.ch.len_utf8();
-        x += if char_width(cell.ch) == 2 { 2 } else { 1 };
-    }
-    cost
-}
-
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn colors_after_span(
-    row: &[Cell],
-    start: usize,
-    end: usize,
-    mut cur_fg: Color,
-    mut cur_bg: Color,
-) -> (Color, Color) {
-    let mut x = start;
-    while x < end {
-        let cell = row[x];
-        if cell.ch != ' ' {
-            cur_fg = terminal_color(cell.fg);
-        }
-        cur_bg = terminal_color(cell.bg);
-        x += if char_width(cell.ch) == 2 { 2 } else { 1 };
-    }
-    (cur_fg, cur_bg)
-}
-
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn full_grid_encoded_cost(grid: &Grid) -> usize {
-    let mut cost = 4; // final SGR reset
-    let mut cur_fg = Color::Reset;
-    let mut cur_bg = Color::Reset;
-    for (y, row) in grid.iter().enumerate() {
-        cost += cursor_escape_len(y + 1, 1);
-        cost += encoded_span_cost(row, 0, row.len(), cur_fg, cur_bg);
-        (cur_fg, cur_bg) = colors_after_span(row, 0, row.len(), cur_fg, cur_bg);
-        if cur_bg != Color::Reset {
-            cost += sgr_len(Color::Reset, false);
-            cur_bg = Color::Reset;
-        }
-    }
-    cost
-}
-
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn encode_span(
-    output: &mut String,
-    row: &[Cell],
-    start: usize,
-    end: usize,
-    cur_fg: &mut Color,
-    cur_bg: &mut Color,
-) {
-    let mut x = start;
-    while x < end {
-        let cell = row[x];
-        let fg = terminal_color(cell.fg);
-        let bg = terminal_color(cell.bg);
-        // A space has no foreground pixels. Preserve the last emitted
-        // foreground until a glyph makes a foreground transition visible.
-        if cell.ch != ' ' && fg != *cur_fg {
-            write_sgr(output, fg, true);
-            *cur_fg = fg;
-        }
-        if bg != *cur_bg {
-            write_sgr(output, bg, false);
-            *cur_bg = bg;
-        }
-        output.push(cell.ch);
-        x += if char_width(cell.ch) == 2 { 2 } else { 1 };
-    }
-}
-
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn cells_look_equal(current: Cell, previous: Cell) -> bool {
-    current.ch == previous.ch
-        && terminal_color(current.bg) == terminal_color(previous.bg)
-        && (current.ch == ' ' || terminal_color(current.fg) == terminal_color(previous.fg))
-}
-
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn encode_full_grid(grid: &Grid, output: &mut String) {
-    use std::fmt::Write as _;
-    let mut cur_fg = Color::Reset;
-    let mut cur_bg = Color::Reset;
-    for (y, row) in grid.iter().enumerate() {
-        let _ = write!(output, "\x1b[{};1H", y + 1);
-        encode_span(output, row, 0, row.len(), &mut cur_fg, &mut cur_bg);
-        if cur_bg != Color::Reset {
-            write_sgr(output, Color::Reset, false);
-            cur_bg = Color::Reset;
-        }
-    }
-    output.push_str("\x1b[0m");
-}
-
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn encode_runs(grid: &Grid, runs: &[DirtyRun], output: &mut String) {
-    use std::fmt::Write as _;
-    let mut cur_fg = Color::Reset;
-    let mut cur_bg = Color::Reset;
-    let mut cursor: Option<(usize, usize)> = None;
-    for run in runs {
-        let row = run.row + 1;
-        let col = run.start + 1;
-        match cursor {
-            Some((cursor_row, cursor_col)) if cursor_row == row && cursor_col == col => {}
-            Some((cursor_row, cursor_col)) if cursor_row == row => {
-                let delta = cursor_col.abs_diff(col);
-                let relative_len = if delta == 1 {
-                    3
-                } else {
-                    3 + decimal_len(delta)
-                };
-                let column_len = if col == 1 { 3 } else { 3 + decimal_len(col) };
-                if relative_len < column_len {
-                    let command = if col > cursor_col { 'C' } else { 'D' };
-                    if delta == 1 {
-                        let _ = write!(output, "\x1b[{command}");
-                    } else {
-                        let _ = write!(output, "\x1b[{delta}{command}");
-                    }
-                } else if col == 1 {
-                    output.push_str("\x1b[G");
-                } else {
-                    let _ = write!(output, "\x1b[{col}G");
-                }
-            }
-            _ => {
-                let _ = write!(output, "\x1b[{row};{col}H");
-            }
-        }
-        encode_span(
-            output,
-            &grid[run.row],
-            run.start,
-            run.end,
-            &mut cur_fg,
-            &mut cur_bg,
-        );
-        cursor = Some((row, run.end + 1));
-    }
-    output.push_str("\x1b[0m");
-}
-
 #[cfg(test)]
 mod ansi_frame_tests {
     use super::*;
@@ -660,77 +347,35 @@ mod ansi_frame_tests {
 
     #[test]
     #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-    fn dirty_runs_coalesce_when_gap_bytes_cost_less_than_cursor_move() {
+    fn library_diff_emits_only_changed_cells_and_recovers_after_invalidation() {
         let mut encoder = AnsiFrameEncoder::new();
         let mut output = String::new();
         encoder.encode(&row("abcdef"), true, &mut output);
         let stats = encoder.encode(&row("aXcYef"), false, &mut output);
-        assert_eq!(stats.changed_cells, 2);
-        assert_eq!(stats.runs, 1);
-        assert_eq!(output, "\x1b[1;2HXcY\x1b[0m");
-    }
-
-    #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-    fn dirty_runs_stay_separate_when_gap_is_more_expensive_than_cursor_move() {
-        let mut encoder = AnsiFrameEncoder::new();
-        let mut output = String::new();
-        let before = "a".repeat(40);
-        encoder.encode(&row(&before), true, &mut output);
-        let mut after = before.into_bytes();
-        after[1] = b'X';
-        after[35] = b'Y';
-        let after = String::from_utf8(after).unwrap();
-        let stats = encoder.encode(&row(&after), false, &mut output);
-        assert_eq!(stats.changed_cells, 2);
-        assert_eq!(stats.runs, 2);
-        assert_eq!(output, "\x1b[1;2HX\x1b[36GY\x1b[0m");
-    }
-
-    #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-    fn retained_cursor_reduces_sparse_run_control_bytes() {
-        use std::fmt::Write as _;
-
-        let grid = vec![vec![Cell::blank(); 1_000]];
-        let runs = (0..100)
-            .map(|index| DirtyRun {
-                row: 0,
-                start: index * 10,
-                end: index * 10 + 1,
-            })
-            .collect::<Vec<_>>();
-        let mut retained = String::new();
-        encode_runs(&grid, &runs, &mut retained);
-
-        let mut absolute = String::new();
-        let mut cur_fg = Color::Reset;
-        let mut cur_bg = Color::Reset;
-        for run in &runs {
-            let _ = write!(absolute, "\x1b[{};{}H", run.row + 1, run.start + 1);
-            encode_span(
-                &mut absolute,
-                &grid[run.row],
-                run.start,
-                run.end,
-                &mut cur_fg,
-                &mut cur_bg,
-            );
-        }
-        absolute.push_str("\x1b[0m");
-
-        assert_eq!((absolute.len(), retained.len()), (893, 506));
-    }
-
-    #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-    fn dense_change_uses_full_frame_fallback() {
-        let mut encoder = AnsiFrameEncoder::new();
-        let mut output = String::new();
-        encoder.encode(&row("aaaaaaaaaaaaaaaa"), true, &mut output);
-        let stats = encoder.encode(&row("bbbbbbbbbbbbbbbb"), false, &mut output);
+        assert_eq!((stats.changed_cells, stats.runs), (2, 2));
+        assert_eq!(output, "\x1b[1;2HX\x1b[1;4HY\x1b[39m\x1b[49m\x1b[m");
+        encoder.invalidate();
+        let stats = encoder.encode(&row("aXcYef"), false, &mut output);
         assert!(stats.full_repaint);
-        assert_eq!(output, "\x1b[1;1Hbbbbbbbbbbbbbbbb\x1b[0m");
+        assert_eq!(stats.changed_cells, 6);
+        assert_eq!(output, "\x1b[1;1HaXcYef\x1b[39m\x1b[49m\x1b[m");
+        encoder.encode(&row("aXcYef"), false, &mut output);
+        assert_eq!(output, "");
+    }
+
+    #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    fn library_buffers_cover_more_than_u16_cells_and_resize() {
+        let mut encoder = AnsiFrameEncoder::new();
+        let mut output = String::new();
+        let grid = vec![vec![Cell::blank(); 400]; 200];
+        let stats = encoder.encode(&grid, false, &mut output);
+        assert_eq!(stats.changed_cells, 80_000);
+        assert_eq!(encoder.previous.content.len(), 80_000);
+        assert!(output.contains("\x1b[200;1H"));
+        let stats = encoder.encode(&row("x"), false, &mut output);
+        assert!(stats.full_repaint);
+        assert_eq!(stats.changed_cells, 1);
     }
 
     #[test]
@@ -751,7 +396,7 @@ mod ansi_frame_tests {
         encoder.encode(&wide, true, &mut output);
         let stats = encoder.encode(&narrow, false, &mut output);
         assert_eq!(stats.runs, 1);
-        assert_eq!(output, "\x1b[1;1Hab\x1b[0m");
+        assert_eq!(output, "\x1b[1;1Hab\x1b[39m\x1b[49m\x1b[m");
     }
 
     #[test]

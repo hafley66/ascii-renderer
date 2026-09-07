@@ -39,7 +39,11 @@ impl TCell {
     #[inline]
     #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub(crate) fn empty() -> Self {
-        TCell { ch: '\0', band: 0, tone: 0 }
+        TCell {
+            ch: '\0',
+            band: 0,
+            tone: 0,
+        }
     }
 }
 
@@ -53,7 +57,11 @@ impl Canvas {
     #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub(crate) fn new(w: usize, h: usize) -> Self {
         let (w, h) = (w.max(1), h.max(1));
-        Canvas { w, h, cells: vec![TCell::empty(); w * h] }
+        Canvas {
+            w,
+            h,
+            cells: vec![TCell::empty(); w * h],
+        }
     }
 
     #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
@@ -78,7 +86,11 @@ impl Canvas {
         if x >= self.w || y >= self.h {
             return;
         }
-        self.cells[y * self.w + x] = TCell { ch, band, tone: tone.min(31) };
+        self.cells[y * self.w + x] = TCell {
+            ch,
+            band,
+            tone: tone.min(31),
+        };
     }
 
     #[inline]
@@ -95,7 +107,11 @@ impl Canvas {
         if self.cells[i].ch != '\0' {
             return;
         }
-        self.cells[i] = TCell { ch, band, tone: tone.min(31) };
+        self.cells[i] = TCell {
+            ch,
+            band,
+            tone: tone.min(31),
+        };
     }
 }
 
@@ -157,7 +173,14 @@ pub(crate) fn capture(
 /// Paint a bake list. `offs` is per-group sway in cells scaled by 65536; the
 /// per-cell weight adds another factor of 255, so the product shifts by 24.
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn blit(grid: &mut Grid, w: usize, h: usize, cells: &[BakedCell], lut: &[Color], offs: &[i32]) {
+pub(crate) fn blit(
+    grid: &mut Grid,
+    w: usize,
+    h: usize,
+    cells: &[BakedCell],
+    lut: &[Color],
+    offs: &[i32],
+) {
     for c in cells {
         let dx = (offs[c.group as usize] * c.sway as i32) >> 24;
         let x = c.x as i32 + dx;
@@ -219,7 +242,13 @@ fn stroke(c: &mut Canvas, x0: f32, y0: f32, x1: f32, y1: f32, band: u8, tone: u8
     let ch = glyph_for(dx / ASPECT, dy, heavy);
     for s in 0..=steps {
         let f = s as f32 / steps as f32;
-        c.put((x0 + dx * f).round() as i32, (y0 + dy * f).round() as i32, ch, band, tone);
+        c.put(
+            (x0 + dx * f).round() as i32,
+            (y0 + dy * f).round() as i32,
+            ch,
+            band,
+            tone,
+        );
     }
 }
 
@@ -276,7 +305,14 @@ fn redraw_column(c: &mut Canvas, top_y: i32, xs: &[i32], thick: f32, skip_top: u
 
 /// Buttress flares, knuckle arcs, a mound, or a surface root mat.
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn draw_roots(c: &mut Canvas, x: i32, y: i32, spread: i32, style: usize, rng: &mut StdRng) {
+pub(crate) fn draw_roots(
+    c: &mut Canvas,
+    x: i32,
+    y: i32,
+    spread: i32,
+    style: usize,
+    rng: &mut StdRng,
+) {
     let spread = spread.max(2);
     match style % 4 {
         0 => {
@@ -295,7 +331,13 @@ pub(crate) fn draw_roots(c: &mut Canvas, x: i32, y: i32, spread: i32, style: usi
                     9 + k as u8,
                     false,
                 );
-                c.put(x + side * len, y, if side < 0 { '╴' } else { '╶' }, BAND_ROOT, 6);
+                c.put(
+                    x + side * len,
+                    y,
+                    if side < 0 { '╴' } else { '╶' },
+                    BAND_ROOT,
+                    6,
+                );
             }
         }
         1 => {
@@ -303,10 +345,22 @@ pub(crate) fn draw_roots(c: &mut Canvas, x: i32, y: i32, spread: i32, style: usi
             let r = ((spread as f32) * (0.4 + rng.random::<f32>() * 0.5)) as i32;
             c.put(x, y, '┴', BAND_ROOT, 14);
             for d in 1..=l {
-                c.put(x - d, y, if d == l { '╰' } else { '─' }, BAND_ROOT, 12 - (d as u8).min(6));
+                c.put(
+                    x - d,
+                    y,
+                    if d == l { '╰' } else { '─' },
+                    BAND_ROOT,
+                    12 - (d as u8).min(6),
+                );
             }
             for d in 1..=r {
-                c.put(x + d, y, if d == r { '╯' } else { '─' }, BAND_ROOT, 12 - (d as u8).min(6));
+                c.put(
+                    x + d,
+                    y,
+                    if d == r { '╯' } else { '─' },
+                    BAND_ROOT,
+                    12 - (d as u8).min(6),
+                );
             }
         }
         2 => {
@@ -324,7 +378,13 @@ pub(crate) fn draw_roots(c: &mut Canvas, x: i32, y: i32, spread: i32, style: usi
                     continue;
                 }
                 let g = if (d.abs() & 1) == 0 { '∙' } else { '·' };
-                c.put(x + d, y, g, BAND_ROOT, 7 + (spread - d.abs()).clamp(0, 8) as u8);
+                c.put(
+                    x + d,
+                    y,
+                    g,
+                    BAND_ROOT,
+                    7 + (spread - d.abs()).clamp(0, 8) as u8,
+                );
             }
             c.put(x, y, '┴', BAND_ROOT, 15);
         }
@@ -439,7 +499,8 @@ impl Lobe {
     #[inline]
     #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn at(&self, th: f32) -> f32 {
-        (1.0 + self.a1 * (self.k1 * th + self.p1).sin() + self.a2 * (self.k2 * th + self.p2).sin()).max(0.35)
+        (1.0 + self.a1 * (self.k1 * th + self.p1).sin() + self.a2 * (self.k2 * th + self.p2).sin())
+            .max(0.35)
     }
 }
 
@@ -463,8 +524,25 @@ fn grow_venation(c: &mut Canvas, p: &Plot, rng: &mut StdRng) {
     let base_y = ry - (height * (p.bare + rng.random::<f32>() * 0.10)) as i32;
     let mut xs: Vec<i32> = Vec::new();
     let thick = (spread * 0.14).clamp(0.0, 3.0);
-    draw_column(c, base_y, ry, rx as f32, lean * 0.4, 0.30, thick, rng, &mut xs);
-    draw_roots(c, *xs.last().unwrap_or(&rx), ry, (spread * 0.6) as i32, p.roots, rng);
+    draw_column(
+        c,
+        base_y,
+        ry,
+        rx as f32,
+        lean * 0.4,
+        0.30,
+        thick,
+        rng,
+        &mut xs,
+    );
+    draw_roots(
+        c,
+        *xs.last().unwrap_or(&rx),
+        ry,
+        (spread * 0.6) as i32,
+        p.roots,
+        rng,
+    );
 
     let hub_x = xs.first().copied().unwrap_or(rx) as f32;
     let crown_cy = (top as f32 + base_y as f32) * 0.5;
@@ -479,7 +557,10 @@ fn grow_venation(c: &mut Canvas, p: &Plot, rng: &mut StdRng) {
     for _ in 0..count {
         let th = rng.random::<f32>() * TAU;
         let rr = rng.random::<f32>().sqrt() * lobe.at(th);
-        att.push((ccx + th.cos() * rr * crown_rx, crown_cy - th.sin() * rr * crown_ry));
+        att.push((
+            ccx + th.cos() * rr * crown_rx,
+            crown_cy - th.sin() * rr * crown_ry,
+        ));
     }
 
     let step = (crown_ry * 0.26).clamp(0.85, 2.4);
@@ -575,7 +656,12 @@ fn grow_venation(c: &mut Canvas, p: &Plot, rng: &mut StdRng) {
             let nx = nodes[i].x + ux * step * ASPECT;
             let ny = nodes[i].y + uy * step;
             let idx = nodes.len() as u32;
-            nodes.push(VNode { x: nx, y: ny, parent: i as i32, mass: 1 });
+            nodes.push(VNode {
+                x: nx,
+                y: ny,
+                parent: i as i32,
+                mass: 1,
+            });
             let (ix, iy) = bucket_of(nx, ny);
             buckets[iy * bw + ix].push(idx);
         }
@@ -692,14 +778,17 @@ fn grow_mangrove(c: &mut Canvas, p: &Plot, rng: &mut StdRng) {
 
     let stilt = (height * (0.20 + rng.random::<f32>() * 0.14)).max(2.0) as i32;
     let base_y = ry - stilt;
-    let crown_base = (top + (height * (1.0 - p.bare - rng.random::<f32>() * 0.08).clamp(0.25, 0.86)) as i32)
+    let crown_base = (top
+        + (height * (1.0 - p.bare - rng.random::<f32>() * 0.08).clamp(0.25, 0.86)) as i32)
         .min(base_y - 1)
         .max(top + 1);
     let lean = (rng.random::<f32>() - 0.5) * spread * 0.4;
 
     let mut xs: Vec<i32> = Vec::new();
     let thick = (spread * 0.11).clamp(0.0, 2.0);
-    draw_column(c, crown_base, base_y, rx as f32, lean, 0.24, thick, rng, &mut xs);
+    draw_column(
+        c, crown_base, base_y, rx as f32, lean, 0.24, thick, rng, &mut xs,
+    );
     let trunk_x = |y: i32| -> i32 {
         if xs.is_empty() {
             return rx;
@@ -724,13 +813,26 @@ fn grow_mangrove(c: &mut Canvas, p: &Plot, rng: &mut StdRng) {
             let nx = ax + reach * a.sin();
             let ny = ay as f32 + drop * (1.0 - a.cos());
             let g = glyph_for(nx - px, ny - py, false);
-            c.put(nx.round() as i32, ny.round() as i32, g, BAND_ROOT, 8 + (f * 8.0) as u8);
+            c.put(
+                nx.round() as i32,
+                ny.round() as i32,
+                g,
+                BAND_ROOT,
+                8 + (f * 8.0) as u8,
+            );
             px = nx;
             py = ny;
         }
         c.put(px.round() as i32, ry, '┴', BAND_ROOT, 15);
     }
-    draw_roots(c, trunk_x(base_y), ry, (spread * 0.4) as i32, p.roots + 3, rng);
+    draw_roots(
+        c,
+        trunk_x(base_y),
+        ry,
+        (spread * 0.4) as i32,
+        p.roots + 3,
+        rng,
+    );
 
     let ccx = trunk_x(crown_base) as f32 + lean * 0.6;
     let ccy = (top + crown_base) as f32 * 0.5;
@@ -820,7 +922,14 @@ fn grow_phyllotaxis(c: &mut Canvas, p: &Plot, rng: &mut StdRng) {
     let mut xs: Vec<i32> = Vec::new();
     let thick = (spread * 0.13).clamp(0.0, 3.0);
     draw_column(c, hub_y, ry, rx as f32, bend, 0.18, thick, rng, &mut xs);
-    draw_roots(c, *xs.last().unwrap_or(&rx), ry, (spread * 0.65) as i32, p.roots + 1, rng);
+    draw_roots(
+        c,
+        *xs.last().unwrap_or(&rx),
+        ry,
+        (spread * 0.65) as i32,
+        p.roots + 1,
+        rng,
+    );
 
     let hub_x = xs.first().copied().unwrap_or(rx) as f32;
     let crx = spread * 1.05;
@@ -837,7 +946,16 @@ fn grow_phyllotaxis(c: &mut Canvas, p: &Plot, rng: &mut StdRng) {
         let px = hub_x + th.cos() * rn * crx * edge;
         let py = hub_y as f32 - th.sin() * rn * cry * edge;
         if i % ray_stride == 0 && rn > 0.25 {
-            stroke(c, hub_x, hub_y as f32, px, py, BAND_LIMB, (10.0 + rn * 8.0) as u8, rn < 0.55);
+            stroke(
+                c,
+                hub_x,
+                hub_y as f32,
+                px,
+                py,
+                BAND_LIMB,
+                (10.0 + rn * 8.0) as u8,
+                rn < 0.55,
+            );
         }
         let g = if rn < 0.32 {
             '▒'
@@ -850,7 +968,13 @@ fn grow_phyllotaxis(c: &mut Canvas, p: &Plot, rng: &mut StdRng) {
         } else {
             '◇'
         };
-        c.put(px.round() as i32, py.round() as i32, g, BAND_LEAF, (12.0 + rn * 19.0) as u8);
+        c.put(
+            px.round() as i32,
+            py.round() as i32,
+            g,
+            BAND_LEAF,
+            (12.0 + rn * 19.0) as u8,
+        );
         if rn > 0.72 && hashf(px as i32, py as i32, 991) < p.fruit {
             c.put(px.round() as i32, py.round() as i32, '●', BAND_BLOOM, 26);
         }
@@ -981,7 +1105,14 @@ fn grow_aggregate(c: &mut Canvas, p: &Plot, rng: &mut StdRng) {
     }
 
     redraw_column(c, trunk_top, &xs, thick, 0);
-    draw_roots(c, *xs.last().unwrap_or(&rx), ry, (spread * 0.55) as i32, p.roots + 2, rng);
+    draw_roots(
+        c,
+        *xs.last().unwrap_or(&rx),
+        ry,
+        (spread * 0.55) as i32,
+        p.roots + 2,
+        rng,
+    );
 }
 
 // --- 5. shelf: recursive subdivision -------------------------------
@@ -1005,11 +1136,25 @@ fn subdivide(
     if (w as f32) > (h as f32) * ASPECT {
         let cut = ((w as f32) * (0.32 + rng.random::<f32>() * 0.36)) as i32;
         subdivide((x, y, cut, h), depth + 1, max_depth, branch, out, rng);
-        subdivide((x + cut, y, w - cut, h), depth + 1, max_depth, branch, out, rng);
+        subdivide(
+            (x + cut, y, w - cut, h),
+            depth + 1,
+            max_depth,
+            branch,
+            out,
+            rng,
+        );
     } else {
         let cut = ((h as f32) * (0.32 + rng.random::<f32>() * 0.36)).max(1.0) as i32;
         subdivide((x, y, w, cut), depth + 1, max_depth, branch, out, rng);
-        subdivide((x, y + cut, w, h - cut), depth + 1, max_depth, branch, out, rng);
+        subdivide(
+            (x, y + cut, w, h - cut),
+            depth + 1,
+            max_depth,
+            branch,
+            out,
+            rng,
+        );
     }
 }
 
@@ -1029,7 +1174,14 @@ fn grow_shelf(c: &mut Canvas, p: &Plot, rng: &mut StdRng) {
         let i = (y - trunk_top).clamp(0, xs.len() as i32 - 1) as usize;
         xs.get(i).copied().unwrap_or(rx)
     };
-    draw_roots(c, *xs.last().unwrap_or(&rx), ry, (spread * 0.7) as i32, p.roots, rng);
+    draw_roots(
+        c,
+        *xs.last().unwrap_or(&rx),
+        ry,
+        (spread * 0.7) as i32,
+        p.roots,
+        rng,
+    );
 
     let cw = (spread * 2.1) as i32;
     let ch = (ry - (height * p.bare) as i32) - top;
@@ -1066,7 +1218,12 @@ fn grow_shelf(c: &mut Canvas, p: &Plot, rng: &mut StdRng) {
         })
         .collect();
     scored.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap_or(std::cmp::Ordering::Equal));
-    let keep = scored.iter().filter(|s| s.0 <= 1.0).count().max(3).min(scored.len());
+    let keep = scored
+        .iter()
+        .filter(|s| s.0 <= 1.0)
+        .count()
+        .max(3)
+        .min(scored.len());
     let mut kept: Vec<(i32, i32, i32, i32)> = scored.into_iter().take(keep).map(|s| s.1).collect();
     kept.sort_by_key(|r| r.1);
 
@@ -1182,8 +1339,23 @@ fn q(v: f32) -> u32 {
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn sheet_key(w: usize, h: usize, seed: u64, k: &TreesKnobs) -> (usize, usize, u64, u32, u32, u32, u32, u32, u32) {
-    (w, h, seed, q(k.energy), q(k.fruit), q(k.branch), q(k.scrub), q(k.roots), q(k.detail) ^ q(k.bare))
+fn sheet_key(
+    w: usize,
+    h: usize,
+    seed: u64,
+    k: &TreesKnobs,
+) -> (usize, usize, u64, u32, u32, u32, u32, u32, u32) {
+    (
+        w,
+        h,
+        seed,
+        q(k.energy),
+        q(k.fruit),
+        q(k.branch),
+        q(k.scrub),
+        q(k.roots),
+        q(k.detail) ^ q(k.bare),
+    )
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
@@ -1217,7 +1389,9 @@ fn bake_sheet(
     let cols = SPECIES.len();
     let rows = 2usize;
     let cell_w = (w / cols).max(6);
-    let tall = ((h as f32 * 0.60) as usize).max(9).min(h.saturating_sub(9).max(9));
+    let tall = ((h as f32 * 0.60) as usize)
+        .max(9)
+        .min(h.saturating_sub(9).max(9));
     let heights = [tall, h.saturating_sub(tall).max(9)];
 
     let mut chrome: Vec<BakedCell> = Vec::new();
@@ -1239,7 +1413,13 @@ fn bake_sheet(
             canvas.reset(cell_w, cell_h);
             for x in 0..cell_w as i32 {
                 let n = hashf(x + ox, ground_y, 5150);
-                let g = if n < 0.72 { '─' } else if n < 0.9 { '╴' } else { '╶' };
+                let g = if n < 0.72 {
+                    '─'
+                } else if n < 0.9 {
+                    '╴'
+                } else {
+                    '╶'
+                };
                 canvas.put(x, ground_y + 1, g, BAND_ROOT, 4 + (n * 4.0) as u8);
             }
             for x in 0..cell_w as i32 {
@@ -1251,14 +1431,29 @@ fn bake_sheet(
             let label = sp.label();
             let lx = (cell_w as i32 - label.chars().count() as i32) / 2;
             for (j, ch) in label.chars().enumerate() {
-                canvas.put(lx + j as i32, label_y, ch, BAND_AIR, if row == 0 { 27 } else { 19 });
+                canvas.put(
+                    lx + j as i32,
+                    label_y,
+                    ch,
+                    BAND_AIR,
+                    if row == 0 { 27 } else { 19 },
+                );
             }
             capture(&canvas, ox, oy, slot, slot, ground_y, &mut chrome);
 
             canvas.reset(cell_w, cell_h);
-            let energy = if row == 0 { k.energy } else { k.energy * k.scrub };
+            let energy = if row == 0 {
+                k.energy
+            } else {
+                k.energy * k.scrub
+            };
             let plot = Plot {
-                rect: Rect { x: 1, y: 1, w: cell_w.saturating_sub(2).max(3), h: ground_y as usize },
+                rect: Rect {
+                    x: 1,
+                    y: 1,
+                    w: cell_w.saturating_sub(2).max(3),
+                    h: ground_y as usize,
+                },
                 energy,
                 fruit: k.fruit,
                 branch: k.branch,
@@ -1292,7 +1487,14 @@ fn bake_sheet(
         }
     }
 
-    SheetBake { key, chrome, trees, leaves, phase, slots: rows * cols }
+    SheetBake {
+        key,
+        chrome,
+        trees,
+        leaves,
+        phase,
+        slots: rows * cols,
+    }
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
@@ -1321,7 +1523,9 @@ pub(crate) fn draw_opus_1_trees(
         let mut slot = store.borrow_mut();
         let key = sheet_key(w, h, seed, k);
         if slot.as_ref().map(|b| b.key) != Some(key) {
-            *slot = Some(measure_layer("opus-1-trees", "bake", || bake_sheet(w, h, seed, k, key)));
+            *slot = Some(measure_layer("opus-1-trees", "bake", || {
+                bake_sheet(w, h, seed, k, key)
+            }));
         }
         let b = slot.as_ref().unwrap();
         let lut = build_sheet_lut(palette, k, b.slots);
@@ -1333,8 +1537,12 @@ pub(crate) fn draw_opus_1_trees(
             }
         }
 
-        measure_layer("opus-1-trees", "ground", || blit(grid, w, h, &b.chrome, &lut, &offs));
-        measure_layer("opus-1-trees", "trees", || blit(grid, w, h, &b.trees, &lut, &offs));
+        measure_layer("opus-1-trees", "ground", || {
+            blit(grid, w, h, &b.chrome, &lut, &offs)
+        });
+        measure_layer("opus-1-trees", "trees", || {
+            blit(grid, w, h, &b.trees, &lut, &offs)
+        });
 
         if t > 0.0 && !b.leaves.is_empty() {
             measure_layer("opus-1-trees", "flicker", || {

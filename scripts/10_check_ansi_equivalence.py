@@ -21,8 +21,11 @@ for index, path in enumerate(files):
     for y in range(200):
         for x in range(400):
             left, right = (screen.buffer[y][x] for screen in screens)
-            if left.data == right.data == ' ':
-                left, right = left._replace(fg='default'), right._replace(fg='default')
+            # pyte retains an empty continuation marker after overwriting a
+            # wide glyph. It paints no text, just as a space does. Preserve
+            # background and modifiers in the comparison.
+            if left.data in ('', ' ') and right.data in ('', ' '):
+                left, right = (cell._replace(data=' ', fg='default') for cell in (left, right))
             assert left == right, (index, x, y, left, right)
     cursor = [(screen.cursor.x, screen.cursor.y) for screen in screens]
     assert cursor[0] == cursor[1], (index, cursor)

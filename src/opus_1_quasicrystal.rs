@@ -212,7 +212,16 @@ fn keep_bg(grid: &Grid, x: usize, y: usize) -> Color {
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn stroke(grid: &mut Grid, w: usize, h: usize, ax: f32, ay: f32, d: (f32, f32), ch: char, fg: Color) {
+fn stroke(
+    grid: &mut Grid,
+    w: usize,
+    h: usize,
+    ax: f32,
+    ay: f32,
+    d: (f32, f32),
+    ch: char,
+    fg: Color,
+) {
     let steps = d.0.abs().max(d.1.abs()).ceil().max(1.0);
     let inv = 1.0 / steps;
     let n = steps as i32;
@@ -300,7 +309,11 @@ fn fill_par(
             row[x0..=x1].fill(a);
         } else {
             for (x, cell) in row[x0..=x1].iter_mut().enumerate() {
-                *cell = if hash2((x0 + x) as i32, y as i32, salt) < mix { b } else { a };
+                *cell = if hash2((x0 + x) as i32, y as i32, salt) < mix {
+                    b
+                } else {
+                    a
+                };
             }
         }
     }
@@ -309,11 +322,21 @@ fn fill_par(
 #[allow(clippy::too_many_arguments)]
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn fill_par_row(
-    row: &mut [Cell], y: usize, ax: f32, ay: f32, u: (f32, f32), v: (f32, f32),
-    a: Cell, b: Cell, mix: f32, salt: u32,
+    row: &mut [Cell],
+    y: usize,
+    ax: f32,
+    ay: f32,
+    u: (f32, f32),
+    v: (f32, f32),
+    a: Cell,
+    b: Cell,
+    mix: f32,
+    salt: u32,
 ) {
     let det = u.0 * v.1 - u.1 * v.0;
-    if det.abs() < 1e-3 { return; }
+    if det.abs() < 1e-3 {
+        return;
+    }
     let inv = 1.0 / det;
     let dy = y as f32 + 0.5 - ay;
     let au = v.1 * inv;
@@ -329,19 +352,31 @@ fn fill_par_row(
         } else if s < -1e-6 {
             lo = lo.max((1.0 - c) / s);
             hi = hi.min(-c / s);
-        } else if !(0.0..=1.0).contains(&c) { return; }
+        } else if !(0.0..=1.0).contains(&c) {
+            return;
+        }
     }
-    if hi <= lo { return; }
+    if hi <= lo {
+        return;
+    }
     let x0 = (lo - 0.5).ceil().max(0.0) as usize;
     let x1t = (hi - 0.5).floor();
-    if x1t < 0.0 || x0 >= row.len() { return; }
+    if x1t < 0.0 || x0 >= row.len() {
+        return;
+    }
     let x1 = (x1t as usize).min(row.len() - 1);
-    if x0 > x1 { return; }
+    if x0 > x1 {
+        return;
+    }
     if mix <= 0.0 {
         row[x0..=x1].fill(a);
     } else {
         for (x, cell) in row[x0..=x1].iter_mut().enumerate() {
-            *cell = if hash2((x0 + x) as i32, y as i32, salt) < mix { b } else { a };
+            *cell = if hash2((x0 + x) as i32, y as i32, salt) < mix {
+                b
+            } else {
+                a
+            };
         }
     }
 }
@@ -368,7 +403,15 @@ pub(crate) fn draw_opus_1_quasicrystal(
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn render(grid: &mut Grid, w: usize, h: usize, palette: &[Color; 5], t: f32, k: &Opus1QuasicrystalKnobs, c: &mut Cached) {
+fn render(
+    grid: &mut Grid,
+    w: usize,
+    h: usize,
+    palette: &[Color; 5],
+    t: f32,
+    k: &Opus1QuasicrystalKnobs,
+    c: &mut Cached,
+) {
     let bg = palette[0];
     measure_layer("opus-1-quasicrystal", "clear", || {
         let blank = Cell::with_bg(' ', palette[4], bg);
@@ -381,7 +424,11 @@ fn render(grid: &mut Grid, w: usize, h: usize, palette: &[Color; 5], t: f32, k: 
         return;
     }
 
-    let tt = if t > 0.0 { t * k.speed.clamp(0.0, 8.0) } else { 0.0 };
+    let tt = if t > 0.0 {
+        t * k.speed.clamp(0.0, 8.0)
+    } else {
+        0.0
+    };
     let n = c.n;
     let nf = n as f32;
     let breath = k.breath.clamp(0.0, 0.35);
@@ -440,7 +487,11 @@ fn render(grid: &mut Grid, w: usize, h: usize, palette: &[Color; 5], t: f32, k: 
         edge_fg[ci] = lerp_color(hsl_to_rgb(hue, 0.5, 0.8), palette[4], 0.42);
         for lv in 0..LEVELS {
             let f = lv as f32 / (LEVELS - 1) as f32;
-            let fg = lerp_color(hsl_to_rgb(hue, 0.5, (0.2 + 0.42 * f) as f64), palette[1], 0.22);
+            let fg = lerp_color(
+                hsl_to_rgb(hue, 0.5, (0.2 + 0.42 * f) as f64),
+                palette[1],
+                0.22,
+            );
             let tint = lerp_color(hsl_to_rgb(hue, 0.55, (0.04 + 0.05 * f) as f64), bg, 0.42);
             fill_a[ci][lv] = Cell::with_bg(RAMP[lv], fg, tint);
             let lo = lv.saturating_sub(1);
@@ -527,12 +578,15 @@ fn render(grid: &mut Grid, w: usize, h: usize, palette: &[Color; 5], t: f32, k: 
                         let lightw = 0.5 + 0.5 * (rr * wk - wphase).cos();
                         let ddx = ax + (ux + wx) * 0.5 - cx;
                         let ddy = ay + (uy + wy) * 0.5 - cy;
-                        let vig = (1.0 - 0.66 * (ddx * ddx * vig_x + ddy * ddy * vig_y)).clamp(0.0, 1.0);
+                        let vig =
+                            (1.0 - 0.66 * (ddx * ddx * vig_x + ddy * ddy * vig_y)).clamp(0.0, 1.0);
                         let bias = 0.34 * (class as f32 / (nclass - 1).max(1) as f32) - 0.17;
                         let grain = (qx * 1.618 + qy * 2.414).rem_euclid(1.0) - 0.5;
                         let mass = lightw * lightw * (3.0 - 2.0 * lightw);
                         let core = (-(mcx * mcx + mcy * mcy) * core_k).exp();
-                        let amt = (((0.96 * mass + 0.44 * grain + bias * mass) * vig + 0.78 * core) * shade)
+                        let amt = (((0.96 * mass + 0.44 * grain + bias * mass) * vig
+                            + 0.78 * core)
+                            * shade)
                             .clamp(0.0, 1.0);
                         let level = (amt * (LEVELS - 1) as f32).round() as u8;
                         let mut star = 0u8;
@@ -578,14 +632,26 @@ fn render(grid: &mut Grid, w: usize, h: usize, palette: &[Color; 5], t: f32, k: 
         if w.saturating_mul(h) < 100_000 {
             for r in rhombs.iter() {
                 let (ci, lv) = (r.class as usize, r.level as usize);
-                fill_par(grid, w, h, r.ax, r.ay, ev[r.j as usize], ev[r.l as usize],
-                    fill_a[ci][lv], fill_b[ci][lv], if lv >= 5 { 0.3 } else { 0.0 },
-                    (lv as u32) << 3 | ci as u32);
+                fill_par(
+                    grid,
+                    w,
+                    h,
+                    r.ax,
+                    r.ay,
+                    ev[r.j as usize],
+                    ev[r.l as usize],
+                    fill_a[ci][lv],
+                    fill_b[ci][lv],
+                    if lv >= 5 { 0.3 } else { 0.0 },
+                    (lv as u32) << 3 | ci as u32,
+                );
             }
             return;
         }
         c.shade_rows.resize_with(h, Vec::new);
-        for bin in &mut c.shade_rows { bin.clear(); }
+        for bin in &mut c.shade_rows {
+            bin.clear();
+        }
         for (ri, r) in rhombs.iter().enumerate() {
             let u = ev[r.j as usize];
             let v = ev[r.l as usize];
@@ -593,19 +659,37 @@ fn render(grid: &mut Grid, w: usize, h: usize, palette: &[Color; 5], t: f32, k: 
             let ymax = r.ay.max(r.ay + u.1).max(r.ay + v.1).max(r.ay + u.1 + v.1);
             let y0 = (ymin - 0.5).ceil().max(0.0) as usize;
             let y1t = (ymax - 0.5).floor();
-            if y1t < 0.0 || y0 >= h { continue; }
+            if y1t < 0.0 || y0 >= h {
+                continue;
+            }
             let y1 = (y1t as usize).min(h - 1);
-            if y0 > y1 { continue; }
-            for bin in &mut c.shade_rows[y0..=y1] { bin.push(ri); }
+            if y0 > y1 {
+                continue;
+            }
+            for bin in &mut c.shade_rows[y0..=y1] {
+                bin.push(ri);
+            }
         }
-        grid[..h].par_iter_mut().zip(c.shade_rows[..h].par_iter()).enumerate()
+        grid[..h]
+            .par_iter_mut()
+            .zip(c.shade_rows[..h].par_iter())
+            .enumerate()
             .for_each(|(y, (row, bin))| {
                 for &ri in bin {
                     let r = &rhombs[ri];
                     let (ci, lv) = (r.class as usize, r.level as usize);
-                    fill_par_row(&mut row[..w], y, r.ax, r.ay, ev[r.j as usize], ev[r.l as usize],
-                        fill_a[ci][lv], fill_b[ci][lv], if lv >= 5 { 0.3 } else { 0.0 },
-                        (lv as u32) << 3 | ci as u32);
+                    fill_par_row(
+                        &mut row[..w],
+                        y,
+                        r.ax,
+                        r.ay,
+                        ev[r.j as usize],
+                        ev[r.l as usize],
+                        fill_a[ci][lv],
+                        fill_b[ci][lv],
+                        if lv >= 5 { 0.3 } else { 0.0 },
+                        (lv as u32) << 3 | ci as u32,
+                    );
                 }
             });
     });
@@ -778,9 +862,36 @@ mod tests {
         let mut serial = vec![vec![Cell::blank(); w]; h];
         let mut rows = serial.clone();
         let fills = [
-            (-5.4, 2.2, (13.7, 4.3), (-3.1, 8.8), Cell::with_bg('#', Color::Red, Color::Blue), Cell::with_bg('%', Color::Yellow, Color::Blue), 0.3, 43),
-            (11.8, -4.5, (8.2, 16.4), (14.7, 2.1), Cell::with_bg('x', Color::Green, Color::Black), Cell::with_bg('o', Color::Cyan, Color::Black), 0.0, 7),
-            (20.1, 8.7, (-12.5, 6.4), (9.3, 7.8), Cell::with_bg('@', Color::Magenta, Color::DarkGrey), Cell::with_bg('.', Color::White, Color::DarkGrey), 0.3, 61),
+            (
+                -5.4,
+                2.2,
+                (13.7, 4.3),
+                (-3.1, 8.8),
+                Cell::with_bg('#', Color::Red, Color::Blue),
+                Cell::with_bg('%', Color::Yellow, Color::Blue),
+                0.3,
+                43,
+            ),
+            (
+                11.8,
+                -4.5,
+                (8.2, 16.4),
+                (14.7, 2.1),
+                Cell::with_bg('x', Color::Green, Color::Black),
+                Cell::with_bg('o', Color::Cyan, Color::Black),
+                0.0,
+                7,
+            ),
+            (
+                20.1,
+                8.7,
+                (-12.5, 6.4),
+                (9.3, 7.8),
+                Cell::with_bg('@', Color::Magenta, Color::DarkGrey),
+                Cell::with_bg('.', Color::White, Color::DarkGrey),
+                0.3,
+                61,
+            ),
         ];
         for &(ax, ay, u, v, a, b, mix, salt) in &fills {
             fill_par(&mut serial, w, h, ax, ay, u, v, a, b, mix, salt);
@@ -794,15 +905,23 @@ mod tests {
     #[test]
     #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn parallel_shading_preserves_full_colored_grid() {
-        let render = |threads| rayon::ThreadPoolBuilder::new().num_threads(threads).build().unwrap().install(|| {
-            let (w, h) = (400, 260);
-            let mut g = vec![vec![Cell::blank(); w]; h];
-            let p = crate::color::make_palette(73);
-            let mut k = Opus1QuasicrystalKnobs::from_env();
-            k.sym = 13.0; k.shade = 1.0; k.stars = 0.83;
-            draw_opus_1_quasicrystal(&mut g, w, h, 73, &p, 19.75, &k);
-            g
-        });
+        let render = |threads| {
+            rayon::ThreadPoolBuilder::new()
+                .num_threads(threads)
+                .build()
+                .unwrap()
+                .install(|| {
+                    let (w, h) = (400, 260);
+                    let mut g = vec![vec![Cell::blank(); w]; h];
+                    let p = crate::color::make_palette(73);
+                    let mut k = Opus1QuasicrystalKnobs::from_env();
+                    k.sym = 13.0;
+                    k.shade = 1.0;
+                    k.stars = 0.83;
+                    draw_opus_1_quasicrystal(&mut g, w, h, 73, &p, 19.75, &k);
+                    g
+                })
+        };
         assert_eq!(render(1), render(4));
     }
 
@@ -822,7 +941,10 @@ mod tests {
             worst = worst.max(t0.elapsed().as_secs_f64() * 1000.0);
         }
         let avg = start.elapsed().as_secs_f64() * 1000.0 / 200.0;
-        eprintln!("opus-1-quasicrystal frame_cost 200x60: avg {:.3} ms, worst {:.3} ms", avg, worst);
+        eprintln!(
+            "opus-1-quasicrystal frame_cost 200x60: avg {:.3} ms, worst {:.3} ms",
+            avg, worst
+        );
         if !cfg!(debug_assertions) {
             assert!(avg < 4.0, "avg frame {:.3} ms", avg);
         }

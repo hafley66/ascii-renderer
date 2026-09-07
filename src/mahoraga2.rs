@@ -98,12 +98,22 @@ struct Aabb {
 const SLACK: f32 = 1e-4;
 
 impl Aabb {
-    const EMPTY: Aabb = Aabb { x0: f32::MAX, y0: f32::MAX, x1: f32::MIN, y1: f32::MIN };
+    const EMPTY: Aabb = Aabb {
+        x0: f32::MAX,
+        y0: f32::MAX,
+        x1: f32::MIN,
+        y1: f32::MIN,
+    };
 
     #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn seg(a: P, b: P, r: f32) -> Aabb {
         let r = r + SLACK;
-        Aabb { x0: a.0.min(b.0) - r, y0: a.1.min(b.1) - r, x1: a.0.max(b.0) + r, y1: a.1.max(b.1) + r }
+        Aabb {
+            x0: a.0.min(b.0) - r,
+            y0: a.1.min(b.1) - r,
+            x1: a.0.max(b.0) + r,
+            y1: a.1.max(b.1) + r,
+        }
     }
 
     #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
@@ -113,18 +123,30 @@ impl Aabb {
 
     #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn grow(self, o: Aabb) -> Aabb {
-        Aabb { x0: self.x0.min(o.x0), y0: self.y0.min(o.y0), x1: self.x1.max(o.x1), y1: self.y1.max(o.y1) }
+        Aabb {
+            x0: self.x0.min(o.x0),
+            y0: self.y0.min(o.y0),
+            x1: self.x1.max(o.x1),
+            y1: self.y1.max(o.y1),
+        }
     }
 
     #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn pad(self, m: f32) -> Aabb {
-        Aabb { x0: self.x0 - m, y0: self.y0 - m, x1: self.x1 + m, y1: self.y1 + m }
+        Aabb {
+            x0: self.x0 - m,
+            y0: self.y0 - m,
+            x1: self.x1 + m,
+            y1: self.y1 + m,
+        }
     }
 
     /// Lower bound on the distance from p to the enclosed shape; exact box SDF inside.
     #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn lb(&self, p: P) -> f32 {
-        (self.x0 - p.0).max(p.0 - self.x1).max((self.y0 - p.1).max(p.1 - self.y1))
+        (self.x0 - p.0)
+            .max(p.0 - self.x1)
+            .max((self.y0 - p.1).max(p.1 - self.y1))
     }
 
     #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
@@ -142,7 +164,9 @@ struct RowSlice<'a> {
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn hash01(seed: u64, x: i64, y: i64) -> f32 {
-    let mut h = seed ^ (x as u64).wrapping_mul(0x9E37_79B9_7F4A_7C15) ^ (y as u64).wrapping_mul(0xC2B2_AE3D_27D4_EB4F);
+    let mut h = seed
+        ^ (x as u64).wrapping_mul(0x9E37_79B9_7F4A_7C15)
+        ^ (y as u64).wrapping_mul(0xC2B2_AE3D_27D4_EB4F);
     h ^= h >> 29;
     h = h.wrapping_mul(0xBF58_476D_1CE4_E5B9);
     h ^= h >> 32;
@@ -223,7 +247,13 @@ impl Prim {
         match *self {
             Prim::Disc { c, r } => Aabb::disc(c, r),
             Prim::Cap { a, b, r } => Aabb::seg(a, b, r),
-            Prim::Oval { c, rx, ry } => Aabb { x0: c.0 - rx, y0: c.1 - ry, x1: c.0 + rx, y1: c.1 + ry }.pad(slack * (rx.max(ry) / rx.min(ry) - 1.0) + SLACK),
+            Prim::Oval { c, rx, ry } => Aabb {
+                x0: c.0 - rx,
+                y0: c.1 - ry,
+                x1: c.0 + rx,
+                y1: c.1 + ry,
+            }
+            .pad(slack * (rx.max(ry) / rx.min(ry) - 1.0) + SLACK),
             Prim::Skirt { a, b } => Aabb::seg(a, b, 0.13),
         }
     }
@@ -246,32 +276,124 @@ impl Figure {
     fn new(rot: f32, lean: f32, care: f32) -> Self {
         let m = |u: f32, v: f32| (-u, v);
         let mut list: Vec<(Prim, Part)> = vec![
-            (Prim::Oval { c: (0.0, 0.31), rx: 0.058, ry: 0.066 }, Part::Skin),
-            (Prim::Cap { a: (0.0, 0.36), b: (0.0, 0.4), r: 0.032 }, Part::Skin),
-            (Prim::Cap { a: (0.0, 0.43), b: (0.0, 0.52), r: 0.13 }, Part::Skin),
-            (Prim::Cap { a: (0.0, 0.52), b: (0.0, 0.66), r: 0.095 }, Part::Skin),
-            (Prim::Cap { a: (-0.18, 0.43), b: (0.18, 0.43), r: 0.065 }, Part::Skin),
+            (
+                Prim::Oval {
+                    c: (0.0, 0.31),
+                    rx: 0.058,
+                    ry: 0.066,
+                },
+                Part::Skin,
+            ),
+            (
+                Prim::Cap {
+                    a: (0.0, 0.36),
+                    b: (0.0, 0.4),
+                    r: 0.032,
+                },
+                Part::Skin,
+            ),
+            (
+                Prim::Cap {
+                    a: (0.0, 0.43),
+                    b: (0.0, 0.52),
+                    r: 0.13,
+                },
+                Part::Skin,
+            ),
+            (
+                Prim::Cap {
+                    a: (0.0, 0.52),
+                    b: (0.0, 0.66),
+                    r: 0.095,
+                },
+                Part::Skin,
+            ),
+            (
+                Prim::Cap {
+                    a: (-0.18, 0.43),
+                    b: (0.18, 0.43),
+                    r: 0.065,
+                },
+                Part::Skin,
+            ),
         ];
         for side in [-1.0f32, 1.0] {
             let s = |u: f32, v: f32| if side < 0.0 { m(u, v) } else { (u, v) };
-            list.push((Prim::Cap { a: s(0.22, 0.46), b: s(0.29, 0.62), r: 0.046 }, Part::Skin));
-            list.push((Prim::Cap { a: s(0.29, 0.62), b: s(0.32, 0.81), r: 0.058 }, Part::Wrap));
-            list.push((Prim::Disc { c: s(0.325, 0.865), r: 0.055 }, Part::Skin));
-            list.push((Prim::Cap { a: s(0.065, 0.68), b: s(0.085, 0.98), r: 0.052 }, Part::Skin));
-            list.push((Prim::Disc { c: s(0.095, 0.985), r: 0.045 }, Part::Skin));
-            list.push((Prim::Disc { c: s(0.022, 0.305), r: 0.011 }, Part::Eye));
+            list.push((
+                Prim::Cap {
+                    a: s(0.22, 0.46),
+                    b: s(0.29, 0.62),
+                    r: 0.046,
+                },
+                Part::Skin,
+            ));
+            list.push((
+                Prim::Cap {
+                    a: s(0.29, 0.62),
+                    b: s(0.32, 0.81),
+                    r: 0.058,
+                },
+                Part::Wrap,
+            ));
+            list.push((
+                Prim::Disc {
+                    c: s(0.325, 0.865),
+                    r: 0.055,
+                },
+                Part::Skin,
+            ));
+            list.push((
+                Prim::Cap {
+                    a: s(0.065, 0.68),
+                    b: s(0.085, 0.98),
+                    r: 0.052,
+                },
+                Part::Skin,
+            ));
+            list.push((
+                Prim::Disc {
+                    c: s(0.095, 0.985),
+                    r: 0.045,
+                },
+                Part::Skin,
+            ));
+            list.push((
+                Prim::Disc {
+                    c: s(0.022, 0.305),
+                    r: 0.011,
+                },
+                Part::Eye,
+            ));
         }
-        list.push((Prim::Skirt { a: (0.0, 0.64), b: (0.0, 0.82) }, Part::Cloth));
+        list.push((
+            Prim::Skirt {
+                a: (0.0, 0.64),
+                b: (0.0, 0.82),
+            },
+            Part::Cloth,
+        ));
         let slack = care + 0.01;
         let mut spokes = [((0.0, 0.0), (0.0, 0.0)); 8];
         for (k, sp) in spokes.iter_mut().enumerate() {
             let a = rot + k as f32 * TAU / 8.0;
             let d = (a.cos(), a.sin());
-            *sp = ((WHEEL_C.0 + d.0 * WHEEL_R * 0.25, WHEEL_C.1 + d.1 * WHEEL_R * 0.25), (WHEEL_C.0 + d.0 * WHEEL_R * 1.32, WHEEL_C.1 + d.1 * WHEEL_R * 1.32));
+            *sp = (
+                (
+                    WHEEL_C.0 + d.0 * WHEEL_R * 0.25,
+                    WHEEL_C.1 + d.1 * WHEEL_R * 0.25,
+                ),
+                (
+                    WHEEL_C.0 + d.0 * WHEEL_R * 1.32,
+                    WHEEL_C.1 + d.1 * WHEEL_R * 1.32,
+                ),
+            );
         }
         Figure {
             lean,
-            prims: list.into_iter().map(|(pr, part)| (pr, part, pr.bound(slack))).collect(),
+            prims: list
+                .into_iter()
+                .map(|(pr, part)| (pr, part, pr.bound(slack)))
+                .collect(),
             spokes,
             wheel_box: Aabb::disc(WHEEL_C, WHEEL_R * 1.32 + 0.02),
         }
@@ -284,7 +406,15 @@ impl Figure {
 
     /// Primitives whose bound can reach a tile of cells, plus their union box.
     #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-    fn tile_mask(&self, lo: f32, hi: f32, ulo: f32, uhi: f32, care: f32, out: &mut Vec<u16>) -> Aabb {
+    fn tile_mask(
+        &self,
+        lo: f32,
+        hi: f32,
+        ulo: f32,
+        uhi: f32,
+        care: f32,
+        out: &mut Vec<u16>,
+    ) -> Aabb {
         out.clear();
         let mut span = Aabb::EMPTY;
         for (i, (_, _, bx)) in self.prims.iter().enumerate() {
@@ -299,7 +429,9 @@ impl Figure {
     /// Widest sideways offset `warp` can apply inside a row band.
     #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn warp_shift(&self, lo: f32, hi: f32) -> f32 {
-        (self.lean * (0.62 - lo)).abs().max((self.lean * (0.62 - hi)).abs())
+        (self.lean * (0.62 - lo))
+            .abs()
+            .max((self.lean * (0.62 - hi)).abs())
     }
 
     /// Primitives further than `care` are skipped: the caller only reads d below it.
@@ -377,7 +509,13 @@ struct Slash {
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn make_slashes(seed: u64, count: usize, cut_uv: f32, u_span: f32, v_span: (f32, f32)) -> Vec<Slash> {
+fn make_slashes(
+    seed: u64,
+    count: usize,
+    cut_uv: f32,
+    u_span: f32,
+    v_span: (f32, f32),
+) -> Vec<Slash> {
     let mut rng = side_rng(seed, 1);
     let mut out = Vec::with_capacity(count);
     for i in 0..count {
@@ -387,8 +525,16 @@ fn make_slashes(seed: u64, count: usize, cut_uv: f32, u_span: f32, v_span: (f32,
         let qu = rng.random_range(-u_span * 0.7..u_span * 0.7) * rng.random::<f32>().sqrt();
         let qv = rng.random_range(v_span.0 * 0.6..v_span.1 * 0.95);
         let half = rng.random_range(0.35..0.75) * u_span.max(0.8);
-        let slip = cut_uv * rng.random_range(0.5..1.4) * if rng.random::<bool>() { 1.0 } else { -1.0 };
-        out.push(Slash { q: (qu, qv), d, n: (-d.1, d.0), half, slip, bright: rng.random() });
+        let slip =
+            cut_uv * rng.random_range(0.5..1.4) * if rng.random::<bool>() { 1.0 } else { -1.0 };
+        out.push(Slash {
+            q: (qu, qv),
+            d,
+            n: (-d.1, d.0),
+            half,
+            slip,
+            bright: rng.random(),
+        });
     }
     out
 }
@@ -440,7 +586,14 @@ fn make_city(seed: u64, count: usize, u_span: f32, v_bot: f32, horizon: f32) -> 
             u = (corridor + rng.random_range(0.0..0.25)) * if u < 0.0 { -1.0 } else { 1.0 };
         }
         let base = horizon + (v_bot - horizon) * z.powf(1.7);
-        out.push(Building { u0: u - wide * 0.5, u1: u + wide * 0.5, top: base - tall, base, z, id: i as u64 });
+        out.push(Building {
+            u0: u - wide * 0.5,
+            u1: u + wide * 0.5,
+            top: base - tall,
+            base,
+            z,
+            id: i as u64,
+        });
     }
     out.sort_by(|a, b| b.z.partial_cmp(&a.z).unwrap());
     out
@@ -448,7 +601,9 @@ fn make_city(seed: u64, count: usize, u_span: f32, v_bot: f32, horizon: f32) -> 
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn sample_city<'a>(city: &'a [Building], rows: &[u16], p: P) -> Option<&'a Building> {
-    rows.iter().map(|&i| &city[i as usize]).find(|b| p.0 >= b.u0 && p.0 <= b.u1 && p.1 >= b.top && p.1 <= b.base)
+    rows.iter()
+        .map(|&i| &city[i as usize])
+        .find(|b| p.0 >= b.u0 && p.0 <= b.u1 && p.1 >= b.top && p.1 <= b.base)
 }
 
 // ── the clock ───────────────────────────────────────────────────────
@@ -456,7 +611,11 @@ fn sample_city<'a>(city: &'a [Building], rows: &[u16], p: P) -> Option<&'a Build
 /// t=0 shows `turns` adaptations; t>0 replays the fight on a loop.
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn progress(t: f32, knobs: &ShrineKnobs) -> f32 {
-    if t <= 0.0 { knobs.turns } else { (t * knobs.speed).rem_euclid(knobs.fuga as f32 + 3.0) }
+    if t <= 0.0 {
+        knobs.turns
+    } else {
+        (t * knobs.speed).rem_euclid(knobs.fuga as f32 + 3.0)
+    }
 }
 
 // ── render ──────────────────────────────────────────────────────────
@@ -468,13 +627,26 @@ const SKIN_RAMP: [char; 10] = [' ', '.', '·', ':', '-', '=', '+', '*', '%', '@'
 const CLOTH_RAMP: [char; 6] = [' ', '.', '-', '~', '=', '#'];
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub fn draw_mahoraga2(grid: &mut Grid, width: usize, height: usize, seed: u64, palette: &[Color; 5], rng: &mut StdRng, t: f32, knobs: &ShrineKnobs) {
+pub fn draw_mahoraga2(
+    grid: &mut Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: &[Color; 5],
+    rng: &mut StdRng,
+    t: f32,
+    knobs: &ShrineKnobs,
+) {
     let _ = rng;
     let p = progress(t, knobs);
     let adaptations = (p.floor() as usize).min(8);
     let reach = (p - knobs.fuga as f32 + 1.0).clamp(0.0, 1.0);
     let frac = p.fract();
-    let turn = if t > 0.0 && frac < 0.3 { ease_in_out(frac / 0.3) } else { 1.0 };
+    let turn = if t > 0.0 && frac < 0.3 {
+        ease_in_out(frac / 0.3)
+    } else {
+        1.0
+    };
     let rot = (adaptations as f32 - 1.0 + turn).max(0.0) * (TAU / 8.0) - PI / 2.0;
 
     let fig_h = (height as f32 * knobs.scale).max(6.0);
@@ -493,10 +665,23 @@ pub fn draw_mahoraga2(grid: &mut Grid, width: usize, height: usize, seed: u64, p
     } else {
         knobs.slash.round() as usize
     };
-    let slashes = measure_layer("mahoraga-2", "slashes", || make_slashes(seed, knobs.slash.round() as usize, knobs.cut / (2.0 * fig_h), u_span, (v_top, v_bot)));
+    let slashes = measure_layer("mahoraga-2", "slashes", || {
+        make_slashes(
+            seed,
+            knobs.slash.round() as usize,
+            knobs.cut / (2.0 * fig_h),
+            u_span,
+            (v_top, v_bot),
+        )
+    });
     let blade = 0.26 / fig_h;
-    let city = measure_layer("mahoraga-2", "city", || make_city(seed, knobs.density.round() as usize, u_span, v_bot, horizon));
-    let light = (knobs.light.to_radians().cos(), knobs.light.to_radians().sin());
+    let city = measure_layer("mahoraga-2", "city", || {
+        make_city(seed, knobs.density.round() as usize, u_span, v_bot, horizon)
+    });
+    let light = (
+        knobs.light.to_radians().cos(),
+        knobs.light.to_radians().sin(),
+    );
 
     let pale = lerp_color(lighten(palette[4], 40), rgb(236, 230, 222), 0.55);
     let bone = darken(pale, 90);
@@ -521,134 +706,212 @@ pub fn draw_mahoraga2(grid: &mut Grid, width: usize, height: usize, seed: u64, p
                 }
             }
             for xt in (0..width).step_by(TILE) {
-            let xe = (xt + TILE).min(width);
-            let span = fig.tile_mask(lo, hi, to_uv(xt as f32, 0.0).0 - reach, to_uv((xe - 1) as f32, 0.0).0 + reach, care + 0.01, &mut mask);
-            let rows = RowSlice { mask: &mask, span };
-            for x in xt..xe {
-                let p0 = (to_uv(x as f32, y as f32).0, v);
-                let (pu, hit) = displace(p0, &slashes, live, blade);
-                if let Some((i, along)) = hit {
-                    let s = &slashes[i];
-                    let ch = stroke_glyph(s.d.0 * 2.0, s.d.1);
-                    let glow = along * (0.5 + 0.5 * s.bright);
-                    let fg = if glow > 0.55 { cut_ink } else { darken(cut_ink, ((1.0 - glow) * 120.0) as u8) };
-                    if glow < 0.12 {
+                let xe = (xt + TILE).min(width);
+                let span = fig.tile_mask(
+                    lo,
+                    hi,
+                    to_uv(xt as f32, 0.0).0 - reach,
+                    to_uv((xe - 1) as f32, 0.0).0 + reach,
+                    care + 0.01,
+                    &mut mask,
+                );
+                let rows = RowSlice { mask: &mask, span };
+                for x in xt..xe {
+                    let p0 = (to_uv(x as f32, y as f32).0, v);
+                    let (pu, hit) = displace(p0, &slashes, live, blade);
+                    if let Some((i, along)) = hit {
+                        let s = &slashes[i];
+                        let ch = stroke_glyph(s.d.0 * 2.0, s.d.1);
+                        let glow = along * (0.5 + 0.5 * s.bright);
+                        let fg = if glow > 0.55 {
+                            cut_ink
+                        } else {
+                            darken(cut_ink, ((1.0 - glow) * 120.0) as u8)
+                        };
+                        if glow < 0.12 {
+                            continue;
+                        }
+                        set(grid, x as i32, y as i32, ch, fg);
                         continue;
                     }
-                    set(grid, x as i32, y as i32, ch, fg);
-                    continue;
-                }
-                let noise = hash01(seed, x as i64, y as i64) - 0.5;
-                let (d, part) = fig.sample(pu, care, rows);
-                if d < 0.0 {
-                    let (ch, fg) = match part {
-                        Part::Ring => ('#', ring_ink),
-                        Part::Hub => ('◉', lighten(ring_ink, 40)),
-                        Part::Handle => ('◆', lighten(ring_ink, 25)),
-                        Part::Spoke => {
-                            let rel = sub((pu.0 - knobs.lean * (0.62 - pu.1), pu.1), WHEEL_C);
-                            (stroke_glyph(rel.0 * 2.0, rel.1), darken(ring_ink, 15))
-                        }
-                        Part::Eye => ('◉', lighten(palette[2], 30)),
-                        _ => {
-                            let n = fig.normal(pu, care, rows);
-                            let lit = 0.5 + 0.5 * dot(n, light);
-                            let rim = smoothstep(0.0, 0.05, -d);
-                            let shade = (lit * 0.75 + (1.0 - rim) * 0.35 + noise * knobs.grain).clamp(0.0, 0.999);
-                            match part {
-                                Part::Cloth => {
-                                    let i = (shade * CLOTH_RAMP.len() as f32) as usize;
-                                    (CLOTH_RAMP[i], lerp_color(darken(cloth_ink, 60), cloth_ink, shade))
-                                }
-                                Part::Wrap => {
-                                    let band = ((pu.1 * fig_h * 0.9) as i32).rem_euclid(3);
-                                    let ch = if band == 0 { '=' } else if shade > 0.5 { '-' } else { '.' };
-                                    (ch, lerp_color(darken(wrap_ink, 50), wrap_ink, shade))
-                                }
-                                _ => {
-                                    let i = (shade * SKIN_RAMP.len() as f32) as usize;
-                                    (SKIN_RAMP[i], lerp_color(bone, pale, shade))
+                    let noise = hash01(seed, x as i64, y as i64) - 0.5;
+                    let (d, part) = fig.sample(pu, care, rows);
+                    if d < 0.0 {
+                        let (ch, fg) = match part {
+                            Part::Ring => ('#', ring_ink),
+                            Part::Hub => ('◉', lighten(ring_ink, 40)),
+                            Part::Handle => ('◆', lighten(ring_ink, 25)),
+                            Part::Spoke => {
+                                let rel = sub((pu.0 - knobs.lean * (0.62 - pu.1), pu.1), WHEEL_C);
+                                (stroke_glyph(rel.0 * 2.0, rel.1), darken(ring_ink, 15))
+                            }
+                            Part::Eye => ('◉', lighten(palette[2], 30)),
+                            _ => {
+                                let n = fig.normal(pu, care, rows);
+                                let lit = 0.5 + 0.5 * dot(n, light);
+                                let rim = smoothstep(0.0, 0.05, -d);
+                                let shade = (lit * 0.75 + (1.0 - rim) * 0.35 + noise * knobs.grain)
+                                    .clamp(0.0, 0.999);
+                                match part {
+                                    Part::Cloth => {
+                                        let i = (shade * CLOTH_RAMP.len() as f32) as usize;
+                                        (
+                                            CLOTH_RAMP[i],
+                                            lerp_color(darken(cloth_ink, 60), cloth_ink, shade),
+                                        )
+                                    }
+                                    Part::Wrap => {
+                                        let band = ((pu.1 * fig_h * 0.9) as i32).rem_euclid(3);
+                                        let ch = if band == 0 {
+                                            '='
+                                        } else if shade > 0.5 {
+                                            '-'
+                                        } else {
+                                            '.'
+                                        };
+                                        (ch, lerp_color(darken(wrap_ink, 50), wrap_ink, shade))
+                                    }
+                                    _ => {
+                                        let i = (shade * SKIN_RAMP.len() as f32) as usize;
+                                        (SKIN_RAMP[i], lerp_color(bone, pale, shade))
+                                    }
                                 }
                             }
+                        };
+                        set(grid, x as i32, y as i32, ch, fg);
+                        continue;
+                    }
+                    if d < edge_eps && matches!(part, Part::Skin | Part::Cloth | Part::Wrap) {
+                        let n = fig.normal(pu, care, rows);
+                        if n.0.abs() > 0.45 {
+                            set(
+                                grid,
+                                x as i32,
+                                y as i32,
+                                stroke_glyph(-n.1 * 2.0, n.0),
+                                lerp_color(bone, pale, 0.6),
+                            );
+                            continue;
                         }
-                    };
-                    set(grid, x as i32, y as i32, ch, fg);
-                    continue;
-                }
-                if d < edge_eps && matches!(part, Part::Skin | Part::Cloth | Part::Wrap) {
-                    let n = fig.normal(pu, care, rows);
-                    if n.0.abs() > 0.45 {
-                        set(grid, x as i32, y as i32, stroke_glyph(-n.1 * 2.0, n.0), lerp_color(bone, pale, 0.6));
-                        continue;
                     }
-                }
-                if let Some(b) = sample_city(&city, &city_rows, pu) {
-                    let defocus = ((b.z - knobs.focus).abs() * knobs.blur * 2.2).min(1.0);
-                    let fade = (1.0 - b.z) * knobs.haze;
-                    let ink = darken(lerp_color(palette[0], palette[1], b.z), (fade * 110.0) as u8);
-                    let col = ((pu.0 - b.u0) * 2.0 * fig_h).floor() as i64;
-                    let row = ((pu.1 - b.top) * fig_h).floor() as i64;
-                    let width_cols = ((b.u1 - b.u0) * 2.0 * fig_h).floor() as i64;
-                    if width_cols < 2 {
-                        continue;
-                    }
-                    let on_edge = col == 0 || col == width_cols;
-                    let on_roof = row == 0;
-                    let window = col % 3 == 1 && row % 2 == 1 && row > 0;
-                    let lit = hash01(seed ^ b.id.wrapping_mul(977), col, row) < 0.55 - b.z * 0.2;
-                    let jitter = hash01(seed ^ 0x51AB, x as i64, y as i64);
-                    let cell = if defocus < 0.45 {
-                        if on_roof {
-                            Some(('─', lighten(ink, 30)))
-                        } else if on_edge {
-                            Some(('│', lighten(ink, 20)))
-                        } else if window {
-                            Some(if lit { ('=', lighten(ink, 70)) } else { ('.', ink) })
+                    if let Some(b) = sample_city(&city, &city_rows, pu) {
+                        let defocus = ((b.z - knobs.focus).abs() * knobs.blur * 2.2).min(1.0);
+                        let fade = (1.0 - b.z) * knobs.haze;
+                        let ink = darken(
+                            lerp_color(palette[0], palette[1], b.z),
+                            (fade * 110.0) as u8,
+                        );
+                        let col = ((pu.0 - b.u0) * 2.0 * fig_h).floor() as i64;
+                        let row = ((pu.1 - b.top) * fig_h).floor() as i64;
+                        let width_cols = ((b.u1 - b.u0) * 2.0 * fig_h).floor() as i64;
+                        if width_cols < 2 {
+                            continue;
+                        }
+                        let on_edge = col == 0 || col == width_cols;
+                        let on_roof = row == 0;
+                        let window = col % 3 == 1 && row % 2 == 1 && row > 0;
+                        let lit =
+                            hash01(seed ^ b.id.wrapping_mul(977), col, row) < 0.55 - b.z * 0.2;
+                        let jitter = hash01(seed ^ 0x51AB, x as i64, y as i64);
+                        let cell = if defocus < 0.45 {
+                            if on_roof {
+                                Some(('─', lighten(ink, 30)))
+                            } else if on_edge {
+                                Some(('│', lighten(ink, 20)))
+                            } else if window {
+                                Some(if lit {
+                                    ('=', lighten(ink, 70))
+                                } else {
+                                    ('.', ink)
+                                })
+                            } else {
+                                Some((' ', ink))
+                            }
+                        } else if window && lit && jitter < 1.0 - defocus * 0.4 {
+                            Some((
+                                if defocus > 0.8 { 'O' } else { 'o' },
+                                darken(lighten(ink, 60), (defocus * 50.0) as u8),
+                            ))
+                        } else if (on_edge || on_roof) && jitter > defocus * 0.9 {
+                            Some(('·', ink))
                         } else {
                             Some((' ', ink))
+                        };
+                        if let Some((ch, fg)) = cell {
+                            set(grid, x as i32, y as i32, ch, fg);
                         }
-                    } else if window && lit && jitter < 1.0 - defocus * 0.4 {
-                        Some((if defocus > 0.8 { 'O' } else { 'o' }, darken(lighten(ink, 60), (defocus * 50.0) as u8)))
-                    } else if (on_edge || on_roof) && jitter > defocus * 0.9 {
-                        Some(('·', ink))
-                    } else {
-                        Some((' ', ink))
-                    };
-                    if let Some((ch, fg)) = cell {
-                        set(grid, x as i32, y as i32, ch, fg);
+                        continue;
                     }
-                    continue;
-                }
-                if pu.1 > horizon {
-                    let rel = (pu.0, pu.1 - horizon);
-                    let ang = rel.0.atan2(rel.1.max(1e-4));
-                    let ray = ((ang * 9.0).rem_euclid(1.0) - 0.5).abs() < 0.035 && rel.1 > 0.02;
-                    let rubble = noise + 0.5 < (rel.1 * 1.6).min(0.6) * 0.5;
-                    if ray {
-                        set(grid, x as i32, y as i32, stroke_glyph(ang.sin() * 2.0, ang.cos()), darken(palette[1], 40));
-                    } else if rubble {
-                        set(grid, x as i32, y as i32, if noise > 0.2 { ':' } else { '·' }, darken(palette[1], 60));
+                    if pu.1 > horizon {
+                        let rel = (pu.0, pu.1 - horizon);
+                        let ang = rel.0.atan2(rel.1.max(1e-4));
+                        let ray = ((ang * 9.0).rem_euclid(1.0) - 0.5).abs() < 0.035 && rel.1 > 0.02;
+                        let rubble = noise + 0.5 < (rel.1 * 1.6).min(0.6) * 0.5;
+                        if ray {
+                            set(
+                                grid,
+                                x as i32,
+                                y as i32,
+                                stroke_glyph(ang.sin() * 2.0, ang.cos()),
+                                darken(palette[1], 40),
+                            );
+                        } else if rubble {
+                            set(
+                                grid,
+                                x as i32,
+                                y as i32,
+                                if noise > 0.2 { ':' } else { '·' },
+                                darken(palette[1], 60),
+                            );
+                        }
+                        continue;
                     }
-                    continue;
+                    let sky = (pu.1 - v_top) / (horizon - v_top).max(0.1);
+                    if noise + 0.5 < sky * sky * 0.08 * (0.3 + knobs.haze) {
+                        set(grid, x as i32, y as i32, '·', darken(palette[3], 70));
+                    }
                 }
-                let sky = (pu.1 - v_top) / (horizon - v_top).max(0.1);
-                if noise + 0.5 < sky * sky * 0.08 * (0.3 + knobs.haze) {
-                    set(grid, x as i32, y as i32, '·', darken(palette[3], 70));
-                }
-            }
             }
         }
     });
 
-    measure_layer("mahoraga-2", "fuga", || draw_fuga(grid, width, height, seed, cx, top + fig_h * WHEEL_C.1, fig_h * WHEEL_R * 1.3, t, reach));
+    measure_layer("mahoraga-2", "fuga", || {
+        draw_fuga(
+            grid,
+            width,
+            height,
+            seed,
+            cx,
+            top + fig_h * WHEEL_C.1,
+            fig_h * WHEEL_R * 1.3,
+            t,
+            reach,
+        )
+    });
     if reach >= 1.0 {
         let hx = (cx + knobs.lean * (0.62 - WHEEL_C.1) * 2.0 * fig_h).round() as i32;
-        set(grid, hx, (top + fig_h * WHEEL_C.1).round() as i32, '◉', hsl_to_rgb(48.0, 1.0, 0.8));
+        set(
+            grid,
+            hx,
+            (top + fig_h * WHEEL_C.1).round() as i32,
+            '◉',
+            hsl_to_rgb(48.0, 1.0, 0.8),
+        );
     }
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn draw_fuga(grid: &mut Grid, width: usize, height: usize, seed: u64, cx: f32, cy: f32, r: f32, t: f32, reach: f32) {
+fn draw_fuga(
+    grid: &mut Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    cx: f32,
+    cy: f32,
+    r: f32,
+    t: f32,
+    reach: f32,
+) {
     if reach <= 0.0 {
         return;
     }
@@ -663,7 +926,11 @@ fn draw_fuga(grid: &mut Grid, width: usize, height: usize, seed: u64, cx: f32, c
     let outer = hsl_to_rgb(8.0, 0.95, 0.42);
     let shimmer = if t > 0.0 { (t * 9.0) as usize } else { 0 };
     let n = (tx - ox).abs().max((ty - oy).abs()).ceil().max(1.0) as usize;
-    let bands: &[i32] = if height >= 30 { &[-2, -1, 0, 1, 2] } else { &[-1, 0, 1] };
+    let bands: &[i32] = if height >= 30 {
+        &[-2, -1, 0, 1, 2]
+    } else {
+        &[-1, 0, 1]
+    };
     for &band in bands {
         for i in 0..=n {
             let f = i as f32 / n as f32;
@@ -690,23 +957,54 @@ fn draw_fuga(grid: &mut Grid, width: usize, height: usize, seed: u64, cx: f32, c
     for i in 0..count {
         let a = sparks.random_range(0.0..TAU);
         let d = sparks.random_range(1.2..3.0) * r;
-        let spin = if t > 0.0 { t * 0.8 + i as f32 * 0.05 } else { 0.0 };
+        let spin = if t > 0.0 {
+            t * 0.8 + i as f32 * 0.05
+        } else {
+            0.0
+        };
         let x = cx + (a + spin).cos() * d * 2.0;
         let y = cy + (a + spin).sin() * d;
         let ch = if i % 4 == 0 { '+' } else { '*' };
-        set(grid, x.round() as i32, y.round() as i32, ch, if i % 3 == 0 { core } else { mid });
+        set(
+            grid,
+            x.round() as i32,
+            y.round() as i32,
+            ch,
+            if i % 3 == 0 { core } else { mid },
+        );
     }
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub fn render_mahoraga2_frame(width: usize, height: usize, seed: u64, palette: &[Color; 5], mut rng: StdRng, t: f32, knobs: &ShrineKnobs) -> Grid {
+pub fn render_mahoraga2_frame(
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: &[Color; 5],
+    mut rng: StdRng,
+    t: f32,
+    knobs: &ShrineKnobs,
+) -> Grid {
     let mut grid = vec![vec![Cell::blank(); width]; height];
     draw_mahoraga2(&mut grid, width, height, seed, palette, &mut rng, t, knobs);
     grid
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn cli_mahoraga2(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
+pub(crate) fn cli_mahoraga2(
+    mut grid: Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: [Color; 5],
+    mut rng: StdRng,
+    t_anim: f32,
+    term_w: u16,
+    term_h: u16,
+    args: &[String],
+    mode: &str,
+    theme_name: &str,
+) -> (Grid, bool) {
     // mahoraga-2 [turns] [slash] [cut] [focus] -- positional overrides win over env/defaults
     let mut knobs = ShrineKnobs::from_env();
     if let Some(v) = args.get(4).and_then(|v| v.parse::<f32>().ok()) {
@@ -722,7 +1020,9 @@ pub(crate) fn cli_mahoraga2(mut grid: Grid, width: usize, height: usize, seed: u
         knobs.focus = v.clamp(0.0, 1.0);
     }
     let _ = (term_w, term_h, mode, theme_name);
-    draw_mahoraga2(&mut grid, width, height, seed, &palette, &mut rng, t_anim, &knobs);
+    draw_mahoraga2(
+        &mut grid, width, height, seed, &palette, &mut rng, t_anim, &knobs,
+    );
     (grid, false)
 }
 
@@ -774,6 +1074,9 @@ mod tests {
         assert!(s.contains('◉'), "hub");
         assert!(s.contains('◆'), "handles");
         assert!(s.contains("~--~"), "fire arrow band");
-        assert!(!run(80, 24, 42, 0.0, 3.0).contains("~--~"), "no arrow before fuga");
+        assert!(
+            !run(80, 24, 42, 0.0, 3.0).contains("~--~"),
+            "no arrow before fuga"
+        );
     }
 }

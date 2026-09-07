@@ -1,6 +1,6 @@
 use crossterm::style::Color;
-use rand::rngs::StdRng;
 use rand::RngExt;
+use rand::rngs::StdRng;
 
 use crate::_0_profile::measure_layer;
 use crate::color::{darken, lerp_color, lighten, shift_hue};
@@ -114,7 +114,7 @@ impl CosmographParams {
         let read = |index: usize, key: &str, default: f32| {
             args.get(index)
                 .and_then(|value| value.parse::<f32>().ok())
-                .or_else(|| param_values.and_then(|values| values.get(index - 4).copied()) )
+                .or_else(|| param_values.and_then(|values| values.get(index - 4).copied()))
                 .unwrap_or_else(|| param_f32(key, default))
         };
         Self {
@@ -298,7 +298,11 @@ fn draw_nebula(
         let dx = (x as f32 - plan.cx as f32) / denom_x;
         dx2_col.push(dx * dx * 0.7);
         let m = 2 * plan.cx - x as i32;
-        mirror_col.push(if m >= 0 && (m as usize) < x { m as usize } else { usize::MAX });
+        mirror_col.push(if m >= 0 && (m as usize) < x {
+            m as usize
+        } else {
+            usize::MAX
+        });
     }
     let mut falloff = vec![0.0f32; width];
     for y in 0..height {
@@ -389,9 +393,8 @@ fn draw_aurora(
         let ribbon = shift_hue(lighten(palette[2], 6), 150.0 + hue_off);
         let dim = darken(ribbon, 20);
         for x in 0..width {
-            let phase = x as f32 * 0.09
-                + t * params.speed * (0.5 + b as f32 * 0.22)
-                + b as f32 * 2.1;
+            let phase =
+                x as f32 * 0.09 + t * params.speed * (0.5 + b as f32 * 0.22) + b as f32 * 2.1;
             let wave = (phase).sin() * band_h * 0.42 + (phase * 0.47).sin() * band_h * 0.3;
             let base_y = 1.0 + b as f32 * band_h * 0.8;
             for k in 0..band_h.round().max(2.0) as i32 {
@@ -399,7 +402,11 @@ fn draw_aurora(
                 if y < 1 || y >= height as i32 - 1 {
                     continue;
                 }
-                let density = pp_fbm(x as f32 * 0.12, k as f32 * 0.4 + b as f32 * 7.0, seed ^ 0xA0B);
+                let density = pp_fbm(
+                    x as f32 * 0.12,
+                    k as f32 * 0.4 + b as f32 * 7.0,
+                    seed ^ 0xA0B,
+                );
                 if density < 0.36 {
                     continue;
                 }
@@ -515,7 +522,13 @@ fn draw_orrery(
             darken(brass, 26),
             9,
         );
-        put(grid, ecx.round() as i32, ecy.round() as i32, '◌', darken(brass, 30));
+        put(
+            grid,
+            ecx.round() as i32,
+            ecy.round() as i32,
+            '◌',
+            darken(brass, 30),
+        );
     }
     // spokes from core to inner band
     let spokes = params.rings.max(4).min(12);
@@ -614,8 +627,8 @@ fn draw_planets(
         let h3 = hash01(seed, 900 + p as u64 * 97);
         // eccentric offset so orbits breathe
         let ecc = (h1 - 0.5) * rx * 0.16;
-        let a = t * params.speed * (0.9 - slot * 0.62) * (if h2 > 0.5 { 1.0 } else { -1.0 })
-            + h2 * TAU;
+        let a =
+            t * params.speed * (0.9 - slot * 0.62) * (if h2 > 0.5 { 1.0 } else { -1.0 }) + h2 * TAU;
         let px = plan.cx as f32 + a.cos() * (rx + ecc);
         let py = plan.cy as f32 + a.sin() * ry + ecc * 0.4;
         let body_col = lerp_color(
@@ -683,7 +696,8 @@ fn draw_comet(
     let prog = ((t * params.speed * 0.30 + h1 * period) % period) / period;
     // sweeping hyperbolic path across the sky
     let sx = (prog * (width as f32 + 30.0)) - 15.0;
-    let sy = 2.0 + (1.0 - (prog * 2.0 - 1.0).abs()) * height as f32 * 0.42
+    let sy = 2.0
+        + (1.0 - (prog * 2.0 - 1.0).abs()) * height as f32 * 0.42
         + (prog * TAU + h1 * 5.0).sin() * 2.0;
     let head_col = lighten(palette[4], 26);
     // trail behind the head
@@ -702,7 +716,13 @@ fn draw_comet(
         } else {
             '·'
         };
-        put(grid, tx.round() as i32, ty.round() as i32, ch, darken(head_col, fade));
+        put(
+            grid,
+            tx.round() as i32,
+            ty.round() as i32,
+            ch,
+            darken(head_col, fade),
+        );
     }
     put(grid, sx.round() as i32, sy.round() as i32, '☄', head_col);
     let _ = plan;
@@ -730,8 +750,7 @@ fn draw_motes(
         // slow Lissajous drift around the mechanism
         let ax = plan.max_rx * (0.7 + h1 * 0.7);
         let ay = plan.max_ry * (0.7 + h2 * 0.9);
-        let x = plan.cx as f32
-            + (t * params.speed * (0.12 + h2 * 0.20) + h1 * TAU).sin() * ax;
+        let x = plan.cx as f32 + (t * params.speed * (0.12 + h2 * 0.20) + h1 * TAU).sin() * ax;
         let y = plan.cy as f32
             + (t * params.speed * (0.10 + h3 * 0.26) + h2 * TAU).cos() * ay
             + (h3 - 0.5) * 2.0;
@@ -739,8 +758,20 @@ fn draw_motes(
             continue;
         }
         let fade = (14.0 + h3 * 38.0) as u8;
-        let ch = if h3 > 0.88 { '✧' } else if h3 > 0.4 { '∙' } else { '·' };
-        put(grid, x.round() as i32, y.round() as i32, ch, darken(warm, fade));
+        let ch = if h3 > 0.88 {
+            '✧'
+        } else if h3 > 0.4 {
+            '∙'
+        } else {
+            '·'
+        };
+        put(
+            grid,
+            x.round() as i32,
+            y.round() as i32,
+            ch,
+            darken(warm, fade),
+        );
     }
 }
 
@@ -849,7 +880,9 @@ mod tests {
         let mut grid = vec![vec![Cell::blank(); width]; height];
         let palette = make_palette(seed);
         let mut rng = StdRng::seed_from_u64(seed);
-        draw_cosmograph(&mut grid, width, height, seed, &palette, &mut rng, t, params);
+        draw_cosmograph(
+            &mut grid, width, height, seed, &palette, &mut rng, t, params,
+        );
         grid
     }
 
@@ -886,7 +919,10 @@ mod tests {
         assert_ne!(a, different_seed);
         assert_ne!(a, different_inputs);
         assert_eq!(
-            a.lines().map(str::chars).map(Iterator::count).collect::<Vec<_>>(),
+            a.lines()
+                .map(str::chars)
+                .map(Iterator::count)
+                .collect::<Vec<_>>(),
             vec![90; 40]
         );
     }
@@ -994,10 +1030,7 @@ mod tests {
     #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_cosmograph_in_motion() {
         let params = CosmographParams::default();
-        insta::assert_snapshot!(
-            "cosmograph_t2_75",
-            plain(&frame(90, 40, 42, 2.75, &params))
-        );
+        insta::assert_snapshot!("cosmograph_t2_75", plain(&frame(90, 40, 42, 2.75, &params)));
     }
 }
 
@@ -1020,4 +1053,3 @@ mod fbm_row_tests {
         }
     }
 }
-

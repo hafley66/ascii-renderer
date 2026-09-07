@@ -2,7 +2,7 @@
 //! with hills, ground, and one seeded atmosphere; trees cached as stamps, swayed by t.
 use crate::_0_profile::measure_layer;
 use crate::color::*;
-use crate::fable_1_trees::{grow, hash01, Growth, Ink, Species, SPECIES};
+use crate::fable_1_trees::{Growth, Ink, SPECIES, Species, grow, hash01};
 use crate::opts::param_f32;
 use crate::types::*;
 use crossterm::style::Color;
@@ -138,13 +138,20 @@ fn color_index(colors: &mut Vec<Color>, c: Color) -> u8 {
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn build(w: usize, h: usize, seed: u64, palette: &[Color; 5], k: &ForestKnobs) -> Scene {
     let mut rng = StdRng::seed_from_u64(seed ^ 0x00F0_4E57);
-    let ground_y = ((h as f32 * k.horizon.clamp(0.3, 0.85)) as usize).clamp(2, h.saturating_sub(2).max(2));
+    let ground_y =
+        ((h as f32 * k.horizon.clamp(0.3, 0.85)) as usize).clamp(2, h.saturating_sub(2).max(2));
     let hue_shift = k.hue as f64 + (rng.random::<f32>() * 40.0 - 20.0) as f64;
     let leaf_base = shift_hue(palette[1], hue_shift);
     let trunk_base = shift_hue(palette[2], hue_shift * 0.5);
     let accent = shift_hue(palette[3], hue_shift);
-    let sky_night = [darken(palette[0], 6), lerp_color(palette[0], palette[2], 0.32)];
-    let sky_dusk = [lerp_color(palette[0], palette[1], 0.22), lerp_color(palette[0], accent, 0.5)];
+    let sky_night = [
+        darken(palette[0], 6),
+        lerp_color(palette[0], palette[2], 0.32),
+    ];
+    let sky_dusk = [
+        lerp_color(palette[0], palette[1], 0.22),
+        lerp_color(palette[0], accent, 0.5),
+    ];
     let fog = lighten(sky_night[1], 14);
     let ground_far = lerp_color(palette[0], palette[2], 0.3);
     let ground_near = lerp_color(palette[0], palette[2], 0.1);
@@ -154,7 +161,10 @@ fn build(w: usize, h: usize, seed: u64, palette: &[Color; 5], k: &ForestKnobs) -
     let moon_fg = lighten(palette[4], 20);
 
     let hill_h = ((ground_y as f32) * 0.2).max(1.0);
-    let (f1, f2) = (TAU * (1.5 + rng.random::<f32>()) / w as f32, TAU * (4.0 + 3.0 * rng.random::<f32>()) / w as f32);
+    let (f1, f2) = (
+        TAU * (1.5 + rng.random::<f32>()) / w as f32,
+        TAU * (4.0 + 3.0 * rng.random::<f32>()) / w as f32,
+    );
     let (p1, p2) = (rng.random::<f32>() * TAU, rng.random::<f32>() * TAU);
     let ridge: Vec<u16> = (0..w)
         .map(|x| {
@@ -202,19 +212,28 @@ fn build(w: usize, h: usize, seed: u64, palette: &[Color; 5], k: &ForestKnobs) -
     let mut mist_bands: Vec<(i32, i32)> = Vec::new();
     let ground_depth = (h - ground_y) as f32;
     for li in 0..layer_count {
-        let lf = if layer_count > 1 { li as f32 / (layer_count - 1) as f32 } else { 1.0 };
+        let lf = if layer_count > 1 {
+            li as f32 / (layer_count - 1) as f32
+        } else {
+            1.0
+        };
         let th_base = (h as f32 * (0.14 + 0.42 * lf)).max(4.0);
         let root_lo = ground_y as f32 + ground_depth * lf * 0.8;
         let jit = ground_depth * 0.08;
         let tw_base = th_base * 1.1;
         let step = (tw_base * (1.1 + 0.6 * lf) / (k.density.max(0.05) * density_mul)).max(3.0);
-        mist_bands.push((root_lo as i32 - (ground_depth * 0.22) as i32 - 2, root_lo as i32 + (ground_depth * 0.12) as i32 + 1));
+        mist_bands.push((
+            root_lo as i32 - (ground_depth * 0.22) as i32 - 2,
+            root_lo as i32 + (ground_depth * 0.12) as i32 + 1,
+        ));
         let fade = (1.0 - lf) * k.fog.clamp(0.0, 1.0);
         let mut x = -(tw_base * 0.3) + rng.random::<f32>() * step;
         while x < w as f32 + tw_base * 0.3 {
             let th = ((th_base * (0.78 + 0.44 * rng.random::<f32>())) as usize).max(4);
-            let tw = ((th as f32 * (0.85 + 0.5 * rng.random::<f32>())) as usize).clamp(5, (w * 2).max(5));
-            let root_y = ((root_lo + (rng.random::<f32>() * 2.0 - 1.0) * jit) as i32).clamp(ground_y as i32, h as i32 - 1);
+            let tw = ((th as f32 * (0.85 + 0.5 * rng.random::<f32>())) as usize)
+                .clamp(5, (w * 2).max(5));
+            let root_y = ((root_lo + (rng.random::<f32>() * 2.0 - 1.0) * jit) as i32)
+                .clamp(ground_y as i32, h as i32 - 1);
             let pick = rng.random::<f32>() * wsum;
             let mut acc = 0.0;
             let mut sp = Species::Colonize;
@@ -227,9 +246,27 @@ fn build(w: usize, h: usize, seed: u64, palette: &[Color; 5], k: &ForestKnobs) -
             }
             let leaf = shift_hue(leaf_base, (rng.random::<f32>() * 20.0 - 10.0) as f64);
             let ink = Ink::from_base(trunk_base, leaf, accent).faded(fog, fade);
-            let growth = Growth { fruit: k.fruit, branch: 0.6 + rng.random::<f32>() * 0.6, leaf: 0.55 + 0.35 * lf + rng.random::<f32>() * 0.3, roots: 0.5 + rng.random::<f32>() * 0.5 };
+            let growth = Growth {
+                fruit: k.fruit,
+                branch: 0.6 + rng.random::<f32>() * 0.6,
+                leaf: 0.55 + 0.35 * lf + rng.random::<f32>() * 0.3,
+                roots: 0.5 + rng.random::<f32>() * 0.5,
+            };
             let mut local: Grid = vec![vec![Cell::blank(); tw]; th];
-            grow(sp, &mut local, Rect { x: 0, y: 0, w: tw, h: th }, 0.82 + 0.18 * rng.random::<f32>(), &ink, &growth, &mut rng);
+            grow(
+                sp,
+                &mut local,
+                Rect {
+                    x: 0,
+                    y: 0,
+                    w: tw,
+                    h: th,
+                },
+                0.82 + 0.18 * rng.random::<f32>(),
+                &ink,
+                &growth,
+                &mut rng,
+            );
             let mut cells: Vec<SCell> = Vec::new();
             let mut colors: Vec<Color> = Vec::new();
             for (yy, row) in local.iter().enumerate() {
@@ -238,7 +275,12 @@ fn build(w: usize, h: usize, seed: u64, palette: &[Color; 5], k: &ForestKnobs) -
                         continue;
                     }
                     let ci = color_index(&mut colors, c.fg);
-                    cells.push(SCell { dx: (xx as i32 - tw as i32 / 2) as i16, dy: (yy as i32 - th as i32 + 1) as i16, ch: c.ch, ci });
+                    cells.push(SCell {
+                        dx: (xx as i32 - tw as i32 / 2) as i16,
+                        dy: (yy as i32 - th as i32 + 1) as i16,
+                        ch: c.ch,
+                        ci,
+                    });
                 }
             }
             let amp = (0.4 + 0.8 * lf) * (th as f32 / 14.0).clamp(0.5, 6.0);
@@ -269,7 +311,8 @@ fn build(w: usize, h: usize, seed: u64, palette: &[Color; 5], k: &ForestKnobs) -
             for _ in 0..n {
                 motes.push(Mote {
                     x: rng.random::<f32>() * w as f32,
-                    y: ground_y as f32 * 0.55 + rng.random::<f32>() * (h as f32 * 0.92 - ground_y as f32 * 0.55),
+                    y: ground_y as f32 * 0.55
+                        + rng.random::<f32>() * (h as f32 * 0.92 - ground_y as f32 * 0.55),
                     rx: 2.0 + rng.random::<f32>() * 6.0,
                     ry: 0.5 + rng.random::<f32>() * 1.5,
                     p1: rng.random::<f32>() * TAU,
@@ -281,17 +324,33 @@ fn build(w: usize, h: usize, seed: u64, palette: &[Color; 5], k: &ForestKnobs) -
             }
         }
         2 | 5 => {
-            let n = if atmos == 2 { (area / 150).clamp(12, 2000) } else { (area / 110).clamp(16, 4000) };
+            let n = if atmos == 2 {
+                (area / 150).clamp(12, 2000)
+            } else {
+                (area / 110).clamp(16, 4000)
+            };
             for _ in 0..n {
                 let slow = atmos == 5;
                 motes.push(Mote {
                     x: rng.random::<f32>() * w as f32,
                     y: rng.random::<f32>() * h as f32,
-                    rx: if slow { 0.5 + rng.random::<f32>() * 1.5 } else { 1.0 + rng.random::<f32>() * 3.0 },
+                    rx: if slow {
+                        0.5 + rng.random::<f32>() * 1.5
+                    } else {
+                        1.0 + rng.random::<f32>() * 3.0
+                    },
                     ry: 0.0,
                     p1: rng.random::<f32>() * TAU,
-                    p2: if slow { 4.0 + rng.random::<f32>() * 4.0 } else { 3.0 + rng.random::<f32>() * 3.0 },
-                    speed: if slow { 0.5 + rng.random::<f32>() * 0.7 } else { 0.9 + rng.random::<f32>() * 0.9 },
+                    p2: if slow {
+                        4.0 + rng.random::<f32>() * 4.0
+                    } else {
+                        3.0 + rng.random::<f32>() * 3.0
+                    },
+                    speed: if slow {
+                        0.5 + rng.random::<f32>() * 0.7
+                    } else {
+                        0.9 + rng.random::<f32>() * 0.9
+                    },
                     blink: 0.0,
                     kind: rng.random_range(0..4u32) as u8,
                 });
@@ -355,7 +414,15 @@ fn build(w: usize, h: usize, seed: u64, palette: &[Color; 5], k: &ForestKnobs) -
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn draw_fable_1_forest(grid: &mut Grid, w: usize, h: usize, seed: u64, palette: &[Color; 5], t: f32, k: &ForestKnobs) {
+pub(crate) fn draw_fable_1_forest(
+    grid: &mut Grid,
+    w: usize,
+    h: usize,
+    seed: u64,
+    palette: &[Color; 5],
+    t: f32,
+    k: &ForestKnobs,
+) {
     if w < 4 || h < 4 {
         return;
     }
@@ -374,7 +441,11 @@ pub(crate) fn draw_fable_1_forest(grid: &mut Grid, w: usize, h: usize, seed: u64
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn render(grid: &mut Grid, w: usize, h: usize, seed: u64, t: f32, k: &ForestKnobs, s: &mut Scene) {
     let speed = k.speed.max(0.0);
-    let light = if t > 0.0 { 0.5 - 0.5 * (TAU * t * speed / s.light_period).cos() } else { 0.0 };
+    let light = if t > 0.0 {
+        0.5 - 0.5 * (TAU * t * speed / s.light_period).cos()
+    } else {
+        0.0
+    };
     let gy = s.ground_y;
     let top = lerp_color(s.sky_night[0], s.sky_dusk[0], light);
     let hor = lerp_color(s.sky_night[1], s.sky_dusk[1], light);
@@ -403,15 +474,33 @@ fn render(grid: &mut Grid, w: usize, h: usize, seed: u64, t: f32, k: &ForestKnob
                 if x >= w || y >= gy || (y as u16) >= s.ridge[x] {
                     continue;
                 }
-                let tw = if t > 0.0 { 0.75 + 0.25 * (t * (0.7 + r as f32 * 0.13) + r as f32).sin() } else { 1.0 };
-                let ch = if r == 0 { '✦' } else if r < 3 { '+' } else { '·' };
-                let fg = lerp_color(s.row_bg[y], s.star, star_vis * tw * if r < 3 { 1.0 } else { 0.7 });
+                let tw = if t > 0.0 {
+                    0.75 + 0.25 * (t * (0.7 + r as f32 * 0.13) + r as f32).sin()
+                } else {
+                    1.0
+                };
+                let ch = if r == 0 {
+                    '✦'
+                } else if r < 3 {
+                    '+'
+                } else {
+                    '·'
+                };
+                let fg = lerp_color(
+                    s.row_bg[y],
+                    s.star,
+                    star_vis * tw * if r < 3 { 1.0 } else { 0.7 },
+                );
                 grid[y][x] = Cell::with_bg(ch, fg, s.row_bg[y]);
             }
         }
         if k.moon > 0.5 {
             let (mx, my, r) = s.moon;
-            let drift = if t > 0.0 { (t * speed / s.light_period * w as f32 * 0.15) as i32 } else { 0 };
+            let drift = if t > 0.0 {
+                (t * speed / s.light_period * w as f32 * 0.15) as i32
+            } else {
+                0
+            };
             let mx = mx + drift;
             let fg = lerp_color(s.moon_fg, hor, light * 0.6);
             for dy in -r..=r {
@@ -424,7 +513,11 @@ fn render(grid: &mut Grid, w: usize, h: usize, seed: u64, t: f32, k: &ForestKnob
                     if x < 0 || y < 0 || x as usize >= w || y as usize >= gy {
                         continue;
                     }
-                    let ch = if d > (r as f32 - 0.6).powi(2) { '▒' } else { '▓' };
+                    let ch = if d > (r as f32 - 0.6).powi(2) {
+                        '▒'
+                    } else {
+                        '▓'
+                    };
                     grid[y as usize][x as usize] = Cell::with_bg(ch, fg, s.row_bg[y as usize]);
                 }
             }
@@ -470,16 +563,23 @@ fn render(grid: &mut Grid, w: usize, h: usize, seed: u64, t: f32, k: &ForestKnob
             }
         }
     });
-    let wind_base = if t > 0.0 { TAU * t * speed / s.wind_period } else { 0.0 };
+    let wind_base = if t > 0.0 {
+        TAU * t * speed / s.wind_period
+    } else {
+        0.0
+    };
     let sway = k.sway.max(0.0);
     for li in 0..s.layer_count {
         measure_layer("fable-1-forest", "trees", || {
-            let Scene { trees, shifts, lit, .. } = s;
+            let Scene {
+                trees, shifts, lit, ..
+            } = s;
             for tr in trees.iter().filter(|tr| tr.layer as usize == li) {
                 lit.clear();
                 lit.extend(tr.colors.iter().map(|&c| lighten(c, lift)));
                 let wind = if t > 0.0 {
-                    (wind_base / tr.period_mul + tr.phase).sin() + 0.35 * (wind_base * 2.7 + tr.phase * 2.0).sin()
+                    (wind_base / tr.period_mul + tr.phase).sin()
+                        + 0.35 * (wind_base * 2.7 + tr.phase * 2.0).sin()
                 } else {
                     0.0
                 };
@@ -504,14 +604,27 @@ fn render(grid: &mut Grid, w: usize, h: usize, seed: u64, t: f32, k: &ForestKnob
             }
         });
         if s.atmos == 3 {
-            measure_layer("fable-1-forest", "mist", || paint_mist(grid, w, h, seed, t, speed, li, s));
+            measure_layer("fable-1-forest", "mist", || {
+                paint_mist(grid, w, h, seed, t, speed, li, s)
+            });
         }
     }
-    measure_layer("fable-1-forest", "atmos", || paint_motes(grid, w, h, t, speed, s));
+    measure_layer("fable-1-forest", "atmos", || {
+        paint_motes(grid, w, h, t, speed, s)
+    });
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-fn paint_mist(grid: &mut Grid, w: usize, h: usize, seed: u64, t: f32, speed: f32, li: usize, s: &mut Scene) {
+fn paint_mist(
+    grid: &mut Grid,
+    w: usize,
+    h: usize,
+    seed: u64,
+    t: f32,
+    speed: f32,
+    li: usize,
+    s: &mut Scene,
+) {
     let (y0, y1) = s.mist_bands[li];
     let y0 = y0.max(0) as usize;
     let y1 = (y1.max(0) as usize).min(h - 1);
@@ -534,7 +647,8 @@ fn paint_mist(grid: &mut Grid, w: usize, h: usize, seed: u64, t: f32, speed: f32
         let env = 1.0 - d * d;
         let row = &mut grid[y];
         for (x, cell) in row.iter_mut().enumerate().take(w) {
-            let v = env * (0.55 + 0.45 * s.col_a[x] * s.col_b[x]) + 0.3 * (hash01(x as i32, y as i32, 21, seed) - 0.5);
+            let v = env * (0.55 + 0.45 * s.col_a[x] * s.col_b[x])
+                + 0.3 * (hash01(x as i32, y as i32, 21, seed) - 0.5);
             if v > 0.8 {
                 cell.ch = '▒';
                 cell.fg = fog;
@@ -564,20 +678,32 @@ fn paint_motes(grid: &mut Grid, w: usize, h: usize, t: f32, speed: f32, s: &Scen
                 let cyc = (tt / m.blink + m.p1 / TAU).fract();
                 if cyc < 0.45 {
                     let ch = if cyc < 0.3 { '•' } else { '·' };
-                    let fg = if cyc < 0.3 { s.mote_fg[0] } else { s.mote_fg[1] };
+                    let fg = if cyc < 0.3 {
+                        s.mote_fg[0]
+                    } else {
+                        s.mote_fg[1]
+                    };
                     put(grid, x.round() as i32, y.round() as i32, ch, fg);
                 }
             }
         }
         2 | 5 => {
-            let glyphs: [char; 4] = if s.atmos == 2 { ['∙', '◦', '~', '·'] } else { ['·', '•', '∙', '·'] };
+            let glyphs: [char; 4] = if s.atmos == 2 {
+                ['∙', '◦', '~', '·']
+            } else {
+                ['·', '•', '∙', '·']
+            };
             let span = h as f32 + 2.0;
             for m in &s.motes {
                 let y = (m.y + tt * m.speed).rem_euclid(span) - 1.0;
                 let x = m.x + m.rx * (TAU * tt / m.p2 + m.p1).sin() + tt * 0.15;
                 let x = x.rem_euclid(w as f32);
                 let gi = ((tt / 1.5 + m.p1).floor() as usize + m.kind as usize) % 4;
-                let fg = if m.kind % 2 == 0 { s.mote_fg[0] } else { s.mote_fg[1] };
+                let fg = if m.kind % 2 == 0 {
+                    s.mote_fg[0]
+                } else {
+                    s.mote_fg[1]
+                };
                 put(grid, x.round() as i32, y.round() as i32, glyphs[gi], fg);
             }
         }
@@ -593,7 +719,13 @@ fn paint_motes(grid: &mut Grid, w: usize, h: usize, t: f32, speed: f32, s: &Scen
                 };
                 put(grid, x.round() as i32, y.round() as i32, ch, fg);
                 if m.kind < 2 {
-                    put(grid, x.round() as i32, y.round() as i32 - 1, '╎', s.mote_fg[1]);
+                    put(
+                        grid,
+                        x.round() as i32,
+                        y.round() as i32 - 1,
+                        '╎',
+                        s.mote_fg[1],
+                    );
                 }
             }
         }
@@ -602,7 +734,20 @@ fn paint_motes(grid: &mut Grid, w: usize, h: usize, t: f32, speed: f32, s: &Scen
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn cli_fable_1_forest(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
+pub(crate) fn cli_fable_1_forest(
+    mut grid: Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: [Color; 5],
+    rng: StdRng,
+    t_anim: f32,
+    term_w: u16,
+    term_h: u16,
+    args: &[String],
+    mode: &str,
+    theme_name: &str,
+) -> (Grid, bool) {
     let _ = (rng, term_w, term_h, mode, theme_name);
     let mut k = ForestKnobs::from_env();
     let pos: Vec<f32> = args.iter().skip(4).filter_map(|a| a.parse().ok()).collect();
@@ -688,7 +833,10 @@ mod tests {
             worst = worst.max(t0.elapsed().as_secs_f64() * 1000.0);
         }
         let avg = start.elapsed().as_secs_f64() * 1000.0 / 200.0;
-        eprintln!("fable-1-forest frame_cost 200x60: avg {:.3} ms, worst {:.3} ms", avg, worst);
+        eprintln!(
+            "fable-1-forest frame_cost 200x60: avg {:.3} ms, worst {:.3} ms",
+            avg, worst
+        );
         if !cfg!(debug_assertions) {
             assert!(avg < 4.0, "avg frame {:.3} ms", avg);
         }

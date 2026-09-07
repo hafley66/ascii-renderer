@@ -1,5 +1,6 @@
 //! Styled path drawing.
 #![allow(unused)]
+use super::*;
 use crate::color::*;
 use crate::fills::*;
 use crate::scene::*;
@@ -8,7 +9,6 @@ use crate::types::*;
 use crossterm::style::Color;
 use rand::RngExt;
 use rand::rngs::StdRng;
-use super::*;
 
 /// Visual style of the path connecting nodes.
 #[derive(Clone, Copy)]
@@ -67,7 +67,12 @@ pub fn draw_styled_path(
 }
 /// Vine path: organic line with occasional leaf/bud chars branching off.
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn draw_vine_path(grid: &mut Grid, stops: &[(usize, usize)], color: Color, rng: &mut StdRng) {
+pub(crate) fn draw_vine_path(
+    grid: &mut Grid,
+    stops: &[(usize, usize)],
+    color: Color,
+    rng: &mut StdRng,
+) {
     let h = grid.len();
     if h == 0 {
         return;
@@ -123,7 +128,12 @@ pub(crate) fn draw_vine_path(grid: &mut Grid, stops: &[(usize, usize)], color: C
 }
 /// River path: wider line using water-like chars.
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn draw_river_path(grid: &mut Grid, stops: &[(usize, usize)], color: Color, rng: &mut StdRng) {
+pub(crate) fn draw_river_path(
+    grid: &mut Grid,
+    stops: &[(usize, usize)],
+    color: Color,
+    rng: &mut StdRng,
+) {
     let h = grid.len();
     if h == 0 {
         return;

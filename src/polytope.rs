@@ -5,9 +5,9 @@ use crate::color::*;
 use crate::opts::param_f32;
 use crate::types::*;
 use crossterm::style::Color;
-use rand::rngs::StdRng;
 use rand::RngExt;
 use rand::SeedableRng;
+use rand::rngs::StdRng;
 use std::cell::RefCell;
 use std::f32::consts::PI;
 
@@ -173,11 +173,7 @@ fn edges_nearest(verts: &[[f32; 4]]) -> Vec<(u16, u16)> {
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn sgn(mask: usize, bit: usize) -> f32 {
-    if (mask >> bit) & 1 == 1 {
-        -1.0
-    } else {
-        1.0
-    }
+    if (mask >> bit) & 1 == 1 { -1.0 } else { 1.0 }
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]

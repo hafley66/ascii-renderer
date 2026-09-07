@@ -6,32 +6,47 @@ use rand::SeedableRng;
 use rand::rngs::StdRng;
 use std::io::{self, IsTerminal, Read as _};
 
+use crate::automata;
 use crate::automata::*;
-use crate::biomes::*;
-use crate::color::*;
-use crate::content::*;
-use crate::fills::*;
-use crate::layout::*;
-use crate::markdown::*;
-use crate::mondrian::*;
-use crate::render::*;
-use crate::scene::*;
-use crate::sprites::*;
-use crate::tree_draw::*;
-use crate::types::*;
-use crate::walker::*;
+use crate::avant;
 use crate::avant::*;
-use crate::automata; use crate::avant; use crate::biomes; use crate::borders; use crate::color; use crate::content; use crate::fills; use crate::layout; use crate::markdown; use crate::mondrian; use crate::render; use crate::scene; use crate::sprites; use crate::tree_draw; use crate::types; use crate::walker;
+use crate::biomes;
+use crate::biomes::*;
+use crate::borders;
 use crate::cli::*;
+use crate::color;
+use crate::color::*;
+use crate::content;
+use crate::content::*;
+use crate::fills;
+use crate::fills::*;
 use crate::gridio::*;
 use crate::ink::*;
+use crate::layout;
+use crate::layout::*;
+use crate::markdown;
+use crate::markdown::*;
 use crate::modes_creatures::*;
 use crate::modes_geo::*;
 use crate::modes_sky::*;
 use crate::modes_tree::*;
+use crate::mondrian;
+use crate::mondrian::*;
 use crate::morph::*;
 use crate::opts::*;
 use crate::registry::*;
+use crate::render;
+use crate::render::*;
+use crate::scene;
+use crate::scene::*;
+use crate::sprites;
+use crate::sprites::*;
+use crate::tree_draw;
+use crate::tree_draw::*;
+use crate::types;
+use crate::types::*;
+use crate::walker;
+use crate::walker::*;
 use crate::warps::*;
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
@@ -88,7 +103,17 @@ pub(crate) fn pp_line(grid: &mut Grid, mut x0: i32, mut y0: i32, x1: i32, y1: i3
 }
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn pp_arc(grid: &mut Grid, cx: i32, cy: i32, rx: f32, ry: f32, start: f32, end: f32, fg: Color, gap: usize) {
+pub(crate) fn pp_arc(
+    grid: &mut Grid,
+    cx: i32,
+    cy: i32,
+    rx: f32,
+    ry: f32,
+    start: f32,
+    end: f32,
+    fg: Color,
+    gap: usize,
+) {
     let samples = ((rx + ry) * 16.0).max(90.0) as usize;
     let mut prev: Option<(i32, i32)> = None;
     for i in 0..=samples {
@@ -107,11 +132,9 @@ pub(crate) fn pp_arc(grid: &mut Grid, cx: i32, cy: i32, rx: f32, ry: f32, start:
     }
 }
 
-
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn pp_hash2(x: i32, y: i32, seed: u64) -> f32 {
-    let mut h = (x as i64)
-        .wrapping_mul(374761393)
+    let mut h = (x as i64).wrapping_mul(374761393)
         ^ (y as i64).wrapping_mul(668265263)
         ^ (seed as i64).wrapping_mul(2246822519);
     h = (h ^ (h >> 13)).wrapping_mul(1274126177);
@@ -147,7 +170,6 @@ pub(crate) fn pp_fbm(fx: f32, fy: f32, seed: u64) -> f32 {
     }
     v
 }
-
 
 /// 2-pass chamfer distance transform; vertical cost is doubled for the 2:1 cell
 /// aspect so distances are visually round.
@@ -202,7 +224,6 @@ pub(crate) fn chamfer(mask: &[Vec<bool>], w: usize, h: usize) -> Vec<Vec<f32>> {
     d
 }
 
-
 /// Signed distance field: negative inside ink, positive outside, ~0 at the edge.
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn signed_df(g: &Grid, w: usize, h: usize) -> Vec<Vec<f32>> {
@@ -226,7 +247,6 @@ pub(crate) fn signed_df(g: &Grid, w: usize, h: usize) -> Vec<Vec<f32>> {
     s
 }
 
-
 /// Smootherstep easing (6p^5 - 15p^4 + 10p^3): near-zero velocity at both ends,
 /// fast through the middle. Gives a pleasant ease-in / ease-out.
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
@@ -234,4 +254,3 @@ pub(crate) fn ease_in_out(p: f32) -> f32 {
     let p = p.clamp(0.0, 1.0);
     p * p * p * (p * (p * 6.0 - 15.0) + 10.0)
 }
-

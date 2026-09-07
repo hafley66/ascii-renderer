@@ -128,7 +128,18 @@ struct GrowCtx<'a> {
 /// Grow one tree rooted at (rx, ry) with `budget` rows of vertical space
 /// (3 = sapling, full height = ancient); grow=1, foliage=1, sway=0 is the static tree.
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub fn grow_tree(grid: &mut Grid, rx: i32, ry: i32, budget: i32, genome: &TreeGenome, cols: &TreeColors, rng: &mut StdRng, grow: f32, foliage: f32, sway: f32) {
+pub fn grow_tree(
+    grid: &mut Grid,
+    rx: i32,
+    ry: i32,
+    budget: i32,
+    genome: &TreeGenome,
+    cols: &TreeColors,
+    rng: &mut StdRng,
+    grow: f32,
+    foliage: f32,
+    sway: f32,
+) {
     if genome.style != TreeStyle::Classic {
         species::grow_species(grid, rx, ry, budget, genome, cols, rng, grow, foliage, sway);
         return;
@@ -184,7 +195,12 @@ pub fn grow_tree(grid: &mut Grid, rx: i32, ry: i32, budget: i32, genome: &TreeGe
         set(grid, rx, ry, '│', cols.trunk);
         start
     } else {
-        draw_taper_pub(grid, &BoleExit::point(start.0, start.1), cols.trunk, genome.taper)
+        draw_taper_pub(
+            grid,
+            &BoleExit::point(start.0, start.1),
+            cols.trunk,
+            genome.taper,
+        )
     };
 
     let mut ctx = GrowCtx {
@@ -211,7 +227,11 @@ pub fn grow_tree(grid: &mut Grid, rx: i32, ry: i32, budget: i32, genome: &TreeGe
                 MoveDir::UpLeft
             }
         } else if lean.abs() > 0.65 && ctx.rng.random::<f32>() < lean.abs() * 0.22 {
-            if lean > 0.0 { MoveDir::Right } else { MoveDir::Left }
+            if lean > 0.0 {
+                MoveDir::Right
+            } else {
+                MoveDir::Left
+            }
         } else {
             MoveDir::Up
         };
@@ -297,7 +317,11 @@ pub fn grow_tree(grid: &mut Grid, rx: i32, ry: i32, budget: i32, genome: &TreeGe
 fn grow_bough(ctx: &mut GrowCtx, x: i32, y: i32, from: MoveDir, side: i32, order: u8, len: i32) {
     let mut pen = TreePen::new(x, y, ctx.cols.branch);
     pen.last_dir = Some(from);
-    let mut dir = if side > 0 { MoveDir::UpRight } else { MoveDir::UpLeft };
+    let mut dir = if side > 0 {
+        MoveDir::UpRight
+    } else {
+        MoveDir::UpLeft
+    };
     let mut cells: Vec<(i32, i32)> = Vec::new();
     for k in 0..len.max(1) {
         // curvature: steepen with height, gnarl droops the tail
@@ -305,9 +329,17 @@ fn grow_bough(ctx: &mut GrowCtx, x: i32, y: i32, from: MoveDir, side: i32, order
         dir = if r < 0.22 {
             MoveDir::Up // steepen toward the light
         } else if r < 0.22 + ctx.genome.gnarl * 0.18 && k > len / 2 {
-            if side > 0 { MoveDir::DownRight } else { MoveDir::DownLeft } // droop
+            if side > 0 {
+                MoveDir::DownRight
+            } else {
+                MoveDir::DownLeft
+            } // droop
         } else if r < 0.5 + 0.3 * (1.0 - ctx.genome.spread) && ctx.rng.random::<f32>() < 0.3 {
-            if side > 0 { MoveDir::Right } else { MoveDir::Left } // flatten wide canopies
+            if side > 0 {
+                MoveDir::Right
+            } else {
+                MoveDir::Left
+            } // flatten wide canopies
         } else {
             dir
         };
@@ -324,7 +356,11 @@ fn grow_bough(ctx: &mut GrowCtx, x: i32, y: i32, from: MoveDir, side: i32, order
         }
     } else {
         // terminal stem: one shy step then a tip
-        let stem_dir = if side > 0 { MoveDir::UpRight } else { MoveDir::UpLeft };
+        let stem_dir = if side > 0 {
+            MoveDir::UpRight
+        } else {
+            MoveDir::UpLeft
+        };
         pen.step(ctx.grid, stem_dir);
         set(ctx.grid, pen.x, pen.y, '╷', lighten(ctx.cols.branch, 30));
         ctx.tips.push((pen.x, pen.y));
@@ -341,7 +377,11 @@ fn draw_taper_pub(grid: &mut Grid, exit: &BoleExit, color: Color, kind: TaperKin
     let e = BoleExit {
         x: exit.x,
         y: exit.y,
-        left: exit.left.max(if exit.left == 0 && exit.right == 0 { 0 } else { exit.left }),
+        left: exit.left.max(if exit.left == 0 && exit.right == 0 {
+            0
+        } else {
+            exit.left
+        }),
         right: exit.right,
     };
     crate::tree_draw::draw_taper(grid, &e, color, kind)
@@ -351,16 +391,16 @@ fn draw_taper_pub(grid: &mut Grid, exit: &BoleExit, color: Color, kind: TaperKin
 
 #[derive(Clone, PartialEq)]
 pub struct ForestKnobs {
-    pub density: f32,   // tree stops across the screen
-    pub strata: u8,     // depth planes 1..=4
-    pub girth: f32,     // size span: 0.3 sapling-heavy .. 3 ancient-heavy
-    pub clumping: f32,  // 0 uniform .. 1 tight groves
-    pub ferns: f32,     // undergrowth density
-    pub relief: f32,    // ground ruggedness
-    pub gale: f32,      // global wind lean added to every genome
-    pub drift: f32,     // hue drift across the grove (degrees)
-    pub haze: f32,      // atmospheric depth fade
-    pub clearings: f32, // fraction of stops left open
+    pub density: f32,     // tree stops across the screen
+    pub strata: u8,       // depth planes 1..=4
+    pub girth: f32,       // size span: 0.3 sapling-heavy .. 3 ancient-heavy
+    pub clumping: f32,    // 0 uniform .. 1 tight groves
+    pub ferns: f32,       // undergrowth density
+    pub relief: f32,      // ground ruggedness
+    pub gale: f32,        // global wind lean added to every genome
+    pub drift: f32,       // hue drift across the grove (degrees)
+    pub haze: f32,        // atmospheric depth fade
+    pub clearings: f32,   // fraction of stops left open
     pub species_mix: f32, // 0 = classic only, 1 = no classic
 }
 
@@ -541,9 +581,9 @@ fn render_static(
     for x in 0..width {
         for y in ground[x]..height {
             let depth = (y - ground[x]) as f64 / (height - ground[x]).max(1) as f64;
-            let h = (ground_hue + x as f64 / width as f64 * knobs.drift as f64 * 0.5
-                + depth * 18.0)
-                .rem_euclid(360.0);
+            let h =
+                (ground_hue + x as f64 / width as f64 * knobs.drift as f64 * 0.5 + depth * 18.0)
+                    .rem_euclid(360.0);
             let l = (0.16 + depth * 0.10).min(0.30);
             let c = hsl_to_rgb(h, 0.35, l);
             let ch = ground_chars[rng.random_range(0..ground_chars.len() as u32) as usize];
@@ -587,7 +627,11 @@ fn draw_dynamic(
     let speed = param_f32("SPEED", 1.0).clamp(0.1, 3.0);
     let animating = t > 0.0;
     for layer in 0..strata {
-        let lfrac = if strata == 1 { 1.0 } else { layer as f32 / (strata - 1) as f32 };
+        let lfrac = if strata == 1 {
+            1.0
+        } else {
+            layer as f32 / (strata - 1) as f32
+        };
         let depth_step = ((height - horizon) / strata.max(1)).max(1);
 
         // Stops for this layer
@@ -680,12 +724,40 @@ fn draw_dynamic(
             let dim = 1.0 - knobs.haze as f64 * 0.55 * (1.0 - lfrac as f64);
             let sat = (0.30 + 0.30 * lfrac as f64) * dim;
             let light = (0.14 + 0.20 * lfrac as f64) * (0.6 + 0.4 * dim);
-            let trunk = hsl_to_rgb((hue - 20.0).rem_euclid(360.0), sat * 0.7, (light * 0.75).max(0.08));
+            let trunk = hsl_to_rgb(
+                (hue - 20.0).rem_euclid(360.0),
+                sat * 0.7,
+                (light * 0.75).max(0.08),
+            );
             let branch = hsl_to_rgb(hue, sat, light);
-            let leaf = hsl_to_rgb((hue + 25.0).rem_euclid(360.0), (sat * 1.2).min(0.85), (light + 0.08).min(0.5));
-            let fruit = hsl_to_rgb((hue + 120.0).rem_euclid(360.0), (sat * 1.3).min(0.9), (light + 0.14).min(0.55));
-            let cols = TreeColors { trunk, branch, leaf, fruit };
-            grow_tree(grid, wx as i32, root_y as i32, budget, &genome, &cols, &mut trng, grow, foliage, sway);
+            let leaf = hsl_to_rgb(
+                (hue + 25.0).rem_euclid(360.0),
+                (sat * 1.2).min(0.85),
+                (light + 0.08).min(0.5),
+            );
+            let fruit = hsl_to_rgb(
+                (hue + 120.0).rem_euclid(360.0),
+                (sat * 1.3).min(0.9),
+                (light + 0.14).min(0.55),
+            );
+            let cols = TreeColors {
+                trunk,
+                branch,
+                leaf,
+                fruit,
+            };
+            grow_tree(
+                grid,
+                wx as i32,
+                root_y as i32,
+                budget,
+                &genome,
+                &cols,
+                &mut trng,
+                grow,
+                foliage,
+                sway,
+            );
         }
     }
 
@@ -770,7 +842,13 @@ pub fn draw_arboretum(
     t: f32,
     knobs: &ForestKnobs,
 ) {
-    let key = CacheKey { seed, width, height, palette: *palette, knobs: knobs.clone() };
+    let key = CacheKey {
+        seed,
+        width,
+        height,
+        palette: *palette,
+        knobs: knobs.clone(),
+    };
     if let Some(hit) = take_base(&key) {
         measure_layer("arboretum", "base_copy", || {
             for (row, brow) in grid.iter_mut().zip(hit.grid.iter()) {
@@ -778,11 +856,26 @@ pub fn draw_arboretum(
             }
         });
         let mut frame_rng = FrameRng::Replay(hit.log.into_iter());
-        measure_layer("arboretum", "dynamic", || draw_dynamic(grid, width, height, seed, &hit.ground, hit.horizon, hit.ground_hue, hit.tree_base_hue, &mut frame_rng, t, knobs));
+        measure_layer("arboretum", "dynamic", || {
+            draw_dynamic(
+                grid,
+                width,
+                height,
+                seed,
+                &hit.ground,
+                hit.horizon,
+                hit.ground_hue,
+                hit.tree_base_hue,
+                &mut frame_rng,
+                t,
+                knobs,
+            )
+        });
         return;
     }
-    let (bg, ground, horizon, ground_hue) =
-        measure_layer("arboretum", "static_build", || render_static(width, height, seed, palette, rng, knobs));
+    let (bg, ground, horizon, ground_hue) = measure_layer("arboretum", "static_build", || {
+        render_static(width, height, seed, palette, rng, knobs)
+    });
     let tree_base_hue = ground_hue + rng.random_range(-25..25) as f64;
     measure_layer("arboretum", "base_copy", || {
         for (row, brow) in grid.iter_mut().zip(bg.iter()) {
@@ -792,7 +885,21 @@ pub fn draw_arboretum(
     let mut log = Vec::new();
     {
         let mut frame_rng = FrameRng::Live(rng, &mut log);
-        measure_layer("arboretum", "dynamic", || draw_dynamic(grid, width, height, seed, &ground, horizon, ground_hue, tree_base_hue, &mut frame_rng, t, knobs));
+        measure_layer("arboretum", "dynamic", || {
+            draw_dynamic(
+                grid,
+                width,
+                height,
+                seed,
+                &ground,
+                horizon,
+                ground_hue,
+                tree_base_hue,
+                &mut frame_rng,
+                t,
+                knobs,
+            )
+        });
     }
     STATIC_BASE.with(|c| {
         *c.borrow_mut() = Some(StaticBase {
@@ -827,7 +934,20 @@ pub fn render_arboretum_frame(
 // ── CLI dispatch arm ────────────────────────────────────────────────
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn cli_arboretum(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
+pub(crate) fn cli_arboretum(
+    mut grid: Grid,
+    width: usize,
+    height: usize,
+    seed: u64,
+    palette: [Color; 5],
+    mut rng: StdRng,
+    t_anim: f32,
+    term_w: u16,
+    term_h: u16,
+    args: &[String],
+    mode: &str,
+    theme_name: &str,
+) -> (Grid, bool) {
     // arboretum [strata] [density] -- knob overrides win over env/defaults
     let mut knobs = ForestKnobs::from_env();
     if let Some(s) = args.get(4).and_then(|v| v.parse::<u8>().ok()) {
@@ -841,7 +961,9 @@ pub(crate) fn cli_arboretum(mut grid: Grid, width: usize, height: usize, seed: u
         }
     }
     let _ = (term_w, term_h, mode, theme_name);
-    draw_arboretum(&mut grid, width, height, seed, &palette, &mut rng, t_anim, &knobs);
+    draw_arboretum(
+        &mut grid, width, height, seed, &palette, &mut rng, t_anim, &knobs,
+    );
     (grid, false)
 }
 
@@ -1030,15 +1152,19 @@ mod tests {
                 leaf: crate::color::rgb(120, 180, 70),
                 fruit: crate::color::rgb(200, 90, 60),
             };
-            grow_tree(&mut g, 30, 22, budget, &genome, &cols, &mut r, 1.0, 1.0, 0.0);
-            plain(&g)
-                .lines()
-                .filter(|l| !l.trim().is_empty())
-                .count()
+            grow_tree(
+                &mut g, 30, 22, budget, &genome, &cols, &mut r, 1.0, 1.0, 0.0,
+            );
+            plain(&g).lines().filter(|l| !l.trim().is_empty()).count()
         };
         let tiny = sapling_cells(3);
         let huge = sapling_cells(22);
         assert!(tiny <= 8, "sapling occupies few rows, got {}", tiny);
-        assert!(huge > tiny, "bigger budget must reach higher: {} vs {}", huge, tiny);
+        assert!(
+            huge > tiny,
+            "bigger budget must reach higher: {} vs {}",
+            huge,
+            tiny
+        );
     }
 }

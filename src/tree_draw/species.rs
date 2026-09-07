@@ -1381,4 +1381,3 @@ impl TreeDrawer for PalmTree {
         set(grid, x, y + 1, '●', darken(params.fruit_color, 10));
     }
 }
-

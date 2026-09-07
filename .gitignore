@@ -1,3 +1,18 @@
 /target
 .boop-worktrees/
 lanes/
+
+# Local agent checkouts and interpreter caches.
+.claude/worktrees/
+__pycache__/
+*.pyc
+
+# Generated probe runs, logs, profiles, and terminal captures stay local.
+/perf/results/*/
+/perf/results/*.ndjson
+/perf/results/*.jsonl
+/perf/results/*.gz
+/perf/results/*.log
+/perf/results/*.ansi
+/perf/results/*.sample.txt
+*.log

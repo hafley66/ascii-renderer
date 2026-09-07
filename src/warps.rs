@@ -6,33 +6,48 @@ use rand::SeedableRng;
 use rand::rngs::StdRng;
 use std::io::{self, IsTerminal, Read as _};
 
+use crate::automata;
 use crate::automata::*;
-use crate::biomes::*;
-use crate::color::*;
-use crate::content::*;
-use crate::fills::*;
-use crate::layout::*;
-use crate::markdown::*;
-use crate::mondrian::*;
-use crate::render::*;
-use crate::scene::*;
-use crate::sprites::*;
-use crate::tree_draw::*;
-use crate::types::*;
-use crate::walker::*;
+use crate::avant;
 use crate::avant::*;
-use crate::automata; use crate::avant; use crate::biomes; use crate::borders; use crate::color; use crate::content; use crate::fills; use crate::layout; use crate::markdown; use crate::mondrian; use crate::render; use crate::scene; use crate::sprites; use crate::tree_draw; use crate::types; use crate::walker;
+use crate::biomes;
+use crate::biomes::*;
+use crate::borders;
 use crate::cli::*;
+use crate::color;
+use crate::color::*;
+use crate::content;
+use crate::content::*;
+use crate::fills;
+use crate::fills::*;
 use crate::gridio::*;
 use crate::ink::*;
+use crate::layout;
+use crate::layout::*;
+use crate::markdown;
+use crate::markdown::*;
 use crate::modes_creatures::*;
 use crate::modes_geo::*;
 use crate::modes_sky::*;
 use crate::modes_tree::*;
+use crate::mondrian;
+use crate::mondrian::*;
 use crate::morph::*;
 use crate::opts::*;
 use crate::pp::*;
 use crate::registry::*;
+use crate::render;
+use crate::render::*;
+use crate::scene;
+use crate::scene::*;
+use crate::sprites;
+use crate::sprites::*;
+use crate::tree_draw;
+use crate::tree_draw::*;
+use crate::types;
+use crate::types::*;
+use crate::walker;
+use crate::walker::*;
 
 /// Wind warp: horizontal shear of a single grid, strongest at the top (canopy
 /// sways, roots stay put) and oscillating + gusting over `time`. No second frame
@@ -44,7 +59,11 @@ pub(crate) fn warp_wind(src: &Grid, time: f32, amp: f32) -> Grid {
     let mut g = vec![vec![Cell::blank(); w]; h];
     for y in 0..h {
         // height factor: 1 at the top, 0 at the bottom (squared for a whip feel).
-        let hf = if h > 1 { 1.0 - (y as f32 / (h as f32 - 1.0)) } else { 0.0 };
+        let hf = if h > 1 {
+            1.0 - (y as f32 / (h as f32 - 1.0))
+        } else {
+            0.0
+        };
         let gust = 0.5 * (time * 0.37).sin() + 0.5; // 0..1 slow swell
         let sway = amp
             * hf
@@ -62,7 +81,6 @@ pub(crate) fn warp_wind(src: &Grid, time: f32, amp: f32) -> Grid {
     g
 }
 
-
 /// Nearest-cell sample from a source grid (out of bounds -> blank).
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn warp_sample(src: &Grid, sx: f32, sy: f32) -> Cell {
@@ -74,7 +92,6 @@ pub(crate) fn warp_sample(src: &Grid, sx: f32, sy: f32) -> Cell {
         Cell::blank()
     }
 }
-
 
 /// Toroidal drift: scroll the whole grid diagonally over time, wrapping around.
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
@@ -93,7 +110,6 @@ pub(crate) fn warp_drift(src: &Grid, time: f32, amp: f32) -> Grid {
     }
     g
 }
-
 
 /// Vortex swirl: rotate around the center, faster near the middle, spinning over time.
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
@@ -117,7 +133,6 @@ pub(crate) fn warp_swirl(src: &Grid, time: f32, amp: f32) -> Grid {
     g
 }
 
-
 /// Concentric ripple: radial sine displacement moving outward over time.
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn warp_ripple(src: &Grid, time: f32, amp: f32) -> Grid {
@@ -140,7 +155,6 @@ pub(crate) fn warp_ripple(src: &Grid, time: f32, amp: f32) -> Grid {
     g
 }
 
-
 /// Breathe: gentle zoom pulse in/out around the center.
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn warp_breathe(src: &Grid, time: f32, amp: f32) -> Grid {
@@ -160,13 +174,18 @@ pub(crate) fn warp_breathe(src: &Grid, time: f32, amp: f32) -> Grid {
     g
 }
 
-
 /// Animated Voronoi: the `stained` tessellation with sites drifting on small
 /// orbits over `time`, so the glass cells flow and re-tile continuously. Site
 /// base positions/colors are deterministic from `seed`; only the orbit offset
 /// moves, so it loops smoothly.
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
-pub(crate) fn voronoi_flow_frame(w: usize, h: usize, seed: u64, time: f32, palette: &[Color; 5]) -> Grid {
+pub(crate) fn voronoi_flow_frame(
+    w: usize,
+    h: usize,
+    seed: u64,
+    time: f32,
+    palette: &[Color; 5],
+) -> Grid {
     let mut rng = StdRng::seed_from_u64(seed);
     let nseeds = 10 + (seed as usize % 12);
     struct Site {
@@ -185,10 +204,23 @@ pub(crate) fn voronoi_flow_frame(w: usize, h: usize, seed: u64, time: f32, palet
         let ox = rng.random_range(3.0..9.0);
         let oy = rng.random_range(1.5..4.5);
         let ph = rng.random_range(0.0..std::f32::consts::TAU);
-        let sp = rng.random_range(0.3..0.9) * if rng.random_range(0..2) == 0 { -1.0 } else { 1.0 };
+        let sp = rng.random_range(0.3..0.9)
+            * if rng.random_range(0..2) == 0 {
+                -1.0
+            } else {
+                1.0
+            };
         let base = [palette[1], palette[2], palette[3]][i % 3];
         let col = shift_hue(base, rng.random_range(-90..=90) as f64);
-        sites.push(Site { bx, by, ox, oy, ph, sp, col });
+        sites.push(Site {
+            bx,
+            by,
+            ox,
+            oy,
+            ph,
+            sp,
+            col,
+        });
     }
     let pos: Vec<(f32, f32, Color)> = sites
         .iter()
@@ -238,8 +270,13 @@ pub(crate) fn voronoi_flow_frame(w: usize, h: usize, seed: u64, time: f32, palet
         }
     }
     for &(sx, sy, col) in &pos {
-        pp_put(&mut g, sx.round() as i32, sy.round() as i32, '◆', lighten(col, 40));
+        pp_put(
+            &mut g,
+            sx.round() as i32,
+            sy.round() as i32,
+            '◆',
+            lighten(col, 40),
+        );
     }
     g
 }
-
