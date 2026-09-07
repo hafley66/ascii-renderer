@@ -881,6 +881,7 @@ mod iterate_frame_tests {
         bytes: usize,
         glyph_bytes: usize,
         cursor_bytes: usize,
+        repeat_bytes: usize,
         foreground_bytes: usize,
         background_bytes: usize,
         reset_bytes: usize,
@@ -911,6 +912,7 @@ mod iterate_frame_tests {
             totals.controls += 1;
             match control.last().copied() {
                 Some(b'H' | b'G' | b'C' | b'D') => totals.cursor_bytes += len,
+                Some(b'b') => totals.repeat_bytes += len,
                 Some(b'm') if control.windows(3).any(|part| part == b"38;") => {
                     totals.foreground_bytes += len
                 }
@@ -989,8 +991,9 @@ mod iterate_frame_tests {
                 totals.foreground_bytes,
                 totals.glyph_bytes,
                 totals.cursor_bytes,
+                totals.repeat_bytes,
             ),
-            (7_061_339, 576_429, 3_629_228, 2_455_888, 975_983)
+            (6_298_980, 630_127, 3_629_228, 1_466_818, 653_995, 548_699)
         );
     }
 

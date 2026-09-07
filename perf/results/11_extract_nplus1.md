@@ -90,3 +90,12 @@ snapshots. The guarded raw-iTerm validator did not produce a post-change sample:
 the first dedicated window failed to launch its command, and the retry tripped
 the unchanged 768 MiB watched-iTerm RSS ceiling before renderer startup. Limits
 were not raised.
+
+Following the extracted per-cell glyph append found repeated multibyte shade
+characters. The encoder now emits ECMA-48 REP only when one repeat command is
+shorter than the literal UTF-8 suffix. On the logged roll-6 fixture, 60 frames
+fell from 7,061,339 to 6,298,980 bytes, a 10.8% reduction. Literal glyph bytes
+fell from 2,455,888 to 1,466,818; REP commands added 548,699 bytes. Cursor bytes
+also fell from 975,983 to 653,995 because compressed unchanged gaps changed the
+cost-based dirty-run partition. Total control count rose from 576,429 to 630,127
+because REP trades several glyph byte sequences for one terminal command.
