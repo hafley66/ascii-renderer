@@ -1,0 +1,21 @@
+{
+  "harness_sha256": "adaaac2009d50b9ca9c133cc66205af32df2b0f5324ce4749a526d991bd7c4d4",
+  "payload_source": "../13_controlled_terminal/frame-00.ansi through frame-02.ansi",
+  "terminal": "iTerm2 3.6.3",
+  "terminal_size": [
+    426,
+    135
+  ],
+  "grid_size": [
+    392,
+    134
+  ],
+  "experiment": "sync",
+  "order": [
+    "literal",
+    "sync",
+    "sync",
+    "literal"
+  ],
+  "timing": "perf_counter_ns; syscall_us includes Python call/exception handling; capacity_wait_us includes select and scheduling; ack_wait_us includes DSR send and response"
+}

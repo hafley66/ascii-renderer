@@ -1,4 +1,4 @@
-"""Replay identical ANSI cells with REP enabled/expanded under 5_probe_guard.py.
+"""Replay identical ANSI cells comparing REP or synchronized output under 5_probe_guard.py.
 DSR measures terminal processing acknowledgement, not paint completion.
 """
 import argparse, hashlib, json, os, pathlib, re, select, termios, time, tty
@@ -20,7 +20,7 @@ def expand_rep(text):
     return ''.join(result).encode()
 
 
-def run(directory):
+def run(directory, experiment):
     fd = os.open('/dev/tty', os.O_RDWR | os.O_NONBLOCK)
     original = termios.tcgetattr(fd)
     log = (directory / 'measurements.ndjson').open('x', buffering=1)
@@ -28,20 +28,28 @@ def run(directory):
         log.write(json.dumps(row) + '\n')
     def send(payload):
         started = time.perf_counter_ns()
-        offset = calls = blocked = 0
+        offset = calls = blocked = syscall_ns = wait_ns = 0
+        payload = memoryview(payload)
         while offset < len(payload):
             if time.perf_counter_ns()-started > 2_000_000_000:
                 raise TimeoutError('write deadline')
             calls += 1
             try:
-                count = os.write(fd, payload[offset:])
+                call_started = time.perf_counter_ns()
+                try:
+                    count = os.write(fd, payload[offset:])
+                finally:
+                    syscall_ns += time.perf_counter_ns() - call_started
                 if not count: raise RuntimeError('zero write')
                 offset += count
             except BlockingIOError:
                 blocked += 1
+                wait_started = time.perf_counter_ns()
                 select.select([], [fd], [], .002)
+                wait_ns += time.perf_counter_ns() - wait_started
         return dict(write_us=(time.perf_counter_ns()-started)//1000,
-                    write_calls=calls, blocked=blocked)
+                    write_calls=calls, blocked=blocked,
+                    syscall_us=syscall_ns//1000, capacity_wait_us=wait_ns//1000)
     def ack():
         send(b'\x1b[6n')
         data = b''
@@ -57,7 +65,7 @@ def run(directory):
     try:
         tty.setraw(fd)
         size = os.get_terminal_size(fd)
-        record(kind='start', terminal=[size.columns,size.lines])
+        record(kind='start', terminal=[size.columns,size.lines], experiment=experiment)
         if (size.columns, size.lines) != (426, 135):
             raise ValueError('terminal must match recorded 426x135 dimensions')
         send(b'\x1b[?1049h\x1b[?25l\x1b[2J\x1b[H')
@@ -73,21 +81,28 @@ def run(directory):
         record(kind='payloads', compressed_bytes=sum(map(len,compressed)),
                literal_bytes=sum(map(len,literal)),
                sha256=[hashlib.sha256(p).hexdigest() for p in compressed])
-        for arm in ['literal','rep','rep','literal']:
-            payloads = literal if arm=='literal' else compressed
+        variants = {'literal': literal, 'rep': compressed}
+        arms = ['literal', 'rep', 'rep', 'literal']
+        if experiment == 'sync':
+            variants['sync'] = [b'\x1b[?2026h' + p + b'\x1b[?2026l' for p in literal]
+            arms = ['literal', 'sync', 'sync', 'literal']
+        for arm in arms:
+            payloads = variants[arm]
             send(b'\x1b[2J\x1b[H')
             for index, payload in enumerate(payloads):
                 started = time.perf_counter_ns()
                 metrics = send(payload)
+                ack_started = time.perf_counter_ns()
                 cursor = ack()
+                ack_wait_us = (time.perf_counter_ns()-ack_started)//1000
                 record(kind='frame', arm=arm, index=index, bytes=len(payload),
                        acknowledged_us=(time.perf_counter_ns()-started)//1000,
-                       cursor=cursor, **metrics)
+                       cursor=cursor, ack_wait_us=ack_wait_us, **metrics)
     except Exception as error:
         record(kind='error', error=str(error))
         raise
     finally:
-        try:send(b'\x1b[0m\x1b[?25h\x1b[?1049l')
+        try:send(b'\x1b[?2026l\x1b[0m\x1b[?25h\x1b[?1049l')
         finally:
             termios.tcsetattr(fd, termios.TCSANOW, original)
             os.close(fd)
@@ -96,4 +111,6 @@ def run(directory):
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('directory',type=pathlib.Path)
-    run(parser.parse_args().directory)
+    parser.add_argument('--experiment', choices=['rep', 'sync'], default='rep')
+    args = parser.parse_args()
+    run(args.directory, args.experiment)
