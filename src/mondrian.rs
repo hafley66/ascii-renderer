@@ -9,6 +9,7 @@ use rand::rngs::StdRng;
 
 /// Mondrian palette: classic Piet Mondrian primary colors + white.
 /// Returns (fill_colors, line_color).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn mondrian_colors() -> ([Color; 5], Color) {
     let fills = [
         rgb(255, 255, 255), // white (most common)
@@ -22,6 +23,7 @@ pub fn mondrian_colors() -> ([Color; 5], Color) {
 }
 
 /// Draw thick Mondrian grid lines along all BSP split boundaries.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn draw_mondrian_lines(grid: &mut Grid, node: &BspNode, line_w: usize, color: Color) {
     if node.is_leaf() {
         return;
@@ -61,6 +63,7 @@ pub fn draw_mondrian_lines(grid: &mut Grid, node: &BspNode, line_w: usize, color
 
 /// Mondrian layout: BSP partition with thick black grid lines and
 /// primary-color filled regions.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn layout_mondrian(
     grid: &mut Grid,
     blocks: &[ContentBlock],

@@ -13,6 +13,7 @@ use super::shift_hue;
 
 /// Generate a multi-layer scene for one node of a party walk.
 /// `rect` is the bounding box, `detail` is 0-100 controlling density.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn make_node_scene(
     rect: &Rect,
     mode: NodeMode,
@@ -32,6 +33,7 @@ pub fn make_node_scene(
 /// `base_y`: average y of the contour.
 /// `amplitude`: max deviation from base.
 /// `freq`: wave frequency (higher = more peaks).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn gen_contour(
     rect: &Rect,
     base_y: usize,
@@ -56,6 +58,7 @@ fn gen_contour(
 /// Pass 1: sky background (sparse dots or nothing -- mostly empty).
 /// Pass 2: ground below a wavy contour line (grass/tile/crosshatch).
 /// Pass 3: foreground sprites rooted ON the ground line.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn make_landscape(rect: &Rect, palette: &[Color; 5], detail: u32, rng: &mut StdRng) -> Vec<Layer> {
     let mut layers = Vec::new();
 
@@ -172,6 +175,7 @@ pub(crate) fn make_landscape(rect: &Rect, palette: &[Color; 5], detail: u32, rng
     layers
 }
 /// Centerpiece with surround: one big element in a patterned field.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn make_centerpiece(rect: &Rect, palette: &[Color; 5], rng: &mut StdRng) -> Vec<Layer> {
     let mut layers = Vec::new();
     let cx = rect.x as f32 + rect.w as f32 * 0.5;
@@ -259,6 +263,7 @@ pub(crate) fn make_centerpiece(rect: &Rect, palette: &[Color; 5], rng: &mut StdR
     layers
 }
 /// Cluster: N related patterns in a spatial arrangement.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn make_cluster(
     rect: &Rect,
     arrangement: ClusterArrangement,
@@ -339,6 +344,7 @@ pub(crate) fn make_cluster(
 }
 /// Negative space: mostly empty box with one recognizable organic sprite.
 /// No pattern fills. Just a tree, flower, or fruit sitting in open space.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn make_negative_space(rect: &Rect, palette: &[Color; 5], rng: &mut StdRng) -> Vec<Layer> {
     let mut layers = Vec::new();
     let cx = rect.x as f32 + rect.w as f32 * 0.5;
@@ -420,6 +426,7 @@ pub(crate) fn make_negative_space(rect: &Rect, palette: &[Color; 5], rng: &mut S
     layers
 }
 /// Position offset for cluster element i of n within a bounding box of (w, h).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cluster_offset(
     arrangement: ClusterArrangement,
     i: usize,
@@ -466,6 +473,7 @@ pub(crate) fn cluster_offset(
 }
 /// Soup walk: overlapping node scenes along a wandering path.
 /// Visually dense, nodes blend together -- no gap enforcement.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn soup_walk(
     w: usize,
     h: usize,

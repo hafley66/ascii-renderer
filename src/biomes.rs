@@ -24,6 +24,7 @@ pub enum Biome {
 
 pub const BIOME_COUNT: usize = 7;
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn biome_from_index(i: usize) -> Biome {
     match i % BIOME_COUNT {
         0 => Biome::Forest,
@@ -37,6 +38,7 @@ pub fn biome_from_index(i: usize) -> Biome {
 }
 
 /// Pick a random biome, seed-driven.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn random_biome(rng: &mut StdRng) -> Biome {
     biome_from_index(rng.random_range(0..BIOME_COUNT))
 }
@@ -44,6 +46,7 @@ pub fn random_biome(rng: &mut StdRng) -> Biome {
 // ── Forest biome ────────────────────────────────────────────────────
 // Truchet background, 1-3 trees scaled to rect, scattered fruits/flowers.
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn render_forest(grid: &mut Grid, rect: &Rect, palette: &[Color; 5], rng: &mut StdRng) {
     // background: truchet noise
     let bg_color = darken(palette[1], 90);
@@ -104,6 +107,7 @@ pub fn render_forest(grid: &mut Grid, rect: &Rect, palette: &[Color; 5], rng: &m
 // ── Garden biome ────────────────────────────────────────────────────
 // Tile pattern floor with flowers on top.
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn render_garden(grid: &mut Grid, rect: &Rect, palette: &[Color; 5], rng: &mut StdRng) {
     // pick a random tile pattern as the floor
     let variant = tile_variant_from_index(rng.random_range(0..TILE_VARIANT_COUNT));
@@ -127,6 +131,7 @@ pub fn render_garden(grid: &mut Grid, rect: &Rect, palette: &[Color; 5], rng: &m
 // ── Temple biome ────────────────────────────────────────────────────
 // Line art background + fret border + optional content area.
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn render_temple(grid: &mut Grid, rect: &Rect, palette: &[Color; 5], rng: &mut StdRng) {
     // background: pick a line art fill
     let c1 = palette[rng.random_range(1..4)];
@@ -176,6 +181,7 @@ pub fn render_temple(grid: &mut Grid, rect: &Rect, palette: &[Color; 5], rng: &m
 // ── Noise biome ─────────────────────────────────────────────────────
 // One or two noise fills layered.
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn render_noise(grid: &mut Grid, rect: &Rect, palette: &[Color; 5], rng: &mut StdRng) {
     let variant = noise_variant_from_index(rng.random_range(0..NOISE_VARIANT_COUNT));
     let c1 = palette[rng.random_range(1..4)];
@@ -193,6 +199,7 @@ pub fn render_noise(grid: &mut Grid, rect: &Rect, palette: &[Color; 5], rng: &mu
 // ── Geometric biome ─────────────────────────────────────────────────
 // BSP subdivision within the rect, walker fills each leaf.
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn render_geometric(grid: &mut Grid, rect: &Rect, palette: &[Color; 5], rng: &mut StdRng) {
     // background
     let bg_color = darken(palette[1], 80);
@@ -211,6 +218,7 @@ pub fn render_geometric(grid: &mut Grid, rect: &Rect, palette: &[Color; 5], rng:
 
 // ── Dispatch ────────────────────────────────────────────────────────
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn render_biome(
     biome: Biome,
     grid: &mut Grid,
@@ -257,6 +265,7 @@ pub struct FlowZone {
 }
 
 /// Compute the active x-range for a row within a zone, given taper.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn zone_x_range(zone: &FlowZone, strip_x: usize, strip_w: usize, t: f32) -> (usize, usize) {
     let (w_start, w_end) = match zone.taper {
         Taper::Constant => (zone.width_start, zone.width_start),
@@ -290,6 +299,7 @@ fn zone_x_range(zone: &FlowZone, strip_x: usize, strip_w: usize, t: f32) -> (usi
 }
 
 /// Draw dissolve glyphs in a horizontal band, fading from `density` to 0.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_dissolve_row(
     grid: &mut Grid,
     y: usize,
@@ -319,6 +329,7 @@ fn draw_dissolve_row(
 }
 
 /// Render a flow: a vertical sequence of zones within a strip rect.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn render_flow(
     grid: &mut Grid,
     rect: &Rect,
@@ -415,6 +426,7 @@ pub fn render_flow(
 }
 
 /// Generate a random flow sequence for a strip.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn random_flow(rect: &Rect, palette: &[Color; 5], rng: &mut StdRng) -> Vec<FlowZone> {
     let zone_count = rng.random_range(3..=5);
     let mut zones = Vec::with_capacity(zone_count);
@@ -491,6 +503,7 @@ pub fn random_flow(rect: &Rect, palette: &[Color; 5], rng: &mut StdRng) -> Vec<F
 /// Midpoint displacement with multiple anchor points for varied ridgelines.
 /// Seeds 3-6 anchors across the width before running displacement, preventing
 /// the single-peak pyramid shape that 2-endpoint displacement always produces.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn gen_contour(
     width: usize,
     base: usize,
@@ -575,6 +588,7 @@ pub fn gen_contour(
 }
 
 /// Draw the contour line itself with ridge glyphs.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn draw_contour_ridge(grid: &mut Grid, rect: &Rect, contour: &[usize], color: Color) {
     for col in 0..rect.w.min(contour.len()) {
         let x = rect.x + col;
@@ -615,6 +629,7 @@ pub struct TerrainContext {
 }
 
 /// Pick a random fill from a pool, weighted toward variety.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn rand_mountain_fill(rng: &mut StdRng) -> FillGen {
     match rng.random_range(0..6) {
         0 => FillGen::Zigzag,
@@ -626,6 +641,7 @@ fn rand_mountain_fill(rng: &mut StdRng) -> FillGen {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn rand_hill_fill(rng: &mut StdRng) -> FillGen {
     match rng.random_range(0..5) {
         0 => FillGen::TilePure(tile_variant_from_index(
@@ -640,6 +656,7 @@ fn rand_hill_fill(rng: &mut StdRng) -> FillGen {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn rand_ground_fill(rng: &mut StdRng) -> FillGen {
     match rng.random_range(0..4) {
         0 => FillGen::Noise(NoiseVariant::Grass),
@@ -652,6 +669,7 @@ fn rand_ground_fill(rng: &mut StdRng) -> FillGen {
 }
 
 /// Rotate a palette: shift slots 1-3 by `n` positions for visual variety.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn rotate_palette(palette: &[Color; 5], n: usize) -> [Color; 5] {
     let inner = [palette[1], palette[2], palette[3]];
     [
@@ -666,6 +684,7 @@ fn rotate_palette(palette: &[Color; 5], n: usize) -> [Color; 5] {
 /// Generate overlay patch layers within a contour band.
 /// Each patch is an ellipse intersected with the band's contour mask,
 /// filled with a different pattern and palette rotation.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn terrain_patches(
     rect: &Rect,
     contour: &[usize],
@@ -723,6 +742,7 @@ fn terrain_patches(
 
 /// Build terrain as compositable layers with patchy variation within each band.
 /// Base layers (sky, mountains, foothills, ground) + overlay patches per band.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn terrain_scene(rect: &Rect, palette: &[Color; 5], rng: &mut StdRng) -> TerrainContext {
     let w = rect.w;
     let h = rect.h;
@@ -845,6 +865,7 @@ pub fn terrain_scene(rect: &Rect, palette: &[Color; 5], rng: &mut StdRng) -> Ter
 
 /// Procedural post-pass: contour ridges, trees, flowers, moon.
 /// These are imperative sprite placements that don't fit the fill+mask model.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn terrain_post_pass(
     grid: &mut Grid,
     rect: &Rect,
@@ -921,6 +942,7 @@ pub fn terrain_post_pass(
 
 /// Terrain biome: layered contour fills creating a landscape.
 /// Builds a 4-layer scene, composites it, then runs procedural post-pass.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn render_terrain(grid: &mut Grid, rect: &Rect, palette: &[Color; 5], rng: &mut StdRng) {
     let ctx = terrain_scene(rect, palette, rng);
     render_scene(grid, rect, &ctx.scene, rng);
@@ -930,6 +952,7 @@ pub fn render_terrain(grid: &mut Grid, rect: &Rect, palette: &[Color; 5], rng: &
 // ── Strip allocator ─────────────────────────────────────────────────
 // Divides the grid into vertical strips of random width, assigns a biome to each.
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn allocate_strips(
     width: usize,
     min_strip: usize,
@@ -952,6 +975,7 @@ pub fn allocate_strips(
 }
 
 /// Render the full grid as a world of vertical biome strips.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn render_world(
     grid: &mut Grid,
     width: usize,

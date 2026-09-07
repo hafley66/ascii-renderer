@@ -35,6 +35,7 @@ use crate::automata; use crate::avant; use crate::biomes; use crate::borders; us
 
 
 /// Dispatch arm for mode(s): swatch (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_swatch(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         let themes = [
             "ember",
@@ -87,6 +88,7 @@ pub(crate) fn cli_swatch(mut grid: Grid, width: usize, height: usize, seed: u64,
 }
 
 /// Dispatch arm for mode(s): tree (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_tree(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         grow_tree(&mut grid, 20, 40, 5, 16, palette[1], &mut rng);
         grow_tree(&mut grid, 55, 42, 8, 12, palette[2], &mut rng);
@@ -100,6 +102,7 @@ pub(crate) fn cli_tree(mut grid: Grid, width: usize, height: usize, seed: u64, p
 }
 
 /// Dispatch arm for mode(s): trees (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_trees(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         // Grid of all 12 tree variants. 4 columns x 3 rows.
         let cols = 4usize;
@@ -132,6 +135,7 @@ pub(crate) fn cli_trees(mut grid: Grid, width: usize, height: usize, seed: u64, 
 }
 
 /// Dispatch arm for mode(s): aztec (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_aztec(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         draw_aztec_diamond(
             &mut grid,
@@ -145,6 +149,7 @@ pub(crate) fn cli_aztec(mut grid: Grid, width: usize, height: usize, seed: u64, 
 }
 
 /// Dispatch arm for mode(s): fret (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_fret(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         draw_stepped_fret(&mut grid, 5, 5, 3, Dir::Right, palette[1]);
         draw_stepped_fret(&mut grid, 25, 5, 5, Dir::Right, palette[2]);
@@ -161,6 +166,7 @@ pub(crate) fn cli_fret(mut grid: Grid, width: usize, height: usize, seed: u64, p
 }
 
 /// Dispatch arm for mode(s): flowers (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_flowers(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         for i in 0..5 {
             let color = [palette[1], palette[2], palette[3], palette[1], palette[2]][i];
@@ -176,6 +182,7 @@ pub(crate) fn cli_flowers(mut grid: Grid, width: usize, height: usize, seed: u64
 }
 
 /// Dispatch arm for mode(s): fruits (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_fruits(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         let fruit_colors = [
             rgb(220, 50, 50),
@@ -197,6 +204,7 @@ pub(crate) fn cli_fruits(mut grid: Grid, width: usize, height: usize, seed: u64,
 }
 
 /// Dispatch arm for mode(s): forest (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_forest(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         let ground_color = darken(palette[1], 90);
         let tiles = ['╱', '╲'];
@@ -262,6 +270,7 @@ pub(crate) fn cli_forest(mut grid: Grid, width: usize, height: usize, seed: u64,
 }
 
 /// Dispatch arm for mode(s): layout (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_layout(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         let truchet_color = darken(palette[1], 90);
         let tiles = ['╱', '╲'];
@@ -359,6 +368,7 @@ pub(crate) fn cli_layout(mut grid: Grid, width: usize, height: usize, seed: u64,
 }
 
 /// Dispatch arm for mode(s): md (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_md(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         let mut input = String::new();
         io::stdin().read_to_string(&mut input).unwrap_or_default();
@@ -434,6 +444,7 @@ pub(crate) fn cli_md(mut grid: Grid, width: usize, height: usize, seed: u64, pal
 }
 
 /// Dispatch arm for mode(s): bsp (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_bsp(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         let truchet_color = darken(palette[1], 90);
         let tiles = ['╱', '╲'];
@@ -509,6 +520,7 @@ pub(crate) fn cli_bsp(mut grid: Grid, width: usize, height: usize, seed: u64, pa
 }
 
 /// Dispatch arm for mode(s): mondrian (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_mondrian(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         let line_w = 2;
 
@@ -656,6 +668,7 @@ pub(crate) fn cli_mondrian(mut grid: Grid, width: usize, height: usize, seed: u6
 }
 
 /// Dispatch arm for mode(s): tiles (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_tiles(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         let names = [
             "asanoha",
@@ -698,6 +711,7 @@ pub(crate) fn cli_tiles(mut grid: Grid, width: usize, height: usize, seed: u64, 
 }
 
 /// Dispatch arm for mode(s): tiles-rand (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_tiles_rand(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         let names = [
             "asanoha",
@@ -749,6 +763,7 @@ pub(crate) fn cli_tiles_rand(mut grid: Grid, width: usize, height: usize, seed: 
 }
 
 /// Dispatch arm for mode(s): tiles-skew (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_tiles_skew(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         let names = [
             "asanoha",
@@ -796,6 +811,7 @@ pub(crate) fn cli_tiles_skew(mut grid: Grid, width: usize, height: usize, seed: 
 }
 
 /// Dispatch arm for mode(s): terrain (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_terrain(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         let rect = Rect {
             x: 0,
@@ -808,6 +824,7 @@ pub(crate) fn cli_terrain(mut grid: Grid, width: usize, height: usize, seed: u64
 }
 
 /// Dispatch arm for mode(s): flow (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_flow(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         let rect = Rect {
             x: 0,
@@ -821,6 +838,7 @@ pub(crate) fn cli_flow(mut grid: Grid, width: usize, height: usize, seed: u64, p
 }
 
 /// Dispatch arm for mode(s): watershed (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_watershed(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         // watershed [channels] -- terrain contours carved by tapered, dissolving flow strips
         let channel_count: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(3);
@@ -997,6 +1015,7 @@ pub(crate) fn cli_watershed(mut grid: Grid, width: usize, height: usize, seed: u
 }
 
 /// Dispatch arm for mode(s): masks (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_masks(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         // background: diamond lattice to recreate the emergent effect
         let bg_rect = Rect {
@@ -1029,6 +1048,7 @@ pub(crate) fn cli_masks(mut grid: Grid, width: usize, height: usize, seed: u64, 
 }
 
 /// Dispatch arm for mode(s): ca (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_ca(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         // ca, ca-life, ca-cave, ca-maze, ca-coral, ca-B3/S23
         let rule_name = if mode == "ca" { "life" } else { &mode[3..] };
@@ -1061,6 +1081,7 @@ pub(crate) fn cli_ca(mut grid: Grid, width: usize, height: usize, seed: u64, pal
 }
 
 /// Dispatch arm for mode(s): ca-layout (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_ca_layout(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         let rect = Rect {
             x: 0,
@@ -1138,6 +1159,7 @@ pub(crate) fn cli_ca_layout(mut grid: Grid, width: usize, height: usize, seed: u
 }
 
 /// Dispatch arm for mode(s): shapes (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_shapes(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         // 2x2 grid, shapes sized to ~30% of each quadrant, hard edges (dissolve=0).
         // rx = 2*ry throughout to correct for 2:1 terminal cell aspect ratio.
@@ -1274,6 +1296,7 @@ pub(crate) fn cli_shapes(mut grid: Grid, width: usize, height: usize, seed: u64,
 }
 
 /// Dispatch arm for mode(s): mondrian2 (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_mondrian2(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         let line_w = 2;
 
@@ -1460,6 +1483,7 @@ pub(crate) fn cli_mondrian2(mut grid: Grid, width: usize, height: usize, seed: u
 }
 
 /// Dispatch arm for mode(s): quilt (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_quilt(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         // quilt [min_patch] [max_patch] -- stitched patchwork of tile patterns
         let min_p: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(10);
@@ -1533,12 +1557,14 @@ pub(crate) fn cli_quilt(mut grid: Grid, width: usize, height: usize, seed: u64, 
 }
 
 /// Dispatch arm for mode(s): world (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_world(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         render_world(&mut grid, width, height, &palette, &mut rng);
     (grid, false)
 }
 
 /// Dispatch arm for mode(s): default (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_default(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         fill_truchet(&mut grid, width, height, darken(palette[1], 80), &mut rng);
 

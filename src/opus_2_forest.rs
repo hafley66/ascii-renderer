@@ -34,6 +34,7 @@ pub(crate) struct Opus2ForestKnobs {
 }
 
 impl Opus2ForestKnobs {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub(crate) fn from_env() -> Self {
         Opus2ForestKnobs {
             density: param_f32("DENSITY", 0.3).clamp(0.0, 1.0),
@@ -55,6 +56,7 @@ impl Opus2ForestKnobs {
         }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn shape_bits(&self) -> [u32; 9] {
         [
             self.density.to_bits(),
@@ -96,11 +98,13 @@ thread_local! {
     static STAND: RefCell<Option<(StandKey, Stand)>> = const { RefCell::new(None) };
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn frac_hash(seed: u64, a: u64) -> f32 {
     (hash2(seed, a) % 100_000) as f32 / 100_000.0
 }
 
 /// Weighted species mix. MIX at 0 keeps the seed's lopsided draw, at 1 evens it out.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn species_weights(seed: u64, mix: f32) -> [f32; 5] {
     let mut w = [0.0f32; 5];
     let mut sum = 0.0;
@@ -115,6 +119,7 @@ fn species_weights(seed: u64, mix: f32) -> [f32; 5] {
     w
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn pick_species(w: &[f32; 5], r: f32) -> usize {
     let mut acc = 0.0;
     for (i, wi) in w.iter().enumerate() {
@@ -126,6 +131,7 @@ fn pick_species(w: &[f32; 5], r: f32) -> usize {
     4
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn build_stand(width: usize, height: usize, seed: u64, k: &Opus2ForestKnobs) -> Stand {
     let layer_count = k.layers.round() as usize;
     let horizon = ((height as f32) * (1.0 - k.ground)) as usize;
@@ -241,6 +247,7 @@ struct Sky {
     tint: Color,
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn sky_at(palette: &[Color; 5], hue: f32, phase: f32) -> Sky {
     let p = |i: usize| shift_hue(palette[i], hue as f64);
     let keys = [
@@ -261,6 +268,7 @@ fn sky_at(palette: &[Color; 5], hue: f32, phase: f32) -> Sky {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn layer_inks(
     palette: &[Color; 5],
     sky: &Sky,
@@ -286,6 +294,7 @@ fn layer_inks(
     out
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn ridge_profile(x: f32, seed: u64, band: u64) -> f32 {
     let a = frac_hash(seed, 300 + band * 7) * 6.283;
     let b = frac_hash(seed, 301 + band * 7) * 6.283;
@@ -296,6 +305,7 @@ fn ridge_profile(x: f32, seed: u64, band: u64) -> f32 {
     ((s1 + s2 + s3) / 1.75).clamp(-1.0, 1.0)
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn atmos_kind(seed: u64, k: &Opus2ForestKnobs) -> usize {
     let forced = k.atmos.round() as usize;
     if forced >= 1 {
@@ -306,6 +316,7 @@ fn atmos_kind(seed: u64, k: &Opus2ForestKnobs) -> usize {
 
 // ── the frame ───────────────────────────────────────────────────────
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn draw_opus_2_forest(
     grid: &mut Grid,
     width: usize,
@@ -371,6 +382,7 @@ pub(crate) fn draw_opus_2_forest(
     });
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn paint_sky(
     grid: &mut Grid,
     width: usize,
@@ -462,6 +474,7 @@ fn paint_sky(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn palette_white() -> Color {
     Color::Rgb {
         r: 235,
@@ -470,6 +483,7 @@ fn palette_white() -> Color {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn set_cell(grid: &mut Grid, x: i32, y: i32, ch: char, c: Color, width: usize, height: usize) {
     if x < 0 || y < 0 || x as usize >= width || y as usize >= height {
         return;
@@ -482,6 +496,7 @@ fn set_cell(grid: &mut Grid, x: i32, y: i32, ch: char, c: Color, width: usize, h
     grid[uy][ux] = Cell::with_bg(ch, c, bg);
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn paint_ridges(
     grid: &mut Grid,
     width: usize,
@@ -513,6 +528,7 @@ fn paint_ridges(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn paint_ground(
     grid: &mut Grid,
     width: usize,
@@ -578,6 +594,7 @@ fn paint_ground(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn mirror_glyph(c: char) -> char {
     match c {
         '╱' => '╲',
@@ -594,6 +611,7 @@ fn mirror_glyph(c: char) -> char {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn stamp_stand(
     grid: &mut Grid,
     width: usize,
@@ -654,6 +672,7 @@ fn stamp_stand(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn paint_atmos(
     grid: &mut Grid,
     width: usize,
@@ -780,6 +799,7 @@ fn paint_atmos(
     let _ = (SLOT_DIM, SLOT_TIP, SLOTS);
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_opus_2_forest(
     mut grid: Grid,
     width: usize,
@@ -839,6 +859,7 @@ pub(crate) fn cli_opus_2_forest(
 mod tests {
     use super::*;
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn run(w: usize, h: usize, seed: u64, t: f32) -> String {
         let mut g = vec![vec![Cell::blank(); w]; h];
         let p = crate::color::make_palette(seed);
@@ -851,22 +872,26 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_opus_2_forest_static() {
         insta::assert_snapshot!("opus_2_forest_80x24_static", run(80, 24, 42, 0.0));
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_opus_2_forest_animated() {
         insta::assert_snapshot!("opus_2_forest_80x24_animated", run(80, 24, 42, 11.0));
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn deterministic_and_seed_sensitive() {
         assert_eq!(run(80, 24, 42, 0.0), run(80, 24, 42, 0.0));
         assert_ne!(run(80, 24, 42, 0.0), run(80, 24, 5, 0.0));
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn time_moves_the_forest() {
         assert_ne!(run(80, 24, 42, 0.0), run(80, 24, 42, 9.0));
     }

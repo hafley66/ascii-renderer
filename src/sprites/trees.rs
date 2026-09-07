@@ -19,6 +19,7 @@ pub enum MoveDir {
     DownRight,
 }
 impl MoveDir {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub fn dx(self) -> i32 {
         match self {
             MoveDir::Left | MoveDir::UpLeft | MoveDir::DownLeft => -1,
@@ -26,6 +27,7 @@ impl MoveDir {
             _ => 0,
         }
     }
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub fn dy(self) -> i32 {
         match self {
             MoveDir::Up | MoveDir::UpLeft | MoveDir::UpRight => -1,
@@ -36,6 +38,7 @@ impl MoveDir {
 }
 /// Given previous travel direction and next travel direction, return the
 /// box-drawing character that connects them at the turning point.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn connect_glyph(from: MoveDir, to: MoveDir) -> char {
     use MoveDir::*;
     match (from, to) {
@@ -81,6 +84,7 @@ pub(crate) fn connect_glyph(from: MoveDir, to: MoveDir) -> char {
 }
 /// What exits does a box-drawing character have?
 /// Returns the set of directions you can travel FROM this character.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn char_exits(ch: char) -> &'static [MoveDir] {
     use MoveDir::*;
     match ch {
@@ -114,6 +118,7 @@ pub fn char_exits(ch: char) -> &'static [MoveDir] {
     }
 }
 /// Opposite direction (for checking entrance compatibility).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn opposite(dir: MoveDir) -> MoveDir {
     use MoveDir::*;
     match dir {
@@ -129,6 +134,7 @@ pub fn opposite(dir: MoveDir) -> MoveDir {
 }
 /// Can we enter `ch` from `entry_dir`? (i.e. does the char have an exit
 /// in the opposite direction, meaning the line continues toward us?)
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn can_enter_from(ch: char, entry_dir: MoveDir) -> bool {
     let need_exit = opposite(entry_dir);
     char_exits(ch).contains(&need_exit)
@@ -136,6 +142,7 @@ pub fn can_enter_from(ch: char, entry_dir: MoveDir) -> bool {
 /// Given a desired entry direction and exit direction, return the char
 /// that connects them. Entry is where the line comes FROM (so the char
 /// needs an exit in opposite(entry)), exit is where it goes TO.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn char_for_connection(entry: MoveDir, exit: MoveDir) -> char {
     use MoveDir::*;
     // entry_exit: the char needs exit toward opposite(entry) AND toward exit
@@ -161,6 +168,7 @@ pub fn char_for_connection(entry: MoveDir, exit: MoveDir) -> char {
 }
 /// From a given cell with char `ch`, what are the valid next positions
 /// and the direction to get there?
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn valid_moves(ch: char) -> Vec<(MoveDir, i32, i32)> {
     char_exits(ch)
         .iter()
@@ -168,6 +176,7 @@ pub fn valid_moves(ch: char) -> Vec<(MoveDir, i32, i32)> {
         .collect()
 }
 /// Direction-appropriate continuation glyph (what to draw while moving in a direction).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn dir_glyph(dir: MoveDir) -> char {
     use MoveDir::*;
     match dir {
@@ -186,6 +195,7 @@ pub struct TreePen {
     pub color: Color,
 }
 impl TreePen {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub fn new(x: i32, y: i32, color: Color) -> Self {
         TreePen {
             x,
@@ -197,6 +207,7 @@ impl TreePen {
 
     /// Move one step in the given direction, drawing the correct connecting glyph.
     /// Returns the new (x, y) position.
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub fn step(&mut self, grid: &mut Grid, dir: MoveDir) -> (i32, i32) {
         // At current position, draw the turn/junction if changing direction
         if let Some(prev) = self.last_dir {
@@ -218,6 +229,7 @@ impl TreePen {
     }
 
     /// Draw a straight run of `n` steps in the given direction.
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub fn run(&mut self, grid: &mut Grid, dir: MoveDir, n: usize) {
         for _ in 0..n {
             self.step(grid, dir);
@@ -225,11 +237,13 @@ impl TreePen {
     }
 
     /// Draw a tip/endpoint at current position.
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub fn tip(&self, grid: &mut Grid) {
         tset_over(grid, self.x, self.y, '╷', lighten(self.color, 30));
     }
 
     /// Fork: return a new pen at the current position for drawing a branch.
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub fn fork(&self, color: Color) -> TreePen {
         TreePen {
             x: self.x,
@@ -251,6 +265,7 @@ pub enum TrunkStyle {
 }
 /// Draw a trunk from bot_y (ground) up to top_y using the given style.
 /// Returns Vec<(y, x)> sorted top-to-bottom for branch attachment lookup.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn draw_trunk(
     grid: &mut Grid,
     start_x: i32,
@@ -391,6 +406,7 @@ pub fn draw_trunk(
 /// Spiral / Fibonacci tree.
 /// Main trunk runs the full height. Branches peel off alternating sides,
 /// each shorter than the last. Secondary twigs curl upward off the tips.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn grow_spiral_tree(
     grid: &mut Grid,
     root_x: usize,
@@ -450,6 +466,7 @@ pub fn grow_spiral_tree(
 }
 /// Candelabra tree.
 /// Short thick trunk splits into 3-5 near-vertical arms that each branch once at the top.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn grow_candelabra(
     grid: &mut Grid,
     root_x: usize,
@@ -527,6 +544,7 @@ pub fn grow_candelabra(
 }
 /// Birch tree.
 /// Tall, thin trunk. Very short branches peeling off frequently. Spray tips.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn grow_birch(
     grid: &mut Grid,
     root_x: usize,
@@ -592,6 +610,7 @@ pub fn grow_birch(
 }
 /// Storm-leaning tree.
 /// Trunk drawn with diagonal chars, leaning to one side. Branches on windward side.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn grow_storm_tree(
     grid: &mut Grid,
     root_x: usize,
@@ -667,6 +686,7 @@ pub fn grow_storm_tree(
 }
 /// Wide spreading tree.
 /// Lower splits are very wide, upper ones narrow. Broad silhouette.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn grow_wide_tree(
     grid: &mut Grid,
     root_x: usize,
@@ -734,6 +754,7 @@ pub fn grow_wide_tree(
 }
 /// Asymmetric tree.
 /// Left and right arms are deliberately different lengths. Wind-blown feel.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn grow_asymmetric_tree(
     grid: &mut Grid,
     root_x: usize,
@@ -827,6 +848,7 @@ pub fn grow_asymmetric_tree(
 }
 /// Tall narrow tree.
 /// Very little horizontal spread. Many levels of short branches. Columnar.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn grow_tall_narrow(
     grid: &mut Grid,
     root_x: usize,
@@ -881,6 +903,7 @@ pub fn grow_tall_narrow(
 }
 /// Dead / skeletal tree.
 /// Sparse angular branches. Uses diagonal chars and sharp tips. Eerie.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn grow_dead_tree(
     grid: &mut Grid,
     root_x: usize,
@@ -969,6 +992,7 @@ pub fn grow_dead_tree(
 }
 /// Drooping tree.
 /// Branches arc outward and curve downward with rounded corners. Elegant droop.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn grow_drooping_tree(
     grid: &mut Grid,
     root_x: usize,
@@ -1049,6 +1073,7 @@ pub fn grow_drooping_tree(
 /// Kaiju tree: massive multi-trunk ancient tree with unbalanced branching.
 /// 2-3 trunks diverge from a thick base, each leaning at different angles.
 /// Branches at irregular intervals with unequal arm lengths. Dominates the scene.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn grow_kaiju_tree(
     grid: &mut Grid,
     root_x: usize,
@@ -1208,6 +1233,7 @@ pub fn grow_kaiju_tree(
     }
 }
 /// Dispatch all tree variants by kind index (0..18).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn draw_tree(
     grid: &mut Grid,
     root_x: usize,
@@ -1284,6 +1310,7 @@ pub struct TreeRecipe {
 }
 impl TreeRecipe {
     /// Balanced branching tree (kind 0 equivalent).
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub fn balanced() -> Self {
         TreeRecipe {
             trunk_wobble_freq: 5,
@@ -1301,6 +1328,7 @@ impl TreeRecipe {
         }
     }
     /// Wild / asymmetric (kind 14 equivalent).
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub fn wild() -> Self {
         TreeRecipe {
             trunk_wobble_freq: 3,
@@ -1324,6 +1352,7 @@ impl TreeRecipe {
         }
     }
     /// Storm-leaning (kind 7 equivalent).
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub fn storm(lean: i32) -> Self {
         TreeRecipe {
             trunk_wobble_freq: 4,
@@ -1341,6 +1370,7 @@ impl TreeRecipe {
         }
     }
     /// Drooping / weeping (kind 11 equivalent).
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub fn weeping() -> Self {
         TreeRecipe {
             trunk_wobble_freq: 6,
@@ -1358,6 +1388,7 @@ impl TreeRecipe {
         }
     }
     /// Sparse / dead (kind 12 equivalent).
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub fn dead() -> Self {
         TreeRecipe {
             trunk_wobble_freq: 4,
@@ -1375,6 +1406,7 @@ impl TreeRecipe {
         }
     }
     /// Tall narrow columnar (kind 10 equivalent).
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub fn columnar() -> Self {
         TreeRecipe {
             trunk_wobble_freq: 8,
@@ -1392,6 +1424,7 @@ impl TreeRecipe {
         }
     }
     /// Gnarled sprawler with thick base.
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub fn gnarled() -> Self {
         TreeRecipe {
             trunk_wobble_freq: 2,
@@ -1410,6 +1443,7 @@ impl TreeRecipe {
     }
 }
 /// Grow a tree using TreePen with the given recipe. Always path-connected.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn grow_pen_tree(
     grid: &mut Grid,
     root_x: usize,
@@ -1494,6 +1528,7 @@ pub fn grow_pen_tree(
     branch_positions.sort();
     branch_positions.dedup();
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw_branch(
         grid: &mut Grid,
         bx: i32,
@@ -1601,6 +1636,7 @@ pub fn grow_pen_tree(
 }
 /// Convenience: grow a pen tree from a recipe preset index.
 /// 0=balanced, 1=wild, 2=storm, 3=weeping, 4=dead, 5=columnar, 6=gnarled
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn grow_connected_tree(
     grid: &mut Grid,
     root_x: usize,
@@ -1629,6 +1665,7 @@ pub fn grow_connected_tree(
 
 /// Split-pen overwrite: trunk overwrites everything, branches overwrite
 /// blanks + grass + lighter branches but not other tree trunks.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn split_set(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
     if x >= 0 && y >= 0 && (y as usize) < grid.len() && (x as usize) < grid[0].len() {
         let cell = &mut grid[y as usize][x as usize];
@@ -1641,6 +1678,7 @@ pub(crate) fn split_set(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
         }
     }
 }
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn split_set_over(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
     if x >= 0 && y >= 0 && (y as usize) < grid.len() && (x as usize) < grid[0].len() {
         grid[y as usize][x as usize] = Cell::new(ch, fg);
@@ -1650,6 +1688,7 @@ pub(crate) fn split_set_over(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Colo
 /// Thick wobbling trunk rises from a wide base flare. At each split level,
 /// horizontal arms fork left and right with independent lengths. Recursive
 /// subdivision fills the canopy densely. Tips marked with ╷.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn grow_split_pen(
     grid: &mut Grid,
     root_x: usize,
@@ -1795,6 +1834,7 @@ pub fn grow_split_pen(
 }
 /// Spiral-pen overwrite: trunk always wins, branches yield to trunk chars
 /// but overwrite grass and blanks.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn spiral_set(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
     if x >= 0 && y >= 0 && (y as usize) < grid.len() && (x as usize) < grid[0].len() {
         let cell = &mut grid[y as usize][x as usize];
@@ -1811,6 +1851,7 @@ pub(crate) fn spiral_set(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
 /// Trunk is ruler-straight with this tree type. Branches peel off at regular
 /// intervals, each shorter than the last. Tips curl upward with a secondary
 /// twig sprouting from the curl.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn grow_spiral_pen(
     grid: &mut Grid,
     root_x: usize,
@@ -1885,6 +1926,7 @@ pub fn grow_spiral_pen(
 }
 /// Candelabra-pen overwrite: trunk and bar overwrite everything.
 /// Arms overwrite blanks + grass but respect trunk/bar chars.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cand_set(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
     if x >= 0 && y >= 0 && (y as usize) < grid.len() && (x as usize) < grid[0].len() {
         let cell = &mut grid[y as usize][x as usize];
@@ -1901,6 +1943,7 @@ pub(crate) fn cand_set(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
 /// height, 3-5 arms rising from the bar. Each arm leans outward, has mid-branch
 /// bark texture, and tips with a two-way fork. The bar uses ┬ at trunk, └/┘ at
 /// ends, ┴ at arm attachments.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn grow_candelabra_pen(
     grid: &mut Grid,
     root_x: usize,
@@ -2004,6 +2047,7 @@ pub fn grow_candelabra_pen(
         cand_set(grid, cx + 2, arm_top - 1, '╷', lighten(tip_c, 20));
     }
 }
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn grow_tendril_tree(
     grid: &mut Grid,
     root_x: usize,
@@ -2028,6 +2072,7 @@ pub fn grow_tendril_tree(
     let cy = center_y as f32;
 
     // Draw a ray from (x,y) at angle, length, recursing with halved length
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw_tendril(
         grid: &mut Grid,
         x: f32,
@@ -2112,6 +2157,7 @@ pub fn grow_tendril_tree(
 }
 /// Zigzag tree: diagonal-only trunk and branches with recursive splitting.
 /// Thick trunk (double-wide diagonals), branches fork recursively off rays.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn grow_zigzag_tree(
     grid: &mut Grid,
     root_x: usize,
@@ -2148,6 +2194,7 @@ pub fn grow_zigzag_tree(
     }
 
     // Recursive diagonal ray helper
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw_ray(
         grid: &mut Grid,
         x: i32,
@@ -2226,6 +2273,7 @@ pub fn grow_zigzag_tree(
 /// Braille canopy tree: trunk of box-drawing, but canopy is a filled region
 /// drawn with braille block characters for an organic, dense look.
 /// Vertical color gradient through canopy. Occasional cuttlefish hue shift.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn grow_braille_tree(
     grid: &mut Grid,
     root_x: usize,
@@ -2317,6 +2365,7 @@ pub fn grow_braille_tree(
 /// Sprout braille leaf clusters at branch tips on the grid.
 /// Scans for tip chars (╷ ╮ ╭ · ╴ ╶) and places small braille clusters
 /// around them. Only overwrites blank cells so branches show through.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn sprout_leaves(grid: &mut Grid, leaf_color: Color, density: u32, rng: &mut StdRng) {
     let tip_chars = ['╷', '╮', '╭', '╴', '╶'];
     let leaf_chars = ['⣿', '⣾', '⣷', '⡇', '⢸', '⣤', '⣀', '⠛'];
@@ -2388,6 +2437,7 @@ pub fn sprout_leaves(grid: &mut Grid, leaf_color: Color, density: u32, rng: &mut
 }
 /// Collect branch tip positions within a bounding rect.
 /// Returns (x, y, color) for each tip char found in the region.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn collect_tips_in_rect(
     grid: &Grid,
     x0: usize,
@@ -2422,6 +2472,7 @@ pub enum TipDeco {
 }
 /// Decorate collected tips with the chosen style.
 /// `chance` is 0-100 probability per tip.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn decorate_tips(
     grid: &mut Grid,
     tips: &[(usize, usize, Color)],
@@ -2474,6 +2525,7 @@ pub fn decorate_tips(
     }
 }
 /// Pick a trunk style that matches a tree family index.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn trunk_style_for_family(family_idx: usize, rng: &mut StdRng) -> TrunkStyle {
     match family_idx {
         0 => [TrunkStyle::Wobble, TrunkStyle::Straight, TrunkStyle::Curved]
@@ -2489,6 +2541,7 @@ pub fn trunk_style_for_family(family_idx: usize, rng: &mut StdRng) -> TrunkStyle
 /// Each side has its own branch count, heights, and arm lengths.
 /// Nothing is mirrored. Trunk wobbles randomly.
 /// Branch zone biased: some trees branch only near top, others near bottom.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn grow_wild_tree(
     grid: &mut Grid,
     root_x: usize,

@@ -4,6 +4,7 @@ use super::*;
 /// Shared bole/bush pattern renderer. 34 style variants.
 /// `compact`: true clamps layer counts to keep height <= 3 rows (for tree boles).
 ///            false renders full size (for standalone bush sprites).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn draw_bole_pattern(
     grid: &mut Grid,
     root_x: i32,

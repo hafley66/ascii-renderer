@@ -37,6 +37,7 @@ pub(crate) struct TCell {
 
 impl TCell {
     #[inline]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub(crate) fn empty() -> Self {
         TCell { ch: '\0', band: 0, tone: 0 }
     }
@@ -49,11 +50,13 @@ pub(crate) struct Canvas {
 }
 
 impl Canvas {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub(crate) fn new(w: usize, h: usize) -> Self {
         let (w, h) = (w.max(1), h.max(1));
         Canvas { w, h, cells: vec![TCell::empty(); w * h] }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub(crate) fn reset(&mut self, w: usize, h: usize) {
         let (w, h) = (w.max(1), h.max(1));
         self.w = w;
@@ -66,6 +69,7 @@ impl Canvas {
     }
 
     #[inline]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub(crate) fn put(&mut self, x: i32, y: i32, ch: char, band: u8, tone: u8) {
         if ch == '\0' || x < 0 || y < 0 {
             return;
@@ -78,6 +82,7 @@ impl Canvas {
     }
 
     #[inline]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub(crate) fn put_soft(&mut self, x: i32, y: i32, ch: char, band: u8, tone: u8) {
         if x < 0 || y < 0 {
             return;
@@ -109,6 +114,7 @@ pub(crate) struct BakedCell {
 }
 
 /// Copy every painted canvas cell into the bake list, translated to grid space.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn capture(
     canvas: &Canvas,
     ox: i32,
@@ -149,6 +155,7 @@ pub(crate) fn capture(
 }
 
 /// Paint a bake list. `offs` is per-group sway in cells scaled by 65536.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn blit(grid: &mut Grid, w: usize, h: usize, cells: &[BakedCell], lut: &[Color], offs: &[i32]) {
     for c in cells {
         let dx = (offs[c.group as usize] * c.sway as i32) >> 24;
@@ -162,6 +169,7 @@ pub(crate) fn blit(grid: &mut Grid, w: usize, h: usize, cells: &[BakedCell], lut
 }
 
 /// Append one 32-step ramp to a color table.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn ramp(out: &mut Vec<Color>, lo: Color, hi: Color) {
     for t in 0..TONES {
         out.push(lerp_color(lo, hi, t as f32 / (TONES - 1) as f32));
@@ -171,6 +179,7 @@ pub(crate) fn ramp(out: &mut Vec<Color>, lo: Color, hi: Color) {
 // ── shared geometry helpers ─────────────────────────────────────────
 
 #[inline]
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn hash2(x: i32, y: i32, s: u32) -> u32 {
     let mut h = (x as u32).wrapping_mul(0x9E37_79B1)
         ^ (y as u32).wrapping_mul(0x85EB_CA77)
@@ -181,11 +190,13 @@ pub(crate) fn hash2(x: i32, y: i32, s: u32) -> u32 {
 }
 
 #[inline]
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn hashf(x: i32, y: i32, s: u32) -> f32 {
     (hash2(x, y, s) & 0xFFFF) as f32 / 65535.0
 }
 
 /// Slope-to-glyph for a float line segment.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn glyph_for(dx: f32, dy: f32) -> char {
     let a = dx.abs();
     let b = dy.abs();
@@ -200,6 +211,7 @@ fn glyph_for(dx: f32, dy: f32) -> char {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn stroke(c: &mut Canvas, x0: f32, y0: f32, x1: f32, y1: f32, band: u8, tone: u8) {
     let dx = x1 - x0;
     let dy = y1 - y0;
@@ -213,6 +225,7 @@ fn stroke(c: &mut Canvas, x0: f32, y0: f32, x1: f32, y1: f32, band: u8, tone: u8
 
 /// A limb spurring off a mostly-straight column: the right corner glyph for
 /// the turn is a tee, not a generic line char.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn branch_glyph(vertical_trunk: bool, side: i32) -> char {
     if vertical_trunk {
         if side >= 0 { '├' } else { '┤' }
@@ -224,6 +237,7 @@ fn branch_glyph(vertical_trunk: bool, side: i32) -> char {
 }
 
 /// Rounded corner for a wobbling column that changes drift direction.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn wobble_corner(d0: i32, d1: i32) -> char {
     match (d0.signum(), d1.signum()) {
         (1, -1) | (1, 0) => '╮',
@@ -236,6 +250,7 @@ fn wobble_corner(d0: i32, d1: i32) -> char {
 
 /// Overwrite a column's own cells with corner glyphs wherever its drift
 /// direction reverses, so a gnarled trunk reads as bent, not just noisy.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn mark_wobble(c: &mut Canvas, top_y: i32, xs: &[i32], tone: u8) {
     for i in 1..xs.len().saturating_sub(1) {
         let d0 = xs[i] - xs[i - 1];
@@ -252,6 +267,7 @@ fn mark_wobble(c: &mut Canvas, top_y: i32, xs: &[i32], tone: u8) {
 
 /// Bark glyph for a taper ring: thin rings draw a plain rule, thick rings
 /// get a ridged fill that lightens toward the edge.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn bark_glyph(half: i32, d: i32, n: f32) -> char {
     if half <= 0 {
         if d == 0 { '│' } else { '\0' }
@@ -270,6 +286,7 @@ fn bark_glyph(half: i32, d: i32, n: f32) -> char {
 
 /// A tapering trunk column with a caller-chosen radius profile. Fills `xs`
 /// with the center x for every row from `top_y` (index 0) to `base_y`.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_bark_column(
     c: &mut Canvas,
     top_y: i32,
@@ -304,6 +321,7 @@ fn draw_bark_column(
 }
 
 /// Repaint a column already sampled into `xs`, so it sits over later art.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn redraw_bark_column(c: &mut Canvas, top_y: i32, xs: &[i32], radius: impl Fn(f32) -> f32, skip: usize) {
     let span = xs.len().max(1) as f32;
     for (k, &xi) in xs.iter().enumerate().skip(skip) {
@@ -318,6 +336,7 @@ fn redraw_bark_column(c: &mut Canvas, top_y: i32, xs: &[i32], radius: impl Fn(f3
 }
 
 /// Ground flare at the base of a trunk: buttress ticks, a root mat, or scatter.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn flare_roots(c: &mut Canvas, x: i32, y: i32, spread: i32, style: usize, rng: &mut StdRng) {
     let spread = spread.max(2);
     match style % 3 {
@@ -369,6 +388,7 @@ struct Fringe {
 }
 
 impl Fringe {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn seeded(rng: &mut StdRng) -> Self {
         Fringe {
             k1: 1.0 + rng.random_range(0..3u32) as f32,
@@ -381,6 +401,7 @@ impl Fringe {
     }
 
     #[inline]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn at(&self, th: f32) -> f32 {
         (1.0 + self.a1 * (self.k1 * th + self.p1).sin() + self.a2 * (self.k2 * th + self.p2).sin()).max(0.3)
     }
@@ -388,6 +409,7 @@ impl Fringe {
 
 /// Canopy ellipse whose density and glyph weight thin from core to fringe;
 /// `thin_pow` steepens (>1) or softens (<1) how fast the fringe empties out.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn leaf_cloud(c: &mut Canvas, cx: f32, cy: f32, rx: f32, ry: f32, band: u8, fruit: f32, thin_pow: f32, rng: &mut StdRng, salt: u32) {
     if rx < 0.5 || ry < 0.5 {
         return;
@@ -448,6 +470,7 @@ pub(crate) const SPECIES: [Species; 6] = [
 ];
 
 impl Species {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub(crate) fn label(self) -> &'static str {
         match self {
             Species::Krummholz => "krummholz",
@@ -459,6 +482,7 @@ impl Species {
         }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub(crate) fn from_index(i: usize) -> Species {
         SPECIES[i % SPECIES.len()]
     }
@@ -477,6 +501,7 @@ pub(crate) struct Plot {
 }
 
 impl Plot {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub(crate) fn root(&self) -> (i32, i32) {
         (
             self.rect.x as i32 + self.rect.w as i32 / 2,
@@ -484,17 +509,20 @@ impl Plot {
         )
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub(crate) fn crown_top(&self) -> i32 {
         let top = self.rect.y as i32;
         let ry = self.root().1;
         ry - ((ry - top) as f32 * self.energy.clamp(0.15, 1.0)) as i32
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub(crate) fn spread(&self) -> i32 {
         ((self.rect.w as f32 / 2.0 - 1.0) * self.energy.clamp(0.25, 1.0)) as i32
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn grow_species(sp: Species, c: &mut Canvas, p: &Plot, rng: &mut StdRng) {
     match sp {
         Species::Krummholz => grow_krummholz(c, p, rng),
@@ -509,6 +537,7 @@ pub(crate) fn grow_species(sp: Species, c: &mut Canvas, p: &Plot, rng: &mut StdR
 // --- 1. krummholz: wind-flagged turtle walk -------------------------
 // See briefs/sonnet-1-trees.md for the rule set.
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn grow_krummholz(c: &mut Canvas, p: &Plot, rng: &mut StdRng) {
     let (rx, ry) = p.root();
     let top = p.crown_top();
@@ -555,6 +584,7 @@ fn grow_krummholz(c: &mut Canvas, p: &Plot, rng: &mut StdRng) {
 // --- 2. fig: a strangler wrapping a host trunk -----------------------
 // See briefs/sonnet-1-trees.md for the rule set.
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn grow_fig(c: &mut Canvas, p: &Plot, rng: &mut StdRng) {
     let (rx, ry) = p.root();
     let top = p.crown_top();
@@ -610,6 +640,7 @@ struct SNode {
     mass: u32,
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn grow_colonist(c: &mut Canvas, p: &Plot, rng: &mut StdRng) {
     let (rx, ry) = p.root();
     let top = p.crown_top();
@@ -790,6 +821,7 @@ fn grow_colonist(c: &mut Canvas, p: &Plot, rng: &mut StdRng) {
 // --- 4. proproot: banyan-style aerial prop roots ----------------------
 // See briefs/sonnet-1-trees.md for the rule set.
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn grow_proproot(c: &mut Canvas, p: &Plot, rng: &mut StdRng) {
     let (rx, ry) = p.root();
     let top = p.crown_top();
@@ -871,6 +903,7 @@ fn grow_proproot(c: &mut Canvas, p: &Plot, rng: &mut StdRng) {
 // --- 5. bottle: baobab bottle trunk with a tiny crown -----------------
 // See briefs/sonnet-1-trees.md for the rule set.
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn grow_bottle(c: &mut Canvas, p: &Plot, rng: &mut StdRng) {
     let (rx, ry) = p.root();
     let top = p.crown_top();
@@ -907,6 +940,7 @@ fn grow_bottle(c: &mut Canvas, p: &Plot, rng: &mut StdRng) {
 // --- 6. stilt: mangrove stilt roots interlocking over water -----------
 // See briefs/sonnet-1-trees.md for the rule set.
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn grow_stilt(c: &mut Canvas, p: &Plot, rng: &mut StdRng) {
     let (rx, ry) = p.root();
     let top = p.crown_top();
@@ -977,6 +1011,7 @@ pub(crate) struct TreesKnobs {
 }
 
 impl TreesKnobs {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub(crate) fn from_env() -> Self {
         TreesKnobs {
             energy: param_f32("ENERGY", 0.88).clamp(0.2, 1.0),
@@ -1007,16 +1042,19 @@ thread_local! {
     static SHEET: RefCell<Option<SheetBake>> = const { RefCell::new(None) };
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn q(v: f32) -> u32 {
     (v * 1000.0) as u32
 }
 
 type SheetKey = (usize, usize, u64, u32, u32, u32, u32, u32, u32, u32);
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn sheet_key(w: usize, h: usize, seed: u64, k: &TreesKnobs) -> SheetKey {
     (w, h, seed, q(k.energy), q(k.fruit), q(k.branch), q(k.scrub), q(k.roots), q(k.wind), q(k.detail) ^ q(k.bare))
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn build_sheet_lut(palette: &[Color; 5], k: &TreesKnobs, slots: usize) -> Vec<Color> {
     let mut lut = Vec::with_capacity(slots * PAL_STRIDE);
     for s in 0..slots {
@@ -1036,6 +1074,7 @@ fn build_sheet_lut(palette: &[Color; 5], k: &TreesKnobs, slots: usize) -> Vec<Co
     lut
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn bake_sheet(w: usize, h: usize, seed: u64, k: &TreesKnobs, key: SheetKey) -> SheetBake {
     let cols = SPECIES.len();
     let rows = 2usize;
@@ -1116,6 +1155,7 @@ fn bake_sheet(w: usize, h: usize, seed: u64, k: &TreesKnobs, key: SheetKey) -> S
     SheetBake { key, chrome, trees, leaves, phase, slots: rows * cols }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn draw_sonnet_1_trees(
     grid: &mut Grid,
     width: usize,
@@ -1178,6 +1218,7 @@ pub(crate) fn draw_sonnet_1_trees(
     });
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_sonnet_1_trees(
     mut grid: Grid,
     width: usize,
@@ -1231,6 +1272,7 @@ pub(crate) fn cli_sonnet_1_trees(
 mod tests {
     use super::*;
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn run(w: usize, h: usize, seed: u64, t: f32) -> String {
         let mut g = vec![vec![Cell::blank(); w]; h];
         let p = crate::color::make_palette(seed);
@@ -1243,17 +1285,20 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_sonnet_1_trees_static() {
         insta::assert_snapshot!("sonnet_1_trees_80x24_static", run(80, 24, 42, 0.0));
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn sonnet_1_trees_is_deterministic() {
         assert_eq!(run(80, 24, 42, 0.0), run(80, 24, 42, 0.0));
         assert_ne!(run(80, 24, 42, 0.0), run(80, 24, 9, 0.0));
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn sonnet_1_trees_animates() {
         assert_ne!(run(80, 24, 42, 0.0), run(80, 24, 42, 4.0));
     }

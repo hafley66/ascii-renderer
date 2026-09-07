@@ -42,6 +42,7 @@ pub(crate) struct PolytopeKnobs {
 }
 
 impl PolytopeKnobs {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub(crate) fn from_env() -> Self {
         PolytopeKnobs {
             poly: param_f32("POLY", 0.0),
@@ -68,14 +69,17 @@ impl PolytopeKnobs {
         }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn poly_n(&self) -> u32 {
         (self.poly.round() as u32).min(7)
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn planes_n(&self) -> u32 {
         (self.planes.round() as u32).clamp(1, 3)
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn trail_n(&self) -> usize {
         (self.trail.round().max(0.0) as usize).min(240)
     }
@@ -129,6 +133,7 @@ thread_local! {
     static CACHE: RefCell<Option<Cached>> = RefCell::new(None);
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn norm4(v: &mut [f32; 4]) {
     let n = (v[0] * v[0] + v[1] * v[1] + v[2] * v[2] + v[3] * v[3])
         .sqrt()
@@ -138,10 +143,12 @@ fn norm4(v: &mut [f32; 4]) {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn dist2(a: &[f32; 4], b: &[f32; 4]) -> f32 {
     (0..4).map(|i| (a[i] - b[i]) * (a[i] - b[i])).sum()
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn edges_nearest(verts: &[[f32; 4]]) -> Vec<(u16, u16)> {
     let mut best = f32::MAX;
     for i in 0..verts.len() {
@@ -164,6 +171,7 @@ fn edges_nearest(verts: &[[f32; 4]]) -> Vec<(u16, u16)> {
     edges
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn sgn(mask: usize, bit: usize) -> f32 {
     if (mask >> bit) & 1 == 1 {
         -1.0
@@ -172,6 +180,7 @@ fn sgn(mask: usize, bit: usize) -> f32 {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn verts_600() -> Vec<[f32; 4]> {
     let mut v = Vec::with_capacity(120);
     for i in 0..4 {
@@ -220,6 +229,7 @@ fn verts_600() -> Vec<[f32; 4]> {
     v
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn verts_120() -> Vec<[f32; 4]> {
     let v = verts_600();
     let e = edges_nearest(&v);
@@ -254,6 +264,7 @@ fn verts_120() -> Vec<[f32; 4]> {
     out
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn make_poly(choice: u32, p: usize, q: usize) -> Poly {
     let (name, schlafli, mut verts, edges): (&str, String, Vec<[f32; 4]>, Option<Vec<(u16, u16)>>) =
         match choice {
@@ -335,6 +346,7 @@ fn make_poly(choice: u32, p: usize, q: usize) -> Poly {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn build(seed: u64, poly_choice: u32, planes_n: u32) -> Cached {
     let mut rng = StdRng::seed_from_u64(seed ^ 0x4D_7C0F_A11);
     let pick = [1u32, 2, 3, 4, 5, 7][rng.random_range(0..6)];
@@ -404,6 +416,7 @@ struct View {
 }
 
 impl View {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn to_cam(&self, p: [f32; 3]) -> [f32; 3] {
         [
             p[0],
@@ -412,6 +425,7 @@ impl View {
         ]
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn project(&self, p: [f32; 3]) -> Scr {
         let c = self.to_cam(p);
         let zc = (c[2] + self.cam).max(0.2);
@@ -428,6 +442,7 @@ impl View {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn rotors(c: &Cached, t: f32) -> [(usize, usize, f32, f32); 3] {
     let mut rots: [(usize, usize, f32, f32); 3] = [(0, 0, 1.0, 0.0); 3];
     for (i, pl) in c.planes.iter().enumerate() {
@@ -437,6 +452,7 @@ fn rotors(c: &Cached, t: f32) -> [(usize, usize, f32, f32); 3] {
     rots
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn rotate4(v: &[f32; 4], rots: &[(usize, usize, f32, f32)]) -> [f32; 4] {
     let mut p = *v;
     for r in rots {
@@ -447,6 +463,7 @@ fn rotate4(v: &[f32; 4], rots: &[(usize, usize, f32, f32)]) -> [f32; 4] {
     p
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn pose(c: &Cached, view: &View, t: f32, out_p3: &mut [[f32; 3]], out_scr: &mut [Scr]) {
     let rots = rotors(c, t);
     let np = c.planes.len();
@@ -465,6 +482,7 @@ fn pose(c: &Cached, view: &View, t: f32, out_p3: &mut [[f32; 3]], out_scr: &mut 
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn line_walk(
     a: (f32, f32),
     b: (f32, f32),
@@ -501,6 +519,7 @@ const EDGE_GLYPHS: [[char; 4]; 3] = [
     ['─', '│', '╱', '╲'],
 ];
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn band_of(near: f32) -> usize {
     if near > 0.62 {
         2
@@ -511,12 +530,14 @@ fn band_of(near: f32) -> usize {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn put(grid: &mut Grid, w: usize, h: usize, x: i32, y: i32, cell: Cell) {
     if x >= 0 && y >= 0 && (x as usize) < w && (y as usize) < h {
         grid[y as usize][x as usize] = cell;
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn draw_polytope(
     grid: &mut Grid,
     w: usize,
@@ -538,6 +559,7 @@ pub(crate) fn draw_polytope(
     });
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn render(
     grid: &mut Grid,
     w: usize,
@@ -947,6 +969,7 @@ fn render(
     c.crossings = crossings;
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_polytope(
     mut grid: Grid,
     width: usize,
@@ -998,6 +1021,7 @@ pub(crate) fn cli_polytope(
 mod tests {
     use super::*;
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn run(w: usize, h: usize, seed: u64, t: f32) -> String {
         let mut g = vec![vec![Cell::blank(); w]; h];
         let p = crate::color::make_palette(seed);
@@ -1010,11 +1034,13 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_polytope_small() {
         insta::assert_snapshot!("polytope_80x24", run(80, 24, 42, 0.0));
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn edge_counts_match_the_regular_polytopes() {
         let expect = [
             (1, 5, 10),
@@ -1033,18 +1059,21 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn deterministic_and_seed_sensitive() {
         assert_eq!(run(90, 30, 42, 0.0), run(90, 30, 42, 0.0));
         assert_ne!(run(90, 30, 42, 0.0), run(90, 30, 7, 0.0));
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn t_turns_the_polytope() {
         assert_ne!(run(90, 30, 42, 0.0), run(90, 30, 42, 4.0));
         assert_ne!(run(90, 30, 42, 4.0), run(90, 30, 42, 9.0));
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn every_polytope_renders_with_trails_and_floor() {
         for choice in 1..=7 {
             let mut g = vec![vec![Cell::blank(); 60]; 20];
@@ -1057,6 +1086,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn frame_cost() {
         let (w, h) = (200usize, 60usize);
         let mut g = vec![vec![Cell::blank(); w]; h];

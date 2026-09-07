@@ -36,6 +36,7 @@ use crate::warps::*;
 
 // --- eyes++ : an argus field. Hero eye + two orbital rings of gazing eyes,
 //     dense rays, halo arcs, every eye tracking a seeded lure. ---
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn draw_eyes_pp(grid: &mut Grid, width: usize, height: usize, seed: u64, palette: &[Color; 5], rng: &mut StdRng) {
     use std::f32::consts::TAU;
     let bg = darken(palette[0], 14);
@@ -194,6 +195,7 @@ pub(crate) fn draw_eyes_pp(grid: &mut Grid, width: usize, height: usize, seed: u
 // fully determined by `seed` (so a snapshot at any t shows the same board); the
 // time `t` only drives a bright "current" pulse that flows along every trace,
 // looping continuously. A native iterate mode -- smooth motion, no seed morph.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn draw_circuit(
     grid: &mut Grid,
     width: usize,
@@ -334,6 +336,7 @@ pub(crate) fn draw_circuit(
 
 // --- phyllotaxis : golden-angle sunflower spiral; glyph scales with radius,
 //     color ramps outward through the palette. ---
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn draw_phyllotaxis(grid: &mut Grid, width: usize, height: usize, seed: u64, palette: &[Color; 5], rng: &mut StdRng, t: f32) {
     let bg = darken(palette[0], 6);
     for y in 0..height {
@@ -366,6 +369,7 @@ pub(crate) fn draw_phyllotaxis(grid: &mut Grid, width: usize, height: usize, see
 
 
 // --- moire : two radial sine gratings interfering; shade ramp + color blend. ---
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn draw_moire(grid: &mut Grid, width: usize, height: usize, _seed: u64, palette: &[Color; 5], rng: &mut StdRng, t: f32) {
     let ramp = [' ', '·', ':', '-', '=', '+', '*', '#', '%', '@'];
     // t drifts the two centers in a slow orbit so the interference fringes flow.
@@ -393,6 +397,7 @@ pub(crate) fn draw_moire(grid: &mut Grid, width: usize, height: usize, _seed: u6
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn draw_eyes3(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, args: &[String]) -> Grid {
         // eyes3 [rays=0] [satellites=0] -- radiant all-seeing eye in a stepped pyramid
         let ray_arg: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0);
@@ -874,6 +879,7 @@ pub(crate) fn draw_eyes3(mut grid: Grid, width: usize, height: usize, seed: u64,
     grid
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn draw_spiro(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, args: &[String]) -> Grid {
         // spiro [curves=0] [density=0] -- layered hypotrochoid / harmonograph curves
         let curve_arg: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0);
@@ -1009,6 +1015,7 @@ pub(crate) fn draw_spiro(mut grid: Grid, width: usize, height: usize, seed: u64,
     grid
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn draw_spiro_tile(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, args: &[String]) -> Grid {
         // spiro-tile [cols=0] [rows=0] [vary=0] -- tessellated grid of small spiro motifs
         let col_arg: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0);
@@ -1185,6 +1192,7 @@ pub(crate) fn draw_spiro_tile(mut grid: Grid, width: usize, height: usize, seed:
     grid
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn draw_weave(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, args: &[String]) -> Grid {
         // weave [horiz=0] [vert=0] -- interlaced wavy warp/weft strands
         let h_arg: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0);
@@ -1376,6 +1384,7 @@ pub(crate) fn draw_weave(mut grid: Grid, width: usize, height: usize, seed: u64,
     grid
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn draw_gears(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, args: &[String]) -> Grid {
         // gears [count=0] [teeth=0] -- interlocking clockwork mechanism
         let count_arg: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0);
@@ -1651,6 +1660,7 @@ pub(crate) fn draw_gears(mut grid: Grid, width: usize, height: usize, seed: u64,
     grid
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn draw_kaleido(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, args: &[String]) -> Grid {
         // kaleido [folds=0] [strokes=0] [mirror=0] -- N-fold symmetric mandala
         let fold_arg: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0);
@@ -1906,6 +1916,7 @@ pub(crate) fn draw_kaleido(mut grid: Grid, width: usize, height: usize, seed: u6
     grid
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn draw_contour(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, args: &[String]) -> Grid {
         // contour [levels=0] [scale=0] -- topographic iso-lines over procedural heightmap
         let level_arg: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0);
@@ -2128,6 +2139,7 @@ pub(crate) fn draw_contour(mut grid: Grid, width: usize, height: usize, seed: u6
 
 
 // --- stained : Voronoi glass cells with dark leading + jewel seeds. ---
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn draw_stained(grid: &mut Grid, width: usize, height: usize, seed: u64, palette: &[Color; 5], rng: &mut StdRng) {
     let nseeds = 10 + seed as usize % 12;
     let mut sites: Vec<(i32, i32, Color)> = Vec::new();
@@ -2186,6 +2198,7 @@ pub(crate) fn draw_stained(grid: &mut Grid, width: usize, height: usize, seed: u
 // ============================================================================
 
 /// Dispatch arm for mode(s): circuit (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_circuit(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         // circuit [traces] -- PCB traces with pads, Manhattan routing.
         // Native time T: current pulses flow along each trace (see draw_circuit).
@@ -2196,42 +2209,49 @@ pub(crate) fn cli_circuit(mut grid: Grid, width: usize, height: usize, seed: u64
 }
 
 /// Dispatch arm for mode(s): eyes3 (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_eyes3(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         grid = draw_eyes3(grid, width, height, seed, palette, rng, t_anim, &args);
     (grid, false)
 }
 
 /// Dispatch arm for mode(s): spiro (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_spiro(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         grid = draw_spiro(grid, width, height, seed, palette, rng, t_anim, &args);
     (grid, false)
 }
 
 /// Dispatch arm for mode(s): spiro-tile (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_spiro_tile(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         grid = draw_spiro_tile(grid, width, height, seed, palette, rng, t_anim, &args);
     (grid, false)
 }
 
 /// Dispatch arm for mode(s): weave (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_weave(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         grid = draw_weave(grid, width, height, seed, palette, rng, t_anim, &args);
     (grid, false)
 }
 
 /// Dispatch arm for mode(s): gears (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_gears(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         grid = draw_gears(grid, width, height, seed, palette, rng, t_anim, &args);
     (grid, false)
 }
 
 /// Dispatch arm for mode(s): kaleido (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_kaleido(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         grid = draw_kaleido(grid, width, height, seed, palette, rng, t_anim, &args);
     (grid, false)
 }
 
 /// Dispatch arm for mode(s): contour (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_contour(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         grid = draw_contour(grid, width, height, seed, palette, rng, t_anim, &args);
     (grid, false)
@@ -2239,18 +2259,21 @@ pub(crate) fn cli_contour(mut grid: Grid, width: usize, height: usize, seed: u64
 
 
 /// Dispatch arm for mode(s): phyllotaxis (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_phyllotaxis(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         draw_phyllotaxis(&mut grid, width, height, seed, &palette, &mut rng, t_anim);
     (grid, false)
 }
 
 /// Dispatch arm for mode(s): moire (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_moire(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         draw_moire(&mut grid, width, height, seed, &palette, &mut rng, t_anim);
     (grid, false)
 }
 
 /// Dispatch arm for mode(s): stained (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_stained(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         draw_stained(&mut grid, width, height, seed, &palette, &mut rng);
     (grid, false)

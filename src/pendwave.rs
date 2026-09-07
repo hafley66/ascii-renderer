@@ -27,6 +27,7 @@ pub(crate) struct PendWaveKnobs {
 }
 
 impl PendWaveKnobs {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub(crate) fn from_env() -> Self {
         PendWaveKnobs {
             count: param_f32("COUNT", 15.0),
@@ -45,23 +46,27 @@ impl PendWaveKnobs {
         }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn n(&self) -> usize {
         (self.count.round() as usize).clamp(1, MAX_COUNT)
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn put(grid: &mut Grid, w: usize, h: usize, x: i32, y: i32, ch: char, fg: Color) {
     if x >= 0 && y >= 0 && (x as usize) < w && (y as usize) < h {
         grid[y as usize][x as usize] = Cell::new(ch, fg);
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn put_soft(grid: &mut Grid, w: usize, h: usize, x: i32, y: i32, ch: char, fg: Color) {
     if x >= 0 && y >= 0 && (x as usize) < w && (y as usize) < h && grid[y as usize][x as usize].ch == ' ' {
         grid[y as usize][x as usize] = Cell::new(ch, fg);
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn pill(grid: &mut Grid, w: usize, h: usize, x: i32, y: i32, c: Color) {
     let bg = darken(c, 70);
     let cells = [(-1, '(', darken(c, 10)), (0, '@', lighten(c, 60)), (1, ')', darken(c, 10))];
@@ -72,6 +77,7 @@ fn pill(grid: &mut Grid, w: usize, h: usize, x: i32, y: i32, c: Color) {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn link(grid: &mut Grid, w: usize, h: usize, a: (i32, i32), b: (i32, i32), fg: Color, hard: bool) {
     let (dx, dy) = (b.0 - a.0, b.1 - a.1);
     let steps = dx.abs().max(dy.abs());
@@ -92,6 +98,7 @@ fn link(grid: &mut Grid, w: usize, h: usize, a: (i32, i32), b: (i32, i32), fg: C
 }
 
 /// Filled ellipse bob for packed top-view lanes, rx from ry and the cell aspect.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn blob(grid: &mut Grid, w: usize, h: usize, x: i32, y: i32, rx: i32, ry: i32, c: Color) {
     let bg = darken(c, 70);
     for dy in -ry..=ry {
@@ -119,21 +126,25 @@ struct Rig {
 }
 
 impl Rig {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn beats(&self, i: usize) -> f32 {
         let idx = if self.flip { self.n - 1 - i } else { i };
         self.base + idx as f32
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn length(&self, i: usize) -> f32 {
         let r = self.base / self.beats(i);
         r * r
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn angle(&self, i: usize, t: f32) -> f32 {
         self.swing * (TAU * self.beats(i) * t / self.cycle).cos()
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn draw_pendwave(grid: &mut Grid, w: usize, h: usize, seed: u64, palette: &[Color; 5], t: f32, k: &PendWaveKnobs) {
     for row in grid.iter_mut().take(h) {
         for cell in row.iter_mut().take(w) {
@@ -161,6 +172,7 @@ pub(crate) fn draw_pendwave(grid: &mut Grid, w: usize, h: usize, seed: u64, pale
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn front(grid: &mut Grid, w: usize, h: usize, palette: &[Color; 5], t: f32, k: &PendWaveKnobs, rig: &Rig, colors: &[Color]) {
     let n = rig.n;
     let aspect = k.aspect.max(0.25);
@@ -255,6 +267,7 @@ fn front(grid: &mut Grid, w: usize, h: usize, palette: &[Color; 5], t: f32, k: &
     });
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn top(grid: &mut Grid, w: usize, h: usize, palette: &[Color; 5], t: f32, k: &PendWaveKnobs, rig: &Rig, colors: &[Color]) {
     let n = rig.n;
     let cx = w as f32 * 0.5;
@@ -382,6 +395,7 @@ fn top(grid: &mut Grid, w: usize, h: usize, palette: &[Color; 5], t: f32, k: &Pe
 
 const RAMP: [char; 10] = [' ', '.', ':', '-', '=', '+', '*', '#', '%', '@'];
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn waterfall(grid: &mut Grid, w: usize, h: usize, palette: &[Color; 5], t: f32, k: &PendWaveKnobs, rig: &Rig, colors: &[Color]) {
     let n = rig.n;
     let dt = k.rowdt.max(0.0005);
@@ -427,6 +441,7 @@ fn waterfall(grid: &mut Grid, w: usize, h: usize, palette: &[Color; 5], t: f32, 
     });
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_pendwave(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
     let _ = (rng, term_w, term_h, mode, theme_name);
     let mut k = PendWaveKnobs::from_env();
@@ -457,6 +472,7 @@ pub(crate) fn cli_pendwave(mut grid: Grid, width: usize, height: usize, seed: u6
 mod tests {
     use super::*;
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn run(w: usize, h: usize, seed: u64, t: f32, view: f32) -> String {
         let mut g = vec![vec![Cell::blank(); w]; h];
         let p = crate::color::make_palette(seed);
@@ -470,38 +486,45 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_pendwave_front() {
         insta::assert_snapshot!("pendwave_front_80x24", run(80, 24, 42, 0.0, 0.0));
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_pendwave_top() {
         insta::assert_snapshot!("pendwave_top_80x24", run(80, 24, 42, 0.0, 1.0));
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_pendwave_waterfall() {
         insta::assert_snapshot!("pendwave_waterfall_110x36_t7", run(110, 36, 42, 7.0, 2.0));
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_pendwave_front_mid_cycle() {
         insta::assert_snapshot!("pendwave_front_110x36_t7", run(110, 36, 42, 7.0, 0.0));
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn deterministic_and_seed_sensitive() {
         assert_eq!(run(90, 30, 42, 2.0, 0.0), run(90, 30, 42, 2.0, 0.0));
         assert_ne!(run(90, 30, 42, 2.0, 0.0), run(90, 30, 7, 2.0, 0.0));
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn t_swings_the_bobs() {
         assert_ne!(run(90, 30, 42, 0.0, 0.0), run(90, 30, 42, 1.0, 0.0));
         assert_ne!(run(90, 30, 42, 0.0, 1.0), run(90, 30, 42, 1.0, 1.0));
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn frame_cost() {
         let (w, h) = (200usize, 60usize);
         let mut g = vec![vec![Cell::blank(); w]; h];

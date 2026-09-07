@@ -37,6 +37,7 @@ use crate::warps::*;
 
 // --- fullmetal-eyes++ : the multi-tier seal cranked. 4 arc bands, 3-4 star
 //     polygons, node eyes on EVERY tier vertex, twin rune bands, hero eye. ---
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn draw_fme_pp(grid: &mut Grid, width: usize, height: usize, seed: u64, palette: &[Color; 5], rng: &mut StdRng) {
     use std::f32::consts::{FRAC_PI_2, TAU};
     let bg = darken(palette[0], 12);
@@ -228,6 +229,7 @@ pub(crate) fn draw_fme_pp(grid: &mut Grid, width: usize, height: usize, seed: u6
 
 // --- trees++ : a lush grounded gallery of tree variants on grassy hillocks,
 //     varied spreads + hues, fruit/flower accents, no debug labels. ---
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn draw_trees_pp(grid: &mut Grid, width: usize, height: usize, seed: u64, palette: &[Color; 5], rng: &mut StdRng) {
     let cols = (width / 18).clamp(3, 6);
     let rows = (height / 14).clamp(2, 4);
@@ -266,6 +268,7 @@ pub(crate) fn draw_trees_pp(grid: &mut Grid, width: usize, height: usize, seed: 
 
 // --- forest++ : layered depth. star sky + disc, far dark pines, mid mix,
 //     foreground hero trees, grass band, scattered flowers/fruit. ---
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn draw_forest_pp(grid: &mut Grid, width: usize, height: usize, seed: u64, palette: &[Color; 5], rng: &mut StdRng) {
     let ground_y = height.saturating_sub(4);
     let ground_color = darken(palette[1], 90);
@@ -360,6 +363,7 @@ pub(crate) fn draw_forest_pp(grid: &mut Grid, width: usize, height: usize, seed:
 }
 
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn draw_fullmetal_eyes(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, args: &[String]) -> Grid {
         // fullmetal-eyes [nodes] [runes] -- alchemical eye seal with watching glyph nodes
         let node_count: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(8);
@@ -649,6 +653,7 @@ pub(crate) fn draw_fullmetal_eyes(mut grid: Grid, width: usize, height: usize, s
     grid
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn draw_fullmetal_eyes2(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, args: &[String]) -> Grid {
         // fullmetal-eyes2 [tiers=0] [runes=0] -- multi-tier watching seal; every eye tracks a seeded lure
         let tier_arg: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0);
@@ -1036,6 +1041,7 @@ pub(crate) fn draw_fullmetal_eyes2(mut grid: Grid, width: usize, height: usize, 
 
 // --- fa6 : an animated spatial transmutation engine. Seed builds the chambers;
 // T rotates the sealwork and moves current through a fixed ritual topology. ---
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn draw_fa6(
     grid: &mut Grid,
     width: usize,
@@ -1491,6 +1497,7 @@ pub(crate) fn draw_fa6(
 }
 
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn draw_delta(grid: &mut Grid, width: usize, height: usize, _seed: u64, palette: &[Color; 5], rng: &mut StdRng, t: f32) {
     use std::f32::consts::FRAC_PI_2;
     let bg = darken(palette[0], 6);
@@ -1692,6 +1699,7 @@ pub(crate) fn draw_delta(grid: &mut Grid, width: usize, height: usize, _seed: u6
 }
 
 /// Dispatch arm for mode(s): fa6, fullmetal-alchemist6 (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_fa6_fullmetal_alchemist6(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         let chambers: usize = args
             .get(4)
@@ -1730,6 +1738,7 @@ pub(crate) fn cli_fa6_fullmetal_alchemist6(mut grid: Grid, width: usize, height:
 
 
 /// Dispatch arm for mode(s): delta (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_delta(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         draw_delta(&mut grid, width, height, seed, &palette, &mut rng, t_anim);
     (grid, false)

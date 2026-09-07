@@ -58,18 +58,23 @@ const PARAMS: &[Param] = &[
 ];
 
 impl Mode for AzulejoMode {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn name(&self) -> &'static str {
         "azulejo"
     }
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn help(&self) -> &'static str {
         "Glazed architectural tessellations: five inlay families, flowing courses and folding stars [bays] [scale] [pattern] [arch] [inset] [flow] [turn] [breath] [relief] [speed] [bond]"
     }
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn animation(&self) -> AnimKind {
         AnimKind::Iterate
     }
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn params(&self) -> &'static [Param] {
         PARAMS
     }
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn render(&self, frame: &mut ModeFrame<'_>) {
         let k = std::array::from_fn(|i| {
             let p = &PARAMS[i];
@@ -89,6 +94,7 @@ impl Mode for AzulejoMode {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn hash(mut n: u64) -> u64 {
     n ^= n >> 30;
     n = n.wrapping_mul(0xbf58476d1ce4e5b9);
@@ -99,6 +105,7 @@ fn hash(mut n: u64) -> u64 {
 
 // Pair sorted scanline intersections, including concave shoulders at deep inset.
 // Clip every span against the panel arch and grid. Identity controls ceramic tone.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn polygon(
     grid: &mut Grid,
     clip: &[(usize, usize)],
@@ -204,6 +211,7 @@ fn polygon(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_azulejo(frame: &mut ModeFrame<'_>, k: &[f32; 11]) {
     // Resolve finite time, seed-selected architectural layout and material ramps.
     // Fill bonded brick courses, then build clipped arch spans per panel.
@@ -482,10 +490,12 @@ fn draw_azulejo(frame: &mut ModeFrame<'_>, k: &[f32; 11]) {
 mod tests {
     use super::*;
     use crate::{morph::IterateFrameRenderer, render::grid_to_plain};
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn defaults() -> Vec<f32> {
         PARAMS.iter().map(|p| p.default).collect()
     }
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn azulejo_snapshots() {
         let mut renderer = IterateFrameRenderer::new("azulejo", 42, "moss", 100, 36).unwrap();
         let k = defaults();
@@ -513,6 +523,7 @@ mod tests {
     }
     #[test]
     #[ignore = "writes review artifacts to AZULEJO_PREVIEW_DIR"]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn azulejo_export_gallery() {
         let dir = std::env::var("AZULEJO_PREVIEW_DIR").expect("AZULEJO_PREVIEW_DIR");
         std::fs::create_dir_all(&dir).unwrap();
@@ -550,6 +561,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn azulejo_input_contract() {
         use rand::SeedableRng;
         let k = defaults();
@@ -588,6 +600,7 @@ mod tests {
 
     #[test]
     #[ignore = "isolated timed 2000x1000 construction and exact demo reroll cases"]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn azulejo_cold_and_random_cost() {
         use std::time::Instant;
         println!("| case | construct ms | first render ms | avg ms | p50 ms | p99 ms | max ms |");
@@ -627,6 +640,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn azulejo_boundaries_and_gallery() {
         for (w, h) in [(1, 1), (2, 9), (9, 2), (80, 24)] {
             let mut renderer =

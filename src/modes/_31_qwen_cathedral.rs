@@ -32,22 +32,27 @@ const PARAMS: &[Param] = &[
 ];
 
 impl Mode for QwenCathedralMode {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn name(&self) -> &'static str {
         "qwen-cathedral"
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn help(&self) -> &'static str {
         "Gothic rose, ribbed vaults, lancets, candles, light [naves] [towers] [rose] [candles] [speed] [rays] [smoke] [depth] [mosaic] [glow] [arch] [banners]"
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn animation(&self) -> AnimKind {
         AnimKind::Iterate
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn params(&self) -> &'static [Param] {
         PARAMS
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn render(&self, frame: &mut ModeFrame<'_>) {
         let params = CathedralParams::from_inputs(frame.args, frame.param_values);
         draw_qwen_cathedral(
@@ -80,6 +85,7 @@ pub(crate) struct CathedralParams {
 }
 
 impl Default for CathedralParams {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn default() -> Self {
         Self {
             bays: 5,
@@ -99,10 +105,12 @@ impl Default for CathedralParams {
 }
 
 impl CathedralParams {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub(crate) fn from_args(args: &[String]) -> Self {
         Self::from_inputs(args, None)
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub(crate) fn from_inputs(args: &[String], param_values: Option<&[f32]>) -> Self {
         let read = |index: usize, key: &str, default: f32| {
             args.get(index)
@@ -127,10 +135,12 @@ impl CathedralParams {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn clampi(v: i32, lo: i32, hi: i32) -> i32 {
     v.max(lo).min(hi.max(lo))
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn hash01(seed: u64, tag: u64) -> f32 {
     let mut value = seed ^ tag.wrapping_mul(0x9E37_79B9_7F4A_7C15);
     value ^= value >> 30;
@@ -141,10 +151,12 @@ fn hash01(seed: u64, tag: u64) -> f32 {
     ((value >> 40) as f32) / ((1u64 << 24) - 1) as f32
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn in_bounds(grid: &Grid, x: i32, y: i32) -> bool {
     x >= 0 && y >= 0 && (y as usize) < grid.len() && (x as usize) < grid[y as usize].len()
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn put(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
     if in_bounds(grid, x, y) {
         let bg = grid[y as usize][x as usize].bg;
@@ -152,16 +164,19 @@ fn put(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn put_bg(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color, bg: Color) {
     if in_bounds(grid, x, y) {
         grid[y as usize][x as usize] = Cell::with_bg(ch, fg, bg);
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn line(grid: &mut Grid, a: (i32, i32), b: (i32, i32), color: Color) {
     pp_line(grid, a.0, a.1, b.0, b.1, color);
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn quad(p0: (f32, f32), c: (f32, f32), p1: (f32, f32), u: f32) -> (f32, f32) {
     let v = 1.0 - u;
     (
@@ -170,6 +185,7 @@ fn quad(p0: (f32, f32), c: (f32, f32), p1: (f32, f32), u: f32) -> (f32, f32) {
     )
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn trace<F>(grid: &mut Grid, samples: usize, color: Color, mut point: F)
 where
     F: FnMut(f32) -> (f32, f32),
@@ -188,6 +204,7 @@ where
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_arch_half(grid: &mut Grid, spring: (f32, f32), apex: (f32, f32), point: f32, color: Color) {
     let dx = apex.0 - spring.0;
     let rise = spring.1 - apex.1;
@@ -198,6 +215,7 @@ fn draw_arch_half(grid: &mut Grid, spring: (f32, f32), apex: (f32, f32), point: 
     trace(grid, 16, color, |u| quad(spring, c, apex, u));
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn pointed_arch(
     grid: &mut Grid,
     lx: f32,
@@ -212,6 +230,7 @@ fn pointed_arch(
     draw_arch_half(grid, (rx, base_y), apex, point, color);
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn ellipse_point(cx: i32, cy: i32, rx: f32, ry: f32, a: f32) -> (f32, f32) {
     (cx as f32 + a.cos() * rx, cy as f32 + a.sin() * ry)
 }
@@ -231,6 +250,7 @@ struct Plan {
     wall_r: i32,
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn compute_plan(width: usize, height: usize) -> Plan {
     let w = width as i32;
     let h = height as i32;
@@ -262,6 +282,7 @@ fn compute_plan(width: usize, height: usize) -> Plan {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_sky(
     grid: &mut Grid,
     width: usize,
@@ -322,6 +343,7 @@ fn draw_sky(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_towers(
     grid: &mut Grid,
     plan: &Plan,
@@ -393,6 +415,7 @@ fn draw_towers(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_wall(
     grid: &mut Grid,
     plan: &Plan,
@@ -450,6 +473,7 @@ fn draw_wall(
     put(grid, gx, plan.roof_y - 4, '✚', lighten(palette[3], 22));
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_buttresses(
     grid: &mut Grid,
     plan: &Plan,
@@ -479,6 +503,7 @@ fn draw_buttresses(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_rose(
     grid: &mut Grid,
     plan: &Plan,
@@ -577,6 +602,7 @@ fn draw_rose(
     put(grid, cx + 1, cy, '⊙', darken(gold, 8));
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_lancets(
     grid: &mut Grid,
     plan: &Plan,
@@ -631,6 +657,7 @@ fn draw_lancets(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_banners(
     grid: &mut Grid,
     plan: &Plan,
@@ -695,6 +722,7 @@ fn draw_banners(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_arcade(grid: &mut Grid, plan: &Plan, palette: &[Color; 5], params: &CathedralParams) {
     let stone = darken(palette[1], 32);
     let inner_l = plan.wall_l + 3;
@@ -746,6 +774,7 @@ fn draw_arcade(grid: &mut Grid, plan: &Plan, palette: &[Color; 5], params: &Cath
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_floor(
     grid: &mut Grid,
     plan: &Plan,
@@ -809,6 +838,7 @@ fn draw_floor(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_portal(
     grid: &mut Grid,
     plan: &Plan,
@@ -897,6 +927,7 @@ fn draw_portal(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_candles(
     grid: &mut Grid,
     plan: &Plan,
@@ -961,6 +992,7 @@ fn draw_candles(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_smoke(
     grid: &mut Grid,
     plan: &Plan,
@@ -1001,6 +1033,7 @@ fn draw_smoke(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_shafts(
     grid: &mut Grid,
     plan: &Plan,
@@ -1048,6 +1081,7 @@ fn draw_shafts(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_dust(
     grid: &mut Grid,
     plan: &Plan,
@@ -1076,6 +1110,7 @@ fn draw_dust(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_frame(
     grid: &mut Grid,
     width: usize,
@@ -1127,6 +1162,7 @@ fn draw_frame(
     put(grid, width as i32 - 1, height as i32 - 1, '╝', stud);
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn draw_qwen_cathedral(
     grid: &mut Grid,
     width: usize,
@@ -1183,6 +1219,7 @@ mod tests {
     use crate::render::grid_to_plain;
     use rand::SeedableRng;
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn frame(width: usize, height: usize, seed: u64, t: f32, params: &CathedralParams) -> Grid {
         let mut grid = vec![vec![Cell::blank(); width]; height];
         let palette = make_palette(seed);
@@ -1193,11 +1230,13 @@ mod tests {
         grid
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn plain(grid: &Grid) -> String {
         grid_to_plain(grid).join("\n")
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn deterministic_seeded_frame_and_visible_motion() {
         let params = CathedralParams::default();
         let a = plain(&frame(80, 36, 42, 1.25, &params));
@@ -1233,6 +1272,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn tiny_grid_and_extreme_inputs_terminate() {
         let params = CathedralParams {
             bays: 9,
@@ -1256,6 +1296,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn dimensions_shape_the_frame() {
         let params = CathedralParams::default();
         for (w, h) in [(60usize, 24usize), (80, 45), (100, 30)] {
@@ -1276,6 +1317,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn params_from_args_override_and_clamp() {
         let args: Vec<String> = [
             "ascii-renderer",
@@ -1323,6 +1365,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_qwen_cathedral_in_motion() {
         let params = CathedralParams::default();
         insta::assert_snapshot!(

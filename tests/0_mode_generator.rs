@@ -40,6 +40,7 @@ fn numbered_modes_generate_in_author_order_and_check_detects_additions() {
     mod _10_b;
     mod _100_z;
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub(crate) fn register_all(registry: &mut crate::registry::ModeRegistry) {
         registry.add(&_0_base::MODE);
         registry.add(&_1_first::MODE);

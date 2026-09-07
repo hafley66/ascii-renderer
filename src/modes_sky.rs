@@ -37,6 +37,7 @@ use crate::warps::*;
 
 // --- nebula : fbm cloud field with a shade ramp, palette gradient, scattered
 //     stars in the dark voids. ---
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn draw_nebula(grid: &mut Grid, width: usize, height: usize, seed: u64, palette: &[Color; 5], rng: &mut StdRng, t: f32) {
     let ramp = [' ', ' ', '·', '∙', ':', '*', '▒', '▓'];
     // t pans the cloud field; the starfield (rng-placed) stays put behind it.
@@ -70,6 +71,7 @@ pub(crate) fn draw_nebula(grid: &mut Grid, width: usize, height: usize, seed: u6
 
 
 // --- delta : recursive branching river/lightning system fanning down-screen. ---
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn draw_solar_system(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, args: &[String]) -> Grid {
         // solar-system [bodies] -- 3D-ish orbital diagram with planets, cubes, and space hardware
         let body_count: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(8);
@@ -432,6 +434,7 @@ pub(crate) fn draw_solar_system(mut grid: Grid, width: usize, height: usize, see
 }
 
 // --- hypercube : multiple seeded 4D cubes projected into terminal space. ---
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn draw_hypercube(
     grid: &mut Grid,
     width: usize,
@@ -575,6 +578,7 @@ pub(crate) fn draw_hypercube(
 
 
 // --- flux : seed-stable particles advected through a looping vector field. ---
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn draw_flux(
     grid: &mut Grid,
     width: usize,
@@ -685,6 +689,7 @@ pub(crate) fn draw_flux(
 
 
 // --- fireworks : phased rockets and ballistic sparks in a seamless loop. ---
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn draw_fireworks(
     grid: &mut Grid,
     width: usize,
@@ -840,6 +845,7 @@ pub(crate) fn draw_fireworks(
 /// members ride faster local swirls around them, so the mass knots, splits,
 /// and re-forms with no per-frame state. Density picks the glyph -- lone
 /// scouts are specks, the packed heart of the flock reads as a solid knot.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn draw_murmuration(
     grid: &mut Grid,
     width: usize,
@@ -975,6 +981,7 @@ pub(crate) fn draw_murmuration(
 /// lanterns: paper lanterns lifting off dark water. Each lantern rises on its
 /// own wrapped cycle with a swaying two-ring halo, a flicker, and a squashed
 /// jittered reflection; spawn, drift, and fade are all pure (seed, t).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn draw_lanterns(
     grid: &mut Grid,
     width: usize,
@@ -1106,6 +1113,7 @@ pub(crate) fn draw_lanterns(
 /// structure; the waterline is up to four superposed sines of t around a
 /// seeded shoreline, and freshly exposed sand stays dark and "wet" by sampling
 /// where the front was a beat ago. Pure (seed, t) like every native-T mode.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn draw_tide(
     grid: &mut Grid,
     width: usize,
@@ -1250,6 +1258,7 @@ pub(crate) fn draw_tide(
     });
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn draw_fireflies(
     grid: &mut Grid,
     width: usize,
@@ -1427,6 +1436,7 @@ pub(crate) fn draw_fireflies(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn draw_meteors(
     grid: &mut Grid,
     width: usize,
@@ -1639,12 +1649,14 @@ pub(crate) fn draw_meteors(
 }
 
 /// Dispatch arm for mode(s): solar-system (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_solar_system(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         grid = draw_solar_system(grid, width, height, seed, palette, rng, t_anim, &args);
     (grid, false)
 }
 
 /// Dispatch arm for mode(s): hypercube (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_hypercube(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         let copies: usize = args
             .get(4)
@@ -1674,6 +1686,7 @@ pub(crate) fn cli_hypercube(mut grid: Grid, width: usize, height: usize, seed: u
 }
 
 /// Dispatch arm for mode(s): flux (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_flux(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         let count: usize = args
             .get(4)
@@ -1703,6 +1716,7 @@ pub(crate) fn cli_flux(mut grid: Grid, width: usize, height: usize, seed: u64, p
 }
 
 /// Dispatch arm for mode(s): fireworks (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_fireworks(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         let bursts: usize = args
             .get(4)
@@ -1732,6 +1746,7 @@ pub(crate) fn cli_fireworks(mut grid: Grid, width: usize, height: usize, seed: u
 }
 
 /// Dispatch arm for mode(s): rhizome (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_rhizome(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         let count: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(5);
         let depth: u32 = args.get(5).and_then(|s| s.parse().ok()).unwrap_or(3);
@@ -1740,6 +1755,7 @@ pub(crate) fn cli_rhizome(mut grid: Grid, width: usize, height: usize, seed: u64
 }
 
 /// Dispatch arm for mode(s): effigy (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_effigy(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         let count: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(6);
         draw_effigy(&mut grid, width, height, seed, &palette, &mut rng, t_anim, count);
@@ -1747,6 +1763,7 @@ pub(crate) fn cli_effigy(mut grid: Grid, width: usize, height: usize, seed: u64,
 }
 
 /// Dispatch arm for mode(s): dendrite (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_dendrite(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         let seeds: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(3);
         let depth: u32 = args.get(5).and_then(|s| s.parse().ok()).unwrap_or(4);
@@ -1755,6 +1772,7 @@ pub(crate) fn cli_dendrite(mut grid: Grid, width: usize, height: usize, seed: u6
 }
 
 /// Dispatch arm for mode(s): totem (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_totem(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         let poles: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(2);
         draw_totem(&mut grid, width, height, seed, &palette, &mut rng, t_anim, poles);
@@ -1762,6 +1780,7 @@ pub(crate) fn cli_totem(mut grid: Grid, width: usize, height: usize, seed: u64, 
 }
 
 /// Dispatch arm for mode(s): chimera (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_chimera(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         let density: u32 = args
             .get(4)
@@ -1773,6 +1792,7 @@ pub(crate) fn cli_chimera(mut grid: Grid, width: usize, height: usize, seed: u64
 }
 
 /// Dispatch arm for mode(s): murmuration (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_murmuration(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         let birds: usize = args
             .get(4)
@@ -1793,6 +1813,7 @@ pub(crate) fn cli_murmuration(mut grid: Grid, width: usize, height: usize, seed:
 }
 
 /// Dispatch arm for mode(s): lanterns (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_lanterns(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         let count: usize = args
             .get(4)
@@ -1813,6 +1834,7 @@ pub(crate) fn cli_lanterns(mut grid: Grid, width: usize, height: usize, seed: u6
 }
 
 /// Dispatch arm for mode(s): tide (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_tide(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         let waves: usize = args
             .get(4)
@@ -1833,6 +1855,7 @@ pub(crate) fn cli_tide(mut grid: Grid, width: usize, height: usize, seed: u64, p
 }
 
 /// Dispatch arm for mode(s): fireflies (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_fireflies(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         let count: usize = args
             .get(4)
@@ -1853,6 +1876,7 @@ pub(crate) fn cli_fireflies(mut grid: Grid, width: usize, height: usize, seed: u
 }
 
 /// Dispatch arm for mode(s): meteors (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_meteors(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         let stars: usize = args
             .get(4)
@@ -1873,6 +1897,7 @@ pub(crate) fn cli_meteors(mut grid: Grid, width: usize, height: usize, seed: u64
 }
 
 /// Dispatch arm for mode(s): noise (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_noise(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         let names = ["truchet", "higaki", "higaki-s", "grass", "static", "dot"];
         let cols = NOISE_VARIANT_COUNT;
@@ -1899,6 +1924,7 @@ pub(crate) fn cli_noise(mut grid: Grid, width: usize, height: usize, seed: u64, 
 }
 
 /// Dispatch arm for mode(s): nebula (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_nebula(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         draw_nebula(&mut grid, width, height, seed, &palette, &mut rng, t_anim);
     (grid, false)

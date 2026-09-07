@@ -2,6 +2,7 @@
 use super::*;
 pub struct WideTree;
 impl TreeDrawer for WideTree {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw_trunk(
         &self,
         grid: &mut Grid,
@@ -24,6 +25,7 @@ impl TreeDrawer for WideTree {
         nodes
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn should_branch(
         &self,
         idx: usize,
@@ -43,6 +45,7 @@ impl TreeDrawer for WideTree {
         }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw_branch(
         &self,
         grid: &mut Grid,
@@ -118,10 +121,12 @@ impl TreeDrawer for WideTree {
         BranchResult { tips }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw_tip(&self, grid: &mut Grid, x: i32, y: i32, params: &TreeParams) {
         set(grid, x, y, '╷', lighten(params.tip_color, 30));
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw_fruit(&self, grid: &mut Grid, x: i32, y: i32, params: &TreeParams, _rng: &mut StdRng) {
         set(grid, x, y + 1, '◆', params.fruit_color);
     }
@@ -129,6 +134,7 @@ impl TreeDrawer for WideTree {
 
 pub struct AsymmetricTree;
 impl TreeDrawer for AsymmetricTree {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw_trunk(
         &self,
         grid: &mut Grid,
@@ -150,6 +156,7 @@ impl TreeDrawer for AsymmetricTree {
         nodes
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn should_branch(
         &self,
         idx: usize,
@@ -168,6 +175,7 @@ impl TreeDrawer for AsymmetricTree {
         }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw_branch(
         &self,
         grid: &mut Grid,
@@ -248,10 +256,12 @@ impl TreeDrawer for AsymmetricTree {
         BranchResult { tips }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw_tip(&self, grid: &mut Grid, x: i32, y: i32, params: &TreeParams) {
         set(grid, x, y, '╷', lighten(params.tip_color, 30));
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw_fruit(&self, grid: &mut Grid, x: i32, y: i32, params: &TreeParams, rng: &mut StdRng) {
         let ch = if rng.random_range(0..2u32) == 0 {
             '◇'
@@ -264,6 +274,7 @@ impl TreeDrawer for AsymmetricTree {
 
 pub struct KaijuTree;
 impl TreeDrawer for KaijuTree {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw_trunk(
         &self,
         grid: &mut Grid,
@@ -295,6 +306,7 @@ impl TreeDrawer for KaijuTree {
         nodes
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn should_branch(
         &self,
         idx: usize,
@@ -313,6 +325,7 @@ impl TreeDrawer for KaijuTree {
         }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw_branch(
         &self,
         grid: &mut Grid,
@@ -441,10 +454,12 @@ impl TreeDrawer for KaijuTree {
         BranchResult { tips }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw_tip(&self, grid: &mut Grid, x: i32, y: i32, params: &TreeParams) {
         set(grid, x, y, '╷', lighten(params.tip_color, 35));
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw_fruit(&self, grid: &mut Grid, x: i32, y: i32, params: &TreeParams, _rng: &mut StdRng) {
         set(grid, x, y, '◆', params.fruit_color);
     }
@@ -452,6 +467,7 @@ impl TreeDrawer for KaijuTree {
 
 pub struct ZigzagTree;
 impl TreeDrawer for ZigzagTree {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw_trunk(
         &self,
         grid: &mut Grid,
@@ -488,6 +504,7 @@ impl TreeDrawer for ZigzagTree {
         nodes
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn should_branch(
         &self,
         idx: usize,
@@ -509,6 +526,7 @@ impl TreeDrawer for ZigzagTree {
         }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw_branch(
         &self,
         grid: &mut Grid,
@@ -524,6 +542,7 @@ impl TreeDrawer for ZigzagTree {
         let dx: i32 = if intent.go_left { -1 } else { 1 };
         let dy: i32 = -1; // upward
 
+        #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
         fn draw_ray(
             grid: &mut Grid,
             x: i32,
@@ -592,10 +611,12 @@ impl TreeDrawer for ZigzagTree {
         BranchResult { tips }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw_tip(&self, grid: &mut Grid, x: i32, y: i32, params: &TreeParams) {
         set(grid, x, y, '·', lighten(params.tip_color, 30));
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw_fruit(&self, grid: &mut Grid, x: i32, y: i32, params: &TreeParams, _rng: &mut StdRng) {
         set(grid, x, y, '◇', params.fruit_color);
     }
@@ -603,6 +624,7 @@ impl TreeDrawer for ZigzagTree {
 
 pub struct BrailleCanopyTree;
 impl TreeDrawer for BrailleCanopyTree {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw_trunk(
         &self,
         grid: &mut Grid,
@@ -626,6 +648,7 @@ impl TreeDrawer for BrailleCanopyTree {
         nodes
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn should_branch(
         &self,
         idx: usize,
@@ -644,6 +667,7 @@ impl TreeDrawer for BrailleCanopyTree {
         }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw_branch(
         &self,
         grid: &mut Grid,
@@ -722,10 +746,12 @@ impl TreeDrawer for BrailleCanopyTree {
         BranchResult { tips }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw_tip(&self, _grid: &mut Grid, _x: i32, _y: i32, _params: &TreeParams) {
         // Canopy edges are already braille -- no extra tip char
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw_fruit(&self, grid: &mut Grid, x: i32, y: i32, params: &TreeParams, rng: &mut StdRng) {
         if rng.random_range(0..4u32) == 0 {
             set(grid, x, y, '●', params.fruit_color);
@@ -735,6 +761,7 @@ impl TreeDrawer for BrailleCanopyTree {
 
 pub struct TendrilTree;
 impl TreeDrawer for TendrilTree {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw_trunk(
         &self,
         grid: &mut Grid,
@@ -756,6 +783,7 @@ impl TreeDrawer for TendrilTree {
         nodes
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn should_branch(
         &self,
         idx: usize,
@@ -774,6 +802,7 @@ impl TreeDrawer for TendrilTree {
         }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw_branch(
         &self,
         grid: &mut Grid,
@@ -788,6 +817,7 @@ impl TreeDrawer for TendrilTree {
         let spread = params.spread() as f32;
         let mut tips = Vec::new();
 
+        #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
         fn draw_tendril(
             grid: &mut Grid,
             x: f32,
@@ -873,16 +903,19 @@ impl TreeDrawer for TendrilTree {
         BranchResult { tips }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw_tip(&self, grid: &mut Grid, x: i32, y: i32, params: &TreeParams) {
         set(grid, x, y, '·', lighten(params.tip_color, 30));
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw_fruit(&self, grid: &mut Grid, x: i32, y: i32, params: &TreeParams, _rng: &mut StdRng) {
         set(grid, x, y, '◆', params.fruit_color);
     }
 }
 
 pub struct OakTree;
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn oak_limb(
     grid: &mut Grid,
     x: i32,
@@ -925,6 +958,7 @@ fn oak_limb(
     tips.push((cx + dx, cy));
 }
 impl TreeDrawer for OakTree {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw_trunk(
         &self,
         grid: &mut Grid,
@@ -935,6 +969,7 @@ impl TreeDrawer for OakTree {
         GnarledTrunk.draw(grid, pen, params, rng)
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn should_branch(
         &self,
         idx: usize,
@@ -960,6 +995,7 @@ impl TreeDrawer for OakTree {
         })
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw_branch(
         &self,
         grid: &mut Grid,
@@ -988,6 +1024,7 @@ impl TreeDrawer for OakTree {
         BranchResult { tips }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw_tip(&self, grid: &mut Grid, x: i32, y: i32, params: &TreeParams) {
         // braille leaf cluster hugging the tip; shape varies by position parity
         let leaf = params.tip_color;
@@ -1004,6 +1041,7 @@ impl TreeDrawer for OakTree {
         }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw_fruit(&self, grid: &mut Grid, x: i32, y: i32, params: &TreeParams, rng: &mut StdRng) {
         // acorns hang one cell below the leaf cluster
         let ch = if rng.random_range(0..2u32) == 0 {
@@ -1017,6 +1055,7 @@ impl TreeDrawer for OakTree {
 
 pub struct FountainTree;
 impl TreeDrawer for FountainTree {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw_trunk(
         &self,
         grid: &mut Grid,
@@ -1030,6 +1069,7 @@ impl TreeDrawer for FountainTree {
         .draw(grid, pen, params, rng)
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn should_branch(
         &self,
         idx: usize,
@@ -1048,6 +1088,7 @@ impl TreeDrawer for FountainTree {
         }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw_branch(
         &self,
         grid: &mut Grid,
@@ -1100,10 +1141,12 @@ impl TreeDrawer for FountainTree {
         BranchResult { tips }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw_tip(&self, grid: &mut Grid, x: i32, y: i32, params: &TreeParams) {
         set(grid, x, y, '❋', lighten(params.tip_color, 20));
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw_fruit(&self, grid: &mut Grid, x: i32, y: i32, params: &TreeParams, _rng: &mut StdRng) {
         // droplet falls one row below the spray tip
         set(grid, x, y + 1, '∘', params.fruit_color);
@@ -1114,6 +1157,7 @@ pub struct WindsweptTree {
     pub lean_right: bool,
 }
 impl WindsweptTree {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub fn new(rng: &mut StdRng) -> Self {
         WindsweptTree {
             lean_right: rng.random_range(0..2u32) == 0,
@@ -1121,6 +1165,7 @@ impl WindsweptTree {
     }
 }
 impl TreeDrawer for WindsweptTree {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw_trunk(
         &self,
         grid: &mut Grid,
@@ -1157,6 +1202,7 @@ impl TreeDrawer for WindsweptTree {
         nodes
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn should_branch(
         &self,
         idx: usize,
@@ -1181,6 +1227,7 @@ impl TreeDrawer for WindsweptTree {
         })
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw_branch(
         &self,
         grid: &mut Grid,
@@ -1219,10 +1266,12 @@ impl TreeDrawer for WindsweptTree {
         BranchResult { tips }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw_tip(&self, grid: &mut Grid, x: i32, y: i32, params: &TreeParams) {
         set(grid, x, y, '╸', lighten(params.tip_color, 30));
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw_fruit(&self, grid: &mut Grid, x: i32, y: i32, params: &TreeParams, _rng: &mut StdRng) {
         // wind carries the fruit one cell past the tip
         let dx = if self.lean_right { 1 } else { -1 };
@@ -1231,6 +1280,7 @@ impl TreeDrawer for WindsweptTree {
 }
 
 pub struct FractalTree;
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn fractal_limb(
     grid: &mut Grid,
     x: f32,
@@ -1293,6 +1343,7 @@ fn fractal_limb(
     }
 }
 impl TreeDrawer for FractalTree {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw_trunk(
         &self,
         grid: &mut Grid,
@@ -1306,6 +1357,7 @@ impl TreeDrawer for FractalTree {
         .draw(grid, pen, params, rng)
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn should_branch(
         &self,
         idx: usize,
@@ -1324,6 +1376,7 @@ impl TreeDrawer for FractalTree {
         }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw_branch(
         &self,
         grid: &mut Grid,
@@ -1350,16 +1403,19 @@ impl TreeDrawer for FractalTree {
         BranchResult { tips }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw_tip(&self, grid: &mut Grid, x: i32, y: i32, params: &TreeParams) {
         set(grid, x, y, '✶', lighten(params.tip_color, 15));
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw_fruit(&self, grid: &mut Grid, x: i32, y: i32, params: &TreeParams, _rng: &mut StdRng) {
         set(grid, x, y - 1, '◦', params.fruit_color);
     }
 }
 
 pub struct LSystemTree;
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn lsystem_expand(energy: f32) -> String {
     let iters = if energy > 0.7 {
         4
@@ -1382,6 +1438,7 @@ fn lsystem_expand(energy: f32) -> String {
     s
 }
 impl TreeDrawer for LSystemTree {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw_trunk(
         &self,
         grid: &mut Grid,
@@ -1395,6 +1452,7 @@ impl TreeDrawer for LSystemTree {
         .draw(grid, pen, params, rng)
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn should_branch(
         &self,
         idx: usize,
@@ -1413,6 +1471,7 @@ impl TreeDrawer for LSystemTree {
         }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw_branch(
         &self,
         grid: &mut Grid,
@@ -1488,10 +1547,12 @@ impl TreeDrawer for LSystemTree {
         BranchResult { tips }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw_tip(&self, grid: &mut Grid, x: i32, y: i32, params: &TreeParams) {
         set(grid, x, y, '✳', lighten(params.tip_color, 20));
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw_fruit(&self, grid: &mut Grid, x: i32, y: i32, params: &TreeParams, rng: &mut StdRng) {
         let dx = if rng.random_range(0..2u32) == 0 {
             -1
@@ -1504,10 +1565,12 @@ impl TreeDrawer for LSystemTree {
 
 pub struct DragonTree;
 /// Fold parity for segment i of the dragon curve: true = turn left.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn dragon_turn_left(i: u32) -> bool {
     let b = i & i.wrapping_neg();
     (i & (b << 1)) == 0
 }
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn dragon_arm(
     grid: &mut Grid,
     x0: i32,
@@ -1568,6 +1631,7 @@ fn dragon_arm(
     tips.push((x, y));
 }
 impl TreeDrawer for DragonTree {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw_trunk(
         &self,
         grid: &mut Grid,
@@ -1581,6 +1645,7 @@ impl TreeDrawer for DragonTree {
         .draw(grid, pen, params, rng)
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn should_branch(
         &self,
         idx: usize,
@@ -1599,6 +1664,7 @@ impl TreeDrawer for DragonTree {
         }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw_branch(
         &self,
         grid: &mut Grid,
@@ -1651,10 +1717,12 @@ impl TreeDrawer for DragonTree {
         BranchResult { tips }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw_tip(&self, grid: &mut Grid, x: i32, y: i32, params: &TreeParams) {
         set(grid, x, y, '✦', lighten(params.tip_color, 20));
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw_fruit(&self, grid: &mut Grid, x: i32, y: i32, params: &TreeParams, _rng: &mut StdRng) {
         set(grid, x, y + 1, '◉', params.fruit_color);
     }
@@ -1662,6 +1730,7 @@ impl TreeDrawer for DragonTree {
 
 pub struct HelixTree;
 impl TreeDrawer for HelixTree {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw_trunk(
         &self,
         grid: &mut Grid,
@@ -1722,6 +1791,7 @@ impl TreeDrawer for HelixTree {
         nodes
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn should_branch(
         &self,
         idx: usize,
@@ -1745,6 +1815,7 @@ impl TreeDrawer for HelixTree {
         })
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw_branch(
         &self,
         grid: &mut Grid,
@@ -1772,10 +1843,12 @@ impl TreeDrawer for HelixTree {
         }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw_tip(&self, grid: &mut Grid, x: i32, y: i32, params: &TreeParams) {
         set(grid, x, y, '❉', lighten(params.tip_color, 15));
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw_fruit(&self, grid: &mut Grid, x: i32, y: i32, params: &TreeParams, _rng: &mut StdRng) {
         set(grid, x, y + 1, '○', params.fruit_color);
     }

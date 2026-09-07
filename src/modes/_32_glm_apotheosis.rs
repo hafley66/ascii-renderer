@@ -32,22 +32,27 @@ const PARAMS: &[Param] = &[
 ];
 
 impl Mode for GlmApotheosisMode {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn name(&self) -> &'static str {
         "glm-apotheosis"
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn help(&self) -> &'static str {
         "Ascending figure, colossal rotating halo mandala, rays, motes, clouds [rings] [spokes] [motes] [wings] [rays] [glow] [clouds] [sparks] [runes] [bob] [stars] [speed]"
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn animation(&self) -> AnimKind {
         AnimKind::Iterate
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn params(&self) -> &'static [Param] {
         PARAMS
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn render(&self, frame: &mut ModeFrame<'_>) {
         let params = ApotheosisParams::from_inputs(frame.args, frame.param_values);
         draw_glm_apotheosis(
@@ -80,6 +85,7 @@ pub(crate) struct ApotheosisParams {
 }
 
 impl Default for ApotheosisParams {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn default() -> Self {
         Self {
             rings: 5,
@@ -99,10 +105,12 @@ impl Default for ApotheosisParams {
 }
 
 impl ApotheosisParams {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub(crate) fn from_args(args: &[String]) -> Self {
         Self::from_inputs(args, None)
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub(crate) fn from_inputs(args: &[String], param_values: Option<&[f32]>) -> Self {
         let read = |index: usize, key: &str, default: f32| {
             args.get(index)
@@ -127,10 +135,12 @@ impl ApotheosisParams {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn clampi(v: i32, lo: i32, hi: i32) -> i32 {
     v.max(lo).min(hi.max(lo))
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn hash01(seed: u64, tag: u64) -> f32 {
     let mut value = seed ^ tag.wrapping_mul(0x9E37_79B9_7F4A_7C15);
     value ^= value >> 30;
@@ -141,10 +151,12 @@ fn hash01(seed: u64, tag: u64) -> f32 {
     ((value >> 40) as f32) / ((1u64 << 24) - 1) as f32
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn in_bounds(grid: &Grid, x: i32, y: i32) -> bool {
     x >= 0 && y >= 0 && (y as usize) < grid.len() && (x as usize) < grid[y as usize].len()
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn put(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
     if in_bounds(grid, x, y) {
         let bg = grid[y as usize][x as usize].bg;
@@ -152,6 +164,7 @@ fn put(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn put_bg(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color, bg: Color) {
     if in_bounds(grid, x, y) {
         grid[y as usize][x as usize] = Cell::with_bg(ch, fg, bg);
@@ -169,6 +182,7 @@ struct Plan {
     floor_y: i32,
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn compute_plan(width: usize, height: usize) -> Plan {
     let w = width as i32;
     let h = height as i32;
@@ -196,6 +210,7 @@ fn compute_plan(width: usize, height: usize) -> Plan {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_sky(
     grid: &mut Grid,
     width: usize,
@@ -278,6 +293,7 @@ fn draw_sky(
 
 const GLYPHS: [char; 16] = ['ᚠ', 'ᚢ', 'ᚦ', 'ᚨ', 'ᚱ', 'ᚲ', 'ᚷ', 'ᚹ', 'ᚺ', 'ᚾ', 'ᛁ', 'ᛃ', 'ᛇ', 'ᛈ', 'ᛉ', 'ᛋ'];
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_mandala(
     grid: &mut Grid,
     plan: &Plan,
@@ -357,6 +373,7 @@ fn draw_mandala(
     );
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_wings(
     grid: &mut Grid,
     plan: &Plan,
@@ -404,6 +421,7 @@ fn draw_wings(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_figure(
     grid: &mut Grid,
     plan: &Plan,
@@ -457,6 +475,7 @@ fn draw_figure(
     );
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_rays(
     grid: &mut Grid,
     plan: &Plan,
@@ -501,6 +520,7 @@ fn draw_rays(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_motes(
     grid: &mut Grid,
     plan: &Plan,
@@ -529,6 +549,7 @@ fn draw_motes(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_sparks(
     grid: &mut Grid,
     plan: &Plan,
@@ -573,6 +594,7 @@ fn draw_sparks(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_clouds(
     grid: &mut Grid,
     plan: &Plan,
@@ -613,6 +635,7 @@ fn draw_clouds(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_frame(
     grid: &mut Grid,
     width: usize,
@@ -664,6 +687,7 @@ fn draw_frame(
     put(grid, width as i32 - 1, height as i32 - 1, '╝', stud);
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn draw_glm_apotheosis(
     grid: &mut Grid,
     width: usize,
@@ -710,6 +734,7 @@ mod tests {
     use crate::render::grid_to_plain;
     use rand::SeedableRng;
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn frame(width: usize, height: usize, seed: u64, t: f32, params: &ApotheosisParams) -> Grid {
         let mut grid = vec![vec![Cell::blank(); width]; height];
         let palette = make_palette(seed);
@@ -720,11 +745,13 @@ mod tests {
         grid
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn plain(grid: &Grid) -> String {
         grid_to_plain(grid).join("\n")
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn deterministic_seeded_frame_and_visible_motion() {
         let params = ApotheosisParams::default();
         let a = plain(&frame(80, 36, 42, 1.25, &params));
@@ -760,6 +787,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn tiny_grid_and_extreme_inputs_terminate() {
         let params = ApotheosisParams {
             rings: 9,
@@ -783,6 +811,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn dimensions_shape_the_frame() {
         let params = ApotheosisParams::default();
         for (w, h) in [(60usize, 24usize), (80, 45), (100, 30)] {
@@ -803,6 +832,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn params_from_args_override_and_clamp() {
         let args: Vec<String> = [
             "ascii-renderer",
@@ -850,12 +880,14 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_glm_apotheosis_t0() {
         let params = ApotheosisParams::default();
         insta::assert_snapshot!("glm_apotheosis_t0", plain(&frame(80, 36, 42, 0.0, &params)));
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_glm_apotheosis_in_motion() {
         let params = ApotheosisParams::default();
         insta::assert_snapshot!(

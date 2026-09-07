@@ -47,6 +47,7 @@ pub(crate) struct PoincareKnobs {
 }
 
 impl PoincareKnobs {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub(crate) fn from_env() -> Self {
         PoincareKnobs {
             p: param_f32("P", 0.0),
@@ -90,17 +91,21 @@ impl C {
     const fn new(re: f32, im: f32) -> C {
         C { re, im }
     }
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn mul(self, o: C) -> C {
         C::new(self.re * o.re - self.im * o.im, self.re * o.im + self.im * o.re)
     }
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn add(self, o: C) -> C {
         C::new(self.re + o.re, self.im + o.im)
     }
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn div(self, o: C) -> C {
         let d = o.re * o.re + o.im * o.im;
         let inv = if d > 1e-30 { 1.0 / d } else { 0.0 };
         C::new((self.re * o.re + self.im * o.im) * inv, (self.im * o.re - self.re * o.im) * inv)
     }
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn norm2(self) -> f32 {
         self.re * self.re + self.im * self.im
     }
@@ -116,17 +121,21 @@ struct Mob {
 }
 
 impl Mob {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn apply(&self, z: C) -> C {
         self.a.mul(z).add(self.b).div(self.c.mul(z).add(self.d))
     }
     /// Image of z and the complex derivative there.
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn apply_d(&self, z: C, det: C) -> (C, C) {
         let den = self.c.mul(z).add(self.d);
         (self.a.mul(z).add(self.b).div(den), det.div(den.mul(den)))
     }
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn det(&self) -> C {
         self.a.mul(self.d).add(C::new(-1.0, 0.0).mul(self.b.mul(self.c)))
     }
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn then(&self, outer: &Mob) -> Mob {
         Mob {
             a: outer.a.mul(self.a).add(outer.b.mul(self.c)),
@@ -135,18 +144,22 @@ impl Mob {
             d: outer.c.mul(self.b).add(outer.d.mul(self.d)),
         }
     }
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn rotation(theta: f32) -> Mob {
         Mob { a: C::new(theta.cos(), theta.sin()), b: C::new(0.0, 0.0), c: C::new(0.0, 0.0), d: C::new(1.0, 0.0) }
     }
     /// Hyperbolic translation by distance s along the geodesic at angle phi through the origin.
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn translation(s: f32, phi: f32) -> Mob {
         let tau = (s * 0.5).tanh();
         let e = C::new(phi.cos() * tau, phi.sin() * tau);
         Mob { a: C::new(1.0, 0.0), b: e, c: C::new(e.re, -e.im), d: C::new(1.0, 0.0) }
     }
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn scale(f: f32) -> Mob {
         Mob { a: C::new(f, 0.0), b: C::new(0.0, 0.0), c: C::new(0.0, 0.0), d: C::new(1.0, 0.0) }
     }
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn cayley() -> Mob {
         Mob { a: C::new(1.0, 0.0), b: C::new(0.0, -1.0), c: C::new(1.0, 0.0), d: C::new(0.0, 1.0) }
     }
@@ -168,12 +181,14 @@ struct Tiling {
     cos_2a: f32,
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn acosh(x: f32) -> f32 {
     let x = x.max(1.0);
     (x + (x * x - 1.0).sqrt()).ln()
 }
 
 impl Tiling {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn new(p: u32, q: u32) -> Tiling {
         let a = PI / p as f32;
         let b = PI / q as f32;
@@ -195,6 +210,7 @@ impl Tiling {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn pick_tiling(seed: u64, k: &PoincareKnobs) -> (u32, u32) {
     let auto = TILINGS[((seed_bits(seed, 0) * 5.0) as usize).min(4)];
     let p = if k.p >= 3.0 { (k.p.round() as u32).clamp(3, 16) } else { auto.0 };
@@ -208,6 +224,7 @@ fn pick_tiling(seed: u64, k: &PoincareKnobs) -> (u32, u32) {
     (p, q)
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn hash(x: u32, y: u32, k: u32, seed: u64) -> f32 {
     let mut h = (x as u64).wrapping_mul(0x9E37_79B9_7F4A_7C15) ^ (y as u64).wrapping_mul(0xBF58_476D_1CE4_E5B9) ^ (k as u64).wrapping_mul(0x94D0_49BB_1331_11EB) ^ seed;
     h ^= h >> 31;
@@ -227,6 +244,7 @@ struct Reduced {
 
 /// Reflect a disk point into the fundamental triangle, then replay the word on the
 /// origin to recover the tile center in the tiling frame.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn reduce(tl: &Tiling, mut x: f32, mut y: f32, depth: u32, ops: &mut [u8; MAX_OPS], d0: C) -> Option<Reduced> {
     let mut n = 0usize;
     let mut da = d0;
@@ -289,6 +307,7 @@ fn reduce(tl: &Tiling, mut x: f32, mut y: f32, depth: u32, ops: &mut [u8; MAX_OP
 }
 
 /// Replay the word on the origin: the tile center in the tiling frame.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn tile_center(tl: &Tiling, ops: &[u8]) -> (f32, f32) {
     let (mut cx, mut cy) = (0.0f32, 0.0f32);
     for &op in ops.iter().rev() {
@@ -367,10 +386,12 @@ struct Frame {
     t: f32,
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn seed_bits(seed: u64, k: u32) -> f32 {
     hash(k, 77, 11, seed)
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn build_frame(w: usize, h: usize, seed: u64, palette: &[Color; 5], t: f32, k: &PoincareKnobs, focus_y: f32) -> Frame {
     let (p, q) = pick_tiling(seed, k);
     let tl = Tiling::new(p, q);
@@ -482,10 +503,12 @@ fn build_frame(w: usize, h: usize, seed: u64, palette: &[Color; 5], t: f32, k: &
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn level(v: f32, n: usize) -> usize {
     ((v.clamp(0.0, 0.9999)) * n as f32) as usize
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn haze_cell(fr: &Frame, sc: f32, x: u32, y: u32) -> Cell {
     let f = (sc / fr.haze).clamp(0.0, 1.0);
     let jitter = hash(x, y, 3, fr.seed);
@@ -508,11 +531,13 @@ struct TileMemo {
 }
 
 impl TileMemo {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn new() -> TileMemo {
         TileMemo { n: usize::MAX, ops: [0; MAX_OPS], shade: 0.0, tile_h: 0.0 }
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn shade_cell(fr: &Frame, x: usize, y: usize, ops: &mut [u8; MAX_OPS], memo: &mut TileMemo) -> Cell {
     let (z, sc) = if fr.half {
         let zx = (x as f32 + 0.5 - fr.cx) * fr.unit;
@@ -644,6 +669,7 @@ fn shade_cell(fr: &Frame, x: usize, y: usize, ops: &mut [u8; MAX_OPS], memo: &mu
     cell
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn paint_rows(rows: &mut [Vec<Cell>], y0: usize, w: usize, fr: &Frame) {
     let mut ops = [0u8; MAX_OPS];
     let mut memo = TileMemo::new();
@@ -655,6 +681,7 @@ fn paint_rows(rows: &mut [Vec<Cell>], y0: usize, w: usize, fr: &Frame) {
 }
 
 /// Rows go out in small chunks pulled from a shared queue so fast and slow cores stay busy.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn paint_field(grid: &mut Grid, w: usize, h: usize, fr: &Frame, threads: usize) {
     if threads <= 1 {
         paint_rows(&mut grid[..h], 0, w, fr);
@@ -678,6 +705,7 @@ fn paint_field(grid: &mut Grid, w: usize, h: usize, fr: &Frame, threads: usize) 
     });
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn put_text(grid: &mut Grid, w: usize, h: usize, x: i32, y: i32, text: &str, fg: Color) {
     for (i, ch) in text.chars().enumerate() {
         let xx = x + i as i32;
@@ -688,6 +716,7 @@ fn put_text(grid: &mut Grid, w: usize, h: usize, x: i32, y: i32, text: &str, fg:
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn draw_poincare(grid: &mut Grid, w: usize, h: usize, seed: u64, palette: &[Color; 5], t: f32, k: &PoincareKnobs) {
     measure_layer("poincare", "clear", || {
         for row in grid.iter_mut().take(h) {
@@ -738,6 +767,7 @@ pub(crate) fn draw_poincare(grid: &mut Grid, w: usize, h: usize, seed: u64, pale
     });
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_poincare(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
     let _ = (rng, term_w, term_h, mode, theme_name);
     let mut k = PoincareKnobs::from_env();
@@ -782,6 +812,7 @@ pub(crate) fn cli_poincare(mut grid: Grid, width: usize, height: usize, seed: u6
 mod tests {
     use super::*;
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn run(w: usize, h: usize, seed: u64, t: f32) -> String {
         let mut g = vec![vec![Cell::blank(); w]; h];
         let p = crate::color::make_palette(seed);
@@ -794,16 +825,19 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_poincare_small() {
         insta::assert_snapshot!("poincare_80x24", run(80, 24, 42, 0.0));
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_poincare_flow() {
         insta::assert_snapshot!("poincare_80x24_t12", run(80, 24, 42, 12.0));
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn tilings_are_hyperbolic() {
         for (p, q) in TILINGS {
             let tl = Tiling::new(p, q);
@@ -813,6 +847,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn wrap_is_a_symmetry() {
         for (p, q) in TILINGS {
             let tl = Tiling::new(p, q);
@@ -830,17 +865,20 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn deterministic_and_seed_sensitive() {
         assert_eq!(run(90, 30, 42, 0.0), run(90, 30, 42, 0.0));
         assert_ne!(run(90, 30, 42, 0.0), run(90, 30, 7, 0.0));
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn t_moves_the_flow() {
         assert_ne!(run(90, 30, 42, 0.0), run(90, 30, 42, 6.0));
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn frame_cost() {
         let (w, h) = (200usize, 60usize);
         let mut g = vec![vec![Cell::blank(); w]; h];
@@ -863,6 +901,7 @@ mod tests {
 
     #[test]
     #[ignore = "manual 2000x1000 timing; ASCII_P_THREADS picks the thread count"]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn bench_big() {
         let (w, h) = (2000usize, 1000usize);
         let mut g = vec![vec![Cell::blank(); w]; h];

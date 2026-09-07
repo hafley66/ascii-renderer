@@ -35,6 +35,7 @@ use crate::automata; use crate::avant; use crate::biomes; use crate::borders; us
 
 
 /// Dispatch arm for mode(s): forest2 (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_forest2(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         // Ground: truchet dirt
         let ground_color = darken(palette[1], 90);
@@ -180,6 +181,7 @@ pub(crate) fn cli_forest2(mut grid: Grid, width: usize, height: usize, seed: u64
 }
 
 /// Dispatch arm for mode(s): forest3 (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_forest3(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         // Background: sky (sparse dots) above horizon, ground (truchet) below
         let horizon = height * 2 / 3 + rng.random_range(0..(height / 8).max(1) as u32) as usize;
@@ -314,6 +316,7 @@ pub(crate) fn cli_forest3(mut grid: Grid, width: usize, height: usize, seed: u64
 }
 
 /// Dispatch arm for mode(s): forest4 (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_forest4(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         // Like forest3 but with wild/unbalanced trees and algorithmic sprites.
         // More trees planted lower, more ground coverage.
@@ -549,6 +552,7 @@ pub(crate) fn cli_forest4(mut grid: Grid, width: usize, height: usize, seed: u64
 }
 
 /// Dispatch arm for mode(s): forest5 (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_forest5(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         // Clustered forest: groups of same-family trees with slight color variation.
         // Center tree tallest in each cluster, edges taper. Per-tree tip decoration.
@@ -784,6 +788,7 @@ pub(crate) fn cli_forest5(mut grid: Grid, width: usize, height: usize, seed: u64
 }
 
 /// Dispatch arm for mode(s): forest6 (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_forest6(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         // Forest6: bespoke pen trees drawn next to their old equivalents for comparison.
         // Reuses forest5 sky/grass/ground layout.
@@ -1077,6 +1082,7 @@ pub(crate) fn cli_forest6(mut grid: Grid, width: usize, height: usize, seed: u64
 }
 
 /// Dispatch arm for mode(s): forest7 (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_forest7(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         // forest7: production layered forest with boles, tapers, fruit
         let horizon = height * 3 / 5 + rng.random_range(0..(height / 5).max(1) as u32) as usize;
@@ -1452,6 +1458,7 @@ pub(crate) fn cli_forest7(mut grid: Grid, width: usize, height: usize, seed: u64
 }
 
 /// Dispatch arm for mode(s): forest8 (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_forest8(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         // forest8 [layers=0] [density=0] -- high-entropy scene-walk forest: trees, bushes, flowers, fruit, grass
         let layers_arg: u8 = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0);
@@ -1680,6 +1687,7 @@ pub(crate) fn cli_forest8(mut grid: Grid, width: usize, height: usize, seed: u64
 }
 
 /// Dispatch arm for mode(s): forest9 (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_forest9(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         // forest9 [layers=0] [fog=0] -- misty high-entropy forest with fog drifts
         let layers_arg: u8 = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0);

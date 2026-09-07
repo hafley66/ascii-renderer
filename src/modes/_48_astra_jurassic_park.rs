@@ -36,22 +36,27 @@ const PARAMS: &[Param] = &[
 ];
 
 impl Mode for JurassicParkMode {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn name(&self) -> &'static str {
         "astra-jurassic-park"
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn help(&self) -> &'static str {
         "Fern Valley: procedural longnecks, ceratopsians, raptors and tyrannosaurs. [herd] [species] [scale] [ferns] [light] [speed] [depth] [variation] [rain] [gait] [migration] [formation] [juveniles] [activity] [herd_variation]"
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn animation(&self) -> AnimKind {
         AnimKind::Iterate
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn params(&self) -> &'static [Param] {
         PARAMS
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn render(&self, frame: &mut ModeFrame<'_>) {
         // Resolve borrowed frame inputs; no environment writes or retained state.
         let knobs = std::array::from_fn(|i| {
@@ -71,16 +76,19 @@ impl Mode for JurassicParkMode {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn hash(mut n: u64) -> u64 {
     n = (n ^ (n >> 30)).wrapping_mul(0xbf58476d1ce4e5b9);
     n = (n ^ (n >> 27)).wrapping_mul(0x94d049bb133111eb);
     n ^ (n >> 31)
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn random(seed: u64, lane: u64) -> f32 {
     (hash(seed.wrapping_add(lane.wrapping_mul(0x9e3779b97f4a7c15))) >> 40) as f32 / 16_777_216.0
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn rgb(color: Color) -> [u8; 3] {
     match color {
         Color::Rgb { r, g, b } => [r, g, b],
@@ -103,6 +111,7 @@ fn rgb(color: Color) -> [u8; 3] {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn tint(a: Color, b: Color, amount: f32) -> Color {
     let a = rgb(a);
     let b = rgb(b);
@@ -125,6 +134,7 @@ struct Canvas<'a> {
 }
 
 impl Canvas<'_> {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn put(&mut self, p: Point, ch: char, color: Color) {
         let x = p[0].round() as i32;
         let y = p[1].round() as i32;
@@ -135,6 +145,7 @@ impl Canvas<'_> {
         }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn line(&mut self, a: Point, b: Point, ch: char, color: Color) {
         let dx = b[0] - a[0];
         let dy = b[1] - a[1];
@@ -157,6 +168,7 @@ impl Canvas<'_> {
         }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn ellipse(&mut self, center: Point, radius: Point, color: Color, identity: u64) {
         let rx = radius[0].max(0.55);
         let ry = radius[1].max(0.7);
@@ -197,6 +209,7 @@ impl Canvas<'_> {
         }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn triangle(&mut self, a: Point, b: Point, c: Point, color: Color) {
         let edge = |p: Point, q: Point, r: Point| {
             (q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0])
@@ -249,10 +262,12 @@ struct Animal {
 }
 
 impl Animal {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn ground_at(&self, x: f32) -> f32 {
         self.ground + (x / (self.scale[0] * 9.0) + self.terrain_phase).sin() * self.scale[1] * 0.35
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn point(&self, x: f32, y: f32) -> Point {
         [
             self.origin[0] + self.facing * x * self.scale[0],
@@ -260,6 +275,7 @@ impl Animal {
         ]
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn oval(&self, canvas: &mut Canvas<'_>, center: Point, radius: Point, color: Color) {
         canvas.ellipse(
             self.point(center[0], center[1]),
@@ -269,10 +285,12 @@ impl Animal {
         );
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn line(&self, canvas: &mut Canvas<'_>, a: Point, b: Point, ch: char, color: Color) {
         canvas.line(self.point(a[0], a[1]), self.point(b[0], b[1]), ch, color);
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn triangle(&self, canvas: &mut Canvas<'_>, a: Point, b: Point, c: Point, color: Color) {
         canvas.triangle(
             self.point(a[0], a[1]),
@@ -294,6 +312,7 @@ struct Gait {
     tail: f32,
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn gait(a: &Animal, time: f32, k: &[f32; 15]) -> Gait {
     // Independent clocks are identity-derived; evaluating t=0 still yields a full pose.
     let phase = a.phase + time * a.cadence;
@@ -314,6 +333,7 @@ fn gait(a: &Animal, time: f32, k: &[f32; 15]) -> Gait {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn foot(a: &Animal, g: &Gait, hip: f32, phase: f32) -> Point {
     // Swing rises off the sampled terrain; the opposite half-cycle remains planted.
     let x = hip + g.stride * phase.cos();
@@ -324,6 +344,7 @@ fn foot(a: &Animal, g: &Gait, hip: f32, phase: f32) -> Point {
     ]
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn place_animal(a: &mut Animal, time: f32, k: &[f32; 15]) {
     // Travel stays inside the reserved slot. Ground is resampled after the x write.
     a.origin[0] += a.facing
@@ -334,6 +355,7 @@ fn place_animal(a: &mut Animal, time: f32, k: &[f32; 15]) {
     a.origin[1] = a.ground_at(a.origin[0]);
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_leg(canvas: &mut Canvas<'_>, a: &Animal, g: &Gait, leg: usize, body_y: f32, color: Color) {
     let hip = if a.species < 2 {
         if leg < 2 { -2.1 } else { 2.0 }
@@ -356,6 +378,7 @@ fn draw_leg(canvas: &mut Canvas<'_>, a: &Animal, g: &Gait, leg: usize, body_y: f
     a.line(canvas, f, [toe_x, toe_y], '_', color);
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_dinosaur(canvas: &mut Canvas<'_>, animal: &Animal, time: f32, k: &[f32; 15]) {
     // Evaluate one stable identity's pose and gait; origin.y is its ground plane.
     // Draw shadow, far limbs, tapered tail, body, neck/crest, head, near limbs, eye.
@@ -504,6 +527,7 @@ fn draw_dinosaur(canvas: &mut Canvas<'_>, animal: &Animal, time: f32, k: &[f32; 
     canvas.put(a.point(head[0] + 0.35, head[1] - 0.15), 'o', Color::White);
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn herd(
     width: usize,
     height: usize,
@@ -612,6 +636,7 @@ fn herd(
         .collect()
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn fern(canvas: &mut Canvas<'_>, base: Point, size: f32, phase: f32, color: Color) {
     let sway = phase.sin() * size * 0.32;
     let tip = [base[0] + sway, base[1] - size * 1.6];
@@ -626,6 +651,7 @@ fn fern(canvas: &mut Canvas<'_>, base: Point, size: f32, phase: f32, color: Colo
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_preserve(frame: &mut ModeFrame<'_>, k: &[f32; 15]) {
     // Initialize the clipped canvas, seed identities, atmosphere and terrain.
     // Evaluate herd gait, water, cloud and fern phases from the explicit clock.
@@ -854,10 +880,12 @@ mod tests {
         },
     ];
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn defaults() -> [f32; 15] {
         std::array::from_fn(|i| PARAMS[i].default)
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn render(width: usize, height: usize, seed: u64, time: f32, knobs: &[f32; 15]) -> Grid {
         let mut grid = vec![vec![Cell::blank(); width]; height];
         let mut rng = StdRng::seed_from_u64(seed);
@@ -875,6 +903,7 @@ mod tests {
         grid
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn plain(grid: &Grid) -> String {
         grid.iter()
             .map(|row| {
@@ -889,6 +918,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn preserve_at_dawn() {
         insta::assert_snapshot!(plain(&render(80, 24, 1701, 0.0, &defaults())), @r"
 
@@ -919,6 +949,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn preserve_in_motion() {
         insta::assert_snapshot!(plain(&render(80, 24, 1701, 2.25, &defaults())), @r"
 
@@ -949,6 +980,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn preserve_large_herd() {
         insta::assert_snapshot!(plain(&render(120, 36, 1701, 2.25, &defaults())), @r"
                                             /
@@ -991,6 +1023,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn deterministic_frames_and_independent_identities() {
         let k = defaults();
         let first = render(80, 24, 1701, 0.0, &k);
@@ -1028,6 +1061,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn controls_clamp_and_change_frames() {
         let k = defaults();
         for i in 0..PARAMS.len() {
@@ -1059,6 +1093,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn species_motion_and_terrain_contact() {
         let k = defaults();
         for (width, height) in [(80, 24), (320, 96)] {
@@ -1128,6 +1163,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn herd_variants_keep_identity_and_bounded_slots() {
         let k = defaults();
         for (w, h) in [(80, 24), (320, 96), (2000, 1000)] {
@@ -1175,6 +1211,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn small_empty_and_large_grids_are_bounded() {
         for (w, h) in [(0, 0), (0, 4), (1, 1), (2, 3), (9, 4), (2000, 1000)] {
             for extreme in [false, true] {

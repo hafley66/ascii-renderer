@@ -25,6 +25,7 @@ pub enum PathStyle {
     DoubleLine,
 }
 impl PathStyle {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub fn pick(rng: &mut StdRng) -> Self {
         match rng.random_range(0..5u32) {
             0 => PathStyle::Line,
@@ -35,6 +36,7 @@ impl PathStyle {
         }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub fn from_name(name: &str) -> Option<Self> {
         Some(match name {
             "line" => PathStyle::Line,
@@ -47,6 +49,7 @@ impl PathStyle {
     }
 }
 /// Draw a styled path between waypoints on the grid.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn draw_styled_path(
     grid: &mut Grid,
     stops: &[(usize, usize)],
@@ -63,6 +66,7 @@ pub fn draw_styled_path(
     }
 }
 /// Vine path: organic line with occasional leaf/bud chars branching off.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn draw_vine_path(grid: &mut Grid, stops: &[(usize, usize)], color: Color, rng: &mut StdRng) {
     let h = grid.len();
     if h == 0 {
@@ -118,6 +122,7 @@ pub(crate) fn draw_vine_path(grid: &mut Grid, stops: &[(usize, usize)], color: C
     }
 }
 /// River path: wider line using water-like chars.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn draw_river_path(grid: &mut Grid, stops: &[(usize, usize)], color: Color, rng: &mut StdRng) {
     let h = grid.len();
     if h == 0 {
@@ -162,6 +167,7 @@ pub(crate) fn draw_river_path(grid: &mut Grid, stops: &[(usize, usize)], color: 
     }
 }
 /// Double-line path: uses double box-drawing chars for a bolder connection.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn draw_double_path(grid: &mut Grid, stops: &[(usize, usize)], color: Color) {
     let h = grid.len();
     if h == 0 {

@@ -2,6 +2,7 @@
 //! Each fn reuses the bole/taper base then draws its own geometry.
 use super::*;
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(super) fn grow_species(
     grid: &mut Grid,
     rx: i32,
@@ -30,6 +31,7 @@ pub(super) fn grow_species(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn base_start(grid: &mut Grid, rx: i32, ry: i32, budget: i32, genome: &TreeGenome, cols: &TreeColors, rng: &mut StdRng) -> (i32, i32) {
     if budget >= 7 {
         if let Some(style) = genome.bole {
@@ -74,6 +76,7 @@ fn base_start(grid: &mut Grid, rx: i32, ry: i32, budget: i32, genome: &TreeGenom
 
 // ── Conifer: straight spire, tiered needle whorls, cones ────────────
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn conifer(grid: &mut Grid, rx: i32, ry: i32, budget: i32, budget_full: i32, genome: &TreeGenome, cols: &TreeColors, rng: &mut StdRng, foliage: f32, sway: f32) {
     let (tx, ty) = base_start(grid, rx, ry, budget, genome, cols, rng);
     let trunk_h = ((budget as f32) * (0.5 + 0.4 * genome.vigor)).max(2.0) as i32;
@@ -135,6 +138,7 @@ fn conifer(grid: &mut Grid, rx: i32, ry: i32, budget: i32, budget_full: i32, gen
 
 // ── Broadleaf: short trunk, boughs flatten into a leafy dome ────────
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn broadleaf(grid: &mut Grid, rx: i32, ry: i32, budget: i32, budget_full: i32, genome: &TreeGenome, cols: &TreeColors, rng: &mut StdRng, foliage: f32, sway: f32) {
     let (tx, ty) = base_start(grid, rx, ry, budget, genome, cols, rng);
     let trunk_h = ((budget as f32) * (0.2 + 0.18 * genome.vigor)).max(2.0) as i32;
@@ -217,6 +221,7 @@ fn broadleaf(grid: &mut Grid, rx: i32, ry: i32, budget: i32, budget_full: i32, g
 
 // ── Willow: S-curved trunk, crown of falling strands ────────────────
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn willow(grid: &mut Grid, rx: i32, ry: i32, budget: i32, budget_full: i32, genome: &TreeGenome, cols: &TreeColors, rng: &mut StdRng, foliage: f32, sway: f32) {
     let (tx, ty) = base_start(grid, rx, ry, budget, genome, cols, rng);
     let trunk_h = ((budget as f32) * (0.3 + 0.25 * genome.vigor)).max(2.0) as i32;
@@ -292,6 +297,7 @@ fn willow(grid: &mut Grid, rx: i32, ry: i32, budget: i32, budget_full: i32, geno
 
 // ── Babel: sane trunk that loses its mind as it climbs ──────────────
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn babel(grid: &mut Grid, rx: i32, ry: i32, budget: i32, budget_full: i32, genome: &TreeGenome, cols: &TreeColors, rng: &mut StdRng, foliage: f32, sway: f32) {
     let (tx, ty) = base_start(grid, rx, ry, budget, genome, cols, rng);
     let trunk_h = ((budget as f32) * (0.55 + 0.4 * genome.vigor)).max(6.0) as i32;
@@ -426,16 +432,19 @@ fn babel(grid: &mut Grid, rx: i32, ry: i32, budget: i32, budget_full: i32, genom
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn ax_of(nodes: &[(i32, i32, f32)]) -> i32 {
     nodes.last().map(|&(x, _, _)| x).unwrap_or(0)
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn ay_of(nodes: &[(i32, i32, f32)]) -> i32 {
     nodes.last().map(|&(_, y, _)| y).unwrap_or(0)
 }
 
 const MADNESS_CAP: usize = 240;
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn madness(grid: &mut Grid, x: i32, y: i32, order: u8, cols: &TreeColors, rng: &mut StdRng, genome: &TreeGenome, foliage: f32, used: &mut usize) {
     if *used >= MADNESS_CAP || order > 3 {
         return;
@@ -474,6 +483,7 @@ fn madness(grid: &mut Grid, x: i32, y: i32, order: u8, cols: &TreeColors, rng: &
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn crown(grid: &mut Grid, cx: i32, cy: i32, cols: &TreeColors, rng: &mut StdRng, genome: &TreeGenome, foliage: f32) {
     for r in [3i32, 5] {
         let pts = (r as f32 * 4.0) as i32;
@@ -498,6 +508,7 @@ fn crown(grid: &mut Grid, cx: i32, cy: i32, cols: &TreeColors, rng: &mut StdRng,
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn island(grid: &mut Grid, cx: i32, cy: i32, cols: &TreeColors, rng: &mut StdRng, foliage: f32) {
     let r = rng.random_range(1..3);
     let pts = (r as f32 * 6.0).max(6.0) as i32;
@@ -515,6 +526,7 @@ fn island(grid: &mut Grid, cx: i32, cy: i32, cols: &TreeColors, rng: &mut StdRng
 
 // ── Pleach: trained to one ceiling -- every tip lands on the same row ──
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn pleach(grid: &mut Grid, rx: i32, ry: i32, budget: i32, budget_full: i32, genome: &TreeGenome, cols: &TreeColors, rng: &mut StdRng, foliage: f32, sway: f32) {
     let (tx, ty) = base_start(grid, rx, ry, budget, genome, cols, rng);
     let trunk_h = ((budget as f32) * (0.4 + 0.35 * genome.vigor)).max(4.0) as i32;
@@ -626,11 +638,13 @@ const DIR_CYCLE: [MoveDir; 8] = [
     MoveDir::UpLeft,
 ];
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn turn(dir: MoveDir, by: i32) -> MoveDir {
     let i = DIR_CYCLE.iter().position(|&d| d == dir).unwrap_or(0) as i32;
     DIR_CYCLE[((i + by).rem_euclid(8)) as usize]
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn plot_spiral(grid: &mut Grid, cx: i32, cy: i32, r0: f32, turns: f32, cols: &TreeColors, rng: &mut StdRng, foliage: f32) {
     let theta_max = turns * std::f32::consts::TAU;
     let mut theta = 0.0;
@@ -659,6 +673,7 @@ fn plot_spiral(grid: &mut Grid, cx: i32, cy: i32, r0: f32, turns: f32, cols: &Tr
     set(grid, cx, cy, '◉', cols.fruit);
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn uzumaki(grid: &mut Grid, rx: i32, ry: i32, budget: i32, budget_full: i32, genome: &TreeGenome, cols: &TreeColors, rng: &mut StdRng, foliage: f32, sway: f32) {
     let (tx, ty) = base_start(grid, rx, ry, budget, genome, cols, rng);
     let trunk_h = ((budget as f32) * (0.45 + 0.35 * genome.vigor)).max(5.0) as i32;
@@ -739,6 +754,7 @@ fn uzumaki(grid: &mut Grid, rx: i32, ry: i32, budget: i32, budget_full: i32, gen
 
 // ── Cypress: tight flame column, swaying tip ────────────────────────
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn cypress(grid: &mut Grid, rx: i32, ry: i32, budget: i32, budget_full: i32, genome: &TreeGenome, cols: &TreeColors, rng: &mut StdRng, foliage: f32, sway: f32) {
     let (tx, ty) = base_start(grid, rx, ry, budget, genome, cols, rng);
     let h = ((budget as f32) * (0.65 + 0.3 * genome.vigor)).max(3.0) as i32;
@@ -775,6 +791,7 @@ mod tests {
     use super::*;
     use rand::SeedableRng;
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn plain(grid: &Grid) -> String {
         grid.iter()
             .map(|row| row.iter().map(|c| c.ch).collect::<String>())
@@ -782,6 +799,7 @@ mod tests {
             .join("\n")
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn cols() -> TreeColors {
         TreeColors {
             trunk: crate::color::rgb(90, 110, 60),
@@ -791,6 +809,7 @@ mod tests {
         }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn species_grid(style: TreeStyle) -> String {
         let mut g = vec![vec![Cell::blank(); 34]; 18];
         let mut r = StdRng::seed_from_u64(42);
@@ -800,41 +819,49 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_conifer() {
         insta::assert_snapshot!("arboretum_conifer", species_grid(TreeStyle::Conifer));
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_broadleaf() {
         insta::assert_snapshot!("arboretum_broadleaf", species_grid(TreeStyle::Broadleaf));
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_willow() {
         insta::assert_snapshot!("arboretum_willow", species_grid(TreeStyle::Willow));
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_cypress() {
         insta::assert_snapshot!("arboretum_cypress", species_grid(TreeStyle::Cypress));
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_babel() {
         insta::assert_snapshot!("arboretum_babel", species_grid(TreeStyle::Babel));
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_pleach() {
         insta::assert_snapshot!("arboretum_pleach", species_grid(TreeStyle::Pleach));
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_uzumaki() {
         insta::assert_snapshot!("arboretum_uzumaki", species_grid(TreeStyle::Uzumaki));
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn uzumaki_trunk_coils_and_crown_vortexes() {
         let mut g = vec![vec![Cell::blank(); 40]; 20];
         let mut r = StdRng::seed_from_u64(42);
@@ -861,6 +888,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn pleach_tips_meet_one_row() {
         let mut g = vec![vec![Cell::blank(); 40]; 20];
         let mut r = StdRng::seed_from_u64(42);
@@ -885,6 +913,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn babel_grows_sane_then_crazy() {
         // low rows must hold ordinary trunk wood; upper rows must break it
         let mut g = vec![vec![Cell::blank(); 30]; 26];

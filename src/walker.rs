@@ -42,6 +42,7 @@ pub struct PlantCharacter {
 }
 
 impl PlantCharacter {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub fn random(rng: &mut StdRng) -> Self {
         let taper_dir = match rng.random_range(0..5u32) {
             0 => TaperDir::Up,
@@ -60,6 +61,7 @@ impl PlantCharacter {
     }
 
     /// Size multiplier for a node at normalized walk position t (0..1).
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub fn size_factor(&self, t: f32) -> f32 {
         let raw = match self.taper_dir {
             TaperDir::Up | TaperDir::Right => 1.0 - t * self.taper_strength,
@@ -94,6 +96,7 @@ pub enum ClusterArrangement {
 }
 
 impl NodeMode {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub fn pick(landscape_bias: f32, rng: &mut StdRng) -> Self {
         if rng.random::<f32>() < landscape_bias {
             NodeMode::Landscape
@@ -132,6 +135,7 @@ pub struct LeafWalker {
 }
 
 impl LeafWalker {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub fn new(center_x: usize, center_y: usize) -> Self {
         LeafWalker {
             mood: WalkerMood::Organic,
@@ -141,6 +145,7 @@ impl LeafWalker {
         }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub fn pick_fill(&self, rect: &Rect, rng: &mut StdRng) -> FillGen {
         let area = rect.w * rect.h;
 
@@ -245,6 +250,7 @@ impl LeafWalker {
         }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub fn step(&mut self, rect: &Rect, rng: &mut StdRng) {
         self.prev_x = rect.x + rect.w / 2;
         self.prev_y = rect.y + rect.h / 2;
@@ -282,6 +288,7 @@ impl LeafWalker {
 /// Walk through leaf rects in nearest-neighbor order, producing layers
 /// instead of writing to a grid. Each leaf becomes a masked layer.
 /// Tree leaves get an extra scatter layer on top.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn walk_to_layers(
     leaves: &[Rect],
     center: (usize, usize),
@@ -400,6 +407,7 @@ pub fn walk_to_layers(
 /// Random-walk path across the canvas. At each waypoint, drop a scene element
 /// (tree, face, pattern, flowers) with breathing room between stops.
 /// The path itself is drawn as a subtle dot trail connecting waypoints.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn path_walk_layers(w: usize, h: usize, palette: &[Color; 5], rng: &mut StdRng) -> Vec<Layer> {
     let mut layers = Vec::new();
     let mut walker = LeafWalker::new(
@@ -615,6 +623,7 @@ pub fn path_walk_layers(w: usize, h: usize, palette: &[Color; 5], rng: &mut StdR
 /// Organic/geometric shapes that have natural edges (trees, flowers, diamonds,
 /// frets) can exceed the scene ellipse. Rectangular fills (tiles, crosshatch,
 /// noise) stay clipped inside.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn fill_breaks_out(fill: &FillGen) -> bool {
     matches!(
         fill,
@@ -629,6 +638,7 @@ fn fill_breaks_out(fill: &FillGen) -> bool {
 
 /// Generate a multi-layer scene at a waypoint. Returns layers for one "world".
 /// Bounded fills get the scene ellipse mask. Breakout fills get a larger rect.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn waypoint_scene(
     sx: usize,
     sy: usize,
@@ -741,6 +751,7 @@ fn waypoint_scene(
 
 /// Path walk v2: random-walk waypoints, each is a multi-layer scene.
 /// Returns (layers, stops) so the caller can draw the path trail after rendering.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn path_walk_layers_2(
     w: usize,
     h: usize,
@@ -781,6 +792,7 @@ pub fn path_walk_layers_2(
 
 /// Draw a path trail between waypoints directly on the grid using box-drawing chars.
 /// Bresenham line with directional glyphs.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn draw_path_trail(grid: &mut Grid, stops: &[(usize, usize)], color: Color, rng: &mut StdRng) {
     let h = grid.len();
     if h == 0 {
@@ -856,6 +868,7 @@ pub enum Growth {
 /// Path walk v3: boxes along a path, each is a mini-world.
 /// Overlapping boxes cannot reuse fill+color combos.
 /// density: 0-100, controls element count per box.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn path_walk_layers_3(
     w: usize,
     h: usize,
@@ -1002,6 +1015,7 @@ pub fn path_walk_layers_3(
 /// cx/cy are the element center, ew/eh are its char dimensions.
 /// Returns a MaskFn shaped to the element, picked from the full shape vocabulary.
 /// Breakout fills (trees, sprites) always get plain rects -- don't call this for them.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn pick_element_mask(cx: f32, cy: f32, ew: f32, eh: f32, rng: &mut StdRng) -> MaskFn {
     // Terminal cells are ~2:1 (h:w), so rx = 2*ry for visually balanced shapes.
     let ry = eh * 0.5;
@@ -1048,6 +1062,7 @@ fn pick_element_mask(cx: f32, cy: f32, ew: f32, eh: f32, rng: &mut StdRng) -> Ma
 }
 
 /// Discriminant byte for a FillGen variant, used for overlap dedup.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn fill_disc(f: &FillGen) -> u8 {
     match f {
         FillGen::TilePure(_) => 0,
@@ -1076,6 +1091,7 @@ fn fill_disc(f: &FillGen) -> u8 {
 }
 
 /// Growth offset: position of element `i` relative to center, based on pattern.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn growth_offset(growth: Growth, i: i32, spacing: i32) -> (i32, i32) {
     // Element 0 is always at center
     if i == 0 {
@@ -1116,6 +1132,7 @@ fn growth_offset(growth: Growth, i: i32, spacing: i32) -> (i32, i32) {
 }
 
 /// Pick a background fill that avoids forbidden combos.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn pick_unique_fill(
     palette: &[Color; 5],
     forbidden: &[(u8, usize)],
@@ -1138,6 +1155,7 @@ fn pick_unique_fill(
 }
 
 /// Pick an element fill that avoids forbidden + already-claimed combos.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn pick_unique_element(
     forbidden: &[(u8, usize)],
     claims: &[(u8, usize)],
@@ -1178,6 +1196,7 @@ fn pick_unique_element(
 }
 
 /// Size in cells for a given fill type.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn element_size(fill: &FillGen, rng: &mut StdRng) -> (usize, usize) {
     match fill {
         FillGen::Tree(_) => (rng.random_range(14..24), rng.random_range(10..20)),
@@ -1195,6 +1214,7 @@ fn element_size(fill: &FillGen, rng: &mut StdRng) -> (usize, usize) {
 
 /// Scatter a few big recognizable sprites as overlay layers.
 /// Biased toward trees and faces -- the things that read well at distance.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn scatter_layers(
     w: usize,
     h: usize,
@@ -1259,6 +1279,7 @@ pub fn scatter_layers(
 /// Leaf shape varies by stalk position: trapezoid at base, parallelogram in mid, triangle at tip.
 /// Leaves alternate sides and shrink toward the apex.
 /// Returns (layers, spine) where spine is the integer stalk path for draw_stalk.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn path_walk_stem(
     w: usize,
     h: usize,
@@ -1410,6 +1431,7 @@ pub fn path_walk_stem(
 
 /// Draw a plant stalk on the grid using line-art chars.
 /// Unlike draw_path_trail, this overwrites existing cells -- the stalk is structural.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn draw_stalk(grid: &mut Grid, spine: &[(usize, usize)], color: Color) {
     let h = grid.len();
     if h == 0 {
@@ -1463,6 +1485,7 @@ pub struct PartyParams {
 }
 
 impl PartyParams {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub fn default() -> Self {
         PartyParams {
             gap: 0,
@@ -1475,6 +1498,7 @@ impl PartyParams {
 
 /// Party walk: non-overlapping node islands along a path.
 /// Each node is a distinct scene clipped to a shape, with breathing room between.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn party_walk(
     w: usize,
     h: usize,
@@ -1650,6 +1674,7 @@ pub fn party_walk(
 
 /// Draw a box-drawing border around a rect on the grid.
 /// Overwrites whatever is there -- this is structural.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn draw_box_border(grid: &mut Grid, bx: usize, by: usize, bw: usize, bh: usize, color: Color) {
     let gh = grid.len();
     if gh == 0 {
@@ -1691,6 +1716,7 @@ pub fn draw_box_border(grid: &mut Grid, bx: usize, by: usize, bw: usize, bh: usi
 /// Draw a solid connecting path between waypoints.
 /// Uses box-drawing line chars, overwrites existing cells.
 /// Much more visible than draw_path_trail.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn draw_walk_path(grid: &mut Grid, stops: &[(usize, usize)], color: Color) {
     let h = grid.len();
     if h == 0 {
@@ -1744,6 +1770,7 @@ enum NodeShape {
 }
 
 /// Shift a color's hue by `degrees` (approximate, works on RGB).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn shift_hue(color: Color, degrees: u8) -> Color {
     match color {
         Color::Rgb { r, g, b } => {
@@ -1774,6 +1801,7 @@ fn shift_hue(color: Color, degrees: u8) -> Color {
 
 /// Walk through leaf rects in nearest-neighbor order, filling each based on
 /// walker mood/energy state.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn walk_and_fill_leaves(
     grid: &mut Grid,
     leaves: &[Rect],

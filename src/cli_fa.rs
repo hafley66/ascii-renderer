@@ -35,18 +35,21 @@ use crate::automata; use crate::avant; use crate::biomes; use crate::borders; us
 
 
 /// Dispatch arm for mode(s): fullmetal-eyes (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_fullmetal_eyes(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         grid = draw_fullmetal_eyes(grid, width, height, seed, palette, rng, t_anim, &args);
     (grid, false)
 }
 
 /// Dispatch arm for mode(s): fullmetal-eyes2 (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_fullmetal_eyes2(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         grid = draw_fullmetal_eyes2(grid, width, height, seed, palette, rng, t_anim, &args);
     (grid, false)
 }
 
 /// Dispatch arm for mode(s): fullmetal-alchemist (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_fullmetal_alchemist(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         // fullmetal-alchemist [rings] [glyphs] -- original generative alchemical sealwork
         let ring_count: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(5);
@@ -327,6 +330,7 @@ pub(crate) fn cli_fullmetal_alchemist(mut grid: Grid, width: usize, height: usiz
 }
 
 /// Dispatch arm for mode(s): fullmetal-alchemist2 (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_fullmetal_alchemist2(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         // fullmetal-alchemist2 [nodes=0] [runes] [fractures] -- node-first ritual geometry
         let node_arg: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0);
@@ -717,6 +721,7 @@ pub(crate) fn cli_fullmetal_alchemist2(mut grid: Grid, width: usize, height: usi
 }
 
 /// Dispatch arm for mode(s): fa3, fullmetal-alchemist3 (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_fa3_fullmetal_alchemist3(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         // fa3 [paths=0] [rings] [nodes=0] -- ornamented ray paths with inner circles and node stations
         let path_arg: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0);
@@ -1065,6 +1070,7 @@ pub(crate) fn cli_fa3_fullmetal_alchemist3(mut grid: Grid, width: usize, height:
 }
 
 /// Dispatch arm for mode(s): fa4, fullmetal-alchemist4 (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_fa4_fullmetal_alchemist4(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         // fa4 [paths=0] [rings] [nodes=0] [ornaments] [stations=0] -- airy curved ritual lattice
         let path_arg: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0);
@@ -1919,6 +1925,7 @@ pub(crate) fn cli_fa4_fullmetal_alchemist4(mut grid: Grid, width: usize, height:
 }
 
 /// Dispatch arm for mode(s): fa5, fullmetal-alchemist5 (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_fa5_fullmetal_alchemist5(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         // fa5 [polys=0] [skew=0] [chords=0] [stations=0] -- inscribed polygon star array
         let poly_arg: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0);

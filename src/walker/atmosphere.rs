@@ -20,6 +20,7 @@ pub enum Weather {
     None,
 }
 impl Weather {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub fn pick(rng: &mut StdRng) -> Self {
         match rng.random_range(0..8u32) {
             0 => Weather::Rain,
@@ -30,6 +31,7 @@ impl Weather {
         }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub fn from_name(name: &str) -> Option<Self> {
         Some(match name {
             "rain" => Weather::Rain,
@@ -44,6 +46,7 @@ impl Weather {
 /// Apply a weather overlay to the grid. Runs AFTER all scene compositing.
 /// Only writes on cells that are blank or very sparse, preserving scene content.
 /// `intensity`: 0-100, how dense the weather is.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn apply_atmosphere(
     grid: &mut Grid,
     weather: Weather,

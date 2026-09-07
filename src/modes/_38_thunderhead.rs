@@ -28,22 +28,27 @@ const PARAMS: &[Param] = &[
 ];
 
 impl Mode for ThunderheadMode {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn name(&self) -> &'static str {
         "thunderhead"
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn help(&self) -> &'static str {
         "Rotating supercell, sculpted anvil, deterministic forked lightning, rain curtains, and storm-ground reflection [scale] [turb] [shear] [rain] [bolts] [forks] [flash] [wind] [speed] [glow] [reflect]"
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn animation(&self) -> AnimKind {
         AnimKind::Iterate
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn params(&self) -> &'static [Param] {
         PARAMS
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn render(&self, frame: &mut ModeFrame<'_>) {
         let params = ThunderheadParams::from_inputs(frame.args, frame.param_values);
         draw_thunderhead(
@@ -75,6 +80,7 @@ pub(crate) struct ThunderheadParams {
 }
 
 impl Default for ThunderheadParams {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn default() -> Self {
         Self {
             scale: 1.0,
@@ -93,6 +99,7 @@ impl Default for ThunderheadParams {
 }
 
 impl ThunderheadParams {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub(crate) fn from_inputs(args: &[String], param_values: Option<&[f32]>) -> Self {
         let read = |index: usize, key: &str, default: f32| {
             args.get(index)
@@ -149,6 +156,7 @@ struct StormField {
 }
 
 impl StormField {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn new(width: usize, height: usize, t: f32, speed: f32) -> Self {
         let inv_width = 1.0 / width.max(1) as f32;
         let inv_height = 1.0 / height.max(1) as f32;
@@ -194,6 +202,7 @@ impl StormField {
     }
 
     #[inline]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn waves(&self, x: usize, y: usize) -> (f32, f32, f32) {
         let column = self.columns[x];
         let row = self.rows[y];
@@ -211,6 +220,7 @@ struct StrikeState {
     intensity: f32,
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn strike_state(t: f32, params: &ThunderheadParams) -> StrikeState {
     let period = 3.4;
     let clock = t * params.speed;
@@ -233,6 +243,7 @@ fn strike_state(t: f32, params: &ThunderheadParams) -> StrikeState {
 }
 
 #[inline]
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn mix64(mut value: u64) -> u64 {
     value ^= value >> 30;
     value = value.wrapping_mul(0xBF58_476D_1CE4_E5B9);
@@ -242,12 +253,14 @@ fn mix64(mut value: u64) -> u64 {
 }
 
 #[inline]
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn hash01(seed: u64, tag: u64) -> f32 {
     let value = mix64(seed ^ tag.wrapping_mul(0x9E37_79B9_7F4A_7C15));
     ((value >> 40) as f32) * (1.0 / 16_777_215.0)
 }
 
 #[inline]
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn hash2(seed: u64, x: i32, y: i32) -> f32 {
     let value = seed
         ^ (x as u64).wrapping_mul(0xD6E8_FEB8_6659_FD93)
@@ -256,12 +269,14 @@ fn hash2(seed: u64, x: i32, y: i32) -> f32 {
 }
 
 #[inline]
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn ellipse_field(x: f32, y: f32, cx: f32, cy: f32, rx: f32, ry: f32) -> f32 {
     let dx = (x - cx) / rx.max(0.001);
     let dy = (y - cy) / ry.max(0.001);
     1.0 - dx * dx - dy * dy
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_storm_sky(
     grid: &mut Grid,
     width: usize,
@@ -310,6 +325,7 @@ fn draw_storm_sky(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn put_preserving_bg(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
     if x < 0 || y < 0 {
         return;
@@ -322,6 +338,7 @@ fn put_preserving_bg(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_rain(
     grid: &mut Grid,
     width: usize,
@@ -370,6 +387,7 @@ fn draw_rain(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn cloud_glyph(level: usize, shelf: bool) -> char {
     if shelf && level > 1 {
         return match level {
@@ -387,6 +405,7 @@ fn cloud_glyph(level: usize, shelf: bool) -> char {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_supercell(
     grid: &mut Grid,
     width: usize,
@@ -486,6 +505,7 @@ fn draw_supercell(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn lightning_glyph(dx: i32) -> char {
     match dx.cmp(&0) {
         std::cmp::Ordering::Less => '╱',
@@ -494,6 +514,7 @@ fn lightning_glyph(dx: i32) -> char {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn put_lightning(
     grid: &mut Grid,
     x: i32,
@@ -524,6 +545,7 @@ fn put_lightning(
     put_preserving_bg(grid, x, y, ch, color);
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_lightning(
     grid: &mut Grid,
     width: usize,
@@ -639,6 +661,7 @@ fn draw_lightning(
     all_points
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_ground_reflection(
     grid: &mut Grid,
     width: usize,
@@ -689,6 +712,7 @@ fn draw_ground_reflection(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn draw_thunderhead(
     grid: &mut Grid,
     width: usize,
@@ -739,6 +763,7 @@ mod tests {
     use crate::render::grid_to_plain;
     use rand::SeedableRng;
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn frame(width: usize, height: usize, seed: u64, t: f32, params: &ThunderheadParams) -> Grid {
         let mut grid = vec![vec![Cell::blank(); width]; height];
         let palette = make_palette(seed);
@@ -749,11 +774,13 @@ mod tests {
         grid
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn plain(grid: &Grid) -> String {
         grid_to_plain(grid).join("\n")
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn deterministic_seeded_frame_and_visible_motion() {
         let params = ThunderheadParams::default();
         let a = frame(100, 36, 42, 1.25, &params);
@@ -766,6 +793,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn parameter_values_override_and_clamp() {
         let values = [
             99.0, -1.0, -99.0, 99.0, 99.0, 99.0, -1.0, 99.0, 0.0, 99.0, -1.0,
@@ -789,6 +817,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn tiny_grids_and_parameter_extrema_terminate() {
         let maxed = ThunderheadParams {
             scale: 1.35,
@@ -811,6 +840,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn strike_frame_contains_channels_and_reflection() {
         let grid = frame(100, 36, 42, 0.0, &ThunderheadParams::default());
         let ground_y = (36.0f32 * 0.79).round() as usize;
@@ -831,6 +861,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn optional_layers_change_the_composition() {
         let params = ThunderheadParams::default();
         let full = frame(90, 32, 77, 0.0, &params);
@@ -851,6 +882,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_thunderhead_strike() {
         insta::assert_snapshot!(plain(&frame(
             80,
@@ -862,6 +894,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_thunderhead_between_strikes() {
         insta::assert_snapshot!(plain(&frame(
             80,
@@ -874,6 +907,7 @@ mod tests {
 
     #[test]
     #[ignore = "release-only performance probe; run with --release --ignored"]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn perf_thunderhead_frame() {
         use std::hint::black_box;
         use std::time::Instant;

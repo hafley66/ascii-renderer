@@ -42,6 +42,7 @@ use crate::automata; use crate::avant; use crate::biomes; use crate::borders; us
 // lamps light while tenants wait and go dark once a cab services the floor.
 
 /// splitmix-style mix for per-floor/per-cycle tenant rolls.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn emix(mut z: u64) -> u64 {
     z = z.wrapping_add(0x9E37_79B9_7F4A_7C15);
     z = (z ^ (z >> 30)).wrapping_mul(0xBF58_476D_1CE4_E5B9);
@@ -50,6 +51,7 @@ fn emix(mut z: u64) -> u64 {
 }
 
 /// How many tenants wait at `floor` during passenger-cycle `pc`.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn elevator_waiting(seed: u64, floor: u64, pc: u64, crowd: f32) -> usize {
     let h = emix(seed ^ floor.wrapping_mul(0x517C_C1B7).wrapping_add(pc.wrapping_mul(0x2722_0A95)));
     let roll = (h % 1000) as f32 / 1000.0;
@@ -60,6 +62,7 @@ fn elevator_waiting(seed: u64, floor: u64, pc: u64, crowd: f32) -> usize {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn draw_elevator(
     grid: &mut Grid,
     width: usize,
@@ -535,6 +538,7 @@ pub(crate) fn draw_elevator(
 }
 
 /// Dispatch arm for mode(s): eyes (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_eyes(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         // eyes [density] [mutation] -- maximalist field of varied staring forms
         let density: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(42);
@@ -847,6 +851,7 @@ pub(crate) fn cli_eyes(mut grid: Grid, width: usize, height: usize, seed: u64, p
 }
 
 /// Dispatch arm for mode(s): eyes2 (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_eyes2(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         // eyes2 [count] [pupil-visible] -- anatomical eyes all staring at a focal lure
         let eye_count: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(6);
@@ -1182,6 +1187,7 @@ pub(crate) fn cli_eyes2(mut grid: Grid, width: usize, height: usize, seed: u64, 
 }
 
 /// Dispatch arm for mode(s): metro (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_metro(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         // metro [lines] -- transit map: orthogonal routes with rounded bends,
         // stations along each run, interchange rings where routes cross
@@ -1365,6 +1371,7 @@ pub(crate) fn cli_metro(mut grid: Grid, width: usize, height: usize, seed: u64, 
 }
 
 /// Dispatch arm for mode(s): koi (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_koi(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         // koi [fish] -- pond seen from above: still water, ripple rings, lily
         // pads, koi gliding with curled tails
@@ -1457,6 +1464,7 @@ pub(crate) fn cli_koi(mut grid: Grid, width: usize, height: usize, seed: u64, pa
 }
 
 /// Dispatch arm for mode(s): skyline (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_skyline(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         // skyline [lit] -- night city in four depth layers: far slabs, mid
         // backdrop, near towers built from facade archetypes (glass curtain,
@@ -1851,6 +1859,7 @@ pub(crate) fn cli_skyline(mut grid: Grid, width: usize, height: usize, seed: u64
 }
 
 /// Dispatch arm for mode(s): hive (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_hive(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         // hive [fill] -- a comb hanging from the top edge: hex lattice masked
         // to a noise-warped teardrop, ragged bare-wall rim, honey drips off the
@@ -1965,6 +1974,7 @@ pub(crate) fn cli_hive(mut grid: Grid, width: usize, height: usize, seed: u64, p
 }
 
 /// Dispatch arm for mode(s): jelly (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_jelly(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         // jelly [count] -- deep-sea drift: translucent bells with swaying
         // tentacles, rising bubbles, light shafts from the surface
@@ -2071,6 +2081,7 @@ pub(crate) fn cli_jelly(mut grid: Grid, width: usize, height: usize, seed: u64, 
 }
 
 /// Dispatch arm for mode(s): jelly2 (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_jelly2(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         // jelly2 [count] -- generative jellies. every jelly rolls a species
         // from independent parts: bell shape (shaded dome, moon jelly, box
@@ -2350,6 +2361,7 @@ pub(crate) fn cli_jelly2(mut grid: Grid, width: usize, height: usize, seed: u64,
 }
 
 /// Dispatch arm for mode(s): elevator.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_elevator(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         // elevator [lifts] [speed] [crowd] -- building cross-section, cab banks
         // running seeded service loops with doored dwells and mirrored weights
@@ -2388,6 +2400,7 @@ pub(crate) fn cli_elevator(mut grid: Grid, width: usize, height: usize, seed: u6
 // rim double-flashes at each full revolution, and the queue/exit pedestrians
 // are walk interpolations keyed to exact pass times.
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn draw_ferris(
     grid: &mut Grid,
     width: usize,
@@ -2603,6 +2616,7 @@ pub(crate) fn draw_ferris(
 }
 
 /// Dispatch arm for mode(s): ferris.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_ferris(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         // ferris [radius] [gondolas] [speed] -- carnival wheel: linear hub
         // rotation, per-revolution rider swaps, chase lights, boarding walks

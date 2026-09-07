@@ -3,6 +3,7 @@ use crossterm::style::Color;
 use std::io::{self, Write};
 
 /// Render grid to plain text (no ANSI escapes).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn grid_to_plain(grid: &Grid) -> Vec<String> {
     let mut lines = Vec::with_capacity(grid.len());
     for row in grid {
@@ -30,6 +31,7 @@ const ANSI_CHUNK_BYTES: usize = 64 * 1024;
 /// Encode one-shot output with bounded scratch storage. The callback is the
 /// write boundary: chunks contain complete cells/escapes and are at most 64 KiB.
 /// Foreground persists across rows; background resets before every newline.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn encode_grid_ansi(grid: &Grid, mut emit: impl FnMut(&[u8]) -> io::Result<()>) -> io::Result<()> {
     let mut buffer = String::with_capacity(ANSI_CHUNK_BYTES);
     let mut cur_fg = Color::Reset;
@@ -75,6 +77,7 @@ fn encode_grid_ansi(grid: &Grid, mut emit: impl FnMut(&[u8]) -> io::Result<()>) 
     emit(buffer.as_bytes())
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn push_u8(buffer: &mut String, value: u8) {
     if value >= 100 {
         buffer.push(char::from(b'0' + value / 100));
@@ -86,6 +89,7 @@ fn push_u8(buffer: &mut String, value: u8) {
 }
 
 /// Same SGR bytes as crossterm 0.26, without nested formatting per cell.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn push_color(buffer: &mut String, color: Color, foreground: bool) {
     if color == Color::Reset {
         buffer.push_str(if foreground { "\x1b[39m" } else { "\x1b[49m" });
@@ -128,6 +132,7 @@ pub(crate) fn push_color(buffer: &mut String, color: Color, foreground: bool) {
 }
 
 /// Print the grid with ANSI color escape sequences.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn render_grid(grid: &Grid) {
     let stdout = io::stdout();
     let mut out = stdout.lock();
@@ -140,6 +145,7 @@ mod tests {
     use super::*;
 
     // Pre-optimization implementation, retained as a byte oracle and baseline.
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn reference_ansi(grid: &Grid, writer: impl Write) {
         let mut out = io::BufWriter::new(writer);
 
@@ -182,6 +188,7 @@ mod tests {
         out.flush().unwrap();
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn colored_grid() -> Grid {
         (0..103)
             .map(|y| {
@@ -206,6 +213,7 @@ mod tests {
             .collect()
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn compare_reference(grid: &Grid) -> (usize, usize) {
         let mut expected = Vec::new();
         reference_ansi(grid, &mut expected);
@@ -228,6 +236,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn ansi_matches_reference_colors_and_unicode() {
         let mut colors = vec![
             Color::Reset,
@@ -275,6 +284,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn ansi_row_state_and_skipped_cell_colors() {
         let grid = vec![
             vec![
@@ -305,6 +315,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn ansi_chunks_are_bounded_across_cells_rows_and_final_reset() {
         compare_reference(&Vec::new());
         compare_reference(&vec![Vec::new(); ANSI_CHUNK_BYTES]);
@@ -334,6 +345,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn ansi_stops_at_failed_write_boundary() {
         let mut calls = 0;
         let result = encode_grid_ansi(&colored_grid(), |_| {
@@ -347,15 +359,18 @@ mod tests {
     #[cfg(all(unix, not(debug_assertions)))]
     #[test]
     #[ignore = "release-only 320x103 ANSI probe; run with --release --ignored --nocapture"]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn perf_terminal_emission_320x103() {
         use std::hint::black_box;
         use std::time::Instant;
 
         struct Consume;
         impl Write for Consume {
+            #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
             fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
                 Ok(black_box(bytes).len())
             }
+            #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
             fn flush(&mut self) -> io::Result<()> {
                 Ok(())
             }

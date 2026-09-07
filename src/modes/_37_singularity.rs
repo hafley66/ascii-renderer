@@ -28,22 +28,27 @@ const PARAMS: &[Param] = &[
 ];
 
 impl Mode for SingularityMode {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn name(&self) -> &'static str {
         "singularity"
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn help(&self) -> &'static str {
         "Gravitationally lensed accretion disk, Kerr shadow, photon subrings, polar jet, and orbiting corona [mass] [spin] [tilt] [disk] [jet] [stars] [speed] [bloom] [grain] [rings] [roll]"
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn animation(&self) -> AnimKind {
         AnimKind::Iterate
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn params(&self) -> &'static [Param] {
         PARAMS
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn render(&self, frame: &mut ModeFrame<'_>) {
         let params = SingularityParams::from_inputs(frame.args, frame.param_values);
         draw_singularity(
@@ -75,6 +80,7 @@ pub(crate) struct SingularityParams {
 }
 
 impl Default for SingularityParams {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn default() -> Self {
         Self {
             mass: 1.0,
@@ -93,6 +99,7 @@ impl Default for SingularityParams {
 }
 
 impl SingularityParams {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub(crate) fn from_inputs(args: &[String], param_values: Option<&[f32]>) -> Self {
         let read = |index: usize, key: &str, default: f32| {
             args.get(index)
@@ -132,6 +139,7 @@ struct Projection {
 }
 
 impl Projection {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn new(width: usize, height: usize, roll: f32) -> Self {
         let scale = 1.0 / height.max(1) as f32;
         let cx = width.saturating_sub(1) as f32 * 0.5;
@@ -159,12 +167,14 @@ impl Projection {
     }
 
     #[inline]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn point(&self, x: usize, y: usize) -> (f32, f32) {
         (self.x[x].u + self.y[y].u, self.x[x].v + self.y[y].v)
     }
 }
 
 #[inline]
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn mix64(mut value: u64) -> u64 {
     value ^= value >> 30;
     value = value.wrapping_mul(0xBF58_476D_1CE4_E5B9);
@@ -174,12 +184,14 @@ fn mix64(mut value: u64) -> u64 {
 }
 
 #[inline]
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn hash01(seed: u64, tag: u64) -> f32 {
     let value = mix64(seed ^ tag.wrapping_mul(0x9E37_79B9_7F4A_7C15));
     ((value >> 40) as f32) * (1.0 / 16_777_215.0)
 }
 
 #[inline]
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn hash2(seed: u64, x: i32, y: i32) -> f32 {
     let value = seed
         ^ (x as u64).wrapping_mul(0xD6E8_FEB8_6659_FD93)
@@ -188,11 +200,13 @@ fn hash2(seed: u64, x: i32, y: i32) -> f32 {
 }
 
 #[inline]
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn lens_source(u: f32, v: f32, einstein2: f32) -> (f32, f32) {
     let factor = 1.0 - einstein2 / (u * u + v * v).max(0.000_1);
     (u * factor, v * factor)
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_lensed_background(
     grid: &mut Grid,
     width: usize,
@@ -253,6 +267,7 @@ fn draw_lensed_background(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn disk_glyph(brightness: f32, grain: f32) -> char {
     match (brightness * 7.0 + grain * 0.75) as usize {
         0 => '·',
@@ -266,6 +281,7 @@ fn disk_glyph(brightness: f32, grain: f32) -> char {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_relativity_field(
     grid: &mut Grid,
     width: usize,
@@ -418,6 +434,7 @@ fn draw_relativity_field(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn put(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color, bg: Color) {
     if x < 0 || y < 0 {
         return;
@@ -429,6 +446,7 @@ fn put(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color, bg: Color) {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_orbiting_corona(
     grid: &mut Grid,
     width: usize,
@@ -481,6 +499,7 @@ fn draw_orbiting_corona(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn draw_singularity(
     grid: &mut Grid,
     width: usize,
@@ -518,6 +537,7 @@ mod tests {
     use crate::render::grid_to_plain;
     use rand::SeedableRng;
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn frame(width: usize, height: usize, seed: u64, t: f32, params: &SingularityParams) -> Grid {
         let mut grid = vec![vec![Cell::blank(); width]; height];
         let palette = make_palette(seed);
@@ -528,11 +548,13 @@ mod tests {
         grid
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn plain(grid: &Grid) -> String {
         grid_to_plain(grid).join("\n")
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn deterministic_seeded_frame_and_visible_motion() {
         let params = SingularityParams::default();
         let a = frame(100, 36, 42, 1.25, &params);
@@ -545,6 +567,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn parameter_values_override_and_clamp() {
         let values = [
             99.0, -99.0, 99.0, -1.0, 99.0, -1.0, 0.0, 99.0, 99.0, 99.0, -99.0,
@@ -568,6 +591,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn tiny_grids_and_parameter_extrema_terminate() {
         let maxed = SingularityParams {
             mass: 1.45,
@@ -590,6 +614,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn optional_layers_change_the_composition() {
         let params = SingularityParams::default();
         let full = frame(90, 32, 77, 2.4, &params);
@@ -610,6 +635,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_singularity_t0() {
         insta::assert_snapshot!(plain(&frame(
             80,
@@ -621,6 +647,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_singularity_in_motion() {
         insta::assert_snapshot!(plain(&frame(
             80,
@@ -633,6 +660,7 @@ mod tests {
 
     #[test]
     #[ignore = "release-only performance probe; run with --release --ignored"]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn perf_singularity_frame() {
         use std::hint::black_box;
         use std::time::Instant;

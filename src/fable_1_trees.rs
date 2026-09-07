@@ -29,6 +29,7 @@ pub(crate) const SPECIES: [Species; 5] = [
 ];
 
 impl Species {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub(crate) fn label(self) -> &'static str {
         match self {
             Species::Colonize => "colonize",
@@ -56,6 +57,7 @@ pub(crate) struct Ink {
 }
 
 impl Ink {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub(crate) fn from_base(trunk: Color, leaf: Color, fruit: Color) -> Ink {
         Ink {
             trunk: lighten(trunk, 12),
@@ -72,6 +74,7 @@ impl Ink {
     }
 
     /// Blend every color toward `to` by `f`, for depth falloff.
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub(crate) fn faded(&self, to: Color, f: f32) -> Ink {
         let m = |c: Color| lerp_color(c, to, f);
         Ink {
@@ -108,10 +111,12 @@ pub(crate) struct Brush<'a> {
 }
 
 impl<'a> Brush<'a> {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub(crate) fn new(grid: &'a mut Grid, plot: Rect) -> Brush<'a> {
         Brush { grid, plot }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn inside(&self, x: i32, y: i32) -> bool {
         let p = self.plot;
         x >= p.x as i32
@@ -122,18 +127,21 @@ impl<'a> Brush<'a> {
             && (x as usize) < self.grid[y as usize].len()
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn put(&mut self, x: i32, y: i32, ch: char, fg: Color) {
         if self.inside(x, y) {
             self.grid[y as usize][x as usize] = Cell::new(ch, fg);
         }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn put_soft(&mut self, x: i32, y: i32, ch: char, fg: Color) {
         if self.inside(x, y) && SOFT.contains(&self.grid[y as usize][x as usize].ch) {
             self.grid[y as usize][x as usize] = Cell::new(ch, fg);
         }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn put_leafy(&mut self, x: i32, y: i32, ch: char, fg: Color) {
         if self.inside(x, y) {
             let cur = self.grid[y as usize][x as usize].ch;
@@ -143,12 +151,14 @@ impl<'a> Brush<'a> {
         }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn root(&self) -> (i32, i32) {
         let p = self.plot;
         (p.x as i32 + p.w as i32 / 2, p.y as i32 + p.h as i32 - 1)
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn slope_glyph(dx: i32, dy: i32) -> char {
     if dy == 0 {
         return '─';
@@ -168,6 +178,7 @@ fn slope_glyph(dx: i32, dy: i32) -> char {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn stroke(b: &mut Brush, x0: i32, y0: i32, x1: i32, y1: i32, fg: Color, heavy: bool) {
     let dx = x1 - x0;
     let dy = y1 - y0;
@@ -188,6 +199,7 @@ fn stroke(b: &mut Brush, x0: i32, y0: i32, x1: i32, y1: i32, fg: Color, heavy: b
 }
 
 /// Surface roots on the ground row: `╌╌╱┴╲╌`.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn flare(b: &mut Brush, rx: i32, ry: i32, hw: i32, ink: &Ink, rng: &mut StdRng) {
     b.put(rx, ry, if hw == 0 { '┴' } else { '┃' }, ink.trunk);
     b.put(rx - hw - 1, ry, '╱', ink.root);
@@ -210,6 +222,7 @@ struct CNode {
     size: u32,
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn grow_colonize(b: &mut Brush, energy: f32, ink: &Ink, g: &Growth, rng: &mut StdRng) {
     let (rx, ry) = b.root();
     let ph = b.plot.h as f32;
@@ -381,6 +394,7 @@ fn grow_colonize(b: &mut Brush, energy: f32, ink: &Ink, g: &Growth, rng: &mut St
 
 // ── banyan ──────────────────────────────────────────────────────────
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn grow_banyan(b: &mut Brush, energy: f32, ink: &Ink, g: &Growth, rng: &mut StdRng) {
     let (rx, ry) = b.root();
     let h = (b.plot.h as f32 * energy).max(4.0);
@@ -493,6 +507,7 @@ fn grow_banyan(b: &mut Brush, energy: f32, ink: &Ink, g: &Growth, rng: &mut StdR
 
 // ── mangrove ────────────────────────────────────────────────────────
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn grow_mangrove(b: &mut Brush, energy: f32, ink: &Ink, g: &Growth, rng: &mut StdRng) {
     let (rx, ry) = b.root();
     let h = (b.plot.h as f32 * energy).max(4.0);
@@ -585,6 +600,7 @@ fn grow_mangrove(b: &mut Brush, energy: f32, ink: &Ink, g: &Growth, rng: &mut St
 
 // ── baobab ──────────────────────────────────────────────────────────
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn twig(
     b: &mut Brush,
     x: i32,
@@ -620,6 +636,7 @@ fn twig(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn grow_baobab(b: &mut Brush, energy: f32, ink: &Ink, g: &Growth, rng: &mut StdRng) {
     let (rx, ry) = b.root();
     let h = (b.plot.h as f32 * energy).max(4.0);
@@ -682,6 +699,7 @@ fn grow_baobab(b: &mut Brush, energy: f32, ink: &Ink, g: &Growth, rng: &mut StdR
 
 // ── coral (diffusion-limited aggregation) ───────────────────────────
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn grow_coral(b: &mut Brush, energy: f32, ink: &Ink, g: &Growth, rng: &mut StdRng) {
     let (rx, ry) = b.root();
     let h = (b.plot.h as f32 * energy).max(4.0);
@@ -842,6 +860,7 @@ fn grow_coral(b: &mut Brush, energy: f32, ink: &Ink, g: &Growth, rng: &mut StdRn
 }
 
 /// Grow one species into `grid`, clipped to `plot`; the root sits at the plot's bottom center.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn grow(sp: Species, grid: &mut Grid, plot: Rect, energy: f32, ink: &Ink, g: &Growth, rng: &mut StdRng) {
     if plot.w < 3 || plot.h < 3 {
         return;
@@ -857,6 +876,7 @@ pub(crate) fn grow(sp: Species, grid: &mut Grid, plot: Rect, energy: f32, ink: &
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn hash01(x: i32, y: i32, k: u32, seed: u64) -> f32 {
     let mut h = (x as u64).wrapping_mul(0x9E37_79B9_7F4A_7C15)
         ^ (y as u64).wrapping_mul(0xBF58_476D_1CE4_E5B9)
@@ -882,6 +902,7 @@ pub(crate) struct SheetKnobs {
 }
 
 impl SheetKnobs {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub(crate) fn from_env() -> Self {
         SheetKnobs {
             energy: param_f32("ENERGY", 0.9),
@@ -897,6 +918,7 @@ impl SheetKnobs {
 }
 
 /// Row bands of the sheet: (top, height) for the full row and the scrub row.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn sheet_rows(h: usize) -> [(usize, usize); 2] {
     let cell_h0 = ((h as f32 * 0.58) as usize).max(12);
     let cell_h1 = h.saturating_sub(cell_h0).max(9);
@@ -912,12 +934,14 @@ thread_local! {
     static SHEET: RefCell<Option<SheetCache>> = RefCell::new(None);
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn sheet_key(w: usize, h: usize, seed: u64, palette: &[Color; 5], k: &SheetKnobs) -> (usize, usize, u64, [u32; 6], [Color; 5]) {
     let bits = [k.energy.to_bits(), k.fruit.to_bits(), k.branch.to_bits(), k.leaf.to_bits(), k.roots.to_bits(), k.scrub.to_bits()];
     (w, h, seed, bits, *palette)
 }
 
 /// Grow the sheet once per (size, seed, knobs, palette); each frame copies it and flickers.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn draw_fable_1_trees(grid: &mut Grid, w: usize, h: usize, seed: u64, palette: &[Color; 5], t: f32, k: &SheetKnobs) {
     let key = sheet_key(w, h, seed, palette, k);
     SHEET.with(|cell| {
@@ -935,6 +959,7 @@ pub(crate) fn draw_fable_1_trees(grid: &mut Grid, w: usize, h: usize, seed: u64,
 }
 
 /// Copy the grown page into the frame, leaning each tree column by a slow wind.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn copy_swayed(grid: &mut Grid, page: &Grid, w: usize, h: usize, t: f32, k: &SheetKnobs) {
     let cols = SPECIES.len();
     let cell_w = (w / cols).max(1);
@@ -964,6 +989,7 @@ fn copy_swayed(grid: &mut Grid, page: &Grid, w: usize, h: usize, t: f32, k: &She
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn grow_sheet(grid: &mut Grid, w: usize, h: usize, seed: u64, palette: &[Color; 5], k: &SheetKnobs) {
     let cols = SPECIES.len();
     if w < cols * 4 || h < 6 {
@@ -1023,6 +1049,7 @@ fn grow_sheet(grid: &mut Grid, w: usize, h: usize, seed: u64, palette: &[Color; 
     });
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn flicker(grid: &mut Grid, w: usize, h: usize, seed: u64, t: f32, k: &SheetKnobs) {
     measure_layer("fable-1-trees", "flicker", || {
         if t <= 0.0 || k.flicker <= 0.0 {
@@ -1048,6 +1075,7 @@ fn flicker(grid: &mut Grid, w: usize, h: usize, seed: u64, t: f32, k: &SheetKnob
     });
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_fable_1_trees(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
     let _ = (rng, term_w, term_h, mode, theme_name);
     let mut k = SheetKnobs::from_env();
@@ -1073,6 +1101,7 @@ pub(crate) fn cli_fable_1_trees(mut grid: Grid, width: usize, height: usize, see
 mod tests {
     use super::*;
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn run(w: usize, h: usize, seed: u64, t: f32) -> String {
         let mut g = vec![vec![Cell::blank(); w]; h];
         let p = crate::color::make_palette(seed);
@@ -1085,17 +1114,20 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_fable_1_trees_80x24() {
         insta::assert_snapshot!("fable_1_trees_80x24", run(80, 24, 42, 0.0));
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn deterministic_and_seed_sensitive() {
         assert_eq!(run(110, 36, 42, 0.0), run(110, 36, 42, 0.0));
         assert_ne!(run(110, 36, 42, 0.0), run(110, 36, 7, 0.0));
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn every_species_draws_a_trunk_and_canopy() {
         for sp in SPECIES {
             let mut g = vec![vec![Cell::blank(); 30]; 20];
@@ -1111,6 +1143,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn tiny_plots_do_not_panic() {
         for sp in SPECIES {
             let mut g = vec![vec![Cell::blank(); 6]; 5];

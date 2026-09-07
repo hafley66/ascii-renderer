@@ -51,6 +51,7 @@ use crate::warps::*;
 
 /// Render path used by every mode: dump a serialized grid when ASCII_GRID_DUMP
 /// is set (for the morph driver to capture), otherwise paint to the terminal.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn emit_grid(grid: &Grid) {
     use std::io::Write;
     if std::env::var("ASCII_GRID_DUMP").is_ok() {
@@ -63,6 +64,7 @@ pub(crate) fn emit_grid(grid: &Grid) {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn grid_color_code(c: Color) -> String {
     match c {
         Color::Rgb { r, g, b } => format!("{},{},{}", r, g, b),
@@ -70,6 +72,7 @@ pub(crate) fn grid_color_code(c: Color) -> String {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn parse_color_code(s: &str) -> Color {
     if s == "x" {
         return Color::Reset;
@@ -82,6 +85,7 @@ pub(crate) fn parse_color_code(s: &str) -> Color {
 }
 
 /// Lossless text serialization: "w h" header, then one "char_u32 fg bg" line per cell.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn serialize_grid(grid: &Grid) -> String {
     let h = grid.len();
     let w = if h > 0 { grid[0].len() } else { 0 };
@@ -100,6 +104,7 @@ pub(crate) fn serialize_grid(grid: &Grid) -> String {
     s
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn parse_grid(s: &str) -> Grid {
     let mut lines = s.lines();
     let header = lines.next().unwrap_or("0 0");
@@ -126,6 +131,7 @@ pub(crate) fn parse_grid(s: &str) -> Grid {
 }
 
 /// Force a grid to (w, h) by truncating / padding with blanks.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn fit_grid(g: Grid, w: usize, h: usize) -> Grid {
     let mut out = vec![vec![Cell::blank(); w]; h];
     for y in 0..h.min(g.len()) {
@@ -137,6 +143,7 @@ pub(crate) fn fit_grid(g: Grid, w: usize, h: usize) -> Grid {
 }
 
 /// Coerce any color to an Rgb so lerp_color interpolates instead of snapping.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn rgb_of(c: Color) -> Color {
     match c {
         Color::Rgb { .. } => c,
@@ -154,10 +161,12 @@ pub(crate) fn rgb_of(c: Color) -> Color {
 /// Write the SGR escape for a color directly into `s` (no per-call String alloc,
 /// unlike crossterm's `SetForegroundColor(..).to_string()`). `fg` selects the
 /// foreground (38/39) vs background (48/49) parameter group.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn write_sgr(s: &mut String, c: Color, fg: bool) {
     crate::render::push_color(s, c, fg);
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn grid_to_ansi(grid: &Grid) -> String {
     use std::fmt::Write as _;
     // preallocate roughly enough for chars + cursor escapes + some color runs.
@@ -231,6 +240,7 @@ pub(crate) struct AnsiFrameEncoder {
 }
 
 impl AnsiFrameEncoder {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub(crate) fn new() -> Self {
         Self {
             width: 0,
@@ -243,6 +253,7 @@ impl AnsiFrameEncoder {
         }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub(crate) fn invalidate(&mut self) {
         self.initialized = false;
     }
@@ -256,6 +267,7 @@ impl AnsiFrameEncoder {
     ///    than another absolute cursor-position escape.
     /// 4. Encode dirty runs, falling back to a full frame when it is cheaper.
     /// 5. Copy current cells into contiguous previous-frame storage.
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub(crate) fn encode(
         &mut self,
         grid: &Grid,
@@ -328,6 +340,7 @@ impl AnsiFrameEncoder {
         }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn collect_dirty_runs(&mut self, grid: &Grid) -> usize {
         self.dirty.fill(false);
         let mut changed = 0;
@@ -415,6 +428,7 @@ impl AnsiFrameEncoder {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn decimal_len(mut value: usize) -> usize {
     let mut len = 1;
     while value >= 10 {
@@ -424,10 +438,12 @@ fn decimal_len(mut value: usize) -> usize {
     len
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn cursor_escape_len(row: usize, col: usize) -> usize {
     4 + decimal_len(row) + decimal_len(col)
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn sgr_len(color: Color, fg: bool) -> usize {
     match color {
         Color::Rgb { r, g, b } => {
@@ -446,7 +462,9 @@ fn sgr_len(color: Color, fg: bool) -> usize {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn terminal_color(color: Color) -> Color {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn cube_index(value: u8) -> u8 {
         match value {
             0..=47 => 0,
@@ -465,6 +483,7 @@ fn terminal_color(color: Color) -> Color {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn encoded_span_cost(
     row: &[Cell],
     start: usize,
@@ -492,6 +511,7 @@ fn encoded_span_cost(
     cost
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn colors_after_span(
     row: &[Cell],
     start: usize,
@@ -511,6 +531,7 @@ fn colors_after_span(
     (cur_fg, cur_bg)
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn full_grid_encoded_cost(grid: &Grid) -> usize {
     let mut cost = 4; // final SGR reset
     let mut cur_fg = Color::Reset;
@@ -527,6 +548,7 @@ fn full_grid_encoded_cost(grid: &Grid) -> usize {
     cost
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn encode_span(
     output: &mut String,
     row: &[Cell],
@@ -555,12 +577,14 @@ fn encode_span(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn cells_look_equal(current: Cell, previous: Cell) -> bool {
     current.ch == previous.ch
         && terminal_color(current.bg) == terminal_color(previous.bg)
         && (current.ch == ' ' || terminal_color(current.fg) == terminal_color(previous.fg))
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn encode_full_grid(grid: &Grid, output: &mut String) {
     use std::fmt::Write as _;
     let mut cur_fg = Color::Reset;
@@ -576,6 +600,7 @@ fn encode_full_grid(grid: &Grid, output: &mut String) {
     output.push_str("\x1b[0m");
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn encode_runs(grid: &Grid, runs: &[DirtyRun], output: &mut String) {
     use std::fmt::Write as _;
     let mut cur_fg = Color::Reset;
@@ -628,11 +653,13 @@ fn encode_runs(grid: &Grid, runs: &[DirtyRun], output: &mut String) {
 mod ansi_frame_tests {
     use super::*;
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn row(text: &str) -> Grid {
         vec![text.chars().map(|ch| Cell::new(ch, Color::Reset)).collect()]
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn dirty_runs_coalesce_when_gap_bytes_cost_less_than_cursor_move() {
         let mut encoder = AnsiFrameEncoder::new();
         let mut output = String::new();
@@ -644,6 +671,7 @@ mod ansi_frame_tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn dirty_runs_stay_separate_when_gap_is_more_expensive_than_cursor_move() {
         let mut encoder = AnsiFrameEncoder::new();
         let mut output = String::new();
@@ -660,6 +688,7 @@ mod ansi_frame_tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn retained_cursor_reduces_sparse_run_control_bytes() {
         use std::fmt::Write as _;
 
@@ -694,6 +723,7 @@ mod ansi_frame_tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn dense_change_uses_full_frame_fallback() {
         let mut encoder = AnsiFrameEncoder::new();
         let mut output = String::new();
@@ -704,6 +734,7 @@ mod ansi_frame_tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn replacing_double_width_glyph_repaints_its_reserved_cell() {
         let mut encoder = AnsiFrameEncoder::new();
         let mut output = String::new();
@@ -724,6 +755,7 @@ mod ansi_frame_tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn foreground_only_changes_on_spaces_emit_no_bytes() {
         let red = Color::Rgb { r: 255, g: 0, b: 0 };
         let blue = Color::Rgb { r: 0, g: 0, b: 255 };
@@ -737,6 +769,7 @@ mod ansi_frame_tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn spaces_do_not_emit_invisible_foreground_sequences() {
         let red = Color::Rgb { r: 255, g: 0, b: 0 };
         let blue = Color::Rgb { r: 0, g: 0, b: 255 };
@@ -747,6 +780,7 @@ mod ansi_frame_tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn animation_encoder_collapses_adjacent_rgb_levels() {
         let mut encoder = AnsiFrameEncoder::new();
         let mut output = String::new();

@@ -34,6 +34,7 @@ use crate::warps::*;
 use crate::automata; use crate::avant; use crate::biomes; use crate::borders; use crate::color; use crate::content; use crate::fills; use crate::layout; use crate::markdown; use crate::mondrian; use crate::render; use crate::scene; use crate::sprites; use crate::tree_draw; use crate::types; use crate::walker;
 
 /// Dispatch arm for mode(s): party (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_party(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         // party [gap] [nodes] [scale] [detail] [weather] [path] [atmo]
         let pp = PartyParams {
@@ -79,6 +80,7 @@ pub(crate) fn cli_party(mut grid: Grid, width: usize, height: usize, seed: u64, 
 }
 
 /// Dispatch arm for mode(s): soup (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_soup(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         let rect = Rect {
             x: 0,
@@ -94,6 +96,7 @@ pub(crate) fn cli_soup(mut grid: Grid, width: usize, height: usize, seed: u64, p
 }
 
 /// Dispatch arm for mode(s): stem (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_stem(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         let rect = Rect {
             x: 0,
@@ -109,6 +112,7 @@ pub(crate) fn cli_stem(mut grid: Grid, width: usize, height: usize, seed: u64, p
 }
 
 /// Dispatch arm for mode(s): scene-walk (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_scene_walk(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         let rect = Rect {
             x: 0,
@@ -123,6 +127,7 @@ pub(crate) fn cli_scene_walk(mut grid: Grid, width: usize, height: usize, seed: 
 }
 
 /// Dispatch arm for mode(s): scene-walk-2 (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_scene_walk_2(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         let rect = Rect {
             x: 0,
@@ -138,6 +143,7 @@ pub(crate) fn cli_scene_walk_2(mut grid: Grid, width: usize, height: usize, seed
 }
 
 /// Dispatch arm for mode(s): scene-walk-3 (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_scene_walk_3(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         let rect = Rect {
             x: 0,
@@ -155,6 +161,7 @@ pub(crate) fn cli_scene_walk_3(mut grid: Grid, width: usize, height: usize, seed
 }
 
 /// Dispatch arm for mode(s): kintsugi (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_kintsugi(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         // kintsugi [cracks] -- shattered tile shards repaired with gold seams
         let crack_count: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(4);
@@ -232,6 +239,7 @@ pub(crate) fn cli_kintsugi(mut grid: Grid, width: usize, height: usize, seed: u6
 }
 
 /// Dispatch arm for mode(s): constellation (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_constellation(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         // constellation [count] -- night sky with named, line-connected clusters
         let count: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(4);
@@ -331,6 +339,7 @@ pub(crate) fn cli_constellation(mut grid: Grid, width: usize, height: usize, see
 }
 
 /// Dispatch arm for mode(s): strata (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_strata(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         // strata [layers] -- geological cross-section with fossils
         let layer_count: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(6);
@@ -430,6 +439,7 @@ pub(crate) fn cli_strata(mut grid: Grid, width: usize, height: usize, seed: u64,
 }
 
 /// Dispatch arm for mode(s): patchwalk (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_patchwalk(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         // patchwalk [stops] [line_w] -- quilt x scene-walk x mondrian2:
         // skewed BSP with big flat fields against small quilted clusters,
@@ -725,6 +735,7 @@ pub(crate) fn cli_patchwalk(mut grid: Grid, width: usize, height: usize, seed: u
 }
 
 /// Dispatch arm for mode(s): aurora (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_aurora(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         // aurora [bands] -- layered night-sky ribbons over a snowy horizon
         let band_count: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(5);
@@ -824,6 +835,7 @@ pub(crate) fn cli_aurora(mut grid: Grid, width: usize, height: usize, seed: u64,
 }
 
 /// Dispatch arm for mode(s): aura2 (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_aura2(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         // aura2 [rain] -- sparse rain behind aurora ribbons and snowfields
         let rain: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(34);
@@ -946,6 +958,7 @@ pub(crate) fn cli_aura2(mut grid: Grid, width: usize, height: usize, seed: u64, 
 }
 
 /// Dispatch arm for mode(s): harbor (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_harbor(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         // harbor [boats] -- ridiculous neon harbor carnival with cranes and fireworks
         let boat_count: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(9);
@@ -1154,6 +1167,7 @@ pub(crate) fn cli_harbor(mut grid: Grid, width: usize, height: usize, seed: u64,
 }
 
 /// Dispatch arm for mode(s): labyrinth (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_labyrinth(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         // labyrinth [markers] -- nested stone walls, deliberate gates, and one glowing route
         let marker_count: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(18);
@@ -1543,6 +1557,7 @@ pub(crate) fn cli_labyrinth(mut grid: Grid, width: usize, height: usize, seed: u
 }
 
 /// Dispatch arm for mode(s): rainfall (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_rainfall(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         // rainfall [intensity] -- wind-sheared rain, gutters, puddles, and bright strikes
         let intensity: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(65);
@@ -1635,6 +1650,7 @@ pub(crate) fn cli_rainfall(mut grid: Grid, width: usize, height: usize, seed: u6
 }
 
 /// Dispatch arm for mode(s): meadow (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_meadow(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         // meadow [density] -- windy wildflower field with stems, seed heads, and grass
         let density: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(70);
@@ -1730,6 +1746,7 @@ pub(crate) fn cli_meadow(mut grid: Grid, width: usize, height: usize, seed: u64,
 }
 
 /// Dispatch arm for mode(s): world2 (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_world2(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         // world2 [shards] -- cracked/leaking biome partitions with aurora and scene islands
         let shard_count: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(6);

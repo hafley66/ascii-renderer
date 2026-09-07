@@ -9,6 +9,7 @@ use rand::{Rng, RngExt};
 use rand::SeedableRng;
 use rand::rngs::StdRng;
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn set(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
     if x >= 0 && y >= 0 && (y as usize) < grid.len() && (x as usize) < grid[0].len() {
         grid[y as usize][x as usize] = Cell::new(ch, fg);
@@ -16,6 +17,7 @@ fn set(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
 }
 
 /// Draw a simple tree for the forest.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_tree(
     grid: &mut Grid,
     x: i32,
@@ -41,6 +43,7 @@ fn draw_tree(
 }
 
 /// Draw layer of trees at given depth level.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_layer(
     grid: &mut Grid,
     width: usize,
@@ -73,6 +76,7 @@ fn draw_layer(
 }
 
 /// Draw mist that drifts and occludes.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_mist(
     grid: &mut Grid,
     width: usize,
@@ -109,6 +113,7 @@ fn draw_mist(
 }
 
 /// Draw ground.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_ground(grid: &mut Grid, width: usize, height: usize, palette: &[Color; 5]) {
     let ground_y = height - 1;
     for x in 0..width {
@@ -117,6 +122,7 @@ fn draw_ground(grid: &mut Grid, width: usize, height: usize, palette: &[Color; 5
 }
 
 /// Draw sky with light cycle.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_sky(
     grid: &mut Grid,
     width: usize,
@@ -147,6 +153,7 @@ fn draw_sky(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn draw_haiku_1_forest(
     grid: &mut Grid,
     width: usize,
@@ -213,6 +220,7 @@ pub(crate) struct HaikuForestKnobs {
 }
 
 impl HaikuForestKnobs {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub(crate) fn from_env() -> Self {
         HaikuForestKnobs {
             density: param_f32("DENSITY", 0.8),
@@ -225,6 +233,7 @@ impl HaikuForestKnobs {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_haiku_1_forest(
     mut grid: Grid,
     width: usize,
@@ -260,6 +269,7 @@ mod tests {
     use super::*;
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn test_haiku_1_forest_snapshot() {
         let width = 80;
         let height = 24;
@@ -306,6 +316,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn test_haiku_1_forest_animated_snapshot() {
         let width = 80;
         let height = 24;

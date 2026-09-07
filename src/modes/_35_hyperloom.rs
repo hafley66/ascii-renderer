@@ -33,22 +33,27 @@ const PARAMS: &[Param] = &[
 ];
 
 impl Mode for HyperloomMode {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn name(&self) -> &'static str {
         "hyperloom"
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn help(&self) -> &'static str {
         "Kinetic Jacquard engine: braided warp/weft fields, nested loom apertures, Lissajous knot cages, shuttle comets [threads] [looms] [symm] [depth] [shuttles] [knots] [speed] [warp] [weave] [moire] [trail] [bloom]"
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn animation(&self) -> AnimKind {
         AnimKind::Iterate
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn params(&self) -> &'static [Param] {
         PARAMS
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn render(&self, frame: &mut ModeFrame<'_>) {
         let params = HyperloomParams::from_inputs(frame.args, frame.param_values);
         draw_hyperloom(
@@ -83,6 +88,7 @@ pub(crate) struct HyperloomParams {
 }
 
 impl Default for HyperloomParams {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn default() -> Self {
         Self {
             threads: 20,
@@ -104,6 +110,7 @@ impl Default for HyperloomParams {
 }
 
 impl HyperloomParams {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub(crate) fn from_inputs(args: &[String], param_values: Option<&[f32]>) -> Self {
         let read = |index: usize, key: &str, default: f32| {
             args.get(index)
@@ -134,6 +141,7 @@ impl HyperloomParams {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn hash01(seed: u64, tag: u64) -> f32 {
     let mut value = seed ^ tag.wrapping_mul(0x9E37_79B9_7F4A_7C15);
     value ^= value >> 30;
@@ -144,10 +152,12 @@ fn hash01(seed: u64, tag: u64) -> f32 {
     ((value >> 40) as f32) / ((1u64 << 24) - 1) as f32
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn in_bounds(grid: &Grid, x: i32, y: i32) -> bool {
     x >= 0 && y >= 0 && (y as usize) < grid.len() && (x as usize) < grid[y as usize].len()
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn put(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
     if in_bounds(grid, x, y) {
         let bg = grid[y as usize][x as usize].bg;
@@ -155,6 +165,7 @@ fn put(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn line(grid: &mut Grid, mut x0: i32, mut y0: i32, x1: i32, y1: i32, fg: Color) {
     let ch = pp_stroke(x1 - x0, y1 - y0);
     let dx = (x1 - x0).abs();
@@ -179,6 +190,7 @@ fn line(grid: &mut Grid, mut x0: i32, mut y0: i32, x1: i32, y1: i32, fg: Color) 
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn stroke_curve(
     grid: &mut Grid,
     samples: usize,
@@ -199,6 +211,7 @@ fn stroke_curve(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn polygon(grid: &mut Grid, points: &[(f32, f32)], color: Color) {
     if points.len() < 2 {
         return;
@@ -219,6 +232,7 @@ fn polygon(grid: &mut Grid, points: &[(f32, f32)], color: Color) {
 
 /// Deterministic phase state: the loom cycles through `params.phase` named
 /// phases, each with its own seeded modulation, advancing once per 2.5 seconds.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn loom_phase(seed: u64, t: f32, params: &HyperloomParams) -> (usize, f32) {
     let total = params.phase.max(1) as f32;
     let scaled = t / 2.5;
@@ -229,6 +243,7 @@ fn loom_phase(seed: u64, t: f32, params: &HyperloomParams) -> (usize, f32) {
 }
 
 /// Time-driven x position of the traveling veil wavefront across the grid.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn veil_front(width: usize, t: f32, params: &HyperloomParams) -> f32 {
     let span = width.max(1) as f32;
     let period = 6.0 / params.speed.max(0.05);
@@ -236,6 +251,7 @@ fn veil_front(width: usize, t: f32, params: &HyperloomParams) -> f32 {
     progress * (span + 14.0) - 7.0
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn thread_color(palette: &[Color; 5], index: usize, count: usize, t: f32) -> Color {
     let mix = if count <= 1 {
         0.5
@@ -246,6 +262,7 @@ fn thread_color(palette: &[Color; 5], index: usize, count: usize, t: f32) -> Col
     shift_hue(base, ((t * 13.0 + index as f32 * 17.0).sin() * 24.0) as f64)
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn warp_thread_point(
     width: usize,
     height: usize,
@@ -277,6 +294,7 @@ fn warp_thread_point(
     )
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn weft_thread_point(
     width: usize,
     height: usize,
@@ -298,6 +316,7 @@ fn weft_thread_point(
     )
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_spectral_field(
     grid: &mut Grid,
     width: usize,
@@ -355,6 +374,7 @@ fn draw_spectral_field(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn loom_center(
     width: usize,
     height: usize,
@@ -374,6 +394,7 @@ fn loom_center(
     )
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_loom_apertures(
     grid: &mut Grid,
     width: usize,
@@ -420,6 +441,7 @@ fn draw_loom_apertures(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_threads(
     grid: &mut Grid,
     width: usize,
@@ -448,6 +470,7 @@ fn draw_threads(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_knot_cages(
     grid: &mut Grid,
     width: usize,
@@ -519,6 +542,7 @@ fn draw_knot_cages(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_shuttles(
     grid: &mut Grid,
     width: usize,
@@ -551,6 +575,7 @@ fn draw_shuttles(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_veil_band(
     grid: &mut Grid,
     width: usize,
@@ -582,6 +607,7 @@ fn draw_veil_band(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_jacquard_cards(
     grid: &mut Grid,
     width: usize,
@@ -622,6 +648,7 @@ fn draw_jacquard_cards(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_woven_border(
     grid: &mut Grid,
     width: usize,
@@ -657,6 +684,7 @@ fn draw_woven_border(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn draw_hyperloom(
     grid: &mut Grid,
     width: usize,
@@ -705,6 +733,7 @@ mod tests {
     use crate::render::grid_to_plain;
     use rand::SeedableRng;
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn frame(width: usize, height: usize, seed: u64, t: f32, params: &HyperloomParams) -> Grid {
         let mut grid = vec![vec![Cell::blank(); width]; height];
         let palette = make_palette(seed);
@@ -715,11 +744,13 @@ mod tests {
         grid
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn plain(grid: &Grid) -> String {
         grid_to_plain(grid).join("\n")
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn deterministic_seeded_frame_and_visible_motion() {
         let params = HyperloomParams::default();
         let a = plain(&frame(88, 30, 42, 1.25, &params));
@@ -746,6 +777,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn parameter_values_override_and_clamp() {
         let values = [
             100.0, 0.0, 99.0, 99.0, 99.0, 999.0, 0.0, 9.0, 99.0, 9.0, 0.0, 9.0, 0.0, 9.0,
@@ -772,6 +804,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn tiny_grid_and_extreme_inputs_terminate() {
         let params = HyperloomParams {
             threads: 36,
@@ -794,6 +827,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn veil_sweep_moves_with_time_and_depends_on_veil_and_seed() {
         let base = HyperloomParams::default();
         let t0 = plain(&frame(88, 30, 42, 0.0, &base));
@@ -824,6 +858,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn veil_extrema_and_micro_grids_terminate() {
         let maxed = HyperloomParams {
             phase: 8,
@@ -848,11 +883,13 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_hyperloom_t0() {
         insta::assert_snapshot!(plain(&frame(96, 32, 42, 0.0, &HyperloomParams::default())));
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_hyperloom_in_motion() {
         insta::assert_snapshot!(plain(&frame(96, 32, 42, 2.75, &HyperloomParams::default())));
     }

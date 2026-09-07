@@ -14,16 +14,19 @@ use std::cell::RefCell;
 type C = (f32, f32);
 
 #[inline]
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn polar(r: f32, ang: f32) -> C {
     (r * ang.cos(), r * ang.sin())
 }
 
 #[inline]
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn norm2(a: C) -> f32 {
     a.0 * a.0 + a.1 * a.1
 }
 
 #[inline]
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn rotate(z: C, cosr: f32, sinr: f32) -> C {
     (z.0 * cosr - z.1 * sinr, z.0 * sinr + z.1 * cosr)
 }
@@ -43,6 +46,7 @@ pub(crate) struct Knobs5 {
 }
 
 impl Knobs5 {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub(crate) fn from_env() -> Self {
         Knobs5 {
             depth: param_f32("DEPTH", 7.0).round().clamp(4.0, 10.0) as u32,
@@ -57,6 +61,7 @@ impl Knobs5 {
             speed: param_f32("SPEED", 1.0).clamp(0.05, 4.0),
         }
     }
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn geometry_key(&self) -> (u32, u32, u32, usize) {
         (self.depth, self.spread.to_bits(), self.len.to_bits(), self.motes)
     }
@@ -125,6 +130,7 @@ thread_local! {
     static CACHE: RefCell<Option<Cached>> = const { RefCell::new(None) };
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn rgb3(c: Color) -> (u8, u8, u8) {
     match c {
         Color::Rgb { r, g, b } => (r, g, b),
@@ -132,6 +138,7 @@ fn rgb3(c: Color) -> (u8, u8, u8) {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn hue_of(c: Color) -> f64 {
     let (r, g, b) = rgb3(c);
     let (r, g, b) = (r as f64 / 255.0, g as f64 / 255.0, b as f64 / 255.0);
@@ -152,12 +159,14 @@ fn hue_of(c: Color) -> f64 {
 }
 
 #[inline]
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn scale(c: (u8, u8, u8), k: f32) -> Color {
     let f = |v: u8| ((v as f32 * k).round().clamp(0.0, 255.0)) as u8;
     Color::Rgb { r: f(c.0), g: f(c.1), b: f(c.2) }
 }
 
 #[inline]
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn mix(a: (u8, u8, u8), b: (u8, u8, u8), t: f32) -> (u8, u8, u8) {
     let t = t.clamp(0.0, 1.0);
     let f = |x: u8, y: u8| (x as f32 + (y as f32 - x as f32) * t).round() as u8;
@@ -165,6 +174,7 @@ fn mix(a: (u8, u8, u8), b: (u8, u8, u8), t: f32) -> (u8, u8, u8) {
 }
 
 #[inline]
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn put(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
     if x >= 0 && y >= 0 && (y as usize) < grid.len() && (x as usize) < grid[0].len() {
         let c = &mut grid[y as usize][x as usize];
@@ -173,6 +183,7 @@ fn put(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn grow(
     rng: &mut StdRng,
     segs: &mut Vec<BSeg>,
@@ -229,6 +240,7 @@ fn grow(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn build(w: usize, h: usize, seed: u64, palette: &[Color; 5], k: &Knobs5) -> Cached {
     let mut rng = StdRng::seed_from_u64(seed ^ 0x5EED_CAFE_7A11_3E5);
     let rx = ((w as f32) * 0.5 - 1.0).min(((h as f32) * 0.5 - 0.5) * 2.1).max(4.0);
@@ -300,6 +312,7 @@ const LIVE_LEAF: [[char; 2]; 3] = [['♠', '♣'], ['♣', '*'], ['♠', '*']];
 const MOTE: [char; 4] = ['·', '∙', '°', '○'];
 
 #[inline]
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn slope_glyph(dx: i32, dy: i32, heavy: bool) -> char {
     let adx = dx.abs();
     let ady = dy.abs() * 2;
@@ -317,11 +330,13 @@ fn slope_glyph(dx: i32, dy: i32, heavy: bool) -> char {
 }
 
 #[inline]
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn to_screen(c: &Cached, z: C) -> (i32, i32) {
     ((c.cx + z.0 * c.rx).round() as i32, (c.cy - z.1 * c.ry).round() as i32)
 }
 
 #[inline]
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn line(x0: i32, y0: i32, x1: i32, y1: i32, mut f: impl FnMut(i32, i32)) {
     let n = (x1 - x0).abs().max((y1 - y0).abs()).max(1);
     for i in 0..=n {
@@ -330,6 +345,7 @@ fn line(x0: i32, y0: i32, x1: i32, y1: i32, mut f: impl FnMut(i32, i32)) {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn draw_lifetree5(grid: &mut Grid, w: usize, h: usize, seed: u64, palette: &[Color; 5], t: f32, k: &Knobs5) {
     if w == 0 || h == 0 {
         return;
@@ -346,6 +362,7 @@ pub(crate) fn draw_lifetree5(grid: &mut Grid, w: usize, h: usize, seed: u64, pal
 }
 
 #[inline]
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn frame(grid: &mut Grid, c: &Cached, t: f32, k: &Knobs5) {
     let w = grid[0].len();
     let h = grid.len();
@@ -537,6 +554,7 @@ fn frame(grid: &mut Grid, c: &Cached, t: f32, k: &Knobs5) {
     });
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_lifetree5(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
     let _ = (rng, term_w, term_h, mode, theme_name);
     let mut k = Knobs5::from_env();
@@ -567,6 +585,7 @@ pub(crate) fn cli_lifetree5(mut grid: Grid, width: usize, height: usize, seed: u
 mod tests {
     use super::*;
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn run(w: usize, h: usize, seed: u64, t: f32) -> String {
         let mut g = vec![vec![Cell::blank(); w]; h];
         let p = crate::color::named_theme("moss").unwrap();
@@ -579,27 +598,32 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_lifetree5_small() {
         insta::assert_snapshot!("lifetree5_80x24", run(80, 24, 42, 0.0));
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_lifetree5_wide() {
         insta::assert_snapshot!("lifetree5_120x40", run(120, 40, 42, 0.0));
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn deterministic_and_seed_sensitive() {
         assert_eq!(run(90, 30, 42, 0.0), run(90, 30, 42, 0.0));
         assert_ne!(run(90, 30, 42, 0.0), run(90, 30, 7, 0.0));
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn rotation_moves_tree() {
         assert_ne!(run(90, 30, 42, 0.0), run(90, 30, 42, 3.0));
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn corners_outside_disk_stay_blank() {
         let s = run(100, 32, 42, 0.0);
         let first = s.lines().next().unwrap();
@@ -608,6 +632,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn both_sides_present() {
         let s = run(100, 32, 42, 0.0);
         assert!(s.contains('░') || s.contains('▒') || s.contains('▓'), "ethereal fill");
@@ -615,6 +640,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn rotate_roundtrip() {
         let (cosr, sinr) = 0.7f32.sin_cos();
         let z = (0.5, 0.4);
@@ -624,6 +650,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn crown_has_hundreds_of_segments() {
         let mut rng = StdRng::seed_from_u64(42 ^ 0x5EED_CAFE_7A11_3E5);
         let mut segs = Vec::new();
@@ -635,6 +662,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn frame_cost_is_flat() {
         let mut g = vec![vec![Cell::blank(); 200]; 60];
         let p = crate::color::named_theme("ember").unwrap();

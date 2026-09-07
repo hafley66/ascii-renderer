@@ -23,6 +23,7 @@ pub(crate) const SLOTS: usize = 6;
 pub(crate) type Ink = [Color; SLOTS];
 
 /// Sentinel ink whose colors survive baking as slot indices.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn slot_ink() -> Ink {
     [
         Color::AnsiValue(0),
@@ -34,6 +35,7 @@ pub(crate) fn slot_ink() -> Ink {
     ]
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn ink_from(base: Color, fruit: Color) -> Ink {
     [
         darken(base, 58),
@@ -54,6 +56,7 @@ pub(crate) struct GrowOpts {
 }
 
 impl Default for GrowOpts {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn default() -> Self {
         GrowOpts {
             fruit: 0.25,
@@ -82,6 +85,7 @@ pub(crate) const SPECIES: [Species; 5] = [
 ];
 
 impl Species {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub(crate) fn label(self) -> &'static str {
         match self {
             Species::Mangrove => "MANGROVE",
@@ -92,11 +96,13 @@ impl Species {
         }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub(crate) fn from_index(i: usize) -> Species {
         SPECIES[i % SPECIES.len()]
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn grow_species(
     sp: Species,
     g: &mut Grid,
@@ -117,6 +123,7 @@ pub(crate) fn grow_species(
 
 // ── grid primitives ─────────────────────────────────────────────────
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn put(g: &mut Grid, x: i32, y: i32, ch: char, c: Color) {
     if x < 0 || y < 0 {
         return;
@@ -132,6 +139,7 @@ fn put(g: &mut Grid, x: i32, y: i32, ch: char, c: Color) {
     row[ux] = Cell::new(ch, c);
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn put_soft(g: &mut Grid, x: i32, y: i32, ch: char, c: Color) {
     if x < 0 || y < 0 {
         return;
@@ -149,6 +157,7 @@ fn put_soft(g: &mut Grid, x: i32, y: i32, ch: char, c: Color) {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn seg_glyph(dx: i32, dy: i32) -> char {
     if dy == 0 {
         return '─';
@@ -159,6 +168,7 @@ fn seg_glyph(dx: i32, dy: i32) -> char {
     if (dx > 0) == (dy > 0) { '╲' } else { '╱' }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn stroke(g: &mut Grid, x0: i32, y0: i32, x1: i32, y1: i32, c: Color, soft: bool) {
     let dx = x1 - x0;
     let dy = y1 - y0;
@@ -178,14 +188,17 @@ fn stroke(g: &mut Grid, x0: i32, y0: i32, x1: i32, y1: i32, c: Color, soft: bool
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn rf(rng: &mut StdRng) -> f32 {
     rng.random::<f32>()
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn ri(rng: &mut StdRng, n: u32) -> u32 {
     if n <= 1 { 0 } else { rng.random_range(0..n) }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn hash2(a: u64, b: u64) -> u64 {
     let mut x = a
         .wrapping_mul(0x9E37_79B9_7F4A_7C15)
@@ -199,6 +212,7 @@ pub(crate) fn hash2(a: u64, b: u64) -> u64 {
 
 /// Coherent-edged leaf mass. The per-column edge table keeps the silhouette
 /// ragged instead of speckled.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn leaf_blob(g: &mut Grid, cx: i32, cy: i32, rx: i32, ry: i32, ink: &Ink, rng: &mut StdRng) {
     let rx = rx.max(1);
     let ry = ry.max(1);
@@ -234,6 +248,7 @@ fn leaf_blob(g: &mut Grid, cx: i32, cy: i32, rx: i32, ry: i32, ink: &Ink, rng: &
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn hang_fruit(g: &mut Grid, x: i32, y: i32, ink: &Ink) {
     put(g, x, y, '╷', ink[SLOT_BARK as usize]);
     put(g, x, y + 1, '●', ink[SLOT_FRUIT as usize]);
@@ -242,6 +257,7 @@ fn hang_fruit(g: &mut Grid, x: i32, y: i32, ink: &Ink) {
 // ── species 1: mangrove ─────────────────────────────────────────────
 // Prop roots are power-curve arcs from a raised collar down to splayed feet.
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn grow_mangrove(
     g: &mut Grid,
     plot: Rect,
@@ -349,6 +365,7 @@ struct ColonyNode {
     weight: u32,
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn grow_colony(g: &mut Grid, plot: Rect, energy: f32, ink: &Ink, o: &GrowOpts, rng: &mut StdRng) {
     let root_y = plot.y as i32 + plot.h as i32 - 1;
     let cx = plot.x as i32 + plot.w as i32 / 2;
@@ -575,6 +592,7 @@ fn grow_colony(g: &mut Grid, plot: Rect, energy: f32, ink: &Ink, o: &GrowOpts, r
 // ── species 3: banyan ───────────────────────────────────────────────
 // Horizontal boughs drop aerial roots; roots that touch soil become pillars.
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn grow_banyan(g: &mut Grid, plot: Rect, energy: f32, ink: &Ink, o: &GrowOpts, rng: &mut StdRng) {
     let root_y = plot.y as i32 + plot.h as i32 - 1;
     let cx = plot.x as i32 + plot.w as i32 / 2;
@@ -700,6 +718,7 @@ fn grow_banyan(g: &mut Grid, plot: Rect, energy: f32, ink: &Ink, o: &GrowOpts, r
 // ── species 4: bracket ──────────────────────────────────────────────
 // A tapering stipe with radial shelves; every shelf gets its own rim profile.
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn grow_bracket(g: &mut Grid, plot: Rect, energy: f32, ink: &Ink, o: &GrowOpts, rng: &mut StdRng) {
     let root_y = plot.y as i32 + plot.h as i32 - 1;
     let cx = plot.x as i32 + plot.w as i32 / 2;
@@ -793,6 +812,7 @@ fn grow_bracket(g: &mut Grid, plot: Rect, energy: f32, ink: &Ink, o: &GrowOpts, 
 // ── species 5: coral ────────────────────────────────────────────────
 // Diffusion-limited aggregation: walkers drift down and stick on contact.
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn grow_coral(g: &mut Grid, plot: Rect, energy: f32, ink: &Ink, o: &GrowOpts, rng: &mut StdRng) {
     let root_y = plot.y as i32 + plot.h as i32 - 1;
     let cx = plot.x as i32 + plot.w as i32 / 2;
@@ -988,6 +1008,7 @@ pub(crate) struct Stamp {
 }
 
 /// Grow into a scratch grid, then keep only the painted cells with their slots.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn bake(w: usize, h: usize, grp: u8, f: impl FnOnce(&mut Grid)) -> Stamp {
     let mut scratch: Grid = vec![vec![Cell::blank(); w.max(1)]; h.max(1)];
     f(&mut scratch);
@@ -1032,6 +1053,7 @@ pub(crate) struct Opus2TreesKnobs {
 }
 
 impl Opus2TreesKnobs {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub(crate) fn from_env() -> Self {
         Opus2TreesKnobs {
             energy: param_f32("ENERGY", 0.92).clamp(0.1, 1.0),
@@ -1046,6 +1068,7 @@ impl Opus2TreesKnobs {
         }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn bits(&self) -> [u32; 7] {
         [
             self.energy.to_bits(),
@@ -1065,6 +1088,7 @@ thread_local! {
     static SHEET: RefCell<Option<(SheetKey, Stamp, usize)>> = const { RefCell::new(None) };
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn sheet_inks(palette: &[Color; 5], k: &Opus2TreesKnobs) -> Vec<Ink> {
     let mut out = Vec::with_capacity(12);
     for i in 0..SPECIES.len() {
@@ -1087,6 +1111,7 @@ fn sheet_inks(palette: &[Color; 5], k: &Opus2TreesKnobs) -> Vec<Ink> {
     out
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn build_sheet(width: usize, height: usize, seed: u64, k: &Opus2TreesKnobs) -> (Stamp, usize) {
     let cols = SPECIES.len();
     let cell_w = (width / cols).max(4);
@@ -1183,6 +1208,7 @@ fn build_sheet(width: usize, height: usize, seed: u64, k: &Opus2TreesKnobs) -> (
     (page, ground_ref)
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn blit_sheet(
     grid: &mut Grid,
     width: usize,
@@ -1240,6 +1266,7 @@ fn blit_sheet(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn draw_opus_2_trees(
     grid: &mut Grid,
     width: usize,
@@ -1286,6 +1313,7 @@ pub(crate) fn draw_opus_2_trees(
     });
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_opus_2_trees(
     mut grid: Grid,
     width: usize,
@@ -1336,6 +1364,7 @@ pub(crate) fn cli_opus_2_trees(
 mod tests {
     use super::*;
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn run(w: usize, h: usize, seed: u64, t: f32) -> String {
         let mut g = vec![vec![Cell::blank(); w]; h];
         let p = crate::color::make_palette(seed);
@@ -1348,17 +1377,20 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_opus_2_trees_static() {
         insta::assert_snapshot!("opus_2_trees_80x24_static", run(80, 24, 42, 0.0));
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn deterministic_and_seed_sensitive() {
         assert_eq!(run(80, 24, 42, 0.0), run(80, 24, 42, 0.0));
         assert_ne!(run(80, 24, 42, 0.0), run(80, 24, 9, 0.0));
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn time_moves_the_sheet() {
         assert_ne!(run(80, 24, 42, 0.0), run(80, 24, 42, 4.0));
     }

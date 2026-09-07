@@ -57,6 +57,7 @@ thread_local! {
         const { std::cell::RefCell::new(std::collections::BTreeMap::new()) };
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn param_f32(key: &str, default: f32) -> f32 {
     match LIVE_PARAMS.with(|values| values.borrow().get(key).copied()) {
         Some(value) => value.unwrap_or(default),
@@ -67,6 +68,7 @@ pub(crate) fn param_f32(key: &str, default: f32) -> f32 {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn live_params_to_command(command: &mut std::process::Command) {
     LIVE_PARAMS.with(|values| {
         for (key, value) in values.borrow().iter() {
@@ -92,6 +94,7 @@ pub(crate) fn live_params_to_command(command: &mut std::process::Command) {
 
 /// Path to the persisted-options file (`~/.config/ascii-renderer/options.tsv`),
 /// or None if HOME is unset.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn options_path() -> Option<std::path::PathBuf> {
     let mut p = std::env::var_os("XDG_CONFIG_HOME")
         .map(std::path::PathBuf::from)
@@ -113,6 +116,7 @@ pub(crate) struct SavedPreset {
 
 /// Named deterministic render inputs. JSON is used here because the collection
 /// is rewritten atomically, while render telemetry remains append-only NDJSON.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn presets_path() -> Option<std::path::PathBuf> {
     let mut path = std::env::var_os("XDG_CONFIG_HOME")
         .map(std::path::PathBuf::from)
@@ -124,6 +128,7 @@ pub(crate) fn presets_path() -> Option<std::path::PathBuf> {
     Some(path)
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn valid_preset_name(name: &str) -> bool {
     !name.is_empty()
         && name.len() <= 80
@@ -132,6 +137,7 @@ pub(crate) fn valid_preset_name(name: &str) -> bool {
             .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'_' | b'.'))
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn load_presets_from(
     path: &std::path::Path,
 ) -> std::collections::BTreeMap<String, SavedPreset> {
@@ -154,6 +160,7 @@ pub(crate) fn load_presets_from(
         .collect()
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn preset_from_json(value: &serde_json::Value) -> Option<SavedPreset> {
     let name = value.get("name")?.as_str()?.to_string();
     let seed = value.get("seed")?.as_u64()?;
@@ -191,6 +198,7 @@ fn preset_from_json(value: &serde_json::Value) -> Option<SavedPreset> {
     })
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn save_presets_to(
     path: &std::path::Path,
     presets: &std::collections::BTreeMap<String, SavedPreset>,
@@ -218,12 +226,14 @@ pub(crate) fn save_presets_to(
     Ok(())
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn load_presets() -> std::collections::BTreeMap<String, SavedPreset> {
     presets_path()
         .map(|path| load_presets_from(&path))
         .unwrap_or_default()
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn save_preset(preset: SavedPreset) -> std::io::Result<()> {
     let path = presets_path().ok_or_else(|| std::io::Error::other("HOME is unset"))?;
     let mut presets = load_presets_from(&path);
@@ -231,6 +241,7 @@ pub(crate) fn save_preset(preset: SavedPreset) -> std::io::Result<()> {
     save_presets_to(&path, &presets)
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn unix_epoch_ms() -> u64 {
     std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
@@ -241,6 +252,7 @@ pub(crate) fn unix_epoch_ms() -> u64 {
 pub(crate) type OptMap = std::collections::HashMap<String, std::collections::HashMap<String, f32>>;
 
 /// Parse the TSV at `path` into mode -> (KEY -> value). Missing/unreadable -> empty.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn load_options_from(path: &std::path::Path) -> OptMap {
     let mut map: OptMap = std::collections::HashMap::new();
     if let Ok(s) = std::fs::read_to_string(path) {
@@ -259,6 +271,7 @@ pub(crate) fn load_options_from(path: &std::path::Path) -> OptMap {
 }
 
 /// Write the whole option map to `path` (creates parent dirs as needed).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn save_options_to(path: &std::path::Path, map: &OptMap) {
     use std::io::Write;
     if let Some(dir) = path.parent() {
@@ -282,6 +295,7 @@ pub(crate) fn save_options_to(path: &std::path::Path, map: &OptMap) {
 }
 
 /// Load all saved knob values from the default options file.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn load_options() -> OptMap {
     match options_path() {
         Some(p) => load_options_from(&p),
@@ -290,6 +304,7 @@ pub(crate) fn load_options() -> OptMap {
 }
 
 /// Persist the whole option map to the default options file.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn save_options(map: &OptMap) {
     if let Some(p) = options_path() {
         save_options_to(&p, map);
@@ -298,6 +313,7 @@ pub(crate) fn save_options(map: &OptMap) {
 
 /// Initial knob values for `mode`: saved value (clamped to range) if present,
 /// else the param default.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn pvals_for(
     spec: &ModeSpec,
     mode: &str,
@@ -318,6 +334,7 @@ pub(crate) fn pvals_for(
 /// A deterministic-but-random value for knob `p`, hashed from (seed, key) into the
 /// param's range and snapped to its step. Stable for a given seed; re-rolls when
 /// the seed changes -- "controlled randomness" rather than per-frame jitter.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn rand_knob(seed: u64, p: &Param) -> f32 {
     let mut h = seed ^ 0x9E37_79B9_7F4A_7C15;
     for b in p.key.bytes() {
@@ -332,6 +349,7 @@ pub(crate) fn rand_knob(seed: u64, p: &Param) -> f32 {
 /// The values actually pushed to the renderer: the tuned `pvals` (deterministic),
 /// or random samples for every knob when `randomize` is on. `roll` is a nonce the
 /// UI bumps with left/right to re-roll a fresh random set without changing seed.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn effective_pvals(
     spec: &ModeSpec,
     pvals: &[f32],
@@ -348,6 +366,7 @@ pub(crate) fn effective_pvals(
 }
 
 /// The global deterministic-vs-random toggle, stored under a reserved pseudo-mode.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn load_randomize(saved: &OptMap) -> bool {
     saved
         .get("__global")
@@ -357,6 +376,7 @@ pub(crate) fn load_randomize(saved: &OptMap) -> bool {
         > 0.5
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn store_randomize(saved: &mut OptMap, on: bool) {
     saved
         .entry("__global".to_string())
@@ -366,6 +386,7 @@ pub(crate) fn store_randomize(saved: &mut OptMap, on: bool) {
 }
 
 /// Record `mode`'s current knob values into `saved` and flush to disk.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn store_pvals(
     mode: &str,
     spec: &ModeSpec,
@@ -381,6 +402,7 @@ pub(crate) fn store_pvals(
 
 /// Indices of modes whose name contains `query` (case-insensitive). Empty query
 /// matches all, preserving order.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn demo_filter_modes(all_modes: &[&str], query: &str) -> Vec<usize> {
     let ql = query.to_lowercase();
     all_modes
@@ -394,6 +416,7 @@ pub(crate) fn demo_filter_modes(all_modes: &[&str], query: &str) -> Vec<usize> {
 /// Full-screen list+filter picker. Type to filter (substring, case-insensitive),
 /// Up/Down to move, Enter to select, Esc to cancel. Returns the chosen index into
 /// `all_modes`, or None if cancelled. Caller must have raw mode enabled.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn demo_pick_mode(all_modes: &[&str], current: usize) -> Option<usize> {
     use crossterm::{
         cursor,
@@ -513,6 +536,7 @@ pub(crate) fn demo_pick_mode(all_modes: &[&str], current: usize) -> Option<usize
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn run_demo(initial_seed: u64) {
     use crossterm::{
         cursor,
@@ -941,6 +965,7 @@ mod live_param_tests {
     use super::*;
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn named_presets_roundtrip_and_replace_by_name() {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("presets.json");
@@ -981,6 +1006,7 @@ mod live_param_tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn live_values_stay_thread_local_and_are_explicit_for_children() {
         std::thread::spawn(|| {
             const KEY: &str = "CODEX_TEST_LIVE_PARAM";

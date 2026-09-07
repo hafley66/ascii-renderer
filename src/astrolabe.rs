@@ -10,12 +10,14 @@ use rand::RngExt;
 use rand::SeedableRng;
 use rand::rngs::StdRng;
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn set(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
     if x >= 0 && y >= 0 && (y as usize) < grid.len() && (x as usize) < grid[0].len() {
         grid[y as usize][x as usize] = Cell::new(ch, fg);
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn blank_at(grid: &Grid, x: i32, y: i32) -> bool {
     x >= 0
         && y >= 0
@@ -24,10 +26,12 @@ fn blank_at(grid: &Grid, x: i32, y: i32) -> bool {
         && grid[y as usize][x as usize].ch == ' '
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn pt(cx: f32, cy: f32, rx: f32, ry: f32, a: f32) -> (i32, i32) {
     ((cx + a.cos() * rx) as i32, (cy + a.sin() * ry) as i32)
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn step_toward(pen: &mut TreePen, grid: &mut Grid, tx: i32, ty: i32) {
     while pen.x != tx || pen.y != ty {
         let dx = tx - pen.x;
@@ -49,6 +53,7 @@ fn step_toward(pen: &mut TreePen, grid: &mut Grid, tx: i32, ty: i32) {
 
 /// Ellipse arc from angle a0 to a1 (radians, CCW math convention), drawn as
 /// connected box-drawing glyphs. Returns the pen at the end point.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn arc(grid: &mut Grid, cx: f32, cy: f32, rx: f32, ry: f32, a0: f32, a1: f32, color: Color, start: Option<(i32, i32)>) -> TreePen {
     let steps = (((a1 - a0).abs() * rx.max(ry)).ceil() as usize).clamp(8, 400);
     let mut pen = if let Some((sx, sy)) = start {
@@ -67,6 +72,7 @@ fn arc(grid: &mut Grid, cx: f32, cy: f32, rx: f32, ry: f32, a0: f32, a1: f32, co
     pen
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn ellipse(grid: &mut Grid, cx: f32, cy: f32, rx: f32, ry: f32, color: Color) {
     let mut pen = arc(grid, cx, cy, rx, ry, -std::f32::consts::PI, std::f32::consts::PI, color, None);
     let (sx, sy) = pt(cx, cy, rx, ry, -std::f32::consts::PI);
@@ -86,6 +92,7 @@ struct Brass {
     ink: Color,
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn brass(palette: &[Color; 5], seed: u64) -> Brass {
     let mut rng = StdRng::seed_from_u64(seed ^ 0xA57A);
     let base_hue = if let Color::Rgb { r, g, .. } = palette[3] {
@@ -107,6 +114,7 @@ fn brass(palette: &[Color; 5], seed: u64) -> Brass {
 }
 
 /// Outer limb: double ring, degree ticks, hour numerals, inscription band.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_limb(grid: &mut Grid, cx: f32, cy: f32, rx: f32, ry: f32, b: &Brass, rng: &mut StdRng) {
     ellipse(grid, cx, cy, rx, ry, b.limb);
     ellipse(grid, cx, cy, rx * 0.94, ry * 0.94, b.limb_hi);
@@ -147,6 +155,7 @@ fn draw_limb(grid: &mut Grid, cx: f32, cy: f32, rx: f32, ry: f32, b: &Brass, rng
 }
 
 /// Tympan: stereographic plate -- almucantar rings, azimuth spokes, tropics.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_tympan(grid: &mut Grid, cx: f32, cy: f32, rx: f32, ry: f32, b: &Brass, rings: usize, spokes: usize, rng: &mut StdRng) {
     let inner_r = rx * 0.70 * 0.92;
     let inner_ry = ry * 0.70 * 0.92;
@@ -190,6 +199,7 @@ fn draw_tympan(grid: &mut Grid, cx: f32, cy: f32, rx: f32, ry: f32, b: &Brass, r
 
 /// Rete: rotating star cage -- ecliptic band, star pointers, labels. All
 /// geometry is a pure rotation by `rot` of seeded placements.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_rete(grid: &mut Grid, cx: f32, cy: f32, rx: f32, ry: f32, b: &Brass, rot: f32, stars: usize, twinkle: f32, t: f32, ecliptic_amt: f32) {
     let mut srng = StdRng::seed_from_u64((stars as u64).wrapping_mul(0x51A5) ^ 0x9E37);
     let inner_r = rx * 0.66;
@@ -237,6 +247,7 @@ fn draw_rete(grid: &mut Grid, cx: f32, cy: f32, rx: f32, ry: f32, b: &Brass, rot
 }
 
 /// Rule: a graduated bar pivoting through the center, plus the center pin.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_rule(grid: &mut Grid, cx: f32, cy: f32, rx: f32, ry: f32, b: &Brass, phi: f32) {
     for sign in [1.0f32, -1.0] {
         let a = phi * sign;
@@ -269,6 +280,7 @@ fn draw_rule(grid: &mut Grid, cx: f32, cy: f32, rx: f32, ry: f32, b: &Brass, phi
 }
 
 /// Throne crest above the limb.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_throne(grid: &mut Grid, cx: f32, cy: f32, ry: f32, b: &Brass) {
     let ty = (cy - ry - 2.0) as i32;
     if ty < 0 {
@@ -287,6 +299,7 @@ fn draw_throne(grid: &mut Grid, cx: f32, cy: f32, ry: f32, b: &Brass) {
 
 // ── Renderer ────────────────────────────────────────────────────────
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn draw_astrolabe(grid: &mut Grid, width: usize, height: usize, seed: u64, palette: &[Color; 5], t: f32) {
     let stars = param_f32("STARS", 42.0).clamp(10.0, 110.0) as usize;
     let rings = param_f32("RINGS", 5.0).clamp(2.0, 9.0) as usize;
@@ -316,6 +329,7 @@ pub fn draw_astrolabe(grid: &mut Grid, width: usize, height: usize, seed: u64, p
     measure_layer("astrolabe", "throne", || draw_throne(grid, cx, cy, ry, &b));
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_astrolabe(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
     let _ = (rng, term_w, term_h, args, mode, theme_name);
     draw_astrolabe(&mut grid, width, height, seed, &palette, t_anim);
@@ -326,6 +340,7 @@ pub(crate) fn cli_astrolabe(mut grid: Grid, width: usize, height: usize, seed: u
 mod tests {
     use super::*;
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn run(w: usize, h: usize, seed: u64, t: f32) -> String {
         let mut g = vec![vec![Cell::blank(); w]; h];
         let p = crate::color::make_palette(seed);
@@ -337,28 +352,33 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_astrolabe_small() {
         insta::assert_snapshot!("astrolabe_80x24", run(80, 24, 42, 0.0));
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_astrolabe_large() {
         insta::assert_snapshot!("astrolabe_110x40", run(110, 40, 42, 0.0));
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn deterministic_and_seed_sensitive() {
         assert_eq!(run(90, 30, 42, 0.0), run(90, 30, 42, 0.0));
         assert_ne!(run(90, 30, 42, 0.0), run(90, 30, 7, 0.0));
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn t_moves_the_instrument() {
         assert_ne!(run(90, 30, 42, 0.0), run(90, 30, 42, 6.0));
         assert_ne!(run(90, 30, 42, 6.0), run(90, 30, 42, 12.0));
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn frames_locally_stable() {
         let a = run(90, 30, 42, 30.0);
         let b = run(90, 30, 42, 30.6);

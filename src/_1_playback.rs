@@ -31,6 +31,7 @@ pub(crate) enum Exit {
     Input(Event),
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn quit(event: &Event) -> Option<Exit> {
     match event {
         Event::Key(key) if key.kind != KeyEventKind::Release => match key.code {
@@ -48,6 +49,7 @@ fn quit(event: &Event) -> Option<Exit> {
 // prevents nested render_frame children from surviving an interrupted session.
 struct Job(Child);
 impl Drop for Job {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn drop(&mut self) {
         let started = Instant::now();
         let _ = killpg(Pid::from_raw(self.0.id() as i32), Signal::SIGKILL);
@@ -62,12 +64,14 @@ impl Drop for Job {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn nonblocking(fd: impl AsFd) -> io::Result<()> {
     let flags = OFlag::from_bits_truncate(fcntl(&fd, FcntlArg::F_GETFL)?);
     fcntl(fd, FcntlArg::F_SETFL(flags | OFlag::O_NONBLOCK))?;
     Ok(())
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn supervise(command: &mut Command, animation: bool) -> io::Result<Exit> {
     // A distinct open file description avoids changing the caller's stdout flags.
     let mut terminal = OpenOptions::new()
@@ -113,6 +117,7 @@ pub(crate) fn supervise(command: &mut Command, animation: bool) -> io::Result<Ex
     result
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn pump(
     command: &mut Command,
     animation: bool,
@@ -305,6 +310,7 @@ fn pump(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn animate(
     mode_a: &str,
     seed_a: u64,
@@ -330,6 +336,7 @@ pub(crate) fn animate(
     supervise(&mut command, true)
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn worker(args: &[String]) {
     use std::io::BufRead;
     if args.len() != 10 {
@@ -363,6 +370,7 @@ pub(crate) fn worker(args: &[String]) {
     );
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn synchronized_output() -> bool {
     synchronized_output_for(
         std::env::var("TERM_PROGRAM").ok().as_deref(),
@@ -371,6 +379,7 @@ pub(crate) fn synchronized_output() -> bool {
     )
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn synchronized_output_for(term_program: Option<&str>, in_tmux: bool, in_screen: bool) -> bool {
     term_program == Some("iTerm.app") && !in_tmux && !in_screen
 }
@@ -378,6 +387,7 @@ fn synchronized_output_for(term_program: Option<&str>, in_tmux: bool, in_screen:
 /// Write bounded chunks while collecting controls. The complete frame remains
 /// contiguous so synchronized-output brackets are never abandoned for an
 /// ordinary control. Quit stays supervisor-owned and kills the worker directly.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn write_frame(
     output: &mut (impl Write + AsFd),
     mut bytes: &[u8],
@@ -421,6 +431,7 @@ mod tests {
     use crossterm::event::KeyEvent;
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn synchronized_output_is_limited_to_direct_iterm_sessions() {
         assert!(synchronized_output_for(Some("iTerm.app"), false, false));
         assert!(!synchronized_output_for(Some("iTerm.app"), true, false));
@@ -434,6 +445,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn controls_are_collected_without_abandoning_frames_and_disconnected_workers_stop() {
         struct PartialWriter {
             readiness: std::fs::File,
@@ -442,11 +454,13 @@ mod tests {
             writes: usize,
         }
         impl AsFd for PartialWriter {
+            #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
             fn as_fd(&self) -> BorrowedFd<'_> {
                 self.readiness.as_fd()
             }
         }
         impl Write for PartialWriter {
+            #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
             fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
                 if self.writes == 1 {
                     self.writes += 1;
@@ -459,6 +473,7 @@ mod tests {
                 self.written.extend_from_slice(&bytes[..3]);
                 Ok(3)
             }
+            #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
             fn flush(&mut self) -> io::Result<()> {
                 Ok(())
             }
@@ -501,21 +516,25 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn frame_writer_attempts_one_contiguous_application_batch() {
         struct BatchWriter {
             readiness: std::fs::File,
             requests: Vec<usize>,
         }
         impl AsFd for BatchWriter {
+            #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
             fn as_fd(&self) -> BorrowedFd<'_> {
                 self.readiness.as_fd()
             }
         }
         impl Write for BatchWriter {
+            #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
             fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
                 self.requests.push(bytes.len());
                 Ok(bytes.len())
             }
+            #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
             fn flush(&mut self) -> io::Result<()> {
                 Ok(())
             }
@@ -534,6 +553,7 @@ mod tests {
     /// Complete CLI frames through the same pipe and nonblocking PTY relay as demo.
     #[test]
     #[ignore = "release relay probe; ASCII_PERF_BIN selects the renderer executable"]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn perf_preview_relay_over_time() {
         let binary = std::env::var("ASCII_PERF_BIN").expect("set ASCII_PERF_BIN");
         let directory = tempfile::tempdir().unwrap();
@@ -601,15 +621,18 @@ mod tests {
 
     struct Congested;
     impl Write for Congested {
+        #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
         fn write(&mut self, _: &[u8]) -> io::Result<usize> {
             Err(io::ErrorKind::WouldBlock.into())
         }
+        #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
         fn flush(&mut self) -> io::Result<()> {
             Ok(())
         }
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn quit_interrupts_cpu_sleep_and_output_backpressure() {
         for script in ["while :; do :; done", "sleep 10", "yes frame"] {
             for (code, modifiers, expected) in [
@@ -650,13 +673,16 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn writable_descriptor_with_rejected_writes_has_bounded_retries() {
         struct RejectingWriter(usize);
         impl Write for RejectingWriter {
+            #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
             fn write(&mut self, _: &[u8]) -> io::Result<usize> {
                 self.0 += 1;
                 Err(io::ErrorKind::WouldBlock.into())
             }
+            #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
             fn flush(&mut self) -> io::Result<()> {
                 Ok(())
             }
@@ -690,6 +716,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn quit_interrupts_real_terminal_backpressure() {
         let pty = nix::pty::openpty(None, None).unwrap();
         let mut terminal = std::fs::File::from(pty.slave);
@@ -714,6 +741,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn cancellation_kills_nested_render_children() {
         let directory = tempfile::tempdir().unwrap();
         let ready = directory.path().join("ready");
@@ -751,6 +779,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn preview_navigation_cancels_pending_render() {
         let key = Event::Key(KeyEvent::new(KeyCode::Down, KeyModifiers::NONE));
         let result = pump(
@@ -765,6 +794,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn preview_preserves_output_and_converts_newlines() {
         let mut output = Vec::new();
         let result = pump(

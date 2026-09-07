@@ -108,18 +108,23 @@ const PARAMS: &[Param] = &[
 ];
 
 impl Mode for ChaosTheoryMode {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn name(&self) -> &'static str {
         "astra-chaos-theory"
     }
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn help(&self) -> &'static str {
         "Chaos observatory: Lorenz/Rossler/Thomas pairs, logistic bifurcation, log separation. Knobs: sys, time, view, map, ink; positional values follow the knob order."
     }
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn animation(&self) -> AnimKind {
         AnimKind::Iterate
     }
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn params(&self) -> &'static [Param] {
         PARAMS
     }
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn render(&self, frame: &mut ModeFrame<'_>) {
         // Read explicit live values, then CLI slots, then thread-local/env fallback.
         let knobs = std::array::from_fn(|i| {
@@ -139,6 +144,7 @@ impl Mode for ChaosTheoryMode {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn random(seed: u64, lane: usize) -> f32 {
     let mut n = seed.wrapping_add((lane as u64).wrapping_mul(0x9e3779b97f4a7c15));
     n = (n ^ (n >> 30)).wrapping_mul(0xbf58476d1ce4e5b9);
@@ -150,6 +156,7 @@ type Point = [f32; 3];
 
 // Each pair advances simultaneously. The extra damping and coupling are explicit
 // modifications of the named ODEs; the inset logistic map is a separate system.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn velocity(p: Point, q: Point, family: usize, damping: f32, coupling: f32) -> Point {
     let [x, y, z] = p;
     let v = match family {
@@ -164,6 +171,7 @@ fn velocity(p: Point, q: Point, family: usize, damping: f32, coupling: f32) -> P
     std::array::from_fn(|i| v[i] - damping * p[i] + coupling * (q[i] - p[i]))
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn advance(pair: [Point; 2], dt: f32, family: usize, damping: f32, coupling: f32) -> [Point; 2] {
     // Explicit midpoint RK2; all coordinates remain finite within the safety box.
     let midpoint: [Point; 2] = std::array::from_fn(|j| {
@@ -192,6 +200,7 @@ struct Canvas<'a> {
 }
 
 impl Canvas<'_> {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn line(&mut self, panel: Panel, a: Point, b: Point, ch: char, fg: Color, z: f32) {
         // Clip before rasterizing so offscreen trajectories cannot consume work.
         let dx = b[0] - a[0];
@@ -239,6 +248,7 @@ impl Canvas<'_> {
         }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn put(&mut self, x: usize, y: usize, ch: char, fg: Color, z: f32) {
         if x < self.width && y < self.height {
             let index = y * self.width + x;
@@ -250,6 +260,7 @@ impl Canvas<'_> {
         }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn point(&mut self, panel: Panel, x: f32, y: f32, ch: char, fg: Color, z: f32) {
         if x.is_finite()
             && y.is_finite()
@@ -268,12 +279,14 @@ impl Canvas<'_> {
         }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn text(&mut self, x: usize, y: usize, text: &str, fg: Color) {
         for (i, ch) in text.chars().take(self.width.saturating_sub(x)).enumerate() {
             self.put(x + i, y, ch, fg, 100.0);
         }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn border(&mut self, p: Panel, title: &str, fg: Color) {
         for x in p.x..p.x + p.w {
             self.put(x, p.y, '-', fg, 90.0);
@@ -300,6 +313,7 @@ impl Canvas<'_> {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn project(p: Point, family: usize, angle: f32, tilt: f32, depth: f32) -> Point {
     let [x, y, z] = match family {
         0 => [p[0] / 22.0, p[1] / 28.0, (p[2] - 25.0) / 26.0],
@@ -316,6 +330,7 @@ fn project(p: Point, family: usize, angle: f32, tilt: f32, depth: f32) -> Point 
     [horizontal * perspective, vertical * perspective, distance]
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_chaos(frame: &mut ModeFrame<'_>, knobs: &[f32; 24]) {
     // Initialize bounded frame storage, then draw the rear graticule and orbit cage.
     let &[
@@ -716,10 +731,12 @@ mod tests {
     use super::*;
     use rand::{SeedableRng, rngs::StdRng};
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn defaults() -> [f32; 24] {
         std::array::from_fn(|i| PARAMS[i].default)
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn render(width: usize, height: usize, seed: u64, time: f32, values: &[f32]) -> Grid {
         let mut grid = vec![vec![Cell::blank(); width]; height];
         let mut rng = StdRng::seed_from_u64(seed);
@@ -737,6 +754,7 @@ mod tests {
         grid
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn plain(grid: &Grid) -> String {
         grid.iter()
             .map(|r| r.iter().map(|c| c.ch).collect::<String>())
@@ -745,6 +763,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn chaos_time_zero() {
         insta::assert_snapshot!(plain(&render(80, 24, 1701, 0.0, &defaults())), @r"
 +- ASTRA / LORENZ -------------------------------------++- LOGISTIC / r -------+
@@ -775,6 +794,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn chaos_time_four() {
         insta::assert_snapshot!(plain(&render(80, 24, 1701, 4.0, &defaults())), @r"
 +- ASTRA / LORENZ -------------------------------------++- LOGISTIC / r -------+
@@ -805,6 +825,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn chaos_rossler_first_frame() {
         let mut values = defaults();
         for (i, value) in [
@@ -848,6 +869,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn chaos_thomas_first_frame() {
         let mut values = defaults();
         for (i, value) in [
@@ -891,6 +913,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn chaos_short_trail_first_frame() {
         let mut values = defaults();
         for (i, value) in [
@@ -932,6 +955,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn complete_first_frame_without_background_or_heads() {
         // Test the actual orbit layer: decorations cannot satisfy its coverage.
         let mut values = defaults();
@@ -961,6 +985,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn large_grid_extreme_controls() {
         let mut values: [f32; 24] = std::array::from_fn(|i| PARAMS[i].max);
         values[2] = PARAMS[2].min;
@@ -976,6 +1001,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn deterministic_and_time_controls() {
         let values = defaults();
         let first = render(80, 24, 1701, 4.0, &values);
@@ -995,6 +1021,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn every_control_changes_cells() {
         let values = defaults();
         let reference = render(80, 24, 1701, 4.0, &values);
@@ -1015,6 +1042,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn parameter_clamps_and_nonfinite_defaults() {
         let low: [f32; 24] = std::array::from_fn(|i| PARAMS[i].min);
         let high: [f32; 24] = std::array::from_fn(|i| PARAMS[i].max);
@@ -1035,6 +1063,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn small_grids_and_extreme_time_terminate() {
         for family in 0..3 {
             for (width, height) in [
@@ -1063,6 +1092,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn paired_integrator_is_finite_and_respects_identity() {
         for family in 0..3 {
             let mut pair = [[1.0, 0.4, 2.0]; 2];
@@ -1079,6 +1109,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn frame_inputs_and_parameter_precedence() {
         // Thread-local fallback avoids mutating the process environment in tests.
         let saved = crate::opts::LIVE_PARAMS.with(|p| {

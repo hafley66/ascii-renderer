@@ -32,27 +32,32 @@ pub struct TreeParams {
 }
 
 impl TreeParams {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub fn root(&self) -> (i32, i32) {
         let x = self.plot.x as i32 + self.plot.w as i32 / 2;
         let y = self.plot.y as i32 + self.plot.h as i32 - 1;
         (x, y)
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub fn canopy_top(&self) -> i32 {
         let top = self.plot.y as i32;
         let ry = self.root().1;
         ry - ((ry - top) as f32 * self.energy.clamp(0.1, 1.0)) as i32
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub fn spread(&self) -> i32 {
         (self.plot.w as f32 / 2.0 * self.energy.clamp(0.2, 1.0)) as i32
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub fn color_at_depth(&self, frac: f32) -> Color {
         lighten(self.branch_color, (frac * 60.0) as u8)
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn set(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
     if x >= 0 && y >= 0 && (y as usize) < grid.len() && (x as usize) < grid[0].len() {
         grid[y as usize][x as usize] = Cell::new(ch, fg);
@@ -109,6 +114,7 @@ pub trait TreeDrawer {
     fn draw_fruit(&self, grid: &mut Grid, x: i32, y: i32, params: &TreeParams, rng: &mut StdRng);
 
     /// Default growth loop: trunk → branches at intervals → tips → fruit.
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn grow(&self, grid: &mut Grid, params: &TreeParams, rng: &mut StdRng) {
         let exit = if let Some(ref bole) = params.bole {
             bole.draw(grid, params, rng)
@@ -167,10 +173,12 @@ mod tests {
     use crossterm::style::Color;
     use rand::SeedableRng;
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn make_grid(w: usize, h: usize) -> Grid {
         vec![vec![Cell::new(' ', Color::Reset); w]; h]
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn grid_to_string(grid: &Grid) -> String {
         grid.iter()
             .map(|row| row.iter().map(|c| c.ch).collect::<String>())
@@ -178,6 +186,7 @@ mod tests {
             .join("\n")
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn test_params(plot_x: usize, plot_y: usize, plot_w: usize, plot_h: usize) -> TreeParams {
         let green = Color::Rgb {
             r: 80,
@@ -206,6 +215,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_spiral_tree() {
         let mut grid = make_grid(40, 20);
         let tp = test_params(10, 1, 20, 18);
@@ -215,6 +225,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_candelabra_tree() {
         let mut grid = make_grid(40, 20);
         let tp = test_params(10, 1, 20, 18);
@@ -224,6 +235,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_split_tree() {
         let mut grid = make_grid(40, 20);
         let tp = test_params(10, 1, 20, 18);
@@ -233,6 +245,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_birch_tree() {
         let mut grid = make_grid(40, 20);
         let tp = test_params(10, 1, 20, 18);
@@ -242,6 +255,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_storm_tree() {
         let mut grid = make_grid(40, 20);
         let tp = test_params(10, 1, 20, 18);
@@ -251,6 +265,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_dead_tree() {
         let mut grid = make_grid(40, 20);
         let tp = test_params(10, 1, 20, 18);
@@ -260,6 +275,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_drooping_tree() {
         let mut grid = make_grid(40, 20);
         let tp = test_params(10, 1, 20, 18);
@@ -269,6 +285,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_pine_tree() {
         let mut grid = make_grid(40, 20);
         let tp = test_params(20, 1, 20, 18);
@@ -278,6 +295,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_willow_tree() {
         let mut grid = make_grid(40, 20);
         let tp = test_params(20, 1, 20, 18);
@@ -287,6 +305,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_palm_tree() {
         let mut grid = make_grid(40, 20);
         let tp = test_params(20, 1, 20, 18);
@@ -296,6 +315,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_oak_tree() {
         let mut grid = make_grid(40, 20);
         let tp = test_params(10, 1, 20, 18);
@@ -305,6 +325,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_fountain_tree() {
         let mut grid = make_grid(40, 20);
         let tp = test_params(10, 1, 20, 18);
@@ -314,6 +335,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_windswept_tree() {
         let mut grid = make_grid(40, 20);
         let tp = test_params(10, 1, 20, 18);
@@ -323,6 +345,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_fractal_tree() {
         let mut grid = make_grid(40, 20);
         let tp = test_params(10, 1, 20, 18);
@@ -332,6 +355,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_lsystem_tree() {
         let mut grid = make_grid(40, 20);
         let tp = test_params(10, 1, 20, 18);
@@ -341,6 +365,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_dragon_tree() {
         let mut grid = make_grid(40, 20);
         let tp = test_params(10, 1, 20, 18);
@@ -350,6 +375,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_helix_tree() {
         let mut grid = make_grid(40, 20);
         let tp = test_params(10, 1, 20, 18);
@@ -359,6 +385,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_winding_boles() {
         // all four winding bole styles (24-27) on one grid
         let mut grid = make_grid(80, 10);
@@ -372,6 +399,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_structural_boles() {
         // all six structural bole styles (28-33) on one grid
         let mut grid = make_grid(120, 12);

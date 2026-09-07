@@ -18,18 +18,23 @@ const PARAMS: &[Param] = &[
 ];
 
 impl Mode for ChimeraShadowGardenMode {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn name(&self) -> &'static str {
         "chimera-shadow-garden"
     }
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn help(&self) -> &'static str {
         TITLE
     }
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn animation(&self) -> AnimKind {
         AnimKind::Iterate
     }
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn params(&self) -> &'static [Param] {
         PARAMS
     }
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn render(&self, frame: &mut ModeFrame<'_>) {
         // Resolve positional arguments, live controls, and defaults.
         let k = std::array::from_fn(|i| {
@@ -52,6 +57,7 @@ impl Mode for ChimeraShadowGardenMode {
 }
 
 // Stable identities keep plants and spores fixed when another control changes.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn noise(seed: u64, id: usize) -> f32 {
     let mut n = seed.wrapping_add((id as u64).wrapping_mul(0x9e3779b97f4a7c15));
     n = (n ^ (n >> 30)).wrapping_mul(0xbf58476d1ce4e5b9);
@@ -59,6 +65,7 @@ fn noise(seed: u64, id: usize) -> f32 {
     ((n ^ (n >> 31)) >> 40) as f32 / 16777216.0
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn put(grid: &mut Grid, p: [f32; 2], ch: char, fg: Color) {
     if !(0.0..1.0).contains(&p[0]) || !(0.0..1.0).contains(&p[1]) {
         return;
@@ -75,6 +82,7 @@ fn put(grid: &mut Grid, p: [f32; 2], ch: char, fg: Color) {
 }
 
 // Sample normalized curves at cell resolution, with a grid-sized work bound.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn curve(grid: &mut Grid, a: [f32; 2], b: [f32; 2], c: [f32; 2], fg: Color) {
     let h = grid.len();
     let w = grid.first().map_or(0, Vec::len);
@@ -107,6 +115,7 @@ fn curve(grid: &mut Grid, a: [f32; 2], b: [f32; 2], c: [f32; 2], fg: Color) {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_chimera_shadow_garden(frame: &mut ModeFrame<'_>, k: &[f32; 6]) {
     // Initialize depth colors and seed-stable object positions.
     // Evaluate sway, ripples, and drifting spores from time.
@@ -325,11 +334,13 @@ mod tests {
     use super::*;
     use crate::{morph::IterateFrameRenderer, render::grid_to_plain};
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn defaults() -> Vec<f32> {
         PARAMS.iter().map(|p| p.default).collect()
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn chimera_shadow_garden_static_snapshot() {
         let mut renderer = IterateFrameRenderer::new(MODE.name(), 42, "deep", 80, 28).unwrap();
         insta::assert_snapshot!(
@@ -339,6 +350,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn chimera_shadow_garden_motion_snapshot() {
         let mut renderer = IterateFrameRenderer::new(MODE.name(), 42, "deep", 80, 28).unwrap();
         insta::assert_snapshot!(
@@ -348,6 +360,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn chimera_shadow_garden_controls_and_replay() {
         let mut renderer = IterateFrameRenderer::new(MODE.name(), 42, "deep", 100, 36).unwrap();
         let k = defaults();
@@ -376,6 +389,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn chimera_shadow_garden_boundaries_and_cli() {
         use rand::{SeedableRng, rngs::StdRng};
         for (w, h) in [(0, 0), (0, 3), (3, 0), (1, 1), (2, 9), (9, 2), (80, 28)] {

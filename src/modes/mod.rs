@@ -22,6 +22,7 @@ mod _48_astra_jurassic_park;
 mod _49_astra_chaos_theory;
 mod _50_gem_aetherium_2;
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn register_all(registry: &mut crate::registry::ModeRegistry) {
     registry.add(&_30_illuminarium::MODE);
     registry.add(&_31_qwen_cathedral::MODE);

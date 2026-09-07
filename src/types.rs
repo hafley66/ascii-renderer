@@ -9,6 +9,7 @@ pub struct Cell {
 }
 
 impl Cell {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub fn blank() -> Self {
         Cell {
             ch: ' ',
@@ -17,6 +18,7 @@ impl Cell {
         }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub fn new(ch: char, fg: Color) -> Self {
         Cell {
             ch,
@@ -25,6 +27,7 @@ impl Cell {
         }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub fn with_bg(ch: char, fg: Color, bg: Color) -> Self {
         Cell { ch, fg, bg }
     }
@@ -33,11 +36,13 @@ impl Cell {
 pub type Grid = Vec<Vec<Cell>>;
 
 /// Display width of a string (accounts for fullwidth CJK chars).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn display_width(s: &str) -> usize {
     s.chars().map(|c| c.width().unwrap_or(0)).sum()
 }
 
 /// Display width of a single char.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn char_width(c: char) -> usize {
     c.width().unwrap_or(0)
 }

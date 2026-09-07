@@ -26,6 +26,7 @@ pub(crate) struct ChladniKnobs {
 }
 
 impl ChladniKnobs {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub(crate) fn from_env() -> Self {
         ChladniKnobs {
             dwell: param_f32("DWELL", 3.0),
@@ -40,6 +41,7 @@ impl ChladniKnobs {
         }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn order_n(&self) -> u32 {
         (self.order.round() as u32).clamp(2, 24)
     }
@@ -65,6 +67,7 @@ thread_local! {
     static CACHE: RefCell<Option<Cached>> = RefCell::new(None);
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn build(seed: u64, order: u32) -> Cached {
     let mut rng = StdRng::seed_from_u64(seed ^ 0xC41AD71);
     let mut seq: Vec<Figure> = Vec::with_capacity(SEQ);
@@ -86,6 +89,7 @@ fn build(seed: u64, order: u32) -> Cached {
     Cached { key: (seed, order), seq, col_n: Vec::new(), col_m: Vec::new(), row_n: Vec::new(), row_m: Vec::new() }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn hash(x: u32, y: u32, k: u32, seed: u64) -> f32 {
     let mut h = (x as u64).wrapping_mul(0x9E37_79B9_7F4A_7C15)
         ^ (y as u64).wrapping_mul(0xBF58_476D_1CE4_E5B9)
@@ -97,6 +101,7 @@ fn hash(x: u32, y: u32, k: u32, seed: u64) -> f32 {
     (h & 0xFF_FFFF) as f32 / 16_777_216.0
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn smooth(s: f32) -> f32 {
     let s = s.clamp(0.0, 1.0);
     s * s * (3.0 - 2.0 * s)
@@ -109,6 +114,7 @@ struct Drive {
     glide: f32,
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn drive_at(t: f32, dwell: f32, glide: f32, seq: &[Figure]) -> Drive {
     let period = dwell + glide;
     let i = (t / period).floor().max(0.0) as usize;
@@ -124,24 +130,28 @@ fn drive_at(t: f32, dwell: f32, glide: f32, seq: &[Figure]) -> Drive {
     Drive { fig, from, to, glide: s }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn field(fig: &Figure, px: f32, py: f32) -> f32 {
     let a = (fig.n * PI * px).cos() * (fig.m * PI * py).cos();
     let b = (fig.m * PI * px).cos() * (fig.n * PI * py).cos();
     a + fig.sign * b
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn put(grid: &mut Grid, w: usize, h: usize, x: i32, y: i32, cell: Cell) {
     if x >= 0 && y >= 0 && (x as usize) < w && (y as usize) < h {
         grid[y as usize][x as usize] = cell;
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn put_text(grid: &mut Grid, w: usize, h: usize, x: i32, y: i32, text: &str, fg: Color, bg: Color) {
     for (i, ch) in text.chars().enumerate() {
         put(grid, w, h, x + i as i32, y, Cell::with_bg(ch, fg, bg));
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn draw_chladni(grid: &mut Grid, w: usize, h: usize, seed: u64, palette: &[Color; 5], t: f32, k: &ChladniKnobs) {
     let order = k.order_n();
     CACHE.with(|cell| {
@@ -156,6 +166,7 @@ pub(crate) fn draw_chladni(grid: &mut Grid, w: usize, h: usize, seed: u64, palet
     });
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn render(grid: &mut Grid, w: usize, h: usize, seed: u64, palette: &[Color; 5], t: f32, k: &ChladniKnobs, c: &mut Cached) {
     measure_layer("chladni", "clear", || {
         for row in grid.iter_mut().take(h) {
@@ -291,6 +302,7 @@ fn render(grid: &mut Grid, w: usize, h: usize, seed: u64, palette: &[Color; 5], 
     });
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_chladni(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
     let _ = (rng, term_w, term_h, mode, theme_name);
     let mut k = ChladniKnobs::from_env();
@@ -317,6 +329,7 @@ pub(crate) fn cli_chladni(mut grid: Grid, width: usize, height: usize, seed: u64
 mod tests {
     use super::*;
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn run(w: usize, h: usize, seed: u64, t: f32) -> String {
         let mut g = vec![vec![Cell::blank(); w]; h];
         let p = crate::color::make_palette(seed);
@@ -329,16 +342,19 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_chladni_small() {
         insta::assert_snapshot!("chladni_80x24", run(80, 24, 42, 0.0));
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_chladni_large() {
         insta::assert_snapshot!("chladni_110x36", run(110, 36, 42, 0.0));
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn order_two_terminates() {
         let mut g = vec![vec![Cell::blank(); 40]; 12];
         let p = crate::color::make_palette(3);
@@ -348,18 +364,21 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn deterministic_and_seed_sensitive() {
         assert_eq!(run(90, 30, 42, 0.0), run(90, 30, 42, 0.0));
         assert_ne!(run(90, 30, 42, 0.0), run(90, 30, 7, 0.0));
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn t_steps_the_figure() {
         assert_ne!(run(90, 30, 42, 0.0), run(90, 30, 42, 4.0));
         assert_ne!(run(90, 30, 42, 4.0), run(90, 30, 42, 9.0));
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn frame_cost() {
         let (w, h) = (200usize, 60usize);
         let mut g = vec![vec![Cell::blank(); w]; h];

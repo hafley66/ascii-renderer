@@ -37,6 +37,7 @@ use crate::registry::*;
 /// Wind warp: horizontal shear of a single grid, strongest at the top (canopy
 /// sways, roots stay put) and oscillating + gusting over `time`. No second frame
 /// needed -- this animates one rendered scene "through the wind".
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn warp_wind(src: &Grid, time: f32, amp: f32) -> Grid {
     let h = src.len();
     let w = if h > 0 { src[0].len() } else { 0 };
@@ -63,6 +64,7 @@ pub(crate) fn warp_wind(src: &Grid, time: f32, amp: f32) -> Grid {
 
 
 /// Nearest-cell sample from a source grid (out of bounds -> blank).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn warp_sample(src: &Grid, sx: f32, sy: f32) -> Cell {
     let xi = sx.round() as i32;
     let yi = sy.round() as i32;
@@ -75,6 +77,7 @@ pub(crate) fn warp_sample(src: &Grid, sx: f32, sy: f32) -> Cell {
 
 
 /// Toroidal drift: scroll the whole grid diagonally over time, wrapping around.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn warp_drift(src: &Grid, time: f32, amp: f32) -> Grid {
     let h = src.len();
     let w = if h > 0 { src[0].len() } else { 0 };
@@ -93,6 +96,7 @@ pub(crate) fn warp_drift(src: &Grid, time: f32, amp: f32) -> Grid {
 
 
 /// Vortex swirl: rotate around the center, faster near the middle, spinning over time.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn warp_swirl(src: &Grid, time: f32, amp: f32) -> Grid {
     let h = src.len();
     let w = if h > 0 { src[0].len() } else { 0 };
@@ -115,6 +119,7 @@ pub(crate) fn warp_swirl(src: &Grid, time: f32, amp: f32) -> Grid {
 
 
 /// Concentric ripple: radial sine displacement moving outward over time.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn warp_ripple(src: &Grid, time: f32, amp: f32) -> Grid {
     let h = src.len();
     let w = if h > 0 { src[0].len() } else { 0 };
@@ -137,6 +142,7 @@ pub(crate) fn warp_ripple(src: &Grid, time: f32, amp: f32) -> Grid {
 
 
 /// Breathe: gentle zoom pulse in/out around the center.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn warp_breathe(src: &Grid, time: f32, amp: f32) -> Grid {
     let h = src.len();
     let w = if h > 0 { src[0].len() } else { 0 };
@@ -159,6 +165,7 @@ pub(crate) fn warp_breathe(src: &Grid, time: f32, amp: f32) -> Grid {
 /// orbits over `time`, so the glass cells flow and re-tile continuously. Site
 /// base positions/colors are deterministic from `seed`; only the orbit offset
 /// moves, so it loops smoothly.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn voronoi_flow_frame(w: usize, h: usize, seed: u64, time: f32, palette: &[Color; 5]) -> Grid {
     let mut rng = StdRng::seed_from_u64(seed);
     let nseeds = 10 + (seed as usize % 12);

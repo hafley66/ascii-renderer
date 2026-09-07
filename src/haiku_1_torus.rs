@@ -19,6 +19,7 @@ pub(crate) struct TorusKnobs {
 }
 
 impl TorusKnobs {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub(crate) fn from_env() -> Self {
         TorusKnobs {
             speed: param_f32("SPEED", 1.0),
@@ -37,6 +38,7 @@ struct Pt3 {
     z: f32,
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn torus_point(u: f32, v: f32, major: f32, minor_r: f32) -> Pt3 {
     let cu = u.cos();
     let su = u.sin();
@@ -50,6 +52,7 @@ fn torus_point(u: f32, v: f32, major: f32, minor_r: f32) -> Pt3 {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn rotate_y(p: Pt3, angle: f32) -> Pt3 {
     let ca = angle.cos();
     let sa = angle.sin();
@@ -60,6 +63,7 @@ fn rotate_y(p: Pt3, angle: f32) -> Pt3 {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn rotate_x(p: Pt3, angle: f32) -> Pt3 {
     let ca = angle.cos();
     let sa = angle.sin();
@@ -70,6 +74,7 @@ fn rotate_x(p: Pt3, angle: f32) -> Pt3 {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn project(p: Pt3, w: usize, h: usize) -> (f32, f32) {
     let z_dist = 3.0 + p.z;
     if z_dist < 0.5 {
@@ -83,6 +88,7 @@ fn project(p: Pt3, w: usize, h: usize) -> (f32, f32) {
     (x, y)
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn glyph_for_depth(depth: f32, v_norm: f32, density: f32) -> char {
     let r = (depth * 7.0).fract();
     let threshold = 0.3 + 0.7 * (1.0 - depth).max(0.0);
@@ -105,6 +111,7 @@ fn glyph_for_depth(depth: f32, v_norm: f32, density: f32) -> char {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn draw_haiku_1_torus(grid: &mut Grid, w: usize, h: usize, seed: u64, palette: &[Color; 5], t: f32, k: &TorusKnobs) {
     measure_layer("haiku-1-torus", "clear", || {
         for row in grid.iter_mut().take(h) {
@@ -261,6 +268,7 @@ pub(crate) fn draw_haiku_1_torus(grid: &mut Grid, w: usize, h: usize, seed: u64,
     });
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_haiku_1_torus(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
     let mut knobs = TorusKnobs::from_env();
 
@@ -304,6 +312,7 @@ mod tests {
     use super::*;
     use crate::types::Grid;
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn grid_to_string(grid: &Grid) -> String {
         grid.iter()
             .map(|row| row.iter().map(|c| c.ch).collect::<String>())
@@ -312,6 +321,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_haiku_1_torus_static() {
         let mut grid = vec![vec![Cell::blank(); 80]; 24];
         let palette = crate::color::make_palette(42);
@@ -329,6 +339,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_haiku_1_torus_animated() {
         let mut grid = vec![vec![Cell::blank(); 80]; 24];
         let palette = crate::color::make_palette(42);

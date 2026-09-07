@@ -15,6 +15,7 @@ pub struct BoleExit {
     pub right: i32, // half-width extending right of x (0 = just center)
 }
 impl BoleExit {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub fn point(x: i32, y: i32) -> Self {
         BoleExit {
             x,
@@ -47,10 +48,12 @@ pub enum TaperKind {
     Melt,     // braille density fade
 }
 impl Default for TaperKind {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn default() -> Self {
         TaperKind::Diagonal
     }
 }
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn draw_taper(grid: &mut Grid, exit: &BoleExit, color: Color, kind: TaperKind) -> (i32, i32) {
     if exit.left == 0 && exit.right == 0 {
         set(grid, exit.x, exit.y, '│', color);
@@ -64,6 +67,7 @@ pub(crate) fn draw_taper(grid: &mut Grid, exit: &BoleExit, color: Color, kind: T
         TaperKind::Melt => taper_melt(grid, exit, color),
     }
 }
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn taper_diagonal(grid: &mut Grid, exit: &BoleExit, color: Color) -> (i32, i32) {
     let mut left = exit.left;
     let mut right = exit.right;
@@ -102,6 +106,7 @@ pub(crate) fn taper_diagonal(grid: &mut Grid, exit: &BoleExit, color: Color) -> 
     set(grid, exit.x, cy, '│', color);
     (exit.x, cy)
 }
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn taper_shelf(grid: &mut Grid, exit: &BoleExit, color: Color) -> (i32, i32) {
     let mut left = exit.left;
     let mut right = exit.right;
@@ -134,6 +139,7 @@ pub(crate) fn taper_shelf(grid: &mut Grid, exit: &BoleExit, color: Color) -> (i3
     set(grid, exit.x, cy, '│', color);
     (exit.x, cy)
 }
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn taper_bracket(grid: &mut Grid, exit: &BoleExit, color: Color) -> (i32, i32) {
     let mut left = exit.left;
     let mut right = exit.right;
@@ -193,6 +199,7 @@ pub(crate) fn taper_bracket(grid: &mut Grid, exit: &BoleExit, color: Color) -> (
     }
     (exit.x, cy)
 }
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn taper_step(grid: &mut Grid, exit: &BoleExit, color: Color) -> (i32, i32) {
     let mut left = exit.left;
     let mut right = exit.right;
@@ -216,6 +223,7 @@ pub(crate) fn taper_step(grid: &mut Grid, exit: &BoleExit, color: Color) -> (i32
     set(grid, exit.x, cy, '│', color);
     (exit.x, cy)
 }
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn taper_melt(grid: &mut Grid, exit: &BoleExit, color: Color) -> (i32, i32) {
     let mut left = exit.left;
     let mut right = exit.right;
@@ -284,6 +292,7 @@ pub struct StraightTrunk {
     pub height_fraction: f32,
 }
 impl TrunkAlgo for StraightTrunk {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw(
         &self,
         grid: &mut Grid,
@@ -313,6 +322,7 @@ pub struct ThickTrunk {
     pub height_fraction: f32,
 }
 impl TrunkAlgo for ThickTrunk {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw(
         &self,
         grid: &mut Grid,
@@ -346,6 +356,7 @@ pub struct WobbleTrunk {
     pub height_fraction: f32,
 }
 impl TrunkAlgo for WobbleTrunk {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw(
         &self,
         grid: &mut Grid,
@@ -386,6 +397,7 @@ pub struct LeanTrunk {
     pub lean: StdCell<i32>,
 }
 impl LeanTrunk {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub fn new() -> Self {
         LeanTrunk {
             lean: StdCell::new(0),
@@ -393,6 +405,7 @@ impl LeanTrunk {
     }
 }
 impl TrunkAlgo for LeanTrunk {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw(
         &self,
         grid: &mut Grid,
@@ -443,6 +456,7 @@ impl TrunkAlgo for LeanTrunk {
 }
 pub struct GnarledTrunk;
 impl TrunkAlgo for GnarledTrunk {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw(
         &self,
         grid: &mut Grid,
@@ -486,6 +500,7 @@ pub struct OrganicTrunk {
     pub height_fraction: f32,
 }
 impl TrunkAlgo for OrganicTrunk {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw(
         &self,
         grid: &mut Grid,
@@ -550,6 +565,7 @@ pub struct SineTrunk {
     pub amplitude: i32,
 }
 impl TrunkAlgo for SineTrunk {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw(
         &self,
         grid: &mut Grid,
@@ -608,6 +624,7 @@ pub trait BoleStyle {
 /// No bole
 pub struct NoBole;
 impl BoleStyle for NoBole {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw(&self, _grid: &mut Grid, params: &TreeParams, _rng: &mut StdRng) -> BoleExit {
         let (x, y) = params.root();
         BoleExit::point(x, y)
@@ -623,6 +640,7 @@ pub struct Bole {
 /// Bole pattern: array of (dx, dy, char) offsets from center, like draw_flower.
 /// Generated procedurally based on width + style + rng.
 impl BoleStyle for Bole {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw(&self, grid: &mut Grid, params: &TreeParams, rng: &mut StdRng) -> BoleExit {
         let (root_x, root_y) = params.root();
         let color = params.trunk_color;
@@ -672,6 +690,7 @@ pub struct BushSprite {
     pub energy: f32,
 }
 impl BushSprite {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub fn draw(&self, grid: &mut Grid, rng: &mut StdRng) -> BoleExit {
         let w = self.width.max(2);
         let lw = w / 2 + rng.random_range(0..(w / 2 + 1).max(1) as u32) as i32;
@@ -699,6 +718,7 @@ impl BushSprite {
         exit
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn apply_fade(&self, grid: &mut Grid, exit: &BoleExit) {
         // Compute bounding box from exit info + root position
         let left = self.x - exit.left - 3; // padding for sprawl chars
@@ -746,6 +766,7 @@ pub struct TreeWithTrunk<T: TreeDrawer> {
 }
 
 impl<T: TreeDrawer> TreeDrawer for TreeWithTrunk<T> {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw_trunk(
         &self,
         grid: &mut Grid,
@@ -756,6 +777,7 @@ impl<T: TreeDrawer> TreeDrawer for TreeWithTrunk<T> {
         self.trunk.draw(grid, pen, params, rng)
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn should_branch(
         &self,
         idx: usize,
@@ -766,6 +788,7 @@ impl<T: TreeDrawer> TreeDrawer for TreeWithTrunk<T> {
         self.tree.should_branch(idx, count, params, rng)
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw_branch(
         &self,
         grid: &mut Grid,
@@ -778,10 +801,12 @@ impl<T: TreeDrawer> TreeDrawer for TreeWithTrunk<T> {
         self.tree.draw_branch(grid, pen, intent, depth, params, rng)
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw_tip(&self, grid: &mut Grid, x: i32, y: i32, params: &TreeParams) {
         self.tree.draw_tip(grid, x, y, params);
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn draw_fruit(&self, grid: &mut Grid, x: i32, y: i32, params: &TreeParams, rng: &mut StdRng) {
         self.tree.draw_fruit(grid, x, y, params, rng);
     }

@@ -131,10 +131,21 @@ use walker::*;
 use warps::*;
 
 fn main() {
-    if let Err(error) = _0_profile::init() {
-        eprintln!("profiling initialization failed: {error}");
+    let trace_guard = match _0_profile::init() {
+        Ok(guard) => guard,
+        Err(error) => {
+            eprintln!("profiling initialization failed: {error}");
+            None
+        }
+    };
+    {
+        let _main = tracing::trace_span!(target: "ascii_renderer::functions", "main").entered();
+        cli::run();
     }
-    cli::run();
+    if let Some((guard, dropped)) = trace_guard {
+        tracing::warn!(target: "ascii_renderer::functions", dropped_records = dropped.dropped_lines(), "function trace shutdown");
+        drop(guard);
+    }
 }
 
 #[cfg(test)]
@@ -142,6 +153,7 @@ mod tests {
     use super::*;
     use unicode_width::UnicodeWidthStr;
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn assert_uniform_display_width(grid: &Grid, expected: usize) {
         let lines = grid_to_plain(grid);
         for (i, line) in lines.iter().enumerate() {
@@ -154,6 +166,7 @@ mod tests {
         }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn make_grid(width: usize, height: usize, seed: u64) -> (Grid, StdRng, [Color; 5]) {
         let grid = vec![vec![Cell::blank(); width]; height];
         let rng = StdRng::seed_from_u64(seed);
@@ -161,11 +174,13 @@ mod tests {
         (grid, rng, palette)
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn grid_to_string(grid: &Grid) -> String {
         grid_to_plain(grid).join("\n")
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn ease_in_out_shape() {
         assert!((ease_in_out(0.0) - 0.0).abs() < 1e-6);
         assert!((ease_in_out(1.0) - 1.0).abs() < 1e-6);
@@ -184,6 +199,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn warps_are_deterministic_and_animate() {
         let (mut g, mut rng, pal) = make_grid(80, 24, 4);
         draw_nebula(&mut g, 80, 24, 4, &pal, &mut rng, 0.0);
@@ -196,6 +212,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn voronoi_flow_deterministic_and_moves() {
         let pal = make_palette(3);
         let f0 = voronoi_flow_frame(80, 24, 3, 0.0, &pal);
@@ -206,12 +223,14 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn voronoi_flow_snapshot() {
         let pal = make_palette(3);
         insta::assert_snapshot!("voronoi_flow_t2", grid_to_string(&voronoi_flow_frame(80, 24, 3, 2.0, &pal)));
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn elevator_animates_and_deterministic() {
         let (mut a, mut ra, pal) = make_grid(80, 24, 9);
         draw_elevator(&mut a, 80, 24, 9, &pal, &mut ra, 0.0, 3, 1.0, 1.0);
@@ -224,6 +243,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn ferris_animates_and_deterministic() {
         let (mut a, mut ra, pal) = make_grid(80, 24, 5);
         draw_ferris(&mut a, 80, 24, 5, &pal, &mut ra, 1.3, 8, 10, 1.0);
@@ -236,6 +256,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn warp_wind_moves_and_zero_amp_identity() {
         let (mut g, mut rng, pal) = make_grid(80, 24, 1);
         draw_phyllotaxis(&mut g, 80, 24, 1, &pal, &mut rng, 0.0);
@@ -248,6 +269,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn grid_serialize_roundtrip() {
         let (mut grid, mut rng, palette) = make_grid(20, 6, 42);
         draw_phyllotaxis(&mut grid, 20, 6, 42, &palette, &mut rng, 0.0);
@@ -262,6 +284,7 @@ mod tests {
         }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn morph_pair() -> MorphState {
         let (mut a, mut ra, pa) = make_grid(80, 24, 1);
         draw_phyllotaxis(&mut a, 80, 24, 1, &pa, &mut ra, 0.0);
@@ -271,26 +294,31 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn morph_dissolve_mid() {
         insta::assert_snapshot!("morph_dissolve_mid", grid_to_string(&morph_pair().frame(0.5, "dissolve")));
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn morph_field_mid() {
         insta::assert_snapshot!("morph_field_mid", grid_to_string(&morph_pair().frame(0.5, "field")));
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn morph_transport_mid() {
         insta::assert_snapshot!("morph_transport_mid", grid_to_string(&morph_pair().frame(0.5, "transport")));
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn morph_sdf_mid() {
         insta::assert_snapshot!("morph_sdf_mid", grid_to_string(&morph_pair().frame(0.5, "sdf")));
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn morph_endpoints_recover_inputs() {
         // at t=0 dissolve should be ~grid A, at t=1 ~grid B (char identity).
         let st = morph_pair();
@@ -314,12 +342,14 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn demo_filter_empty_matches_all() {
         let modes = ["party", "soup", "tree"];
         assert_eq!(demo_filter_modes(&modes, ""), vec![0, 1, 2]);
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn demo_filter_substring_case_insensitive() {
         let modes = ["forest", "forest++", "eyes++", "FullMetal"];
         assert_eq!(demo_filter_modes(&modes, "forest"), vec![0, 1]);
@@ -329,6 +359,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn eyes_pp_42() {
         let (mut grid, mut rng, palette) = make_grid(80, 24, 42);
         draw_eyes_pp(&mut grid, 80, 24, 42, &palette, &mut rng);
@@ -336,6 +367,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn fme_pp_42() {
         let (mut grid, mut rng, palette) = make_grid(80, 24, 42);
         draw_fme_pp(&mut grid, 80, 24, 42, &palette, &mut rng);
@@ -343,6 +375,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn trees_pp_42() {
         let (mut grid, mut rng, palette) = make_grid(80, 24, 42);
         draw_trees_pp(&mut grid, 80, 24, 42, &palette, &mut rng);
@@ -350,6 +383,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn forest_pp_42() {
         let (mut grid, mut rng, palette) = make_grid(80, 24, 42);
         draw_forest_pp(&mut grid, 80, 24, 42, &palette, &mut rng);
@@ -357,6 +391,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn phyllotaxis_42() {
         let (mut grid, mut rng, palette) = make_grid(80, 24, 42);
         draw_phyllotaxis(&mut grid, 80, 24, 42, &palette, &mut rng, 0.0);
@@ -364,6 +399,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn moire_42() {
         let (mut grid, mut rng, palette) = make_grid(80, 24, 42);
         draw_moire(&mut grid, 80, 24, 42, &palette, &mut rng, 0.0);
@@ -371,6 +407,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn nebula_42() {
         let (mut grid, mut rng, palette) = make_grid(80, 24, 42);
         draw_nebula(&mut grid, 80, 24, 42, &palette, &mut rng, 0.0);
@@ -378,6 +415,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn delta_42() {
         let (mut grid, mut rng, palette) = make_grid(80, 24, 42);
         draw_delta(&mut grid, 80, 24, 42, &palette, &mut rng, 0.0);
@@ -385,6 +423,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn circuit_42() {
         let (mut grid, mut rng, palette) = make_grid(80, 24, 42);
         draw_circuit(&mut grid, 80, 24, 42, &palette, &mut rng, 0.0, 14);
@@ -392,6 +431,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snakes_42() {
         let (mut grid, mut rng, palette) = make_grid(80, 24, 42);
         draw_snakes(&mut grid, 80, 24, 42, &palette, &mut rng, 0.0, 7);
@@ -399,6 +439,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn options_persist_roundtrip() {
         let dir = std::env::temp_dir().join(format!("ascii-opt-test-{}", std::process::id()));
         let path = dir.join("options.tsv");
@@ -426,6 +467,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn randomize_knobs_per_seed() {
         let spec = mode_spec("snakes");
         let zeros = vec![0.0f32; spec.params.len()];
@@ -445,6 +487,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snakes_animate_and_deterministic() {
         let frame = |t: f32| {
             let (mut g, mut r, p) = make_grid(80, 24, 42);
@@ -456,6 +499,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn hypercube_uses_seed_and_time_deterministically() {
         let frame = |seed: u64, t: f32| {
             let (mut g, mut r, p) = make_grid(80, 24, seed);
@@ -468,6 +512,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn flux_uses_seed_and_time_deterministically() {
         let frame = |seed: u64, t: f32| {
             let (mut g, mut r, p) = make_grid(80, 24, seed);
@@ -480,6 +525,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn fireworks_use_seed_and_time_deterministically() {
         let frame = |seed: u64, t: f32| {
             let (mut g, mut r, p) = make_grid(80, 24, seed);
@@ -492,6 +538,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn fa6_uses_seed_and_time_deterministically() {
         let frame = |seed: u64, t: f32| {
             let (mut g, mut r, p) = make_grid(80, 24, seed);
@@ -504,6 +551,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn murmuration_uses_seed_and_time_deterministically() {
         let frame = |seed: u64, t: f32| {
             let (mut g, mut r, p) = make_grid(80, 24, seed);
@@ -516,6 +564,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn lanterns_use_seed_and_time_deterministically() {
         let frame = |seed: u64, t: f32| {
             let (mut g, mut r, p) = make_grid(80, 24, seed);
@@ -528,6 +577,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn tide_uses_seed_and_time_deterministically() {
         let frame = |seed: u64, t: f32| {
             let (mut g, mut r, p) = make_grid(80, 24, seed);
@@ -540,6 +590,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn circuit_topology_stable_across_time() {
         // The current pulse only recolors cells; the trace topology (chars) must
         // be identical at every t.
@@ -551,6 +602,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn stained_42() {
         let (mut grid, mut rng, palette) = make_grid(80, 24, 42);
         draw_stained(&mut grid, 80, 24, 42, &palette, &mut rng);
@@ -558,6 +610,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn mondrian_display_width() {
         let (mut grid, mut rng, _) = make_grid(80, 45, 42);
         let blocks = vec![
@@ -607,6 +660,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn mondrian_different_seeds_display_width() {
         for seed in [0, 1, 7, 42, 99, 1234] {
             let (mut grid, mut rng, _) = make_grid(80, 45, seed);
@@ -637,6 +691,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn default_mode_display_width() {
         let (mut grid, mut rng, palette) = make_grid(80, 45, 42);
         let truchet_color = darken(palette[1], 80);
@@ -667,6 +722,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn bsp_display_width() {
         let (mut grid, mut rng, palette) = make_grid(80, 45, 42);
         let truchet_color = darken(palette[1], 90);
@@ -701,6 +757,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn wrap_text_fullwidth_chars() {
         let lines = wrap_text("「 X 」", 7);
         assert_eq!(lines, vec!["「 X 」"]);
@@ -710,12 +767,14 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn wrap_text_ascii_basic() {
         let lines = wrap_text("hello world foo", 11);
         assert_eq!(lines, vec!["hello world", "foo"]);
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn min_block_width_accounts_for_fullwidth() {
         let block = ContentBlock {
             items: vec![ContentItem::Text("「 SKILLS 」".into())],
@@ -725,6 +784,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn bsp_split_gap_leaves_cover_canvas() {
         let mut rng = StdRng::seed_from_u64(42);
         let mut root = BspNode::new(0, 0, 80, 45);
@@ -740,6 +800,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn bsp_split_gap1_backward_compat() {
         let mut rng1 = StdRng::seed_from_u64(99);
         let mut rng2 = StdRng::seed_from_u64(99);
@@ -753,6 +814,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn mondrian_content_not_wrapped() {
         let (mut grid, mut rng, _) = make_grid(80, 45, 42);
         let blocks = vec![ContentBlock {
@@ -788,6 +850,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn scene_walk_produces_layers() {
         let mut rng = StdRng::seed_from_u64(42);
         let palette = make_palette(42);
@@ -809,6 +872,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn scene_walk_renders_without_panic() {
         for seed in [0, 1, 7, 42, 99, 1234] {
             let (mut grid, mut rng, palette) = make_grid(80, 45, seed);
@@ -829,6 +893,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn scene_walk_deterministic() {
         let run = |seed: u64| {
             let mut rng = StdRng::seed_from_u64(seed);
@@ -853,6 +918,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn tile_edge_seigaiha_skew_deterministic() {
         // Seigaiha with skew should produce identical output for same seed
         let run = |seed: u64| {
@@ -881,6 +947,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn tile_edge_skew_bleeds_past_rect() {
         // With skew>0, cells outside the rect should get drawn
         let (mut grid, mut rng, palette) = make_grid(40, 20, 42);
@@ -920,6 +987,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn tile_edge_all_variants_no_panic() {
         // Every variant with skew should render without panic
         for vi in 0..TILE_VARIANT_COUNT {

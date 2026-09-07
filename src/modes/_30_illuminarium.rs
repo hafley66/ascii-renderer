@@ -26,22 +26,27 @@ const PARAMS: &[Param] = &[
 ];
 
 impl Mode for IlluminariumMode {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn name(&self) -> &'static str {
         "illuminarium"
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn help(&self) -> &'static str {
         "Rotating rose vault, guilloche, recursive filigree, comet jewels [symm] [rings] [fili] [orbits] [speed] [warp] [trail] [sparks] [depth] [bloom]"
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn animation(&self) -> AnimKind {
         AnimKind::Iterate
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn params(&self) -> &'static [Param] {
         PARAMS
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn render(&self, frame: &mut ModeFrame<'_>) {
         let params = IlluminariumParams::from_inputs(frame.args, frame.param_values);
         draw_illuminarium(
@@ -72,6 +77,7 @@ pub(crate) struct IlluminariumParams {
 }
 
 impl Default for IlluminariumParams {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn default() -> Self {
         Self {
             symmetry: 12,
@@ -89,10 +95,12 @@ impl Default for IlluminariumParams {
 }
 
 impl IlluminariumParams {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub(crate) fn from_args(args: &[String]) -> Self {
         Self::from_inputs(args, None)
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub(crate) fn from_inputs(args: &[String], param_values: Option<&[f32]>) -> Self {
         let read = |index: usize, key: &str, default: f32| {
             args.get(index)
@@ -136,6 +144,7 @@ struct IlluminariumParamKey {
 }
 
 impl From<&IlluminariumParams> for IlluminariumParamKey {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn from(params: &IlluminariumParams) -> Self {
         Self {
             symmetry: params.symmetry,
@@ -224,6 +233,7 @@ impl IlluminariumStatic {
     ///
     /// Pseudocode: classify every background cell, derive ribbon/ring constants,
     /// derive filigree/orbiter/spark identities, then retain central phase data.
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn new(
         width: usize,
         height: usize,
@@ -326,6 +336,7 @@ thread_local! {
     };
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn hash01(seed: u64, tag: u64) -> f32 {
     let mut value = seed ^ tag.wrapping_mul(0x9E37_79B9_7F4A_7C15);
     value ^= value >> 30;
@@ -336,10 +347,12 @@ fn hash01(seed: u64, tag: u64) -> f32 {
     ((value >> 40) as f32) / ((1u64 << 24) - 1) as f32
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn in_bounds(grid: &Grid, x: i32, y: i32) -> bool {
     x >= 0 && y >= 0 && (y as usize) < grid.len() && (x as usize) < grid[y as usize].len()
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn put(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
     if in_bounds(grid, x, y) {
         let bg = grid[y as usize][x as usize].bg;
@@ -347,16 +360,19 @@ fn put(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn line(grid: &mut Grid, a: (i32, i32), b: (i32, i32), color: Color) {
     pp_line(grid, a.0, a.1, b.0, b.1, color);
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn color_wheel(palette: &[Color; 5], index: usize, phase: f32) -> Color {
     let base = palette[1 + index % 3];
     let shift = index as f64 * 37.0 + phase as f64 * 24.0;
     shift_hue(lighten(base, 18), shift)
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn trace_curve<F>(
     grid: &mut Grid,
     samples: usize,
@@ -385,6 +401,7 @@ fn trace_curve<F>(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn cubic_point(
     p0: (f32, f32),
     p1: (f32, f32),
@@ -403,6 +420,7 @@ fn cubic_point(
     )
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_background(
     grid: &mut Grid,
     width: usize,
@@ -433,6 +451,7 @@ fn draw_background(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_arch_frame(
     grid: &mut Grid,
     width: usize,
@@ -522,6 +541,7 @@ fn draw_arch_frame(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_guilloche(
     grid: &mut Grid,
     width: usize,
@@ -560,6 +580,7 @@ fn draw_guilloche(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_rose_lattice(
     grid: &mut Grid,
     width: usize,
@@ -622,6 +643,7 @@ fn draw_rose_lattice(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_branch(
     grid: &mut Grid,
     start: (f32, f32),
@@ -700,6 +722,7 @@ fn draw_branch(
     );
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_filigree(
     grid: &mut Grid,
     width: usize,
@@ -744,6 +767,7 @@ fn draw_filigree(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_orbits(
     grid: &mut Grid,
     width: usize,
@@ -794,6 +818,7 @@ fn draw_orbits(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_sparks(
     grid: &mut Grid,
     width: usize,
@@ -829,6 +854,7 @@ fn draw_sparks(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_rosette(
     grid: &mut Grid,
     width: usize,
@@ -911,6 +937,7 @@ fn draw_rosette(
     );
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn draw_illuminarium(
     grid: &mut Grid,
     width: usize,
@@ -957,6 +984,7 @@ pub(crate) fn draw_illuminarium(
     });
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_illuminarium_uncached(
     grid: &mut Grid,
     width: usize,
@@ -975,6 +1003,7 @@ fn draw_illuminarium_uncached(
     draw_illuminarium_with_static(grid, width, height, seed, palette, t, params, &static_data);
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_illuminarium_with_static(
     grid: &mut Grid,
     width: usize,
@@ -1026,6 +1055,7 @@ mod tests {
     use crate::render::grid_to_plain;
     use rand::SeedableRng;
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn frame(width: usize, height: usize, seed: u64, t: f32, params: &IlluminariumParams) -> Grid {
         let mut grid = vec![vec![Cell::blank(); width]; height];
         let palette = make_palette(seed);
@@ -1036,6 +1066,7 @@ mod tests {
         grid
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn frame_uncached(
         width: usize,
         height: usize,
@@ -1052,11 +1083,13 @@ mod tests {
         grid
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn plain(grid: &Grid) -> String {
         grid_to_plain(grid).join("\n")
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn deterministic_seeded_frame_and_visible_motion() {
         let params = IlluminariumParams::default();
         let a = plain(&frame(80, 36, 42, 1.25, &params));
@@ -1086,6 +1119,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn tiny_grid_and_extreme_inputs_terminate() {
         let params = IlluminariumParams {
             symmetry: 28,
@@ -1105,6 +1139,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn cached_and_uncached_frames_are_cell_exact_across_invalidation() {
         let defaults = IlluminariumParams::default();
         let tuned = IlluminariumParams {
@@ -1129,6 +1164,7 @@ mod tests {
 
     #[test]
     #[ignore = "release-only performance probe; run with --release --ignored"]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn perf_illuminarium_generation_and_terminal_encoding() {
         use crate::_0_profile::{FrameProfiler, FrameSample};
         use crate::gridio::{AnsiFrameEncoder, grid_to_ansi};
@@ -1295,6 +1331,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_illuminarium_in_motion() {
         let params = IlluminariumParams::default();
         insta::assert_snapshot!(

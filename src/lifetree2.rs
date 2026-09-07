@@ -32,6 +32,7 @@ pub(crate) struct VeilKnobs {
 }
 
 impl VeilKnobs {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub(crate) fn from_env() -> Self {
         VeilKnobs {
             depth: param_f32("DEPTH", 8.0).round().clamp(4.0, 11.0) as u32,
@@ -54,6 +55,7 @@ impl VeilKnobs {
         }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn geometry_key(&self) -> (u32, u32, u32, usize) {
         (self.depth, self.spread.to_bits(), self.roots.to_bits(), self.motes)
     }
@@ -147,6 +149,7 @@ thread_local! {
     static CACHE: RefCell<Option<Cached>> = const { RefCell::new(None) };
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn rgb3(c: Color) -> (u8, u8, u8) {
     match c {
         Color::Rgb { r, g, b } => (r, g, b),
@@ -154,6 +157,7 @@ fn rgb3(c: Color) -> (u8, u8, u8) {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn hue_of(c: Color) -> f64 {
     let (r, g, b) = rgb3(c);
     let (r, g, b) = (r as f64 / 255.0, g as f64 / 255.0, b as f64 / 255.0);
@@ -174,12 +178,14 @@ fn hue_of(c: Color) -> f64 {
 }
 
 #[inline]
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn scale(c: (u8, u8, u8), k: f32) -> Color {
     let f = |v: u8| ((v as f32 * k).round().clamp(0.0, 255.0)) as u8;
     Color::Rgb { r: f(c.0), g: f(c.1), b: f(c.2) }
 }
 
 #[inline]
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn mix(a: (u8, u8, u8), b: (u8, u8, u8), t: f32) -> (u8, u8, u8) {
     let t = t.clamp(0.0, 1.0);
     let f = |x: u8, y: u8| (x as f32 + (y as f32 - x as f32) * t).round() as u8;
@@ -187,6 +193,7 @@ fn mix(a: (u8, u8, u8), b: (u8, u8, u8), t: f32) -> (u8, u8, u8) {
 }
 
 #[inline]
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn put(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
     if x >= 0 && y >= 0 && (y as usize) < grid.len() && (x as usize) < grid[0].len() {
         let c = &mut grid[y as usize][x as usize];
@@ -197,6 +204,7 @@ fn put(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
 
 /// Veil x for a row: seam column plus two travelling harmonics. t == 0 is a fixed wave.
 #[inline]
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn veil_x(y: i32, w: usize, ts: f32, k: &VeilKnobs) -> i32 {
     let tide = k.tide * 0.5 * (ts * 0.11).sin() + k.tide * 0.12 * (ts * 0.37).sin();
     let base = w as f32 * (k.seam + tide).clamp(-0.05, 1.05);
@@ -205,6 +213,7 @@ fn veil_x(y: i32, w: usize, ts: f32, k: &VeilKnobs) -> i32 {
     (base + k.veil * wave).round().clamp(0.0, w as f32) as i32
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn grow(
     rng: &mut StdRng,
     segs: &mut Vec<Seg>,
@@ -245,6 +254,7 @@ fn grow(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn fit(segs: &mut [Seg], cx: f32, y_base: f32, half_w: f32, span_h: f32) {
     let mut max_dx = 1.0_f32;
     let mut max_dy = 1.0_f32;
@@ -262,6 +272,7 @@ fn fit(segs: &mut [Seg], cx: f32, y_base: f32, half_w: f32, span_h: f32) {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn slope_code(dx: f32, dy: f32) -> u8 {
     if dx.abs() < 0.25 * dy.abs() {
         0
@@ -274,10 +285,12 @@ fn slope_code(dx: f32, dy: f32) -> u8 {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn blank_cell(x: i32, y: i32, kind: Kind, ord: f32, phase: f32, tex: u8) -> TreeCell {
     TreeCell { x, y, kind, ord, phase, tex, eth: (0, 0, 0), phys: (0, 0, 0), phys_alt: (0, 0, 0) }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn raster(
     segs: &[Seg],
     max_lvl: u32,
@@ -323,6 +336,7 @@ fn raster(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn blob(map: &mut Vec<Option<TreeCell>>, w: usize, h: usize, cx: i32, cy: i32, r: i32, ord: f32, rng: &mut StdRng) {
     for dy in -r..=r {
         for dx in -(r * 2)..=(r * 2) {
@@ -345,6 +359,7 @@ fn blob(map: &mut Vec<Option<TreeCell>>, w: usize, h: usize, cx: i32, cy: i32, r
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn build(w: usize, h: usize, seed: u64, palette: &[Color; 5], k: &VeilKnobs) -> Cached {
     let mut rng = StdRng::seed_from_u64(seed ^ 0x2A7C_11D3_9E37_79B9);
     let cx = (w / 2) as i32;
@@ -592,6 +607,7 @@ const WISP: [char; 4] = ['○', '°', '∙', '·'];
 const SEAM_TEXT: &[u8] = b"ARBOR\xb7VITAE\xb7MEMENTO\xb7MORI\xb7ANIMA\xb7MUNDI\xb7";
 
 #[inline]
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn hash2(a: i32, b: i32) -> u32 {
     let mut x = (a as u32).wrapping_mul(0x9E37_79B9) ^ (b as u32).wrapping_mul(0x85EB_CA6B);
     x ^= x >> 15;
@@ -601,6 +617,7 @@ fn hash2(a: i32, b: i32) -> u32 {
 }
 
 #[inline]
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn smooth(x: f32) -> f32 {
     let x = x.clamp(0.0, 1.0);
     x * x * (3.0 - 2.0 * x)
@@ -608,6 +625,7 @@ fn smooth(x: f32) -> f32 {
 
 /// Season weights (spring, summer, autumn, winter) from a 0..4 phase, each a tent of width 2.
 #[inline]
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn season_w(phase: f32) -> [f32; 4] {
     let mut w = [0.0f32; 4];
     for (i, slot) in w.iter_mut().enumerate() {
@@ -618,6 +636,7 @@ fn season_w(phase: f32) -> [f32; 4] {
     w
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn draw_lifetree2(grid: &mut Grid, w: usize, h: usize, seed: u64, palette: &[Color; 5], t: f32, k: &VeilKnobs) {
     if w == 0 || h == 0 {
         return;
@@ -634,6 +653,7 @@ pub(crate) fn draw_lifetree2(grid: &mut Grid, w: usize, h: usize, seed: u64, pal
 }
 
 #[inline]
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn frame(grid: &mut Grid, c: &Cached, t: f32, k: &VeilKnobs) {
     let w = c.bg_eth[0].len();
     let h = c.bg_eth.len();
@@ -1038,6 +1058,7 @@ fn frame(grid: &mut Grid, c: &Cached, t: f32, k: &VeilKnobs) {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_lifetree2(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
     let _ = (rng, term_w, term_h, mode, theme_name);
     let mut k = VeilKnobs::from_env();
@@ -1080,6 +1101,7 @@ pub(crate) fn cli_lifetree2(mut grid: Grid, width: usize, height: usize, seed: u
 mod tests {
     use super::*;
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn run(w: usize, h: usize, seed: u64, t: f32) -> String {
         let mut g = vec![vec![Cell::blank(); w]; h];
         let p = crate::color::named_theme("moss").unwrap();
@@ -1092,22 +1114,26 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_lifetree2_small() {
         insta::assert_snapshot!("lifetree2_80x24", run(80, 24, 42, 0.0));
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_lifetree2_wide() {
         insta::assert_snapshot!("lifetree2_120x40", run(120, 40, 42, 0.0));
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn deterministic_and_seed_sensitive() {
         assert_eq!(run(90, 30, 42, 0.0), run(90, 30, 42, 0.0));
         assert_ne!(run(90, 30, 42, 0.0), run(90, 30, 7, 0.0));
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn t_moves_frame_and_veil() {
         let a = run(90, 30, 42, 0.0);
         let b = run(90, 30, 42, 2.0);
@@ -1120,6 +1146,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn seasons_cycle_leaf_visibility() {
         let mut k = VeilKnobs::from_env();
         k.season = 1.0;
@@ -1136,6 +1163,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn ring_and_both_halves_present() {
         let s = run(100, 32, 42, 0.0);
         assert!(s.contains('░') || s.contains('▒'), "ethereal fill");
@@ -1145,6 +1173,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn frame_cost_is_flat() {
         let mut g = vec![vec![Cell::blank(); 200]; 60];
         let p = crate::color::named_theme("ember").unwrap();

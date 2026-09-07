@@ -35,6 +35,7 @@ use crate::automata; use crate::avant; use crate::biomes; use crate::borders; us
 
 
 /// Dispatch arm for mode(s): boles1 (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_boles1(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         // boles1: bole styles at 3 energy levels (low/mid/high)
         let styles = [
@@ -113,6 +114,7 @@ pub(crate) fn cli_boles1(mut grid: Grid, width: usize, height: usize, seed: u64,
 }
 
 /// Dispatch arm for mode(s): boles2 (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_boles2(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         // boles2: experimental bole styles v2
         let styles = [
@@ -193,6 +195,7 @@ pub(crate) fn cli_boles2(mut grid: Grid, width: usize, height: usize, seed: u64,
 }
 
 /// Dispatch arm for mode(s): boles3 (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_boles3(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         // boles3: refined bole styles with descriptive names
         let styles = [
@@ -273,6 +276,7 @@ pub(crate) fn cli_boles3(mut grid: Grid, width: usize, height: usize, seed: u64,
 }
 
 /// Dispatch arm for mode(s): boles4 (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_boles4(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         // boles4: winding bole styles (24-27)
         let styles = ["Serpent", "Braid", "Coil", "Taproot"];
@@ -346,6 +350,7 @@ pub(crate) fn cli_boles4(mut grid: Grid, width: usize, height: usize, seed: u64,
 }
 
 /// Dispatch arm for mode(s): boles5 (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_boles5(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         // boles5: structural bole styles (28-33)
         let styles = ["Stilts", "Cairn", "Hollow", "Talon", "Tiers", "Tussock"];
@@ -419,6 +424,7 @@ pub(crate) fn cli_boles5(mut grid: Grid, width: usize, height: usize, seed: u64,
 }
 
 /// Dispatch arm for mode(s): trunks1 (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_trunks1(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         // trunks1: horizontal trunk algorithms + direction-aware branching
         let labels = [
@@ -516,6 +522,7 @@ pub(crate) fn cli_trunks1(mut grid: Grid, width: usize, height: usize, seed: u64
 }
 
 /// Dispatch arm for mode(s): trees1 (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_trees1(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         // trees1: full pipeline demo -- tree + trunk algo + bole
         // args: [energy] [fruit_factor] [branch_factor] [bole_override]
@@ -628,6 +635,7 @@ pub(crate) fn cli_trees1(mut grid: Grid, width: usize, height: usize, seed: u64,
 }
 
 /// Dispatch arm for mode(s): trees2 (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_trees2(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         // trees2: squat horizontal boles (styles 18-23) + tree combos
         let energy: f32 = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0.8);
@@ -735,6 +743,7 @@ pub(crate) fn cli_trees2(mut grid: Grid, width: usize, height: usize, seed: u64,
 }
 
 /// Dispatch arm for mode(s): trees3 (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_trees3(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         // trees3: vertical catalog -- all tree types, trunk algos, taper styles, bole styles
         let page_w = 80usize;
@@ -1014,6 +1023,7 @@ pub(crate) fn cli_trees3(mut grid: Grid, width: usize, height: usize, seed: u64,
 }
 
 /// Dispatch arm for mode(s): trees4 (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_trees4(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         // trees4: showcase all TreeDrawer types including new ports
         // One tree per slot, labeled, with boles and fruit
@@ -1091,6 +1101,7 @@ pub(crate) fn cli_trees4(mut grid: Grid, width: usize, height: usize, seed: u64,
 }
 
 /// Dispatch arm for mode(s): trees8 (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_trees8(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         // trees8: [energy] [fruit] [branch]
         // Three new TreeDrawers (Oak, Fountain, Windswept), each shown at
@@ -1158,6 +1169,7 @@ pub(crate) fn cli_trees8(mut grid: Grid, width: usize, height: usize, seed: u64,
 }
 
 /// Dispatch arm for mode(s): trees9 (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_trees9(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         // trees9: [energy] [fruit] [branch]
         // Esoteric drawers (Fractal, L-System, Dragon, Helix) at two
@@ -1228,6 +1240,7 @@ pub(crate) fn cli_trees9(mut grid: Grid, width: usize, height: usize, seed: u64,
 }
 
 /// Dispatch arm for mode(s): bushes (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_bushes(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         // bushes: showcase full-size bole patterns as standalone bush sprites
         // args: [energy]
@@ -1283,6 +1296,7 @@ pub(crate) fn cli_bushes(mut grid: Grid, width: usize, height: usize, seed: u64,
 }
 
 /// Dispatch arm for mode(s): boles6 (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_boles6(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         // boles6 [layers=0] -- close-packed bole forest, every trunk rooted in a bole
         let layers_arg: u8 = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0);
@@ -1344,6 +1358,7 @@ pub(crate) fn cli_boles6(mut grid: Grid, width: usize, height: usize, seed: u64,
 }
 
 /// Dispatch arm for mode(s): trees10 (moved verbatim from run()).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_trees10(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
         // trees10 [count=0] -- specimen row, every archetype side by side
         let count_arg: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0);

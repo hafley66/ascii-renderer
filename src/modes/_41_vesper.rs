@@ -33,18 +33,23 @@ thread_local! {
 }
 
 impl Mode for VesperMode {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn name(&self) -> &'static str {
         "vesper"
     }
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn help(&self) -> &'static str {
         "An eclipsed sun cradled in a folded luminous orbital shell [folds] [threads] [open] [speed]"
     }
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn animation(&self) -> AnimKind {
         AnimKind::Iterate
     }
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn params(&self) -> &'static [Param] {
         PARAMS
     }
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn render(&self, frame: &mut ModeFrame<'_>) {
         // Resolve bounded controls and the analytic clock for this frame.
         let read = |i: usize| {
@@ -216,6 +221,7 @@ mod tests {
     use crate::render::grid_to_plain;
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn vesper_snapshots_and_frame_lifecycle() {
         let mut player = IterateFrameRenderer::new("vesper", 42, "deep", 100, 36).unwrap();
         let values: Vec<_> = PARAMS.iter().map(|p| p.default).collect();
@@ -239,6 +245,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn vesper_color_and_control_regression() {
         let mut results = Vec::new();
         for seed in [0, 42, u64::MAX] {
@@ -265,6 +272,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn vesper_small_grids_and_extreme_controls() {
         for (w, h) in [(1, 1), (2, 9), (9, 2), (80, 24)] {
             let mut player = IterateFrameRenderer::new("vesper", u64::MAX, "deep", w, h).unwrap();

@@ -34,22 +34,27 @@ const PARAMS: &[Param] = &[
 ];
 
 impl Mode for AetherforgeMode {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn name(&self) -> &'static str {
         "aetherforge"
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn help(&self) -> &'static str {
         "Kinetic star-metal foundry: toothed halo mechanisms, magnetic rivers, nested rose spindle, orbital crucibles, spark memory, mirrored forge gates [halos] [teeth] [petals] [crucibles] [sparks] [rivers] [speed] [ecc] [flux] [trail] [depth] [bloom] [gates] [pulse]"
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn animation(&self) -> AnimKind {
         AnimKind::Iterate
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn params(&self) -> &'static [Param] {
         PARAMS
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn render(&self, frame: &mut ModeFrame<'_>) {
         let params = AetherforgeParams::from_inputs(frame.args, frame.param_values);
         draw_aetherforge(
@@ -84,6 +89,7 @@ pub(crate) struct AetherforgeParams {
 }
 
 impl Default for AetherforgeParams {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn default() -> Self {
         Self {
             halos: 7,
@@ -105,6 +111,7 @@ impl Default for AetherforgeParams {
 }
 
 impl AetherforgeParams {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub(crate) fn from_inputs(args: &[String], param_values: Option<&[f32]>) -> Self {
         let read = |index: usize, key: &str, default: f32| {
             args.get(index)
@@ -135,6 +142,7 @@ impl AetherforgeParams {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn hash01(seed: u64, tag: u64) -> f32 {
     let mut value = seed ^ tag.wrapping_mul(0x9E37_79B9_7F4A_7C15);
     value ^= value >> 30;
@@ -145,6 +153,7 @@ fn hash01(seed: u64, tag: u64) -> f32 {
     ((value >> 40) as f32) / ((1u64 << 24) - 1) as f32
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn put(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
     if x < 0 || y < 0 {
         return;
@@ -158,6 +167,7 @@ fn put(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn put_bg(grid: &mut Grid, x: usize, y: usize, bg: Color) {
     if let Some(row) = grid.get_mut(y)
         && let Some(cell) = row.get_mut(x)
@@ -166,6 +176,7 @@ fn put_bg(grid: &mut Grid, x: usize, y: usize, bg: Color) {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn line(grid: &mut Grid, mut x0: i32, mut y0: i32, x1: i32, y1: i32, fg: Color) {
     let ch = pp_stroke(x1 - x0, y1 - y0);
     let dx = (x1 - x0).abs();
@@ -190,6 +201,7 @@ fn line(grid: &mut Grid, mut x0: i32, mut y0: i32, x1: i32, y1: i32, fg: Color) 
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn stroke_curve(
     grid: &mut Grid,
     samples: usize,
@@ -210,6 +222,7 @@ fn stroke_curve(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn polygon(grid: &mut Grid, points: &[(f32, f32)], color: Color) {
     if points.len() < 2 {
         return;
@@ -228,10 +241,12 @@ fn polygon(grid: &mut Grid, points: &[(f32, f32)], color: Color) {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn ellipse_point(cx: f32, cy: f32, rx: f32, ry: f32, angle: f32) -> (f32, f32) {
     (cx + angle.cos() * rx, cy + angle.sin() * ry)
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_star_metal_field(
     grid: &mut Grid,
     width: usize,
@@ -302,6 +317,7 @@ fn draw_star_metal_field(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_flux_rivers(
     grid: &mut Grid,
     width: usize,
@@ -353,6 +369,7 @@ fn draw_flux_rivers(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_forge_gates(
     grid: &mut Grid,
     width: usize,
@@ -442,6 +459,7 @@ fn draw_forge_gates(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_halo_mechanisms(
     grid: &mut Grid,
     width: usize,
@@ -516,6 +534,7 @@ fn draw_halo_mechanisms(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_reactor_spindle(
     grid: &mut Grid,
     width: usize,
@@ -586,6 +605,7 @@ fn draw_reactor_spindle(
     );
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_crucibles(
     grid: &mut Grid,
     width: usize,
@@ -650,6 +670,7 @@ fn draw_crucibles(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_star_sparks(
     grid: &mut Grid,
     width: usize,
@@ -701,6 +722,7 @@ fn draw_star_sparks(
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_runic_border(
     grid: &mut Grid,
     width: usize,
@@ -757,6 +779,7 @@ fn draw_runic_border(
     put(grid, right, bottom, '╝', lighten(palette[3], 20));
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn draw_aetherforge(
     grid: &mut Grid,
     width: usize,
@@ -811,6 +834,7 @@ mod tests {
     use crate::render::grid_to_plain;
     use rand::SeedableRng;
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn frame(width: usize, height: usize, seed: u64, t: f32, params: &AetherforgeParams) -> Grid {
         let mut grid = vec![vec![Cell::blank(); width]; height];
         let palette = make_palette(seed);
@@ -821,11 +845,13 @@ mod tests {
         grid
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn plain(grid: &Grid) -> String {
         grid_to_plain(grid).join("\n")
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn deterministic_seeded_frame_and_visible_motion() {
         let params = AetherforgeParams::default();
         let a = plain(&frame(100, 34, 42, 1.25, &params));
@@ -852,6 +878,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn parameter_values_override_and_clamp() {
         let values = [
             99.0, 0.0, 99.0, 99.0, 999.0, 99.0, 0.0, 99.0, 99.0, 0.0, 99.0, 99.0, 99.0, 99.0,
@@ -878,6 +905,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn tiny_grids_and_parameter_extrema_terminate() {
         let maxed = AetherforgeParams {
             halos: 12,
@@ -903,6 +931,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn disabled_optional_layers_change_the_composition() {
         let base = AetherforgeParams::default();
         let full = plain(&frame(90, 30, 77, 2.4, &base));
@@ -923,6 +952,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_aetherforge_t0() {
         insta::assert_snapshot!(plain(&frame(
             104,
@@ -934,6 +964,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_aetherforge_in_motion() {
         insta::assert_snapshot!(plain(&frame(
             104,

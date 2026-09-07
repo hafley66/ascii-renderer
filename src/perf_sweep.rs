@@ -16,24 +16,29 @@ struct RunStats {
 }
 
 impl RunStats {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn fps(&self) -> f64 {
         self.frames as f64 / self.wall.as_secs_f64().max(f64::EPSILON)
     }
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn avg_ms(&self) -> f64 {
         self.wall.as_secs_f64() * 1_000.0 / self.frames.max(1) as f64
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn env_or<T: std::str::FromStr>(name: &str, default: T) -> T {
     std::env::var(name).ok().and_then(|v| v.parse().ok()).unwrap_or(default)
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn set_knob(key: &'static str, value: Option<f32>) {
     crate::opts::LIVE_PARAMS.with(|values| {
         values.borrow_mut().insert(key, value);
     });
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn run_for(label: &str, mode: &str, theme: &str, w: usize, h: usize, secs: f64, dt: f32, capture: bool) -> Option<RunStats> {
     let mut r = IterateFrameRenderer::new(mode, 42, theme, w, h)?;
     r.render(0.0, None)?;
@@ -59,6 +64,7 @@ fn run_for(label: &str, mode: &str, theme: &str, w: usize, h: usize, secs: f64, 
 
 #[test]
 #[ignore = "release-only knob sweep; run via perf/knob_sweep.sh"]
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn perf_knob_sweep() {
     let mode: String = env_or("ASCII_PERF_MODE", "chladni".to_string());
     let theme: String = env_or("ASCII_PERF_THEME", "moss".to_string());
@@ -164,6 +170,7 @@ const NATIVE_MODES: &[&str] = &[
 ];
 
 #[test]
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn every_native_mode_has_layer_timers() {
     let mut missing = Vec::new();
     for mode in NATIVE_MODES {

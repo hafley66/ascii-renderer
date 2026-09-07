@@ -35,6 +35,7 @@ use crate::registry::*;
 use crate::warps::*;
 
 /// Approximate ink density of a glyph, for the `field` strategy.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn ink_weight(ch: char) -> f32 {
     match ch {
         ' ' => 0.0,
@@ -56,6 +57,7 @@ pub(crate) struct Ink {
     pub(crate) fg: Color,
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn ink_points(g: &Grid) -> Vec<Ink> {
     let mut v = Vec::new();
     for (y, row) in g.iter().enumerate() {
@@ -74,6 +76,7 @@ pub(crate) fn ink_points(g: &Grid) -> Vec<Ink> {
 }
 
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn draw_ink(
     grid: &mut Grid,
     width: usize,

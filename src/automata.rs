@@ -15,6 +15,7 @@ pub struct CaRule {
 }
 
 impl CaRule {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub fn parse(spec: &str) -> Self {
         let mut birth = [false; 9];
         let mut survival = [false; 9];
@@ -34,15 +35,19 @@ impl CaRule {
         CaRule { birth, survival }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub fn life() -> Self {
         Self::parse("B3/S23")
     }
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub fn cave() -> Self {
         Self::parse("B5678/S45678")
     }
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub fn maze() -> Self {
         Self::parse("B3/S12345")
     }
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub fn coral() -> Self {
         Self::parse("B3/S45678")
     }
@@ -57,6 +62,7 @@ pub struct CaGrid {
 }
 
 impl CaGrid {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub fn new(w: usize, h: usize) -> Self {
         CaGrid {
             cells: vec![vec![false; w]; h],
@@ -65,6 +71,7 @@ impl CaGrid {
         }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub fn seed_random(&mut self, density: f64, rng: &mut StdRng) {
         let thresh = (density * 1000.0) as u32;
         for row in &mut self.cells {
@@ -74,6 +81,7 @@ impl CaGrid {
         }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub fn seed_points(&mut self, count: usize, rng: &mut StdRng) {
         for _ in 0..count {
             let x = rng.random_range(0..self.w);
@@ -96,6 +104,7 @@ impl CaGrid {
     }
 
     /// Moore neighborhood count (8-connected)
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn neighbors(&self, x: usize, y: usize) -> u8 {
         let mut n = 0u8;
         for dy in -1i32..=1 {
@@ -119,6 +128,7 @@ impl CaGrid {
     }
 
     /// Cardinal neighbor bitmask: N=1 E=2 S=4 W=8
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub fn cardinal(&self, x: usize, y: usize) -> u8 {
         let mut m = 0u8;
         if y > 0 && self.cells[y - 1][x] {
@@ -137,6 +147,7 @@ impl CaGrid {
     }
 
     /// Diagonal neighbor bitmask: NE=1 SE=2 SW=4 NW=8
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub fn diagonal(&self, x: usize, y: usize) -> u8 {
         let mut m = 0u8;
         if y > 0 && x + 1 < self.w && self.cells[y - 1][x + 1] {
@@ -154,6 +165,7 @@ impl CaGrid {
         m
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub fn step(&mut self, rule: &CaRule) {
         let mut next = vec![vec![false; self.w]; self.h];
         for y in 0..self.h {
@@ -169,12 +181,14 @@ impl CaGrid {
         self.cells = next;
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub fn evolve(&mut self, rule: &CaRule, generations: usize) {
         for _ in 0..generations {
             self.step(rule);
         }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub fn live_count(&self) -> usize {
         self.cells
             .iter()
@@ -195,6 +209,7 @@ pub enum GlyphStyle {
 }
 
 /// Cardinal bitmask (N=1 E=2 S=4 W=8) → box-drawing char
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn cardinal_glyph(mask: u8, diag: u8, style: GlyphStyle) -> char {
     match style {
         GlyphStyle::Box => match mask {
@@ -302,6 +317,7 @@ pub enum CellRole {
     Cross,
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn classify(cardinal: u8) -> CellRole {
     match cardinal.count_ones() {
         0 => CellRole::Isolated,
@@ -318,6 +334,7 @@ fn classify(cardinal: u8) -> CellRole {
 /// Render CA grid onto the display grid.
 /// Phase 1: every live cell gets a glyph from its cardinal neighborhood.
 /// Phase 2 (if seed_primitives): endpoints → flowers, crosses → frets, junctions → trees.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn render_ca(
     grid: &mut Grid,
     rect: &Rect,
@@ -446,6 +463,7 @@ pub fn render_ca(
 
 // ── Full pipeline entry point ───────────────────────────────────────
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn render_automata(
     grid: &mut Grid,
     rect: &Rect,
@@ -499,6 +517,7 @@ pub struct CaRegion {
 }
 
 /// Flood-fill connected components (4-connected) on the CA grid.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn find_components(ca: &CaGrid) -> Vec<Vec<(usize, usize)>> {
     let mut visited = vec![vec![false; ca.w]; ca.h];
     let mut components = Vec::new();
@@ -537,6 +556,7 @@ fn find_components(ca: &CaGrid) -> Vec<Vec<(usize, usize)>> {
 }
 
 /// Convert CA components to render-grid regions.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn components_to_regions(
     components: Vec<Vec<(usize, usize)>>,
     cell_w: usize,
@@ -569,6 +589,7 @@ fn components_to_regions(
 
 /// Draw the CA skeleton at coarse scale: each live cell gets a box-drawing
 /// char at its center in the render grid, connecting to neighbors.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_ca_skeleton(
     grid: &mut Grid,
     ca: &CaGrid,
@@ -620,6 +641,7 @@ fn draw_ca_skeleton(
 
 /// Full CA layout pipeline.
 /// Returns regions sorted by area descending (largest first for text placement).
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn ca_layout(
     grid: &mut Grid,
     rect: &Rect,

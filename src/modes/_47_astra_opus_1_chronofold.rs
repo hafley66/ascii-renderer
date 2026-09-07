@@ -22,22 +22,27 @@ const PARAMS: &[Param] = &[
 ];
 
 impl Mode for ChronofoldMode {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn name(&self) -> &'static str {
         "astra-opus-1-chronofold"
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn help(&self) -> &'static str {
         "ASTRA / OPUS REPLAY 01: CHRONOFOLD. Faceted torus knot, helical flutes, orbiting tracers and a moving perspective stage [speed] [lobes] [width] [twist] [orbits] [zoom] [lattice]"
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn animation(&self) -> AnimKind {
         AnimKind::Iterate
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn params(&self) -> &'static [Param] {
         PARAMS
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn render(&self, frame: &mut ModeFrame<'_>) {
         let knobs = std::array::from_fn(|i| {
             let p = &PARAMS[i];
@@ -59,10 +64,12 @@ impl Mode for ChronofoldMode {
 
 type V3 = [f32; 3];
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn sub(a: V3, b: V3) -> V3 {
     std::array::from_fn(|i| a[i] - b[i])
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn cross(a: V3, b: V3) -> V3 {
     [
         a[1] * b[2] - a[2] * b[1],
@@ -71,11 +78,13 @@ fn cross(a: V3, b: V3) -> V3 {
     ]
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn unit(v: V3) -> V3 {
     let length = (v[0] * v[0] + v[1] * v[1] + v[2] * v[2]).sqrt().max(1e-6);
     v.map(|x| x / length)
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn hash(mut x: u64) -> u64 {
     x = (x ^ (x >> 30)).wrapping_mul(0xbf58476d1ce4e5b9);
     x = (x ^ (x >> 27)).wrapping_mul(0x94d049bb133111eb);
@@ -94,6 +103,7 @@ struct Raster<'a> {
 }
 
 impl Raster<'_> {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn rotate(&self, p: V3) -> V3 {
         let (s, c) = self.yaw;
         let x = c * p[0] + s * p[2];
@@ -102,6 +112,7 @@ impl Raster<'_> {
         [x, c * p[1] - s * z, s * p[1] + c * z]
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn project(&self, p: V3) -> V3 {
         // Every surface lies inside radius 2.2; the eye is five units away.
         let inv = 1.0 / (5.0 - p[2]);
@@ -112,6 +123,7 @@ impl Raster<'_> {
         ]
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn put(&mut self, x: i32, y: i32, z: f32, cell: Cell) {
         if x < 0 || y < 0 || x as usize >= self.width || y as usize >= self.height {
             return;
@@ -123,6 +135,7 @@ impl Raster<'_> {
         }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn line(&mut self, a: V3, b: V3, mut cell: Cell) {
         let d = sub(b, a);
         if cell.ch == '\0' {
@@ -149,6 +162,7 @@ impl Raster<'_> {
         }
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn triangle(&mut self, a: V3, b: V3, c: V3, cell: Cell) {
         let edge =
             |p: V3, q: V3, x: f32, y: f32| (q[0] - p[0]) * (y - p[1]) - (q[1] - p[1]) * (x - p[0]);
@@ -175,6 +189,7 @@ impl Raster<'_> {
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_chronofold(frame: &mut ModeFrame<'_>, k: &[f32; 7]) {
     // Initialize a palette ramp, deterministic seed phases and a fresh depth buffer.
     // Evaluate the knot and its transported octagonal section at this time.
@@ -367,6 +382,7 @@ mod tests {
     use super::*;
     use rand::{SeedableRng, rngs::StdRng};
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn render(
         width: usize,
         height: usize,
@@ -392,6 +408,7 @@ mod tests {
         grid
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn plain(grid: &Grid) -> String {
         grid.iter()
             .map(|row| {
@@ -406,6 +423,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn deterministic_motion_and_controls() {
         let defaults: Vec<_> = PARAMS.iter().map(|p| p.default).collect();
         let a = render(80, 28, 42, 0.0, &defaults, &[]);
@@ -440,6 +458,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn dimensions_extrema_and_nonfinite_inputs() {
         let defaults: Vec<_> = PARAMS.iter().map(|p| p.default).collect();
         let bad = vec![f32::NAN; PARAMS.len()];
@@ -470,6 +489,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn chronofold_seed_42_t0() {
         let defaults: Vec<_> = PARAMS.iter().map(|p| p.default).collect();
         let output = plain(&render(80, 28, 42, 0.0, &defaults, &[]));
@@ -506,6 +526,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn chronofold_seed_42_t4() {
         let defaults: Vec<_> = PARAMS.iter().map(|p| p.default).collect();
         let output = plain(&render(80, 28, 42, 4.0, &defaults, &[]));

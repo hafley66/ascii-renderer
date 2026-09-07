@@ -2,6 +2,7 @@
 use std::io::{BufRead, BufReader};
 use std::process::Command;
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn command(args: &[String]) -> bool {
     let verb = args.get(1).map(String::as_str);
     if !matches!(verb, Some("inputs" | "replay")) {
@@ -14,6 +15,7 @@ pub(crate) fn command(args: &[String]) -> bool {
     true
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn run(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
     if args[1] == "inputs" {
         let mode = args

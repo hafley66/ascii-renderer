@@ -45,6 +45,7 @@ pub struct TreeGenome {
 }
 
 /// Roll a style: `mix` 0 = all Classic, 1 = never Classic.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn roll_style(rng: &mut StdRng, mix: f32) -> TreeStyle {
     if rng.random::<f32>() > mix {
         return TreeStyle::Classic;
@@ -61,6 +62,7 @@ pub fn roll_style(rng: &mut StdRng, mix: f32) -> TreeStyle {
 }
 
 impl TreeGenome {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub fn roll(rng: &mut StdRng) -> Self {
         let taper = [
             TaperKind::Diagonal,
@@ -96,12 +98,14 @@ struct TreeColors {
     fruit: Color,
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn set(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
     if x >= 0 && y >= 0 && (y as usize) < grid.len() && (x as usize) < grid[0].len() {
         grid[y as usize][x as usize] = Cell::new(ch, fg);
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn blank_at(grid: &Grid, x: i32, y: i32) -> bool {
     x >= 0
         && y >= 0
@@ -123,6 +127,7 @@ struct GrowCtx<'a> {
 
 /// Grow one tree rooted at (rx, ry) with `budget` rows of vertical space
 /// (3 = sapling, full height = ancient); grow=1, foliage=1, sway=0 is the static tree.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn grow_tree(grid: &mut Grid, rx: i32, ry: i32, budget: i32, genome: &TreeGenome, cols: &TreeColors, rng: &mut StdRng, grow: f32, foliage: f32, sway: f32) {
     if genome.style != TreeStyle::Classic {
         species::grow_species(grid, rx, ry, budget, genome, cols, rng, grow, foliage, sway);
@@ -288,6 +293,7 @@ pub fn grow_tree(grid: &mut Grid, rx: i32, ry: i32, budget: i32, genome: &TreeGe
 }
 
 /// Recursive bough: walk outward-up from (x,y), forking by `orders`.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn grow_bough(ctx: &mut GrowCtx, x: i32, y: i32, from: MoveDir, side: i32, order: u8, len: i32) {
     let mut pen = TreePen::new(x, y, ctx.cols.branch);
     pen.last_dir = Some(from);
@@ -329,6 +335,7 @@ fn grow_bough(ctx: &mut GrowCtx, x: i32, y: i32, from: MoveDir, side: i32, order
     }
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_taper_pub(grid: &mut Grid, exit: &BoleExit, color: Color, kind: TaperKind) -> (i32, i32) {
     // Thin wrapper so the taper cap is drawn even for point exits (no bole).
     let e = BoleExit {
@@ -358,6 +365,7 @@ pub struct ForestKnobs {
 }
 
 impl ForestKnobs {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     pub fn from_env() -> Self {
         ForestKnobs {
             density: param_f32("DENS", 16.0).clamp(2.0, 60.0),
@@ -406,6 +414,7 @@ enum FrameRng<'a> {
 }
 
 impl FrameRng<'_> {
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn f32(&mut self) -> f32 {
         match self {
             FrameRng::Live(r, log) => {
@@ -419,6 +428,7 @@ impl FrameRng<'_> {
             },
         }
     }
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn f64(&mut self) -> f64 {
         match self {
             FrameRng::Live(r, log) => {
@@ -432,6 +442,7 @@ impl FrameRng<'_> {
             },
         }
     }
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn range_u32(&mut self, lo: u32, hi: u32) -> u32 {
         match self {
             FrameRng::Live(r, log) => {
@@ -445,6 +456,7 @@ impl FrameRng<'_> {
             },
         }
     }
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn range_i32(&mut self, lo: i32, hi: i32) -> i32 {
         match self {
             FrameRng::Live(r, log) => {
@@ -477,6 +489,7 @@ thread_local! {
 
 /// Sky stars, clouds, ground line walk, ground fill, fog band. Consumes rng
 /// through the fog; output is identical every frame for a fixed key.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn render_static(
     width: usize,
     height: usize,
@@ -556,6 +569,7 @@ fn render_static(
 
 /// Tree strata pass + undergrowth, drawn over the cached static base. All rng
 /// draws here match the original in-order sequence.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn draw_dynamic(
     grid: &mut Grid,
     width: usize,
@@ -724,6 +738,7 @@ struct BaseHit {
     log: Vec<Draw>,
 }
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 fn take_base(key: &CacheKey) -> Option<BaseHit> {
     STATIC_BASE.with(|c| {
         let b = c.borrow();
@@ -744,6 +759,7 @@ fn take_base(key: &CacheKey) -> Option<BaseHit> {
 
 /// Rebuild or reuse the static base for this key, then draw the dynamic
 /// passes into `grid`. Hits replay the recorded draw log, byte-identical.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn draw_arboretum(
     grid: &mut Grid,
     width: usize,
@@ -793,6 +809,7 @@ pub fn draw_arboretum(
 
 /// Frame entry for the in-process player: returns a fresh grid without a
 /// caller-side pre-alloc. A hit is one base clone plus the dynamic passes.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn render_arboretum_frame(
     width: usize,
     height: usize,
@@ -809,6 +826,7 @@ pub fn render_arboretum_frame(
 
 // ── CLI dispatch arm ────────────────────────────────────────────────
 
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn cli_arboretum(mut grid: Grid, width: usize, height: usize, seed: u64, palette: [Color; 5], mut rng: StdRng, t_anim: f32, term_w: u16, term_h: u16, args: &[String], mode: &str, theme_name: &str) -> (Grid, bool) {
     // arboretum [strata] [density] -- knob overrides win over env/defaults
     let mut knobs = ForestKnobs::from_env();
@@ -834,6 +852,7 @@ mod tests {
     use super::*;
     use rand::SeedableRng;
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn make(w: usize, h: usize, seed: u64) -> (Grid, StdRng, [Color; 5]) {
         (
             vec![vec![Cell::blank(); w]; h],
@@ -842,6 +861,7 @@ mod tests {
         )
     }
 
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn plain(grid: &Grid) -> String {
         grid.iter()
             .map(|row| row.iter().map(|c| c.ch).collect::<String>())
@@ -850,6 +870,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_arboretum_tiny_grid() {
         let (mut g, mut r, p) = make(46, 14, 42);
         let knobs = ForestKnobs::from_env();
@@ -858,6 +879,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_arboretum_standard() {
         let (mut g, mut r, p) = make(80, 24, 42);
         let knobs = ForestKnobs::from_env();
@@ -866,6 +888,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn snapshot_arboretum_huge_grid() {
         let (mut g, mut r, p) = make(150, 50, 42);
         let knobs = ForestKnobs::from_env();
@@ -874,6 +897,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn deterministic_and_seed_sensitive() {
         let run = |seed: u64| {
             let (mut g, mut r, p) = make(80, 24, seed);
@@ -886,6 +910,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn lifecycle_animates_and_t0_is_static() {
         let run = |t: f32| {
             let (mut g, mut r, p) = make(80, 24, 42);
@@ -899,6 +924,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn animation_frames_are_locally_stable() {
         // one player tick must nudge the scene, not re-roll it: per-tree rng
         // streams are keyed to (seed, layer, si) and never shift neighbors.
@@ -930,6 +956,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn cache_hit_matches_from_scratch() {
         // replay path must be byte-identical to the recording path, for
         // several t values and across repeated hits
@@ -952,6 +979,7 @@ mod tests {
 
     #[test]
     #[ignore]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn perf_arboretum_frames() {
         for (w, h) in [(80usize, 24usize), (150usize, 50usize)] {
             let (mut g, _, p) = make(w, h, 42);
@@ -990,6 +1018,7 @@ mod tests {
     }
 
     #[test]
+    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
     fn single_tree_scales_tiny_to_ancient() {
         // A 3-budget sapling must stay small; a 40-budget tree must reach high.
         let sapling_cells = |budget: i32| {

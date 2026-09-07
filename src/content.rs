@@ -15,6 +15,7 @@ pub struct ContentBlock {
 
 /// Wrap a string to fit within max_width using greedy line breaking.
 /// Returns the wrapped lines and the actual max line width used.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn wrap_text(text: &str, max_width: usize) -> Vec<String> {
     if text.is_empty() {
         return vec![String::new()];
@@ -46,6 +47,7 @@ pub fn wrap_text(text: &str, max_width: usize) -> Vec<String> {
 /// Measure a content block: returns (width, height) needed.
 /// Width = max line width across all items + 2*padding.
 /// Height = total lines + 2*padding.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn measure_block(block: &ContentBlock, available_width: usize) -> (usize, usize) {
     let inner_w = available_width.saturating_sub(block.padding * 2);
     let mut max_line_w: usize = 0;
@@ -78,6 +80,7 @@ pub fn measure_block(block: &ContentBlock, available_width: usize) -> (usize, us
 }
 
 /// Minimum width a block needs to avoid any text wrapping.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn min_block_width(block: &ContentBlock) -> usize {
     let mut max_w: usize = 0;
     for item in &block.items {
@@ -96,6 +99,7 @@ pub fn min_block_width(block: &ContentBlock) -> usize {
 
 /// Render a content block into the grid at (rect.x, rect.y).
 /// Clears the rect area first, then writes content.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn render_block(grid: &mut Grid, block: &ContentBlock, rect: &Rect, fg: Color, bar_fg: Color) {
     // clear rect
     for y in rect.y..rect.y + rect.h {
@@ -185,6 +189,7 @@ pub fn render_block(grid: &mut Grid, block: &ContentBlock, rect: &Rect, fg: Colo
 
 /// Like render_block but preserves existing bg color of each cell
 /// instead of clearing to blank. Used by Mondrian to keep color fills.
+#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub fn render_block_preserve_bg(
     grid: &mut Grid,
     block: &ContentBlock,
