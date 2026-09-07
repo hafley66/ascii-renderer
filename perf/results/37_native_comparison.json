@@ -1,0 +1,243 @@
+{
+  "scope": "400x200 terminal; 366x199 art; native PTY/vt100 and full colors; GUI painting untested",
+  "cases": [
+    {
+      "mode": "gem-aetherium-2",
+      "status": "passed",
+      "binary_sha256": "d548079918582f755210a1c2aa1b55bef7b110d264567982e33098484334f4bf",
+      "inputs": {
+        "seed": 42,
+        "grid": {
+          "h": 199,
+          "w": 366
+        },
+        "terminal_size": {
+          "h": 200,
+          "w": 400
+        },
+        "knobs": {
+          "COMETS": 11.0,
+          "GEARS": 7.0,
+          "HARMONY": 7.0,
+          "NEBULA": 1.25,
+          "PLANETS": 9.0,
+          "PULSE": 0.10000000149011612,
+          "RAYS": 0.800000011920929,
+          "RINGS": 9.0,
+          "RUNES": 0.30000001192092896,
+          "SPEED": 2.3499999046325684,
+          "TILT": 0.6000000238418579,
+          "ZODIAC": 19.0
+        },
+        "time": 0.05999999865889549,
+        "palette": [
+          "rgb_(49,42,26)",
+          "rgb_(181,209,71)",
+          "rgb_(57,91,172)",
+          "rgb_(140,228,103)",
+          "rgb_(220,220,220)"
+        ]
+      },
+      "steady": {
+        "frames": 9,
+        "render_us": {
+          "p50": 1267,
+          "p95": 1335,
+          "max": 1335
+        },
+        "encoding_us": {
+          "p50": 3250,
+          "p95": 3460,
+          "max": 3460
+        },
+        "presentation_us": {
+          "p50": 1698,
+          "p95": 3989,
+          "max": 3989
+        },
+        "dur_us": {
+          "p50": 6284,
+          "p95": 8615,
+          "max": 8615
+        },
+        "interval_ms": {
+          "p50": 16.249125,
+          "p95": 19.868792,
+          "max": 19.868792
+        },
+        "bytes": {
+          "p50": 159373,
+          "p95": 164956,
+          "max": 164956
+        }
+      },
+      "checks": [
+        {
+          "name": "actual-demo-startup",
+          "status": "passed"
+        },
+        {
+          "name": "mode-search-and-preview",
+          "status": "passed"
+        },
+        {
+          "name": "exact-animation-inputs",
+          "status": "passed"
+        },
+        {
+          "name": "terminal-cell-motion",
+          "status": "passed"
+        },
+        {
+          "name": "knob-reaches-render",
+          "status": "passed",
+          "latency_ms": 11
+        },
+        {
+          "name": "random-knob-diversity",
+          "status": "passed"
+        },
+        {
+          "name": "q-returns-to-demo",
+          "status": "passed"
+        },
+        {
+          "name": "exit-and-terminal-restoration",
+          "status": "passed",
+          "latency_ms": 1
+        },
+        {
+          "name": "profile-includes-render-worker",
+          "status": "passed"
+        }
+      ],
+      "terminal": {
+        "alive": true,
+        "bytes": 3654940,
+        "error": null,
+        "exit_code": null,
+        "parse_us": 17243,
+        "reader_done": false,
+        "reads": 4984
+      },
+      "artifact_directory": "perf/results/35_native_gem_color/bad-400x200"
+    },
+    {
+      "mode": "terminal-stress",
+      "status": "passed",
+      "binary_sha256": "d548079918582f755210a1c2aa1b55bef7b110d264567982e33098484334f4bf",
+      "inputs": {
+        "seed": 42,
+        "grid": {
+          "h": 199,
+          "w": 366
+        },
+        "terminal_size": {
+          "h": 200,
+          "w": 400
+        },
+        "knobs": {
+          "BACKGROUND": 1.0,
+          "CHURN": 1.0,
+          "COLORS": 216.0,
+          "DENSITY": 1.0,
+          "FREQUENCY": 32.0,
+          "GLYPHS": 1.0,
+          "PATTERN": 2.0,
+          "SPEED": 120.0
+        },
+        "time": 0.05999999865889549,
+        "palette": [
+          "rgb_(49,42,26)",
+          "rgb_(181,209,71)",
+          "rgb_(57,91,172)",
+          "rgb_(140,228,103)",
+          "rgb_(220,220,220)"
+        ]
+      },
+      "steady": {
+        "frames": 9,
+        "render_us": {
+          "p50": 305,
+          "p95": 352,
+          "max": 352
+        },
+        "encoding_us": {
+          "p50": 10517,
+          "p95": 10863,
+          "max": 10863
+        },
+        "presentation_us": {
+          "p50": 50480,
+          "p95": 84065,
+          "max": 84065
+        },
+        "dur_us": {
+          "p50": 61252,
+          "p95": 94755,
+          "max": 94755
+        },
+        "interval_ms": {
+          "p50": 61.281292,
+          "p95": 94.796959,
+          "max": 94.796959
+        },
+        "bytes": {
+          "p50": 1749898,
+          "p95": 1750192,
+          "max": 1750192
+        }
+      },
+      "checks": [
+        {
+          "name": "actual-demo-startup",
+          "status": "passed"
+        },
+        {
+          "name": "mode-search-and-preview",
+          "status": "passed"
+        },
+        {
+          "name": "exact-animation-inputs",
+          "status": "passed"
+        },
+        {
+          "name": "terminal-cell-motion",
+          "status": "passed"
+        },
+        {
+          "name": "knob-reaches-render",
+          "status": "passed",
+          "latency_ms": 121
+        },
+        {
+          "name": "random-knob-diversity",
+          "status": "passed"
+        },
+        {
+          "name": "q-returns-to-demo",
+          "status": "passed"
+        },
+        {
+          "name": "exit-and-terminal-restoration",
+          "status": "passed",
+          "latency_ms": 1
+        },
+        {
+          "name": "profile-includes-render-worker",
+          "status": "passed"
+        }
+      ],
+      "terminal": {
+        "alive": true,
+        "bytes": 29285073,
+        "error": null,
+        "exit_code": null,
+        "parse_us": 119369,
+        "reader_done": false,
+        "reads": 30010
+      },
+      "artifact_directory": "perf/results/36_native_stress_color/max-400x200"
+    }
+  ]
+}

@@ -21,6 +21,7 @@ mod _47_astra_opus_1_chronofold;
 mod _48_astra_jurassic_park;
 mod _49_astra_chaos_theory;
 mod _50_gem_aetherium_2;
+mod _51_terminal_stress;
 
 #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
 pub(crate) fn register_all(registry: &mut crate::registry::ModeRegistry) {
@@ -45,4 +46,5 @@ pub(crate) fn register_all(registry: &mut crate::registry::ModeRegistry) {
     registry.add(&_48_astra_jurassic_park::MODE);
     registry.add(&_49_astra_chaos_theory::MODE);
     registry.add(&_50_gem_aetherium_2::MODE);
+    registry.add(&_51_terminal_stress::MODE);
 }
