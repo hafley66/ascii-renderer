@@ -1,5 +1,19 @@
 # Terminal stress animation
 
+## Independent reroll
+
+`examples/2_fresh_animation.rs` is a separate animation executable. Its path is a parametric colored wave written directly into Ratatui's buffer, then Ratatui's diff and Crossterm backend write to a 64 KiB buffered stdout. It does not import the application's renderer, registry, playback supervisor, or frame relay.
+
+```sh
+cargo run --release --example 2_fresh_animation -- 300 /tmp/fresh-animation.ndjson
+```
+
+Press `q` or Escape to exit. The example accepts at most 300 frames and 80,000 terminal cells. A blocked terminal write can extend its runtime; automated probes must still use the external watchdog.
+
+The guarded native 400×200, 12-frame run measured 8.107 ms median and 18.257 ms maximum draw time after the first frame. This is a fresh-pattern baseline, with different content and byte volume from Gem 2. It does not establish equivalent visual performance. [Recorded result](results/38_fresh_animation/summary.json).
+
+## Demo load generator
+
 Run `cargo run --release -- 42 demo`, select `terminal-stress` at the end of the mode list, and press `a` to animate. The mode uses the existing knob controls, input recording, and seed handling.
 
 Density, churn, color count, background coverage, frequency, speed, glyph set, and pattern control terminal output load. The renderer performs one pass over the grid with a fixed sine lookup table. The maximum preset changes colored Unicode cells across the full art area.

@@ -1,0 +1,12 @@
+{"timestamp":"2026-09-07T23:16:46.579924Z","level":"INFO","fields":{"message":"fresh frame","frame":0,"width":400,"height":200,"draw_us":61210,"elapsed_us":61235},"target":"2_fresh_animation"}
+{"timestamp":"2026-09-07T23:16:46.587674Z","level":"INFO","fields":{"message":"fresh frame","frame":1,"width":400,"height":200,"draw_us":7535,"elapsed_us":68985},"target":"2_fresh_animation"}
+{"timestamp":"2026-09-07T23:16:46.604605Z","level":"INFO","fields":{"message":"fresh frame","frame":2,"width":400,"height":200,"draw_us":7394,"elapsed_us":85916},"target":"2_fresh_animation"}
+{"timestamp":"2026-09-07T23:16:46.625784Z","level":"INFO","fields":{"message":"fresh frame","frame":3,"width":400,"height":200,"draw_us":11415,"elapsed_us":107094},"target":"2_fresh_animation"}
+{"timestamp":"2026-09-07T23:16:46.645130Z","level":"INFO","fields":{"message":"fresh frame","frame":4,"width":400,"height":200,"draw_us":13271,"elapsed_us":126440},"target":"2_fresh_animation"}
+{"timestamp":"2026-09-07T23:16:46.667274Z","level":"INFO","fields":{"message":"fresh frame","frame":5,"width":400,"height":200,"draw_us":18257,"elapsed_us":148584},"target":"2_fresh_animation"}
+{"timestamp":"2026-09-07T23:16:46.678764Z","level":"INFO","fields":{"message":"fresh frame","frame":6,"width":400,"height":200,"draw_us":11182,"elapsed_us":160074},"target":"2_fresh_animation"}
+{"timestamp":"2026-09-07T23:16:46.696472Z","level":"INFO","fields":{"message":"fresh frame","frame":7,"width":400,"height":200,"draw_us":8107,"elapsed_us":177781},"target":"2_fresh_animation"}
+{"timestamp":"2026-09-07T23:16:46.714010Z","level":"INFO","fields":{"message":"fresh frame","frame":8,"width":400,"height":200,"draw_us":7873,"elapsed_us":195319},"target":"2_fresh_animation"}
+{"timestamp":"2026-09-07T23:16:46.729479Z","level":"INFO","fields":{"message":"fresh frame","frame":9,"width":400,"height":200,"draw_us":6001,"elapsed_us":210788},"target":"2_fresh_animation"}
+{"timestamp":"2026-09-07T23:16:46.747247Z","level":"INFO","fields":{"message":"fresh frame","frame":10,"width":400,"height":200,"draw_us":6852,"elapsed_us":228556},"target":"2_fresh_animation"}
+{"timestamp":"2026-09-07T23:16:46.767957Z","level":"INFO","fields":{"message":"fresh frame","frame":11,"width":400,"height":200,"draw_us":9719,"elapsed_us":249266},"target":"2_fresh_animation"}

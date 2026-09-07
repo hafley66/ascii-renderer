@@ -1,0 +1,17 @@
+{
+  "frames": 12,
+  "width": 400,
+  "height": 200,
+  "median_draw_us": 8107,
+  "max_draw_us": 18257,
+  "native": {
+    "alive": false,
+    "bytes": 849670,
+    "error": null,
+    "exit_code": 0,
+    "parse_us": 12645,
+    "reader_done": true,
+    "reads": 839
+  },
+  "scope": "Independent Ratatui animation through native PTY/vt100; GUI painting unmeasured"
+}
