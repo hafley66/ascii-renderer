@@ -20,7 +20,7 @@ def expand_rep(text):
     return ''.join(result).encode()
 
 
-def run(directory, experiment):
+def run(directory, experiment, expected_size=(426, 135)):
     fd = os.open('/dev/tty', os.O_RDWR | os.O_NONBLOCK)
     original = termios.tcgetattr(fd)
     log = (directory / 'measurements.ndjson').open('x', buffering=1)
@@ -66,8 +66,8 @@ def run(directory, experiment):
         tty.setraw(fd)
         size = os.get_terminal_size(fd)
         record(kind='start', terminal=[size.columns,size.lines], experiment=experiment)
-        if (size.columns, size.lines) != (426, 135):
-            raise ValueError('terminal must match recorded 426x135 dimensions')
+        if (size.columns, size.lines) != expected_size:
+            raise ValueError(f'terminal must match recorded {expected_size} dimensions')
         send(b'\x1b[?1049h\x1b[?25l\x1b[2J\x1b[H')
         send('▒\x1b[11b'.encode())
         cursor = ack()
@@ -86,6 +86,12 @@ def run(directory, experiment):
         if experiment == 'sync':
             variants['sync'] = [b'\x1b[?2026h' + p + b'\x1b[?2026l' for p in literal]
             arms = ['literal', 'sync', 'sync', 'literal']
+        if experiment == 'gap':
+            changed = [(directory/'after'/p.name).read_bytes() for p in frames]
+            variants = {'before': [b'\x1b[?2026h' + p + b'\x1b[?2026l' for p in compressed],
+                        'after': [b'\x1b[?2026h' + p + b'\x1b[?2026l' for p in changed]}
+            record(kind='changed_payloads', sha256=[hashlib.sha256(p).hexdigest() for p in changed])
+            arms = ['before', 'after', 'after', 'before']
         for arm in arms:
             payloads = variants[arm]
             send(b'\x1b[2J\x1b[H')
@@ -111,6 +117,7 @@ def run(directory, experiment):
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('directory',type=pathlib.Path)
-    parser.add_argument('--experiment', choices=['rep', 'sync'], default='rep')
+    parser.add_argument('--experiment', choices=['rep', 'sync', 'gap'], default='rep')
+    parser.add_argument('--size', default='426x135')
     args = parser.parse_args()
-    run(args.directory, args.experiment)
+    run(args.directory, args.experiment, tuple(map(int, args.size.split("x"))))

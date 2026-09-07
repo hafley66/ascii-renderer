@@ -1,0 +1,100 @@
+diff --git a/src/gridio.rs b/src/gridio.rs
+index 567d24b..57b0e7a 100644
+--- a/src/gridio.rs
++++ b/src/gridio.rs
+@@ -253,7 +253,7 @@ impl AnsiFrameEncoder {
+     /// 1. Rebuild retained storage on a size change and force a full repaint.
+     /// 2. Compare final cells, expanding changes around double-width glyphs.
+     /// 3. Form row-local dirty runs and absorb gaps whose bytes cost no more
+-    ///    than another absolute cursor-position escape.
++    ///    than the cursor command that would skip them.
+     /// 4. Encode dirty runs, falling back to a full frame when it is cheaper.
+     /// 5. Copy current cells into contiguous previous-frame storage.
+     pub(crate) fn encode(
+@@ -386,7 +386,7 @@ impl AnsiFrameEncoder {
+                 let (mut fg, mut bg) =
+                     colors_after_span(row, start, end, Color::Reset, Color::Reset);
+                 // Compare the exact bytes for unchanged cells in the gap with
+-                // the absolute cursor escape that would skip them.
++                // the same horizontal cursor command encode_runs would emit.
+                 loop {
+                     let mut next = end;
+                     while next < self.width && !self.dirty[offset + next] {
+@@ -400,7 +400,7 @@ impl AnsiFrameEncoder {
+                         next_end += 1;
+                     }
+                     let gap_cost = encoded_span_cost(row, end, next, fg, bg);
+-                    if gap_cost > cursor_escape_len(y + 1, next + 1) {
++                    if gap_cost > horizontal_cursor_command(end + 1, next + 1).2 {
+                         break;
+                     }
+                     (fg, bg) = colors_after_span(row, end, next_end, fg, bg);
+@@ -424,6 +424,19 @@ fn decimal_len(mut value: usize) -> usize {
+     len
+ }
+ 
++// Parameter, CSI final byte, and encoded byte length. Share the choice between
++// gap pricing and emission so their estimates cannot use different commands.
++fn horizontal_cursor_command(from: usize, to: usize) -> (usize, char, usize) {
++    let delta = from.abs_diff(to);
++    let relative_len = if delta == 1 { 3 } else { 3 + decimal_len(delta) };
++    let column_len = if to == 1 { 3 } else { 3 + decimal_len(to) };
++    if relative_len < column_len {
++        (delta, if to > from { 'C' } else { 'D' }, relative_len)
++    } else {
++        (to, 'G', column_len)
++    }
++}
++
+ fn cursor_escape_len(row: usize, col: usize) -> usize {
+     4 + decimal_len(row) + decimal_len(col)
+ }
+@@ -587,24 +600,11 @@ fn encode_runs(grid: &Grid, runs: &[DirtyRun], output: &mut String) {
+         match cursor {
+             Some((cursor_row, cursor_col)) if cursor_row == row && cursor_col == col => {}
+             Some((cursor_row, cursor_col)) if cursor_row == row => {
+-                let delta = cursor_col.abs_diff(col);
+-                let relative_len = if delta == 1 {
+-                    3
+-                } else {
+-                    3 + decimal_len(delta)
+-                };
+-                let column_len = if col == 1 { 3 } else { 3 + decimal_len(col) };
+-                if relative_len < column_len {
+-                    let command = if col > cursor_col { 'C' } else { 'D' };
+-                    if delta == 1 {
+-                        let _ = write!(output, "\x1b[{command}");
+-                    } else {
+-                        let _ = write!(output, "\x1b[{delta}{command}");
+-                    }
+-                } else if col == 1 {
+-                    output.push_str("\x1b[G");
++                let (amount, command, _) = horizontal_cursor_command(cursor_col, col);
++                if amount == 1 {
++                    let _ = write!(output, "\x1b[{command}");
+                 } else {
+-                    let _ = write!(output, "\x1b[{col}G");
++                    let _ = write!(output, "\x1b[{amount}{command}");
+                 }
+             }
+             _ => {
+@@ -659,6 +659,19 @@ mod ansi_frame_tests {
+         assert_eq!(output, "\x1b[1;2HX\x1b[36GY\x1b[0m");
+     }
+ 
++    #[test]
++    fn gap_pricing_uses_the_emitted_horizontal_command() {
++        let mut encoder = AnsiFrameEncoder::new();
++        let mut output = String::new();
++        encoder.encode(&row(&"a".repeat(40)), true, &mut output);
++        let mut after = "a".repeat(40).into_bytes();
++        after[1] = b'X';
++        after[7] = b'Y';
++        let stats = encoder.encode(&row(&String::from_utf8(after).unwrap()), false, &mut output);
++        assert_eq!((stats.changed_cells, stats.runs), (2, 2));
++        assert_eq!(output, "\x1b[1;2HX\x1b[8GY\x1b[0m");
++    }
++
+     #[test]
+     fn retained_cursor_reduces_sparse_run_control_bytes() {
+         use std::fmt::Write as _;

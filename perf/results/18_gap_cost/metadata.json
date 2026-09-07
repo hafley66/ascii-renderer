@@ -1,0 +1,23 @@
+{
+  "candidate": "candidate.patch",
+  "baseline_frames": "../17_pty_work/frame-*.ansi",
+  "candidate_frames": "after/frame-*.ansi",
+  "terminal": [
+    400,
+    200
+  ],
+  "order": [
+    "before",
+    "after",
+    "after",
+    "before"
+  ],
+  "frames_per_arm": 3,
+  "delta_indices": [
+    1,
+    2
+  ],
+  "equivalence_library": "pyte 0.8.2, wcwidth 0.8.3",
+  "harness_sha256": "0b9669bed867fc4795df25e70a422821772a53bfa3cefbbbbbdbcaf9df17b9fa",
+  "candidate_retained": false
+}

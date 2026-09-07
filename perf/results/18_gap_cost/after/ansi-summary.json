@@ -1,0 +1,672 @@
+[
+  {
+    "frame": 1,
+    "grid": {
+      "h": 199,
+      "w": 366
+    },
+    "changed_cells": 72834,
+    "dirty_runs": 199,
+    "logged_total_bytes": 276532,
+    "art_bytes": 270393,
+    "counts": {
+      "cursor_absolute": 199,
+      "printable_characters": 72832,
+      "ascii_characters": 15243,
+      "foreground": 7835,
+      "reset_or_other_sgr": 1
+    },
+    "byte_counts": {
+      "cursor_absolute": 1484,
+      "text": 187484,
+      "foreground": 81421,
+      "reset_or_other_sgr": 4
+    },
+    "printable_spans": 7995,
+    "median_span": 2,
+    "single_character_spans": 3979,
+    "spaces": 15235,
+    "distinct_characters": 71,
+    "distinct_foregrounds": 31,
+    "most_common_characters": [
+      [
+        "\u2592",
+        27276
+      ],
+      [
+        " ",
+        15235
+      ],
+      [
+        "\u2591",
+        11048
+      ],
+      [
+        "\u2593",
+        7370
+      ],
+      [
+        "\u250a",
+        6839
+      ],
+      [
+        "\u2506",
+        956
+      ],
+      [
+        "\u2500",
+        918
+      ],
+      [
+        "\u2502",
+        833
+      ],
+      [
+        "\u2699",
+        517
+      ],
+      [
+        "\u00b7",
+        491
+      ],
+      [
+        "\u25ab",
+        442
+      ],
+      [
+        "\u25aa",
+        385
+      ]
+    ],
+    "prefix": "\u001b[1;1H                                                              \u001b[38;5;113m\u2502                                     \u001b[38;5;186m\u02d9                   \u001b[38;5;113m\u2699        \u001b[38;5;59m\u250a\u250a\u250a\u250a\u250a\u250a\u250a\u250a\u001b[38;5;143m\u25aa\u001b[38;5;59m\u2591\u2591\u2591\u2591\u2591\u001b[38;5;143m\u25aa\u001b[38;5;59m\u2591\u2591\u2591\u2592\u2592",
+    "baseline_logged_minus_candidate_art_bytes": 6139
+  },
+  {
+    "frame": 2,
+    "grid": {
+      "h": 199,
+      "w": 366
+    },
+    "changed_cells": 12852,
+    "dirty_runs": 4762,
+    "logged_total_bytes": 127225,
+    "art_bytes": 124871,
+    "counts": {
+      "cursor_absolute": 199,
+      "foreground": 5885,
+      "printable_characters": 14193,
+      "ascii_characters": 1446,
+      "cursor_horizontal": 5320,
+      "reset_or_other_sgr": 1
+    },
+    "byte_counts": {
+      "cursor_absolute": 1590,
+      "foreground": 61437,
+      "text": 39368,
+      "cursor_horizontal": 22472,
+      "reset_or_other_sgr": 4
+    },
+    "printable_spans": 7968,
+    "median_span": 1.0,
+    "single_character_spans": 5861,
+    "spaces": 1437,
+    "distinct_characters": 68,
+    "distinct_foregrounds": 31,
+    "most_common_characters": [
+      [
+        "\u250a",
+        3352
+      ],
+      [
+        "\u2592",
+        3274
+      ],
+      [
+        " ",
+        1437
+      ],
+      [
+        "\u2591",
+        966
+      ],
+      [
+        "\u2500",
+        885
+      ],
+      [
+        "\u2593",
+        750
+      ],
+      [
+        "\u2502",
+        749
+      ],
+      [
+        "\u2506",
+        742
+      ],
+      [
+        "\u2699",
+        518
+      ],
+      [
+        "\u25ab",
+        463
+      ],
+      [
+        "\u25aa",
+        297
+      ],
+      [
+        "\u00b7",
+        290
+      ]
+    ],
+    "prefix": "\u001b[1;58H\u001b[38;5;113m\u2502     \u001b[37C\u001b[38;5;187m\u02d9\u001b[19C     \u001b[38;5;59m\u250a\u250a\u001b[38;5;143m\u25ab\u001b[38;5;59m\u250a\u001b[4C\u2591\u2591\u2591\u2591\u2591\u001b[5C\u2591\u001b[20C\u001b[38;5;113m\u2699\u001b[23C\u001b[38;5;188m\u2502\u001b[18C\u001b[38;5;59m\u2592\u2592\u001b[5C\u001b[38;5;149m\u2502\u001b[12C\u2502\u001b[4C\u001b[38;5;59m\u2591\u001b[18C\u250a\u250a\u250a\u250a\u250a\u001b[2C    \u001b[49C\u001b[38;5;113m\u2502    \u001b[2;54H\u253c\u001b[38;",
+    "baseline_logged_minus_candidate_art_bytes": 2354
+  },
+  {
+    "frame": 3,
+    "grid": {
+      "h": 199,
+      "w": 366
+    },
+    "changed_cells": 12655,
+    "dirty_runs": 4722,
+    "logged_total_bytes": 124772,
+    "art_bytes": 122269,
+    "counts": {
+      "cursor_absolute": 199,
+      "foreground": 5735,
+      "printable_characters": 13918,
+      "ascii_characters": 1434,
+      "cursor_horizontal": 5299,
+      "reset_or_other_sgr": 1
+    },
+    "byte_counts": {
+      "cursor_absolute": 1580,
+      "foreground": 59858,
+      "text": 38567,
+      "cursor_horizontal": 22260,
+      "reset_or_other_sgr": 4
+    },
+    "printable_spans": 7878,
+    "median_span": 1.0,
+    "single_character_spans": 5717,
+    "spaces": 1424,
+    "distinct_characters": 68,
+    "distinct_foregrounds": 30,
+    "most_common_characters": [
+      [
+        "\u250a",
+        3315
+      ],
+      [
+        "\u2592",
+        3168
+      ],
+      [
+        " ",
+        1424
+      ],
+      [
+        "\u2591",
+        933
+      ],
+      [
+        "\u2500",
+        859
+      ],
+      [
+        "\u2593",
+        723
+      ],
+      [
+        "\u2502",
+        721
+      ],
+      [
+        "\u2506",
+        704
+      ],
+      [
+        "\u2699",
+        605
+      ],
+      [
+        "\u25ab",
+        391
+      ],
+      [
+        "\u25aa",
+        333
+      ],
+      [
+        "\u00b7",
+        289
+      ]
+    ],
+    "prefix": "\u001b[1;55H\u001b[38;5;113m\u253c   \u001b[53C\u2699\u001b[9C\u001b[38;5;59m\u250a\u250a\u250a\u250a\u001b[2C\u250a\u250a\u2591\u2591\u2591\u2591\u001b[25C\u001b[38;5;113m\u2699\u001b[5C\u001b[38;5;59m\u2593\u001b[23C\u2592\u001b[9C\u001b[38;5;188m\u2502\u001b[2C\u001b[38;5;106m\u00b7\u001b[38;5;59m\u2592\u001b[6C\u2591\u001b[4C\u2591\u001b[5C\u001b[38;5;149m\u2502\u001b[2C\u2502\u001b[3C\u001b[38;5;59m\u2591\u001b[11C \u001b[7C\u250a\u250a\u250a\u250a\u001b[3C\u2591\u2591\u2591\u2591\u001b[26C\u001b[38;5;24m\u2504\u001b[23C\u001b[38;5;113m\u2502  ",
+    "baseline_logged_minus_candidate_art_bytes": 2503
+  },
+  {
+    "frame": 4,
+    "grid": {
+      "h": 199,
+      "w": 366
+    },
+    "changed_cells": 12472,
+    "dirty_runs": 4459,
+    "logged_total_bytes": 124970,
+    "art_bytes": 122740,
+    "counts": {
+      "cursor_absolute": 199,
+      "foreground": 5928,
+      "printable_characters": 13850,
+      "ascii_characters": 1521,
+      "cursor_horizontal": 4978,
+      "reset_or_other_sgr": 1
+    },
+    "byte_counts": {
+      "cursor_absolute": 1598,
+      "foreground": 61978,
+      "text": 38197,
+      "cursor_horizontal": 20963,
+      "reset_or_other_sgr": 4
+    },
+    "printable_spans": 7821,
+    "median_span": 1,
+    "single_character_spans": 5658,
+    "spaces": 1510,
+    "distinct_characters": 69,
+    "distinct_foregrounds": 30,
+    "most_common_characters": [
+      [
+        "\u250a",
+        3311
+      ],
+      [
+        "\u2592",
+        3049
+      ],
+      [
+        " ",
+        1510
+      ],
+      [
+        "\u2591",
+        912
+      ],
+      [
+        "\u2500",
+        884
+      ],
+      [
+        "\u2502",
+        753
+      ],
+      [
+        "\u2506",
+        727
+      ],
+      [
+        "\u2593",
+        655
+      ],
+      [
+        "\u2699",
+        472
+      ],
+      [
+        "\u25aa",
+        469
+      ],
+      [
+        "\u25ab",
+        365
+      ],
+      [
+        "\u00b7",
+        283
+      ]
+    ],
+    "prefix": "\u001b[1;52H\u001b[38;5;113m\u2502   \u001b[56C \u001b[5C\u001b[38;5;61m\u2550\u001b[38;5;59m\u250a\u250a\u250a\u250a\u001b[38;5;143m\u25aa\u001b[C    \u001b[38;5;59m\u2591\u001b[38;5;143m\u25ab\u001b[3C\u25aa\u001b[10C\u001b[38;5;61m\u2550\u001b[7C\u001b[38;5;143m\u2699\u001b[4C\u001b[38;5;113m\u2699\u001b[38;5;59m\u2592\u001b[39C\u2592\u001b[19C\u001b[38;5;149m\u2502\u001b[C\u001b[38;5;59m\u2591\u001b[2C\u2591\u2591\u001b[38;5;149m\u2502\u001b[12C    \u001b[38;5;59m\u250a\u250a\u250a",
+    "baseline_logged_minus_candidate_art_bytes": 2230
+  },
+  {
+    "frame": 5,
+    "grid": {
+      "h": 199,
+      "w": 366
+    },
+    "changed_cells": 12559,
+    "dirty_runs": 4552,
+    "logged_total_bytes": 126387,
+    "art_bytes": 123842,
+    "counts": {
+      "cursor_absolute": 199,
+      "foreground": 5965,
+      "printable_characters": 13926,
+      "ascii_characters": 1597,
+      "cursor_horizontal": 5147,
+      "reset_or_other_sgr": 1
+    },
+    "byte_counts": {
+      "cursor_absolute": 1617,
+      "foreground": 62365,
+      "text": 38275,
+      "cursor_horizontal": 21581,
+      "reset_or_other_sgr": 4
+    },
+    "printable_spans": 7859,
+    "median_span": 1,
+    "single_character_spans": 5746,
+    "spaces": 1583,
+    "distinct_characters": 64,
+    "distinct_foregrounds": 31,
+    "most_common_characters": [
+      [
+        "\u250a",
+        3334
+      ],
+      [
+        "\u2592",
+        3015
+      ],
+      [
+        " ",
+        1583
+      ],
+      [
+        "\u2591",
+        909
+      ],
+      [
+        "\u2500",
+        891
+      ],
+      [
+        "\u2502",
+        739
+      ],
+      [
+        "\u2506",
+        718
+      ],
+      [
+        "\u2593",
+        692
+      ],
+      [
+        "\u25aa",
+        482
+      ],
+      [
+        "\u2699",
+        464
+      ],
+      [
+        "\u25ab",
+        374
+      ],
+      [
+        "\u00b7",
+        281
+      ]
+    ],
+    "prefix": "\u001b[1;51H\u001b[38;5;113m\u2502 \u001b[48C\u001b[38;5;188m\u02d9\u001b[12C\u001b[38;5;59m\u250a\u250a\u250a\u250a\u250a\u001b[2C        \u001b[38;5;143m\u25ab\u001b[38;5;59m\u2591\u001b[3C\u2591\u001b[5C\u001b[38;5;143m\u25aa\u001b[4C\u001b[38;5;59m\u2591\u2591\u2592\u001b[5C\u2592\u2592\u001b[38;5;113m\u2699\u001b[2C\u001b[38;5;59m\u2592\u001b[50C\u2591\u001b[4C\u001b[38;5;149m\u2502\u001b[4C\u001b[38;5;59m\u2591\u2591\u001b[38;5;188m\u2502\u001b[4C\u001b[38;5;59m\u2591\u001b[5C\u001b[38;5;1",
+    "baseline_logged_minus_candidate_art_bytes": 2545
+  },
+  {
+    "frame": 6,
+    "grid": {
+      "h": 199,
+      "w": 366
+    },
+    "changed_cells": 12530,
+    "dirty_runs": 4488,
+    "logged_total_bytes": 125911,
+    "art_bytes": 123563,
+    "counts": {
+      "cursor_absolute": 199,
+      "foreground": 5972,
+      "printable_characters": 13835,
+      "ascii_characters": 1487,
+      "cursor_horizontal": 5061,
+      "reset_or_other_sgr": 1
+    },
+    "byte_counts": {
+      "cursor_absolute": 1619,
+      "foreground": 62452,
+      "text": 38191,
+      "cursor_horizontal": 21297,
+      "reset_or_other_sgr": 4
+    },
+    "printable_spans": 7881,
+    "median_span": 1,
+    "single_character_spans": 5789,
+    "spaces": 1472,
+    "distinct_characters": 68,
+    "distinct_foregrounds": 31,
+    "most_common_characters": [
+      [
+        "\u250a",
+        3327
+      ],
+      [
+        "\u2592",
+        3075
+      ],
+      [
+        " ",
+        1472
+      ],
+      [
+        "\u2500",
+        888
+      ],
+      [
+        "\u2591",
+        845
+      ],
+      [
+        "\u2502",
+        741
+      ],
+      [
+        "\u2506",
+        720
+      ],
+      [
+        "\u2593",
+        673
+      ],
+      [
+        "\u25ab",
+        557
+      ],
+      [
+        "\u2699",
+        429
+      ],
+      [
+        "\u25aa",
+        331
+      ],
+      [
+        "\u00b7",
+        312
+      ]
+    ],
+    "prefix": "\u001b[1;39H\u001b[38;5;231m\u2218\u001b[79G\u001b[38;5;24m\u2504\u001b[24C\u001b[38;5;143m\u2699    \u001b[38;5;59m\u250a\u250a\u250a\u250a\u250a\u001b[2C \u001b[38;5;143m\u25ab   \u25aa\u001b[6C\u001b[38;5;59m\u2591\u2591\u001b[10C\u2591\u001b[14C\u2592\u001b[52C\u001b[38;5;149m\u253c\u2502\u001b[4C\u001b[38;5;59m\u2591\u001b[6C\u001b[38;5;106m\u00b7\u001b[9C\u001b[38;5;188m\u2502\u001b[38;5;59m\u2591\u001b[38;5;188m\u253c\u001b[38;5;59m\u250a\u250a\u250a\u001b[38;5;149m\u2502\u001b[38;5;",
+    "baseline_logged_minus_candidate_art_bytes": 2348
+  },
+  {
+    "frame": 7,
+    "grid": {
+      "h": 199,
+      "w": 366
+    },
+    "changed_cells": 12616,
+    "dirty_runs": 4494,
+    "logged_total_bytes": 126447,
+    "art_bytes": 124002,
+    "counts": {
+      "cursor_absolute": 199,
+      "foreground": 5988,
+      "printable_characters": 13890,
+      "ascii_characters": 1508,
+      "cursor_horizontal": 5092,
+      "reset_or_other_sgr": 1
+    },
+    "byte_counts": {
+      "cursor_absolute": 1615,
+      "foreground": 62580,
+      "text": 38318,
+      "cursor_horizontal": 21485,
+      "reset_or_other_sgr": 4
+    },
+    "printable_spans": 7845,
+    "median_span": 1,
+    "single_character_spans": 5692,
+    "spaces": 1494,
+    "distinct_characters": 68,
+    "distinct_foregrounds": 31,
+    "most_common_characters": [
+      [
+        "\u250a",
+        3344
+      ],
+      [
+        "\u2592",
+        3047
+      ],
+      [
+        " ",
+        1494
+      ],
+      [
+        "\u2500",
+        915
+      ],
+      [
+        "\u2591",
+        832
+      ],
+      [
+        "\u2506",
+        774
+      ],
+      [
+        "\u2502",
+        730
+      ],
+      [
+        "\u2593",
+        677
+      ],
+      [
+        "\u25ab",
+        486
+      ],
+      [
+        "\u25aa",
+        475
+      ],
+      [
+        "\u2699",
+        332
+      ],
+      [
+        "\u00b7",
+        308
+      ]
+    ],
+    "prefix": "\u001b[1;20H\u001b[38;5;25m\u2500 \u001b[38;5;71m\u00b7\u001b[39G \u001b[51G \u001b[38;5;156m\u03c0\u001b[79G     \u001b[38;5;24m\u2504\u001b[19C \u001b[38;5;59m\u250a\u001b[38;5;143m\u25ab\u001b[38;5;59m\u250a\u250a\u001b[2C           \u001b[42C\u2593\u001b[38C\u001b[38;5;149m\u253c\u001b[4C\u001b[38;5;59m\u2591\u2591\u001b[10C\u001b[38;5;106m\u00b7\u001b[38;5;59m\u2591\u001b[8C\u250a\u250a\u250a\u250a\u001b[3C\u250a  \u001b[38;5;149m\u2502 \u001b[38;5;188m\u2502\u001b[",
+    "baseline_logged_minus_candidate_art_bytes": 2445
+  },
+  {
+    "frame": 8,
+    "grid": {
+      "h": 199,
+      "w": 366
+    },
+    "changed_cells": 12581,
+    "dirty_runs": 4647,
+    "logged_total_bytes": 127719,
+    "art_bytes": 125423,
+    "counts": {
+      "cursor_absolute": 199,
+      "foreground": 6089,
+      "printable_characters": 13794,
+      "ascii_characters": 1387,
+      "cursor_horizontal": 5206,
+      "reset_or_other_sgr": 1
+    },
+    "byte_counts": {
+      "cursor_absolute": 1614,
+      "foreground": 63653,
+      "text": 38274,
+      "cursor_horizontal": 21878,
+      "reset_or_other_sgr": 4
+    },
+    "printable_spans": 7902,
+    "median_span": 1.0,
+    "single_character_spans": 5755,
+    "spaces": 1377,
+    "distinct_characters": 68,
+    "distinct_foregrounds": 29,
+    "most_common_characters": [
+      [
+        "\u250a",
+        3359
+      ],
+      [
+        "\u2592",
+        3049
+      ],
+      [
+        " ",
+        1377
+      ],
+      [
+        "\u2500",
+        943
+      ],
+      [
+        "\u2591",
+        839
+      ],
+      [
+        "\u2502",
+        773
+      ],
+      [
+        "\u2506",
+        717
+      ],
+      [
+        "\u2593",
+        694
+      ],
+      [
+        "\u2699",
+        517
+      ],
+      [
+        "\u25aa",
+        374
+      ],
+      [
+        "\u25ab",
+        374
+      ],
+      [
+        "\u00b7",
+        308
+      ]
+    ],
+    "prefix": "\u001b[1;14H\u001b[38;5;25m\u2500\u001b[5C \u001b[38;5;71m\u00b7 \u001b[52G  \u001b[38;5;113m\u2502\u001b[84G \u001b[95G\u2699\u001b[5C\u001b[38;5;59m\u250a\u250a\u250a\u250a\u250a      \u001b[38;5;143m\u25aa\u001b[83C\u001b[38;5;149m\u2502\u001b[C\u253c\u001b[4C\u001b[38;5;59m\u2592\u001b[22C\u250a\u250a\u250a\u250a\u001b[4C\u2591\u2591\u2591        \u001b[38;5;149m\u2502\u001b[9C \u001b[26C\u001b[38;5;113m\u2502\u001b[7C \u001b[30C\u001b[38;5;106m\u2500\u001b[36C\u001b[38;5;25m\u2502\u001b[2;3",
+    "baseline_logged_minus_candidate_art_bytes": 2296
+  }
+]
