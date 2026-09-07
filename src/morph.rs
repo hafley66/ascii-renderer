@@ -1290,6 +1290,7 @@ pub(crate) fn morph_worker_session(
     });
 
     'frames: loop {
+        let frame_started = Instant::now();
         if strat != encoded_strat {
             frame_encoder.invalidate();
             encoded_strat.clone_from(&strat);
@@ -1573,14 +1574,17 @@ pub(crate) fn morph_worker_session(
         }
 
         if events.is_empty() {
+            // Rendering and output backpressure consume the frame budget too.
+            // An over-budget frame polls input immediately before continuing.
+            let input_wait = Duration::from_millis(16).saturating_sub(frame_started.elapsed());
             if let Some(receiver) = &input {
-                match receiver.recv_timeout(Duration::from_millis(16)) {
+                match receiver.recv_timeout(input_wait) {
                     Ok(event) => events.push(event),
                     Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => break,
                     Err(_) => {}
                 }
                 events.extend(receiver.try_iter().take(31));
-            } else if event::poll(Duration::from_millis(16)).unwrap_or(false) {
+            } else if event::poll(input_wait).unwrap_or(false) {
                 if let Ok(event) = event::read() {
                     events.push(event);
                 }

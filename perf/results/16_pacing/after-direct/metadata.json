@@ -1,0 +1,24 @@
+{
+  "binary": "/Users/chrishafley/projects/ascii-renderer/target/release/ascii-renderer",
+  "sha256": "2d22a1454126f153df904a9e47fb2bf395fbf40ada026286cdb3faf8c3a85f92",
+  "requested_terminal": [
+    400,
+    200
+  ],
+  "frames": 8,
+  "direct": true,
+  "knobs": {
+    "COMETS": 11.0,
+    "GEARS": 7.0,
+    "HARMONY": 7.0,
+    "NEBULA": 1.25,
+    "PLANETS": 9.0,
+    "PULSE": 0.1,
+    "RAYS": 0.8,
+    "RINGS": 9.0,
+    "RUNES": 0.3,
+    "SPEED": 2.35,
+    "TILT": 0.6,
+    "ZODIAC": 19.0
+  }
+}

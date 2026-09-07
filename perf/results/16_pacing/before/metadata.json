@@ -1,0 +1,23 @@
+{
+  "binary": "/private/tmp/ascii-pacing-before",
+  "sha256": "0ce5438b5e1a79c6578ec82a1a697650acc2cd8886a6b2d8a3e47fe4dde93671",
+  "requested_terminal": [
+    400,
+    200
+  ],
+  "frames": 8,
+  "knobs": {
+    "COMETS": 11.0,
+    "GEARS": 7.0,
+    "HARMONY": 7.0,
+    "NEBULA": 1.25,
+    "PLANETS": 9.0,
+    "PULSE": 0.1,
+    "RAYS": 0.8,
+    "RINGS": 9.0,
+    "RUNES": 0.3,
+    "SPEED": 2.35,
+    "TILT": 0.6,
+    "ZODIAC": 19.0
+  }
+}

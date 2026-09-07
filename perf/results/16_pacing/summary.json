@@ -1,0 +1,20 @@
+{
+  "before": {
+    "interval_ms": 70.2558965,
+    "dur_us": 50959.0,
+    "presentation_us": 46529.0,
+    "render_us": 1736.5,
+    "encoding_us": 2187.5,
+    "fps_from_median": 14.233680727424778,
+    "median_outside_frame_ms": 19.066499999999998
+  },
+  "after": {
+    "interval_ms": 62.328520999999995,
+    "dur_us": 62303.0,
+    "presentation_us": 58903.5,
+    "render_us": 1140.5,
+    "encoding_us": 2210.0,
+    "fps_from_median": 16.0440193984388,
+    "median_outside_frame_ms": 0.030895499999999743
+  }
+}
