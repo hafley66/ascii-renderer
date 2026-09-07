@@ -313,6 +313,10 @@ fn unix_ms() -> u64 {
 #[derive(Default, serde::Serialize)]
 pub(crate) struct RelayTotals {
     pub(crate) bytes: usize,
+    pub(crate) read_calls: usize,
+    pub(crate) write_calls: usize,
+    pub(crate) max_read_bytes: usize,
+    pub(crate) max_write_bytes: usize,
     pub(crate) read_us: u64,
     pub(crate) write_us: u64,
     pub(crate) input_us: u64,

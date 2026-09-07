@@ -186,6 +186,8 @@ exit, even when no frame completes. `pid` identifies the input supervisor and
 Within each relay interval, `timing` separates child-pipe reads, terminal writes,
 input polling, control forwarding, waits for child output, and waits for terminal
 writability. `unattributed_us` covers bookkeeping and timer granularity.
+`read_calls` and `write_calls` expose relay hop count; `max_read_bytes` and
+`max_write_bytes` expose the largest accepted batch at each boundary.
 `write_blocked` counts unsuccessful terminal writes; `max_input_gap_us` measures
 the gap between actual input polls. Worker `presentation_us` overlaps these
 relay stages, so do not add it to relay durations.
@@ -198,7 +200,7 @@ control delays from delays before input reaches the process or after output
 leaves it.
 
 The relay checks input every 2 ms. After eight consecutive failed terminal
-writes, subsequent retries wait at least 25 microseconds until a write succeeds. This handles a PTY reporting writable while its next
+writes, subsequent retries wait at least 1 millisecond until a write succeeds. This handles a PTY reporting writable while its next
 write still returns `WouldBlock` without spinning through input polling.
 
 Reproduce the pane-size all-max workload through an isolated tmux server:

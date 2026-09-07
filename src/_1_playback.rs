@@ -15,7 +15,7 @@ use std::os::unix::{fs::OpenOptionsExt, process::CommandExt};
 use std::process::{Child, Command, Stdio};
 use std::time::{Duration, Instant};
 
-const OUTPUT_BYTES: usize = 32 * 1024;
+const RELAY_BATCH_BYTES: usize = 256 * 1024;
 // POLLOUT on a macOS PTY can remain asserted while nonblocking writes return
 // EAGAIN. A sub-millisecond retry loop generated 64k write calls/second in the
 // 1718x348 repro. Keep input polling frequent, but pace terminal retries.
@@ -133,8 +133,8 @@ fn pump(
     let mut pending = VecDeque::<Vec<u8>>::new();
     let mut sending = Vec::new();
     let mut sent = 0;
-    let mut bytes = vec![0u8; OUTPUT_BYTES];
-    let mut display = Vec::with_capacity(OUTPUT_BYTES * 2);
+    let mut bytes = vec![0u8; RELAY_BATCH_BYTES];
+    let mut display = Vec::with_capacity(RELAY_BATCH_BYTES);
     let mut displayed = 0;
     let mut eof = false;
     let mut consecutive_write_stalls = 0;
@@ -211,15 +211,21 @@ fn pump(
             match output.read(&mut bytes) {
                 Ok(0) => eof = true,
                 Ok(n) => {
+                    profile.totals.read_calls += 1;
+                    profile.totals.max_read_bytes = profile.totals.max_read_bytes.max(n);
                     display.clear();
                     displayed = 0;
-                    for &byte in &bytes[..n] {
-                        // Preview CLI output uses LF, while raw terminal mode
-                        // requires explicit carriage return. Worker output is ANSI.
-                        if !animation && byte == b'\n' {
-                            display.push(b'\r');
+                    if animation {
+                        display.extend_from_slice(&bytes[..n]);
+                    } else {
+                        for &byte in &bytes[..n] {
+                            // Preview CLI output uses LF, while raw terminal mode
+                            // requires explicit carriage return. Worker output is ANSI.
+                            if byte == b'\n' {
+                                display.push(b'\r');
+                            }
+                            display.push(byte);
                         }
-                        display.push(byte);
                     }
                 }
                 Err(e)
@@ -234,6 +240,7 @@ fn pump(
         if displayed < display.len() {
             let write_started = Instant::now();
             let written = terminal.write(&display[displayed..]);
+            profile.totals.write_calls += 1;
             let write_us = write_started.elapsed().as_micros() as u64;
             profile.totals.write_us += write_us;
             profile.totals.max_write_us = profile.totals.max_write_us.max(write_us);
@@ -243,6 +250,7 @@ fn pump(
                     consecutive_write_stalls = 0;
                     displayed += n;
                     profile.totals.bytes += n;
+                    profile.totals.max_write_bytes = profile.totals.max_write_bytes.max(n);
                     progressed = true;
                 }
                 Err(e)
@@ -386,7 +394,7 @@ pub(crate) fn write_frame(
                 }
             }
         }
-        match output.write(&bytes[..bytes.len().min(OUTPUT_BYTES)]) {
+        match output.write(bytes) {
             Ok(0) => return Err(io::ErrorKind::WriteZero.into()),
             Ok(n) => bytes = &bytes[n..],
             Err(error) if error.kind() == io::ErrorKind::Interrupted => continue,
@@ -490,6 +498,37 @@ mod tests {
                 .kind(),
             io::ErrorKind::BrokenPipe
         );
+    }
+
+    #[test]
+    fn frame_writer_attempts_one_contiguous_application_batch() {
+        struct BatchWriter {
+            readiness: std::fs::File,
+            requests: Vec<usize>,
+        }
+        impl AsFd for BatchWriter {
+            fn as_fd(&self) -> BorrowedFd<'_> {
+                self.readiness.as_fd()
+            }
+        }
+        impl Write for BatchWriter {
+            fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
+                self.requests.push(bytes.len());
+                Ok(bytes.len())
+            }
+            fn flush(&mut self) -> io::Result<()> {
+                Ok(())
+            }
+        }
+        let (sender, receiver) = std::sync::mpsc::channel();
+        let frame = vec![b'x'; 300 * 1024];
+        let mut writer = BatchWriter {
+            readiness: OpenOptions::new().write(true).open("/dev/null").unwrap(),
+            requests: Vec::new(),
+        };
+        assert!(write_frame(&mut writer, &frame, &receiver, &mut Vec::new()).unwrap());
+        assert_eq!(writer.requests, [frame.len()]);
+        drop(sender);
     }
 
     /// Complete CLI frames through the same pipe and nonblocking PTY relay as demo.
