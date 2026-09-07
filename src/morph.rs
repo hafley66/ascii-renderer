@@ -955,6 +955,46 @@ mod iterate_frame_tests {
     }
 
     #[test]
+    fn gem_bad_roll6_ansi_regression() {
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../perf/fixtures/12_gem_aetherium_2_bad_roll6.json"
+        ))
+        .unwrap();
+        let mode = fixture["mode"].as_str().unwrap();
+        let seed = fixture["seed"].as_u64().unwrap();
+        let theme = fixture["theme"].as_str().unwrap();
+        let w = fixture["grid"]["w"].as_u64().unwrap() as usize;
+        let h = fixture["grid"]["h"].as_u64().unwrap() as usize;
+        let spec = mode_spec(mode);
+        let values = spec
+            .params
+            .iter()
+            .map(|param| fixture["knobs"][param.key].as_f64().unwrap() as f32)
+            .collect::<Vec<_>>();
+        let mut renderer = IterateFrameRenderer::new(mode, seed, theme, w, h).unwrap();
+        let mut encoder = AnsiFrameEncoder::new();
+        let mut output = String::new();
+        let mut totals = AnsiComposition::default();
+
+        for frame in 0..60 {
+            let grid = renderer.render(frame as f32 * 0.06, Some(&values)).unwrap();
+            encoder.encode(grid, false, &mut output);
+            classify_ansi(output.as_bytes(), &mut totals);
+        }
+
+        assert_eq!(
+            (
+                totals.bytes,
+                totals.controls,
+                totals.foreground_bytes,
+                totals.glyph_bytes,
+                totals.cursor_bytes,
+            ),
+            (7_061_339, 576_429, 3_629_228, 2_455_888, 975_983)
+        );
+    }
+
+    #[test]
     #[ignore = "release animation encoder probe with deterministic knob rerolls"]
     fn perf_gem_animation_rerolls() {
         for (w, h) in [(320, 103), (2000, 2000)] {
