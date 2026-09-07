@@ -1,0 +1,306 @@
+[
+  {
+    "status": "passed",
+    "backend": "crossterm",
+    "pattern": "static",
+    "consumer": "native",
+    "terminal": [
+      400,
+      200
+    ],
+    "frames": 8,
+    "steady_frames": 7,
+    "metrics": {
+      "fill_us": {
+        "median": 1125,
+        "max": 1233
+      },
+      "library_us": {
+        "median": 815,
+        "max": 1178
+      },
+      "output_us": {
+        "median": 3,
+        "max": 5
+      },
+      "total_us": {
+        "median": 1951,
+        "max": 2308
+      },
+      "bytes": {
+        "median": 41,
+        "max": 41
+      }
+    },
+    "bytes_read": 1080108,
+    "parser_us": 4560,
+    "elapsed_us": 69556,
+    "scope": "drawing lab; application generation and GUI painting excluded"
+  },
+  {
+    "status": "passed",
+    "backend": "termion",
+    "pattern": "static",
+    "consumer": "native",
+    "terminal": [
+      400,
+      200
+    ],
+    "frames": 8,
+    "steady_frames": 7,
+    "metrics": {
+      "fill_us": {
+        "median": 1040,
+        "max": 1192
+      },
+      "library_us": {
+        "median": 702,
+        "max": 1921
+      },
+      "output_us": {
+        "median": 3,
+        "max": 7
+      },
+      "total_us": {
+        "median": 1741,
+        "max": 3033
+      },
+      "bytes": {
+        "median": 35,
+        "max": 35
+      }
+    },
+    "bytes_read": 864540,
+    "parser_us": 3876,
+    "elapsed_us": 45355,
+    "scope": "drawing lab; application generation and GUI painting excluded"
+  },
+  {
+    "status": "passed",
+    "backend": "crossterm",
+    "pattern": "sparse",
+    "consumer": "native",
+    "terminal": [
+      400,
+      200
+    ],
+    "frames": 8,
+    "steady_frames": 7,
+    "metrics": {
+      "fill_us": {
+        "median": 993,
+        "max": 1024
+      },
+      "library_us": {
+        "median": 1017,
+        "max": 1292
+      },
+      "output_us": {
+        "median": 932,
+        "max": 979
+      },
+      "total_us": {
+        "median": 2988,
+        "max": 3191
+      },
+      "bytes": {
+        "median": 76056,
+        "max": 76137
+      }
+    },
+    "bytes_read": 585735,
+    "parser_us": 3432,
+    "elapsed_us": 39044,
+    "scope": "drawing lab; application generation and GUI painting excluded"
+  },
+  {
+    "status": "passed",
+    "backend": "termion",
+    "pattern": "sparse",
+    "consumer": "native",
+    "terminal": [
+      400,
+      200
+    ],
+    "frames": 8,
+    "steady_frames": 7,
+    "metrics": {
+      "fill_us": {
+        "median": 997,
+        "max": 1062
+      },
+      "library_us": {
+        "median": 950,
+        "max": 1852
+      },
+      "output_us": {
+        "median": 667,
+        "max": 979
+      },
+      "total_us": {
+        "median": 2685,
+        "max": 3360
+      },
+      "bytes": {
+        "median": 62529,
+        "max": 62592
+      }
+    },
+    "bytes_read": 484452,
+    "parser_us": 2808,
+    "elapsed_us": 37208,
+    "scope": "drawing lab; application generation and GUI painting excluded"
+  },
+  {
+    "status": "passed",
+    "backend": "crossterm",
+    "pattern": "mono",
+    "consumer": "native",
+    "terminal": [
+      400,
+      200
+    ],
+    "frames": 8,
+    "steady_frames": 7,
+    "metrics": {
+      "fill_us": {
+        "median": 1092,
+        "max": 1099
+      },
+      "library_us": {
+        "median": 2368,
+        "max": 2585
+      },
+      "output_us": {
+        "median": 1432,
+        "max": 1542
+      },
+      "total_us": {
+        "median": 4875,
+        "max": 5155
+      },
+      "bytes": {
+        "median": 161545,
+        "max": 161545
+      }
+    },
+    "bytes_read": 1240796,
+    "parser_us": 7293,
+    "elapsed_us": 53609,
+    "scope": "drawing lab; application generation and GUI painting excluded"
+  },
+  {
+    "status": "passed",
+    "backend": "termion",
+    "pattern": "mono",
+    "consumer": "native",
+    "terminal": [
+      400,
+      200
+    ],
+    "frames": 8,
+    "steady_frames": 7,
+    "metrics": {
+      "fill_us": {
+        "median": 1068,
+        "max": 1149
+      },
+      "library_us": {
+        "median": 1494,
+        "max": 2632
+      },
+      "output_us": {
+        "median": 1153,
+        "max": 1265
+      },
+      "total_us": {
+        "median": 3727,
+        "max": 4901
+      },
+      "bytes": {
+        "median": 137536,
+        "max": 137536
+      }
+    },
+    "bytes_read": 1072727,
+    "parser_us": 7166,
+    "elapsed_us": 45084,
+    "scope": "drawing lab; application generation and GUI painting excluded"
+  },
+  {
+    "status": "passed",
+    "backend": "crossterm",
+    "pattern": "color",
+    "consumer": "native",
+    "terminal": [
+      400,
+      200
+    ],
+    "frames": 8,
+    "steady_frames": 7,
+    "metrics": {
+      "fill_us": {
+        "median": 1133,
+        "max": 1345
+      },
+      "library_us": {
+        "median": 5842,
+        "max": 6307
+      },
+      "output_us": {
+        "median": 9136,
+        "max": 9759
+      },
+      "total_us": {
+        "median": 16322,
+        "max": 16579
+      },
+      "bytes": {
+        "median": 1083386,
+        "max": 1083386
+      }
+    },
+    "bytes_read": 8663510,
+    "parser_us": 37635,
+    "elapsed_us": 148220,
+    "scope": "drawing lab; application generation and GUI painting excluded"
+  },
+  {
+    "status": "passed",
+    "backend": "termion",
+    "pattern": "color",
+    "consumer": "native",
+    "terminal": [
+      400,
+      200
+    ],
+    "frames": 8,
+    "steady_frames": 7,
+    "metrics": {
+      "fill_us": {
+        "median": 1112,
+        "max": 1165
+      },
+      "library_us": {
+        "median": 4436,
+        "max": 4861
+      },
+      "output_us": {
+        "median": 6296,
+        "max": 7789
+      },
+      "total_us": {
+        "median": 12239,
+        "max": 13635
+      },
+      "bytes": {
+        "median": 855857,
+        "max": 855857
+      }
+    },
+    "bytes_read": 6855284,
+    "parser_us": 29892,
+    "elapsed_us": 122642,
+    "scope": "drawing lab; application generation and GUI painting excluded"
+  }
+]

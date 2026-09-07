@@ -25,6 +25,30 @@ def worker(args):
     parse_ns = byte_count = 0
     if args.consumer == 'memory':
         subprocess.run(command, env=env, stdout=subprocess.DEVNULL, check=True, timeout=10)
+    elif args.consumer == 'native':
+        driver = subprocess.Popen([str(ROOT/'target/release/examples/1_native_terminal'),
+            '400','200',str(directory/'terminal.ansi.gz'),*command], env=env,
+            stdin=subprocess.PIPE,stdout=subprocess.PIPE,text=True)
+        def request(op, **fields):
+            driver.stdin.write(json.dumps(dict(op=op,**fields))+'\n');driver.stdin.flush()
+            return json.loads(driver.stdout.readline())
+        try:
+            assert json.loads(driver.stdout.readline())['ready']
+            deadline=time.monotonic()+10
+            while True:
+                status=request('status')
+                if status['reader_done']:break
+                if time.monotonic()>deadline:raise TimeoutError('native terminal completion')
+                time.sleep(.005)
+            assert status['exit_code']==0 and status['error'] is None,status
+            byte_count=status['bytes'];parse_ns=status['parse_us']*1000
+            snapshot=request('capture')
+            (directory/'cells.sha256').write_text(hashlib.sha256(json.dumps(snapshot['rows']).encode()).hexdigest()+'\n')
+            driver.stdin.write('{"op":"quit"}\n');driver.stdin.flush()
+            driver.wait(timeout=1)
+        finally:
+            if driver.poll() is None:
+                driver.kill();driver.wait()
     else:
         child = pexpect.spawn(command[0], command[1:], env=env, dimensions=(200,400), maxread=65536)
         screen = pyte.Screen(400,200)
@@ -69,7 +93,7 @@ def main():
     parser.add_argument('--worker',action='store_true')
     parser.add_argument('--backend',choices=['crossterm','termion'])
     parser.add_argument('--pattern',choices=['static','sparse','mono','color'])
-    parser.add_argument('--consumer',choices=['memory','drain','pyte'])
+    parser.add_argument('--consumer',choices=['memory','drain','native','pyte'])
     args=parser.parse_args();args.directory=args.directory.resolve()
     if args.worker:
         worker(args);return
@@ -77,7 +101,7 @@ def main():
     results=[]
     for pattern in ('static','sparse','mono','color'):
         for backend in ('crossterm','termion'):
-            for consumer in ('memory','drain','pyte'):
+            for consumer in ((args.consumer,) if args.consumer else ('memory','drain','native')):
                 directory=args.directory/f'{pattern}-{backend}-{consumer}'
                 directory.mkdir()
                 command=[sys.executable,str(ROOT/'scripts/5_probe_guard.py'),
@@ -92,9 +116,12 @@ def main():
                 results.append(json.loads((directory/'result.json').read_text()))
                 print(f'{pattern} {backend} {consumer}: {results[-1]["metrics"]["total_us"]}',flush=True)
                 (args.directory/'results.json').write_text(json.dumps(results,indent=2)+'\n')
-        left=(args.directory/f'{pattern}-crossterm-pyte/cells.sha256').read_text()
-        right=(args.directory/f'{pattern}-termion-pyte/cells.sha256').read_text()
-        assert left==right, f'{pattern}: library terminal cells differ'
-    (args.directory/'equivalence.json').write_text(json.dumps({'status':'passed','patterns':4,'cells_per_pattern':80000})+'\n')
+        if args.consumer in (None, 'native', 'pyte'):
+            consumer=args.consumer or 'native'
+            left=(args.directory/f'{pattern}-crossterm-{consumer}/cells.sha256').read_text()
+            right=(args.directory/f'{pattern}-termion-{consumer}/cells.sha256').read_text()
+            assert left==right, f'{pattern}: library terminal cells differ'
+    checked = args.consumer in (None, 'native', 'pyte')
+    (args.directory/'equivalence.json').write_text(json.dumps({'status':'passed' if checked else 'not_checked','patterns':4 if checked else 0,'cells_per_pattern':80000})+'\n')
 
 if __name__=='__main__':main()

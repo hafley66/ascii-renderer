@@ -8,6 +8,7 @@ if [[ ! -x "$e2e_venv/bin/python" ]]; then
 fi
 "$e2e_venv/bin/pip" --disable-pip-version-check install --quiet -r scripts/11_e2e_requirements.txt
 cargo build --release --locked
+cargo build --release --locked --example 1_native_terminal -j 2
 "$e2e_venv/bin/python" scripts/5_probe_guard_test.py
 "$e2e_venv/bin/python" scripts/12_test_e2e_test.py
 exec "$e2e_venv/bin/python" scripts/12_test_e2e.py "$@"

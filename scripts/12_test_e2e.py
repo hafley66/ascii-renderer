@@ -208,13 +208,14 @@ class DemoCase:
         Image.init()  # Import decoders before the live observer starts.
         self.d.mkdir(parents=True)
         self.result.update(binary=support.binary_identity(self.binary, ROOT))
+        mode = getattr(self.args, 'mode', 'gem-aetherium-2')
         fixture = json.loads((ROOT/'perf/fixtures/12_gem_aetherium_2_bad_roll6.json').read_text())
-        if self.name == 'max-400x200':
-            fixture = json.loads(subprocess.check_output([str(self.binary), 'inputs', 'gem-aetherium-2', 'max'], timeout=2))
+        if self.name == 'max-400x200' or mode != 'gem-aetherium-2':
+            fixture = json.loads(subprocess.check_output([str(self.binary), 'inputs', mode, 'max' if self.name == 'max-400x200' else 'default'], timeout=2))
         config = self.d/'config/ascii-renderer'
         config.mkdir(parents=True)
         (config/'options.tsv').write_text('__global\tRAND\t0\n'+''.join(
-            f'gem-aetherium-2\t{k}\t{v}\n' for k,v in fixture['knobs'].items()))
+            f'{mode}\t{k}\t{v}\n' for k,v in fixture['knobs'].items()))
         support.write_json(self.d/'fixture.json', fixture)
         size = (160,40) if self.name == 'workflow' else (400,200)
         watch_pid = await self.open_terminal(size)
@@ -247,29 +248,29 @@ class DemoCase:
             self.checkpoint('actual-demo-startup', terminal=list(size))
             await self.key('open-mode-picker','/')
             await self.screen_until('mode-picker', lambda s: 'cancel' in s.lower())
-            await self.key('find-gem','gem-aetherium-2')
-            await self.screen_until('mode-filter', lambda s: 'gem-aetherium-2' in s)
+            await self.key('find-mode',mode)
+            await self.screen_until('mode-filter', lambda s: mode in s)
             await self.key('select-gem','\r')
-            await self.screen_until('gem-preview', lambda s: 'gem-aetherium-2' in s and 'a=animate' in s)
+            await self.screen_until('gem-preview', lambda s: mode in s and 'a=animate' in s)
             self.checkpoint('mode-search-and-preview')
             if self.name == 'workflow':
                 await self.key('save-exact-preset','s')
-                await self.screen_until('saved-preset', lambda s: 'saved:gem-aetherium-2' in s)
+                await self.screen_until('saved-preset', lambda s: ('saved:'+mode) in s)
                 presets = json.loads((config/'presets.json').read_text())
                 support.write_json(self.d/'saved-presets.json', presets)
                 saved = presets['presets']
-                assert len(saved)==1 and saved[0]['mode']=='gem-aetherium-2' and saved[0]['seed']==42, saved
+                assert len(saved)==1 and saved[0]['mode']==mode and saved[0]['seed']==42, saved
                 assert all(abs(saved[0]['knobs'][k]-v)<1e-5 for k,v in fixture['knobs'].items()), saved
                 self.checkpoint('modeless-save', file=str(config/'presets.json'))
             await self.key('animate','a')
         await self.wait('first native frame', lambda _: bool(self.frames()), 3)
         first = self.frames()[0]
-        assert first['seed']==42 and first['mode']=='gem-aetherium-2' and first['strategy']=='iterate', first
+        assert first['seed']==42 and first['mode']==mode and first['strategy']=='iterate', first
         assert first['terminal_size']==dict(w=size[0],h=size[1]), first
         assert first['grid']==dict(w=size[0]-34,h=size[1]-1), first
         assert all(abs(first['knobs'][k]-v)<1e-5 for k,v in fixture['knobs'].items()), first
         self.checkpoint('exact-animation-inputs', frame=first)
-        await self.screen_until('animation-ui', lambda s: 't=' in s and 'gem-aetherium-2' in s)
+        await self.screen_until('animation-ui', lambda s: 't=' in s and mode in s)
         pixels_before = await self.capture('animation-before')
         start = len(self.frames())
         await self.wait('animation progresses', lambda _: len(self.frames())>=start+3)
@@ -289,7 +290,7 @@ class DemoCase:
             sent=await self.key('exit-native-cli','q')
         else:
             await self.key('return-to-demo','q')
-            await self.screen_until('returned-demo', lambda s: 'a=animate' in s and 'gem-aetherium-2' in s)
+            await self.screen_until('returned-demo', lambda s: 'a=animate' in s and mode in s)
             self.checkpoint('q-returns-to-demo')
             self.closed = True
             sent = await self.key('exit-demo','\x03' if self.name != 'workflow' else 'q')
@@ -311,7 +312,7 @@ class DemoCase:
         if self.name != 'workflow':
             measured = self.result['steady']['interval_ms']
             if getattr(self.args, 'headless', False):
-                self.result['performance_gate'] = 'not_evaluated: pyte consumer participates in output backpressure'
+                self.result['performance_gate'] = 'native-consumer cadence; GUI painting untested'
                 self.result['consumer_cadence'] = measured
             else:
                 self.result['budget'] = {'p95_frame_interval_ms': 33.34, 'max_frame_interval_ms': 100}
@@ -394,6 +395,7 @@ def backpressure_case(args):
         '--state', str(directory/'guard.ndjson'), '--artifact-dir', str(directory),
         '--owner-pid', str(os.getpid()), '--', sys.executable,
         str(ROOT/'scripts/4_test_input_latency.py'), str(args.binary),
+        '--mode', getattr(args,'mode','gem-aetherium-2'),
         '--size', '366x199', '--stall', '1', '--sampled', '--max-ms', '250',
         '--directory', str(directory/'inputs')]
     if args.function_trace:
@@ -454,8 +456,9 @@ def main():
     parser.add_argument('--binary', type=Path, default=ROOT/'target/release/ascii-renderer')
     parser.add_argument('--directory', type=Path, default=ROOT/f'perf/results/e2e-{time.time_ns()//1_000_000}')
     parser.add_argument('--case', choices=['all','backpressure','workflow','bad-400x200','max-400x200'], default='all')
+    parser.add_argument('--mode', default='gem-aetherium-2', help='Registered mode exercised by the shared demo workflow')
     parser.add_argument('--function-trace', action='store_true', help='Record every instrumented function into each guarded case directory; run GUI cases first')
-    parser.add_argument('--headless', action='store_true', help='Real demo/PTY with Pexpect and pyte; no GUI focus or terminal paint measurements')
+    parser.add_argument('--headless', action='store_true', help='Real demo/PTY with native portable-pty and vt100; no GUI focus or painting measurements')
     args = parser.parse_args()
     args.binary, args.directory = args.binary.resolve(), args.directory.resolve()
     args.directory.mkdir(parents=True, exist_ok=False)
