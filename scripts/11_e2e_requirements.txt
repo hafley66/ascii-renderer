@@ -1,0 +1,9 @@
+iterm2==2.20
+Pillow==12.1.1
+protobuf==7.36.1
+websockets==17.1
+pyobjc-core==12.2.2
+pyobjc-framework-Cocoa==12.2.2
+pyobjc-framework-Quartz==12.2.1
+pexpect==4.9.0
+pyte==0.8.2

@@ -26,6 +26,12 @@ cargo insta review            # review pending snapshot changes
 cargo insta accept            # accept all pending changes (use after visual review)
 ```
 
+### Terminal E2E validation
+
+- Run `scripts/13_e2e.sh` for animation playback, terminal output, or live-control changes. The contract and limits are in `perf/0_E2E.md`.
+- Report the actual suite status and unexecuted cases. PTY draining, ANSI replay, and unit tests do not establish the live iTerm E2E result.
+- Preserve failing runs and their exact inputs. A safety trip is a failure; never increase its limits to obtain a pass.
+
 ### Rules
 
 - Every mode gets at least one snapshot test with a fixed seed
@@ -105,5 +111,5 @@ Key modules:
 - Expose tuning knobs through the file-owned `Mode::params` declaration. Keep registry defaults equal to renderer fallbacks.
 - Live UI knobs use thread-local overrides; preview subprocesses receive `Command::env`. Keep process environment immutable after startup so native renderers can use worker threads.
 - Commit at each milestone for rewind points.
-- Live performance probes require an external watchdog before launch. Bound wall time, owned-process RSS, terminal-process RSS growth, and artifact disk usage; stop the owned process tree on a threshold breach, observer failure, or lost focus. `scripts/5_probe_guard.py` provides the current probe guard. Its polled thresholds permit some overshoot and do not replace OS resource limits.
+- Live performance probes require an external watchdog before launch. Bound wall time, owned-process RSS, terminal-process RSS growth, and artifact disk usage; stop the owned process tree on a threshold breach or observer failure. Foreground GUI probes also stop on lost focus. User-authorized headless probes use transport liveness and observer heartbeats without a foreground-focus requirement; they measure terminal cells and application execution, not GUI painting. `scripts/5_probe_guard.py` provides the current probe guard. Its polled thresholds permit some overshoot and do not replace OS resource limits.
 - Once a reproduction shows the bottleneck, analyze that evidence before extending the stress duration. Do not raise probe limits or run longer stress experiments without the user's direction.

@@ -5,6 +5,7 @@ terminal restoration separately from process exit while reads remain paused.
 Usage: python3 scripts/4_test_input_latency.py [binary] --size 286x103 --stall 10
 """
 import argparse
+import contextlib
 import fcntl
 import json
 import os
@@ -26,6 +27,7 @@ parser.add_argument('--size', default='286x103')
 parser.add_argument('--stall', type=float, default=10)
 parser.add_argument('--key', choices=['both', 'knob', 'quit'], default='both')
 parser.add_argument('--tmux', action='store_true', help='include an isolated tmux server and client')
+parser.add_argument('--directory', type=Path, help='preserve isolated config and traces under a fresh directory')
 parser.add_argument('--sampled', action='store_true', help='verify deterministic every-tenth-frame traces with slow-frame logging suppressed')
 parser.add_argument('--max-ms', type=float, help='fail if applying an input exceeds this latency')
 args = parser.parse_args()
@@ -35,7 +37,13 @@ fixture = json.loads(subprocess.check_output([binary, 'inputs', args.mode, 'max'
 
 
 def check(key):
-    with tempfile.TemporaryDirectory(prefix='ascii-input-latency-') as directory:
+    if args.directory:
+        directory = args.directory.resolve()/('quit' if key==b'q' else 'knob')
+        directory.mkdir(parents=True, exist_ok=False)
+        workspace = contextlib.nullcontext(directory)
+    else:
+        workspace = tempfile.TemporaryDirectory(prefix='ascii-input-latency-')
+    with workspace as directory:
         directory = Path(directory)
         config = directory / 'ascii-renderer' / 'options.tsv'
         config.parent.mkdir()

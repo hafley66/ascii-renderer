@@ -34,6 +34,29 @@ def descendants(table, root):
         owned = expanded
 
 
+def observer_violation(path, now_ms):
+    """Fail closed when the GUI observer stalls, disconnects, or loses focus."""
+    if path is None:
+        return None
+    try:
+        state = json.loads(pathlib.Path(path).read_text())
+        age = now_ms - state['ts_ms']
+        if not 0 <= age <= 1500:
+            return 'observer_stale'
+        if state.get('stop_reason'):
+            return 'observer_requested_stop'
+        if state.get('error'):
+            return 'observer_failure'
+        if state.get('mode') == 'headless':
+            if state.get('transport_alive') is not True:
+                return 'observer_transport_lost'
+        elif state['focused'] is not True:
+            return 'observer_focus_lost'
+    except (OSError, ValueError, KeyError, TypeError):
+        return 'observer_invalid'
+    return None
+
+
 def violation(*, elapsed, max_seconds, owned_kib, max_owned_kib,
               watched_kib, baseline_kib, max_watched_kib, max_growth_kib,
               artifact_bytes, max_artifact_bytes, free_bytes, min_free_bytes,
@@ -83,6 +106,8 @@ def run(args):
             if child:
                 owned |= descendants(table, child.pid)
             own_rss = sum(table.get(pid, (0, 0))[1] for pid in owned)
+            if args.owner_pid is not None and args.owner_pid not in owned:
+                own_rss += table.get(args.owner_pid, (0, 0))[1]
             watched = table.get(args.watch_pid, (0, 0))[1]
             if args.watch_pid and args.watch_pid not in table:
                 reason = reason or 'watched_process_exited'
@@ -96,6 +121,7 @@ def run(args):
                 free_bytes=shutil.disk_usage(artifact).free,
                 min_free_bytes=args.min_free_gib*1024**3,
                 owner_alive=args.owner_pid is None or args.owner_pid in table)
+            reason = reason or observer_violation(args.observer_state, time.time_ns()//1_000_000)
             reason = reason or violation(**values)
             record('check', **values)
             if reason:
@@ -162,6 +188,7 @@ if __name__ == '__main__':
     parser.add_argument('--state', required=True)
     parser.add_argument('--artifact-dir', required=True)
     parser.add_argument('--owner-pid', type=int)
+    parser.add_argument('--observer-state', help='atomic GUI heartbeat JSON; stale after 1.5 s')
     parser.add_argument('--save-profiler-on-stop', action='store_true',
                         help='after killing workload descendants, allow profiler parent 2 s to save')
     parser.add_argument('--watch-pid', type=int)
