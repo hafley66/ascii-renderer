@@ -68,6 +68,8 @@ def check(width, height):
             os.close(gate_read)
             env = dict(os.environ, ASCII_TRACE_PATH=str(trace), ASCII_TRACE_ALL='1',
                        XDG_CONFIG_HOME=directory)
+            # Match the colored demo E2E even when the runner exports NO_COLOR.
+            env.pop('NO_COLOR', None)
             command = [binary, '42', 'morph', 'auto', args.mode, '42', args.mode, '43', 'iterate']
             if args.tmux:
                 env['TERM'] = 'xterm-256color'

@@ -1,5 +1,5 @@
 //! Celestial engraving with bounded animated ink. Independent of Gem 1 and 2.
-//! Per frame: O(W*H + R*min(3*(W+H),4096) + M*log(M)), M <= 1170.
+//! Per frame: O(W*H + R*min(3*(W+H),4096) + M*log(M)), M <= 638.
 //! Bounded circle/mark/sort scratch; no retained simulation or per-cell IO.
 use crate::opts::param_f32;
 use crate::registry::{AnimKind, Mode, ModeFrame, Param};
@@ -202,10 +202,10 @@ fn draw(
     }
 
     // The dial is stationary; all moving geometry shares one depth-sorted list.
-    // Reconstructed each frame, with a proven 1280-mark upper bound below.
+    // Reconstructed each frame, with a proven 638-mark upper bound below.
     let mut moving = Vec::with_capacity(MAX_MOVING_MARKS);
     let gimbals = 2 + (rings as usize - 2) / 5;
-    let ring_samples = 384 / gimbals;
+    let ring_samples = 192 / gimbals;
     for ring in 0..gimbals {
         let orientation = Plane::new(
             0.35 + tilt * 0.9 + (t * 0.43 + ring as f32).sin() * 0.6,
@@ -240,9 +240,9 @@ fn draw(
     }
 
     // The alidade spans the dial, including a broad sweeping silhouette at t=0.
-    // <=385 samples independently of terminal dimensions. No interpolated fill.
+    // <=129 samples independently of terminal dimensions. No interpolated fill.
     let (arm_s, arm_c) = (phase + t * 0.72).sin_cos();
-    let arm_samples = width.max(height).clamp(16, 384);
+    let arm_samples = width.max(height).clamp(16, 128);
     for j in 0..=arm_samples {
         let r = (j as f32 / arm_samples as f32 * 2.0 - 1.0) * 0.94;
         let [x, y, z] = [r * arm_c, r * arm_s, r * 0.15];
@@ -271,8 +271,8 @@ fn draw(
         let gx = c * 0.22;
         let gy = s * 0.22;
         let spin = t * if gear % 2 == 0 { 1.0 } else { -1.33 };
-        for j in 0..24 {
-            let a = j as f32 * TAU / 24.0 + spin;
+        for j in 0..16 {
+            let a = j as f32 * TAU / 16.0 + spin;
             let r = if j % 2 == 0 { 0.17 } else { 0.145 };
             let (s, c) = a.sin_cos();
             mark(
@@ -288,8 +288,8 @@ fn draw(
         }
         for spoke in 0..4 {
             let (s, c) = (spin + spoke as f32 * PI * 0.5).sin_cos();
-            for k in 1..=3 {
-                let r = k as f32 * 0.038;
+            for k in 1..=2 {
+                let r = k as f32 * 0.056;
                 mark(
                     &mut moving,
                     cx,
@@ -309,7 +309,7 @@ fn draw(
         let plane = Plane::new(0.3 + tilt * 0.75, turn);
         let radius = 0.26 + 0.61 * (i + 1) as f32 / planets;
         let a = turn + t * (1.0 + (i % 3) as f32 / harmonic);
-        for k in (1..=trail as usize).rev() {
+        for k in (1..=trail as usize).rev().step_by(2) {
             mark(
                 &mut moving,
                 cx,
@@ -396,13 +396,13 @@ fn draw(
         ch: '@',
         fg: white,
     });
-    // 384 gimbal + 385 arm + 108 gear + 12*(8+9) planet +
-    // 8*8 comet + 24 tracer + 1 core = 1170, below the allocation bound.
+    // 192 gimbal + 129 arm + 72 gear + 12*(4+9) planet +
+    // 8*8 comet + 24 tracer + 1 core = 638, below the allocation bound.
     assert!(moving.len() <= MAX_MOVING_MARKS);
     composite(grid, &mut moving);
 }
 
-const MAX_MOVING_MARKS: usize = 1280;
+const MAX_MOVING_MARKS: usize = 638;
 
 struct Mark {
     x: f32,
@@ -580,20 +580,33 @@ mod tests {
 
     #[test]
     fn gem3_max_animation_bounds_real_terminal_payload_over_time() {
+        // Termion memoizes NO_COLOR. Re-exec only this test with color enabled
+        // instead of mutating process-wide environment during parallel tests.
+        if std::env::var_os("NO_COLOR").is_some_and(|v| !v.is_empty()) {
+            let status = std::process::Command::new(std::env::current_exe().unwrap())
+                .args(["--exact", "modes::_52_gem_aetherium_3::tests::gem3_max_animation_bounds_real_terminal_payload_over_time", "--test-threads=1"])
+                .env_remove("NO_COLOR")
+                .status().unwrap();
+            assert!(status.success(), "colored payload regression failed");
+            return;
+        }
         for (w, h) in [(162, 61), (366, 199)] {
             let mut encoder = crate::gridio::AnsiFrameEncoder::new();
             let mut output = String::new();
+            let mut peak = (0, 0);
             for i in 0..100 {
                 let grid = frame(w, h, i as f32 * 0.06, true);
                 encoder.encode(&grid, false, &mut output);
-                if i > 0 {
-                    assert!(
-                        output.len() <= 20_000,
-                        "{w}x{h} frame {i}: {} encoded bytes",
-                        output.len()
-                    );
+                if i > 0 && output.len() > peak.1 {
+                    peak = (i, output.len());
                 }
             }
+            assert!(
+                peak.1 <= 20_000,
+                "{w}x{h} frame {}: {} encoded bytes",
+                peak.0,
+                peak.1
+            );
         }
     }
 }
