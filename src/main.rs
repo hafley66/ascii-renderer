@@ -9,6 +9,13 @@ mod _3_gem_lab;
 #[macro_use]
 mod registry;
 
+#[cfg(feature = "gem-lab-only")]
+#[path = "modes/_33_cosmograph.rs"]
+mod _33_cosmograph;
+#[cfg(feature = "gem-lab-only")]
+#[path = "modes/_50_gem_aetherium_2.rs"]
+mod _50_lab_scene;
+
 mod arboretum;
 mod astrolabe;
 mod automata;
@@ -141,7 +148,12 @@ fn main() {
     };
     {
         let _main = tracing::trace_span!(target: "ascii_renderer::functions", "main").entered();
+        #[cfg(not(feature = "gem-lab-only"))]
         cli::run();
+        #[cfg(feature = "gem-lab-only")]
+        if !_3_gem_lab::command(&std::env::args().collect::<Vec<_>>()) {
+            eprintln!("usage: gem-render-lab gem-lab ratatui|console|termwiz FRAMES LOG [INPUTS.json|max] [WIDTH HEIGHT] [hold]");
+        }
     }
     if let Some((guard, dropped)) = trace_guard {
         tracing::warn!(target: "ascii_renderer::functions", dropped_records = dropped.dropped_lines(), "function trace shutdown");

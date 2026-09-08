@@ -66,7 +66,10 @@ fn run(args: &[String]) -> Result<()> {
             "limit: 80,000 terminal cells; art must fit with one spare terminal row".into(),
         );
     }
+    #[cfg(not(feature = "gem-lab-only"))]
     let mode = registered_mode("gem-aetherium-2").unwrap();
+    #[cfg(feature = "gem-lab-only")]
+    let mode: &dyn crate::registry::Mode = &crate::_50_lab_scene::MODE;
     let fixture: serde_json::Value = match args.get(5).map(String::as_str) {
         Some("max") | None => serde_json::from_str(include_str!(
             "../perf/fixtures/12_gem_aetherium_2_bad_roll6.json"
@@ -165,6 +168,7 @@ fn run(args: &[String]) -> Result<()> {
                 };
                 cell.bg = crate::gridio::terminal_color(cell.bg);
             }
+            reserve_wide_columns(&mut grid);
             let normalize_us = normalize.elapsed().as_micros() as u64;
             let (adapt_us, present_us) = output.draw(&grid)?;
             tracing::info!(
@@ -191,13 +195,29 @@ fn run(args: &[String]) -> Result<()> {
         // Canonical final scene evidence is written outside the measured frames.
         let cells: Vec<Vec<_>> = grid
             .iter()
-            .map(|row| row.iter().map(|c| (c.ch, c.fg, c.bg)).collect())
+            .map(|row| {
+                row.iter()
+                    .map(|c| {
+                        let [fg, bg] = [c.fg, c.bg].map(|color| match wiz_color(color) {
+                            termwiz::color::ColorAttribute::PaletteIndex(index) => Some(index),
+                            termwiz::color::ColorAttribute::Default => None,
+                            _ => unreachable!("all scene colors were normalized to indexed colors"),
+                        });
+                        (c.ch, fg, bg)
+                    })
+                    .collect()
+            })
             .collect();
         serde_json::to_writer(
             BufWriter::new(std::fs::File::create(log.with_extension("grid"))?),
             &cells,
         )?;
-        tracing::info!(kind = "complete", ts_ms=crate::_0_profile::unix_ms(), backend, "gem lab");
+        tracing::info!(
+            kind = "complete",
+            ts_ms = crate::_0_profile::unix_ms(),
+            backend,
+            "gem lab"
+        );
         if args.get(8).map(String::as_str) == Some("hold") {
             quit(Duration::from_secs(2))?;
         }
@@ -211,6 +231,30 @@ fn run(args: &[String]) -> Result<()> {
 fn quit(wait: Duration) -> io::Result<bool> {
     Ok(event::poll(wait)?
         && matches!(event::read()?, Event::Key(key) if matches!(key.code, KeyCode::Char('q') | KeyCode::Esc)))
+}
+
+fn reserve_wide_columns(grid: &mut Grid) {
+    for row in grid {
+        let mut x = 0;
+        while x < row.len() {
+            let width = unicode_width::UnicodeWidthChar::width(row[x].ch).unwrap_or(0);
+            if width == 0 || x + width > row.len() {
+                row[x].ch = ' ';
+                row[x].fg = Color::Reset;
+                x += 1;
+                continue;
+            }
+            let bg = row[x].bg;
+            for trailing in &mut row[x + 1..x + width] {
+                *trailing = Cell {
+                    ch: ' ',
+                    fg: Color::Reset,
+                    bg,
+                };
+            }
+            x += width;
+        }
+    }
 }
 
 enum Output {
@@ -358,6 +402,19 @@ fn wiz_color(color: Color) -> termwiz::color::ColorAttribute {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn wide_glyphs_reserve_columns_and_clip_at_the_edge() {
+        let mut grid = vec![
+            "♌x♍"
+                .chars()
+                .map(|ch| Cell::new(ch, Color::AnsiValue(42)))
+                .collect(),
+        ];
+        reserve_wide_columns(&mut grid);
+        assert_eq!(grid[0].iter().map(|c| c.ch).collect::<String>(), "♌  ");
+        assert_eq!(grid[0][1].fg, Color::Reset);
+        assert_eq!(grid[0][2].fg, Color::Reset);
+    }
     #[test]
     fn termwiz_surface_preserves_rows_colors_and_repeated_frames() {
         let mut surface = Surface::new(3, 2);

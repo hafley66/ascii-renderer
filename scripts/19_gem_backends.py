@@ -3,7 +3,6 @@ import argparse
 import hashlib
 import json
 import os
-import re
 from pathlib import Path
 import statistics
 import subprocess
@@ -16,7 +15,7 @@ def run_case(args, backend):
     directory = args.directory / backend
     directory.mkdir()
     log = directory / 'frames.ndjson'
-    binary = ROOT / 'target/release/ascii-renderer'
+    binary = ROOT / 'target/release/gem-render-lab'
     command = [str(binary), 'gem-lab', backend, str(args.frames), str(log),
                str(args.fixture), str(args.width), str(args.height), 'hold']
     (directory / 'command.json').write_text(json.dumps(command))
@@ -24,7 +23,7 @@ def run_case(args, backend):
         '--state', str(directory/'guard.ndjson'), '--artifact-dir', str(directory),
         '--owner-pid', str(os.getpid()), '--max-seconds', '15', '--max-owned-mib', '256',
         '--max-artifact-mib', '32', '--', str(ROOT/'target/release/examples/1_native_terminal'),
-        '400', '200', str(directory/'terminal.ansi.gz'), *command]
+        str(args.cols), str(args.rows), str(directory/'terminal.ansi.gz'), *command]
     env = dict(os.environ)
     env.pop('ASCII_FUNCTION_TRACE', None)
     env.pop('NO_COLOR', None)
@@ -81,12 +80,7 @@ def run_case(args, backend):
     assert len(frames) == args.frames
     source = json.loads(log.with_suffix('.grid').read_text())
     def color(value):
-        if value == 'reset': return 'Default'
-        match = re.fullmatch(r'ansi_\((\d+)\)', value)
-        if match: return f'Idx({match[1]})'
-        names = ['black','dark_red','dark_green','dark_yellow','dark_blue','dark_magenta','dark_cyan','grey',
-                 'dark_grey','red','green','yellow','blue','magenta','cyan','white']
-        return f'Idx({names.index(value)})'
+        return 'Default' if value is None else f'Idx({value})'
     expected = [[[ch, 'Default' if ch == ' ' else color(fg), color(bg)] for ch,fg,bg in row] for row in source]
     mismatches = [(x,y) for y,row in enumerate(cells) for x,cell in enumerate(row) if cell != expected[y][x]]
     assert not mismatches, f'{backend}: {len(mismatches)} cells differ from scene; first {mismatches[:5]}'
@@ -108,14 +102,20 @@ def main():
     parser.add_argument('--frames', type=int, default=12)
     parser.add_argument('--width', type=int, default=366)
     parser.add_argument('--height', type=int, default=199)
+    parser.add_argument('--cols', type=int, default=400)
+    parser.add_argument('--rows', type=int, default=200)
+    parser.add_argument('--backends', nargs='+', choices=['ratatui','console','termwiz'],
+                        default=['ratatui','console','termwiz'])
     args = parser.parse_args()
-    if not 2 <= args.frames <= 12 or not 1 <= args.width <= 400 or not 1 <= args.height < 200:
-        parser.error('probe limits: 2..12 frames, width <=400, height <200')
+    if (not 2 <= args.frames <= 12 or not 1 <= args.cols <= 400
+            or not 2 <= args.rows <= 200 or args.cols * args.rows > 80000
+            or not 1 <= args.width <= args.cols or not 1 <= args.height < args.rows):
+        parser.error('probe limits: 2..12 frames, terminal <=400x200, art fits with one spare row')
     args.directory = args.directory.resolve()
     args.directory.mkdir(parents=True,exist_ok=False)
     results = []
     reference = None
-    for backend in ('ratatui','console','termwiz'):
+    for backend in args.backends:
         result, cells = run_case(args, backend)
         results.append(result)
         (args.directory/'results.json').write_text(json.dumps(results,indent=2)+'\n')
@@ -129,7 +129,7 @@ def main():
             if differences:
                 raise AssertionError(f'{backend}: {len(differences)} terminal cells differ; first {differences[:5]}')
         assert result['scene_sha256'] == results[0]['scene_sha256'], 'scene input/render mismatch'
-    print('All three final scene grids and colored terminal cell captures match.')
+    print(f'{len(results)} backend(s): final scene grids and colored terminal cell captures match.')
 
 if __name__ == '__main__':
     main()

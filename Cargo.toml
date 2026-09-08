@@ -7,6 +7,19 @@ license = "MIT"
 repository = "https://github.com/hafley66/ascii-renderer"
 homepage = "https://github.com/hafley66/ascii-renderer"
 publish = false
+default-run = "ascii-renderer"
+
+[features]
+gem-lab-only = []
+
+[[bin]]
+name = "ascii-renderer"
+path = "src/main.rs"
+
+[[bin]]
+name = "gem-render-lab"
+path = "src/main.rs"
+required-features = ["gem-lab-only"]
 
 [dependencies]
 console_engine = "2.6.1"

@@ -1,0 +1,692 @@
+{
+  "coverage": "Native PTY, parsed colored cells, 12 frames per backend. GUI painting untested.",
+  "runs": {
+    "46_gem_max_fixed": [
+      {
+        "backend": "ratatui",
+        "frames": 12,
+        "inputs": {
+          "args": [],
+          "grid": {
+            "h": 199,
+            "w": 366
+          },
+          "knobs": {
+            "COMETS": 12.0,
+            "GEARS": 8.0,
+            "HARMONY": 8.0,
+            "NEBULA": 1.5,
+            "PLANETS": 12.0,
+            "PULSE": 2.0,
+            "RAYS": 1.5,
+            "RINGS": 10.0,
+            "RUNES": 1.0,
+            "SPEED": 3.0,
+            "TILT": 1.0,
+            "ZODIAC": 24.0
+          },
+          "mode": "gem-aetherium-2",
+          "palette": [
+            "rgb_(49,42,26)",
+            "rgb_(181,209,71)",
+            "rgb_(57,91,172)",
+            "rgb_(140,228,103)",
+            "rgb_(220,220,220)"
+          ],
+          "seed": 42,
+          "terminal_size": {
+            "h": 200,
+            "w": 400
+          },
+          "terminal_size_fallback": false,
+          "theme": "",
+          "time": 0.0
+        },
+        "scene_sha256": "331b2710a707bd91c6a4ca1a96253cb67ecd11e0aa2a20be47480454c24656f6",
+        "cells_sha256": "4b1903f58715cd2047de566d8053984e0a4dd70f72e85f41a913bb6152d8e997",
+        "binary_sha256": "6c778a91e52235f60e941f30b96e9b701893a8c4d816c4871c0b4a059cf6df1c",
+        "native": {
+          "alive": false,
+          "bytes": 2457626,
+          "error": null,
+          "exit_code": 0,
+          "parse_us": 12688,
+          "reader_done": true,
+          "reads": 2421
+        },
+        "timings": {
+          "render_us": {
+            "median": 1549,
+            "maximum": 1679
+          },
+          "normalize_us": {
+            "median": 800,
+            "maximum": 894
+          },
+          "adapt_us": {
+            "median": 1002,
+            "maximum": 1116
+          },
+          "present_us": {
+            "median": 6197,
+            "maximum": 7420
+          },
+          "total_us": {
+            "median": 9453,
+            "maximum": 10937
+          }
+        }
+      },
+      {
+        "backend": "console",
+        "frames": 12,
+        "inputs": {
+          "args": [],
+          "grid": {
+            "h": 199,
+            "w": 366
+          },
+          "knobs": {
+            "COMETS": 12.0,
+            "GEARS": 8.0,
+            "HARMONY": 8.0,
+            "NEBULA": 1.5,
+            "PLANETS": 12.0,
+            "PULSE": 2.0,
+            "RAYS": 1.5,
+            "RINGS": 10.0,
+            "RUNES": 1.0,
+            "SPEED": 3.0,
+            "TILT": 1.0,
+            "ZODIAC": 24.0
+          },
+          "mode": "gem-aetherium-2",
+          "palette": [
+            "rgb_(49,42,26)",
+            "rgb_(181,209,71)",
+            "rgb_(57,91,172)",
+            "rgb_(140,228,103)",
+            "rgb_(220,220,220)"
+          ],
+          "seed": 42,
+          "terminal_size": {
+            "h": 200,
+            "w": 400
+          },
+          "terminal_size_fallback": false,
+          "theme": "",
+          "time": 0.0
+        },
+        "scene_sha256": "331b2710a707bd91c6a4ca1a96253cb67ecd11e0aa2a20be47480454c24656f6",
+        "cells_sha256": "4b1903f58715cd2047de566d8053984e0a4dd70f72e85f41a913bb6152d8e997",
+        "binary_sha256": "6c778a91e52235f60e941f30b96e9b701893a8c4d816c4871c0b4a059cf6df1c",
+        "native": {
+          "alive": false,
+          "bytes": 2990284,
+          "error": null,
+          "exit_code": 0,
+          "parse_us": 15804,
+          "reader_done": true,
+          "reads": 4205
+        },
+        "timings": {
+          "render_us": {
+            "median": 1443,
+            "maximum": 1979
+          },
+          "normalize_us": {
+            "median": 842,
+            "maximum": 924
+          },
+          "adapt_us": {
+            "median": 101,
+            "maximum": 124
+          },
+          "present_us": {
+            "median": 4682,
+            "maximum": 5729
+          },
+          "total_us": {
+            "median": 7144,
+            "maximum": 7950
+          }
+        },
+        "different_cells": 0
+      },
+      {
+        "backend": "termwiz",
+        "frames": 12,
+        "inputs": {
+          "args": [],
+          "grid": {
+            "h": 199,
+            "w": 366
+          },
+          "knobs": {
+            "COMETS": 12.0,
+            "GEARS": 8.0,
+            "HARMONY": 8.0,
+            "NEBULA": 1.5,
+            "PLANETS": 12.0,
+            "PULSE": 2.0,
+            "RAYS": 1.5,
+            "RINGS": 10.0,
+            "RUNES": 1.0,
+            "SPEED": 3.0,
+            "TILT": 1.0,
+            "ZODIAC": 24.0
+          },
+          "mode": "gem-aetherium-2",
+          "palette": [
+            "rgb_(49,42,26)",
+            "rgb_(181,209,71)",
+            "rgb_(57,91,172)",
+            "rgb_(140,228,103)",
+            "rgb_(220,220,220)"
+          ],
+          "seed": 42,
+          "terminal_size": {
+            "h": 200,
+            "w": 400
+          },
+          "terminal_size_fallback": false,
+          "theme": "",
+          "time": 0.0
+        },
+        "scene_sha256": "331b2710a707bd91c6a4ca1a96253cb67ecd11e0aa2a20be47480454c24656f6",
+        "cells_sha256": "4b1903f58715cd2047de566d8053984e0a4dd70f72e85f41a913bb6152d8e997",
+        "binary_sha256": "6c778a91e52235f60e941f30b96e9b701893a8c4d816c4871c0b4a059cf6df1c",
+        "native": {
+          "alive": false,
+          "bytes": 2460750,
+          "error": null,
+          "exit_code": 0,
+          "parse_us": 12552,
+          "reader_done": true,
+          "reads": 2418
+        },
+        "timings": {
+          "render_us": {
+            "median": 1412,
+            "maximum": 11907
+          },
+          "normalize_us": {
+            "median": 795,
+            "maximum": 957
+          },
+          "adapt_us": {
+            "median": 3892,
+            "maximum": 4113
+          },
+          "present_us": {
+            "median": 9273,
+            "maximum": 12937
+          },
+          "total_us": {
+            "median": 15577,
+            "maximum": 28357
+          }
+        },
+        "different_cells": 0
+      }
+    ],
+    "47_gem_small_fixed": [
+      {
+        "backend": "ratatui",
+        "frames": 12,
+        "inputs": {
+          "args": [],
+          "grid": {
+            "h": 61,
+            "w": 162
+          },
+          "knobs": {
+            "COMETS": 11.0,
+            "GEARS": 7.0,
+            "HARMONY": 7.0,
+            "NEBULA": 1.25,
+            "PLANETS": 9.0,
+            "PULSE": 0.10000000149011612,
+            "RAYS": 0.800000011920929,
+            "RINGS": 9.0,
+            "RUNES": 0.30000001192092896,
+            "SPEED": 2.3499999046325684,
+            "TILT": 0.6000000238418579,
+            "ZODIAC": 19.0
+          },
+          "mode": "gem-aetherium-2",
+          "palette": [
+            "rgb_(49,42,26)",
+            "rgb_(181,209,71)",
+            "rgb_(57,91,172)",
+            "rgb_(140,228,103)",
+            "rgb_(220,220,220)"
+          ],
+          "seed": 42,
+          "terminal_size": {
+            "h": 62,
+            "w": 196
+          },
+          "terminal_size_fallback": false,
+          "theme": "",
+          "time": 0.0
+        },
+        "scene_sha256": "878891d0e9d7d5477222afface1502384638b11f6895b60050bd034584f32d80",
+        "cells_sha256": "a46026cf0de12cd8d34897dd820cd57b814362b5f0f3fdd0d2843bbd9c06989f",
+        "binary_sha256": "6c778a91e52235f60e941f30b96e9b701893a8c4d816c4871c0b4a059cf6df1c",
+        "native": {
+          "alive": false,
+          "bytes": 504425,
+          "error": null,
+          "exit_code": 0,
+          "parse_us": 2624,
+          "reader_done": true,
+          "reads": 502
+        },
+        "timings": {
+          "render_us": {
+            "median": 537,
+            "maximum": 683
+          },
+          "normalize_us": {
+            "median": 127,
+            "maximum": 148
+          },
+          "adapt_us": {
+            "median": 152,
+            "maximum": 169
+          },
+          "present_us": {
+            "median": 892,
+            "maximum": 1152
+          },
+          "total_us": {
+            "median": 1723,
+            "maximum": 2006
+          }
+        }
+      },
+      {
+        "backend": "console",
+        "frames": 12,
+        "inputs": {
+          "args": [],
+          "grid": {
+            "h": 61,
+            "w": 162
+          },
+          "knobs": {
+            "COMETS": 11.0,
+            "GEARS": 7.0,
+            "HARMONY": 7.0,
+            "NEBULA": 1.25,
+            "PLANETS": 9.0,
+            "PULSE": 0.10000000149011612,
+            "RAYS": 0.800000011920929,
+            "RINGS": 9.0,
+            "RUNES": 0.30000001192092896,
+            "SPEED": 2.3499999046325684,
+            "TILT": 0.6000000238418579,
+            "ZODIAC": 19.0
+          },
+          "mode": "gem-aetherium-2",
+          "palette": [
+            "rgb_(49,42,26)",
+            "rgb_(181,209,71)",
+            "rgb_(57,91,172)",
+            "rgb_(140,228,103)",
+            "rgb_(220,220,220)"
+          ],
+          "seed": 42,
+          "terminal_size": {
+            "h": 62,
+            "w": 196
+          },
+          "terminal_size_fallback": false,
+          "theme": "",
+          "time": 0.0
+        },
+        "scene_sha256": "878891d0e9d7d5477222afface1502384638b11f6895b60050bd034584f32d80",
+        "cells_sha256": "a46026cf0de12cd8d34897dd820cd57b814362b5f0f3fdd0d2843bbd9c06989f",
+        "binary_sha256": "6c778a91e52235f60e941f30b96e9b701893a8c4d816c4871c0b4a059cf6df1c",
+        "native": {
+          "alive": false,
+          "bytes": 639825,
+          "error": null,
+          "exit_code": 0,
+          "parse_us": 3476,
+          "reader_done": true,
+          "reads": 890
+        },
+        "timings": {
+          "render_us": {
+            "median": 508,
+            "maximum": 535
+          },
+          "normalize_us": {
+            "median": 127,
+            "maximum": 156
+          },
+          "adapt_us": {
+            "median": 15,
+            "maximum": 23
+          },
+          "present_us": {
+            "median": 896,
+            "maximum": 1120
+          },
+          "total_us": {
+            "median": 1566,
+            "maximum": 1782
+          }
+        },
+        "different_cells": 0
+      },
+      {
+        "backend": "termwiz",
+        "frames": 12,
+        "inputs": {
+          "args": [],
+          "grid": {
+            "h": 61,
+            "w": 162
+          },
+          "knobs": {
+            "COMETS": 11.0,
+            "GEARS": 7.0,
+            "HARMONY": 7.0,
+            "NEBULA": 1.25,
+            "PLANETS": 9.0,
+            "PULSE": 0.10000000149011612,
+            "RAYS": 0.800000011920929,
+            "RINGS": 9.0,
+            "RUNES": 0.30000001192092896,
+            "SPEED": 2.3499999046325684,
+            "TILT": 0.6000000238418579,
+            "ZODIAC": 19.0
+          },
+          "mode": "gem-aetherium-2",
+          "palette": [
+            "rgb_(49,42,26)",
+            "rgb_(181,209,71)",
+            "rgb_(57,91,172)",
+            "rgb_(140,228,103)",
+            "rgb_(220,220,220)"
+          ],
+          "seed": 42,
+          "terminal_size": {
+            "h": 62,
+            "w": 196
+          },
+          "terminal_size_fallback": false,
+          "theme": "",
+          "time": 0.0
+        },
+        "scene_sha256": "878891d0e9d7d5477222afface1502384638b11f6895b60050bd034584f32d80",
+        "cells_sha256": "a46026cf0de12cd8d34897dd820cd57b814362b5f0f3fdd0d2843bbd9c06989f",
+        "binary_sha256": "6c778a91e52235f60e941f30b96e9b701893a8c4d816c4871c0b4a059cf6df1c",
+        "native": {
+          "alive": false,
+          "bytes": 505062,
+          "error": null,
+          "exit_code": 0,
+          "parse_us": 2563,
+          "reader_done": true,
+          "reads": 503
+        },
+        "timings": {
+          "render_us": {
+            "median": 501,
+            "maximum": 552
+          },
+          "normalize_us": {
+            "median": 134,
+            "maximum": 157
+          },
+          "adapt_us": {
+            "median": 709,
+            "maximum": 779
+          },
+          "present_us": {
+            "median": 2010,
+            "maximum": 2229
+          },
+          "total_us": {
+            "median": 3356,
+            "maximum": 3640
+          }
+        },
+        "different_cells": 0
+      }
+    ],
+    "48_gem_large_fixed": [
+      {
+        "backend": "ratatui",
+        "frames": 12,
+        "inputs": {
+          "args": [],
+          "grid": {
+            "h": 199,
+            "w": 366
+          },
+          "knobs": {
+            "COMETS": 11.0,
+            "GEARS": 7.0,
+            "HARMONY": 7.0,
+            "NEBULA": 1.25,
+            "PLANETS": 9.0,
+            "PULSE": 0.10000000149011612,
+            "RAYS": 0.800000011920929,
+            "RINGS": 9.0,
+            "RUNES": 0.30000001192092896,
+            "SPEED": 2.3499999046325684,
+            "TILT": 0.6000000238418579,
+            "ZODIAC": 19.0
+          },
+          "mode": "gem-aetherium-2",
+          "palette": [
+            "rgb_(49,42,26)",
+            "rgb_(181,209,71)",
+            "rgb_(57,91,172)",
+            "rgb_(140,228,103)",
+            "rgb_(220,220,220)"
+          ],
+          "seed": 42,
+          "terminal_size": {
+            "h": 200,
+            "w": 400
+          },
+          "terminal_size_fallback": false,
+          "theme": "",
+          "time": 0.0
+        },
+        "scene_sha256": "11e34764776ab9f7ca4084333d302d5a989a1d764fc970dd5b72fddaab7b7a51",
+        "cells_sha256": "7fabc6e139ff711d8e0aad9a7fd88fbae687d9e2a738ae9383927c4f9aac51e0",
+        "binary_sha256": "6c778a91e52235f60e941f30b96e9b701893a8c4d816c4871c0b4a059cf6df1c",
+        "native": {
+          "alive": false,
+          "bytes": 1681964,
+          "error": null,
+          "exit_code": 0,
+          "parse_us": 8449,
+          "reader_done": true,
+          "reads": 1660
+        },
+        "timings": {
+          "render_us": {
+            "median": 1227,
+            "maximum": 1364
+          },
+          "normalize_us": {
+            "median": 780,
+            "maximum": 971
+          },
+          "adapt_us": {
+            "median": 1017,
+            "maximum": 1053
+          },
+          "present_us": {
+            "median": 3520,
+            "maximum": 4357
+          },
+          "total_us": {
+            "median": 6609,
+            "maximum": 7392
+          }
+        }
+      },
+      {
+        "backend": "console",
+        "frames": 12,
+        "inputs": {
+          "args": [],
+          "grid": {
+            "h": 199,
+            "w": 366
+          },
+          "knobs": {
+            "COMETS": 11.0,
+            "GEARS": 7.0,
+            "HARMONY": 7.0,
+            "NEBULA": 1.25,
+            "PLANETS": 9.0,
+            "PULSE": 0.10000000149011612,
+            "RAYS": 0.800000011920929,
+            "RINGS": 9.0,
+            "RUNES": 0.30000001192092896,
+            "SPEED": 2.3499999046325684,
+            "TILT": 0.6000000238418579,
+            "ZODIAC": 19.0
+          },
+          "mode": "gem-aetherium-2",
+          "palette": [
+            "rgb_(49,42,26)",
+            "rgb_(181,209,71)",
+            "rgb_(57,91,172)",
+            "rgb_(140,228,103)",
+            "rgb_(220,220,220)"
+          ],
+          "seed": 42,
+          "terminal_size": {
+            "h": 200,
+            "w": 400
+          },
+          "terminal_size_fallback": false,
+          "theme": "",
+          "time": 0.0
+        },
+        "scene_sha256": "11e34764776ab9f7ca4084333d302d5a989a1d764fc970dd5b72fddaab7b7a51",
+        "cells_sha256": "7fabc6e139ff711d8e0aad9a7fd88fbae687d9e2a738ae9383927c4f9aac51e0",
+        "binary_sha256": "6c778a91e52235f60e941f30b96e9b701893a8c4d816c4871c0b4a059cf6df1c",
+        "native": {
+          "alive": false,
+          "bytes": 2041077,
+          "error": null,
+          "exit_code": 0,
+          "parse_us": 10744,
+          "reader_done": true,
+          "reads": 2955
+        },
+        "timings": {
+          "render_us": {
+            "median": 1302,
+            "maximum": 1725
+          },
+          "normalize_us": {
+            "median": 754,
+            "maximum": 970
+          },
+          "adapt_us": {
+            "median": 101,
+            "maximum": 144
+          },
+          "present_us": {
+            "median": 2995,
+            "maximum": 3401
+          },
+          "total_us": {
+            "median": 5161,
+            "maximum": 5738
+          }
+        },
+        "different_cells": 0
+      },
+      {
+        "backend": "termwiz",
+        "frames": 12,
+        "inputs": {
+          "args": [],
+          "grid": {
+            "h": 199,
+            "w": 366
+          },
+          "knobs": {
+            "COMETS": 11.0,
+            "GEARS": 7.0,
+            "HARMONY": 7.0,
+            "NEBULA": 1.25,
+            "PLANETS": 9.0,
+            "PULSE": 0.10000000149011612,
+            "RAYS": 0.800000011920929,
+            "RINGS": 9.0,
+            "RUNES": 0.30000001192092896,
+            "SPEED": 2.3499999046325684,
+            "TILT": 0.6000000238418579,
+            "ZODIAC": 19.0
+          },
+          "mode": "gem-aetherium-2",
+          "palette": [
+            "rgb_(49,42,26)",
+            "rgb_(181,209,71)",
+            "rgb_(57,91,172)",
+            "rgb_(140,228,103)",
+            "rgb_(220,220,220)"
+          ],
+          "seed": 42,
+          "terminal_size": {
+            "h": 200,
+            "w": 400
+          },
+          "terminal_size_fallback": false,
+          "theme": "",
+          "time": 0.0
+        },
+        "scene_sha256": "11e34764776ab9f7ca4084333d302d5a989a1d764fc970dd5b72fddaab7b7a51",
+        "cells_sha256": "7fabc6e139ff711d8e0aad9a7fd88fbae687d9e2a738ae9383927c4f9aac51e0",
+        "binary_sha256": "6c778a91e52235f60e941f30b96e9b701893a8c4d816c4871c0b4a059cf6df1c",
+        "native": {
+          "alive": false,
+          "bytes": 1691855,
+          "error": null,
+          "exit_code": 0,
+          "parse_us": 9022,
+          "reader_done": true,
+          "reads": 1666
+        },
+        "timings": {
+          "render_us": {
+            "median": 1323,
+            "maximum": 1516
+          },
+          "normalize_us": {
+            "median": 813,
+            "maximum": 968
+          },
+          "adapt_us": {
+            "median": 3482,
+            "maximum": 3717
+          },
+          "present_us": {
+            "median": 6808,
+            "maximum": 8900
+          },
+          "total_us": {
+            "median": 12478,
+            "maximum": 14679
+          }
+        },
+        "different_cells": 0
+      }
+    ]
+  }
+}
