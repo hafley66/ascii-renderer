@@ -25,7 +25,9 @@ parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('binary', nargs='?', help='existing binary; otherwise build release automatically')
 parser.add_argument('--mode', default='gem-aetherium-2')
 parser.add_argument('--tmux', action='store_true', help='include an isolated tmux server and drained PTY client')
-parser.add_argument('--max', action='store_true', help='set every declared knob to maximum simultaneously')
+fixed_inputs = parser.add_mutually_exclusive_group()
+fixed_inputs.add_argument('--max', action='store_true', help='set every declared knob to maximum simultaneously')
+fixed_inputs.add_argument('--fixture', type=Path, help='hold seed, theme and knobs from an exported input fixture')
 parser.add_argument('--size', action='append', help='render WIDTHxHEIGHT; repeat for multiple sizes')
 parser.add_argument('--frames', type=int, default=100)
 parser.add_argument('--timeout', type=float, default=120, help='seconds allowed per size')
@@ -45,7 +47,16 @@ for size in args.size or (['2000x2000'] if args.max else ['320x103', '2000x2000'
 if args.binary is None:
     subprocess.run(['cargo', 'build', '--release', '--locked'], check=True)
 binary = os.path.abspath(args.binary or 'target/release/ascii-renderer')
-fixture = json.loads(subprocess.check_output([binary, 'inputs', args.mode, 'max' if args.max else 'default']))
+fixture = (json.loads(args.fixture.read_text()) if args.fixture else
+           json.loads(subprocess.check_output([binary, 'inputs', args.mode, 'max' if args.max else 'default'])))
+if fixture['mode'] != args.mode:
+    parser.error('fixture mode must match --mode')
+# The Rust parameter boundary stores f32; compare the same numeric representation.
+expected_knobs = {key: struct.unpack('f', struct.pack('f', value))[0]
+                  for key, value in fixture['knobs'].items()}
+fixed = args.max or args.fixture is not None
+seed = fixture.get('seed', 42) if args.fixture else 42
+theme = (fixture.get('theme') or 'auto') if args.fixture else 'auto'
 trace = Path(args.trace or f'perf/results/{args.mode}-{time.time_ns() // 1_000_000}.ndjson').resolve()
 trace.parent.mkdir(parents=True, exist_ok=True)
 # Exclusive creation preserves earlier measurements and stable replay line numbers.
@@ -70,7 +81,7 @@ def check(width, height):
                        XDG_CONFIG_HOME=directory)
             # Match the colored demo E2E even when the runner exports NO_COLOR.
             env.pop('NO_COLOR', None)
-            command = [binary, '42', 'morph', 'auto', args.mode, '42', args.mode, '43', 'iterate']
+            command = [binary, str(seed), 'morph', theme, args.mode, str(seed), args.mode, str(seed + 1), 'iterate']
             if args.tmux:
                 env['TERM'] = 'xterm-256color'
                 os.execvpe('tmux', ['tmux', '-T', 'RGB', '-S', str(Path(directory) / 'tmux.sock'), '-f', '/dev/null',
@@ -117,9 +128,9 @@ def check(width, height):
                     events = [json.loads(line) for line in lines]
                     frames = [event for event in events if event['kind'] == 'animation_frame' or event['kind'] == 'slow_animation_frame']
                     # Enable random controls in the isolated config, then reroll.
-                    if not args.max and frames and seen == 0:
+                    if not fixed and frames and seen == 0:
                         os.write(fd, b'g')
-                    if not args.max and frames and len(frames) // 4 > sent_roll:
+                    if not fixed and frames and len(frames) // 4 > sent_roll:
                         os.write(fd, b'+')
                         sent_roll = len(frames) // 4
                     seen = len(frames)
@@ -127,11 +138,12 @@ def check(width, height):
             assert all(event['kind'] not in ('render', 'slow_render') for event in events)
             if args.frames >= 100:
                 assert frames[-1]['time'] > 5.4, frames[-1]
-            if args.max:
-                assert all(event['knobs'] == fixture['knobs'] for event in frames), 'knobs differed from declared maxima'
+            if fixed:
+                assert all(event['knobs'] == expected_knobs for event in frames), 'knobs differed from fixed fixture'
             elif args.frames >= 40:
                 assert len({event['roll'] for event in frames}) >= 10
                 assert len({json.dumps(event['knobs'], sort_keys=True) for event in frames}) >= 10
+            assert all(event['seed'] == seed for event in frames), 'seed differed from fixture'
             assert all(event['grid'] == {'w': width, 'h': height} for event in frames)
             assert all(event['terminal_size'] == {'w': width + 34, 'h': height + 1} for event in frames)
             for stage in ('render_us', 'encoding_us', 'presentation_us', 'dur_us'):
@@ -140,7 +152,7 @@ def check(width, height):
             print(f'{width}x{height}: {len(frames)} frames, {len({e["roll"] for e in frames})} rolls, wall={time.monotonic()-started:.3f}s')
             slowest = max((i for i, event in enumerate(events) if 'frame_index' in event), key=lambda i: events[i]['dur_us'])
             print('Replay slowest frame: ' + shlex.join([binary, 'replay', str(trace), str(first_line + slowest + 1)]), flush=True)
-            if width == 320 and not args.max:
+            if width == 320 and not fixed:
                 # Deferred endpoints must still initialize when leaving native mode.
                 for key, strategy in [(b'5', 'wind'), (b'i', 'iterate')]:
                     before = len(events)

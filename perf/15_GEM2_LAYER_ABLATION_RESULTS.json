@@ -1,0 +1,823 @@
+{
+  "scope": "Controlled colored Gem 2 native animation / real Unix PTY supervisor, drained consumer; GUI painting unmeasured.",
+  "binary_sha256": "3f5d4b7e7c1fef92913ce6173a47063dfeb814191c87dfd83eda19ed99bbeeef",
+  "source_fixture": "perf/fixtures/12_gem_aetherium_2_bad_roll6.json",
+  "requested_frames_per_run": 61,
+  "steady_frames_per_run": 60,
+  "color_enabled": true,
+  "runtime_priority": "normal",
+  "guard": {
+    "max_seconds_per_case": 15,
+    "max_owned_mib": 256,
+    "max_artifact_mib": 32
+  },
+  "baseline_repeat_payload_identical": true,
+  "cases": [
+    {
+      "case": "baseline_162x61",
+      "trace": "perf/results/86_gem2_layer_ablation/baseline_162x61/frames.ndjson",
+      "frames": 60,
+      "time_range": [
+        0.11999999731779099,
+        3.6599974632263184
+      ],
+      "inputs": {
+        "mode": "gem-aetherium-2",
+        "seed": 42,
+        "theme": "auto",
+        "grid": {
+          "h": 61,
+          "w": 162
+        },
+        "terminal_size": {
+          "h": 62,
+          "w": 196
+        },
+        "knobs": {
+          "COMETS": 11.0,
+          "GEARS": 7.0,
+          "HARMONY": 7.0,
+          "NEBULA": 1.25,
+          "PLANETS": 9.0,
+          "PULSE": 0.10000000149011612,
+          "RAYS": 0.800000011920929,
+          "RINGS": 9.0,
+          "RUNES": 0.30000001192092896,
+          "SPEED": 2.3499999046325684,
+          "TILT": 0.6000000238418579,
+          "ZODIAC": 19.0
+        },
+        "palette": [
+          "rgb_(49,42,26)",
+          "rgb_(181,209,71)",
+          "rgb_(57,91,172)",
+          "rgb_(140,228,103)",
+          "rgb_(220,220,220)"
+        ]
+      },
+      "median": {
+        "bytes": 55084.0,
+        "changed_cells": 4179.0,
+        "render_us": 439.0,
+        "encoding_us": 637.5,
+        "presentation_us": 28.5,
+        "dur_us": 1123.0,
+        "interval_ms": 19.491312
+      },
+      "max": {
+        "bytes": 58512,
+        "changed_cells": 4412,
+        "render_us": 722,
+        "encoding_us": 860,
+        "presentation_us": 45,
+        "dur_us": 1389,
+        "interval_ms": 19.957083
+      },
+      "owned_peak_mib": 36.234375
+    },
+    {
+      "case": "baseline_repeat_366x199",
+      "trace": "perf/results/86_gem2_layer_ablation/baseline_repeat_366x199/frames.ndjson",
+      "frames": 60,
+      "time_range": [
+        0.11999999731779099,
+        3.6599974632263184
+      ],
+      "inputs": {
+        "mode": "gem-aetherium-2",
+        "seed": 42,
+        "theme": "auto",
+        "grid": {
+          "h": 199,
+          "w": 366
+        },
+        "terminal_size": {
+          "h": 200,
+          "w": 400
+        },
+        "knobs": {
+          "COMETS": 11.0,
+          "GEARS": 7.0,
+          "HARMONY": 7.0,
+          "NEBULA": 1.25,
+          "PLANETS": 9.0,
+          "PULSE": 0.10000000149011612,
+          "RAYS": 0.800000011920929,
+          "RINGS": 9.0,
+          "RUNES": 0.30000001192092896,
+          "SPEED": 2.3499999046325684,
+          "TILT": 0.6000000238418579,
+          "ZODIAC": 19.0
+        },
+        "palette": [
+          "rgb_(49,42,26)",
+          "rgb_(181,209,71)",
+          "rgb_(57,91,172)",
+          "rgb_(140,228,103)",
+          "rgb_(220,220,220)"
+        ]
+      },
+      "median": {
+        "bytes": 165667.0,
+        "changed_cells": 13147.5,
+        "render_us": 1042.0,
+        "encoding_us": 2831.0,
+        "presentation_us": 1584.0,
+        "dur_us": 5487.0,
+        "interval_ms": 17.1498955
+      },
+      "max": {
+        "bytes": 171786,
+        "changed_cells": 13873,
+        "render_us": 2066,
+        "encoding_us": 3008,
+        "presentation_us": 10298,
+        "dur_us": 14368,
+        "interval_ms": 25.205875
+      },
+      "owned_peak_mib": 44.90625
+    },
+    {
+      "case": "baseline_verified_366x199",
+      "trace": "perf/results/86_gem2_layer_ablation/baseline_verified_366x199/frames.ndjson",
+      "frames": 60,
+      "time_range": [
+        0.11999999731779099,
+        3.6599974632263184
+      ],
+      "inputs": {
+        "mode": "gem-aetherium-2",
+        "seed": 42,
+        "theme": "auto",
+        "grid": {
+          "h": 199,
+          "w": 366
+        },
+        "terminal_size": {
+          "h": 200,
+          "w": 400
+        },
+        "knobs": {
+          "COMETS": 11.0,
+          "GEARS": 7.0,
+          "HARMONY": 7.0,
+          "NEBULA": 1.25,
+          "PLANETS": 9.0,
+          "PULSE": 0.10000000149011612,
+          "RAYS": 0.800000011920929,
+          "RINGS": 9.0,
+          "RUNES": 0.30000001192092896,
+          "SPEED": 2.3499999046325684,
+          "TILT": 0.6000000238418579,
+          "ZODIAC": 19.0
+        },
+        "palette": [
+          "rgb_(49,42,26)",
+          "rgb_(181,209,71)",
+          "rgb_(57,91,172)",
+          "rgb_(140,228,103)",
+          "rgb_(220,220,220)"
+        ]
+      },
+      "median": {
+        "bytes": 165667.0,
+        "changed_cells": 13147.5,
+        "render_us": 2089.5,
+        "encoding_us": 3615.0,
+        "presentation_us": 34997.0,
+        "dur_us": 47924.5,
+        "interval_ms": 49.723979
+      },
+      "max": {
+        "bytes": 171786,
+        "changed_cells": 13873,
+        "render_us": 28515,
+        "encoding_us": 122406,
+        "presentation_us": 387670,
+        "dur_us": 395571,
+        "interval_ms": 395.592708
+      },
+      "owned_peak_mib": 53.15625
+    },
+    {
+      "case": "no_fog_162x61",
+      "trace": "perf/results/86_gem2_layer_ablation/no_fog_162x61/frames.ndjson",
+      "frames": 60,
+      "time_range": [
+        0.11999999731779099,
+        3.6599974632263184
+      ],
+      "inputs": {
+        "mode": "gem-aetherium-2",
+        "seed": 42,
+        "theme": "auto",
+        "grid": {
+          "h": 61,
+          "w": 162
+        },
+        "terminal_size": {
+          "h": 62,
+          "w": 196
+        },
+        "knobs": {
+          "COMETS": 11.0,
+          "GEARS": 7.0,
+          "HARMONY": 7.0,
+          "NEBULA": 0.0,
+          "PLANETS": 9.0,
+          "PULSE": 0.10000000149011612,
+          "RAYS": 0.800000011920929,
+          "RINGS": 9.0,
+          "RUNES": 0.30000001192092896,
+          "SPEED": 2.3499999046325684,
+          "TILT": 0.6000000238418579,
+          "ZODIAC": 19.0
+        },
+        "palette": [
+          "rgb_(49,42,26)",
+          "rgb_(181,209,71)",
+          "rgb_(57,91,172)",
+          "rgb_(140,228,103)",
+          "rgb_(220,220,220)"
+        ]
+      },
+      "median": {
+        "bytes": 51126.5,
+        "changed_cells": 4163.5,
+        "render_us": 381.0,
+        "encoding_us": 631.0,
+        "presentation_us": 31.0,
+        "dur_us": 1038.0,
+        "interval_ms": 19.679583
+      },
+      "max": {
+        "bytes": 53870,
+        "changed_cells": 4384,
+        "render_us": 1248,
+        "encoding_us": 1642,
+        "presentation_us": 76645,
+        "dur_us": 78215,
+        "interval_ms": 91.98295900000001
+      },
+      "owned_peak_mib": 38.578125
+    },
+    {
+      "case": "no_fog_366x199",
+      "trace": "perf/results/86_gem2_layer_ablation/no_fog_366x199/frames.ndjson",
+      "frames": 60,
+      "time_range": [
+        0.11999999731779099,
+        3.6599974632263184
+      ],
+      "inputs": {
+        "mode": "gem-aetherium-2",
+        "seed": 42,
+        "theme": "auto",
+        "grid": {
+          "h": 199,
+          "w": 366
+        },
+        "terminal_size": {
+          "h": 200,
+          "w": 400
+        },
+        "knobs": {
+          "COMETS": 11.0,
+          "GEARS": 7.0,
+          "HARMONY": 7.0,
+          "NEBULA": 0.0,
+          "PLANETS": 9.0,
+          "PULSE": 0.10000000149011612,
+          "RAYS": 0.800000011920929,
+          "RINGS": 9.0,
+          "RUNES": 0.30000001192092896,
+          "SPEED": 2.3499999046325684,
+          "TILT": 0.6000000238418579,
+          "ZODIAC": 19.0
+        },
+        "palette": [
+          "rgb_(49,42,26)",
+          "rgb_(181,209,71)",
+          "rgb_(57,91,172)",
+          "rgb_(140,228,103)",
+          "rgb_(220,220,220)"
+        ]
+      },
+      "median": {
+        "bytes": 147021.5,
+        "changed_cells": 12067.5,
+        "render_us": 708.0,
+        "encoding_us": 2407.5,
+        "presentation_us": 1600.0,
+        "dur_us": 4683.5,
+        "interval_ms": 17.339416
+      },
+      "max": {
+        "bytes": 151814,
+        "changed_cells": 12668,
+        "render_us": 1024,
+        "encoding_us": 2732,
+        "presentation_us": 6788,
+        "dur_us": 10079,
+        "interval_ms": 22.994583
+      },
+      "owned_peak_mib": 43.828125
+    },
+    {
+      "case": "no_fog_rays_162x61",
+      "trace": "perf/results/86_gem2_layer_ablation/no_fog_rays_162x61/frames.ndjson",
+      "frames": 60,
+      "time_range": [
+        0.11999999731779099,
+        3.6599974632263184
+      ],
+      "inputs": {
+        "mode": "gem-aetherium-2",
+        "seed": 42,
+        "theme": "auto",
+        "grid": {
+          "h": 61,
+          "w": 162
+        },
+        "terminal_size": {
+          "h": 62,
+          "w": 196
+        },
+        "knobs": {
+          "COMETS": 11.0,
+          "GEARS": 7.0,
+          "HARMONY": 7.0,
+          "NEBULA": 0.0,
+          "PLANETS": 9.0,
+          "PULSE": 0.10000000149011612,
+          "RAYS": 0.0,
+          "RINGS": 9.0,
+          "RUNES": 0.30000001192092896,
+          "SPEED": 2.3499999046325684,
+          "TILT": 0.6000000238418579,
+          "ZODIAC": 19.0
+        },
+        "palette": [
+          "rgb_(49,42,26)",
+          "rgb_(181,209,71)",
+          "rgb_(57,91,172)",
+          "rgb_(140,228,103)",
+          "rgb_(220,220,220)"
+        ]
+      },
+      "median": {
+        "bytes": 47386.0,
+        "changed_cells": 3784.0,
+        "render_us": 212.0,
+        "encoding_us": 569.0,
+        "presentation_us": 30.0,
+        "dur_us": 816.0,
+        "interval_ms": 19.1146045
+      },
+      "max": {
+        "bytes": 49863,
+        "changed_cells": 3973,
+        "render_us": 250,
+        "encoding_us": 634,
+        "presentation_us": 46,
+        "dur_us": 914,
+        "interval_ms": 19.864458000000003
+      },
+      "owned_peak_mib": 34.6875
+    },
+    {
+      "case": "no_fog_rays_366x199",
+      "trace": "perf/results/86_gem2_layer_ablation/no_fog_rays_366x199/frames.ndjson",
+      "frames": 60,
+      "time_range": [
+        0.11999999731779099,
+        3.6599974632263184
+      ],
+      "inputs": {
+        "mode": "gem-aetherium-2",
+        "seed": 42,
+        "theme": "auto",
+        "grid": {
+          "h": 199,
+          "w": 366
+        },
+        "terminal_size": {
+          "h": 200,
+          "w": 400
+        },
+        "knobs": {
+          "COMETS": 11.0,
+          "GEARS": 7.0,
+          "HARMONY": 7.0,
+          "NEBULA": 0.0,
+          "PLANETS": 9.0,
+          "PULSE": 0.10000000149011612,
+          "RAYS": 0.0,
+          "RINGS": 9.0,
+          "RUNES": 0.30000001192092896,
+          "SPEED": 2.3499999046325684,
+          "TILT": 0.6000000238418579,
+          "ZODIAC": 19.0
+        },
+        "palette": [
+          "rgb_(49,42,26)",
+          "rgb_(181,209,71)",
+          "rgb_(57,91,172)",
+          "rgb_(140,228,103)",
+          "rgb_(220,220,220)"
+        ]
+      },
+      "median": {
+        "bytes": 113513.5,
+        "changed_cells": 7191.0,
+        "render_us": 306.0,
+        "encoding_us": 2081.5,
+        "presentation_us": 75.5,
+        "dur_us": 2466.0,
+        "interval_ms": 18.235813
+      },
+      "max": {
+        "bytes": 117368,
+        "changed_cells": 7417,
+        "render_us": 883,
+        "encoding_us": 3796,
+        "presentation_us": 30826,
+        "dur_us": 35146,
+        "interval_ms": 50.556416999999996
+      },
+      "owned_peak_mib": 44.5625
+    },
+    {
+      "case": "no_fog_rays_runes_162x61",
+      "trace": "perf/results/86_gem2_layer_ablation/no_fog_rays_runes_162x61/frames.ndjson",
+      "frames": 60,
+      "time_range": [
+        0.11999999731779099,
+        3.6599974632263184
+      ],
+      "inputs": {
+        "mode": "gem-aetherium-2",
+        "seed": 42,
+        "theme": "auto",
+        "grid": {
+          "h": 61,
+          "w": 162
+        },
+        "terminal_size": {
+          "h": 62,
+          "w": 196
+        },
+        "knobs": {
+          "COMETS": 11.0,
+          "GEARS": 7.0,
+          "HARMONY": 7.0,
+          "NEBULA": 0.0,
+          "PLANETS": 9.0,
+          "PULSE": 0.10000000149011612,
+          "RAYS": 0.0,
+          "RINGS": 9.0,
+          "RUNES": 0.0,
+          "SPEED": 2.3499999046325684,
+          "TILT": 0.6000000238418579,
+          "ZODIAC": 19.0
+        },
+        "palette": [
+          "rgb_(49,42,26)",
+          "rgb_(181,209,71)",
+          "rgb_(57,91,172)",
+          "rgb_(140,228,103)",
+          "rgb_(220,220,220)"
+        ]
+      },
+      "median": {
+        "bytes": 47108.5,
+        "changed_cells": 3779.0,
+        "render_us": 215.0,
+        "encoding_us": 570.5,
+        "presentation_us": 30.0,
+        "dur_us": 816.5,
+        "interval_ms": 18.792083499999997
+      },
+      "max": {
+        "bytes": 49615,
+        "changed_cells": 3966,
+        "render_us": 656,
+        "encoding_us": 1036,
+        "presentation_us": 16001,
+        "dur_us": 17503,
+        "interval_ms": 32.336875
+      },
+      "owned_peak_mib": 36.78125
+    },
+    {
+      "case": "no_fog_rays_runes_366x199",
+      "trace": "perf/results/86_gem2_layer_ablation/no_fog_rays_runes_366x199/frames.ndjson",
+      "frames": 60,
+      "time_range": [
+        0.11999999731779099,
+        3.6599974632263184
+      ],
+      "inputs": {
+        "mode": "gem-aetherium-2",
+        "seed": 42,
+        "theme": "auto",
+        "grid": {
+          "h": 199,
+          "w": 366
+        },
+        "terminal_size": {
+          "h": 200,
+          "w": 400
+        },
+        "knobs": {
+          "COMETS": 11.0,
+          "GEARS": 7.0,
+          "HARMONY": 7.0,
+          "NEBULA": 0.0,
+          "PLANETS": 9.0,
+          "PULSE": 0.10000000149011612,
+          "RAYS": 0.0,
+          "RINGS": 9.0,
+          "RUNES": 0.0,
+          "SPEED": 2.3499999046325684,
+          "TILT": 0.6000000238418579,
+          "ZODIAC": 19.0
+        },
+        "palette": [
+          "rgb_(49,42,26)",
+          "rgb_(181,209,71)",
+          "rgb_(57,91,172)",
+          "rgb_(140,228,103)",
+          "rgb_(220,220,220)"
+        ]
+      },
+      "median": {
+        "bytes": 113371.0,
+        "changed_cells": 7190.0,
+        "render_us": 317.0,
+        "encoding_us": 2138.5,
+        "presentation_us": 96.5,
+        "dur_us": 2554.0,
+        "interval_ms": 19.221895500000002
+      },
+      "max": {
+        "bytes": 117173,
+        "changed_cells": 7417,
+        "render_us": 1529,
+        "encoding_us": 5871,
+        "presentation_us": 120904,
+        "dur_us": 125974,
+        "interval_ms": 126.021416
+      },
+      "owned_peak_mib": 47.765625
+    },
+    {
+      "case": "no_rays_162x61",
+      "trace": "perf/results/86_gem2_layer_ablation/no_rays_162x61/frames.ndjson",
+      "frames": 60,
+      "time_range": [
+        0.11999999731779099,
+        3.6599974632263184
+      ],
+      "inputs": {
+        "mode": "gem-aetherium-2",
+        "seed": 42,
+        "theme": "auto",
+        "grid": {
+          "h": 61,
+          "w": 162
+        },
+        "terminal_size": {
+          "h": 62,
+          "w": 196
+        },
+        "knobs": {
+          "COMETS": 11.0,
+          "GEARS": 7.0,
+          "HARMONY": 7.0,
+          "NEBULA": 1.25,
+          "PLANETS": 9.0,
+          "PULSE": 0.10000000149011612,
+          "RAYS": 0.0,
+          "RINGS": 9.0,
+          "RUNES": 0.30000001192092896,
+          "SPEED": 2.3499999046325684,
+          "TILT": 0.6000000238418579,
+          "ZODIAC": 19.0
+        },
+        "palette": [
+          "rgb_(49,42,26)",
+          "rgb_(181,209,71)",
+          "rgb_(57,91,172)",
+          "rgb_(140,228,103)",
+          "rgb_(220,220,220)"
+        ]
+      },
+      "median": {
+        "bytes": 51716.5,
+        "changed_cells": 3727.0,
+        "render_us": 274.5,
+        "encoding_us": 606.5,
+        "presentation_us": 30.0,
+        "dur_us": 914.0,
+        "interval_ms": 18.92975
+      },
+      "max": {
+        "bytes": 55123,
+        "changed_cells": 3927,
+        "render_us": 325,
+        "encoding_us": 673,
+        "presentation_us": 54,
+        "dur_us": 1047,
+        "interval_ms": 19.834333
+      },
+      "owned_peak_mib": 35.640625
+    },
+    {
+      "case": "no_rays_366x199",
+      "trace": "perf/results/86_gem2_layer_ablation/no_rays_366x199/frames.ndjson",
+      "frames": 60,
+      "time_range": [
+        0.11999999731779099,
+        3.6599974632263184
+      ],
+      "inputs": {
+        "mode": "gem-aetherium-2",
+        "seed": 42,
+        "theme": "auto",
+        "grid": {
+          "h": 199,
+          "w": 366
+        },
+        "terminal_size": {
+          "h": 200,
+          "w": 400
+        },
+        "knobs": {
+          "COMETS": 11.0,
+          "GEARS": 7.0,
+          "HARMONY": 7.0,
+          "NEBULA": 1.25,
+          "PLANETS": 9.0,
+          "PULSE": 0.10000000149011612,
+          "RAYS": 0.0,
+          "RINGS": 9.0,
+          "RUNES": 0.30000001192092896,
+          "SPEED": 2.3499999046325684,
+          "TILT": 0.6000000238418579,
+          "ZODIAC": 19.0
+        },
+        "palette": [
+          "rgb_(49,42,26)",
+          "rgb_(181,209,71)",
+          "rgb_(57,91,172)",
+          "rgb_(140,228,103)",
+          "rgb_(220,220,220)"
+        ]
+      },
+      "median": {
+        "bytes": 129880.0,
+        "changed_cells": 7561.0,
+        "render_us": 662.5,
+        "encoding_us": 2568.0,
+        "presentation_us": 97.0,
+        "dur_us": 3445.5,
+        "interval_ms": 18.182458
+      },
+      "max": {
+        "bytes": 134647,
+        "changed_cells": 7784,
+        "render_us": 788,
+        "encoding_us": 2858,
+        "presentation_us": 4194,
+        "dur_us": 7800,
+        "interval_ms": 23.645375
+      },
+      "owned_peak_mib": 43.171875
+    },
+    {
+      "case": "no_runes_162x61",
+      "trace": "perf/results/86_gem2_layer_ablation/no_runes_162x61/frames.ndjson",
+      "frames": 60,
+      "time_range": [
+        0.11999999731779099,
+        3.6599974632263184
+      ],
+      "inputs": {
+        "mode": "gem-aetherium-2",
+        "seed": 42,
+        "theme": "auto",
+        "grid": {
+          "h": 61,
+          "w": 162
+        },
+        "terminal_size": {
+          "h": 62,
+          "w": 196
+        },
+        "knobs": {
+          "COMETS": 11.0,
+          "GEARS": 7.0,
+          "HARMONY": 7.0,
+          "NEBULA": 1.25,
+          "PLANETS": 9.0,
+          "PULSE": 0.10000000149011612,
+          "RAYS": 0.800000011920929,
+          "RINGS": 9.0,
+          "RUNES": 0.0,
+          "SPEED": 2.3499999046325684,
+          "TILT": 0.6000000238418579,
+          "ZODIAC": 19.0
+        },
+        "palette": [
+          "rgb_(49,42,26)",
+          "rgb_(181,209,71)",
+          "rgb_(57,91,172)",
+          "rgb_(140,228,103)",
+          "rgb_(220,220,220)"
+        ]
+      },
+      "median": {
+        "bytes": 54753.0,
+        "changed_cells": 4172.0,
+        "render_us": 434.0,
+        "encoding_us": 630.5,
+        "presentation_us": 31.0,
+        "dur_us": 1099.0,
+        "interval_ms": 19.030521
+      },
+      "max": {
+        "bytes": 58264,
+        "changed_cells": 4405,
+        "render_us": 1813,
+        "encoding_us": 1734,
+        "presentation_us": 1771,
+        "dur_us": 5320,
+        "interval_ms": 20.943958
+      },
+      "owned_peak_mib": 37.28125
+    },
+    {
+      "case": "no_runes_366x199",
+      "trace": "perf/results/86_gem2_layer_ablation/no_runes_366x199/frames.ndjson",
+      "frames": 60,
+      "time_range": [
+        0.11999999731779099,
+        3.6599974632263184
+      ],
+      "inputs": {
+        "mode": "gem-aetherium-2",
+        "seed": 42,
+        "theme": "auto",
+        "grid": {
+          "h": 199,
+          "w": 366
+        },
+        "terminal_size": {
+          "h": 200,
+          "w": 400
+        },
+        "knobs": {
+          "COMETS": 11.0,
+          "GEARS": 7.0,
+          "HARMONY": 7.0,
+          "NEBULA": 1.25,
+          "PLANETS": 9.0,
+          "PULSE": 0.10000000149011612,
+          "RAYS": 0.800000011920929,
+          "RINGS": 9.0,
+          "RUNES": 0.0,
+          "SPEED": 2.3499999046325684,
+          "TILT": 0.6000000238418579,
+          "ZODIAC": 19.0
+        },
+        "palette": [
+          "rgb_(49,42,26)",
+          "rgb_(181,209,71)",
+          "rgb_(57,91,172)",
+          "rgb_(140,228,103)",
+          "rgb_(220,220,220)"
+        ]
+      },
+      "median": {
+        "bytes": 165459.0,
+        "changed_cells": 13147.0,
+        "render_us": 1093.0,
+        "encoding_us": 2844.5,
+        "presentation_us": 1713.0,
+        "dur_us": 5832.5,
+        "interval_ms": 17.069542
+      },
+      "max": {
+        "bytes": 171597,
+        "changed_cells": 13873,
+        "render_us": 2614,
+        "encoding_us": 3442,
+        "presentation_us": 25668,
+        "dur_us": 31725,
+        "interval_ms": 36.457083000000004
+      },
+      "owned_peak_mib": 47.34375
+    }
+  ]
+}
