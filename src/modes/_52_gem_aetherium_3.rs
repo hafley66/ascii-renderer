@@ -22,6 +22,23 @@ const PARAMS: &[Param] = &[
     param!("SPREAD", "celestial field extent", 0.45, 1.0, 0.85, 0.05),
     param!("PETALS", "rosette depth", 0.0, 1.0, 0.35, 0.05),
     param!("TRACERS", "harmonic fireflies", 0.0, 24.0, 12.0, 1.0),
+    param!(
+        "LAYOUT",
+        "0 armillary 1 binary 2 tower 3 spiral 4 eclipse",
+        0.0,
+        4.0,
+        0.0,
+        1.0
+    ),
+    param!("ECCENTRIC", "separation and asymmetry", 0.0, 1.0, 0.4, 0.05),
+    param!(
+        "FILIGREE",
+        "radial lattice and chart relief",
+        0.0,
+        1.0,
+        0.5,
+        0.05
+    ),
 ];
 
 impl Mode for Aetherium {
@@ -42,7 +59,7 @@ impl Mode for Aetherium {
         // Engrave stationary nebulae, star charts and harmonic orbital shells.
         // Evaluate gimbals, alidade, gears, moons and trails analytically at frame.time.
         // Depth-sort bounded moving marks, then composite through the existing grid.
-        let p: [f32; 12] = std::array::from_fn(|i| {
+        let p: [f32; 15] = std::array::from_fn(|i| {
             let v = frame
                 .param_values
                 .and_then(|v| v.get(i))
@@ -75,7 +92,7 @@ fn draw(
     seed: u64,
     palette: &[Color; 5],
     time: f32,
-    p: &[f32; 12],
+    p: &[f32; 15],
 ) {
     if width == 0 || height == 0 {
         return;
@@ -93,6 +110,9 @@ fn draw(
         spread,
         petals,
         tracers,
+        layout,
+        eccentric,
+        filigree,
     ] = *p;
     let phase = unit(seed ^ 0x519d) * TAU;
     let t = if time.is_finite() {
@@ -104,6 +124,42 @@ fn draw(
     let cy = (height - 1) as f32 * 0.5;
     let sx = cx * spread;
     let sy = cy * spread;
+    // Choose stationary sites once. Every layer uses the same sites, so a roll
+    // rearranges whole instruments, including their moving parts. No extra marks.
+    let layout = layout as usize;
+    let sites = [1, 2, 3, 4, 2][layout];
+    let skew = (unit(seed ^ 0x21ab) - 0.5) * eccentric;
+    let site = |i: usize| {
+        let i = i % sites;
+        let (x, y, scale, stretch) = match layout {
+            1 => (
+                if i == 0 { -0.48 } else { 0.48 },
+                if i == 0 { -skew } else { skew },
+                0.44,
+                0.8 + eccentric * 0.6,
+            ),
+            2 => (
+                skew * if i == 1 { 1.0 } else { -1.0 },
+                (i as f32 - 1.0) * (0.5 + eccentric * 0.16),
+                0.32,
+                0.8,
+            ),
+            3 => {
+                let a = phase + i as f32 * 2.399963;
+                let r = 0.2 + i as f32 * 0.18;
+                (r * a.cos(), r * a.sin(), 0.22 + i as f32 * 0.055, 1.0)
+            }
+            4 => {
+                if i == 0 {
+                    (-0.23 - eccentric * 0.18, -0.12, 0.7, 1.0)
+                } else {
+                    (0.52, 0.38 + skew * 0.3, 0.27, 1.0)
+                }
+            }
+            _ => (skew * 0.25, 0.0, 1.0, 1.0),
+        };
+        (cx + sx * x, cy + sy * y, sx * scale, sy * scale * stretch)
+    };
     let faint = crate::color::darken(palette[2], 45);
     let ink = crate::color::darken(palette[1], 60);
     let bright = palette[1];
@@ -116,8 +172,22 @@ fn draw(
         let v = (y as f32 - cy) / cy.max(1.0);
         for (x, cell) in row.iter_mut().enumerate() {
             let u = (x as f32 - cx) / cx.max(1.0);
-            let band = ((u * u * 1.7 + v * v * 0.6 + u * v * tilt) * 19.0 + phase) as i32;
-            let in_cloud = u * u + v * v < 0.92 && (u * 0.6 + v).abs() < nebula * 0.65;
+            let field = match layout {
+                1 => ((u.abs() - 0.48).powi(2) * 2.0 + v * v) * 24.0,
+                2 => u.abs() * 18.0 + (v * 3.0).abs().fract() * 4.0,
+                3 => (u * u + v * v) * 15.0 + (u - v) * 8.0,
+                4 => ((u + 0.35).powi(2) + v * v) * 22.0,
+                _ => (u * u * 1.7 + v * v * 0.6 + u * v * tilt) * 19.0,
+            };
+            let band = (field + phase) as i32;
+            let in_cloud = u * u + v * v < 0.92
+                && match layout {
+                    1 => (u.abs() - 0.48).abs() < nebula * 0.4,
+                    2 => u.abs() < nebula * 0.45,
+                    3 => (u - v * 0.7).abs() < nebula * 0.65,
+                    4 => (u + 0.35).powi(2) + v * v < nebula * 0.8,
+                    _ => (u * 0.6 + v).abs() < nebula * 0.65,
+                };
             let ch = if in_cloud && band.rem_euclid(4) == 0 {
                 if (x + y * 2) % 4 == 0 { ':' } else { '.' }
             } else {
@@ -156,11 +226,21 @@ fn draw(
         })
         .collect();
     for ring in 0..rings as usize {
+        let (cx, cy, sx, sy) = site(ring);
         let radius = 0.22 + 0.75 * (ring + 1) as f32 / rings;
         let turn = phase + ring as f32 * PI / rings;
         let (rs, rc) = turn.sin_cos();
-        let flatten = 0.28 + (1.0 - tilt) * 0.52;
+        let flatten = 0.2 + (1.0 - tilt) * 0.6 + eccentric * 0.12;
         for (i, &(s, c, wave)) in circle.iter().enumerate() {
+            if layout == 4 && c < -0.25 - eccentric * 0.55 {
+                continue;
+            }
+            let radius = radius
+                * if layout == 3 {
+                    0.25 + 0.75 * i as f32 / samples as f32
+                } else {
+                    1.0
+                };
             let x = radius * wave * (c * rc - s * flatten * rs);
             let y = radius * wave * (c * rs + s * flatten * rc);
             let ch = if i % (samples / 16).max(1) == 0 {
@@ -181,7 +261,8 @@ fn draw(
     }
     // Fixed radial ticks make the outer dial immediately legible at t=0.
     for i in 0..48 {
-        let a = i as f32 * TAU / 48.0;
+        let (cx, cy, sx, sy) = site(i);
+        let a = (i / sites) as f32 * TAU / (48 / sites) as f32;
         let (s, c) = a.sin_cos();
         put(
             grid,
@@ -201,12 +282,38 @@ fn draw(
         }
     }
 
+    // Stationary reticles and lattice struts expose a different silhouette at
+    // each site; bounded to 24*16 stamps, independent of grid area and time.
+    for ray in 0..(filigree * 24.0) as usize {
+        let (cx, cy, sx, sy) = site(ray);
+        let a = phase + (ray / sites) as f32 * TAU / harmonic;
+        let (s, c) = a.sin_cos();
+        for k in 1..=16 {
+            let r = k as f32 / 16.0;
+            let bend = if layout == 3 { r * r * 0.25 } else { 0.0 };
+            put(
+                grid,
+                cx + sx * (r * c + bend),
+                cy + sy * r * s,
+                if k % 4 == 0 {
+                    '+'
+                } else if c.abs() > s.abs() {
+                    '-'
+                } else {
+                    '|'
+                },
+                ink,
+            );
+        }
+    }
+
     // The dial is stationary; all moving geometry shares one depth-sorted list.
     // Reconstructed each frame, with a proven 638-mark upper bound below.
     let mut moving = Vec::with_capacity(MAX_MOVING_MARKS);
     let gimbals = 2 + (rings as usize - 2) / 5;
     let ring_samples = 192 / gimbals;
     for ring in 0..gimbals {
+        let (cx, cy, sx, sy) = site(ring);
         let orientation = Plane::new(
             0.35 + tilt * 0.9 + (t * 0.43 + ring as f32).sin() * 0.6,
             phase
@@ -241,10 +348,13 @@ fn draw(
 
     // The alidade spans the dial, including a broad sweeping silhouette at t=0.
     // <=129 samples independently of terminal dimensions. No interpolated fill.
-    let (arm_s, arm_c) = (phase + t * 0.72).sin_cos();
     let arm_samples = width.max(height).clamp(16, 128);
     for j in 0..=arm_samples {
-        let r = (j as f32 / arm_samples as f32 * 2.0 - 1.0) * 0.94;
+        let (cx, cy, sx, sy) = site(j);
+        let branch = j % sites;
+        let (arm_s, arm_c) =
+            (phase + branch as f32 * 1.7 + t * (0.72 + branch as f32 * 0.19)).sin_cos();
+        let r = ((j / sites) as f32 / (arm_samples / sites).max(1) as f32 * 2.0 - 1.0) * 0.94;
         let [x, y, z] = [r * arm_c, r * arm_s, r * 0.15];
         mark(
             &mut moving,
@@ -266,6 +376,7 @@ fn draw(
 
     // Three counter-rotating gear trains: teeth, four spokes, and orbiting hubs.
     for gear in 0..3 {
+        let (cx, cy, sx, sy) = site(gear);
         let a = phase + gear as f32 * TAU / 3.0;
         let (s, c) = a.sin_cos();
         let gx = c * 0.22;
@@ -305,6 +416,7 @@ fn draw(
     }
 
     for i in 0..planets as usize {
+        let (cx, cy, sx, sy) = site(i);
         let turn = phase + i as f32 * 2.399963;
         let plane = Plane::new(0.3 + tilt * 0.75, turn);
         let radius = 0.26 + 0.61 * (i + 1) as f32 / planets;
@@ -356,6 +468,7 @@ fn draw(
         }
     }
     for i in 0..comets as usize {
+        let (cx, cy, sx, sy) = site(i);
         for k in (0..trail as usize).rev() {
             let a = phase + i as f32 * TAU / comets - t * 1.35 + k as f32 * 0.04;
             let (s, c) = a.sin_cos();
@@ -373,6 +486,7 @@ fn draw(
         }
     }
     for i in 0..tracers as usize {
+        let (cx, cy, sx, sy) = site(i);
         let a = t * 0.65 + phase + i as f32 * TAU / tracers;
         mark(
             &mut moving,
@@ -389,9 +503,10 @@ fn draw(
             bright,
         );
     }
+    let (core_x, core_y, _, _) = site(0);
     moving.push(Mark {
-        x: cx,
-        y: cy,
+        x: core_x,
+        y: core_y,
         z: 1.1,
         ch: '@',
         fg: white,
@@ -490,18 +605,22 @@ mod tests {
     use super::*;
     use rand::{SeedableRng, rngs::StdRng};
     fn frame(w: usize, h: usize, t: f32, max: bool) -> Grid {
+        configured_frame(w, h, t, max, if max { 4 } else { 0 }, 42)
+    }
+    fn configured_frame(w: usize, h: usize, t: f32, max: bool, layout: usize, seed: u64) -> Grid {
         let mut grid = vec![vec![Cell::blank(); w]; h];
-        let mut rng = StdRng::seed_from_u64(42);
-        let values: Vec<_> = PARAMS
+        let mut rng = StdRng::seed_from_u64(seed);
+        let mut values: Vec<_> = PARAMS
             .iter()
             .map(|p| if max { p.max } else { p.default })
             .collect();
+        values[12] = layout as f32;
         MODE.render(&mut ModeFrame {
             grid: &mut grid,
             width: w,
             height: h,
-            seed: 42,
-            palette: &crate::color::make_palette(42),
+            seed,
+            palette: &crate::color::make_palette(seed),
             rng: &mut rng,
             time: t,
             args: &[],
@@ -541,6 +660,37 @@ mod tests {
                     "{w}x{h} t={t}: {changes} changed cells"
                 );
                 assert!(after.iter().flatten().all(|c| c.ch.is_ascii()));
+            }
+        }
+    }
+
+    #[test]
+    fn gem3_layout_gallery_and_seed_diversity() {
+        let gallery = (0..5)
+            .map(|layout| {
+                let grid = configured_frame(80, 30, 1.5, false, layout, 42);
+                assert_eq!(grid, configured_frame(80, 30, 1.5, false, layout, 42));
+                assert_ne!(grid, configured_frame(80, 30, 1.5, false, layout, 137));
+                format!("layout {layout}\n{}", text(&grid))
+            })
+            .collect::<Vec<_>>()
+            .join("\n\n");
+        insta::assert_snapshot!("gem3_layout_gallery", gallery);
+        let frames: Vec<_> = (0..5)
+            .map(|i| configured_frame(162, 61, 0.0, false, i, 42))
+            .collect();
+        for i in 0..5 {
+            for j in 0..i {
+                let different = frames[i]
+                    .iter()
+                    .flatten()
+                    .zip(frames[j].iter().flatten())
+                    .filter(|(a, b)| a.ch != b.ch)
+                    .count();
+                assert!(
+                    different > 800,
+                    "layouts {i}/{j}: only {different} differing glyphs"
+                );
             }
         }
     }
@@ -590,23 +740,25 @@ mod tests {
             assert!(status.success(), "colored payload regression failed");
             return;
         }
-        for (w, h) in [(162, 61), (366, 199)] {
-            let mut encoder = crate::gridio::AnsiFrameEncoder::new();
-            let mut output = String::new();
-            let mut peak = (0, 0);
-            for i in 0..100 {
-                let grid = frame(w, h, i as f32 * 0.06, true);
-                encoder.encode(&grid, false, &mut output);
-                if i > 0 && output.len() > peak.1 {
-                    peak = (i, output.len());
+        for layout in 0..5 {
+            for (w, h) in [(162, 61), (366, 199)] {
+                let mut encoder = crate::gridio::AnsiFrameEncoder::new();
+                let mut output = String::new();
+                let mut peak = (0, 0);
+                for i in 0..100 {
+                    let grid = configured_frame(w, h, i as f32 * 0.06, true, layout, 42);
+                    encoder.encode(&grid, false, &mut output);
+                    if i > 0 && output.len() > peak.1 {
+                        peak = (i, output.len());
+                    }
                 }
+                assert!(
+                    peak.1 <= 20_000,
+                    "layout {layout} {w}x{h} frame {}: {} encoded bytes",
+                    peak.0,
+                    peak.1
+                );
             }
-            assert!(
-                peak.1 <= 20_000,
-                "{w}x{h} frame {}: {} encoded bytes",
-                peak.0,
-                peak.1
-            );
         }
     }
 }
