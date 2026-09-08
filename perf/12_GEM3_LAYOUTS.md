@@ -37,4 +37,33 @@ Registry generation is current. Raw evidence remains ignored under
 
 The full colored suite (`81_gem3_layout_suite`) has 437 unit passes, one existing
 Gem 2 ANSI assertion failure, and 15 ignored tests. All 189 integration checks
-pass. Release validation is pending.
+pass.
+
+## Release playback
+
+The guarded release build succeeded. `target/release/ascii-renderer` includes
+source commit `1f1a654`. Actual-demo headless workflow, default animation and
+maximum-knob animation passed; the existing stalled-output backpressure case
+still fails. GUI painting is unmeasured.
+
+At 366x199 art inside a 400x200 terminal, the nine fixed-input E2E frames had:
+
+| Inputs | Median frame work | Maximum frame work | Median bytes | Maximum bytes |
+| --- | ---: | ---: | ---: | ---: |
+| Defaults | 1.887 ms | 2.350 ms | 7,039 | 7,621 |
+| All maxima, eclipse layout | 2.099 ms | 2.386 ms | 11,622 | 11,954 |
+
+The colored direct playback test reached its 100-frame/25-roll checkpoint in
+1.695 seconds. The complete trace includes two additional shutdown-period frames:
+102 frames and 26 roll values. It contains all five LAYOUT values. Among frames
+with unchanged knobs, median work was 2.414 ms and maximum was 30.776 ms.
+Knob transitions had median work 2.724 ms, with one 62.573 ms maximum including
+58.058 ms in presentation. Changing layout replaces stationary content as well,
+so transition payloads exceeded the animation-only 20 KB gate, peaking at 79,136
+bytes. The initial full repaint was 116,986 bytes.
+
+Inputs, timings, color settings and the release binary hash are saved in
+`13_GEM3_LAYOUT_RESULTS.json`. Raw artifacts are under `82_gem3_layout_e2e` and
+`83_gem3_layout_random`. Runtime watchdogs stayed at 15 seconds and 256 MiB;
+compilation used one background job and the existing 1 GiB guard. All probes
+have finished.

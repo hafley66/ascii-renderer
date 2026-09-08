@@ -1,0 +1,256 @@
+{
+  "source_commit": "1f1a654",
+  "binary_sha256": "3f5d4b7e7c1fef92913ce6173a47063dfeb814191c87dfd83eda19ed99bbeeef",
+  "scope": "Colored real app / native PTY; GUI painting unmeasured.",
+  "random": {
+    "trace": "perf/results/83_gem3_layout_random/frames.ndjson",
+    "all_frames": {
+      "frames": 102,
+      "median": {
+        "render_us": 380.0,
+        "encoding_us": 1910.0,
+        "presentation_us": 76.0,
+        "dur_us": 2505.5,
+        "bytes": 6394.0,
+        "changed_cells": 440.0
+      },
+      "max": {
+        "render_us": 3662,
+        "encoding_us": 28825,
+        "presentation_us": 58058,
+        "dur_us": 62573,
+        "bytes": 116986,
+        "changed_cells": 72834
+      }
+    },
+    "unchanged_knobs": {
+      "frames": 75,
+      "median": {
+        "render_us": 362,
+        "encoding_us": 1856,
+        "presentation_us": 60,
+        "dur_us": 2414,
+        "bytes": 4151,
+        "changed_cells": 310
+      },
+      "max": {
+        "render_us": 3662,
+        "encoding_us": 28825,
+        "presentation_us": 263,
+        "dur_us": 30776,
+        "bytes": 12591,
+        "changed_cells": 830
+      }
+    },
+    "knob_transitions": {
+      "frames": 26,
+      "median": {
+        "render_us": 394.0,
+        "encoding_us": 2080.0,
+        "presentation_us": 81.0,
+        "dur_us": 2724.0,
+        "bytes": 45118.5,
+        "changed_cells": 10665.0
+      },
+      "max": {
+        "render_us": 722,
+        "encoding_us": 3826,
+        "presentation_us": 58058,
+        "dur_us": 62573,
+        "bytes": 79136,
+        "changed_cells": 16314
+      }
+    },
+    "layouts": [
+      0.0,
+      1.0,
+      2.0,
+      3.0,
+      4.0
+    ],
+    "rolls": 26,
+    "slowest_frame": {
+      "args": [],
+      "bytes": 49314,
+      "changed_cells": 12818,
+      "dur_us": 62573,
+      "encoding_us": 3826,
+      "frame_index": 2,
+      "full_repaint": false,
+      "grid": {
+        "h": 199,
+        "w": 366
+      },
+      "interval_bytes": 49314,
+      "interval_frames": 1,
+      "interval_ms": 74.268875,
+      "kind": "slow_animation_frame",
+      "knobs": {
+        "COMETS": 5.0,
+        "DUST": 260.0,
+        "ECCENTRIC": 0.8500000238418579,
+        "FILIGREE": 0.05000000074505806,
+        "HARMONIC": 7.0,
+        "LAYOUT": 3.0,
+        "NEBULA": 0.6000000238418579,
+        "PETALS": 0.30000001192092896,
+        "PLANETS": 7.0,
+        "RINGS": 5.0,
+        "SPEED": 0.7000000476837158,
+        "SPREAD": 0.6000000238418579,
+        "TILT": 0.20000000298023224,
+        "TRACERS": 21.0,
+        "TRAIL": 7.0
+      },
+      "mode": "gem-aetherium-3",
+      "palette": [
+        "rgb_(49,42,26)",
+        "rgb_(181,209,71)",
+        "rgb_(57,91,172)",
+        "rgb_(140,228,103)",
+        "rgb_(220,220,220)"
+      ],
+      "phase": 0.02199999988079071,
+      "pid": 97820,
+      "presentation_us": 58058,
+      "randomize": true,
+      "render_us": 687,
+      "roll": 0,
+      "runs": 2126,
+      "sampled": false,
+      "seed": 42,
+      "strategy": "iterate",
+      "terminal_size": {
+        "h": 200,
+        "w": 400
+      },
+      "terminal_size_fallback": false,
+      "theme": "auto",
+      "time": 0.11999999731779099,
+      "ts_ms": 1788834631285,
+      "v": 1
+    }
+  },
+  "e2e": {
+    "bad-400x200": {
+      "fixed_interval": {
+        "frames": 9,
+        "median": {
+          "render_us": 282,
+          "encoding_us": 1529,
+          "presentation_us": 48,
+          "dur_us": 1887,
+          "bytes": 7039,
+          "changed_cells": 493
+        },
+        "max": {
+          "render_us": 391,
+          "encoding_us": 2025,
+          "presentation_us": 52,
+          "dur_us": 2350,
+          "bytes": 7621,
+          "changed_cells": 524
+        }
+      },
+      "inputs": {
+        "seed": 42,
+        "grid": {
+          "h": 199,
+          "w": 366
+        },
+        "terminal_size": {
+          "h": 200,
+          "w": 400
+        },
+        "knobs": {
+          "COMETS": 3.0,
+          "DUST": 160.0,
+          "ECCENTRIC": 0.4000000059604645,
+          "FILIGREE": 0.5,
+          "HARMONIC": 5.0,
+          "LAYOUT": 0.0,
+          "NEBULA": 0.4000000059604645,
+          "PETALS": 0.3499999940395355,
+          "PLANETS": 7.0,
+          "RINGS": 7.0,
+          "SPEED": 0.699999988079071,
+          "SPREAD": 0.8500000238418579,
+          "TILT": 0.550000011920929,
+          "TRACERS": 12.0,
+          "TRAIL": 5.0
+        },
+        "palette": [
+          "rgb_(49,42,26)",
+          "rgb_(181,209,71)",
+          "rgb_(57,91,172)",
+          "rgb_(140,228,103)",
+          "rgb_(220,220,220)"
+        ],
+        "theme": ""
+      }
+    },
+    "max-400x200": {
+      "fixed_interval": {
+        "frames": 9,
+        "median": {
+          "render_us": 325,
+          "encoding_us": 1635,
+          "presentation_us": 59,
+          "dur_us": 2099,
+          "bytes": 11622,
+          "changed_cells": 823
+        },
+        "max": {
+          "render_us": 478,
+          "encoding_us": 1995,
+          "presentation_us": 87,
+          "dur_us": 2386,
+          "bytes": 11954,
+          "changed_cells": 861
+        }
+      },
+      "inputs": {
+        "seed": 42,
+        "grid": {
+          "h": 199,
+          "w": 366
+        },
+        "terminal_size": {
+          "h": 200,
+          "w": 400
+        },
+        "knobs": {
+          "COMETS": 8.0,
+          "DUST": 400.0,
+          "ECCENTRIC": 1.0,
+          "FILIGREE": 1.0,
+          "HARMONIC": 9.0,
+          "LAYOUT": 4.0,
+          "NEBULA": 1.0,
+          "PETALS": 1.0,
+          "PLANETS": 12.0,
+          "RINGS": 12.0,
+          "SPEED": 3.0,
+          "SPREAD": 1.0,
+          "TILT": 1.0,
+          "TRACERS": 24.0,
+          "TRAIL": 8.0
+        },
+        "palette": [
+          "rgb_(49,42,26)",
+          "rgb_(181,209,71)",
+          "rgb_(57,91,172)",
+          "rgb_(140,228,103)",
+          "rgb_(220,220,220)"
+        ],
+        "theme": ""
+      }
+    }
+  },
+  "e2e_status": {
+    "workflow": "passed",
+    "bad-400x200": "passed",
+    "max-400x200": "passed",
+    "backpressure": "failed"
+  }
+}
