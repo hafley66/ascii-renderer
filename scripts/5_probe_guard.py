@@ -12,10 +12,27 @@ import os
 import pathlib
 import shutil
 import signal
+import stat
 import subprocess
 import sys
 import termios
 import time
+
+
+def artifact_size(directory):
+    # Atomic telemetry replacement can rename a listed .tmp before stat.
+    # Retry the complete scan once; persistent failures still stop the probe.
+    for attempt in range(2):
+        try:
+            total = 0
+            for path in directory.rglob('*'):
+                info = path.stat()
+                if stat.S_ISREG(info.st_mode):
+                    total += info.st_size
+            return total
+        except FileNotFoundError:
+            if attempt:
+                raise
 
 
 def processes():
@@ -111,7 +128,7 @@ def run(args):
             watched = table.get(args.watch_pid, (0, 0))[1]
             if args.watch_pid and args.watch_pid not in table:
                 reason = reason or 'watched_process_exited'
-            size = sum(p.stat().st_size for p in artifact.rglob('*') if p.is_file())
+            size = artifact_size(artifact)
             values = dict(elapsed=time.monotonic()-started, max_seconds=args.max_seconds,
                 owned_kib=own_rss, max_owned_kib=args.max_owned_mib*1024,
                 watched_kib=watched, baseline_kib=baseline,

@@ -7,6 +7,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import Mock
 
 path = pathlib.Path(__file__).with_name('5_probe_guard.py')
 spec = importlib.util.spec_from_file_location('guard', path)
@@ -15,6 +16,19 @@ spec.loader.exec_module(guard)
 
 
 class GuardTests(unittest.TestCase):
+    def test_artifact_rename_retries_scan_but_persistent_failure_stops(self):
+        with tempfile.TemporaryDirectory() as temp:
+            stable = pathlib.Path(temp) / 'stats.json'
+            stable.write_bytes(b'12345')
+            missing = pathlib.Path(temp) / 'stats.tmp'
+            directory = Mock()
+            directory.rglob.side_effect = [[missing], [stable]]
+            self.assertEqual(guard.artifact_size(directory), 5)
+            self.assertEqual(directory.rglob.call_count, 2)
+            directory.rglob.side_effect = [[missing], [missing]]
+            with self.assertRaises(FileNotFoundError):
+                guard.artifact_size(directory)
+
     def test_limits_and_descendants(self):
         good = dict(elapsed=0, max_seconds=15, owned_kib=10, max_owned_kib=100,
                     watched_kib=10, baseline_kib=10, max_watched_kib=100,
