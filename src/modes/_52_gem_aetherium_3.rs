@@ -174,7 +174,6 @@ fn draw(
             let u = (x as f32 - cx) / cx.max(1.0);
             let field = match layout {
                 1 => ((u.abs() - 0.48).powi(2) * 2.0 + v * v) * 24.0,
-                2 => u.abs() * 18.0 + (v * 3.0).abs().fract() * 4.0,
                 3 => (u * u + v * v) * 15.0 + (u - v) * 8.0,
                 4 => ((u + 0.35).powi(2) + v * v) * 22.0,
                 _ => (u * u * 1.7 + v * v * 0.6 + u * v * tilt) * 19.0,
@@ -183,7 +182,8 @@ fn draw(
             let in_cloud = u * u + v * v < 0.92
                 && match layout {
                     1 => (u.abs() - 0.48).abs() < nebula * 0.4,
-                    2 => u.abs() < nebula * 0.45,
+                    // Tower background stays clear of bands, including random rolls.
+                    2 => false,
                     3 => (u - v * 0.7).abs() < nebula * 0.65,
                     4 => (u + 0.35).powi(2) + v * v < nebula * 0.8,
                     _ => (u * 0.6 + v).abs() < nebula * 0.65,
