@@ -1,0 +1,586 @@
+{
+  "scope": "Real demo/native PTY and native headless terminal. GUI painting unmeasured.",
+  "implementation_commit": "25889d7",
+  "binary_sha256": "6a1a8087d920ce284800df6a408c5ab2d2fdc773a83fb70e3ac43e0143cad007",
+  "tests": {
+    "focused": {
+      "passed": 4
+    },
+    "unit": {
+      "passed": 435,
+      "failed": 2,
+      "ignored": 15
+    },
+    "integration": {
+      "passed": 189
+    }
+  },
+  "sequences": [
+    {
+      "trace": "perf/results/59_gem3_max/frames.ndjson",
+      "frames": 100,
+      "steady_frames": 99,
+      "rolls": 1,
+      "inputs": {
+        "mode": "gem-aetherium-3",
+        "seed": 42,
+        "theme": "auto",
+        "grid": {
+          "h": 199,
+          "w": 366
+        },
+        "terminal_size": {
+          "h": 200,
+          "w": 400
+        },
+        "knobs": {
+          "COMETS": 8.0,
+          "DUST": 400.0,
+          "HARMONIC": 9.0,
+          "NEBULA": 1.0,
+          "PETALS": 1.0,
+          "PLANETS": 12.0,
+          "RINGS": 12.0,
+          "SPEED": 3.0,
+          "SPREAD": 1.0,
+          "TILT": 1.0,
+          "TRACERS": 24.0,
+          "TRAIL": 8.0
+        },
+        "strategy": "iterate",
+        "palette": [
+          "rgb_(49,42,26)",
+          "rgb_(181,209,71)",
+          "rgb_(57,91,172)",
+          "rgb_(140,228,103)",
+          "rgb_(220,220,220)"
+        ]
+      },
+      "first_frame": {
+        "render_us": 432,
+        "encoding_us": 2983,
+        "presentation_us": 259,
+        "dur_us": 3675,
+        "bytes": 94978,
+        "changed_cells": 72834
+      },
+      "steady_median": {
+        "render_us": 262,
+        "encoding_us": 1551,
+        "presentation_us": 37,
+        "dur_us": 1864,
+        "bytes": 3877,
+        "changed_cells": 415
+      },
+      "steady_max": {
+        "render_us": 339,
+        "encoding_us": 1803,
+        "presentation_us": 79,
+        "dur_us": 2114,
+        "bytes": 4085,
+        "changed_cells": 437
+      }
+    },
+    {
+      "trace": "perf/results/60_gem3_random/frames.ndjson",
+      "frames": 100,
+      "steady_frames": 99,
+      "rolls": 25,
+      "inputs": {
+        "mode": "gem-aetherium-3",
+        "seed": 42,
+        "theme": "auto",
+        "grid": {
+          "h": 199,
+          "w": 366
+        },
+        "terminal_size": {
+          "h": 200,
+          "w": 400
+        },
+        "knobs": {
+          "COMETS": 3.0,
+          "DUST": 160.0,
+          "HARMONIC": 5.0,
+          "NEBULA": 0.4000000059604645,
+          "PETALS": 0.3499999940395355,
+          "PLANETS": 7.0,
+          "RINGS": 7.0,
+          "SPEED": 0.699999988079071,
+          "SPREAD": 0.8500000238418579,
+          "TILT": 0.550000011920929,
+          "TRACERS": 12.0,
+          "TRAIL": 5.0
+        },
+        "strategy": "iterate",
+        "palette": [
+          "rgb_(49,42,26)",
+          "rgb_(181,209,71)",
+          "rgb_(57,91,172)",
+          "rgb_(140,228,103)",
+          "rgb_(220,220,220)"
+        ]
+      },
+      "first_frame": {
+        "render_us": 423,
+        "encoding_us": 2761,
+        "presentation_us": 92,
+        "dur_us": 3277,
+        "bytes": 88098,
+        "changed_cells": 72834
+      },
+      "steady_median": {
+        "render_us": 207,
+        "encoding_us": 1419,
+        "presentation_us": 36,
+        "dur_us": 1666,
+        "bytes": 1447,
+        "changed_cells": 164
+      },
+      "steady_max": {
+        "render_us": 295,
+        "encoding_us": 1827,
+        "presentation_us": 63,
+        "dur_us": 2113,
+        "bytes": 56412,
+        "changed_cells": 16370
+      }
+    },
+    {
+      "trace": "perf/results/69_gem3_clockwork_max/frames.ndjson",
+      "frames": 100,
+      "steady_frames": 99,
+      "rolls": 1,
+      "inputs": {
+        "mode": "gem-aetherium-3",
+        "seed": 42,
+        "theme": "auto",
+        "grid": {
+          "h": 199,
+          "w": 366
+        },
+        "terminal_size": {
+          "h": 200,
+          "w": 400
+        },
+        "knobs": {
+          "COMETS": 8.0,
+          "DUST": 400.0,
+          "HARMONIC": 9.0,
+          "NEBULA": 1.0,
+          "PETALS": 1.0,
+          "PLANETS": 12.0,
+          "RINGS": 12.0,
+          "SPEED": 3.0,
+          "SPREAD": 1.0,
+          "TILT": 1.0,
+          "TRACERS": 24.0,
+          "TRAIL": 8.0
+        },
+        "strategy": "iterate",
+        "palette": [
+          "rgb_(49,42,26)",
+          "rgb_(181,209,71)",
+          "rgb_(57,91,172)",
+          "rgb_(140,228,103)",
+          "rgb_(220,220,220)"
+        ]
+      },
+      "first_frame": {
+        "render_us": 1008,
+        "encoding_us": 5445,
+        "presentation_us": 151,
+        "dur_us": 6605,
+        "bytes": 96098,
+        "changed_cells": 72834
+      },
+      "steady_median": {
+        "render_us": 1415,
+        "encoding_us": 3341,
+        "presentation_us": 108,
+        "dur_us": 4751,
+        "bytes": 14932,
+        "changed_cells": 1765
+      },
+      "steady_max": {
+        "render_us": 2229,
+        "encoding_us": 7349,
+        "presentation_us": 188,
+        "dur_us": 9759,
+        "bytes": 16215,
+        "changed_cells": 1877
+      }
+    },
+    {
+      "trace": "perf/results/70_gem3_clockwork_random/frames.ndjson",
+      "frames": 100,
+      "steady_frames": 99,
+      "rolls": 25,
+      "inputs": {
+        "mode": "gem-aetherium-3",
+        "seed": 42,
+        "theme": "auto",
+        "grid": {
+          "h": 199,
+          "w": 366
+        },
+        "terminal_size": {
+          "h": 200,
+          "w": 400
+        },
+        "knobs": {
+          "COMETS": 3.0,
+          "DUST": 160.0,
+          "HARMONIC": 5.0,
+          "NEBULA": 0.4000000059604645,
+          "PETALS": 0.3499999940395355,
+          "PLANETS": 7.0,
+          "RINGS": 7.0,
+          "SPEED": 0.699999988079071,
+          "SPREAD": 0.8500000238418579,
+          "TILT": 0.550000011920929,
+          "TRACERS": 12.0,
+          "TRAIL": 5.0
+        },
+        "strategy": "iterate",
+        "palette": [
+          "rgb_(49,42,26)",
+          "rgb_(181,209,71)",
+          "rgb_(57,91,172)",
+          "rgb_(140,228,103)",
+          "rgb_(220,220,220)"
+        ]
+      },
+      "first_frame": {
+        "render_us": 637,
+        "encoding_us": 7816,
+        "presentation_us": 234,
+        "dur_us": 8688,
+        "bytes": 89668,
+        "changed_cells": 72834
+      },
+      "steady_median": {
+        "render_us": 1349,
+        "encoding_us": 4505,
+        "presentation_us": 162,
+        "dur_us": 6282,
+        "bytes": 7919,
+        "changed_cells": 1069
+      },
+      "steady_max": {
+        "render_us": 11400,
+        "encoding_us": 20635,
+        "presentation_us": 248,
+        "dur_us": 24901,
+        "bytes": 63727,
+        "changed_cells": 17015
+      }
+    }
+  ],
+  "e2e": [
+    {
+      "trace": "perf/results/58_gem3_no_hooks_e2e/bad-400x200/animation.ndjson",
+      "frames": 14,
+      "steady_frames": 13,
+      "rolls": 3,
+      "inputs": {
+        "mode": "gem-aetherium-3",
+        "seed": 42,
+        "theme": "",
+        "grid": {
+          "h": 199,
+          "w": 366
+        },
+        "terminal_size": {
+          "h": 200,
+          "w": 400
+        },
+        "knobs": {
+          "COMETS": 3.0,
+          "DUST": 160.0,
+          "HARMONIC": 5.0,
+          "NEBULA": 0.4000000059604645,
+          "PETALS": 0.3499999940395355,
+          "PLANETS": 7.0,
+          "RINGS": 7.0,
+          "SPEED": 0.699999988079071,
+          "SPREAD": 0.8500000238418579,
+          "TILT": 0.550000011920929,
+          "TRACERS": 12.0,
+          "TRAIL": 5.0
+        },
+        "strategy": "iterate",
+        "palette": [
+          "rgb_(49,42,26)",
+          "rgb_(181,209,71)",
+          "rgb_(57,91,172)",
+          "rgb_(140,228,103)",
+          "rgb_(220,220,220)"
+        ]
+      },
+      "first_frame": {
+        "render_us": 196,
+        "encoding_us": 2912,
+        "presentation_us": 88,
+        "dur_us": 3196,
+        "bytes": 109706,
+        "changed_cells": 72834
+      },
+      "steady_median": {
+        "render_us": 208,
+        "encoding_us": 1536,
+        "presentation_us": 35,
+        "dur_us": 1784,
+        "bytes": 2563,
+        "changed_cells": 161
+      },
+      "steady_max": {
+        "render_us": 244,
+        "encoding_us": 1696,
+        "presentation_us": 64,
+        "dur_us": 1935,
+        "bytes": 60456,
+        "changed_cells": 9956
+      }
+    },
+    {
+      "trace": "perf/results/58_gem3_no_hooks_e2e/max-400x200/animation.ndjson",
+      "frames": 14,
+      "steady_frames": 13,
+      "rolls": 3,
+      "inputs": {
+        "mode": "gem-aetherium-3",
+        "seed": 42,
+        "theme": "",
+        "grid": {
+          "h": 199,
+          "w": 366
+        },
+        "terminal_size": {
+          "h": 200,
+          "w": 400
+        },
+        "knobs": {
+          "COMETS": 8.0,
+          "DUST": 400.0,
+          "HARMONIC": 9.0,
+          "NEBULA": 1.0,
+          "PETALS": 1.0,
+          "PLANETS": 12.0,
+          "RINGS": 12.0,
+          "SPEED": 3.0,
+          "SPREAD": 1.0,
+          "TILT": 1.0,
+          "TRACERS": 24.0,
+          "TRAIL": 8.0
+        },
+        "strategy": "iterate",
+        "palette": [
+          "rgb_(49,42,26)",
+          "rgb_(181,209,71)",
+          "rgb_(57,91,172)",
+          "rgb_(140,228,103)",
+          "rgb_(220,220,220)"
+        ]
+      },
+      "first_frame": {
+        "render_us": 588,
+        "encoding_us": 2819,
+        "presentation_us": 4366,
+        "dur_us": 7774,
+        "bytes": 141515,
+        "changed_cells": 72834
+      },
+      "steady_median": {
+        "render_us": 288,
+        "encoding_us": 1669,
+        "presentation_us": 47,
+        "dur_us": 2021,
+        "bytes": 6400,
+        "changed_cells": 418
+      },
+      "steady_max": {
+        "render_us": 752,
+        "encoding_us": 2137,
+        "presentation_us": 113,
+        "dur_us": 2668,
+        "bytes": 80535,
+        "changed_cells": 16577
+      }
+    },
+    {
+      "trace": "perf/results/68_gem3_clockwork_e2e/bad-400x200/animation.ndjson",
+      "frames": 14,
+      "steady_frames": 13,
+      "rolls": 3,
+      "inputs": {
+        "mode": "gem-aetherium-3",
+        "seed": 42,
+        "theme": "",
+        "grid": {
+          "h": 199,
+          "w": 366
+        },
+        "terminal_size": {
+          "h": 200,
+          "w": 400
+        },
+        "knobs": {
+          "COMETS": 3.0,
+          "DUST": 160.0,
+          "HARMONIC": 5.0,
+          "NEBULA": 0.4000000059604645,
+          "PETALS": 0.3499999940395355,
+          "PLANETS": 7.0,
+          "RINGS": 7.0,
+          "SPEED": 0.699999988079071,
+          "SPREAD": 0.8500000238418579,
+          "TILT": 0.550000011920929,
+          "TRACERS": 12.0,
+          "TRAIL": 5.0
+        },
+        "strategy": "iterate",
+        "palette": [
+          "rgb_(49,42,26)",
+          "rgb_(181,209,71)",
+          "rgb_(57,91,172)",
+          "rgb_(140,228,103)",
+          "rgb_(220,220,220)"
+        ]
+      },
+      "first_frame": {
+        "render_us": 226,
+        "encoding_us": 2810,
+        "presentation_us": 76,
+        "dur_us": 3113,
+        "bytes": 118208,
+        "changed_cells": 72834
+      },
+      "steady_median": {
+        "render_us": 241,
+        "encoding_us": 1592,
+        "presentation_us": 35,
+        "dur_us": 1872,
+        "bytes": 10109,
+        "changed_cells": 763
+      },
+      "steady_max": {
+        "render_us": 269,
+        "encoding_us": 1783,
+        "presentation_us": 70,
+        "dur_us": 2082,
+        "bytes": 71272,
+        "changed_cells": 10827
+      }
+    },
+    {
+      "trace": "perf/results/68_gem3_clockwork_e2e/max-400x200/animation.ndjson",
+      "frames": 14,
+      "steady_frames": 13,
+      "rolls": 3,
+      "inputs": {
+        "mode": "gem-aetherium-3",
+        "seed": 42,
+        "theme": "",
+        "grid": {
+          "h": 199,
+          "w": 366
+        },
+        "terminal_size": {
+          "h": 200,
+          "w": 400
+        },
+        "knobs": {
+          "COMETS": 8.0,
+          "DUST": 400.0,
+          "HARMONIC": 9.0,
+          "NEBULA": 1.0,
+          "PETALS": 1.0,
+          "PLANETS": 12.0,
+          "RINGS": 12.0,
+          "SPEED": 3.0,
+          "SPREAD": 1.0,
+          "TILT": 1.0,
+          "TRACERS": 24.0,
+          "TRAIL": 8.0
+        },
+        "strategy": "iterate",
+        "palette": [
+          "rgb_(49,42,26)",
+          "rgb_(181,209,71)",
+          "rgb_(57,91,172)",
+          "rgb_(140,228,103)",
+          "rgb_(220,220,220)"
+        ]
+      },
+      "first_frame": {
+        "render_us": 301,
+        "encoding_us": 3151,
+        "presentation_us": 1800,
+        "dur_us": 5253,
+        "bytes": 149414,
+        "changed_cells": 72834
+      },
+      "steady_median": {
+        "render_us": 308,
+        "encoding_us": 1815,
+        "presentation_us": 36,
+        "dur_us": 2158,
+        "bytes": 24414,
+        "changed_cells": 1722
+      },
+      "steady_max": {
+        "render_us": 348,
+        "encoding_us": 2092,
+        "presentation_us": 77,
+        "dur_us": 2459,
+        "bytes": 93087,
+        "changed_cells": 17365
+      }
+    }
+  ],
+  "e2e_status": {
+    "58_gem3_no_hooks_e2e": {
+      "workflow": "passed",
+      "bad-400x200": "passed",
+      "max-400x200": "passed",
+      "backpressure": "failed"
+    },
+    "68_gem3_clockwork_e2e": {
+      "workflow": "passed",
+      "bad-400x200": "passed",
+      "max-400x200": "passed",
+      "backpressure": "failed"
+    }
+  },
+  "status": "Historical measurements only; final 638-mark release validation interrupted.",
+  "measured_implementation_commit": "25889d7",
+  "final_source_commit": "4fda48e",
+  "final_colored_unit_tests": {
+    "passed": 436,
+    "failed": 1,
+    "ignored": 15,
+    "remaining_failure": "morph::iterate_frame_tests::gem_bad_roll6_ansi_regression"
+  },
+  "final_focused_tests": {
+    "passed": 4,
+    "color_gate_bytes": 20000,
+    "frames_per_size": 100,
+    "sizes": [
+      [
+        162,
+        61
+      ],
+      [
+        366,
+        199
+      ]
+    ]
+  },
+  "caveats": [
+    "Direct sequences 59, 60, 69 and 70 inherited NO_COLOR=1; E2E removed it.",
+    "Direct sequences 69 and 70 used background taskpolicy and nice 19.",
+    "Final 638-mark release rebuilds received SIGTERM twice; third attempt stopped at user request.",
+    "No final release performance measurement is claimed."
+  ]
+}
