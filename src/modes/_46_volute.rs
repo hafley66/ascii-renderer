@@ -17,23 +17,23 @@ const PARAMS: &[Param] = &[
 ];
 
 impl Mode for VoluteMode {
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn name(&self) -> &'static str {
         "volute"
     }
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn help(&self) -> &'static str {
         "Chambered spiral shell in a flowing tide [scale] [coil] [chambers] [nacre] [tide] [speed]"
     }
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn animation(&self) -> AnimKind {
         AnimKind::Iterate
     }
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn params(&self) -> &'static [Param] {
         PARAMS
     }
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn render(&self, frame: &mut ModeFrame<'_>) {
         // Resolve positional arguments, native controls, then live/env defaults.
         // Sanitize each input before evaluating a frame with no retained state.
@@ -55,7 +55,7 @@ impl Mode for VoluteMode {
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn draw_volute(frame: &mut ModeFrame<'_>, controls: &[f32; 6]) {
     // Derive shell orientation and tidal phase from the explicit seed and time.
     // Evaluate four logarithmic whorls and curved chamber walls per grid cell.
@@ -175,7 +175,7 @@ mod tests {
     use crate::{morph::IterateFrameRenderer, render::grid_to_plain};
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn volute_snapshots_and_motion() {
         let k: Vec<_> = PARAMS.iter().map(|p| p.default).collect();
         let mut renderer = IterateFrameRenderer::new("volute", 42, "deep", 100, 32).unwrap();
@@ -203,7 +203,7 @@ mod tests {
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn volute_boundaries_and_inputs() {
         use rand::SeedableRng;
         for (w, h) in [(0, 0), (0, 3), (3, 0), (1, 1), (2, 9), (9, 2), (80, 24)] {

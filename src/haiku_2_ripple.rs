@@ -21,7 +21,7 @@ pub(crate) struct RippleKnobs {
 }
 
 impl RippleKnobs {
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     pub(crate) fn from_env() -> Self {
         RippleKnobs {
             speed: param_f32("SPEED", 1.0).clamp(0.3, 3.0),
@@ -34,7 +34,7 @@ impl RippleKnobs {
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn wave_value(distance: f32, phase: f32, freq: f32, waveform: u32) -> f32 {
     let angle = distance * freq * TAU / 24.0 - phase;
     match waveform {
@@ -53,7 +53,7 @@ fn wave_value(distance: f32, phase: f32, freq: f32, waveform: u32) -> f32 {
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn choose_glyph_for_wave(amp: f32, particle: bool) -> char {
     if particle {
         match (amp * 3.0).round() as i32 {
@@ -74,7 +74,7 @@ fn choose_glyph_for_wave(amp: f32, particle: bool) -> char {
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn draw_haiku_2_ripple(
     grid: &mut Grid,
     width: usize,
@@ -190,7 +190,7 @@ pub(crate) fn draw_haiku_2_ripple(
     });
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_haiku_2_ripple(
     mut grid: Grid,
     width: usize,
@@ -233,7 +233,7 @@ pub(crate) fn cli_haiku_2_ripple(
 mod tests {
     use super::*;
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn run(w: usize, h: usize, seed: u64, t: f32) -> String {
         let mut g = vec![vec![Cell::blank(); w]; h];
         let p = crate::color::make_palette(seed);
@@ -246,26 +246,26 @@ mod tests {
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn snapshot_haiku_2_ripple_static() {
         insta::assert_snapshot!("haiku_2_ripple_80x24_static", run(80, 24, 42, 0.0));
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn snapshot_haiku_2_ripple_animated() {
         insta::assert_snapshot!("haiku_2_ripple_80x24_animated", run(80, 24, 42, 5.0));
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn snapshot_deterministic() {
         assert_eq!(run(80, 24, 42, 0.0), run(80, 24, 42, 0.0));
         assert_ne!(run(80, 24, 42, 0.0), run(80, 24, 7, 0.0));
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn snapshot_t_changes_frame() {
         assert_ne!(run(80, 24, 42, 0.0), run(80, 24, 42, 3.0));
         assert_ne!(run(80, 24, 42, 3.0), run(80, 24, 42, 6.0));

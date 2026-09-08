@@ -54,7 +54,7 @@ pub struct SceneOpts {
     pub hue_range: f32,
 }
 impl Default for SceneOpts {
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn default() -> Self {
         SceneOpts {
             layer_count: 3,
@@ -76,7 +76,7 @@ impl Default for SceneOpts {
 /// - mixed element vocabulary: trees, bushes, flowers, fruit vines, grass, gaps
 /// - per-stop hue/sat/light jitter (no per-layer color banding)
 /// Layers still bias size/color by depth, but distributions overlap so layers blur.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn scene_walk(
     width: usize,
     height: usize,

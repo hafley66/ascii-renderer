@@ -33,7 +33,7 @@ generate() {
             echo "mod $module;"
         done
         echo
-        echo '#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]'
+        echo '#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]'
         echo 'pub(crate) fn register_all(registry: &mut crate::registry::ModeRegistry) {'
         for file in "${files[@]}"; do
             local module

@@ -97,7 +97,7 @@ use crate::walker;
 use crate::walker::*;
 use crate::warps::*;
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn run() {
     let args: Vec<String> = std::env::args().collect();
 
@@ -116,7 +116,7 @@ pub(crate) fn run() {
     run_render(args);
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn run_preset_command(args: &[String]) {
     match args.get(2).map(String::as_str) {
         Some("list") => {
@@ -233,14 +233,14 @@ fn run_preset_command(args: &[String]) {
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn preset_usage() {
     eprintln!(
         "ascii-renderer preset list|show <name>|run <name>|save <name> <seed> <mode> [theme] [KEY=VALUE ...]"
     );
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn run_render(args: Vec<String>) {
     #[cfg(unix)]
     if args.get(1).map(String::as_str) == Some("--animation-worker") {

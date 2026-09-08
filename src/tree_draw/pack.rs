@@ -2,7 +2,7 @@
 use super::*;
 /// Grow any archetype by index (mod TREE_KIND_COUNT). DRY replacement for the
 /// per-mode `match kind % N { ... }` blocks.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn grow_tree_by_index(idx: usize, grid: &mut Grid, params: &TreeParams, rng: &mut StdRng) {
     match idx % TREE_KIND_COUNT {
         0 => SpiralTree.grow(grid, params, rng),
@@ -45,7 +45,7 @@ pub struct PackOpts {
     pub kind_filter: Option<&'static [usize]>,
 }
 impl Default for PackOpts {
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn default() -> Self {
         PackOpts {
             layer_count: 3,
@@ -72,7 +72,7 @@ pub struct PackedSlot {
 /// Coverage strategy: each layer walks x=0..width placing trees whose canopies
 /// interleave by `overlap`. Layer index raises both root_y (closer = lower) and
 /// canopy height (closer = taller), producing an aerial-perspective tier wall.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn pack_forest(
     width: usize,
     height: usize,

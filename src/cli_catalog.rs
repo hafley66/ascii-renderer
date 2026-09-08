@@ -49,7 +49,7 @@ use crate::walker::*;
 use crate::warps::*;
 
 /// Dispatch arm for mode(s): boles1 (moved verbatim from run()).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_boles1(
     mut grid: Grid,
     width: usize,
@@ -141,7 +141,7 @@ pub(crate) fn cli_boles1(
 }
 
 /// Dispatch arm for mode(s): boles2 (moved verbatim from run()).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_boles2(
     mut grid: Grid,
     width: usize,
@@ -235,7 +235,7 @@ pub(crate) fn cli_boles2(
 }
 
 /// Dispatch arm for mode(s): boles3 (moved verbatim from run()).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_boles3(
     mut grid: Grid,
     width: usize,
@@ -329,7 +329,7 @@ pub(crate) fn cli_boles3(
 }
 
 /// Dispatch arm for mode(s): boles4 (moved verbatim from run()).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_boles4(
     mut grid: Grid,
     width: usize,
@@ -416,7 +416,7 @@ pub(crate) fn cli_boles4(
 }
 
 /// Dispatch arm for mode(s): boles5 (moved verbatim from run()).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_boles5(
     mut grid: Grid,
     width: usize,
@@ -503,7 +503,7 @@ pub(crate) fn cli_boles5(
 }
 
 /// Dispatch arm for mode(s): trunks1 (moved verbatim from run()).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_trunks1(
     mut grid: Grid,
     width: usize,
@@ -614,7 +614,7 @@ pub(crate) fn cli_trunks1(
 }
 
 /// Dispatch arm for mode(s): trees1 (moved verbatim from run()).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_trees1(
     mut grid: Grid,
     width: usize,
@@ -740,7 +740,7 @@ pub(crate) fn cli_trees1(
 }
 
 /// Dispatch arm for mode(s): trees2 (moved verbatim from run()).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_trees2(
     mut grid: Grid,
     width: usize,
@@ -861,7 +861,7 @@ pub(crate) fn cli_trees2(
 }
 
 /// Dispatch arm for mode(s): trees3 (moved verbatim from run()).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_trees3(
     mut grid: Grid,
     width: usize,
@@ -1154,7 +1154,7 @@ pub(crate) fn cli_trees3(
 }
 
 /// Dispatch arm for mode(s): trees4 (moved verbatim from run()).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_trees4(
     mut grid: Grid,
     width: usize,
@@ -1245,7 +1245,7 @@ pub(crate) fn cli_trees4(
 }
 
 /// Dispatch arm for mode(s): trees8 (moved verbatim from run()).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_trees8(
     mut grid: Grid,
     width: usize,
@@ -1326,7 +1326,7 @@ pub(crate) fn cli_trees8(
 }
 
 /// Dispatch arm for mode(s): trees9 (moved verbatim from run()).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_trees9(
     mut grid: Grid,
     width: usize,
@@ -1410,7 +1410,7 @@ pub(crate) fn cli_trees9(
 }
 
 /// Dispatch arm for mode(s): bushes (moved verbatim from run()).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_bushes(
     mut grid: Grid,
     width: usize,
@@ -1479,7 +1479,7 @@ pub(crate) fn cli_bushes(
 }
 
 /// Dispatch arm for mode(s): boles6 (moved verbatim from run()).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_boles6(
     mut grid: Grid,
     width: usize,
@@ -1556,7 +1556,7 @@ pub(crate) fn cli_boles6(
 }
 
 /// Dispatch arm for mode(s): trees10 (moved verbatim from run()).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_trees10(
     mut grid: Grid,
     width: usize,

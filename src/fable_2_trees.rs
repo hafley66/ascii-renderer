@@ -33,7 +33,7 @@ pub(crate) const SPECIES: [Species; 5] = [
 ];
 
 impl Species {
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     pub(crate) fn label(self) -> &'static str {
         match self {
             Species::Colonizer => "Colonizer",
@@ -58,7 +58,7 @@ pub(crate) struct Ink {
 }
 
 impl Ink {
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     pub(crate) fn from_hue(hue: f64, sat: f64, light: f64) -> Ink {
         let h = |d: f64| (hue + d).rem_euclid(360.0);
         Ink {
@@ -73,7 +73,7 @@ impl Ink {
     }
 
     /// Aerial perspective: pull every color toward `toward` by `k`.
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     pub(crate) fn fade(&self, toward: Color, k: f32) -> Ink {
         let f = |c: Color| lerp_color(c, toward, k);
         Ink {
@@ -98,19 +98,19 @@ pub(crate) struct GrowKnobs {
 
 // ---------------------------------------------------------------- pen helpers
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn rf(rng: &mut StdRng) -> f32 {
     rng.random::<f32>()
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn put(grid: &mut Grid, x: i32, y: i32, ch: char, c: Color) {
     if y >= 0 && x >= 0 && (y as usize) < grid.len() && (x as usize) < grid[y as usize].len() {
         grid[y as usize][x as usize] = Cell::new(ch, c);
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn is_blank(grid: &Grid, x: i32, y: i32) -> bool {
     y >= 0
         && x >= 0
@@ -119,14 +119,14 @@ fn is_blank(grid: &Grid, x: i32, y: i32) -> bool {
         && grid[y as usize][x as usize].ch == ' '
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn put_blank(grid: &mut Grid, x: i32, y: i32, ch: char, c: Color) {
     if is_blank(grid, x, y) {
         grid[y as usize][x as usize] = Cell::new(ch, c);
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn step_glyph(dx: i32, dy: i32, thick: bool) -> char {
     if dx == 0 {
         if thick { '┃' } else { '│' }
@@ -140,7 +140,7 @@ fn step_glyph(dx: i32, dy: i32, thick: bool) -> char {
 }
 
 /// Draw the cells after (x0, y0) up to and including (x1, y1), glyph per step.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn seg(grid: &mut Grid, x0: i32, y0: i32, x1: i32, y1: i32, c: Color, thick: bool) {
     let dx = x1 - x0;
     let dy = y1 - y0;
@@ -158,7 +158,7 @@ fn seg(grid: &mut Grid, x0: i32, y0: i32, x1: i32, y1: i32, c: Color, thick: boo
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn root_of(plot: Rect) -> (i32, i32) {
     (
         plot.x as i32 + plot.w as i32 / 2,
@@ -167,7 +167,7 @@ fn root_of(plot: Rect) -> (i32, i32) {
 }
 
 /// Wobbling trunk of `rows` cells rising from (x0, y0); returns the centerline bottom to top.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn trunk_walk(
     grid: &mut Grid,
     x0: i32,
@@ -206,7 +206,7 @@ fn trunk_walk(
 }
 
 /// Elliptical leaf cluster; glyphs ordered core, mid, rim. Never covers structure.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn leaf_blob(
     grid: &mut Grid,
     cx: i32,
@@ -243,7 +243,7 @@ fn leaf_blob(
 }
 
 /// Two to four roots fanning down from the root row, plus a flare on the row itself.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn root_fan(
     grid: &mut Grid,
     rx: i32,
@@ -285,7 +285,7 @@ pub(crate) fn root_fan(
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn hue_of(c: Color) -> f64 {
     match c {
         Color::Rgb { r, g, b } => {
@@ -309,7 +309,7 @@ fn hue_of(c: Color) -> f64 {
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn palette_hue(palette: &[Color; 5]) -> f64 {
     hue_of(palette[1])
 }
@@ -318,7 +318,7 @@ pub(crate) fn palette_hue(palette: &[Color; 5]) -> f64 {
 
 /// Grow one tree. `plot` is the above-ground box whose bottom row is the root row;
 /// `root_depth` rows below it are free for roots.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn grow_species(
     kind: Species,
     grid: &mut Grid,
@@ -348,7 +348,7 @@ struct Frame {
     half: f32,
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn frame_of(plot: Rect, energy: f32) -> Frame {
     let (rx, ry) = root_of(plot);
     let e = energy.clamp(0.25, 1.3);
@@ -360,7 +360,7 @@ fn frame_of(plot: Rect, energy: f32) -> Frame {
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn leaf_set(th: f32) -> [char; 3] {
     if th < 9.0 {
         ['•', '∙', '·']
@@ -377,7 +377,7 @@ struct Node {
     parent: i32,
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn grow_colonizer(
     grid: &mut Grid,
     plot: Rect,
@@ -570,7 +570,7 @@ fn grow_colonizer(
 
 // ---------------------------------------------------------------- 2. banyan (limbs + prop roots)
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn grow_limb(
     grid: &mut Grid,
     x0: i32,
@@ -613,7 +613,7 @@ fn grow_limb(
     );
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn grow_banyan(
     grid: &mut Grid,
     plot: Rect,
@@ -762,7 +762,7 @@ fn grow_banyan(
 
 // ---------------------------------------------------------------- 3. mangrove (stilt roots + turtle branches)
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn turtle_branch(
     grid: &mut Grid,
     vx: f32,
@@ -816,7 +816,7 @@ fn turtle_branch(
     tips.push((px, py));
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn grow_mangrove(
     grid: &mut Grid,
     plot: Rect,
@@ -926,7 +926,7 @@ fn grow_mangrove(
 
 // ---------------------------------------------------------------- 4. coral (diffusion-limited aggregation)
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn count8(occ: &[u8], lw: usize, lh: usize, x: i32, y: i32) -> u32 {
     let mut n = 0;
     for dy in -1..=1 {
@@ -948,7 +948,7 @@ fn count8(occ: &[u8], lw: usize, lh: usize, x: i32, y: i32) -> u32 {
     n
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn grow_coral(
     grid: &mut Grid,
     plot: Rect,
@@ -1103,7 +1103,7 @@ fn grow_coral(
 
 // ---------------------------------------------------------------- 5. sunburst (phyllotactic crown)
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn grow_sunburst(
     grid: &mut Grid,
     plot: Rect,
@@ -1210,7 +1210,7 @@ pub(crate) struct Palette {
 }
 
 impl Palette {
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     pub(crate) fn new() -> Self {
         Palette {
             colors: Vec::new(),
@@ -1218,7 +1218,7 @@ impl Palette {
         }
     }
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     pub(crate) fn intern(&mut self, c: Color) -> u16 {
         if let Some(&i) = self.index.get(&c) {
             return i;
@@ -1246,12 +1246,12 @@ pub(crate) struct Sprite {
     pub spans: Vec<Option<(u16, u16)>>,
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn is_leaf_glyph(ch: char) -> bool {
     matches!(ch, '●' | '•' | '∙' | '·' | '◆' | '◇' | '○' | '◦')
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn leaf_alt(ch: char) -> char {
     match ch {
         '●' => '•',
@@ -1266,7 +1266,7 @@ fn leaf_alt(ch: char) -> char {
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn sprite_from_grid(scratch: &Grid, root_row: usize, pal: &mut Palette) -> Sprite {
     let w = scratch.first().map(|r| r.len()).unwrap_or(0);
     let rows: Vec<Vec<SpriteCell>> = scratch
@@ -1307,7 +1307,7 @@ pub(crate) fn sprite_from_grid(scratch: &Grid, root_row: usize, pal: &mut Palett
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn hash3(a: u32, b: u32, c: u32) -> u32 {
     let mut h =
         a.wrapping_mul(0x9E37_79B9) ^ b.wrapping_mul(0x85EB_CA6B) ^ c.wrapping_mul(0xC2B2_AE35);
@@ -1319,7 +1319,7 @@ pub(crate) fn hash3(a: u32, b: u32, c: u32) -> u32 {
 
 /// Paint a sprite with its root row at (x0, y0 + root_row). Rows above the root
 /// shear by `sway` scaled with height squared; leaf glyphs flicker by `flicker`.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn blit_sprite(
     grid: &mut Grid,
     gw: usize,
@@ -1379,7 +1379,7 @@ pub(crate) struct SheetKnobs {
 }
 
 impl SheetKnobs {
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     pub(crate) fn from_env() -> Self {
         SheetKnobs {
             energy: param_f32("ENERGY", 0.9).clamp(0.3, 1.2),
@@ -1426,7 +1426,7 @@ thread_local! {
     static SHEET: RefCell<Option<Sheet>> = const { RefCell::new(None) };
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn build_sheet(key: SheetKey, k: &SheetKnobs) -> Sheet {
     let gw = key.w;
     let gh = key.h;
@@ -1492,7 +1492,7 @@ fn build_sheet(key: SheetKey, k: &SheetKnobs) -> Sheet {
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn draw_fable_2_trees(
     grid: &mut Grid,
     width: usize,
@@ -1575,7 +1575,7 @@ pub(crate) fn draw_fable_2_trees(
     });
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_fable_2_trees(
     mut grid: Grid,
     width: usize,
@@ -1614,7 +1614,7 @@ pub(crate) fn cli_fable_2_trees(
 mod tests {
     use super::*;
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn run(w: usize, h: usize, seed: u64, t: f32) -> String {
         let mut g = vec![vec![Cell::blank(); w]; h];
         let p = crate::color::make_palette(seed);
@@ -1627,20 +1627,20 @@ mod tests {
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn snapshot_fable_2_trees_static() {
         insta::assert_snapshot!("fable_2_trees_80x24_static", run(80, 24, 42, 0.0));
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn deterministic_and_seed_sensitive() {
         assert_eq!(run(80, 24, 42, 0.0), run(80, 24, 42, 0.0));
         assert_ne!(run(80, 24, 42, 0.0), run(80, 24, 7, 0.0));
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn every_species_draws_and_differs_by_seed() {
         for &sp in &SPECIES {
             let mut outs = Vec::new();

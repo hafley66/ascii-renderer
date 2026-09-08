@@ -13,7 +13,7 @@ use std::cell::RefCell;
 type HPoint = (f32, f32);
 
 #[inline]
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn sl2_act(m: [f32; 4], z: HPoint) -> HPoint {
     let (x, y) = z;
     let denom = (m[2] * x + m[3]) * (m[2] * x + m[3]) + (m[2] * y) * (m[2] * y);
@@ -24,7 +24,7 @@ fn sl2_act(m: [f32; 4], z: HPoint) -> HPoint {
 }
 
 #[inline]
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn h_dist(z1: HPoint, z2: HPoint) -> f32 {
     let dx = z1.0 - z2.0;
     let dy = z1.1 - z2.1;
@@ -35,7 +35,7 @@ fn h_dist(z1: HPoint, z2: HPoint) -> f32 {
 }
 
 #[inline]
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn sample_geodesic(z1: HPoint, z2: HPoint, n: usize) -> Vec<HPoint> {
     let mut pts = Vec::with_capacity(n);
     if (z1.0 - z2.0).abs() < 1e-4 {
@@ -73,7 +73,7 @@ pub(crate) struct Knobs6 {
 }
 
 impl Knobs6 {
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     pub(crate) fn from_env() -> Self {
         Knobs6 {
             depth: param_f32("DEPTH", 7.0).round().clamp(3.0, 10.0) as u32,
@@ -88,7 +88,7 @@ impl Knobs6 {
             seam: param_f32("SEAM", 0.08).clamp(-0.6, 0.6),
         }
     }
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn geom_key(&self) -> (u32, u32, u32, usize) {
         (
             self.depth,
@@ -163,7 +163,7 @@ thread_local! {
     static CACHE: RefCell<Option<Cached6>> = const { RefCell::new(None) };
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn rgb_tuple(c: Color) -> (u8, u8, u8) {
     match c {
         Color::Rgb { r, g, b } => (r, g, b),
@@ -171,7 +171,7 @@ fn rgb_tuple(c: Color) -> (u8, u8, u8) {
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn color_hue(c: Color) -> f64 {
     let (r, g, b) = rgb_tuple(c);
     let (rf, gf, bf) = (r as f64 / 255.0, g as f64 / 255.0, b as f64 / 255.0);
@@ -192,7 +192,7 @@ fn color_hue(c: Color) -> f64 {
 }
 
 #[inline]
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn scale_rgb(c: (u8, u8, u8), factor: f32) -> Color {
     let conv = |v: u8| ((v as f32 * factor).round().clamp(0.0, 255.0)) as u8;
     Color::Rgb {
@@ -203,7 +203,7 @@ fn scale_rgb(c: (u8, u8, u8), factor: f32) -> Color {
 }
 
 #[inline]
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn blend_rgb(c1: (u8, u8, u8), c2: (u8, u8, u8), ratio: f32) -> (u8, u8, u8) {
     let t = ratio.clamp(0.0, 1.0);
     let calc = |a: u8, b: u8| (a as f32 + (b as f32 - a as f32) * t).round() as u8;
@@ -211,7 +211,7 @@ fn blend_rgb(c1: (u8, u8, u8), c2: (u8, u8, u8), ratio: f32) -> (u8, u8, u8) {
 }
 
 #[inline]
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn set_cell(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
     if x >= 0 && y >= 0 && (y as usize) < grid.len() && (x as usize) < grid[0].len() {
         let cell = &mut grid[y as usize][x as usize];
@@ -221,7 +221,7 @@ fn set_cell(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
 }
 
 #[inline]
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn h_step(start: HPoint, heading_rad: f32, dist: f32) -> (HPoint, f32) {
     let cos_t = heading_rad.cos();
     let sin_t = heading_rad.sin();
@@ -248,7 +248,7 @@ fn h_step(start: HPoint, heading_rad: f32, dist: f32) -> (HPoint, f32) {
     (end, next_heading)
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn grow_tree6(
     rng: &mut StdRng,
     segs: &mut Vec<Segment6>,
@@ -334,7 +334,7 @@ fn grow_tree6(
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn build_cached6(w: usize, h: usize, seed: u64, palette: &[Color; 5], k: &Knobs6) -> Cached6 {
     let mut rng = StdRng::seed_from_u64(seed ^ 0x6A09_E667_BB67_AE85);
     let scale_x = (w as f32 * 0.48).max(5.0);
@@ -463,7 +463,7 @@ const CANOPY_PAIRS: [[char; 2]; 4] = [['♣', '♠'], ['♠', '♣'], ['*', '♣
 const MOTE_CHARS: [char; 4] = ['·', '∙', '°', '○'];
 
 #[inline]
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn select_branch_char(dx: i32, dy: i32, heavy: bool) -> char {
     let ax = dx.abs();
     let ay = dy.abs() * 2;
@@ -481,7 +481,7 @@ fn select_branch_char(dx: i32, dy: i32, heavy: bool) -> char {
 }
 
 #[inline]
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn project_to_screen(c: &Cached6, z: HPoint) -> (i32, i32) {
     let x_norm = z.0 / z.1.sqrt();
     let y_norm = (z.1.ln() + 2.5) / 5.5;
@@ -491,7 +491,7 @@ fn project_to_screen(c: &Cached6, z: HPoint) -> (i32, i32) {
 }
 
 #[inline]
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn unproject_from_screen(c: &Cached6, px: i32, py: i32) -> HPoint {
     let y_norm = ((c.c_y - py as f32) / c.scale_y).clamp(0.01, 1.1);
     let y = ((y_norm * 5.5) - 2.5).exp();
@@ -501,7 +501,7 @@ fn unproject_from_screen(c: &Cached6, px: i32, py: i32) -> HPoint {
 }
 
 #[inline]
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn raster_line(x0: i32, y0: i32, x1: i32, y1: i32, mut plot: impl FnMut(i32, i32)) {
     let steps = (x1 - x0).abs().max((y1 - y0).abs()).max(1);
     for i in 0..=steps {
@@ -512,7 +512,7 @@ fn raster_line(x0: i32, y0: i32, x1: i32, y1: i32, mut plot: impl FnMut(i32, i32
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn draw_lifetree6(
     grid: &mut Grid,
     w: usize,
@@ -537,7 +537,7 @@ pub(crate) fn draw_lifetree6(
 }
 
 #[inline]
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn render_frame6(grid: &mut Grid, c: &Cached6, t: f32, k: &Knobs6) {
     let w = grid[0].len();
     let h = grid.len();
@@ -765,7 +765,7 @@ fn render_frame6(grid: &mut Grid, c: &Cached6, t: f32, k: &Knobs6) {
     });
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_lifetree6(
     mut grid: Grid,
     width: usize,
@@ -806,7 +806,7 @@ pub(crate) fn cli_lifetree6(
 mod tests {
     use super::*;
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn run_test(w: usize, h: usize, seed: u64, t: f32) -> String {
         let mut g = vec![vec![Cell::blank(); w]; h];
         let p = crate::color::named_theme("moss").unwrap();
@@ -819,32 +819,32 @@ mod tests {
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn snapshot_lifetree6_small() {
         insta::assert_snapshot!("lifetree6_80x24", run_test(80, 24, 42, 0.0));
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn snapshot_lifetree6_wide() {
         insta::assert_snapshot!("lifetree6_120x40", run_test(120, 40, 42, 0.0));
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn deterministic_and_seed_sensitive() {
         assert_eq!(run_test(90, 30, 42, 0.0), run_test(90, 30, 42, 0.0));
         assert_ne!(run_test(90, 30, 42, 0.0), run_test(90, 30, 7, 0.0));
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn hyperbolic_flow_moves_tree() {
         assert_ne!(run_test(90, 30, 42, 0.0), run_test(90, 30, 42, 3.0));
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn both_halves_rendered() {
         let s = run_test(100, 32, 42, 0.0);
         assert!(
@@ -858,7 +858,7 @@ mod tests {
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn frame_perf_under_6ms() {
         let mut g = vec![vec![Cell::blank(); 200]; 60];
         let p = crate::color::named_theme("ember").unwrap();

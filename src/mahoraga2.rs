@@ -28,7 +28,7 @@ pub struct ShrineKnobs {
 }
 
 impl ShrineKnobs {
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     pub fn from_env() -> Self {
         ShrineKnobs {
             turns: param_f32("TURNS", 7.0).clamp(0.0, 8.0),
@@ -52,25 +52,25 @@ impl ShrineKnobs {
 
 type P = (f32, f32);
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn sub(a: P, b: P) -> P {
     (a.0 - b.0, a.1 - b.1)
 }
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn dot(a: P, b: P) -> f32 {
     a.0 * b.0 + a.1 * b.1
 }
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn len(a: P) -> f32 {
     dot(a, a).sqrt()
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn sd_circle(p: P, c: P, r: f32) -> f32 {
     len(sub(p, c)) - r
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn sd_seg(p: P, a: P, b: P, r: f32) -> f32 {
     let pa = sub(p, a);
     let ba = sub(b, a);
@@ -78,7 +78,7 @@ fn sd_seg(p: P, a: P, b: P, r: f32) -> f32 {
     len((pa.0 - ba.0 * h, pa.1 - ba.1 * h)) - r
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn sd_ellipse(p: P, c: P, rx: f32, ry: f32) -> f32 {
     let q = ((p.0 - c.0) / rx, (p.1 - c.1) / ry);
     (len(q) - 1.0) * rx.min(ry)
@@ -105,7 +105,7 @@ impl Aabb {
         y1: f32::MIN,
     };
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn seg(a: P, b: P, r: f32) -> Aabb {
         let r = r + SLACK;
         Aabb {
@@ -116,12 +116,12 @@ impl Aabb {
         }
     }
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn disc(c: P, r: f32) -> Aabb {
         Aabb::seg(c, c, r)
     }
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn grow(self, o: Aabb) -> Aabb {
         Aabb {
             x0: self.x0.min(o.x0),
@@ -131,7 +131,7 @@ impl Aabb {
         }
     }
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn pad(self, m: f32) -> Aabb {
         Aabb {
             x0: self.x0 - m,
@@ -142,14 +142,14 @@ impl Aabb {
     }
 
     /// Lower bound on the distance from p to the enclosed shape; exact box SDF inside.
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn lb(&self, p: P) -> f32 {
         (self.x0 - p.0)
             .max(p.0 - self.x1)
             .max((self.y0 - p.1).max(p.1 - self.y1))
     }
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn spans_row(&self, lo: f32, hi: f32, care: f32) -> bool {
         self.y0 - care <= hi && self.y1 + care >= lo
     }
@@ -162,7 +162,7 @@ struct RowSlice<'a> {
     span: Aabb,
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn hash01(seed: u64, x: i64, y: i64) -> f32 {
     let mut h = seed
         ^ (x as u64).wrapping_mul(0x9E37_79B9_7F4A_7C15)
@@ -173,19 +173,19 @@ fn hash01(seed: u64, x: i64, y: i64) -> f32 {
     (h & 0xFFFF) as f32 / 65536.0
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn side_rng(seed: u64, layer: u64) -> StdRng {
     StdRng::seed_from_u64(seed ^ layer.wrapping_mul(0x9E37_79B9))
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn smoothstep(e0: f32, e1: f32, x: f32) -> f32 {
     let t = ((x - e0) / (e1 - e0)).clamp(0.0, 1.0);
     t * t * (3.0 - 2.0 * t)
 }
 
 /// Glyph for a screen-space direction (2:1 cell aspect already applied).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn stroke_glyph(dx: f32, dy: f32) -> char {
     let ax = dx.abs();
     let ay = dy.abs();
@@ -200,7 +200,7 @@ fn stroke_glyph(dx: f32, dy: f32) -> char {
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn set(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
     if x >= 0 && y >= 0 && (y as usize) < grid.len() && (x as usize) < grid[0].len() {
         grid[y as usize][x as usize] = Cell::new(ch, fg);
@@ -231,7 +231,7 @@ enum Prim {
 }
 
 impl Prim {
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn sd(&self, p: P) -> f32 {
         match *self {
             Prim::Disc { c, r } => sd_circle(p, c, r),
@@ -242,7 +242,7 @@ impl Prim {
     }
 
     /// `slack` covers the ellipse metric, which reads shorter than true distance.
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn bound(&self, slack: f32) -> Aabb {
         match *self {
             Prim::Disc { c, r } => Aabb::disc(c, r),
@@ -272,7 +272,7 @@ const WHEEL_C: P = (0.0, 0.105);
 const WHEEL_R: f32 = 0.105;
 
 impl Figure {
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn new(rot: f32, lean: f32, care: f32) -> Self {
         let m = |u: f32, v: f32| (-u, v);
         let mut list: Vec<(Prim, Part)> = vec![
@@ -399,13 +399,13 @@ impl Figure {
         }
     }
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn warp(&self, p: P) -> P {
         (p.0 - self.lean * (0.62 - p.1), p.1)
     }
 
     /// Primitives whose bound can reach a tile of cells, plus their union box.
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn tile_mask(
         &self,
         lo: f32,
@@ -427,7 +427,7 @@ impl Figure {
     }
 
     /// Widest sideways offset `warp` can apply inside a row band.
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn warp_shift(&self, lo: f32, hi: f32) -> f32 {
         (self.lean * (0.62 - lo))
             .abs()
@@ -435,7 +435,7 @@ impl Figure {
     }
 
     /// Primitives further than `care` are skipped: the caller only reads d below it.
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn body(&self, p: P, care: f32, rows: RowSlice) -> (f32, Part) {
         let p = self.warp(p);
         let mut best = (f32::MAX, Part::Skin);
@@ -455,7 +455,7 @@ impl Figure {
         best
     }
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn wheel(&self, p: P, care: f32) -> (f32, Part) {
         let p = self.warp(p);
         let far = self.wheel_box.lb(p);
@@ -480,14 +480,14 @@ impl Figure {
         best
     }
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn sample(&self, p: P, care: f32, rows: RowSlice) -> (f32, Part) {
         let b = self.body(p, care, rows);
         let w = self.wheel(p, care);
         if w.0 < b.0 { w } else { b }
     }
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn normal(&self, p: P, care: f32, rows: RowSlice) -> P {
         let e = 0.004;
         let dx = self.body((p.0 + e, p.1), care, rows).0 - self.body((p.0 - e, p.1), care, rows).0;
@@ -508,7 +508,7 @@ struct Slash {
     bright: f32,
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn make_slashes(
     seed: u64,
     count: usize,
@@ -540,7 +540,7 @@ fn make_slashes(
 }
 
 /// Slip a sample point across every cut it sits beside; report a cut hit.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn displace(p: P, slashes: &[Slash], live: usize, blade: f32) -> (P, Option<(usize, f32)>) {
     let mut q = p;
     let mut hit = None;
@@ -572,7 +572,7 @@ struct Building {
     id: u64,
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn make_city(seed: u64, count: usize, u_span: f32, v_bot: f32, horizon: f32) -> Vec<Building> {
     let mut rng = side_rng(seed, 2);
     let mut out = Vec::with_capacity(count);
@@ -599,7 +599,7 @@ fn make_city(seed: u64, count: usize, u_span: f32, v_bot: f32, horizon: f32) -> 
     out
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn sample_city<'a>(city: &'a [Building], rows: &[u16], p: P) -> Option<&'a Building> {
     rows.iter()
         .map(|&i| &city[i as usize])
@@ -609,7 +609,7 @@ fn sample_city<'a>(city: &'a [Building], rows: &[u16], p: P) -> Option<&'a Build
 // ── the clock ───────────────────────────────────────────────────────
 
 /// t=0 shows `turns` adaptations; t>0 replays the fight on a loop.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn progress(t: f32, knobs: &ShrineKnobs) -> f32 {
     if t <= 0.0 {
         knobs.turns
@@ -626,7 +626,7 @@ const TILE: usize = 64;
 const SKIN_RAMP: [char; 10] = [' ', '.', '·', ':', '-', '=', '+', '*', '%', '@'];
 const CLOTH_RAMP: [char; 6] = [' ', '.', '-', '~', '=', '#'];
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn draw_mahoraga2(
     grid: &mut Grid,
     width: usize,
@@ -900,7 +900,7 @@ pub fn draw_mahoraga2(
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn draw_fuga(
     grid: &mut Grid,
     width: usize,
@@ -975,7 +975,7 @@ fn draw_fuga(
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn render_mahoraga2_frame(
     width: usize,
     height: usize,
@@ -990,7 +990,7 @@ pub fn render_mahoraga2_frame(
     grid
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_mahoraga2(
     mut grid: Grid,
     width: usize,
@@ -1030,7 +1030,7 @@ pub(crate) fn cli_mahoraga2(
 mod tests {
     use super::*;
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn run(w: usize, h: usize, seed: u64, t: f32, turns: f32) -> String {
         let p = crate::color::make_palette(seed);
         let mut knobs = ShrineKnobs::from_env();
@@ -1043,32 +1043,32 @@ mod tests {
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn snapshot_mahoraga2_standing() {
         insta::assert_snapshot!("mahoraga2_80x24", run(80, 24, 42, 0.0, 7.0));
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn snapshot_mahoraga2_fuga_tall() {
         insta::assert_snapshot!("mahoraga2_100x40_fuga", run(100, 40, 42, 0.0, 8.0));
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn deterministic_and_seed_sensitive() {
         assert_eq!(run(90, 30, 42, 0.0, 7.0), run(90, 30, 42, 0.0, 7.0));
         assert_ne!(run(90, 30, 42, 0.0, 7.0), run(90, 30, 7, 0.0, 7.0));
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn t_turns_the_wheel() {
         assert_ne!(run(90, 30, 42, 1.0, 7.0), run(90, 30, 42, 3.0, 7.0));
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn figure_and_arrow_present() {
         let s = run(100, 40, 42, 0.0, 8.0);
         assert!(s.contains('◉'), "hub");

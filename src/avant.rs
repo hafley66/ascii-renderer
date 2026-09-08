@@ -11,7 +11,7 @@ use std::f32::consts::TAU;
 
 // ── Shared helpers ──────────────────────────────────────────────────
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn put(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
     if x >= 0 && y >= 0 && (y as usize) < grid.len() && (x as usize) < grid[0].len() {
         grid[y as usize][x as usize] = Cell::new(ch, fg);
@@ -20,7 +20,7 @@ fn put(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
 
 /// Deterministic hash of (seed, position, time). Time makes the same cell
 /// re-roll when animated, while seed keeps the whole scene reproducible.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn hash_seed(seed: u64, x: usize, y: usize, t: f32) -> u64 {
     let mut s = seed;
     s = s.wrapping_mul(0x9E37_79B9_7F4A_7C15).wrapping_add(x as u64);
@@ -33,14 +33,14 @@ fn hash_seed(seed: u64, x: usize, y: usize, t: f32) -> u64 {
 
 /// Seeded RNG for a single element so every feature can vary independently
 /// while staying locked to the global seed and current animation time.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn element_rng(seed: u64, x: usize, y: usize, t: f32) -> StdRng {
     StdRng::seed_from_u64(hash_seed(seed, x, y, t))
 }
 
 // ── Avant-garde face sprite ─────────────────────────────────────────
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn draw_avant_face(
     grid: &mut Grid,
     cx: i32,
@@ -110,7 +110,7 @@ fn draw_avant_face(
 
 // ── Rhizome: underground tree network ───────────────────────────────
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn rhizome_branch(
     grid: &mut Grid,
     pen: &TreePen,
@@ -174,7 +174,7 @@ fn rhizome_branch(
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn draw_rhizome(
     grid: &mut Grid,
     w: usize,
@@ -272,7 +272,7 @@ pub fn draw_rhizome(
 
 // ── Effigy: scattered algorithmic faces ─────────────────────────────
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn draw_effigy(
     grid: &mut Grid,
     w: usize,
@@ -324,7 +324,7 @@ pub fn draw_effigy(
 
 // ── Dendrite: neuron-like branching ─────────────────────────────────
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn dendrite_branch(
     grid: &mut Grid,
     pen: &mut TreePen,
@@ -376,7 +376,7 @@ fn dendrite_branch(
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn draw_dendrite(
     grid: &mut Grid,
     w: usize,
@@ -420,7 +420,7 @@ pub fn draw_dendrite(
 
 // ── Totem: stacked face poles ───────────────────────────────────────
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn draw_totem(
     grid: &mut Grid,
     w: usize,
@@ -470,7 +470,7 @@ pub fn draw_totem(
 
 // ── Chimera: special hybrid of trees and faces ──────────────────────
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn connect_line(grid: &mut Grid, x0: i32, y0: i32, x1: i32, y1: i32, color: Color) {
     let dx = (x1 - x0).abs();
     let sx = if x0 < x1 { 1 } else { -1 };
@@ -508,7 +508,7 @@ fn connect_line(grid: &mut Grid, x0: i32, y0: i32, x1: i32, y1: i32, color: Colo
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn draw_chimera(
     grid: &mut Grid,
     w: usize,

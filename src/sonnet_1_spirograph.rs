@@ -31,7 +31,7 @@ pub(crate) struct Sonnet1SpirographKnobs {
 }
 
 impl Sonnet1SpirographKnobs {
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     pub(crate) fn from_env() -> Self {
         Sonnet1SpirographKnobs {
             speed: param_f32("SPEED", 1.0),
@@ -66,7 +66,7 @@ thread_local! {
     static CACHE: RefCell<Option<Geom>> = const { RefCell::new(None) };
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn gcd(mut a: u32, mut b: u32) -> u32 {
     while b != 0 {
         let t = b;
@@ -76,7 +76,7 @@ fn gcd(mut a: u32, mut b: u32) -> u32 {
     a.max(1)
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn build(seed: u64) -> Geom {
     let mut rng = StdRng::seed_from_u64(seed ^ 0xA5F1_9E2D_5C31_44B7);
     let rr = rng.random_range(6..=13) as f32;
@@ -102,7 +102,7 @@ fn build(seed: u64) -> Geom {
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn pen_point(g: &Geom, d: f32, theta: f32) -> (f32, f32) {
     let inner = g.ratio * theta;
     let base_x = g.dist * theta.cos();
@@ -114,12 +114,12 @@ fn pen_point(g: &Geom, d: f32, theta: f32) -> (f32, f32) {
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn roll_center(g: &Geom, theta: f32) -> (f32, f32) {
     (g.dist * theta.cos(), g.dist * theta.sin())
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn hash(a: u32, b: u32, c: u32, seed: u64) -> f32 {
     let mut h = (a as u64).wrapping_mul(0x9E37_79B9_7F4A_7C15)
         ^ (b as u64).wrapping_mul(0xBF58_476D_1CE4_E5B9)
@@ -131,14 +131,14 @@ fn hash(a: u32, b: u32, c: u32, seed: u64) -> f32 {
     (h & 0xFF_FFFF) as f32 / 16_777_216.0
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn put(grid: &mut Grid, w: usize, h: usize, x: i32, y: i32, cell: Cell) {
     if x >= 0 && y >= 0 && (x as usize) < w && (y as usize) < h {
         grid[y as usize][x as usize] = cell;
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn put_text(grid: &mut Grid, w: usize, h: usize, x: i32, y: i32, text: &str, fg: Color, bg: Color) {
     for (i, ch) in text.chars().enumerate() {
         put(grid, w, h, x + i as i32, y, Cell::with_bg(ch, fg, bg));
@@ -153,7 +153,7 @@ struct View {
 }
 
 impl View {
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn map(&self, mx: f32, my: f32) -> (i32, i32) {
         (
             (self.cx + mx * self.unit * self.aspect).round() as i32,
@@ -162,7 +162,7 @@ impl View {
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn draw_ring(
     grid: &mut Grid,
     w: usize,
@@ -182,7 +182,7 @@ fn draw_ring(
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn draw_arm(
     grid: &mut Grid,
     w: usize,
@@ -222,7 +222,7 @@ fn draw_arm(
     put(grid, w, h, x1, y1, Cell::with_bg('+', lighten(col, 30), bg));
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn draw_sonnet_1_spirograph(
     grid: &mut Grid,
     w: usize,
@@ -243,7 +243,7 @@ pub(crate) fn draw_sonnet_1_spirograph(
     });
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn render(
     grid: &mut Grid,
     w: usize,
@@ -447,7 +447,7 @@ fn render(
     });
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_sonnet_1_spirograph(
     mut grid: Grid,
     width: usize,
@@ -489,7 +489,7 @@ pub(crate) fn cli_sonnet_1_spirograph(
 mod tests {
     use super::*;
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn run(w: usize, h: usize, seed: u64, t: f32) -> String {
         let mut g = vec![vec![Cell::blank(); w]; h];
         let p = crate::color::make_palette(seed);
@@ -502,26 +502,26 @@ mod tests {
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn snapshot_sonnet_1_spirograph_static() {
         insta::assert_snapshot!("sonnet_1_spirograph_80x24", run(80, 24, 42, 0.0));
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn snapshot_sonnet_1_spirograph_moving() {
         insta::assert_snapshot!("sonnet_1_spirograph_110x36_t9", run(110, 36, 42, 9.0));
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn deterministic_and_seed_sensitive() {
         assert_eq!(run(90, 30, 42, 0.0), run(90, 30, 42, 0.0));
         assert_ne!(run(90, 30, 42, 0.0), run(90, 30, 7, 0.0));
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn t_zero_is_static_and_t_moves_the_pen() {
         assert_eq!(run(90, 30, 42, 0.0), run(90, 30, 42, 0.0));
         assert_ne!(run(90, 30, 42, 0.0), run(90, 30, 42, 5.0));
@@ -529,7 +529,7 @@ mod tests {
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn frame_cost() {
         let (w, h) = (200usize, 60usize);
         let mut g = vec![vec![Cell::blank(); w]; h];

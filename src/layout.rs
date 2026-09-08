@@ -11,7 +11,7 @@ pub struct BspNode {
 }
 
 impl BspNode {
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     pub fn new(x: usize, y: usize, w: usize, h: usize) -> Self {
         BspNode {
             rect: Rect { x, y, w, h },
@@ -20,14 +20,14 @@ impl BspNode {
         }
     }
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     pub fn is_leaf(&self) -> bool {
         self.left.is_none() && self.right.is_none()
     }
 
     /// Recursively split until we have enough leaves or hit min size.
     /// gap: number of cells reserved between children (for grid lines).
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     pub fn split_with_gap(
         &mut self,
         min_w: usize,
@@ -109,13 +109,13 @@ impl BspNode {
     }
 
     /// Split with default gap of 1.
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     pub fn split(&mut self, min_w: usize, min_h: usize, max_depth: usize, rng: &mut StdRng) {
         self.split_with_gap(min_w, min_h, max_depth, 1, rng);
     }
 
     /// Collect all leaf rects in traversal order.
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     pub fn leaves(&self) -> Vec<&Rect> {
         if self.is_leaf() {
             return vec![&self.rect];
@@ -132,7 +132,7 @@ impl BspNode {
 }
 
 /// Two-column layout. Returns the rects placed so pattern fills can avoid them.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn layout_two_col(
     grid: &mut Grid,
     left: &[ContentBlock],
@@ -194,7 +194,7 @@ pub fn layout_two_col(
 
 /// BSP layout: split canvas into regions, assign content blocks to leaves,
 /// render blocks, return all leaf rects (content + empty pattern zones).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn layout_bsp(
     grid: &mut Grid,
     blocks: &[ContentBlock],

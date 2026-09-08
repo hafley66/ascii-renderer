@@ -19,16 +19,16 @@ pub struct TilePattern {
 }
 
 impl TilePattern {
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     pub fn period_x(&self) -> usize {
         self.cells[0].len()
     }
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     pub fn period_y(&self) -> usize {
         self.cells.len()
     }
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     pub fn at(&self, x: usize, y: usize) -> (char, u8) {
         let py = self.period_y();
         let px = self.period_x();
@@ -56,7 +56,7 @@ pub enum TileVariant {
 
 pub const TILE_VARIANT_COUNT: usize = 10;
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn tile_variant_from_index(i: usize) -> TileVariant {
     match i % TILE_VARIANT_COUNT {
         0 => TileVariant::Asanoha,
@@ -73,7 +73,7 @@ pub fn tile_variant_from_index(i: usize) -> TileVariant {
 }
 
 /// Build the repeating char grid for a tile variant.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn make_tile(variant: TileVariant) -> TilePattern {
     match variant {
         TileVariant::Asanoha => {
@@ -323,7 +323,7 @@ pub struct TileParams {
 }
 
 impl TileParams {
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     pub fn new(variant: TileVariant) -> Self {
         TileParams {
             variant,
@@ -335,7 +335,7 @@ impl TileParams {
         }
     }
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     pub fn randomized(rng: &mut StdRng) -> Self {
         let variant = tile_variant_from_index(rng.random_range(0..TILE_VARIANT_COUNT));
         let density = if rng.random_range(0..4) == 0 {
@@ -374,7 +374,7 @@ impl TileParams {
 
 /// Fill a rect with a tile pattern, pure deterministic baseline.
 /// No phase shift, no jitter, no density dropout. What-you-define-is-what-you-get.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn fill_tile_pure(
     grid: &mut Grid,
     rect: &Rect,
@@ -426,7 +426,7 @@ pub struct TileEdgeContext {
 ///
 /// Variants that don't need bespoke behavior fall through to default_edge,
 /// which is the generic distance-based dropout.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn edge_behavior(
     variant: TileVariant,
     ctx: &TileEdgeContext,
@@ -453,7 +453,7 @@ fn edge_behavior(
 /// Default: distance-based probabilistic dropout.
 /// When boundary_value is set, uses it directly as survival probability
 /// instead of rect-edge distance, so dropout follows the container's contour.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn default_edge(ctx: &TileEdgeContext, rng: &mut StdRng) -> Option<(char, u8)> {
     if !ctx.outside {
         return Some((ctx.normal_char, ctx.normal_ci));
@@ -481,7 +481,7 @@ fn default_edge(ctx: &TileEdgeContext, rng: &mut StdRng) -> Option<(char, u8)> {
 /// Mirror tile coords near edges, then apply dropout for cells past the boundary.
 /// `mirror_y`: fold ty near bottom/top edges.
 /// `mirror_x`: fold tx near left/right edges.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn mirror_edge(
     ctx: &TileEdgeContext,
     mirror_y: bool,
@@ -544,7 +544,7 @@ fn mirror_edge(
 }
 
 /// GrannySquare: at bottom edge, emit box-closing characters.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn granny_edge(ctx: &TileEdgeContext, rng: &mut StdRng) -> Option<(char, u8)> {
     if ctx.outside {
         return default_edge(ctx, rng);
@@ -578,7 +578,7 @@ fn granny_edge(ctx: &TileEdgeContext, rng: &mut StdRng) -> Option<(char, u8)> {
 /// Nowaki: extend stroke characters (│ and ╱) past the boundary with
 /// length-based decay instead of random dropout. Non-stroke chars get
 /// normal dropout.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn nowaki_edge(ctx: &TileEdgeContext, rng: &mut StdRng) -> Option<(char, u8)> {
     if !ctx.outside {
         return Some((ctx.normal_char, ctx.normal_ci));
@@ -614,7 +614,7 @@ fn nowaki_edge(ctx: &TileEdgeContext, rng: &mut StdRng) -> Option<(char, u8)> {
 /// shape edge, 1.0 = deep inside). When provided, dropout at/past the rect edges
 /// follows the container's contour instead of uniform rect-distance falloff.
 /// Pass `None` for default rect-edge skew behavior.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn fill_tile_ex(
     grid: &mut Grid,
     rect: &Rect,
@@ -809,7 +809,7 @@ pub enum NoiseVariant {
     Dot,          // ·∙°, coherence 0.6
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn noise_coherence(variant: NoiseVariant) -> f32 {
     match variant {
         NoiseVariant::Truchet => 0.0,
@@ -821,7 +821,7 @@ pub fn noise_coherence(variant: NoiseVariant) -> f32 {
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn noise_glyphs(variant: NoiseVariant) -> Vec<NoiseGlyph> {
     match variant {
         NoiseVariant::Truchet => vec![
@@ -944,7 +944,7 @@ pub fn noise_glyphs(variant: NoiseVariant) -> Vec<NoiseGlyph> {
 
 pub const NOISE_VARIANT_COUNT: usize = 6;
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn noise_variant_from_index(i: usize) -> NoiseVariant {
     match i % NOISE_VARIANT_COUNT {
         0 => NoiseVariant::Truchet,
@@ -957,14 +957,14 @@ pub fn noise_variant_from_index(i: usize) -> NoiseVariant {
 }
 
 /// Sample a glyph index from the CDF.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn sample_glyph(cdf: &[f32], rng: &mut StdRng) -> usize {
     let r = rng.random::<f32>();
     cdf.iter().position(|&c| r < c).unwrap_or(cdf.len() - 1)
 }
 
 /// Fill a rect with noise. Coherence controls run length.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn fill_noise(
     grid: &mut Grid,
     rect: &Rect,
@@ -1005,7 +1005,7 @@ pub fn fill_noise(
 }
 
 /// Fill entire grid with Truchet noise. Replaces the duplicated inline loops.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn fill_truchet(grid: &mut Grid, width: usize, height: usize, color: Color, rng: &mut StdRng) {
     let rect = Rect {
         x: 0,
@@ -1019,7 +1019,7 @@ pub fn fill_truchet(grid: &mut Grid, width: usize, height: usize, color: Color, 
 // ── Line art fills ──────────────────────────────────────────────────
 
 /// Crosshatch: deterministic diagonal tiling. Denser than random Truchet.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn draw_crosshatch(grid: &mut Grid, rect: &Rect, color: Color, color2: Color) {
     for y in rect.y..rect.y + rect.h {
         for x in rect.x..rect.x + rect.w {
@@ -1038,7 +1038,7 @@ pub fn draw_crosshatch(grid: &mut Grid, rect: &Rect, color: Color, color2: Color
 }
 
 /// Guilloche: interlocking wave curves from rounded box-drawing chars.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn draw_guilloche(grid: &mut Grid, rect: &Rect, color: Color, color2: Color) {
     for y in rect.y..rect.y + rect.h {
         for x in rect.x..rect.x + rect.w {
@@ -1079,7 +1079,7 @@ pub fn draw_guilloche(grid: &mut Grid, rect: &Rect, color: Color, color2: Color)
 }
 
 /// Basket weave: interlocking horizontal/vertical line segments.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn draw_weave(grid: &mut Grid, rect: &Rect, color: Color, color2: Color) {
     for y in rect.y..rect.y + rect.h {
         for x in rect.x..rect.x + rect.w {
@@ -1127,7 +1127,7 @@ pub fn draw_weave(grid: &mut Grid, rect: &Rect, color: Color, color2: Color) {
 }
 
 /// Zigzag: horizontal zigzag bands using diagonal chars.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn draw_zigzag(grid: &mut Grid, rect: &Rect, color: Color, color2: Color) {
     for y in rect.y..rect.y + rect.h {
         for x in rect.x..rect.x + rect.w {
@@ -1154,7 +1154,7 @@ pub fn draw_zigzag(grid: &mut Grid, rect: &Rect, color: Color, color2: Color) {
 }
 
 /// Diamond lattice: interlocking diamond shapes from box-drawing diagonals.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn draw_diamond_lattice(grid: &mut Grid, rect: &Rect, color: Color, color2: Color) {
     for y in rect.y..rect.y + rect.h {
         for x in rect.x..rect.x + rect.w {
@@ -1182,7 +1182,7 @@ pub fn draw_diamond_lattice(grid: &mut Grid, rect: &Rect, color: Color, color2: 
 }
 
 /// Spiral: Archimedean spiral from center using box-drawing curves.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn draw_spiral(grid: &mut Grid, rect: &Rect, color: Color, color2: Color) {
     let cx = rect.x as f32 + rect.w as f32 * 0.5;
     let cy = rect.y as f32 + rect.h as f32 * 0.5;
@@ -1227,7 +1227,7 @@ pub fn draw_spiral(grid: &mut Grid, rect: &Rect, color: Color, color2: Color) {
 }
 
 /// Concentric: nested rectangles from center outward, alternating colors.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn draw_concentric(grid: &mut Grid, rect: &Rect, color: Color, color2: Color) {
     let cx = rect.x + rect.w / 2;
     let cy = rect.y + rect.h / 2;
@@ -1292,7 +1292,7 @@ pub fn draw_concentric(grid: &mut Grid, rect: &Rect, color: Color, color2: Color
 }
 
 /// Labyrinth: deterministic maze-like pattern using line segments.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn draw_labyrinth(grid: &mut Grid, rect: &Rect, color: Color, color2: Color) {
     for y in rect.y..rect.y + rect.h {
         for x in rect.x..rect.x + rect.w {

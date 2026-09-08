@@ -34,23 +34,23 @@ const PARAMS: &[Param] = &[
 ];
 
 impl Mode for TideglassMode {
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn name(&self) -> &'static str {
         "tideglass"
     }
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn help(&self) -> &'static str {
         "Suspended tidal observatory: orbiting iris, pendulum lights and broken reflections [scale] [rings] [tilt] [turn] [aperture] [teeth] [pendants] [sway] [tide] [waves] [stars] [glow] [hue] [speed]"
     }
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn animation(&self) -> AnimKind {
         AnimKind::Iterate
     }
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn params(&self) -> &'static [Param] {
         PARAMS
     }
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn render(&self, frame: &mut ModeFrame<'_>) {
         let k = std::array::from_fn(|i| {
             let p = &PARAMS[i];
@@ -75,7 +75,7 @@ impl Mode for TideglassMode {
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn put(grid: &mut Grid, x: f32, y: f32, cell: Cell) {
     if x >= 0.0 && y >= 0.0 {
         if let Some(target) = grid
@@ -87,7 +87,7 @@ fn put(grid: &mut Grid, x: f32, y: f32, cell: Cell) {
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn line(grid: &mut Grid, a: [f32; 2], b: [f32; 2], color: Color, bg: Color) {
     let dx = b[0] - a[0];
     let dy = b[1] - a[1];
@@ -112,7 +112,7 @@ fn line(grid: &mut Grid, a: [f32; 2], b: [f32; 2], color: Color, bg: Color) {
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn draw_tideglass(frame: &mut ModeFrame<'_>, k: &[f32; 14], t: f32) {
     // Resolve stable object identities once, independent of time and draw branches.
     // Draw the sky and suspension, then rear bands, opaque iris, and front bands.
@@ -357,7 +357,7 @@ mod tests {
     use crate::{morph::IterateFrameRenderer, render::grid_to_plain};
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn tideglass_snapshots_and_motion() {
         let k: Vec<_> = PARAMS.iter().map(|p| p.default).collect();
         let mut renderer = IterateFrameRenderer::new("tideglass", 42, "deep", 100, 36).unwrap();
@@ -383,7 +383,7 @@ mod tests {
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn tideglass_extrema_and_rerolls() {
         for (w, h) in [(1, 1), (2, 9), (9, 2), (80, 24)] {
             let mut renderer =

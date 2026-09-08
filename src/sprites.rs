@@ -14,7 +14,7 @@ pub enum Dir {
 }
 
 impl Dir {
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     pub fn turn_right(self) -> Dir {
         match self {
             Dir::Right => Dir::Down,
@@ -24,7 +24,7 @@ impl Dir {
         }
     }
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     pub fn advance(self, x: i32, y: i32) -> (i32, i32) {
         match self {
             Dir::Right => (x + 1, y),
@@ -34,7 +34,7 @@ impl Dir {
         }
     }
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     pub fn horizontal_glyph(self) -> char {
         match self {
             Dir::Right | Dir::Left => '─',
@@ -44,7 +44,7 @@ impl Dir {
 }
 
 /// Draw a single stepped fret (xicalcoliuhqui) spiral.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn draw_stepped_fret(
     grid: &mut Grid,
     start_x: i32,
@@ -101,7 +101,7 @@ pub fn draw_stepped_fret(
 }
 
 /// Draw a stepped fret border band along an edge of a rectangular region.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn draw_fret_border(
     grid: &mut Grid,
     x0: usize,
@@ -134,7 +134,7 @@ pub fn draw_fret_border(
 }
 
 /// Draw a conifer/pine tree.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn draw_pine(
     grid: &mut Grid,
     root_x: usize,
@@ -199,7 +199,7 @@ pub fn draw_pine(
 }
 
 /// Draw a weeping willow.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn draw_willow(
     grid: &mut Grid,
     root_x: usize,
@@ -286,7 +286,7 @@ pub fn draw_willow(
 }
 
 /// Draw a palm tree.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn draw_palm(
     grid: &mut Grid,
     root_x: usize,
@@ -353,7 +353,7 @@ pub fn draw_palm(
 }
 
 /// Draw a fruit at position (x, y).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn draw_fruit(grid: &mut Grid, cx: usize, cy: usize, style: usize, color: Color) {
     let patterns: &[&[(i32, i32, char)]] = &[
         &[(0, 0, '●'), (0, -1, '╿'), (1, -1, '╌')],
@@ -391,7 +391,7 @@ pub fn draw_fruit(grid: &mut Grid, cx: usize, cy: usize, style: usize, color: Co
 }
 
 /// Grow a GRIS-style tree upward from (root_x, root_y).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn grow_tree(
     grid: &mut Grid,
     root_x: usize,
@@ -492,7 +492,7 @@ pub fn grow_tree(
 
 /// Shared cell setter used by all tree functions.
 /// Overwrites blank cells and ground fill chars (grass, dots) but not other tree structure.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn tset(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
     if x >= 0 && y >= 0 && (y as usize) < grid.len() && (x as usize) < grid[0].len() {
         let cell = &mut grid[y as usize][x as usize];
@@ -506,7 +506,7 @@ fn tset(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn tset_over(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
     if x >= 0 && y >= 0 && (y as usize) < grid.len() && (x as usize) < grid[0].len() {
         grid[y as usize][x as usize] = Cell::new(ch, fg);
@@ -525,7 +525,7 @@ pub use trees::*;
 /// Mask/firework sprite: two eyes on a vertical stem with radiating diagonals.
 /// Emergent pattern captured from flower + tree + diamond lattice overlap.
 /// `size` controls the radius of the radiating lines (1 = compact, 2-4 = larger).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn draw_mask(grid: &mut Grid, cx: usize, cy: usize, size: usize, style: usize, color: Color) {
     let bright = lighten(color, 40);
     let dim = darken(color, 30);
@@ -591,7 +591,7 @@ pub fn draw_mask(grid: &mut Grid, cx: usize, cy: usize, size: usize, style: usiz
 }
 pub const MASK_STYLE_COUNT: usize = 4;
 /// Aztec diamond domino tiling via domino shuffling.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn draw_aztec_diamond(
     grid: &mut Grid,
     center_x: usize,

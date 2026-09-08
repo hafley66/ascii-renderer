@@ -27,7 +27,7 @@ pub(crate) struct BraidKnobs {
 }
 
 impl BraidKnobs {
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     pub(crate) fn from_env() -> Self {
         BraidKnobs {
             strands: param_f32("STRANDS", 5.0),
@@ -43,7 +43,7 @@ impl BraidKnobs {
         }
     }
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn n(&self) -> usize {
         (self.strands.round() as usize).clamp(2, MAX_STRANDS)
     }
@@ -62,7 +62,7 @@ thread_local! {
     static CACHE: RefCell<Option<Cached>> = RefCell::new(None);
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn build(
     w: usize,
     h: usize,
@@ -128,7 +128,7 @@ fn build(
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn hash2(x: i32, y: i32, seed: u64) -> u32 {
     let mut v =
         (x as u32).wrapping_mul(0x9E37_79B9) ^ (y as u32).wrapping_mul(0x85EB_CA6B) ^ (seed as u32);
@@ -138,7 +138,7 @@ fn hash2(x: i32, y: i32, seed: u64) -> u32 {
     v
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn put(grid: &mut Grid, w: usize, h: usize, x: i32, y: i32, ch: char, fg: Color) {
     if x >= 0 && y >= 0 && (x as usize) < w && (y as usize) < h {
         grid[y as usize][x as usize] = Cell::new(ch, fg);
@@ -154,7 +154,7 @@ struct Lane {
     knot: bool,
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn paint_lane(grid: &mut Grid, w: usize, h: usize, y: i32, lane: &Lane, half: i32, c: &Cached) {
     let cx = lane.x.round() as i32;
     let body = c.color[lane.strand];
@@ -201,7 +201,7 @@ fn paint_lane(grid: &mut Grid, w: usize, h: usize, y: i32, lane: &Lane, half: i3
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn draw_braid(
     grid: &mut Grid,
     w: usize,
@@ -226,7 +226,7 @@ pub(crate) fn draw_braid(
     });
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn render(
     grid: &mut Grid,
     w: usize,
@@ -330,7 +330,7 @@ fn render(
     });
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_braid(
     mut grid: Grid,
     width: usize,
@@ -371,7 +371,7 @@ pub(crate) fn cli_braid(
 mod tests {
     use super::*;
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn run(w: usize, h: usize, seed: u64, t: f32) -> String {
         let mut g = vec![vec![Cell::blank(); w]; h];
         let p = crate::color::make_palette(seed);
@@ -384,33 +384,33 @@ mod tests {
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn snapshot_braid_small() {
         insta::assert_snapshot!("braid_80x24", run(80, 24, 42, 0.0));
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn snapshot_braid_large() {
         insta::assert_snapshot!("braid_110x36", run(110, 36, 42, 0.0));
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn deterministic_and_seed_sensitive() {
         assert_eq!(run(90, 30, 42, 0.0), run(90, 30, 42, 0.0));
         assert_ne!(run(90, 30, 42, 0.0), run(90, 30, 7, 0.0));
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn t_scrolls_the_plait() {
         assert_ne!(run(90, 30, 42, 0.0), run(90, 30, 42, 3.0));
         assert_ne!(run(90, 30, 42, 3.0), run(90, 30, 42, 6.0));
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn frame_cost() {
         let (w, h) = (200usize, 60usize);
         let mut g = vec![vec![Cell::blank(); w]; h];

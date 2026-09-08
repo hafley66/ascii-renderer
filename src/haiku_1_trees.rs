@@ -11,7 +11,7 @@ use rand::{Rng, RngExt};
 
 // ── Species ────────────────────────────────────────────────────────────
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn set(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
     if x >= 0 && y >= 0 && (y as usize) < grid.len() && (x as usize) < grid[0].len() {
         grid[y as usize][x as usize] = Cell::new(ch, fg);
@@ -19,7 +19,7 @@ fn set(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
 }
 
 /// Spiral: helix trunk with radial branches peeling outward.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn grow_spiral(
     grid: &mut Grid,
     root_x: i32,
@@ -58,7 +58,7 @@ fn grow_spiral(
 }
 
 /// Cascade: drooping branches following gravity curves.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn grow_cascade(
     grid: &mut Grid,
     root_x: i32,
@@ -93,7 +93,7 @@ fn grow_cascade(
 }
 
 /// Thorns: explosive radial spikes from trunk.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn grow_thorns(
     grid: &mut Grid,
     root_x: i32,
@@ -129,7 +129,7 @@ fn grow_thorns(
 }
 
 /// Lattice: interconnected grid branches (novel).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn grow_lattice(
     grid: &mut Grid,
     root_x: i32,
@@ -161,7 +161,7 @@ fn grow_lattice(
 }
 
 /// Petrified: crystalline angular geometry (novel).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn grow_petrified(
     grid: &mut Grid,
     root_x: i32,
@@ -199,7 +199,7 @@ fn grow_petrified(
 }
 
 /// Strata: layered tiers that thin toward top.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn grow_strata(
     grid: &mut Grid,
     root_x: i32,
@@ -235,7 +235,7 @@ fn grow_strata(
 
 // ── Sample sheet ───────────────────────────────────────────────────────
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn draw_haiku_1_trees(
     grid: &mut Grid,
     width: usize,
@@ -314,7 +314,7 @@ pub(crate) struct HaikuTreesKnobs {
 }
 
 impl HaikuTreesKnobs {
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     pub(crate) fn from_env() -> Self {
         HaikuTreesKnobs {
             energy: param_f32("ENERGY", 0.85),
@@ -324,7 +324,7 @@ impl HaikuTreesKnobs {
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_haiku_1_trees(
     mut grid: Grid,
     width: usize,
@@ -356,7 +356,7 @@ mod tests {
     use super::*;
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn test_haiku_1_trees_snapshot() {
         let width = 80;
         let height = 24;

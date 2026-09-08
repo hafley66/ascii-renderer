@@ -1,7 +1,7 @@
 use crate::content::*;
 use pulldown_cmark::{Event, HeadingLevel, Parser, Tag, TagEnd};
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn flush_block(blocks: &mut Vec<ContentBlock>, items: &mut Vec<ContentItem>) {
     if items.is_empty() {
         return;
@@ -12,7 +12,7 @@ fn flush_block(blocks: &mut Vec<ContentBlock>, items: &mut Vec<ContentItem>) {
     });
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn parse_markdown(input: &str) -> Vec<ContentBlock> {
     let parser = Parser::new(input);
     let mut blocks: Vec<ContentBlock> = Vec::new();

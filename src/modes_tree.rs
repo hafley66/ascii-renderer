@@ -52,7 +52,7 @@ use crate::warps::*;
 
 // --- fullmetal-eyes++ : the multi-tier seal cranked. 4 arc bands, 3-4 star
 //     polygons, node eyes on EVERY tier vertex, twin rune bands, hero eye. ---
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn draw_fme_pp(
     grid: &mut Grid,
     width: usize,
@@ -340,7 +340,7 @@ pub(crate) fn draw_fme_pp(
 
 // --- trees++ : a lush grounded gallery of tree variants on grassy hillocks,
 //     varied spreads + hues, fruit/flower accents, no debug labels. ---
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn draw_trees_pp(
     grid: &mut Grid,
     width: usize,
@@ -397,7 +397,7 @@ pub(crate) fn draw_trees_pp(
 
 // --- forest++ : layered depth. star sky + disc, far dark pines, mid mix,
 //     foreground hero trees, grass band, scattered flowers/fruit. ---
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn draw_forest_pp(
     grid: &mut Grid,
     width: usize,
@@ -560,7 +560,7 @@ pub(crate) fn draw_forest_pp(
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn draw_fullmetal_eyes(
     mut grid: Grid,
     width: usize,
@@ -859,7 +859,7 @@ pub(crate) fn draw_fullmetal_eyes(
     grid
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn draw_fullmetal_eyes2(
     mut grid: Grid,
     width: usize,
@@ -1255,7 +1255,7 @@ pub(crate) fn draw_fullmetal_eyes2(
 
 // --- fa6 : an animated spatial transmutation engine. Seed builds the chambers;
 // T rotates the sealwork and moves current through a fixed ritual topology. ---
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn draw_fa6(
     grid: &mut Grid,
     width: usize,
@@ -1727,7 +1727,7 @@ pub(crate) fn draw_fa6(
     });
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn draw_delta(
     grid: &mut Grid,
     width: usize,
@@ -1951,7 +1951,7 @@ pub(crate) fn draw_delta(
 }
 
 /// Dispatch arm for mode(s): fa6, fullmetal-alchemist6 (moved verbatim from run()).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_fa6_fullmetal_alchemist6(
     mut grid: Grid,
     width: usize,
@@ -2000,7 +2000,7 @@ pub(crate) fn cli_fa6_fullmetal_alchemist6(
 }
 
 /// Dispatch arm for mode(s): delta (moved verbatim from run()).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_delta(
     mut grid: Grid,
     width: usize,

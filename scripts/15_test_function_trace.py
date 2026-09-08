@@ -15,7 +15,8 @@ directory.mkdir(parents=True, exist_ok=True)
 env = dict(os.environ, ASCII_GRID_W='24', ASCII_GRID_H='12',
            XDG_STATE_HOME=str(directory / 'state'))
 env.pop('ASCII_FUNCTION_TRACE', None)
-command = [str(Path('target/release/ascii-renderer').resolve()), '42', 'gem-aetherium-2']
+binary = Path(sys.argv[2] if len(sys.argv) > 2 else 'target/release/ascii-renderer').resolve()
+command = [str(binary), '42', 'gem-aetherium-2']
 baseline = subprocess.run(command, env=env, capture_output=True, timeout=5, check=True)
 env['ASCII_FUNCTION_TRACE'] = str(directory / 'functions')
 traced = subprocess.run(command, env=env, capture_output=True, timeout=5, check=True)

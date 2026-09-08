@@ -49,7 +49,7 @@ use crate::walker::*;
 use crate::warps::*;
 
 /// Dispatch arm for mode(s): fullmetal-eyes (moved verbatim from run()).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_fullmetal_eyes(
     mut grid: Grid,
     width: usize,
@@ -69,7 +69,7 @@ pub(crate) fn cli_fullmetal_eyes(
 }
 
 /// Dispatch arm for mode(s): fullmetal-eyes2 (moved verbatim from run()).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_fullmetal_eyes2(
     mut grid: Grid,
     width: usize,
@@ -89,7 +89,7 @@ pub(crate) fn cli_fullmetal_eyes2(
 }
 
 /// Dispatch arm for mode(s): fullmetal-alchemist (moved verbatim from run()).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_fullmetal_alchemist(
     mut grid: Grid,
     width: usize,
@@ -383,7 +383,7 @@ pub(crate) fn cli_fullmetal_alchemist(
 }
 
 /// Dispatch arm for mode(s): fullmetal-alchemist2 (moved verbatim from run()).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_fullmetal_alchemist2(
     mut grid: Grid,
     width: usize,
@@ -786,7 +786,7 @@ pub(crate) fn cli_fullmetal_alchemist2(
 }
 
 /// Dispatch arm for mode(s): fa3, fullmetal-alchemist3 (moved verbatim from run()).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_fa3_fullmetal_alchemist3(
     mut grid: Grid,
     width: usize,
@@ -1148,7 +1148,7 @@ pub(crate) fn cli_fa3_fullmetal_alchemist3(
 }
 
 /// Dispatch arm for mode(s): fa4, fullmetal-alchemist4 (moved verbatim from run()).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_fa4_fullmetal_alchemist4(
     mut grid: Grid,
     width: usize,
@@ -2014,7 +2014,7 @@ pub(crate) fn cli_fa4_fullmetal_alchemist4(
 }
 
 /// Dispatch arm for mode(s): fa5, fullmetal-alchemist5 (moved verbatim from run()).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_fa5_fullmetal_alchemist5(
     mut grid: Grid,
     width: usize,

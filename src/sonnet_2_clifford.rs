@@ -34,7 +34,7 @@ pub(crate) struct CliffordKnobs {
 }
 
 impl CliffordKnobs {
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     pub(crate) fn from_env() -> Self {
         CliffordKnobs {
             speed: param_f32("SPEED", 1.0),
@@ -72,7 +72,7 @@ thread_local! {
     static CACHE: RefCell<Option<Cached>> = RefCell::new(None);
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn step(a: f32, b: f32, c: f32, d: f32, x: f32, y: f32) -> (f32, f32) {
     (
         (a * y).sin() + c * (a * x).cos(),
@@ -96,7 +96,7 @@ struct Quick {
 
 /// Retrace a short bbox each frame, then bin a second pass into that bbox:
 /// a periodic window fills only a handful of its own bbox cells, chaos fills many.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn quick_bbox(a: f32, b: f32, c: f32, d: f32, x0: f32, y0: f32) -> Quick {
     let (mut x, mut y) = (x0, y0);
     let (mut minx, mut maxx, mut miny, mut maxy) = (f32::MAX, f32::MIN, f32::MAX, f32::MIN);
@@ -158,7 +158,7 @@ struct Trial {
 
 /// One clean bbox pass, then a second pass that bins visited cells at two
 /// grid scales so the ratio approximates a box-counting fractal dimension.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn trial(a: f32, b: f32, c: f32, d: f32) -> Option<Trial> {
     let (mut x, mut y) = (0.1f32, 0.1f32);
     let (mut minx, mut maxx, mut miny, mut maxy) = (f32::MAX, f32::MIN, f32::MAX, f32::MIN);
@@ -210,13 +210,13 @@ fn trial(a: f32, b: f32, c: f32, d: f32) -> Option<Trial> {
     })
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn seed_hue(seed: u64) -> f32 {
     let h = seed.wrapping_mul(0x9E37_79B9_7F4A_7C15);
     ((h >> 40) % 360) as f32
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn build(seed: u64) -> Geom {
     let mut rng = StdRng::seed_from_u64(seed ^ 0xC11F_D00D_u64);
     let mut best: Option<(f32, f32, f32, f32, Trial, f32)> = None;
@@ -269,14 +269,14 @@ fn build(seed: u64) -> Geom {
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn put(grid: &mut Grid, w: usize, h: usize, x: i32, y: i32, cell: Cell) {
     if x >= 0 && y >= 0 && (x as usize) < w && (y as usize) < h {
         grid[y as usize][x as usize] = cell;
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn draw_sonnet_2_clifford(
     grid: &mut Grid,
     w: usize,
@@ -301,7 +301,7 @@ pub(crate) fn draw_sonnet_2_clifford(
     });
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn render(
     grid: &mut Grid,
     w: usize,
@@ -501,7 +501,7 @@ fn render(
     });
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_sonnet_2_clifford(
     mut grid: Grid,
     width: usize,
@@ -541,7 +541,7 @@ pub(crate) fn cli_sonnet_2_clifford(
 mod tests {
     use super::*;
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn run(w: usize, h: usize, seed: u64, t: f32) -> String {
         let mut g = vec![vec![Cell::blank(); w]; h];
         let p = crate::color::make_palette(seed);
@@ -554,13 +554,13 @@ mod tests {
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn snapshot_sonnet_2_clifford_static() {
         insta::assert_snapshot!("sonnet_2_clifford_80x24_t0", run(80, 24, 42, 0.0));
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn snapshot_sonnet_2_clifford_moving() {
         insta::assert_snapshot!("sonnet_2_clifford_80x24_t20", run(80, 24, 42, 20.0));
     }

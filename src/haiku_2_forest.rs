@@ -11,21 +11,21 @@ use rand::SeedableRng;
 use rand::rngs::StdRng;
 use std::f32::consts::PI;
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn set(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
     if x >= 0 && y >= 0 && (y as usize) < grid.len() && (x as usize) < grid[0].len() {
         grid[y as usize][x as usize] = Cell::new(ch, fg);
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn set_with_bg(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color, bg: Color) {
     if x >= 0 && y >= 0 && (y as usize) < grid.len() && (x as usize) < grid[0].len() {
         grid[y as usize][x as usize] = Cell::with_bg(ch, fg, bg);
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn blank_at(grid: &Grid, x: i32, y: i32) -> bool {
     x >= 0
         && y >= 0
@@ -36,7 +36,7 @@ fn blank_at(grid: &Grid, x: i32, y: i32) -> bool {
 
 // ── Simple tree drawing for forest ───────────────────────────────────────
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn draw_simple_tree(
     grid: &mut Grid,
     x: i32,
@@ -137,7 +137,7 @@ pub struct Haiku2ForestKnobs {
 }
 
 impl Haiku2ForestKnobs {
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     pub fn from_env() -> Self {
         Haiku2ForestKnobs {
             density: param_f32("DENSITY", 0.6),
@@ -150,7 +150,7 @@ impl Haiku2ForestKnobs {
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn draw_haiku_2_forest(
     grid: &mut Grid,
     width: usize,
@@ -303,7 +303,7 @@ pub(crate) fn draw_haiku_2_forest(
     });
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_haiku_2_forest(
     mut grid: Grid,
     width: usize,
@@ -343,7 +343,7 @@ mod tests {
     use super::*;
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn test_haiku_2_forest_snapshot() {
         let mut grid = vec![vec![Cell::blank(); 80]; 24];
         let palette = [
@@ -391,7 +391,7 @@ mod tests {
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn test_haiku_2_forest_animated_snapshot() {
         let mut grid = vec![vec![Cell::blank(); 80]; 24];
         let palette = [

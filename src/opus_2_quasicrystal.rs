@@ -36,7 +36,7 @@ struct FrontLut {
     formed: f32,
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn build_lut(f: &Frame, out: &mut Vec<FrontLut>, n: usize) {
     out.clear();
     out.reserve(n);
@@ -103,7 +103,7 @@ pub(crate) struct Opus2QuasicrystalKnobs {
 }
 
 impl Opus2QuasicrystalKnobs {
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     pub(crate) fn from_env() -> Self {
         Opus2QuasicrystalKnobs {
             speed: param_f32("SPEED", 1.0),
@@ -126,7 +126,7 @@ impl Opus2QuasicrystalKnobs {
         }
     }
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn folds_n(&self, seeded: usize) -> usize {
         let f = self.folds.round() as i32;
         if f < 4 {
@@ -155,7 +155,7 @@ thread_local! {
     static CACHE: RefCell<Option<Cached>> = RefCell::new(None);
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn build(seed: u64, folds_knob: usize) -> Cached {
     let mut rng = StdRng::seed_from_u64(seed ^ 0x0_9A5C_2117);
     let picks = [5usize, 5, 7, 5, 4, 7, 6, 5];
@@ -191,7 +191,7 @@ fn build(seed: u64, folds_knob: usize) -> Cached {
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn hash_bits(x: u32, y: u32, k: u32) -> u32 {
     let mut h = (x as u64).wrapping_mul(0x9E37_79B9_7F4A_7C15)
         ^ (y as u64).wrapping_mul(0xBF58_476D_1CE4_E5B9)
@@ -202,19 +202,19 @@ fn hash_bits(x: u32, y: u32, k: u32) -> u32 {
     h as u32
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn smooth(s: f32) -> f32 {
     let s = s.clamp(0.0, 1.0);
     s * s * (3.0 - 2.0 * s)
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn frac(v: f32) -> f32 {
     v - v.floor()
 }
 
 /// Screen-space glyph for a line whose world direction is perpendicular to `theta`.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn line_glyph(theta: f32, aspect: f32) -> char {
     let dx = -theta.sin() * aspect;
     let dy = theta.cos();
@@ -234,7 +234,7 @@ fn line_glyph(theta: f32, aspect: f32) -> char {
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn draw_opus_2_quasicrystal(
     grid: &mut Grid,
     w: usize,
@@ -286,7 +286,7 @@ struct Frame {
     rrow: [f32; RDIRS],
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn geometry(w: usize, h: usize, t: f32, k: &Opus2QuasicrystalKnobs, c: &Cached) -> Frame {
     let n = k.folds_n(c.n).clamp(4, MAXN);
     let aspect = k.aspect.clamp(0.25, 4.0);
@@ -390,7 +390,7 @@ struct Paint {
     star: Color,
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn paints(
     palette: &[Color; 5],
     k: &Opus2QuasicrystalKnobs,
@@ -434,7 +434,7 @@ fn paints(
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn render(
     grid: &mut Grid,
     w: usize,
@@ -494,7 +494,7 @@ struct Envelope {
 }
 
 impl Envelope {
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn build(a: &[f32], bslope: &[f32], n: usize) -> Self {
         let mut m = [0.0f32; 2 * RDIRS];
         let mut b = [0.0f32; 2 * RDIRS];
@@ -553,7 +553,7 @@ impl Envelope {
     }
 
     #[inline(always)]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn at(&mut self, x: f32) -> f32 {
         while self.at + 1 < self.len && x >= self.brk[self.at] {
             self.at += 1;
@@ -562,7 +562,7 @@ impl Envelope {
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn lattice_pass(
     grid: &mut Grid,
     w: usize,
@@ -583,7 +583,7 @@ fn lattice_pass(
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn lattice_rows<const N: usize>(
     grid: &mut Grid,
     w: usize,
@@ -767,7 +767,7 @@ fn lattice_rows<const N: usize>(
         });
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn nucleus_pass(
     grid: &mut Grid,
     w: usize,
@@ -832,7 +832,7 @@ fn nucleus_pass(
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_opus_2_quasicrystal(
     mut grid: Grid,
     width: usize,
@@ -880,7 +880,7 @@ pub(crate) fn cli_opus_2_quasicrystal(
 mod tests {
     use super::*;
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn run(w: usize, h: usize, seed: u64, t: f32) -> String {
         let mut g = vec![vec![Cell::blank(); w]; h];
         let p = crate::color::make_palette(seed);
@@ -893,33 +893,33 @@ mod tests {
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn snapshot_opus_2_quasicrystal_small() {
         insta::assert_snapshot!("opus_2_quasicrystal_80x24", run(80, 24, 42, 0.0));
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn snapshot_opus_2_quasicrystal_moving() {
         insta::assert_snapshot!("opus_2_quasicrystal_110x36_t45", run(110, 36, 7, 45.0));
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn deterministic_and_seed_sensitive() {
         assert_eq!(run(90, 30, 42, 0.0), run(90, 30, 42, 0.0));
         assert_ne!(run(90, 30, 42, 0.0), run(90, 30, 7, 0.0));
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn t_advances_the_front() {
         assert_ne!(run(90, 30, 42, 0.0), run(90, 30, 42, 20.0));
         assert_ne!(run(90, 30, 42, 20.0), run(90, 30, 42, 60.0));
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn every_fold_order_terminates() {
         for folds in 4..=MAXN {
             let mut g = vec![vec![Cell::blank(); 60]; 20];
@@ -931,7 +931,7 @@ mod tests {
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn envelope_matches_brute_force() {
         let mut worst = 0.0f32;
         for trial in 0..40u32 {
@@ -957,7 +957,7 @@ mod tests {
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn parallel_lattice_preserves_full_colored_grid() {
         let render = |threads| {
             rayon::ThreadPoolBuilder::new()
@@ -983,9 +983,9 @@ mod tests {
 
     #[test]
     #[ignore = "manual mixed-knob animation timing"]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn perf_random_knob_hops() {
-        #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+        #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
         fn report(label: &str, cold: f64, mut samples: Vec<f64>) {
             samples.sort_by(f64::total_cmp);
             let p50 = samples[samples.len() / 2];
@@ -1044,7 +1044,7 @@ mod tests {
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn frame_cost() {
         let (w, h) = (200usize, 60usize);
         let mut g = vec![vec![Cell::blank(); w]; h];

@@ -109,7 +109,7 @@ pub(crate) struct ModeRegistry {
 }
 
 impl ModeRegistry {
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     pub(crate) fn add(&mut self, mode: &'static dyn Mode) {
         assert!(
             self.get(mode.name()).is_none(),
@@ -119,12 +119,12 @@ impl ModeRegistry {
         self.modes.push(mode);
     }
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     pub(crate) fn get(&self, name: &str) -> Option<&'static dyn Mode> {
         self.modes.iter().copied().find(|mode| mode.name() == name)
     }
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     pub(crate) fn iter(&self) -> impl Iterator<Item = (&'static str, &'static dyn Mode)> + '_ {
         self.modes.iter().map(|mode| (mode.name(), *mode))
     }
@@ -132,7 +132,7 @@ impl ModeRegistry {
 
 static REGISTERED_MODES: OnceLock<ModeRegistry> = OnceLock::new();
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn registered_modes() -> &'static ModeRegistry {
     REGISTERED_MODES.get_or_init(|| {
         let mut registry = ModeRegistry::default();
@@ -141,7 +141,7 @@ pub(crate) fn registered_modes() -> &'static ModeRegistry {
     })
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn registered_mode(name: &str) -> Option<&'static dyn Mode> {
     registered_modes().get(name)
 }
@@ -1231,7 +1231,7 @@ pub(crate) static MODE_FORMS: &[ModeForm] = &[
 /// Look up a mode's declared config. Unlisted modes default to iterate, no knobs:
 /// T animates the mode natively if it reads it (in-process via iterate_grid),
 /// otherwise the player warps the base frame over time.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn mode_spec(name: &str) -> ModeSpec {
     if let Some(mode) = registered_mode(name) {
         return ModeSpec {
@@ -1259,28 +1259,28 @@ mod registered_mode_tests {
 
     struct NamedMode(&'static str);
     impl Mode for NamedMode {
-        #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+        #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
         fn name(&self) -> &'static str {
             self.0
         }
-        #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+        #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
         fn help(&self) -> &'static str {
             "registry ordering fixture"
         }
-        #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+        #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
         fn animation(&self) -> AnimKind {
             AnimKind::Iterate
         }
-        #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+        #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
         fn params(&self) -> &'static [Param] {
             &[]
         }
-        #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+        #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
         fn render(&self, _: &mut ModeFrame<'_>) {}
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn registration_order_survives_lookup_and_duplicate_rejection() {
         static OLDER: NamedMode = NamedMode("z-first");
         static NEWER: NamedMode = NamedMode("a-second");
@@ -1302,7 +1302,7 @@ mod registered_mode_tests {
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn generated_registry_contains_the_file_owned_modes() {
         let names: Vec<_> = registered_modes().iter().map(|(name, _)| name).collect();
         assert!(names.contains(&"illuminarium"));
@@ -1316,7 +1316,7 @@ mod registered_mode_tests {
 }
 
 /// Strategy string the morph player understands for a given animate kind.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn anim_strat(k: AnimKind) -> &'static str {
     match k {
         AnimKind::Iterate => "iterate",
@@ -1329,7 +1329,7 @@ pub(crate) fn anim_strat(k: AnimKind) -> &'static str {
 /// mode's declared animate kind and its tunable knobs as labelled sliders, with
 /// the selected knob highlighted. Positions every row with an absolute cursor
 /// escape so it never disturbs the mode render in the left columns.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn draw_options_pane(
     x0: usize, // 0-based column where the pane region starts (== render_w)
     th: u16,
@@ -1353,7 +1353,7 @@ pub(crate) fn draw_options_pane(
 
 /// Append the complete options-pane overlay to an existing frame buffer so an
 /// animation frame can reach stdout through the same locked `write_all`.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn options_pane_to_ansi(
     out: &mut String,
     x0: usize,

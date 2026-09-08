@@ -28,7 +28,7 @@ pub(crate) struct ForestKnobs {
 }
 
 impl ForestKnobs {
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     pub(crate) fn from_env() -> Self {
         ForestKnobs {
             density: param_f32("DENSITY", 1.0).clamp(0.2, 2.0),
@@ -125,12 +125,12 @@ thread_local! {
     static SCENE: RefCell<Option<Scene>> = const { RefCell::new(None) };
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn rf(rng: &mut StdRng) -> f32 {
     rng.random::<f32>()
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn hue_of_or(c: Color, fallback: f64) -> f64 {
     match c {
         Color::Rgb { r, g, b } => {
@@ -153,7 +153,7 @@ fn hue_of_or(c: Color, fallback: f64) -> f64 {
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn is_canopy_glyph(ch: char) -> bool {
     matches!(
         ch,
@@ -161,7 +161,7 @@ fn is_canopy_glyph(ch: char) -> bool {
     )
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn build_scene(key: Key, k: &ForestKnobs) -> Scene {
     let w = key.w;
     let h = key.h;
@@ -546,14 +546,14 @@ fn build_scene(key: Key, k: &ForestKnobs) -> Scene {
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn set(grid: &mut Grid, gw: usize, gh: usize, x: i32, y: i32, ch: char, c: Color) {
     if x >= 0 && y >= 0 && (x as usize) < gw && (y as usize) < gh {
         grid[y as usize][x as usize] = Cell::new(ch, c);
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn paint_atmos(
     grid: &mut Grid,
     gw: usize,
@@ -676,7 +676,7 @@ fn paint_atmos(
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn draw_sonnet_2_forest(
     grid: &mut Grid,
     width: usize,
@@ -810,7 +810,7 @@ pub(crate) fn draw_sonnet_2_forest(
     });
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_sonnet_2_forest(
     mut grid: Grid,
     width: usize,
@@ -852,7 +852,7 @@ pub(crate) fn cli_sonnet_2_forest(
 mod tests {
     use super::*;
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn run(w: usize, h: usize, seed: u64, t: f32) -> String {
         let mut g = vec![vec![Cell::blank(); w]; h];
         let p = crate::color::make_palette(seed);
@@ -865,13 +865,13 @@ mod tests {
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn snapshot_sonnet_2_forest_static() {
         insta::assert_snapshot!("sonnet_2_forest_80x24_static", run(80, 24, 42, 0.0));
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn deterministic_seed_and_time_sensitive() {
         assert_eq!(run(80, 24, 42, 0.0), run(80, 24, 42, 0.0));
         assert_ne!(run(80, 24, 42, 0.0), run(80, 24, 7, 0.0));
@@ -879,7 +879,7 @@ mod tests {
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn every_atmosphere_renders() {
         for a in 1..=5u32 {
             let mut g = vec![vec![Cell::blank(); 80]; 24];

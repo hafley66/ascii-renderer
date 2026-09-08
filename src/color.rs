@@ -1,11 +1,11 @@
 use crossterm::style::Color;
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn rgb(r: u8, g: u8, b: u8) -> Color {
     Color::Rgb { r, g, b }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn hsl_to_rgb(h: f64, s: f64, l: f64) -> Color {
     let c = (1.0 - (2.0 * l - 1.0).abs()) * s;
     let x = c * (1.0 - ((h / 60.0) % 2.0 - 1.0).abs());
@@ -26,7 +26,7 @@ pub fn hsl_to_rgb(h: f64, s: f64, l: f64) -> Color {
 }
 
 /// Named themes. Each is [background, primary, secondary, accent, text].
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn named_theme(name: &str) -> Option<[Color; 5]> {
     Some(match name {
         // --- warm ---
@@ -120,7 +120,7 @@ pub fn named_theme(name: &str) -> Option<[Color; 5]> {
 
 /// Seed-deterministic palette: rotate hue based on seed, derive harmonious colors.
 /// Returns [background, primary, secondary, accent, text].
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn make_palette(seed: u64) -> [Color; 5] {
     let base_hue = (seed % 360) as f64;
     [
@@ -133,7 +133,7 @@ pub fn make_palette(seed: u64) -> [Color; 5] {
 }
 
 /// Shift hue by extracting approximate HSL, rotating, converting back.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn shift_hue(color: Color, degrees: f64) -> Color {
     match color {
         Color::Rgb { r, g, b } => {
@@ -163,7 +163,7 @@ pub fn shift_hue(color: Color, degrees: f64) -> Color {
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn lighten(color: Color, amount: u8) -> Color {
     match color {
         Color::Rgb { r, g, b } => Color::Rgb {
@@ -175,7 +175,7 @@ pub fn lighten(color: Color, amount: u8) -> Color {
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn darken(color: Color, amount: u8) -> Color {
     match color {
         Color::Rgb { r, g, b } => Color::Rgb {
@@ -188,7 +188,7 @@ pub fn darken(color: Color, amount: u8) -> Color {
 }
 
 /// Linear interpolation between two colors. t=0.0 returns `a`, t=1.0 returns `b`.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn lerp_color(a: Color, b: Color, t: f32) -> Color {
     let t = t.clamp(0.0, 1.0);
     match (a, b) {

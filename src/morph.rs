@@ -54,7 +54,7 @@ use crate::warps::*;
 
 pub(crate) const MORPH_RAMP: [char; 9] = [' ', '·', '∙', ':', '+', '*', '#', '%', '@'];
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn morph_is_ink(c: &Cell) -> bool {
     c.ch != ' '
 }
@@ -72,7 +72,7 @@ pub(crate) struct MorphState {
 }
 
 impl MorphState {
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     pub(crate) fn new(a: Grid, b: Grid) -> Self {
         let h = a.len();
         let w = if h > 0 { a[0].len() } else { 0 };
@@ -112,7 +112,7 @@ impl MorphState {
         }
     }
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     pub(crate) fn frame(&self, t: f32, strategy: &str) -> Grid {
         let t = t.clamp(0.0, 1.0);
         match strategy {
@@ -129,7 +129,7 @@ impl MorphState {
         }
     }
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn dissolve(&self, t: f32) -> Grid {
         let mut g = vec![vec![Cell::blank(); self.w]; self.h];
         for y in 0..self.h {
@@ -146,7 +146,7 @@ impl MorphState {
         g
     }
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn field(&self, t: f32) -> Grid {
         let mut g = vec![vec![Cell::blank(); self.w]; self.h];
         for y in 0..self.h {
@@ -162,7 +162,7 @@ impl MorphState {
         g
     }
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn transport(&self, t: f32) -> Grid {
         let mut g = vec![vec![Cell::blank(); self.w]; self.h];
         let la = self.ta.len();
@@ -180,7 +180,7 @@ impl MorphState {
         g
     }
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn sdf(&self, t: f32) -> Grid {
         let mut g = vec![vec![Cell::blank(); self.w]; self.h];
         for y in 0..self.h {
@@ -216,7 +216,7 @@ pub(crate) struct IterateFrameRenderer {
 }
 
 impl IterateFrameRenderer {
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     pub(crate) fn new(
         mode: &str,
         seed: u64,
@@ -245,7 +245,7 @@ impl IterateFrameRenderer {
 
     /// Clear the reusable back frame, reset deterministic RNG state, then
     /// render directly into the same grid allocation.
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     pub(crate) fn render(&mut self, t: f32, param_values: Option<&[f32]>) -> Option<&Grid> {
         for row in &mut self.grid {
             row.fill(Cell::blank());
@@ -270,7 +270,7 @@ impl IterateFrameRenderer {
 }
 
 /// In-process iterate render for callers that need an owned one-shot grid.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn iterate_grid(
     mode: &str,
     seed: u64,
@@ -289,7 +289,7 @@ pub(crate) fn iterate_grid(
 /// Pseudocode: resolve a registered mode and pass direct frame parameters; for
 /// legacy native modes, invoke the existing branch; return false only when the
 /// subprocess/warp fallback still owns that mode.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn iterate_grid_into(
     mode: &str,
     seed: u64,
@@ -889,7 +889,7 @@ mod iterate_frame_tests {
 
     #[test]
     #[ignore = "exports bounded recorded frames for terminal A/B validation"]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn export_recorded_terminal_frames() {
         let input = std::env::var("ASCII_AB_INPUT").unwrap();
         let destination = std::env::var("ASCII_AB_DIR").unwrap();
@@ -941,7 +941,7 @@ mod iterate_frame_tests {
         controls: usize,
     }
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn classify_ansi(bytes: &[u8], totals: &mut AnsiComposition) {
         totals.bytes += bytes.len();
         let mut index = 0;
@@ -981,7 +981,7 @@ mod iterate_frame_tests {
 
     #[test]
     #[ignore = "release-only 392x134 ANSI byte composition probe"]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn perf_gem_ansi_composition() {
         let (w, h) = (392, 134);
         let spec = mode_spec("gem-aetherium-2");
@@ -1012,7 +1012,7 @@ mod iterate_frame_tests {
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn gem_bad_roll6_ansi_regression() {
         let fixture: serde_json::Value = serde_json::from_str(include_str!(
             "../perf/fixtures/12_gem_aetherium_2_bad_roll6.json"
@@ -1055,7 +1055,7 @@ mod iterate_frame_tests {
 
     #[test]
     #[ignore = "release animation encoder probe with deterministic knob rerolls"]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn perf_gem_animation_rerolls() {
         for (w, h) in [(320, 103), (2000, 2000)] {
             let spec = mode_spec("gem-aetherium-2");
@@ -1084,7 +1084,7 @@ mod iterate_frame_tests {
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn retained_registered_frame_matches_one_shot_and_reuses_rows() {
         let mut retained = IterateFrameRenderer::new("illuminarium", 42, "deep", 64, 24).unwrap();
         let first_row = retained.grid[0].as_ptr();
@@ -1099,7 +1099,7 @@ mod iterate_frame_tests {
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn registered_frame_consumes_direct_effective_knobs() {
         let spec = mode_spec("illuminarium");
         let defaults: Vec<f32> = spec.params.iter().map(|param| param.default).collect();
@@ -1113,7 +1113,7 @@ mod iterate_frame_tests {
 }
 
 /// Render any (mode, seed) to a Grid by re-running this binary with the dump flag.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn render_frame(
     exe: &std::path::Path,
     seed: u64,
@@ -1127,7 +1127,7 @@ pub(crate) fn render_frame(
 
 /// Same, but pass an animation time `t` (ASCII_T) so parametric modes that read
 /// it advance their phase -- the native "iterate" path.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn render_frame_t(
     exe: &std::path::Path,
     seed: u64,
@@ -1158,7 +1158,7 @@ pub(crate) fn render_frame_t(
 /// lifecycle, then delegates the loop to `morph_session`.
 ///   morph <modeA> <seedA> <modeB> <seedB> [strategy]
 /// Keys: space play/pause · 1-4 strategy · ←/→ scrub · w walk seeds · n next · q quit
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn run_morph(args: &[String], default_seed: u64, theme: &str) {
     use crossterm::{cursor, execute, terminal};
 
@@ -1195,7 +1195,7 @@ pub(crate) fn run_morph(args: &[String], default_seed: u64, theme: &str) {
 
 /// The morph player loop. Assumes raw mode + alternate screen are already active
 /// (so it composes inside `demo`). Returns true when Ctrl+C should exit demo.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn morph_session(
     mode_a: &str,
     seed_a: u64,
@@ -1221,7 +1221,7 @@ pub(crate) fn morph_session(
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn morph_worker_session(
     mode_a: &str,
     seed_a: u64,

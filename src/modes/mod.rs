@@ -24,7 +24,7 @@ mod _50_gem_aetherium_2;
 mod _51_terminal_stress;
 mod _52_gem_aetherium_3;
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn register_all(registry: &mut crate::registry::ModeRegistry) {
     registry.add(&_30_illuminarium::MODE);
     registry.add(&_31_qwen_cathedral::MODE);

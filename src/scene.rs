@@ -67,7 +67,7 @@ pub const DISSOLVE: &[char] = &['╳', '╱', '╲', '·', '∙', '°', ' '];
 /// `palette` is passed through for fills that need the full set (aztec diamond).
 /// `skew_boundary`: optional shape boundary fn forwarded to tile fills for
 /// shape-aware edge dissolution. Pass `None` for default rect-edge behavior.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn render_fill(
     grid: &mut Grid,
     rect: &Rect,
@@ -158,7 +158,7 @@ pub fn render_fill(
 // ── Mask composition ────────────────────────────────────────────────
 
 /// Render a fill into `rect`, then mask every cell through `mask_fn`.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn fill_masked(
     grid: &mut Grid,
     rect: &Rect,
@@ -206,7 +206,7 @@ pub fn fill_masked(
 }
 
 /// Render a scene: iterate layers bottom-to-top, compositing each.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn render_scene(grid: &mut Grid, rect: &Rect, scene: &Scene, rng: &mut StdRng) {
     for layer in &scene.layers {
         match &layer.mask {
@@ -223,7 +223,7 @@ pub fn render_scene(grid: &mut Grid, rect: &Rect, scene: &Scene, rng: &mut StdRn
 // ── Mask constructors ───────────────────────────────────────────────
 
 /// Circle/ellipse mask centered at (cx, cy).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn mask_ellipse(
     cx: f32,
     cy: f32,
@@ -247,7 +247,7 @@ pub fn mask_ellipse(
 
 /// Contour mask: inside below the contour line.
 /// `contour[x - x_offset]` gives the y-threshold.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn mask_below_contour(
     contour: Vec<usize>,
     x_offset: usize,
@@ -268,7 +268,7 @@ pub fn mask_below_contour(
 }
 
 /// Contour mask: inside above the contour line.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn mask_above_contour(
     contour: Vec<usize>,
     x_offset: usize,
@@ -289,7 +289,7 @@ pub fn mask_above_contour(
 }
 
 /// Horizontal band mask with dissolve at top and bottom.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn mask_band(y_top: usize, y_bot: usize, dissolve: f32) -> impl Fn(usize, usize) -> f32 {
     move |_x, y| {
         if y >= y_top && y <= y_bot {
@@ -308,7 +308,7 @@ pub fn mask_band(y_top: usize, y_bot: usize, dissolve: f32) -> impl Fn(usize, us
 }
 
 /// Rectangle mask: 1.0 inside rect, dissolve at edges, 0.0 outside.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn mask_rect(rect: &Rect, dissolve: f32) -> impl Fn(usize, usize) -> f32 + use<> {
     let x0 = rect.x;
     let y0 = rect.y;
@@ -335,7 +335,7 @@ pub fn mask_rect(rect: &Rect, dissolve: f32) -> impl Fn(usize, usize) -> f32 + u
 }
 
 /// Combine two masks: intersection (min of both values).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn mask_intersect(
     a: impl Fn(usize, usize) -> f32 + 'static,
     b: impl Fn(usize, usize) -> f32 + 'static,
@@ -344,7 +344,7 @@ pub fn mask_intersect(
 }
 
 /// Combine two masks: union (max of both values).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn mask_union(
     a: impl Fn(usize, usize) -> f32 + 'static,
     b: impl Fn(usize, usize) -> f32 + 'static,
@@ -357,7 +357,7 @@ pub fn mask_union(
 /// Diamond (rhombus) mask: L1 norm with soft dissolve at edges.
 /// rx/ry are half-widths along each axis. In terminal cells x:y ≈ 2:1,
 /// so pass rx ≈ 2*ry for a visually balanced diamond.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn mask_diamond(
     cx: f32,
     cy: f32,
@@ -382,7 +382,7 @@ pub fn mask_diamond(
 /// Parallelogram mask: a rectangle sheared along x by `shear` cells per
 /// unit of normalized dy from center. Positive shear leans right going down.
 /// w/h are full width and height, centered at (cx, cy).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn mask_parallelogram(
     cx: f32,
     cy: f32,
@@ -420,7 +420,7 @@ pub enum TriDir {
 
 /// Triangle mask. Apex points in `dir`, base is opposite.
 /// rx/ry are half-extents from center to the widest cross-section.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn mask_triangle(
     cx: f32,
     cy: f32,
@@ -474,7 +474,7 @@ pub fn mask_triangle(
 /// Hexagon mask. Regular hexagon with flat top/bottom.
 /// rx is half-width (horizontal), ry is half-height (vertical).
 /// Hex shape: top/bottom edges are flat (w = rx), sides are angled.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn mask_hexagon(
     cx: f32,
     cy: f32,
@@ -504,7 +504,7 @@ pub fn mask_hexagon(
 
 /// Trapezoid mask. Top edge width `w_top`, bottom edge width `w_bot`,
 /// total height `h`, centered at (cx, cy). Sides taper linearly.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn mask_trapezoid(
     cx: f32,
     cy: f32,
@@ -538,7 +538,7 @@ pub fn mask_trapezoid(
 
 /// CA snapshot: run a 2D cellular automata for a few generations, render the
 /// frozen state as box-drawing chars inside the rect.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn draw_ca_snapshot(
     grid: &mut Grid,
     rect: &Rect,
@@ -596,7 +596,7 @@ fn draw_ca_snapshot(
 }
 
 /// Explosion: radial burst from center. Dense core, rays thinning outward.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn draw_explosion(grid: &mut Grid, rect: &Rect, color: Color, color2: Color) {
     let cx = rect.w as f32 * 0.5;
     let cy = rect.h as f32 * 0.5;
@@ -651,7 +651,7 @@ fn draw_explosion(grid: &mut Grid, rect: &Rect, color: Color, color2: Color) {
 
 /// 1D elementary cellular automaton (Wolfram rules). Renders top-to-bottom,
 /// each row is the next generation. Popular rules: 30, 90, 110, 150, 184.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn draw_rule_1d(grid: &mut Grid, rect: &Rect, rule: u8, color: Color, color2: Color) {
     if rect.w == 0 || rect.h == 0 {
         return;

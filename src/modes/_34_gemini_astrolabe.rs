@@ -55,27 +55,27 @@ const PARAMS: &[Param] = &[
 ];
 
 impl Mode for GemAetheriumMode {
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn name(&self) -> &'static str {
         "gem-aetherium"
     }
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn help(&self) -> &'static str {
         "Grand Aetherial Orrery, 3D rotating armillary spheres, epicyclic clockwork gears, zodiac astrolabe, orbiting planets & comets [rings] [planets] [gears] [zodiac] [speed] [tilt] [nebula] [rays] [comets] [runes] [pulse] [harmony]"
     }
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn animation(&self) -> AnimKind {
         AnimKind::Iterate
     }
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn params(&self) -> &'static [Param] {
         PARAMS
     }
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn render(&self, frame: &mut ModeFrame<'_>) {
         let params = AetheriumParams::from_inputs(frame.args, frame.param_values);
         draw_gem_aetherium(
@@ -108,7 +108,7 @@ pub(crate) struct AetheriumParams {
 }
 
 impl Default for AetheriumParams {
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn default() -> Self {
         Self {
             rings: 6,
@@ -128,12 +128,12 @@ impl Default for AetheriumParams {
 }
 
 impl AetheriumParams {
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     pub(crate) fn from_args(args: &[String]) -> Self {
         Self::from_inputs(args, None)
     }
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     pub(crate) fn from_inputs(args: &[String], param_values: Option<&[f32]>) -> Self {
         let read = |index: usize, key: &str, default: f32| {
             args.get(index)
@@ -212,7 +212,7 @@ const RUNIC_CHARS: &[char] = &[
     'π', 'ρ', 'σ', 'τ', 'υ', 'φ', 'χ', 'ψ', 'ω',
 ];
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn rotate_3d(x: f32, y: f32, z: f32, pitch: f32, yaw: f32, roll: f32) -> (f32, f32, f32) {
     // Yaw (around Y)
     let cy = yaw.cos();
@@ -238,7 +238,7 @@ fn rotate_3d(x: f32, y: f32, z: f32, pitch: f32, yaw: f32, roll: f32) -> (f32, f
     (x3, y3, z3)
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn project(
     x: f32,
     y: f32,
@@ -258,7 +258,7 @@ fn project(
     Some((px.round() as i32, py.round() as i32, z))
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn draw_gem_aetherium(
     grid: &mut Grid,
     width: usize,
@@ -890,7 +890,7 @@ mod tests {
     use crate::color::make_palette;
     use crate::render::grid_to_plain;
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn render_test_grid(
         width: usize,
         height: usize,
@@ -907,13 +907,13 @@ mod tests {
         grid
     }
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn plain(grid: &Grid) -> String {
         grid_to_plain(grid).join("\n")
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn deterministic_seeded_frame_and_visible_motion() {
         let params = AetheriumParams::default();
         let frame_a = plain(&render_test_grid(80, 24, 42, 0.0, &params));
@@ -931,7 +931,7 @@ mod tests {
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn tiny_grid_and_extreme_inputs_terminate() {
         let tiny_params = AetheriumParams {
             rings: 10,
@@ -955,7 +955,7 @@ mod tests {
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn params_from_args_override_and_clamp() {
         let args = vec![
             "42".to_string(),
@@ -979,7 +979,7 @@ mod tests {
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn snapshot_gem_aetherium_t0() {
         let params = AetheriumParams::default();
         let out = plain(&render_test_grid(80, 24, 42, 0.0, &params));
@@ -987,7 +987,7 @@ mod tests {
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn snapshot_gem_aetherium_in_motion() {
         let params = AetheriumParams::default();
         let out = plain(&render_test_grid(80, 24, 42, 1.25, &params));

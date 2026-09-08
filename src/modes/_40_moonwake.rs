@@ -21,27 +21,27 @@ const PARAMS: &[Param] = &[
 ];
 
 impl Mode for MoonwakeMode {
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn name(&self) -> &'static str {
         "moonwake"
     }
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn help(&self) -> &'static str {
         "Moonlit breaking wave, engraved currents, branching foam, drifting spray, and a lantern sailboat [swell] [lines] [foam] [moon] [reflect] [boat] [speed]"
     }
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn animation(&self) -> AnimKind {
         AnimKind::Iterate
     }
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn params(&self) -> &'static [Param] {
         PARAMS
     }
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn render(&self, frame: &mut ModeFrame<'_>) {
         let params = MoonwakeParams::from_inputs(frame.args, frame.param_values);
         draw_moonwake(
@@ -69,7 +69,7 @@ struct MoonwakeParams {
 }
 
 impl MoonwakeParams {
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn from_inputs(args: &[String], values: Option<&[f32]>) -> Self {
         let read = |i: usize| {
             let p = &PARAMS[i];
@@ -100,7 +100,7 @@ type Point = [f32; 2];
 const TAU: f32 = std::f32::consts::TAU;
 const DOTS: [[u8; 4]; 2] = [[1, 2, 4, 64], [8, 16, 32, 128]];
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn hash(seed: u64, index: usize) -> f32 {
     let mut n = seed.wrapping_add((index as u64).wrapping_mul(0x9E37_79B9_7F4A_7C15));
     n = (n ^ (n >> 30)).wrapping_mul(0xBF58_476D_1CE4_E5B9);
@@ -108,12 +108,12 @@ fn hash(seed: u64, index: usize) -> f32 {
     ((n ^ (n >> 31)) >> 40) as f32 / 16_777_216.0
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn mix(a: Point, b: Point, t: f32) -> Point {
     [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn cubic(points: [Point; 4], t: f32) -> Point {
     let a = mix(points[0], points[1], t);
     let b = mix(points[1], points[2], t);
@@ -123,7 +123,7 @@ fn cubic(points: [Point; 4], t: f32) -> Point {
 
 // Both edges end at the lip. Their interpolation gives continuous engraved
 // currents from the foot of the wave into its overhanging spiral.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn wave(u: f32, v: f32, clock: f32, swell: f32) -> Point {
     const OUTER: [[Point; 4]; 3] = [
         [[-0.12, 1.08], [0.12, 0.98], [0.06, 0.15], [0.40, 0.16]],
@@ -160,7 +160,7 @@ struct Strokes {
 }
 
 impl Strokes {
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn new(width: usize, height: usize) -> Self {
         Self {
             width,
@@ -171,7 +171,7 @@ impl Strokes {
         }
     }
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn point(&mut self, p: Point, color: Color, light: f32) {
         if !(0.0..1.0).contains(&p[0]) || !(0.0..1.0).contains(&p[1]) {
             return;
@@ -186,7 +186,7 @@ impl Strokes {
         }
     }
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn line(&mut self, a: Point, b: Point, color: Color, light: f32) {
         let dx = (a[0] - b[0]).abs() * (self.width * 2) as f32;
         let dy = (a[1] - b[1]).abs() * (self.height * 4) as f32;
@@ -196,7 +196,7 @@ impl Strokes {
         }
     }
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn paint(&self, grid: &mut Grid) {
         for (y, row) in grid.iter_mut().take(self.height).enumerate() {
             for (x, cell) in row.iter_mut().take(self.width).enumerate() {
@@ -210,7 +210,7 @@ impl Strokes {
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn fill_wave(
     grid: &mut Grid,
     width: usize,
@@ -242,7 +242,7 @@ fn fill_wave(
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn sky_and_water(
     grid: &mut Grid,
     width: usize,
@@ -340,7 +340,7 @@ fn sky_and_water(
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn foam(
     strokes: &mut Strokes,
     seed: u64,
@@ -408,7 +408,7 @@ fn foam(
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn boat(grid: &mut Grid, width: usize, height: usize, clock: f32, palette: &[Color; 5]) {
     if width < 24 || height < 10 {
         return;
@@ -468,7 +468,7 @@ fn boat(grid: &mut Grid, width: usize, height: usize, clock: f32, palette: &[Col
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn draw_moonwake(
     grid: &mut Grid,
     width: usize,
@@ -579,12 +579,12 @@ mod tests {
     use crate::render::grid_to_plain;
     use rand::SeedableRng;
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn defaults() -> Vec<f32> {
         PARAMS.iter().map(|p| p.default).collect()
     }
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn frame(width: usize, height: usize, seed: u64, t: f32, values: &[f32]) -> Grid {
         let mut grid = vec![vec![Cell::blank(); width]; height];
         let palette = named_theme("deep").unwrap();
@@ -604,19 +604,19 @@ mod tests {
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn snapshot_moonwake_seed_42() {
         insta::assert_snapshot!(grid_to_plain(&frame(80, 24, 42, 0.0, &defaults())).join("\n"));
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn snapshot_moonwake_in_motion() {
         insta::assert_snapshot!(grid_to_plain(&frame(100, 32, 42, 4.75, &defaults())).join("\n"));
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn frames_are_reproducible_seed_sensitive_and_animate() {
         let values = defaults();
         let start = frame(96, 32, 42, 1.25, &values);
@@ -633,7 +633,7 @@ mod tests {
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn native_playback_matches_direct_frames_and_live_controls() {
         use crate::morph::IterateFrameRenderer;
         let mut player = IterateFrameRenderer::new("moonwake", 42, "deep", 80, 24).unwrap();
@@ -653,7 +653,7 @@ mod tests {
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn controls_change_the_visible_composition() {
         let values = defaults();
         let baseline = grid_to_plain(&frame(100, 36, 42, 2.0, &values));
@@ -670,7 +670,7 @@ mod tests {
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn parameter_precedence_limits_and_nonfinite_inputs() {
         let defaults = defaults();
         let params = MoonwakeParams::from_inputs(&[], Some(&defaults));
@@ -703,7 +703,7 @@ mod tests {
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn small_grids_extreme_parameters_and_display_width() {
         use crate::types::display_width;
         let low: Vec<_> = PARAMS.iter().map(|p| p.min).collect();

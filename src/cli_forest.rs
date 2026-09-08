@@ -49,7 +49,7 @@ use crate::walker::*;
 use crate::warps::*;
 
 /// Dispatch arm for mode(s): forest2 (moved verbatim from run()).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_forest2(
     mut grid: Grid,
     width: usize,
@@ -208,7 +208,7 @@ pub(crate) fn cli_forest2(
 }
 
 /// Dispatch arm for mode(s): forest3 (moved verbatim from run()).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_forest3(
     mut grid: Grid,
     width: usize,
@@ -355,7 +355,7 @@ pub(crate) fn cli_forest3(
 }
 
 /// Dispatch arm for mode(s): forest4 (moved verbatim from run()).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_forest4(
     mut grid: Grid,
     width: usize,
@@ -599,7 +599,7 @@ pub(crate) fn cli_forest4(
 }
 
 /// Dispatch arm for mode(s): forest5 (moved verbatim from run()).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_forest5(
     mut grid: Grid,
     width: usize,
@@ -844,7 +844,7 @@ pub(crate) fn cli_forest5(
 }
 
 /// Dispatch arm for mode(s): forest6 (moved verbatim from run()).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_forest6(
     mut grid: Grid,
     width: usize,
@@ -1148,7 +1148,7 @@ pub(crate) fn cli_forest6(
 }
 
 /// Dispatch arm for mode(s): forest7 (moved verbatim from run()).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_forest7(
     mut grid: Grid,
     width: usize,
@@ -1519,7 +1519,7 @@ pub(crate) fn cli_forest7(
 }
 
 /// Dispatch arm for mode(s): forest8 (moved verbatim from run()).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_forest8(
     mut grid: Grid,
     width: usize,
@@ -1760,7 +1760,7 @@ pub(crate) fn cli_forest8(
 }
 
 /// Dispatch arm for mode(s): forest9 (moved verbatim from run()).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_forest9(
     mut grid: Grid,
     width: usize,

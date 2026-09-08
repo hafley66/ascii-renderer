@@ -26,7 +26,7 @@ pub(crate) struct ForestKnobs {
 }
 
 impl ForestKnobs {
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     pub(crate) fn from_env() -> Self {
         ForestKnobs {
             density: param_f32("DENSITY", 1.0),
@@ -110,7 +110,7 @@ thread_local! {
     static CACHE: RefCell<Option<Scene>> = RefCell::new(None);
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn knob_key(k: &ForestKnobs) -> [u32; 7] {
     [
         k.density.to_bits(),
@@ -123,7 +123,7 @@ fn knob_key(k: &ForestKnobs) -> [u32; 7] {
     ]
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn color_index(colors: &mut Vec<Color>, c: Color) -> u8 {
     if let Some(i) = colors.iter().position(|&x| x == c) {
         return i as u8;
@@ -135,7 +135,7 @@ fn color_index(colors: &mut Vec<Color>, c: Color) -> u8 {
     0
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn build(w: usize, h: usize, seed: u64, palette: &[Color; 5], k: &ForestKnobs) -> Scene {
     let mut rng = StdRng::seed_from_u64(seed ^ 0x00F0_4E57);
     let ground_y =
@@ -413,7 +413,7 @@ fn build(w: usize, h: usize, seed: u64, palette: &[Color; 5], k: &ForestKnobs) -
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn draw_fable_1_forest(
     grid: &mut Grid,
     w: usize,
@@ -438,7 +438,7 @@ pub(crate) fn draw_fable_1_forest(
     });
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn render(grid: &mut Grid, w: usize, h: usize, seed: u64, t: f32, k: &ForestKnobs, s: &mut Scene) {
     let speed = k.speed.max(0.0);
     let light = if t > 0.0 {
@@ -614,7 +614,7 @@ fn render(grid: &mut Grid, w: usize, h: usize, seed: u64, t: f32, k: &ForestKnob
     });
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn paint_mist(
     grid: &mut Grid,
     w: usize,
@@ -660,7 +660,7 @@ fn paint_mist(
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn paint_motes(grid: &mut Grid, w: usize, h: usize, t: f32, speed: f32, s: &Scene) {
     let tt = if t > 0.0 { t * speed } else { 0.0 };
     let put = |grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color| {
@@ -733,7 +733,7 @@ fn paint_motes(grid: &mut Grid, w: usize, h: usize, t: f32, speed: f32, s: &Scen
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_fable_1_forest(
     mut grid: Grid,
     width: usize,
@@ -774,7 +774,7 @@ pub(crate) fn cli_fable_1_forest(
 mod tests {
     use super::*;
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn run(w: usize, h: usize, seed: u64, t: f32) -> String {
         let mut g = vec![vec![Cell::blank(); w]; h];
         let p = crate::color::make_palette(seed);
@@ -787,26 +787,26 @@ mod tests {
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn snapshot_fable_1_forest_80x24() {
         insta::assert_snapshot!("fable_1_forest_80x24", run(80, 24, 42, 0.0));
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn deterministic_and_seed_sensitive() {
         assert_eq!(run(110, 36, 42, 0.0), run(110, 36, 42, 0.0));
         assert_ne!(run(110, 36, 42, 0.0), run(110, 36, 7, 0.0));
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn t_moves_the_scene() {
         assert_ne!(run(110, 36, 42, 0.0), run(110, 36, 42, 12.0));
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn every_atmosphere_renders() {
         for a in 1..=5 {
             let mut g = vec![vec![Cell::blank(); 90]; 30];
@@ -818,7 +818,7 @@ mod tests {
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn frame_cost() {
         let (w, h) = (200usize, 60usize);
         let mut g = vec![vec![Cell::blank(); w]; h];

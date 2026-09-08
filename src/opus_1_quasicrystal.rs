@@ -38,7 +38,7 @@ pub(crate) struct Opus1QuasicrystalKnobs {
 }
 
 impl Opus1QuasicrystalKnobs {
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     pub(crate) fn from_env() -> Self {
         Opus1QuasicrystalKnobs {
             speed: param_f32("SPEED", 1.0),
@@ -93,12 +93,12 @@ thread_local! {
     static CACHE: RefCell<Option<Cached>> = const { RefCell::new(None) };
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn gcd(a: u32, b: u32) -> u32 {
     if b == 0 { a } else { gcd(b, a % b) }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn choose_sym(seed: u64, knob: f32) -> u32 {
     let forced = knob.round() as i32;
     if forced >= 3 {
@@ -108,7 +108,7 @@ fn choose_sym(seed: u64, knob: f32) -> u32 {
     SYMS[rng.random_range(0..SYMS.len())]
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn build(seed: u64, n: u32) -> Cached {
     let mut rng = StdRng::seed_from_u64(seed ^ 0x9B1D_E7F0_2C55);
     let nn = n as usize;
@@ -178,7 +178,7 @@ fn build(seed: u64, n: u32) -> Cached {
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn hash2(x: i32, y: i32, salt: u32) -> f32 {
     let mut h = (x as u64 & 0xFFFF).wrapping_mul(0x9E37_79B9_7F4A_7C15)
         ^ (y as u64 & 0xFFFF).wrapping_mul(0xBF58_476D_1CE4_E5B9)
@@ -189,7 +189,7 @@ fn hash2(x: i32, y: i32, salt: u32) -> f32 {
     (h & 0xFF_FFFF) as f32 / 16_777_216.0
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn slope_glyph(dx: f32, dy: f32) -> char {
     if dx.abs() < 1e-3 {
         return '|';
@@ -206,12 +206,12 @@ fn slope_glyph(dx: f32, dy: f32) -> char {
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn keep_bg(grid: &Grid, x: usize, y: usize) -> Color {
     grid[y][x].bg
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn stroke(
     grid: &mut Grid,
     w: usize,
@@ -240,7 +240,7 @@ fn stroke(
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn fill_par(
     grid: &mut Grid,
     w: usize,
@@ -320,7 +320,7 @@ fn fill_par(
 }
 
 #[allow(clippy::too_many_arguments)]
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn fill_par_row(
     row: &mut [Cell],
     y: usize,
@@ -381,7 +381,7 @@ fn fill_par_row(
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn draw_opus_1_quasicrystal(
     grid: &mut Grid,
     w: usize,
@@ -402,7 +402,7 @@ pub(crate) fn draw_opus_1_quasicrystal(
     });
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn render(
     grid: &mut Grid,
     w: usize,
@@ -753,7 +753,7 @@ fn render(
     });
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_opus_1_quasicrystal(
     mut grid: Grid,
     width: usize,
@@ -796,7 +796,7 @@ pub(crate) fn cli_opus_1_quasicrystal(
 mod tests {
     use super::*;
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn run(w: usize, h: usize, seed: u64, t: f32) -> String {
         let mut g = vec![vec![Cell::blank(); w]; h];
         let p = crate::color::make_palette(seed);
@@ -809,33 +809,33 @@ mod tests {
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn snapshot_quasicrystal_small() {
         insta::assert_snapshot!("opus_1_quasicrystal_80x24", run(80, 24, 42, 0.0));
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn snapshot_quasicrystal_wide_t18() {
         insta::assert_snapshot!("opus_1_quasicrystal_110x36_t18", run(110, 36, 7, 18.0));
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn deterministic_and_seed_sensitive() {
         assert_eq!(run(90, 30, 42, 0.0), run(90, 30, 42, 0.0));
         assert_ne!(run(90, 30, 42, 0.0), run(90, 30, 3, 0.0));
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn time_moves_the_tiling() {
         assert_ne!(run(90, 30, 42, 0.0), run(90, 30, 42, 9.0));
         assert_ne!(run(90, 30, 42, 9.0), run(90, 30, 42, 21.0));
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn every_symmetry_terminates() {
         for n in 3..=13 {
             let mut g = vec![vec![Cell::blank(); 60]; 20];
@@ -847,7 +847,7 @@ mod tests {
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn tiny_grid_is_safe() {
         let mut g = vec![vec![Cell::blank(); 4]; 3];
         let p = crate::color::make_palette(1);
@@ -856,7 +856,7 @@ mod tests {
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn row_fill_matches_serial_with_clipping_dither_and_overwrite() {
         let (w, h) = (37, 19);
         let mut serial = vec![vec![Cell::blank(); w]; h];
@@ -903,7 +903,7 @@ mod tests {
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn parallel_shading_preserves_full_colored_grid() {
         let render = |threads| {
             rayon::ThreadPoolBuilder::new()
@@ -926,7 +926,7 @@ mod tests {
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn frame_cost() {
         let (w, h) = (200usize, 60usize);
         let mut g = vec![vec![Cell::blank(); w]; h];

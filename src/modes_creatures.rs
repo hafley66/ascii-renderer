@@ -52,7 +52,7 @@ use crate::warps::*;
 
 /// Box-drawing glyph for a cell given the in/out step directions, plus axis bits
 /// (h = horizontal travel, v = vertical travel) used for crossover detection.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn snake_seg(din: (i32, i32), dout: (i32, i32)) -> (char, bool, bool) {
     let ch = match (din, dout) {
         ((1, 0), (1, 0)) | ((-1, 0), (-1, 0)) => '─',
@@ -76,7 +76,7 @@ pub(crate) fn snake_seg(din: (i32, i32), dout: (i32, i32)) -> (char, bool, bool)
 /// body window slides forever with no teleport). Cells are already wrapped into
 /// [0,w) x [0,h); the per-cell step direction and a per-cell "is this a hop block"
 /// flag are returned too, so glyphs (and the wrap seam) render correctly.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn snake_walk(
     w: i32,
     h: i32,
@@ -179,7 +179,7 @@ pub(crate) fn snake_walk(
     (cells, dirs, block)
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn draw_snakes(
     grid: &mut Grid,
     width: usize,
@@ -323,7 +323,7 @@ pub(crate) fn draw_snakes(
 }
 
 /// Dispatch arm for mode(s): snakes (moved verbatim from run()).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_snakes(
     mut grid: Grid,
     width: usize,
@@ -356,7 +356,7 @@ pub(crate) fn cli_snakes(
 }
 
 /// Dispatch arm for mode(s): ink (moved verbatim from run()).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_ink(
     mut grid: Grid,
     width: usize,

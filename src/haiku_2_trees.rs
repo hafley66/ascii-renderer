@@ -12,7 +12,7 @@ use rand::rngs::StdRng;
 
 // ── Tree drawing algorithm implementations ───────────────────────────────
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn set(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
     if x >= 0 && y >= 0 && (y as usize) < grid.len() && (x as usize) < grid[0].len() {
         grid[y as usize][x as usize] = Cell::new(ch, fg);
@@ -20,7 +20,7 @@ fn set(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
 }
 
 /// Gnarled Oak: thick trunk with visible knots, asymmetric major branches with tapers.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn draw_gnarled_oak(
     grid: &mut Grid,
     root_x: i32,
@@ -95,7 +95,7 @@ fn draw_gnarled_oak(
 }
 
 /// Weeping Willow: high anchor with cascading strand layers.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn draw_weeping_willow(
     grid: &mut Grid,
     root_x: i32,
@@ -154,7 +154,7 @@ fn draw_weeping_willow(
 }
 
 /// Twisted Spiral: trunk rotating around itself with branches following the twist.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn draw_twisted_spiral(
     grid: &mut Grid,
     root_x: i32,
@@ -211,7 +211,7 @@ fn draw_twisted_spiral(
 }
 
 /// Bottle Tree: massive tapered trunk (baobab-like) with small crown.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn draw_bottle_tree(
     grid: &mut Grid,
     root_x: i32,
@@ -285,7 +285,7 @@ fn draw_bottle_tree(
 }
 
 /// Root System: visible roots spreading downward from base (inverted tree).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn draw_root_system(
     grid: &mut Grid,
     root_x: i32,
@@ -355,7 +355,7 @@ fn draw_root_system(
 }
 
 /// Clump Shrub: multiple stems from base forming irregular mass (novel growth).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn draw_clump_shrub(
     grid: &mut Grid,
     root_x: i32,
@@ -415,7 +415,7 @@ fn draw_clump_shrub(
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn draw_branch(
     grid: &mut Grid,
     start_x: i32,
@@ -441,7 +441,7 @@ pub struct Haiku2TreesKnobs {
 }
 
 impl Haiku2TreesKnobs {
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     pub fn from_env() -> Self {
         Haiku2TreesKnobs {
             energy: param_f32("ENERGY", 0.8),
@@ -451,7 +451,7 @@ impl Haiku2TreesKnobs {
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn draw_haiku_2_trees(
     grid: &mut Grid,
     width: usize,
@@ -525,7 +525,7 @@ pub(crate) fn draw_haiku_2_trees(
     });
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_haiku_2_trees(
     mut grid: Grid,
     width: usize,
@@ -555,7 +555,7 @@ mod tests {
     use super::*;
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn test_haiku_2_trees_snapshot() {
         let mut grid = vec![vec![Cell::blank(); 80]; 24];
         let palette = [

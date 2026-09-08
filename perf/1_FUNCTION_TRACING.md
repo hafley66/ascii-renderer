@@ -1,7 +1,7 @@
 # Function entry and exit recording
 
 ```bash
-cargo build --release --locked
+cargo build --release --locked -j 1 --features function-trace
 ASCII_FUNCTION_TRACE=perf/results/functions target/release/ascii-renderer 42 demo
 ```
 
@@ -10,6 +10,12 @@ workers and preview children, writes `functions-<pid>.ndjson.gz` in that directo
 `new` records mark function entry; `close` records mark completion and include
 elapsed entered/idle span time. Records include source file, line, thread ID,
 function name and timestamp. Arguments, grids and repeated ancestor lists are excluded.
+
+Normal builds omit function instrumentation through `cfg_attr(feature =
+"function-trace", ...)`. The environment variable activates recording only in
+a build that includes that feature. The regular first/every-tenth-frame NDJSON
+records remain enabled independently. `scripts/13_e2e.sh --function-trace` builds
+the instrumented variant explicitly; omit that flag for performance validation.
 
 The implementation uses `tracing::instrument`, `tracing-subscriber`,
 `tracing-appender`, `flate2::write::GzEncoder` and `std::io::BufWriter`. Compression

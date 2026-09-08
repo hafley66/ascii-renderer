@@ -21,7 +21,7 @@ struct ProfileSettings {
 }
 
 impl ProfileSettings {
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn from_env() -> Self {
         Self::parse(
             std::env::var("ASCII_PROFILE").ok().as_deref(),
@@ -30,7 +30,7 @@ impl ProfileSettings {
         )
     }
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn parse(enabled: Option<&str>, layers: Option<&str>, report_every: Option<&str>) -> Self {
         Self {
             enabled: enabled.is_some_and(env_flag),
@@ -43,7 +43,7 @@ impl ProfileSettings {
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn env_flag(value: &str) -> bool {
     matches!(
         value.trim().to_ascii_lowercase().as_str(),
@@ -51,7 +51,7 @@ fn env_flag(value: &str) -> bool {
     )
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn settings() -> &'static ProfileSettings {
     SETTINGS.get_or_init(ProfileSettings::from_env)
 }
@@ -64,7 +64,7 @@ struct TraceSettings {
 }
 
 impl TraceSettings {
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn from_env() -> Self {
         Self::parse(
             std::env::var_os("ASCII_TRACE_PATH"),
@@ -73,7 +73,7 @@ impl TraceSettings {
         )
     }
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn parse(path: Option<std::ffi::OsString>, all: Option<&str>, slow_ms: Option<&str>) -> Self {
         Self {
             path: Some(path.map(PathBuf::from).unwrap_or_else(default_trace_path)),
@@ -83,7 +83,7 @@ impl TraceSettings {
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn default_trace_path() -> PathBuf {
     let mut path = std::env::var_os("XDG_STATE_HOME")
         .map(PathBuf::from)
@@ -94,12 +94,17 @@ fn default_trace_path() -> PathBuf {
     path
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn trace_settings() -> &'static TraceSettings {
     TRACE_SETTINGS.get_or_init(TraceSettings::from_env)
 }
 
 pub(crate) fn init() -> Result<Option<(tracing_appender::non_blocking::WorkerGuard, tracing_appender::non_blocking::ErrorCounter)>, Box<dyn std::error::Error + Send + Sync>> {
+    #[cfg(not(feature = "function-trace"))]
+    if std::env::var_os("ASCII_FUNCTION_TRACE").is_some() {
+        eprintln!("ASCII_FUNCTION_TRACE requires a build with --features function-trace; function logging is disabled");
+    }
+    #[cfg(feature = "function-trace")]
     if let Some(directory) = std::env::var_os("ASCII_FUNCTION_TRACE") {
         use tracing_subscriber::fmt::format::FmtSpan;
         std::fs::create_dir_all(&directory)?;
@@ -141,7 +146,7 @@ pub(crate) fn init() -> Result<Option<(tracing_appender::non_blocking::WorkerGua
     Ok(None)
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn measure_render<T>(
     mode: &str,
     width: usize,
@@ -173,7 +178,7 @@ enum TraceEventKind {
 }
 
 impl TraceEventKind {
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn as_str(self) -> &'static str {
         match self {
             Self::Render => "render",
@@ -201,7 +206,7 @@ pub(crate) struct FrameInputs<'a> {
 }
 
 impl FrameInputs<'_> {
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     pub(crate) fn to_json(&self) -> serde_json::Value {
         assert_eq!(self.params.len(), self.values.len());
         serde_json::json!({
@@ -225,7 +230,7 @@ pub(crate) struct RenderTrace<'a> {
 }
 
 impl<'a> RenderTrace<'a> {
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     pub(crate) fn start(context: FrameInputs<'a>) -> Option<Self> {
         trace_settings().path.as_ref()?;
         layer_capture_begin();
@@ -239,14 +244,14 @@ impl<'a> RenderTrace<'a> {
     /// Mark the point at which mode dispatch has finished and ANSI/grid output
     /// begins. The final trace event then separates renderer generation from
     /// terminal serialization and presentation.
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     pub(crate) fn mark_render_complete(&mut self) {
         self.render_finished = Some(self.started.elapsed());
     }
 }
 
 impl Drop for RenderTrace<'_> {
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn drop(&mut self) {
         let settings = trace_settings();
         let layers = layer_capture_end();
@@ -303,7 +308,7 @@ struct TraceWriters {
 }
 
 impl TraceWriters {
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn append(&mut self, path: &std::path::Path, event: &serde_json::Value) {
         if !self.files.contains_key(path) {
             let Some(parent) = path.parent() else {
@@ -333,7 +338,7 @@ impl TraceWriters {
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn append_ndjson(path: &std::path::Path, event: &serde_json::Value) {
     let Ok(mut writers) = TRACE_WRITERS
         .get_or_init(|| Mutex::new(TraceWriters::default()))
@@ -353,7 +358,7 @@ pub(crate) enum PlaybackStage {
     SessionExit,
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn playback_event(stage: PlaybackStage, worker_pid: u32, detail: impl serde::Serialize) {
     let Some(path) = &trace_settings().path else {
         return;
@@ -368,7 +373,7 @@ pub(crate) fn playback_event(stage: PlaybackStage, worker_pid: u32, detail: impl
     );
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn unix_ms() -> u64 {
     std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
@@ -407,7 +412,7 @@ pub(crate) struct RelayProfiler {
 }
 
 impl RelayProfiler {
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     pub(crate) fn new(worker_pid: u32, animation: bool) -> Self {
         let now = Instant::now();
         Self {
@@ -420,14 +425,14 @@ impl RelayProfiler {
         }
     }
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     pub(crate) fn tick(&mut self) {
         if self.started.elapsed() >= Duration::from_secs(1) {
             self.report(false);
         }
     }
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     pub(crate) fn input_polled(&mut self) {
         let now = Instant::now();
         self.totals.max_input_gap_us = self
@@ -437,7 +442,7 @@ impl RelayProfiler {
         self.last_input = now;
     }
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn report(&mut self, final_sample: bool) {
         if let Some(path) = &trace_settings().path {
             let interval_us = self.started.elapsed().as_micros() as u64;
@@ -465,7 +470,7 @@ impl RelayProfiler {
 }
 
 impl Drop for RelayProfiler {
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn drop(&mut self) {
         self.report(true);
     }
@@ -486,17 +491,17 @@ thread_local! {
 
 /// Open an in-process layer capture on this thread. Layer timers record into it
 /// even when ASCII_PROFILE_LAYERS is off, so probes need no log parsing.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn layer_capture_begin() {
     LAYER_CAPTURE.with(|c| *c.borrow_mut() = Some(Vec::new()));
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn layer_capture_end() -> Vec<LayerTotal> {
     LAYER_CAPTURE.with(|c| c.borrow_mut().take().unwrap_or_default())
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn layer_capture_record(layer: &'static str, elapsed_ns: u128) {
     LAYER_CAPTURE.with(|c| {
         if let Some(totals) = c.borrow_mut().as_mut() {
@@ -517,7 +522,7 @@ fn layer_capture_record(layer: &'static str, elapsed_ns: u128) {
     });
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn measure_layer<T>(
     mode: &'static str,
     layer: &'static str,
@@ -576,7 +581,7 @@ struct FrameTotals {
 }
 
 impl FrameTotals {
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn record(&mut self, sample: FrameSample) {
         let generation_ns = sample.generation.as_nanos();
         let encoding_ns = sample.encoding.as_nanos();
@@ -613,13 +618,13 @@ pub(crate) struct FrameProfiler {
     trace_bytes: u64,
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn deterministic_animation_sample(frame_index: u64) -> bool {
     frame_index > 0 && (frame_index - 1) % 10 == 0
 }
 
 impl FrameProfiler {
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     pub(crate) fn from_env(mode: &str, strategy: &str) -> Option<Self> {
         let settings = settings();
         (settings.enabled || trace_settings().path.is_some()).then(|| Self {
@@ -635,7 +640,7 @@ impl FrameProfiler {
         })
     }
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     pub(crate) fn record_with_context(
         &mut self,
         strategy: &str,
@@ -683,7 +688,7 @@ impl FrameProfiler {
         self.record(strategy, sample);
     }
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     pub(crate) fn record(&mut self, strategy: &str, sample: FrameSample) {
         if self.strategy != strategy {
             self.report("strategy change");
@@ -696,7 +701,7 @@ impl FrameProfiler {
         }
     }
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn report(&mut self, reason: &'static str) {
         if self.totals.frames == 0 {
             self.interval_started = Instant::now();
@@ -737,7 +742,7 @@ impl FrameProfiler {
 }
 
 impl Drop for FrameProfiler {
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn drop(&mut self) {
         self.report("session end");
     }
@@ -748,7 +753,7 @@ mod tests {
     use super::*;
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn settings_and_frame_totals_are_deterministic() {
         let settings = [
             ProfileSettings::parse(None, None, None),
@@ -818,7 +823,7 @@ mod tests {
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn trace_settings_enable_default_and_explicit_paths() {
         let defaults = TraceSettings::parse(None, None, None);
         assert_eq!(defaults.path, Some(default_trace_path()));
@@ -832,7 +837,7 @@ mod tests {
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn animation_sampling_starts_at_first_draw_and_repeats_every_tenth_frame() {
         let sampled: Vec<_> = (1..=32)
             .filter(|frame| deterministic_animation_sample(*frame))
@@ -841,7 +846,7 @@ mod tests {
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn trace_writer_reuses_one_open_file_for_repeated_records() {
         let directory = tempfile::tempdir().unwrap();
         let path = directory.path().join("nested/trace.ndjson");

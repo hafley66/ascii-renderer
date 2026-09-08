@@ -49,14 +49,14 @@ use crate::walker;
 use crate::walker::*;
 use crate::warps::*;
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn pp_put(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
     if x >= 0 && y >= 0 && (y as usize) < grid.len() && (x as usize) < grid[0].len() {
         grid[y as usize][x as usize] = Cell::new(ch, fg);
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn pp_point_on(cx: i32, cy: i32, rx: f32, ry: f32, a: f32) -> (i32, i32) {
     (
         cx + (a.cos() * rx).round() as i32,
@@ -64,7 +64,7 @@ pub(crate) fn pp_point_on(cx: i32, cy: i32, rx: f32, ry: f32, a: f32) -> (i32, i
     )
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn pp_stroke(dx: i32, dy: i32) -> char {
     if dx.abs() > dy.abs() * 2 {
         '─'
@@ -77,7 +77,7 @@ pub(crate) fn pp_stroke(dx: i32, dy: i32) -> char {
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn pp_line(grid: &mut Grid, mut x0: i32, mut y0: i32, x1: i32, y1: i32, fg: Color) {
     let ch = pp_stroke(x1 - x0, y1 - y0);
     let dx = (x1 - x0).abs();
@@ -102,7 +102,7 @@ pub(crate) fn pp_line(grid: &mut Grid, mut x0: i32, mut y0: i32, x1: i32, y1: i3
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn pp_arc(
     grid: &mut Grid,
     cx: i32,
@@ -132,7 +132,7 @@ pub(crate) fn pp_arc(
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn pp_hash2(x: i32, y: i32, seed: u64) -> f32 {
     let mut h = (x as i64).wrapping_mul(374761393)
         ^ (y as i64).wrapping_mul(668265263)
@@ -141,7 +141,7 @@ pub(crate) fn pp_hash2(x: i32, y: i32, seed: u64) -> f32 {
     ((h & 0xffff) as f32) / 65535.0
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn pp_vnoise(fx: f32, fy: f32, seed: u64) -> f32 {
     let x0 = fx.floor() as i32;
     let y0 = fy.floor() as i32;
@@ -158,7 +158,7 @@ pub(crate) fn pp_vnoise(fx: f32, fy: f32, seed: u64) -> f32 {
     a + (b - a) * sy
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn pp_fbm(fx: f32, fy: f32, seed: u64) -> f32 {
     let mut v = 0.0;
     let mut amp = 0.5;
@@ -173,7 +173,7 @@ pub(crate) fn pp_fbm(fx: f32, fy: f32, seed: u64) -> f32 {
 
 /// 2-pass chamfer distance transform; vertical cost is doubled for the 2:1 cell
 /// aspect so distances are visually round.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn chamfer(mask: &[Vec<bool>], w: usize, h: usize) -> Vec<Vec<f32>> {
     let big = 1.0e6_f32;
     let (wh, wv, wd) = (1.0_f32, 2.0_f32, 2.236_f32);
@@ -225,7 +225,7 @@ pub(crate) fn chamfer(mask: &[Vec<bool>], w: usize, h: usize) -> Vec<Vec<f32>> {
 }
 
 /// Signed distance field: negative inside ink, positive outside, ~0 at the edge.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn signed_df(g: &Grid, w: usize, h: usize) -> Vec<Vec<f32>> {
     let mut ink = vec![vec![false; w]; h];
     let mut bg = vec![vec![false; w]; h];
@@ -249,7 +249,7 @@ pub(crate) fn signed_df(g: &Grid, w: usize, h: usize) -> Vec<Vec<f32>> {
 
 /// Smootherstep easing (6p^5 - 15p^4 + 10p^3): near-zero velocity at both ends,
 /// fast through the middle. Gives a pleasant ease-in / ease-out.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn ease_in_out(p: f32) -> f32 {
     let p = p.clamp(0.0, 1.0);
     p * p * p * (p * (p * 6.0 - 15.0) + 10.0)

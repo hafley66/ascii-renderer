@@ -13,7 +13,7 @@ pub enum BorderStyle {
     Fret,
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn border_glyphs(style: &BorderStyle) -> (char, char, char, char, char, char) {
     match style {
         BorderStyle::Light => ('┌', '┐', '└', '┘', '─', '│'),
@@ -26,7 +26,7 @@ pub fn border_glyphs(style: &BorderStyle) -> (char, char, char, char, char, char
 
 /// Draw a box border around rect, preserving existing bg colors.
 /// No-op if rect < 3x3. Fret falls back to Light if rect < 8x6.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn draw_box_border(grid: &mut Grid, rect: &Rect, style: &BorderStyle, color: Color) {
     if rect.w < 3 || rect.h < 3 {
         return;
@@ -73,7 +73,7 @@ pub fn draw_box_border(grid: &mut Grid, rect: &Rect, style: &BorderStyle, color:
 
 /// Draw decorative corner embellishments on a bordered rect.
 /// Overlays triangle/block motifs at each corner, preserving bg.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn draw_corner_embellishments(grid: &mut Grid, rect: &Rect, style: usize, color: Color) {
     if rect.w < 5 || rect.h < 4 {
         return;
@@ -200,7 +200,7 @@ pub fn draw_corner_embellishments(grid: &mut Grid, rect: &Rect, style: usize, co
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn pick_border_style(rng: &mut StdRng, w: usize, h: usize) -> BorderStyle {
     let area = w * h;
     if area < 100 {
@@ -226,7 +226,7 @@ pub fn pick_border_style(rng: &mut StdRng, w: usize, h: usize) -> BorderStyle {
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn border_inset(style: &BorderStyle) -> usize {
     match style {
         BorderStyle::Fret => 3,
@@ -237,7 +237,7 @@ pub fn border_inset(style: &BorderStyle) -> usize {
 /// Wrapper: draw a decorative border, then render content in the inset area.
 /// If `clear` is true, clears the rect before drawing (use for truchet bg).
 /// If false, preserves existing bg (use for mondrian color fills).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn render_block_with_border(
     grid: &mut Grid,
     block: &ContentBlock,

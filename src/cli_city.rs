@@ -56,7 +56,7 @@ use crate::warps::*;
 // lamps light while tenants wait and go dark once a cab services the floor.
 
 /// splitmix-style mix for per-floor/per-cycle tenant rolls.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn emix(mut z: u64) -> u64 {
     z = z.wrapping_add(0x9E37_79B9_7F4A_7C15);
     z = (z ^ (z >> 30)).wrapping_mul(0xBF58_476D_1CE4_E5B9);
@@ -65,7 +65,7 @@ fn emix(mut z: u64) -> u64 {
 }
 
 /// How many tenants wait at `floor` during passenger-cycle `pc`.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn elevator_waiting(seed: u64, floor: u64, pc: u64, crowd: f32) -> usize {
     let h = emix(
         seed ^ floor
@@ -80,7 +80,7 @@ fn elevator_waiting(seed: u64, floor: u64, pc: u64, crowd: f32) -> usize {
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn draw_elevator(
     grid: &mut Grid,
     width: usize,
@@ -598,7 +598,7 @@ pub(crate) fn draw_elevator(
 }
 
 /// Dispatch arm for mode(s): eyes (moved verbatim from run()).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_eyes(
     mut grid: Grid,
     width: usize,
@@ -922,7 +922,7 @@ pub(crate) fn cli_eyes(
 }
 
 /// Dispatch arm for mode(s): eyes2 (moved verbatim from run()).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_eyes2(
     mut grid: Grid,
     width: usize,
@@ -1267,7 +1267,7 @@ pub(crate) fn cli_eyes2(
 }
 
 /// Dispatch arm for mode(s): metro (moved verbatim from run()).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_metro(
     mut grid: Grid,
     width: usize,
@@ -1469,7 +1469,7 @@ pub(crate) fn cli_metro(
 }
 
 /// Dispatch arm for mode(s): koi (moved verbatim from run()).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_koi(
     mut grid: Grid,
     width: usize,
@@ -1575,7 +1575,7 @@ pub(crate) fn cli_koi(
 }
 
 /// Dispatch arm for mode(s): skyline (moved verbatim from run()).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_skyline(
     mut grid: Grid,
     width: usize,
@@ -1982,7 +1982,7 @@ pub(crate) fn cli_skyline(
 }
 
 /// Dispatch arm for mode(s): hive (moved verbatim from run()).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_hive(
     mut grid: Grid,
     width: usize,
@@ -2110,7 +2110,7 @@ pub(crate) fn cli_hive(
 }
 
 /// Dispatch arm for mode(s): jelly (moved verbatim from run()).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_jelly(
     mut grid: Grid,
     width: usize,
@@ -2230,7 +2230,7 @@ pub(crate) fn cli_jelly(
 }
 
 /// Dispatch arm for mode(s): jelly2 (moved verbatim from run()).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_jelly2(
     mut grid: Grid,
     width: usize,
@@ -2525,7 +2525,7 @@ pub(crate) fn cli_jelly2(
 }
 
 /// Dispatch arm for mode(s): elevator.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_elevator(
     mut grid: Grid,
     width: usize,
@@ -2568,7 +2568,7 @@ pub(crate) fn cli_elevator(
 // rim double-flashes at each full revolution, and the queue/exit pedestrians
 // are walk interpolations keyed to exact pass times.
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn draw_ferris(
     grid: &mut Grid,
     width: usize,
@@ -2795,7 +2795,7 @@ pub(crate) fn draw_ferris(
 }
 
 /// Dispatch arm for mode(s): ferris.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_ferris(
     mut grid: Grid,
     width: usize,

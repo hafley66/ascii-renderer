@@ -23,7 +23,7 @@ pub(crate) struct LifeKnobs {
 }
 
 impl LifeKnobs {
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     pub(crate) fn from_env() -> Self {
         LifeKnobs {
             depth: param_f32("DEPTH", 8.0).round().clamp(4.0, 11.0) as u32,
@@ -37,7 +37,7 @@ impl LifeKnobs {
         }
     }
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn geometry_key(&self) -> (u32, u32, u32, u32, usize) {
         (
             self.depth,
@@ -123,7 +123,7 @@ thread_local! {
     static CACHE: RefCell<Option<Cached>> = const { RefCell::new(None) };
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn rgb3(c: Color) -> (u8, u8, u8) {
     match c {
         Color::Rgb { r, g, b } => (r, g, b),
@@ -131,7 +131,7 @@ fn rgb3(c: Color) -> (u8, u8, u8) {
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn hue_of(c: Color) -> f64 {
     let (r, g, b) = rgb3(c);
     let (r, g, b) = (r as f64 / 255.0, g as f64 / 255.0, b as f64 / 255.0);
@@ -152,7 +152,7 @@ fn hue_of(c: Color) -> f64 {
 }
 
 #[inline]
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn scale(c: (u8, u8, u8), k: f32) -> Color {
     let f = |v: u8| ((v as f32 * k).round().clamp(0.0, 255.0)) as u8;
     Color::Rgb {
@@ -163,7 +163,7 @@ fn scale(c: (u8, u8, u8), k: f32) -> Color {
 }
 
 #[inline]
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn mix(a: (u8, u8, u8), b: (u8, u8, u8), t: f32) -> (u8, u8, u8) {
     let t = t.clamp(0.0, 1.0);
     let f = |x: u8, y: u8| (x as f32 + (y as f32 - x as f32) * t).round() as u8;
@@ -171,7 +171,7 @@ fn mix(a: (u8, u8, u8), b: (u8, u8, u8), t: f32) -> (u8, u8, u8) {
 }
 
 #[inline]
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn put(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
     if x >= 0 && y >= 0 && (y as usize) < grid.len() && (x as usize) < grid[0].len() {
         let c = &mut grid[y as usize][x as usize];
@@ -182,7 +182,7 @@ fn put(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
 
 /// Recursive branching. `ang` in radians, +y is down; canopy grows with
 /// ang near pi/2, roots with ang near -pi/2. Aspect handled at rasterize time.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn grow(
     rng: &mut StdRng,
     segs: &mut Vec<Seg>,
@@ -255,7 +255,7 @@ fn grow(
 }
 
 /// Fit a segment cloud built at origin (0,0) into a box anchored at (cx, y_base).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn fit(segs: &mut [Seg], cx: f32, y_base: f32, half_w: f32, span_h: f32) {
     let mut max_dx = 1.0_f32;
     let mut max_dy = 1.0_f32;
@@ -273,7 +273,7 @@ fn fit(segs: &mut [Seg], cx: f32, y_base: f32, half_w: f32, span_h: f32) {
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn slope_code(dx: f32, dy: f32) -> u8 {
     if dx.abs() < 0.25 * dy.abs() {
         0
@@ -287,7 +287,7 @@ fn slope_code(dx: f32, dy: f32) -> u8 {
 }
 
 /// Rasterize segments into a dense (x, y) -> cell map, last write wins.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn raster(
     segs: &[Seg],
     max_lvl: u32,
@@ -352,7 +352,7 @@ fn raster(
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn blob(
     map: &mut Vec<Option<TreeCell>>,
     w: usize,
@@ -392,7 +392,7 @@ fn blob(
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn build(w: usize, h: usize, seed: u64, palette: &[Color; 5], k: &LifeKnobs) -> Cached {
     let mut rng = StdRng::seed_from_u64(seed ^ 0x1F3D_5B79_9E37_79B9);
     let cx = (w / 2) as i32;
@@ -686,7 +686,7 @@ const MOTE: [char; 4] = ['·', '∙', '°', '○'];
 const FALL: [char; 4] = [',', '\'', '`', '"'];
 
 /// Frame render. t == 0 is the canonical static frame.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn draw_lifetree(
     grid: &mut Grid,
     w: usize,
@@ -711,7 +711,7 @@ pub(crate) fn draw_lifetree(
 }
 
 #[inline]
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn frame(grid: &mut Grid, c: &Cached, t: f32, k: &LifeKnobs) {
     let w = c.bg[0].len();
     let h = c.bg.len();
@@ -893,7 +893,7 @@ fn frame(grid: &mut Grid, c: &Cached, t: f32, k: &LifeKnobs) {
     });
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_lifetree(
     mut grid: Grid,
     width: usize,
@@ -933,7 +933,7 @@ pub(crate) fn cli_lifetree(
 mod tests {
     use super::*;
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn run(w: usize, h: usize, seed: u64, t: f32) -> String {
         let mut g = vec![vec![Cell::blank(); w]; h];
         let p = crate::color::named_theme("moss").unwrap();
@@ -946,26 +946,26 @@ mod tests {
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn snapshot_lifetree_small() {
         insta::assert_snapshot!("lifetree_80x24", run(80, 24, 42, 0.0));
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn snapshot_lifetree_wide() {
         insta::assert_snapshot!("lifetree_120x40", run(120, 40, 42, 0.0));
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn deterministic_and_seed_sensitive() {
         assert_eq!(run(90, 30, 42, 0.0), run(90, 30, 42, 0.0));
         assert_ne!(run(90, 30, 42, 0.0), run(90, 30, 7, 0.0));
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn t_moves_both_halves() {
         let a = run(90, 30, 42, 0.0);
         let b = run(90, 30, 42, 2.0);
@@ -985,7 +985,7 @@ mod tests {
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn halves_have_distinct_glyph_pools() {
         let s = run(90, 30, 42, 0.0);
         let left: String = s
@@ -1012,7 +1012,7 @@ mod tests {
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn frame_cost_is_flat() {
         let mut g = vec![vec![Cell::blank(); 200]; 60];
         let p = crate::color::named_theme("ember").unwrap();

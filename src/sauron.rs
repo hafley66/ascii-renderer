@@ -10,14 +10,14 @@ use rand::RngExt;
 use rand::SeedableRng;
 use rand::rngs::StdRng;
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn set(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
     if x >= 0 && y >= 0 && (y as usize) < grid.len() && (x as usize) < grid[0].len() {
         grid[y as usize][x as usize] = Cell::new(ch, fg);
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn step_toward(pen: &mut TreePen, grid: &mut Grid, tx: i32, ty: i32) {
     while pen.x != tx || pen.y != ty {
         let dx = tx - pen.x;
@@ -37,7 +37,7 @@ fn step_toward(pen: &mut TreePen, grid: &mut Grid, tx: i32, ty: i32) {
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn arc(grid: &mut Grid, cx: f32, cy: f32, rx: f32, ry: f32, a0: f32, a1: f32, color: Color) {
     let steps = (((a1 - a0).abs() * rx.max(ry)).ceil() as usize).clamp(8, 400);
     let (sx, sy) = ((cx + a0.cos() * rx) as i32, (cy + a0.sin() * ry) as i32);
@@ -53,14 +53,14 @@ fn arc(grid: &mut Grid, cx: f32, cy: f32, rx: f32, ry: f32, a0: f32, a1: f32, co
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn col_rng(seed: u64, x: usize) -> StdRng {
     StdRng::seed_from_u64(seed ^ (x as u64).wrapping_mul(0x9E37_79B9) ^ 0xF1E7)
 }
 
 /// Same hue/lightness ramp as before, with the two fmod calls behind
 /// range checks; anything outside the fast range falls back to `hsl_to_rgb`.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn fire_color(heat: f32, hue_off: f64) -> Color {
     let heat = heat as f64;
     let hv = 50.0 - heat * 45.0 + hue_off;
@@ -99,7 +99,7 @@ fn fire_color(heat: f32, hue_off: f64) -> Color {
 
 /// Fire wall: per-column flames with fixed base heights and sin flicker.
 /// The columns part around the eye, flanking it with taller fire.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn draw_fire(
     grid: &mut Grid,
     w: usize,
@@ -193,7 +193,7 @@ fn draw_fire(
 }
 
 /// Rising embers and rare flares around the eye.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn draw_embers(grid: &mut Grid, w: usize, h: usize, seed: u64, t: f32, count: usize, hue_off: f64) {
     let mut rng = StdRng::seed_from_u64(seed ^ 0xE3B0);
     for _ in 0..count {
@@ -228,7 +228,7 @@ fn draw_embers(grid: &mut Grid, w: usize, h: usize, seed: u64, t: f32, count: us
 }
 
 /// The eye: lens lids, iris gradient, slit pupil with wandering gaze.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn draw_eye(
     grid: &mut Grid,
     cx: f32,
@@ -346,7 +346,7 @@ fn draw_eye(
 }
 
 /// Smoke cap and heat shimmer above everything.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn draw_smoke(grid: &mut Grid, w: usize, h: usize, seed: u64, t: f32, hue_off: f64) {
     let smoke = hsl_to_rgb((30.0 + hue_off).rem_euclid(360.0), 0.15, 0.10);
     for y in 0..(h / 6).max(1) {
@@ -365,7 +365,7 @@ fn draw_smoke(grid: &mut Grid, w: usize, h: usize, seed: u64, t: f32, hue_off: f
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub fn draw_sauron(
     grid: &mut Grid,
     width: usize,
@@ -404,7 +404,7 @@ pub fn draw_sauron(
     });
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_sauron(
     mut grid: Grid,
     width: usize,
@@ -428,7 +428,7 @@ pub(crate) fn cli_sauron(
 mod tests {
     use super::*;
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn run(w: usize, h: usize, seed: u64, t: f32) -> String {
         let mut g = vec![vec![Cell::blank(); w]; h];
         let p = crate::color::make_palette(seed);
@@ -440,33 +440,33 @@ mod tests {
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn snapshot_sauron_small() {
         insta::assert_snapshot!("sauron_80x24", run(80, 24, 42, 0.0));
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn snapshot_sauron_wide() {
         insta::assert_snapshot!("sauron_100x36", run(100, 36, 42, 0.0));
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn deterministic_and_seed_sensitive() {
         assert_eq!(run(90, 30, 42, 0.0), run(90, 30, 42, 0.0));
         assert_ne!(run(90, 30, 42, 0.0), run(90, 30, 7, 0.0));
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn t_moves_fire_and_gaze() {
         assert_ne!(run(90, 30, 42, 0.0), run(90, 30, 42, 2.0));
         assert_ne!(run(90, 30, 42, 2.0), run(90, 30, 42, 4.0));
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn eye_present_over_fire() {
         let s = run(90, 30, 42, 0.0);
         assert!(s.contains('◉'), "the eye needs its ember pupil");

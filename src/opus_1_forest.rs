@@ -33,7 +33,7 @@ pub(crate) struct ForestKnobs {
 }
 
 impl ForestKnobs {
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     pub(crate) fn from_env() -> Self {
         ForestKnobs {
             density: param_f32("DENSITY", 1.0).clamp(0.25, 2.5),
@@ -66,7 +66,7 @@ struct Mote {
 }
 
 /// 1 mist, 2 fireflies, 3 leaf fall, 4 rain, 5 snow.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn atmos_kind(k: &ForestKnobs, seed: u64) -> u8 {
     let a = k.atmos.round() as u8;
     if a >= 1 && a <= 5 {
@@ -96,14 +96,14 @@ thread_local! {
     static FOREST: RefCell<Option<ForestBake>> = const { RefCell::new(None) };
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn q(v: f32) -> u32 {
     (v * 1000.0) as u32
 }
 
 type ForestKey = (usize, usize, u64, u32, u32, u32, u32, u32, u32, u32, u32);
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn forest_key(w: usize, h: usize, seed: u64, k: &ForestKnobs) -> ForestKey {
     (
         w,
@@ -121,7 +121,7 @@ fn forest_key(w: usize, h: usize, seed: u64, k: &ForestKnobs) -> ForestKey {
 }
 
 /// Seeded species weights, renormalised so every seed draws a different stand.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn species_mix(rng: &mut StdRng) -> [f32; 5] {
     let mut m = [0.0f32; 5];
     let mut sum = 0.0;
@@ -137,7 +137,7 @@ fn species_mix(rng: &mut StdRng) -> [f32; 5] {
     m
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn pick_species(mix: &[f32; 5], r: f32, layer: usize, layers: usize) -> Species {
     let front = layers > 1 && layer + 1 == layers;
     let back = layer == 0;
@@ -154,7 +154,7 @@ fn pick_species(mix: &[f32; 5], r: f32, layer: usize, layers: usize) -> Species 
     Species::from_index(i)
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn bake_forest(w: usize, h: usize, seed: u64, k: &ForestKnobs, key: ForestKey) -> ForestBake {
     let layers = (k.layers.round() as usize).clamp(3, 6);
     let horizon = ((h as f32 * k.horizon) as i32).clamp(2, h as i32 - 3);
@@ -422,7 +422,7 @@ fn bake_forest(w: usize, h: usize, seed: u64, k: &ForestKnobs, key: ForestKey) -
 // ── color ───────────────────────────────────────────────────────────
 
 /// Four stops around the clock: day, dusk, night, dawn.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn day_stop(p: f32, palette: &[Color; 5]) -> (Color, Color, f32) {
     let tops = [
         lerp_color(palette[0], palette[2], 0.42),
@@ -448,7 +448,7 @@ fn day_stop(p: f32, palette: &[Color; 5]) -> (Color, Color, f32) {
     )
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn build_forest_lut(
     palette: &[Color; 5],
     k: &ForestKnobs,
@@ -496,7 +496,7 @@ fn build_forest_lut(
 
 // ── frame ───────────────────────────────────────────────────────────
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn paint_atmos(
     grid: &mut Grid,
     w: usize,
@@ -573,7 +573,7 @@ fn paint_atmos(
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn draw_opus_1_forest(
     grid: &mut Grid,
     width: usize,
@@ -633,7 +633,7 @@ pub(crate) fn draw_opus_1_forest(
     });
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_opus_1_forest(
     mut grid: Grid,
     width: usize,
@@ -693,7 +693,7 @@ pub(crate) fn cli_opus_1_forest(
 mod tests {
     use super::*;
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn run(w: usize, h: usize, seed: u64, t: f32) -> String {
         let mut g = vec![vec![Cell::blank(); w]; h];
         let p = crate::color::make_palette(seed);
@@ -706,26 +706,26 @@ mod tests {
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn snapshot_opus_1_forest_static() {
         insta::assert_snapshot!("opus_1_forest_80x24_static", run(80, 24, 42, 0.0));
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn snapshot_opus_1_forest_animated() {
         insta::assert_snapshot!("opus_1_forest_80x24_t12", run(80, 24, 42, 12.0));
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn opus_1_forest_is_deterministic() {
         assert_eq!(run(80, 24, 42, 0.0), run(80, 24, 42, 0.0));
         assert_ne!(run(80, 24, 42, 0.0), run(80, 24, 11, 0.0));
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn opus_1_forest_animates() {
         assert_ne!(run(80, 24, 42, 0.0), run(80, 24, 42, 6.0));
     }

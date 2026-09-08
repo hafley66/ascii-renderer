@@ -51,7 +51,7 @@ use crate::warps::*;
 
 // --- eyes++ : an argus field. Hero eye + two orbital rings of gazing eyes,
 //     dense rays, halo arcs, every eye tracking a seeded lure. ---
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn draw_eyes_pp(
     grid: &mut Grid,
     width: usize,
@@ -299,7 +299,7 @@ pub(crate) fn draw_eyes_pp(
 // fully determined by `seed` (so a snapshot at any t shows the same board); the
 // time `t` only drives a bright "current" pulse that flows along every trace,
 // looping continuously. A native iterate mode -- smooth motion, no seed morph.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn draw_circuit(
     grid: &mut Grid,
     width: usize,
@@ -439,7 +439,7 @@ pub(crate) fn draw_circuit(
 
 // --- phyllotaxis : golden-angle sunflower spiral; glyph scales with radius,
 //     color ramps outward through the palette. ---
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn draw_phyllotaxis(
     grid: &mut Grid,
     width: usize,
@@ -479,7 +479,7 @@ pub(crate) fn draw_phyllotaxis(
 }
 
 // --- moire : two radial sine gratings interfering; shade ramp + color blend. ---
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn draw_moire(
     grid: &mut Grid,
     width: usize,
@@ -517,7 +517,7 @@ pub(crate) fn draw_moire(
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn draw_eyes3(
     mut grid: Grid,
     width: usize,
@@ -1024,7 +1024,7 @@ pub(crate) fn draw_eyes3(
     grid
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn draw_spiro(
     mut grid: Grid,
     width: usize,
@@ -1175,7 +1175,7 @@ pub(crate) fn draw_spiro(
     grid
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn draw_spiro_tile(
     mut grid: Grid,
     width: usize,
@@ -1362,7 +1362,7 @@ pub(crate) fn draw_spiro_tile(
     grid
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn draw_weave(
     mut grid: Grid,
     width: usize,
@@ -1563,7 +1563,7 @@ pub(crate) fn draw_weave(
     grid
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn draw_gears(
     mut grid: Grid,
     width: usize,
@@ -1852,7 +1852,7 @@ pub(crate) fn draw_gears(
     grid
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn draw_kaleido(
     mut grid: Grid,
     width: usize,
@@ -2123,7 +2123,7 @@ pub(crate) fn draw_kaleido(
     grid
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn draw_contour(
     mut grid: Grid,
     width: usize,
@@ -2359,7 +2359,7 @@ pub(crate) fn draw_contour(
 }
 
 // --- stained : Voronoi glass cells with dark leading + jewel seeds. ---
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn draw_stained(
     grid: &mut Grid,
     width: usize,
@@ -2425,7 +2425,7 @@ pub(crate) fn draw_stained(
 // ============================================================================
 
 /// Dispatch arm for mode(s): circuit (moved verbatim from run()).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_circuit(
     mut grid: Grid,
     width: usize,
@@ -2458,7 +2458,7 @@ pub(crate) fn cli_circuit(
 }
 
 /// Dispatch arm for mode(s): eyes3 (moved verbatim from run()).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_eyes3(
     mut grid: Grid,
     width: usize,
@@ -2478,7 +2478,7 @@ pub(crate) fn cli_eyes3(
 }
 
 /// Dispatch arm for mode(s): spiro (moved verbatim from run()).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_spiro(
     mut grid: Grid,
     width: usize,
@@ -2498,7 +2498,7 @@ pub(crate) fn cli_spiro(
 }
 
 /// Dispatch arm for mode(s): spiro-tile (moved verbatim from run()).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_spiro_tile(
     mut grid: Grid,
     width: usize,
@@ -2518,7 +2518,7 @@ pub(crate) fn cli_spiro_tile(
 }
 
 /// Dispatch arm for mode(s): weave (moved verbatim from run()).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_weave(
     mut grid: Grid,
     width: usize,
@@ -2538,7 +2538,7 @@ pub(crate) fn cli_weave(
 }
 
 /// Dispatch arm for mode(s): gears (moved verbatim from run()).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_gears(
     mut grid: Grid,
     width: usize,
@@ -2558,7 +2558,7 @@ pub(crate) fn cli_gears(
 }
 
 /// Dispatch arm for mode(s): kaleido (moved verbatim from run()).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_kaleido(
     mut grid: Grid,
     width: usize,
@@ -2578,7 +2578,7 @@ pub(crate) fn cli_kaleido(
 }
 
 /// Dispatch arm for mode(s): contour (moved verbatim from run()).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_contour(
     mut grid: Grid,
     width: usize,
@@ -2598,7 +2598,7 @@ pub(crate) fn cli_contour(
 }
 
 /// Dispatch arm for mode(s): phyllotaxis (moved verbatim from run()).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_phyllotaxis(
     mut grid: Grid,
     width: usize,
@@ -2618,7 +2618,7 @@ pub(crate) fn cli_phyllotaxis(
 }
 
 /// Dispatch arm for mode(s): moire (moved verbatim from run()).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_moire(
     mut grid: Grid,
     width: usize,
@@ -2638,7 +2638,7 @@ pub(crate) fn cli_moire(
 }
 
 /// Dispatch arm for mode(s): stained (moved verbatim from run()).
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn cli_stained(
     mut grid: Grid,
     width: usize,

@@ -34,27 +34,27 @@ const PARAMS: &[Param] = &[
 ];
 
 impl Mode for MandelboxMode {
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn name(&self) -> &'static str {
         "mandelbox"
     }
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn help(&self) -> &'static str {
         "Ray-marched rotating 3D Mandelbox with orbit-trap surface bands, ambient creases, fractal corona, star field, and perspective floor [folds] [steps] [scale] [detail] [zoom] [spin] [tilt] [speed] [ao] [glow] [floor] [stars]"
     }
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn animation(&self) -> AnimKind {
         AnimKind::Iterate
     }
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn params(&self) -> &'static [Param] {
         PARAMS
     }
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn render(&self, frame: &mut ModeFrame<'_>) {
         let params = MandelboxParams::from_inputs(frame.args, frame.param_values);
         draw_mandelbox(
@@ -87,7 +87,7 @@ pub(crate) struct MandelboxParams {
 }
 
 impl Default for MandelboxParams {
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn default() -> Self {
         Self {
             folds: 6,
@@ -107,7 +107,7 @@ impl Default for MandelboxParams {
 }
 
 impl MandelboxParams {
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     pub(crate) fn from_inputs(args: &[String], param_values: Option<&[f32]>) -> Self {
         let read = |index: usize, key: &str, default: f32| {
             args.get(index)
@@ -150,25 +150,25 @@ impl V3 {
     }
 
     #[inline]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn dot(self, other: Self) -> f32 {
         self.x * other.x + self.y * other.y + self.z * other.z
     }
 
     #[inline]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn length(self) -> f32 {
         self.dot(self).sqrt()
     }
 
     #[inline]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn normalized(self) -> Self {
         self * (1.0 / self.length().max(0.000_001))
     }
 
     #[inline]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn cross(self, other: Self) -> Self {
         Self::new(
             self.y * other.z - self.z * other.y,
@@ -182,7 +182,7 @@ impl Add for V3 {
     type Output = Self;
 
     #[inline]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn add(self, other: Self) -> Self {
         Self::new(self.x + other.x, self.y + other.y, self.z + other.z)
     }
@@ -190,7 +190,7 @@ impl Add for V3 {
 
 impl AddAssign for V3 {
     #[inline]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn add_assign(&mut self, other: Self) {
         self.x += other.x;
         self.y += other.y;
@@ -202,7 +202,7 @@ impl Sub for V3 {
     type Output = Self;
 
     #[inline]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn sub(self, other: Self) -> Self {
         Self::new(self.x - other.x, self.y - other.y, self.z - other.z)
     }
@@ -212,7 +212,7 @@ impl Mul<f32> for V3 {
     type Output = Self;
 
     #[inline]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn mul(self, scalar: f32) -> Self {
         Self::new(self.x * scalar, self.y * scalar, self.z * scalar)
     }
@@ -222,7 +222,7 @@ impl Neg for V3 {
     type Output = Self;
 
     #[inline]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn neg(self) -> Self {
         Self::new(-self.x, -self.y, -self.z)
     }
@@ -240,7 +240,7 @@ struct Scene {
 }
 
 impl Scene {
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn new(t: f32, seed: u64, params: &MandelboxParams) -> Self {
         let seed_phase = hash01(seed, 19) * TAU;
         let clock = t * params.speed;
@@ -260,7 +260,7 @@ impl Scene {
     }
 
     #[inline]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn to_object(&self, point: V3) -> V3 {
         let yawed = V3::new(
             point.x * self.yaw_cos - point.z * self.yaw_sin,
@@ -275,7 +275,7 @@ impl Scene {
     }
 
     #[inline]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn distance_object(&self, origin: V3) -> f32 {
         let mut z = origin;
         let mut derivative = 1.0;
@@ -304,7 +304,7 @@ impl Scene {
     }
 
     #[inline]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn orbit_trap_object(&self, origin: V3) -> f32 {
         let mut z = origin;
         let mut trap: f32 = 8.0;
@@ -338,7 +338,7 @@ struct Projection {
 }
 
 impl Projection {
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn new(width: usize, height: usize, camera: V3, target: V3, zoom: f32) -> Self {
         let forward = (target - camera).normalized();
         let right = forward.cross(V3::new(0.0, 1.0, 0.0)).normalized();
@@ -361,7 +361,7 @@ impl Projection {
     }
 
     #[inline]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn ray(&self, x: usize, y: usize) -> V3 {
         (self.rows[y] + self.columns[x]).normalized()
     }
@@ -382,7 +382,7 @@ struct MarchResult {
 }
 
 #[inline]
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn sphere_interval(origin: V3, ray: V3, radius: f32) -> Option<(f32, f32)> {
     let projection = origin.dot(ray);
     let discriminant = projection * projection - (origin.dot(origin) - radius * radius);
@@ -396,7 +396,7 @@ fn sphere_interval(origin: V3, ray: V3, radius: f32) -> Option<(f32, f32)> {
 }
 
 #[inline]
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn march(scene: &Scene, origin: V3, ray: V3, near: f32, far: f32) -> MarchResult {
     let mut travel = near;
     let mut nearest: f32 = 8.0;
@@ -425,7 +425,7 @@ fn march(scene: &Scene, origin: V3, ray: V3, near: f32, far: f32) -> MarchResult
 }
 
 #[inline]
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn mix64(mut value: u64) -> u64 {
     value ^= value >> 30;
     value = value.wrapping_mul(0xBF58_476D_1CE4_E5B9);
@@ -435,14 +435,14 @@ fn mix64(mut value: u64) -> u64 {
 }
 
 #[inline]
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn hash01(seed: u64, tag: u64) -> f32 {
     let value = mix64(seed ^ tag.wrapping_mul(0x9E37_79B9_7F4A_7C15));
     ((value >> 40) as f32) * (1.0 / 16_777_215.0)
 }
 
 #[inline]
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn screen_hash(seed: u64, x: usize, y: usize) -> f32 {
     hash01(
         seed ^ (x as u64).wrapping_mul(0xD6E8_FEB8_6659_FD93),
@@ -451,7 +451,7 @@ fn screen_hash(seed: u64, x: usize, y: usize) -> f32 {
 }
 
 #[inline]
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn ramp(glyphs: &[char], value: f32, dither: f32) -> char {
     let index = (value.clamp(0.0, 1.0) * (glyphs.len() - 1) as f32 + dither - 0.5)
         .round()
@@ -459,7 +459,7 @@ fn ramp(glyphs: &[char], value: f32, dither: f32) -> char {
     glyphs[index]
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn shade_surface(
     normal: V3,
     light: V3,
@@ -491,7 +491,7 @@ fn shade_surface(
     Cell::with_bg(ramp(&SURFACE_GLYPHS, glyph_light, noise), fg, bg)
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn hit_normal(hits: &[Option<MarchHit>], width: usize, height: usize, x: usize, y: usize) -> V3 {
     let hit = hits[y * width + x].expect("surface normal requires a hit");
     let nearby = |other: &MarchHit| {
@@ -539,7 +539,7 @@ fn hit_normal(hits: &[Option<MarchHit>], width: usize, height: usize, x: usize, 
     normal
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn shade_floor(
     origin: V3,
     ray: V3,
@@ -576,7 +576,7 @@ fn shade_floor(
     Some(Cell::with_bg(ch, fg, bg))
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn shade_sky(
     x: usize,
     y: usize,
@@ -620,7 +620,7 @@ struct TraceContext<'a> {
     params: &'a MandelboxParams,
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn trace_rows(
     context: &TraceContext<'_>,
     grid: &mut [Vec<Cell>],
@@ -678,7 +678,7 @@ fn trace_rows(
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn draw_mandelbox(
     grid: &mut Grid,
     width: usize,
@@ -790,7 +790,7 @@ mod tests {
     use crate::render::grid_to_plain;
     use rand::SeedableRng;
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn frame(width: usize, height: usize, seed: u64, t: f32, params: &MandelboxParams) -> Grid {
         let mut grid = vec![vec![Cell::blank(); width]; height];
         let palette = make_palette(seed);
@@ -801,13 +801,13 @@ mod tests {
         grid
     }
 
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn plain(grid: &Grid) -> String {
         grid_to_plain(grid).join("\n")
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn deterministic_seeded_frame_and_visible_motion() {
         let params = MandelboxParams::default();
         let a = frame(96, 34, 42, 1.25, &params);
@@ -820,7 +820,7 @@ mod tests {
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn parameter_values_override_and_clamp() {
         let values = [
             99.0, 0.0, -99.0, 99.0, 0.0, 99.0, -99.0, 0.0, 99.0, -1.0, 99.0, -1.0,
@@ -845,7 +845,7 @@ mod tests {
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn tiny_grids_and_parameter_extrema_terminate() {
         let maxed = MandelboxParams {
             folds: 10,
@@ -869,7 +869,7 @@ mod tests {
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn frame_contains_dense_fractal_surface_and_floor() {
         let grid = frame(100, 36, 42, 0.0, &MandelboxParams::default());
         let surface = grid
@@ -887,7 +887,7 @@ mod tests {
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn optional_environment_changes_the_composition() {
         let params = MandelboxParams::default();
         let full = frame(90, 32, 77, 2.0, &params);
@@ -907,13 +907,13 @@ mod tests {
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn snapshot_mandelbox_seed_42() {
         insta::assert_snapshot!(plain(&frame(80, 28, 42, 0.0, &MandelboxParams::default(),)));
     }
 
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn snapshot_mandelbox_rotated() {
         insta::assert_snapshot!(plain(
             &frame(80, 28, 42, 5.25, &MandelboxParams::default(),)
@@ -922,7 +922,7 @@ mod tests {
 
     #[test]
     #[ignore = "release-only performance probe; run with --release --ignored"]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn perf_mandelbox_frame() {
         use std::hint::black_box;
         use std::time::Instant;

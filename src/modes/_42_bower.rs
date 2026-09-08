@@ -18,7 +18,7 @@ const PARAMS: &[Param] = &[
 ];
 
 // Normalized points keep ornament count independent of render area.
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn put(grid: &mut Grid, p: [f32; 2], ch: char, color: Color) {
     let h = grid.len();
     let w = grid.first().map_or(0, Vec::len);
@@ -34,7 +34,7 @@ fn put(grid: &mut Grid, p: [f32; 2], ch: char, color: Color) {
     }
 }
 
-#[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn stroke(grid: &mut Grid, a: [f32; 2], b: [f32; 2], color: Color) {
     let h = grid.len();
     let w = grid.first().map_or(0, Vec::len);
@@ -62,23 +62,23 @@ fn stroke(grid: &mut Grid, a: [f32; 2], b: [f32; 2], color: Color) {
 }
 
 impl Mode for BowerMode {
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn name(&self) -> &'static str {
         "bower"
     }
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn help(&self) -> &'static str {
         "Illuminated garden arch, Opus branching trees, curling vines and hanging lanterns [vines] [fruit] [detail] [speed]"
     }
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn animation(&self) -> AnimKind {
         AnimKind::Iterate
     }
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn params(&self) -> &'static [Param] {
         PARAMS
     }
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn render(&self, frame: &mut ModeFrame<'_>) {
         // Resolve CLI, live values and environment defaults before drawing.
         let read = |i: usize| {
@@ -282,7 +282,7 @@ mod tests {
     use super::*;
     use crate::{morph::IterateFrameRenderer, render::grid_to_plain};
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn bower_snapshots_and_animation() {
         let mut p = IterateFrameRenderer::new("bower", 42, "moss", 100, 36).unwrap();
         let values: Vec<_> = PARAMS.iter().map(|p| p.default).collect();
@@ -297,7 +297,7 @@ mod tests {
         assert_eq!(&first, p.render(100.0, Some(&stopped)).unwrap());
     }
     #[test]
-    #[tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all)]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn bower_extremes() {
         for (w, h) in [(1, 1), (9, 2), (2, 9), (80, 24)] {
             let mut p = IterateFrameRenderer::new("bower", u64::MAX, "moss", w, h).unwrap();
