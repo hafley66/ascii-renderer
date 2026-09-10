@@ -93,6 +93,7 @@ mod tree_draw;
 mod types;
 mod walker;
 mod warps;
+mod opus_5_dover;
 
 use crossterm::style::Color;
 use rand::RngExt;

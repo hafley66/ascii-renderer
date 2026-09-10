@@ -1,0 +1,29 @@
+---
+source: tests/snapshot_modes.rs
+assertion_line: 1375
+expression: "render(&[\"42\", \"opus-5-dover\", \"moss\"])"
+---
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                         ....                                                   
+                       ...   ...                                                
+                      ..       ..                                               
+                      .         .                                               
+                      .         ..                                              
+                      .           ..  ' ' ' '  '                                
+                       ..           ..     ' ''  ' '                            
+                        ....       '  ... '    '......                          
+                            ...... '     o-----o.' ''o@o.                       
+                                  .....  .......\\  /o '..                      
+                                    ' ...........o-o   ' ..                     
+                                      '.' ' ' '//-     '  .                     
+                                       ...    o-     '   ..                     
+                                         .....   ' '  ....                      
+                                              .........                         
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ I. fourier analysis  sum c_k exp(i k th), 19 arms, th = 0.00

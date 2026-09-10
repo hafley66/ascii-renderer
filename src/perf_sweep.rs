@@ -254,6 +254,7 @@ const NATIVE_MODES: &[&str] = &[
     "sonnet-2-forest",
     "sonnet-1-trees",
     "sonnet-1-forest",
+    "opus-5-dover",
 ];
 
 #[test]

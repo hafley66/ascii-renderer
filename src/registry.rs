@@ -631,6 +631,25 @@ pub(crate) static MODE_FORMS: &[ModeForm] = &[
         ],
     },
     ModeForm {
+        names: &["opus-5-dover"],
+        animate: AnimKind::Iterate,
+        params: &[
+            param!("CHAPTER", "-1 cycle, 0..5 pin", -1.0, 5.0, -1.0, 1.0),
+            param!("DWELL", "seconds per chapter", 2.0, 120.0, 14.0, 1.0),
+            param!("SPEED", "time scale", 0.0, 6.0, 1.0, 0.1),
+            param!("HARM", "fourier harmonics N", 1.0, 24.0, 9.0, 1.0),
+            param!("NODES", "graph vertices", 4.0, 60.0, 22.0, 1.0),
+            param!("CHORDS", "chords per vertex", 0.0, 2.0, 0.35, 0.05),
+            param!("STEPS", "beta step cap / 40", 0.05, 4.0, 0.6, 0.05),
+            param!("TWIST", "band half-twists", 1.0, 6.0, 1.0, 1.0),
+            param!("TUBE", "torus tube / band width", 0.12, 0.85, 0.42, 0.02),
+            param!("MESH", "surface sample density", 0.25, 3.0, 1.0, 0.05),
+            param!("TRAIL", "epicycle trace length", 0.02, 1.0, 0.55, 0.05),
+            param!("LABEL", "chapter caption", 0.0, 1.0, 1.0, 1.0),
+            param!("ASPECT", "cols per row", 0.25, 4.0, 2.0, 0.25),
+        ],
+    },
+    ModeForm {
         names: &["chladni"],
         animate: AnimKind::Iterate,
         params: &[

@@ -879,6 +879,11 @@ fn iterate_grid_into(
             crate::sonnet_1_forest::draw_sonnet_1_forest(grid, w, h, seed, palette, t, &knobs);
             true
         }
+        "opus-5-dover" => {
+            let knobs = crate::opus_5_dover::Opus5DoverKnobs::from_env();
+            crate::opus_5_dover::draw_opus_5_dover(grid, w, h, seed, palette, t, &knobs);
+            true
+        }
         _ => false,
     }
 }

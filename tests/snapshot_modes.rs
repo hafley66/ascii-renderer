@@ -1369,3 +1369,13 @@ fn sonnet_1_forest_seed_42() {
 fn sonnet_1_forest_drifting_t15() {
     insta::assert_snapshot!(render_t(&["7", "sonnet-1-forest", "moss"], "15"));
 }
+
+#[test]
+fn opus_5_dover_seed_42() {
+    insta::assert_snapshot!(render(&["42", "opus-5-dover", "moss"]));
+}
+
+#[test]
+fn opus_5_dover_graph_chapter_t40() {
+    insta::assert_snapshot!(render_t(&["7", "opus-5-dover", "ember", "2"], "40"));
+}

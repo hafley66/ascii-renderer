@@ -1,0 +1,29 @@
+---
+source: src/opus_5_dover.rs
+assertion_line: 1609
+expression: "run(80, 24, 42, 0.0, 3.0)"
+---
+                                                                                
+  (\x. M) N  ->  M[x := N]                                                      
+                                                                                
+  0> (\x.\y.\z.x z (y z)) (\x.\y.x) (\x.\y.x) (\x.\y.x (x y))                   
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ IV. lambda calculus  S K K 2, beta 0/5
