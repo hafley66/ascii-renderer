@@ -560,6 +560,8 @@ pub(crate) struct FrameSample {
     pub(crate) emit: Duration,
     pub(crate) bytes: usize,
     pub(crate) changed_cells: usize,
+    /// Cells the encoder skipped because their raw `Cell` did not move.
+    pub(crate) skipped: usize,
     pub(crate) runs: usize,
     pub(crate) full_repaint: bool,
     pub(crate) width: usize,
@@ -581,6 +583,7 @@ struct FrameTotals {
     presentation_ns_max: u128,
     bytes: u128,
     changed_cells: u128,
+    skipped: u128,
     runs: u128,
     full_repaints: u64,
     width: usize,
@@ -608,6 +611,7 @@ impl FrameTotals {
         self.presentation_ns_max = self.presentation_ns_max.max(presentation_ns);
         self.bytes += sample.bytes as u128;
         self.changed_cells += sample.changed_cells as u128;
+        self.skipped += sample.skipped as u128;
         self.runs += sample.runs as u128;
         self.full_repaints += u64::from(sample.full_repaint);
         self.width = sample.width;
@@ -690,6 +694,7 @@ impl FrameProfiler {
                     "presentation_us": sample.presentation.as_micros() as u64,
                     "bytes": sample.bytes,
                     "changed_cells": sample.changed_cells,
+                    "skipped": sample.skipped,
                     "runs": sample.runs,
                     "full_repaint": sample.full_repaint,
                     "grid": {"w": sample.width, "h": sample.height},
@@ -750,6 +755,8 @@ impl FrameProfiler {
             bytes_avg = self.totals.bytes as f64 / frames as f64,
             changed_cells_total = self.totals.changed_cells as u64,
             changed_cells_avg = self.totals.changed_cells as f64 / frames as f64,
+            skipped_total = self.totals.skipped as u64,
+            skipped_avg = self.totals.skipped as f64 / frames as f64,
             runs_total = self.totals.runs as u64,
             runs_avg = self.totals.runs as f64 / frames as f64,
             full_repaints = self.totals.full_repaints,
@@ -788,6 +795,7 @@ mod tests {
             emit: Duration::from_micros(15),
             bytes: 900,
             changed_cells: 80,
+            skipped: 60,
             runs: 7,
             full_repaint: true,
             width: 80,
@@ -801,6 +809,7 @@ mod tests {
             emit: Duration::from_micros(25),
             bytes: 300,
             changed_cells: 20,
+            skipped: 70,
             runs: 3,
             full_repaint: false,
             width: 80,
@@ -840,6 +849,7 @@ mod tests {
                 presentation_ns_max: 600000,
                 bytes: 1200,
                 changed_cells: 100,
+                skipped: 130,
                 runs: 10,
                 full_repaints: 1,
                 width: 80,

@@ -189,6 +189,113 @@ fn perf_knob_sweep() {
     }
 }
 
+/// The ruler for `perf/16_LARGE_RENDER_PLAN.md`: whole-mode render, blank grid
+/// build, and the three encoder stages at one grid size, so every later change
+/// is measurable in the same units instead of through a throwaway bench.
+#[test]
+#[ignore = "release-only split probe; run via perf/split_probe.sh"]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
+fn perf_split_probe() {
+    use crate::gridio::AnsiFrameEncoder;
+    use crate::types::Cell;
+
+    let mode: String = env_or("ASCII_SPLIT_MODE", "prismata".to_string());
+    let theme: String = env_or("ASCII_SPLIT_THEME", "moss".to_string());
+    let w: usize = env_or("ASCII_SPLIT_WIDTH", 366);
+    let h: usize = env_or("ASCII_SPLIT_HEIGHT", 199);
+    let reps: usize = env_or("ASCII_SPLIT_REPS", 9);
+    let dt: f32 = env_or("ASCII_SPLIT_DT", 0.06);
+    let Some(mut renderer) = IterateFrameRenderer::new(&mode, 42, &theme, w, h) else {
+        println!(
+            "# split probe: {mode} does not render natively through iterate_grid; nothing measured"
+        );
+        return;
+    };
+
+    let mut render_us: Vec<f64> = Vec::with_capacity(reps);
+    let mut t = 0.0f32;
+    for _ in 0..reps {
+        let started = Instant::now();
+        black_box(renderer.render(t, None).expect("native renderer returns a grid"));
+        render_us.push(started.elapsed().as_secs_f64() * 1e6);
+        t += dt;
+    }
+    let first = renderer
+        .render(0.0, None)
+        .expect("native renderer returns a grid")
+        .clone();
+    let second = renderer
+        .render(dt, None)
+        .expect("native renderer returns a grid")
+        .clone();
+
+    let mut blank_us: Vec<f64> = Vec::with_capacity(reps);
+    for _ in 0..reps {
+        let started = Instant::now();
+        let mut grid = vec![vec![Cell::blank(); w]; h];
+        for row in &mut grid {
+            row.fill(Cell::blank());
+        }
+        black_box(grid[0][0]);
+        blank_us.push(started.elapsed().as_secs_f64() * 1e6);
+    }
+
+    let mut full = Vec::with_capacity(reps);
+    let mut delta = Vec::with_capacity(reps);
+    let mut identical = Vec::with_capacity(reps);
+    for _ in 0..reps {
+        let mut encoder = AnsiFrameEncoder::new();
+        let mut output = String::new();
+        full.push(encoder.encode(&first, true, &mut output));
+        delta.push(encoder.encode(&second, false, &mut output));
+        identical.push(encoder.encode(&second, false, &mut output));
+        black_box(output.len());
+    }
+
+    let median = |mut values: Vec<f64>| -> f64 {
+        values.sort_by(|a, b| a.partial_cmp(b).unwrap());
+        values[values.len() / 2]
+    };
+    let min = |values: &[f64]| -> f64 { values.iter().copied().fold(f64::INFINITY, f64::min) };
+    let us = |d: Duration| d.as_secs_f64() * 1e6;
+
+    println!(
+        "\n# split probe: {mode} {w}x{h} ({} cells), theme {theme}, seed 42, dt {dt}, {reps} reps, release\n",
+        w * h
+    );
+    println!("| stage | median us | min us | convert us | emit us | bytes | cells changed | cells skipped | runs |");
+    println!("| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |");
+    println!(
+        "| render (whole mode) | {:.1} | {:.1} | - | - | - | - | - | - |",
+        median(render_us.clone()),
+        min(&render_us)
+    );
+    println!(
+        "| blank grid build + row fill | {:.1} | {:.1} | - | - | - | - | - | - |",
+        median(blank_us.clone()),
+        min(&blank_us)
+    );
+    let row = |label: &str, s: &[crate::gridio::FrameEncodeStats]| {
+        let total: Vec<f64> = s.iter().map(|x| us(x.convert + x.emit)).collect();
+        let convert: Vec<f64> = s.iter().map(|x| us(x.convert)).collect();
+        let emit: Vec<f64> = s.iter().map(|x| us(x.emit)).collect();
+        let bytes = median(s.iter().map(|x| x.bytes as f64).collect());
+        let changed = median(s.iter().map(|x| x.changed_cells as f64).collect());
+        let skipped = median(s.iter().map(|x| x.skipped as f64).collect());
+        let runs = median(s.iter().map(|x| x.runs as f64).collect());
+        println!(
+            "| {label} | {:.1} | {:.1} | {:.1} | {:.1} | {bytes:.0} | {changed:.0} | {skipped:.0} | {runs:.0} |",
+            median(total.clone()),
+            min(&total),
+            median(convert.clone()),
+            median(emit.clone()),
+        );
+    };
+    row("encode full repaint", &full);
+    row("encode delta over one dt step", &delta);
+    row("encode identical frame", &identical);
+}
+
 const NATIVE_MODES: &[&str] = &[
     "delta",
     "snakes",

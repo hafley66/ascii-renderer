@@ -210,6 +210,9 @@ pub(crate) struct FrameEncodeStats {
     pub(crate) changed_cells: usize,
     pub(crate) runs: usize,
     pub(crate) full_repaint: bool,
+    /// Cells whose raw `Cell` matched the shadow, so only the diff option was
+    /// written. This is what the per-cell conversion cost is no longer paid for.
+    pub(crate) skipped: usize,
     /// Per-cell adapter loop: one ratatui write per cell, paid on every frame.
     pub(crate) convert: std::time::Duration,
     /// Diff scan plus ratatui emission of the changed cells.
@@ -224,6 +227,10 @@ pub(crate) struct AnsiFrameEncoder {
     current: ratatui::buffer::Buffer,
     bytes: Vec<u8>,
     initialized: bool,
+    /// Raw art grid the retained `current` buffer was adapted from. Comparing
+    /// against the raw `Cell` skips both color conversions for every cell that
+    /// did not move.
+    shadow: Vec<crate::types::Cell>,
 }
 
 impl AnsiFrameEncoder {
@@ -236,6 +243,7 @@ impl AnsiFrameEncoder {
             current: ratatui::buffer::Buffer::empty(ratatui::layout::Rect::default()),
             bytes: Vec::new(),
             initialized: false,
+            shadow: Vec::new(),
         }
     }
 
@@ -261,11 +269,48 @@ impl AnsiFrameEncoder {
         let full_repaint = force_full || !self.initialized;
         let option = if full_repaint { CellDiffOption::AlwaysUpdate } else { CellDiffOption::None };
         let convert_started = std::time::Instant::now();
-        for (source, target) in grid.iter().flatten().zip(&mut self.current.content) {
-            target.set_char(source.ch)
-                .set_fg(if source.ch == ' ' { ratatui::style::Color::Reset } else { ratatui_color(source.fg) })
+        if self.shadow.len() != self.current.content.len() {
+            self.shadow
+                .resize(self.current.content.len(), crate::types::Cell::blank());
+        }
+        let mut skipped = 0usize;
+        let Self { shadow, current, previous, .. } = self;
+        for ((source, raw), (target, prior)) in grid
+            .iter()
+            .flatten()
+            .zip(shadow.iter_mut())
+            .zip(current.content.iter_mut().zip(previous.content.iter_mut()))
+        {
+            // An unchanged raw cell already holds the value the terminal shows,
+            // so the adapter loop and both color conversions are skipped and the
+            // cell is marked so the diff does not compare it.
+            if !full_repaint && source == raw {
+                target.set_diff_option(CellDiffOption::Skip);
+                skipped += 1;
+                continue;
+            }
+            // `previous` is the reference the diff compares against, so it takes
+            // the value being replaced while `current` takes the new one. Only a
+            // compared frame needs it: a full repaint emits every cell, and the
+            // frame after it refreshes each cell it changes, so its older entry
+            // is never read.
+            if !full_repaint {
+                prior.clone_from(target);
+                // `Cell` equality includes the diff option, so both sides of a
+                // compared cell must carry the same one or an unchanged value
+                // would look changed.
+                prior.set_diff_option(option);
+            }
+            target
+                .set_char(source.ch)
+                .set_fg(if source.ch == ' ' {
+                    ratatui::style::Color::Reset
+                } else {
+                    ratatui_color(source.fg)
+                })
                 .set_bg(ratatui_color(source.bg))
                 .set_diff_option(option);
+            *raw = *source;
         }
         let convert = convert_started.elapsed();
         let emit_started = std::time::Instant::now();
@@ -285,15 +330,9 @@ impl AnsiFrameEncoder {
         }
         output.clear();
         output.push_str(std::str::from_utf8(&self.bytes).expect("Ratatui emits UTF-8"));
-        std::mem::swap(&mut self.previous, &mut self.current);
-        if full_repaint {
-            for cell in &mut self.previous.content {
-                cell.set_diff_option(CellDiffOption::None);
-            }
-        }
         let emit = emit_started.elapsed();
         self.initialized = true;
-        FrameEncodeStats { bytes: output.len(), changed_cells, runs, full_repaint, convert, emit }
+        FrameEncodeStats { bytes: output.len(), changed_cells, runs, full_repaint, convert, emit, skipped }
     }
 }
 
@@ -369,6 +408,49 @@ mod ansi_frame_tests {
         assert_eq!(output, "\x1b[1;1HaXcYef\x1b[39m\x1b[49m\x1b[m");
         encoder.encode(&row("aXcYef"), false, &mut output);
         assert_eq!(output, "");
+    }
+
+    #[test]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
+    fn a_resting_cell_that_changes_invisibly_emits_nothing() {
+        let red = Color::Rgb { r: 255, g: 0, b: 0 };
+        let blue = Color::Rgb { r: 0, g: 0, b: 255 };
+        let mut encoder = AnsiFrameEncoder::new();
+        let mut output = String::new();
+        let frame = |fg: Color| vec![vec![Cell::new('x', Color::Reset), Cell::new(' ', fg)]];
+        encoder.encode(&frame(red), true, &mut output);
+        let stats = encoder.encode(&frame(red), false, &mut output);
+        assert_eq!((stats.changed_cells, stats.skipped), (0, 2));
+        // The blank cell's foreground is not drawn, so a rest followed by an
+        // invisible change must not replay the cell the encoder skipped.
+        let stats = encoder.encode(&frame(blue), false, &mut output);
+        assert_eq!((stats.changed_cells, stats.skipped, stats.bytes), (0, 1, 0));
+        assert_eq!(output, "");
+    }
+
+    #[test]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
+    fn a_cell_that_rests_between_changes_is_still_repainted() {
+        let mut encoder = AnsiFrameEncoder::new();
+        let mut output = String::new();
+        let frame = |ch: char| {
+            vec![vec![
+                Cell::new(ch, Color::Reset),
+                Cell::new('m', Color::Reset),
+            ]]
+        };
+        encoder.encode(&frame('a'), true, &mut output);
+        let stats = encoder.encode(&frame('b'), false, &mut output);
+        assert_eq!((stats.changed_cells, stats.skipped), (1, 1));
+        assert_eq!(output, "\x1b[1;1Hb\x1b[39m\x1b[49m\x1b[m");
+        let stats = encoder.encode(&frame('b'), false, &mut output);
+        assert_eq!((stats.changed_cells, stats.skipped, stats.bytes), (0, 2, 0));
+        assert_eq!(output, "");
+        // The retained buffer holds what the terminal shows, not what an older
+        // frame wrote, so returning to the first frame's glyph still repaints.
+        let stats = encoder.encode(&frame('a'), false, &mut output);
+        assert_eq!((stats.changed_cells, stats.skipped), (1, 1));
+        assert_eq!(output, "\x1b[1;1Ha\x1b[39m\x1b[49m\x1b[m");
     }
 
     #[test]

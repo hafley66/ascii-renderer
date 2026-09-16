@@ -1214,6 +1214,7 @@ mod tests {
         let mut compute_samples = Vec::with_capacity(frames);
         let mut encoded_bytes = 0usize;
         let mut changed_cells = 0usize;
+        let mut skipped = 0usize;
         let mut runs = 0usize;
         let mut full_repaints = 0usize;
 
@@ -1240,6 +1241,7 @@ mod tests {
             compute_samples.push((generation_elapsed + encoding_elapsed).as_nanos());
             encoded_bytes += stats.bytes;
             changed_cells += stats.changed_cells;
+            skipped += stats.skipped;
             runs += stats.runs;
             full_repaints += usize::from(stats.full_repaint);
             if let Some(profiler) = profiler.as_mut() {
@@ -1253,6 +1255,7 @@ mod tests {
                         convert: stats.convert,
                         emit: stats.emit,
                         changed_cells: stats.changed_cells,
+                        skipped: stats.skipped,
                         runs: stats.runs,
                         full_repaint: stats.full_repaint,
                         width,
@@ -1319,12 +1322,13 @@ mod tests {
         let max_ms = compute_samples.last().copied().unwrap_or(0) as f64 / 1_000_000.0;
 
         eprintln!(
-            "illuminarium headless {width}x{height}, {frames} frames, time_step={frame_step:.6}s\n  generation_avg={generation_ms:.3} ms  diff_encoding_avg={encoding_ms:.3} ms  compute_avg={compute_ms:.3} ms\n  compute_p50={p50_ms:.3} ms  p95={p95_ms:.3} ms  p99={p99_ms:.3} ms  max={max_ms:.3} ms\n  capacity={:.1} fps  target={target_fps:.1} fps  budget={frame_budget_ms:.3} ms  p99_budget_ratio={:.1}%  p99_within_budget={}\n  diff_bytes_avg={}  changed_cells_avg={}  runs_avg={}  full_repaints={full_repaints}/{frames}\n  uncached_static_rebuild={:.3} ms/frame  full_encoding={:.3} ms/frame  full_bytes_avg={}",
+            "illuminarium headless {width}x{height}, {frames} frames, time_step={frame_step:.6}s\n  generation_avg={generation_ms:.3} ms  diff_encoding_avg={encoding_ms:.3} ms  compute_avg={compute_ms:.3} ms\n  compute_p50={p50_ms:.3} ms  p95={p95_ms:.3} ms  p99={p99_ms:.3} ms  max={max_ms:.3} ms\n  capacity={:.1} fps  target={target_fps:.1} fps  budget={frame_budget_ms:.3} ms  p99_budget_ratio={:.1}%  p99_within_budget={}\n  diff_bytes_avg={}  changed_cells_avg={}  skipped_avg={}  runs_avg={}  full_repaints={full_repaints}/{frames}\n  uncached_static_rebuild={:.3} ms/frame  full_encoding={:.3} ms/frame  full_bytes_avg={}",
             1_000.0 / compute_ms,
             p99_ms / frame_budget_ms * 100.0,
             p99_ms <= frame_budget_ms,
             encoded_bytes / frames,
             changed_cells / frames,
+            skipped / frames,
             runs / frames,
             uncached.as_secs_f64() * 1000.0 / uncached_frames as f64,
             full_encoding.as_secs_f64() * 1_000.0 / full_frames as f64,

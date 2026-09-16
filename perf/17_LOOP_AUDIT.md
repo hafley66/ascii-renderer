@@ -121,6 +121,12 @@ report logs `convert_us_avg/max` and `emit_us_avg/max`, and every
 existing `render_us`, `encoding_us`, `presentation_us`, `bytes`, `changed_cells`
 and `runs`.
 
+Step 2 of `perf/16_LARGE_RENDER_PLAN.md` adds one more counter on the same path:
+`skipped`, the cells the encoder left alone because their raw `Cell` did not move.
+It rides `FrameEncodeStats` to `FrameSample`, the tracing report
+(`skipped_total/avg`) and the frame record, and it is what separates "the
+conversion got cheaper" from "the conversion stopped happening".
+
 The first live receipt already separates the two costs, from the E2E
 `max-400x200` case at 366x199 with every knob at max (17 frames, medians
 `convert` 1430 us, `emit` 3404 us, `encoding` 4869 us):

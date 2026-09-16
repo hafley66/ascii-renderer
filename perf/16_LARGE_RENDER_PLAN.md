@@ -104,19 +104,27 @@ Each step states the lever, the measured basis, the expected gain, the risk, and
 the check that proves it. Steps 0-3 are byte-identical in output by construction,
 which is what makes them safe to land independently.
 
-### Step 0: make the split measurable before changing anything
+### Step 0: make the split measurable before changing anything - LANDED
 
 Lever: none, this is the ruler. The numbers in section 1 came from a throwaway
 bench that has been removed; without it, every later step is unmeasurable in the
 same units.
 
-Change: promote it into an ignored, env-driven probe next to the existing knob
-sweep, e.g. `ASCII_SPLIT_MODE` / `ASCII_SPLIT_W` / `ASCII_SPLIT_H`, printing
-render, blank-fill, full, delta and unchanged-frame encode at one size, plus
-`runs` and bytes. Record the first run under `perf/results/`.
+Landed as `perf_sweep::perf_split_probe` plus `perf/split_probe.sh`, both
+`#[ignore]`d and driven by `ASCII_SPLIT_MODE` / `ASCII_SPLIT_WIDTH` /
+`ASCII_SPLIT_HEIGHT` / `ASCII_SPLIT_REPS` / `ASCII_SPLIT_DT` / `ASCII_SPLIT_THEME`.
+It prints whole-mode render, blank grid build, and the full / one-step delta /
+identical encode rows with median and min, the encoder's `convert` and `emit`
+split, bytes, changed cells, skipped cells and runs. `perf/results/18_split_probe.md`
+holds the first run and the before/after tables for step 2.
 
-Check: the probe reproduces section 1's table within noise on the current commit,
-and `cargo test` is unchanged (the probe is `#[ignore]`d).
+Check, as landed: the probe is the ruler and its medians are 15 to 40 percent below
+section 1's single-shot numbers on the same grids, because section 1 measured once
+per size under a loaded host while the probe reports the median of N reps after a
+warm-up rep, then keeps a min column for load-insensitive comparison. The encoder
+rows are the ones that matter and they are stable to a few percent across runs;
+render is the row that moves with load. `cargo test` is unchanged: the probe is
+ignored and counted in the ignored total.
 
 ### Step 1: row-parallel field and paint passes (biggest render lever) - LANDED
 
@@ -221,35 +229,114 @@ The user-facing value of step 1 is the one-shot large render (1.74x at 400x120,
 Rollback: the gate is one constant; reverting to the serial branch is a one-line
 change.
 
-### Step 2: stop converting unchanged cells in the encoder (biggest shared lever)
+### Step 2: stop converting unchanged cells in the encoder (biggest shared lever) - LANDED
 
 Lever: the encoder's fixed 27 ns/cell scan is paid on every frame regardless of how
 little changed, and is the same order as the whole render at large sizes.
 
 Basis: 1992 us for an identical frame, 0 bytes emitted, at 366x199; 5132 us at
-800x240. The work is the unconditional target-population loop
-(`src/gridio.rs:258-264`) plus ratatui's full-grid diff (`src/gridio.rs:270-278`).
+800x240. The work is the unconditional target-population loop plus ratatui's
+full-grid diff.
 
-Change, inside `src/gridio.rs`: keep a raw `Vec<Cell>` copy of the art grid (12
-bytes per cell) alongside the ratatui buffers, and write into `current` only for
-cells whose raw `Cell` differs from the copy. The diff then sees exactly the same
-changed set, so **emitted bytes are unchanged**; the conversion cost is skipped for
-the unchanged majority.
+Landed in `src/gridio.rs`, and the shape that survived the guards is not the one
+this step first proposed. The encoder keeps a raw `Vec<Cell>` shadow (12 bytes per
+cell), and each frame walks the grid once:
 
-Expected: identical-frame encode 1992 us to roughly 300 to 500 us at 366x199, and
-5132 us to roughly 800 us to 1.3 ms at 800x240; the same absolute saving applies to
-every delta frame and to every other mode for free.
+- A cell whose raw `Cell` matches the shadow is left alone and marked
+  `CellDiffOption::Skip`, so ratatui neither converts nor compares it. This is
+  what makes the saving larger than the plan predicted: the identical-frame row
+  also loses the full-grid content comparison.
+- A cell that moved is converted as before, and `previous` takes a clone of the
+  value being replaced while `current` takes the new one. `previous` is the diff's
+  reference, so it must hold the value the terminal shows. Refreshing it at the
+  moment a cell changes is what makes skipping safe for later frames, and it costs
+  one clone per changed cell rather than one per resting cell.
+- Full repaints keep `AlwaysUpdate` on every cell and skip the reference clone
+  entirely: they emit everything, and the frame after one refreshes each cell it
+  changes, so an older entry is never read.
 
-Risk: an extra 12 bytes per cell of memory (874 KB at 366x199, 2.3 MB at 800x240)
-and one more pass over the grid; the `full_repaint` path must still populate every
-cell (or keep `AlwaysUpdate`).
+Two designs were implemented, measured and rejected first, both caught by the
+byte-identity guards rather than by inspection:
 
-Check: `morph::iterate_frame_tests::gem_bad_roll6_ansi_regression` asserts exact
-ANSI totals for 60 frames of `gem-aetherium-2` and must pass unchanged, which is a
-strong byte-identity guard; plus the animation encoder unit tests in
-`src/gridio.rs`, the mode snapshot suite, and the step 0 probe showing the saving.
+1. `Skip` plus the existing per-frame buffer flip. `ratatui::buffer::Cell` equality
+   includes `diff_option`, and a flipped buffer leaves the skipped guard cells
+   holding the value from two frames back, so the delta frame emitted 45,510 bytes
+   against 25,421 and `gem_bad_roll6_ansi_regression` totals moved by 250 KB.
+2. Forcing the reference cell's option to `None` on write. That restored the byte
+   counts but left a missed repaint: a cell that changes, rests, then returns to
+   its earlier value was compared against the stale hole instead of against the
+   terminal, so nothing was emitted. The encoder unit test for that sequence fails
+   on that revision and passes on the landed one.
 
-Rollback: the raw copy is additive; the loop change is localized to `encode`.
+Measured, pristine HEAD against the landed revision, interleaved runs of the two
+binaries in one session at 15 reps, prismata, moss, seed 42, dt 0.06. Bytes and
+changed cells are identical in every row of every table below:
+
+| stage, 366x199 | HEAD | landed | ratio |
+| --- | ---: | ---: | ---: |
+| encode identical frame | 1791.7 / 1799.7 | 275.1 / 283.4 | 6.5x |
+| encode delta over one dt step | 1986.0 / 1957.6 | 796.7 / 784.2 | 2.5x |
+| encode full repaint | 2268.0 / 2221.3 | 2238.2 / 2350.5 | parity |
+
+At 800x240 (192,000 cells) the identical frame goes 4696.8 / 5506.3 to 859.2, the
+delta 5123.3 / 5184.4 to 2442.8, and the full repaint 5704.9 / 5737.3 to 6364.4 on
+the intermediate revision; `gem-aetherium-2` at 366x199 goes 1574.2 to 237.4
+identical and 1925.6 to 1007.9 delta. Full repaints land within noise of HEAD once
+the reference clone is confined to compared frames, and there is at most one per
+session in the live pipeline.
+
+Why the delta win is 2.5x while the identical win is 6.5x: `emit` still scales with
+churn and only `convert` responds to resting cells, which is what the earlier
+`convert`/`emit` split predicted, and the delta row at 3.9 percent cell churn keeps
+a fixed share of conversions.
+
+Live pipeline, E2E `max-400x200`, prismata at 366x199 with all twelve knobs at max,
+HEAD (`perf/results/e2e-1789593387274`, 17 frames) against the landed revision
+(`perf/results/e2e-1789595082362`, 18 frames):
+
+| live, 366x199 all knobs max | HEAD | landed |
+| --- | ---: | ---: |
+| cells changed, average | 49,697 | 49,126 |
+| cells skipped, average | 0 | 19,270 |
+| `convert_us`, average | 1,460 | 1,726 |
+| `emit_us`, average | 3,352 | 3,122 |
+| `encoding_us`, average | 4,864 | 4,893 |
+| `render_us`, average | 1,372 | 1,256 |
+| frame `dur_us`, average | 22,286 | 22,593 |
+
+This is the adversarial end of the range, and it is a wash: all knobs at max makes
+prismata churn 67 percent of its cells per frame, so the per-changed-cell reference
+clone, the 12 bytes per cell of shadow stores and the now-unpredictable skip branch
+cost about what the skipped conversions save, `convert` rises 18 percent, and total
+encode and frame duration sit at parity with the terminal still owning about 90
+percent of the frame. The controlled probe rows above are the other end, where the
+delta encoder is 2.5x faster at 3.9 percent churn and 6.5x faster on a frame that did
+not change at all, because a fully resting frame clones nothing. A future revision
+could pick between the two shapes per frame from a counted churn, at the cost of a
+second pass over the grid and a second code path; it is not worth that today, since
+the encoder is a minority share of a terminal-bound frame.
+
+Check, all green:
+
+- Byte identity at grid level: the probe's three encode rows report the same bytes,
+  changed cells and runs on both revisions at 366x199 and 800x240 for `prismata`
+  and `gem-aetherium-2`.
+- Byte identity on a long sequence: `gem_bad_roll6_ansi_regression` is red at HEAD
+  (its expected foreground constant is 4,748,083 against 0 observed, so it never
+  asserted what it intended), but its observed totals are an exact comparator and
+  they are identical on both revisions: 5,124,966 bytes, 357,555 control bytes,
+  2,019,066 glyph bytes, 2,976,090 cursor bytes.
+- Two new encoder tests in `src/gridio.rs`: a cell that changes, rests, then returns
+  to its earlier glyph is repainted, and a resting cell whose change is invisible
+  (a blank cell's foreground) emits nothing.
+- Suite: 454 passed / 3 failed / 17 ignored in the bin target, the three failures
+  pre-existing (`gridio ansi_frame_tests::animation_encoder_collapses_adjacent_rgb_levels`,
+  the gem regression above, `polytope::tests::snapshot_polytope_small`), plus
+  `tests/snapshot_modes.rs` 190 passed / 1 failed where `polytope_seed_42` is
+  pre-existing too, proved by stashing the change and re-running it on HEAD. No
+  `.snap.new` files left.
+
+Rollback: the shadow is additive and the skip is one branch in `encode`.
 
 ### Step 3: buffer hygiene on the frame path
 
