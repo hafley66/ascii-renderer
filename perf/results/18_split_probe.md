@@ -11,7 +11,9 @@ converting cells that did not move. Three revisions were built and measured:
 
 The landed revision shipped first and is superceded by the adapted one; both are in
 history. This file holds the ruler, the three-way measurements, the byte-identity
-evidence, the per-mode churn spread and the live pipeline numbers.
+evidence, the per-mode churn spread and the live pipeline numbers. Step 3, which
+removes the payload copy and the frame-buffer memmoves on the same path, is measured
+in `perf/results/19_frame_buffer.md`.
 
 ## Ruler
 

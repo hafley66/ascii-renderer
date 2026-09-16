@@ -245,9 +245,11 @@ fn perf_split_probe() {
     let mut identical = Vec::with_capacity(reps);
     for _ in 0..reps {
         let mut encoder = AnsiFrameEncoder::new();
-        let mut output = String::new();
+        let mut output = Vec::new();
         full.push(encoder.encode(&first, true, &mut output));
+        output.clear();
         delta.push(encoder.encode(&second, false, &mut output));
+        output.clear();
         identical.push(encoder.encode(&second, false, &mut output));
         black_box(output.len());
     }

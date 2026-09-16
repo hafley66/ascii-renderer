@@ -265,11 +265,11 @@ impl AdaptedCell {
 
 /// Adapts the art grid to Ratatui's retained buffers and Crossterm backend.
 /// Ratatui owns cell comparison, wide-character handling and ANSI generation.
-/// Output stays in a reusable byte buffer for the cancellable playback relay.
+/// The payload is written straight into the caller's byte buffer, which the
+/// cancellable playback relay owns, so no frame is copied or revalidated.
 pub(crate) struct AnsiFrameEncoder {
     previous: ratatui::buffer::Buffer,
     current: ratatui::buffer::Buffer,
-    bytes: Vec<u8>,
     initialized: bool,
     /// Raw art grid the retained `current` buffer was adapted from. Comparing
     /// against the raw `Cell` skips both color conversions for every cell that
@@ -290,7 +290,6 @@ impl AnsiFrameEncoder {
         Self {
             previous: ratatui::buffer::Buffer::empty(ratatui::layout::Rect::default()),
             current: ratatui::buffer::Buffer::empty(ratatui::layout::Rect::default()),
-            bytes: Vec::new(),
             initialized: false,
             shadow: Vec::new(),
             adapted: Vec::new(),
@@ -303,8 +302,12 @@ impl AnsiFrameEncoder {
         self.initialized = false;
     }
 
+    /// Appends one frame's ANSI payload to `output`. The caller owns the buffer
+    /// so a prefix (synchronized-output markers, a cursor cancel) is written
+    /// before the payload instead of being inserted in front of it afterwards,
+    /// and the diff is drawn straight into it: nothing is copied or revalidated.
     #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
-    pub(crate) fn encode(&mut self, grid: &Grid, force_full: bool, output: &mut String) -> FrameEncodeStats {
+    pub(crate) fn encode(&mut self, grid: &Grid, force_full: bool, output: &mut Vec<u8>) -> FrameEncodeStats {
         use ratatui::backend::{Backend, TermionBackend};
         use ratatui::buffer::CellDiffOption;
         let height = grid.len();
@@ -376,25 +379,23 @@ impl AnsiFrameEncoder {
         }
         let convert = convert_started.elapsed();
         let emit_started = std::time::Instant::now();
-        self.bytes.clear();
+        let payload_start = output.len();
         let mut changed_cells = 0;
         let mut runs = 0;
         let mut last = None;
         let mut updates = self.previous.diff_iter(&self.current).peekable();
         if updates.peek().is_some() {
-            TermionBackend::new(&mut self.bytes).draw(updates.inspect(|(x, y, _)| {
+            TermionBackend::new(&mut *output).draw(updates.inspect(|(x, y, _)| {
                 changed_cells += 1;
                 if last != x.checked_sub(1).map(|x| (x, *y)) || last.is_none() {
                     runs += 1;
                 }
                 last = Some((*x, *y));
-            })).expect("writing Ratatui output into Vec cannot fail");
+            })).expect("writing Ratatui output into a Vec cannot fail");
         }
-        output.clear();
-        output.push_str(std::str::from_utf8(&self.bytes).expect("Ratatui emits UTF-8"));
         let emit = emit_started.elapsed();
         self.initialized = true;
-        FrameEncodeStats { bytes: output.len(), changed_cells, runs, full_repaint, convert, emit, skipped }
+        FrameEncodeStats { bytes: output.len() - payload_start, changed_cells, runs, full_repaint, convert, emit, skipped }
     }
 }
 
@@ -454,22 +455,30 @@ mod ansi_frame_tests {
         vec![text.chars().map(|ch| Cell::new(ch, Color::Reset)).collect()]
     }
 
+    /// `encode` appends, so a test that asserts one frame's payload clears first.
+    fn text(bytes: &[u8]) -> &str {
+        std::str::from_utf8(bytes).unwrap()
+    }
+
     #[test]
     #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn library_diff_emits_only_changed_cells_and_recovers_after_invalidation() {
         let mut encoder = AnsiFrameEncoder::new();
-        let mut output = String::new();
+        let mut output = Vec::new();
         encoder.encode(&row("abcdef"), true, &mut output);
+        output.clear();
         let stats = encoder.encode(&row("aXcYef"), false, &mut output);
         assert_eq!((stats.changed_cells, stats.runs), (2, 2));
-        assert_eq!(output, "\x1b[1;2HX\x1b[1;4HY\x1b[39m\x1b[49m\x1b[m");
+        assert_eq!(text(&output), "\x1b[1;2HX\x1b[1;4HY\x1b[39m\x1b[49m\x1b[m");
         encoder.invalidate();
+        output.clear();
         let stats = encoder.encode(&row("aXcYef"), false, &mut output);
         assert!(stats.full_repaint);
         assert_eq!(stats.changed_cells, 6);
-        assert_eq!(output, "\x1b[1;1HaXcYef\x1b[39m\x1b[49m\x1b[m");
+        assert_eq!(text(&output), "\x1b[1;1HaXcYef\x1b[39m\x1b[49m\x1b[m");
+        output.clear();
         encoder.encode(&row("aXcYef"), false, &mut output);
-        assert_eq!(output, "");
+        assert_eq!(text(&output), "");
     }
 
     #[test]
@@ -478,23 +487,25 @@ mod ansi_frame_tests {
         let red = Color::Rgb { r: 255, g: 0, b: 0 };
         let blue = Color::Rgb { r: 0, g: 0, b: 255 };
         let mut encoder = AnsiFrameEncoder::new();
-        let mut output = String::new();
+        let mut output = Vec::new();
         let frame = |fg: Color| vec![vec![Cell::new('x', Color::Reset), Cell::new(' ', fg)]];
         encoder.encode(&frame(red), true, &mut output);
+        output.clear();
         let stats = encoder.encode(&frame(red), false, &mut output);
         assert_eq!((stats.changed_cells, stats.skipped), (0, 2));
         // The blank cell's foreground is not drawn, so a rest followed by an
         // invisible change must not replay the cell the encoder skipped.
+        output.clear();
         let stats = encoder.encode(&frame(blue), false, &mut output);
         assert_eq!((stats.changed_cells, stats.skipped, stats.bytes), (0, 1, 0));
-        assert_eq!(output, "");
+        assert_eq!(text(&output), "");
     }
 
     #[test]
     #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn a_cell_that_rests_between_changes_is_still_repainted() {
         let mut encoder = AnsiFrameEncoder::new();
-        let mut output = String::new();
+        let mut output = Vec::new();
         let frame = |ch: char| {
             vec![vec![
                 Cell::new(ch, Color::Reset),
@@ -502,29 +513,32 @@ mod ansi_frame_tests {
             ]]
         };
         encoder.encode(&frame('a'), true, &mut output);
+        output.clear();
         let stats = encoder.encode(&frame('b'), false, &mut output);
         assert_eq!((stats.changed_cells, stats.skipped), (1, 1));
-        assert_eq!(output, "\x1b[1;1Hb\x1b[39m\x1b[49m\x1b[m");
+        assert_eq!(text(&output), "\x1b[1;1Hb\x1b[39m\x1b[49m\x1b[m");
+        output.clear();
         let stats = encoder.encode(&frame('b'), false, &mut output);
         assert_eq!((stats.changed_cells, stats.skipped, stats.bytes), (0, 2, 0));
-        assert_eq!(output, "");
+        assert_eq!(text(&output), "");
         // The retained buffer holds what the terminal shows, not what an older
         // frame wrote, so returning to the first frame's glyph still repaints.
+        output.clear();
         let stats = encoder.encode(&frame('a'), false, &mut output);
         assert_eq!((stats.changed_cells, stats.skipped), (1, 1));
-        assert_eq!(output, "\x1b[1;1Ha\x1b[39m\x1b[49m\x1b[m");
+        assert_eq!(text(&output), "\x1b[1;1Ha\x1b[39m\x1b[49m\x1b[m");
     }
 
     #[test]
     #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn library_buffers_cover_more_than_u16_cells_and_resize() {
         let mut encoder = AnsiFrameEncoder::new();
-        let mut output = String::new();
+        let mut output = Vec::new();
         let grid = vec![vec![Cell::blank(); 400]; 200];
         let stats = encoder.encode(&grid, false, &mut output);
         assert_eq!(stats.changed_cells, 80_000);
         assert_eq!(encoder.previous.content.len(), 80_000);
-        assert!(output.contains("\x1b[200;1H"));
+        assert!(text(&output).contains("\x1b[200;1H"));
         let stats = encoder.encode(&row("x"), false, &mut output);
         assert!(stats.full_repaint);
         assert_eq!(stats.changed_cells, 1);
@@ -534,7 +548,7 @@ mod ansi_frame_tests {
     #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn replacing_double_width_glyph_repaints_its_reserved_cell() {
         let mut encoder = AnsiFrameEncoder::new();
-        let mut output = String::new();
+        let mut output = Vec::new();
         let wide = vec![vec![
             Cell::new('界', Color::Reset),
             Cell::blank(),
@@ -546,9 +560,10 @@ mod ansi_frame_tests {
             Cell::new('z', Color::Reset),
         ]];
         encoder.encode(&wide, true, &mut output);
+        output.clear();
         let stats = encoder.encode(&narrow, false, &mut output);
         assert_eq!(stats.runs, 1);
-        assert_eq!(output, "\x1b[1;1Hab\x1b[39m\x1b[49m\x1b[m");
+        assert_eq!(text(&output), "\x1b[1;1Hab\x1b[39m\x1b[49m\x1b[m");
     }
 
     #[test]
@@ -557,12 +572,13 @@ mod ansi_frame_tests {
         let red = Color::Rgb { r: 255, g: 0, b: 0 };
         let blue = Color::Rgb { r: 0, g: 0, b: 255 };
         let mut encoder = AnsiFrameEncoder::new();
-        let mut output = String::new();
+        let mut output = Vec::new();
         encoder.encode(&vec![vec![Cell::new(' ', red)]], true, &mut output);
+        output.clear();
         let stats = encoder.encode(&vec![vec![Cell::new(' ', blue)]], false, &mut output);
         assert_eq!(stats.changed_cells, 0);
         assert_eq!(stats.bytes, 0);
-        assert_eq!(output, "");
+        assert_eq!(text(&output), "");
     }
 
     #[test]
@@ -580,7 +596,7 @@ mod ansi_frame_tests {
     #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn animation_encoder_collapses_adjacent_rgb_levels() {
         let mut encoder = AnsiFrameEncoder::new();
-        let mut output = String::new();
+        let mut output = Vec::new();
         let first = vec![vec![Cell::new(
             'x',
             Color::Rgb {
@@ -598,9 +614,10 @@ mod ansi_frame_tests {
             },
         )]];
         encoder.encode(&first, true, &mut output);
-        assert!(output.contains("38;5;68m"));
+        assert!(text(&output).contains("38;5;68m"));
+        output.clear();
         let stats = encoder.encode(&adjacent, false, &mut output);
         assert_eq!(stats.changed_cells, 0);
-        assert_eq!(output, "");
+        assert_eq!(text(&output), "");
     }
 }

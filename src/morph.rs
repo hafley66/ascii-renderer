@@ -916,7 +916,7 @@ mod iterate_frame_tests {
         renderer.palette = serde_json::from_value(first["palette"].clone()).unwrap();
         let spec = mode_spec(mode);
         let mut encoder = AnsiFrameEncoder::new();
-        let mut output = String::new();
+        let mut output = Vec::new();
         for (index, record) in records.iter().enumerate() {
             assert_eq!(record["grid"], first["grid"]);
             assert_eq!(record["seed"], first["seed"]);
@@ -929,6 +929,7 @@ mod iterate_frame_tests {
             let grid = renderer
                 .render(record["time"].as_f64().unwrap() as f32, Some(&values))
                 .unwrap();
+            output.clear();
             encoder.encode(grid, false, &mut output);
             std::fs::write(format!("{destination}/frame-{index:02}.ansi"), &output).unwrap();
         }
@@ -997,12 +998,13 @@ mod iterate_frame_tests {
             .collect::<Vec<_>>();
         let mut renderer = IterateFrameRenderer::new("gem-aetherium-2", 42, "", w, h).unwrap();
         let mut encoder = AnsiFrameEncoder::new();
-        let mut output = String::new();
+        let mut output = Vec::new();
         let mut totals = AnsiComposition::default();
         for frame in 0..20 {
             let grid = renderer.render(frame as f32 * 0.06, Some(&values)).unwrap();
+            output.clear();
             encoder.encode(grid, false, &mut output);
-            classify_ansi(output.as_bytes(), &mut totals);
+            classify_ansi(&output, &mut totals);
         }
         eprintln!(
             "frames=20 bytes={} glyph={} cursor={} fg={} bg={} reset={} controls={}",
@@ -1036,13 +1038,14 @@ mod iterate_frame_tests {
             .collect::<Vec<_>>();
         let mut renderer = IterateFrameRenderer::new(mode, seed, theme, w, h).unwrap();
         let mut encoder = AnsiFrameEncoder::new();
-        let mut output = String::new();
+        let mut output = Vec::new();
         let mut totals = AnsiComposition::default();
 
         for frame in 0..60 {
             let grid = renderer.render(frame as f32 * 0.06, Some(&values)).unwrap();
+            output.clear();
             encoder.encode(grid, false, &mut output);
-            classify_ansi(output.as_bytes(), &mut totals);
+            classify_ansi(&output, &mut totals);
         }
 
         assert_eq!(
@@ -1066,7 +1069,7 @@ mod iterate_frame_tests {
             let spec = mode_spec("gem-aetherium-2");
             let mut renderer = IterateFrameRenderer::new("gem-aetherium-2", 42, "", w, h).unwrap();
             let mut encoder = AnsiFrameEncoder::new();
-            let mut output = String::new();
+            let mut output = Vec::new();
             for frame in 0..60u64 {
                 let roll = frame / 4;
                 let seed = 42 ^ roll.wrapping_mul(0x9E37_79B9_7F4A_7C15);
@@ -1075,6 +1078,7 @@ mod iterate_frame_tests {
                 let grid = renderer.render(frame as f32 * 0.06, Some(&values)).unwrap();
                 let render = started.elapsed();
                 let started = std::time::Instant::now();
+                output.clear();
                 let stats = encoder.encode(grid, false, &mut output);
                 eprintln!(
                     "{w}x{h} frame={frame} roll={roll} render_ms={:.3} encode_ms={:.3} bytes={} changed={}",
@@ -1301,7 +1305,7 @@ pub(crate) fn morph_worker_session(
     let initial_rw = w.saturating_sub(pane_w).max(1);
     let mut iterate_renderer = IterateFrameRenderer::new(mode_a, seed_a, theme, initial_rw, h);
     let mut frame_encoder = AnsiFrameEncoder::new();
-    let mut frame_buffer = String::with_capacity(w * h * 8);
+    let mut frame_buffer = Vec::with_capacity(w * h * 8);
     let mut pane_buffer = String::new();
     let mut previous_pane = String::new();
     let mut previous_status = String::new();
@@ -1425,8 +1429,15 @@ pub(crate) fn morph_worker_session(
             })
         };
         let generation_elapsed = generation_started.map(|started| started.elapsed());
-        let encoding_started = frame_profiler.as_ref().map(|_| Instant::now());
-        let encode_stats = frame_encoder.encode(g.as_ref(), false, &mut frame_buffer);
+        // `encode` appends the frame's payload, so everything the terminal has to
+        // see before it is written here, in order, and nothing ever moves the
+        // payload afterwards: the prefix used to be inserted in front of it after
+        // the fact, which memmoved the whole frame twice.
+        frame_buffer.clear();
+        let sync_output = input.is_some() && crate::_1_playback::synchronized_output();
+        if sync_output {
+            frame_buffer.extend_from_slice(b"\x1b[?2026h");
+        }
         if clear_frame {
             // A cleared terminal has no cached footer or options panel, even
             // when their text is unchanged after a resize.
@@ -1435,9 +1446,11 @@ pub(crate) fn morph_worker_session(
         }
         if interrupted_frame || clear_frame {
             // Cancel a possible partial CSI left by the abandoned frame.
-            frame_buffer.insert_str(0, if clear_frame { "\x18\x1b[2J" } else { "\x18" });
+            frame_buffer.extend_from_slice(if clear_frame { b"\x18\x1b[2J" } else { b"\x18" });
             interrupted_frame = false;
         }
+        let encoding_started = frame_profiler.as_ref().map(|_| Instant::now());
+        let encode_stats = frame_encoder.encode(g.as_ref(), false, &mut frame_buffer);
         let encoding_elapsed = encoding_started.map(|started| started.elapsed());
         let presentation_started = frame_profiler.as_ref().map(|_| Instant::now());
         // Overwrite in place: every grid row is full-width so it repaints every
@@ -1476,7 +1489,7 @@ pub(crate) fn morph_worker_session(
         let mut status: String = status.chars().take(status_w).collect();
         let pad = status_w.saturating_sub(status.chars().count());
         status.extend(std::iter::repeat_n(' ', pad));
-        use std::fmt::Write as _;
+        use std::io::Write as _;
         let old: Vec<char> = previous_status.chars().collect();
         let new: Vec<char> = status.chars().collect();
         let first = old
@@ -1519,16 +1532,14 @@ pub(crate) fn morph_worker_session(
                 randomize,
             );
             if pane_buffer != previous_pane {
-                frame_buffer.push_str(&pane_buffer);
+                frame_buffer.extend_from_slice(pane_buffer.as_bytes());
                 previous_pane.clone_from(&pane_buffer);
             }
         } else {
             previous_pane.clear();
         }
-        let sync_output = input.is_some() && crate::_1_playback::synchronized_output();
         if sync_output {
-            frame_buffer.insert_str(0, "\x1b[?2026h");
-            frame_buffer.push_str("\x1b[?2026l");
+            frame_buffer.extend_from_slice(b"\x1b[?2026l");
         }
         let mut events = Vec::new();
         let presented = {
@@ -1536,7 +1547,7 @@ pub(crate) fn morph_worker_session(
             if let Some(receiver) = &input {
                 match crate::_1_playback::write_frame(
                     pipe_output.as_mut().unwrap(),
-                    frame_buffer.as_bytes(),
+                    frame_buffer.as_slice(),
                     receiver,
                     &mut events,
                 ) {
@@ -1546,7 +1557,7 @@ pub(crate) fn morph_worker_session(
             } else {
                 let stdout = io::stdout();
                 let mut out = stdout.lock();
-                out.write_all(frame_buffer.as_bytes()).unwrap();
+                out.write_all(frame_buffer.as_slice()).unwrap();
                 out.flush().unwrap();
                 true
             }
@@ -1554,7 +1565,7 @@ pub(crate) fn morph_worker_session(
             {
                 let stdout = io::stdout();
                 let mut out = stdout.lock();
-                out.write_all(frame_buffer.as_bytes()).unwrap();
+                out.write_all(frame_buffer.as_slice()).unwrap();
                 out.flush().unwrap();
                 true
             }

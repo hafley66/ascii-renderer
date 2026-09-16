@@ -758,10 +758,11 @@ mod tests {
         for layout in 0..5 {
             for (w, h) in [(162, 61), (366, 199)] {
                 let mut encoder = crate::gridio::AnsiFrameEncoder::new();
-                let mut output = String::new();
+                let mut output = Vec::new();
                 let mut peak = (0, 0);
                 for i in 0..100 {
                     let grid = configured_frame(w, h, i as f32 * 0.06, true, layout, 42);
+                    output.clear();
                     encoder.encode(&grid, false, &mut output);
                     if i > 0 && output.len() > peak.1 {
                         peak = (i, output.len());

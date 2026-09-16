@@ -1208,7 +1208,7 @@ mod tests {
         }
         let mut profiler = FrameProfiler::from_env("illuminarium", "headless");
         let mut encoder = AnsiFrameEncoder::new();
-        let mut output = String::with_capacity(width * height * 8);
+        let mut output = Vec::with_capacity(width * height * 8);
         let mut generation = Duration::ZERO;
         let mut encoding = Duration::ZERO;
         let mut compute_samples = Vec::with_capacity(frames);
@@ -1232,6 +1232,7 @@ mod tests {
                 &params,
             );
             let generation_elapsed = generation_start.elapsed();
+            output.clear();
             let encoding_start = Instant::now();
             let stats = encoder.encode(&grid, false, &mut output);
             let encoding_elapsed = encoding_start.elapsed();

@@ -354,27 +354,83 @@ Check, all green:
 
 Rollback: the two caches are additive and the loop is one branch per cell.
 
-### Step 3: buffer hygiene on the frame path
+### Step 3: buffer hygiene on the frame path - LANDED
 
-Lever: two avoidable full-buffer operations per frame at large sizes.
+Lever: two avoidable full-payload operations per frame at large sizes.
 
 Basis: `output.clear(); output.push_str(std::str::from_utf8(&self.bytes)...)`
-validates and copies the whole payload (`src/gridio.rs:280`, 78 KB here but 290 KB
-at 800x240 with max knobs, and up to ~600 KB in the prior 400x200 study), and the
-worker prepends with `frame_buffer.insert_str(0, ...)`, which memmoves the entire
-frame buffer (`src/morph.rs:1451`, `src/morph.rs:1530`).
+validated and copied the whole payload (`src/gridio.rs:280`, 78 KB at 366x199 but
+290 KB at 800x240 with max knobs, and up to ~600 KB in the prior 400x200 study),
+and the worker prepended with `frame_buffer.insert_str(0, ...)`, which memmoved the
+entire frame buffer (`src/morph.rs:1451`, `src/morph.rs:1530`).
 
-Change: have `encode` target a `Vec<u8>` (or hand out `&[u8]`) so no UTF-8
-validation and no copy is needed, and reserve the prefix once, or write the prefix
-into a small separate buffer that the relay concatenates.
+Landed: `encode` takes `&mut Vec<u8>` and appends one frame's payload to it, drawing
+the Ratatui diff straight into the caller's buffer, and the encoder's own byte field
+is gone. `src/morph.rs` owns a `Vec<u8>` frame buffer and writes the
+synchronized-output begin, the cursor-cancel prefix and the synchronized-output end
+around the payload in stream order, so nothing is inserted in front of a finished
+frame and the payload is never copied or revalidated. See
+`perf/results/19_frame_buffer.md`.
 
-Expected: roughly 0.2 to 0.6 ms per frame at large sizes, scaling with payload.
+The projection in this plan (0.2 to 0.6 ms per frame) was too high and the reason is
+worth recording: std's UTF-8 validation has a word-at-a-time ASCII fast path and
+only leaves it for non-ASCII chunks, and real art payloads are ASCII-dominated. The
+removed pair measures 18.1 us on a 480 KB slice of the live prismata stream (0.2
+percent non-ASCII) and 177.7 us on the same size with 14 percent non-ASCII. So the
+step pays where the art is glyph-dense and barely where it is not.
 
-Risk: touches the String-typed callers in `src/morph.rs` and the CLI paths; keep
-the change mechanical and let the existing byte-count tests guard it.
+Measured, five alternating rounds of the HEAD binary and this revision in one
+session, 15 reps each, 366x199, moss, dt 0.06; medians of the rounds, `total` being
+`convert + emit`. Bytes, changed cells and skipped cells are identical on every row:
 
-Check: the same byte-count regression test, the E2E `workflow` and `max-400x200`
-cases (terminal output must stay identical), and the step 0 probe.
+| mode | row | emit HEAD | emit landed | total HEAD | total landed | total delta |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| illuminarium | delta | 469.0 | 409.7 | 891.6 | 819.8 | -8.1% |
+| illuminarium | full repaint | 1,258.7 | 1,085.5 | 2,652.7 | 2,461.2 | -7.2% |
+| gem-aetherium-2 | delta | 428.2 | 386.2 | 843.0 | 793.0 | -5.9% |
+| gem-aetherium-2 | full repaint | 1,111.3 | 1,003.4 | 2,366.9 | 2,265.2 | -4.3% |
+| cosmograph | delta | 254.6 | 228.4 | 630.0 | 602.8 | -4.3% |
+| cosmograph | full repaint | 1,161.9 | 1,017.5 | 2,471.5 | 2,354.6 | -4.7% |
+| prismata | delta | 209.4 | 205.4 | 591.6 | 585.6 | -1.0% |
+| prismata | full repaint | 885.2 | 858.0 | 2,459.1 | 2,403.2 | -2.3% |
+
+The three glyph-dense modes gain 4 to 8 percent of encoding; prismata, whose art is
+ASCII, is the control row rather than a win. The two removed `insert_str(0, ..)`
+calls are a smaller second term: each memmoved the whole composed frame (376 to 601
+KB live), roughly 15 us at copy bandwidth.
+
+Check, all green:
+
+- Byte identity, three levels. The probe reports identical bytes, changed cells and
+  skipped cells on HEAD and the new revision across sixteen modes at 366x199. The
+  60-frame `gem_bad_roll6_ansi_regression` comparator observes the same
+  `(5,124,966, 357,555, 0, 2,019,066, 2,976,090, 0)` as HEAD and both earlier encoder
+  revisions. In the live pipeline, the fifteen frames with common `frame_index` across
+  the HEAD run, the adapted revision and this one report identical `bytes`,
+  `changed_cells` and `runs` with identical knobs (484,713 bytes and 48,775 changed
+  cells on average).
+- Suite: 454 passed / 3 failed / 17 ignored in the bin target, the same three
+  pre-existing failures, plus the four integration targets at their baseline
+  (`snapshot_modes` 190 passed / 1 failed, `polytope_seed_42`, pre-existing). No
+  `.snap.new`.
+- E2E `max-400x200` headless: 9 of 9 checks twice, `e2e-1789597570940` (default
+  `gem-aetherium-2`) and `e2e-1789597589345` (`prismata`), both single-case runs.
+
+Live pipeline, the shared-frame averages from those three runs; the live `emit`
+column is flat between the adapted revision and this one because the removed work is
+15 to 20 us inside a 2,640 us `emit` while `render_us` moved 40 percent between the
+runs on a shared host:
+
+| live, prismata 366x199 max knobs, 15 shared frames | HEAD | adapted | landed |
+| --- | ---: | ---: | ---: |
+| bytes, average | 484,713 | 484,713 | 484,713 |
+| cells changed, average | 48,775 | 48,775 | 48,775 |
+| `convert_us`, average | 1,465 | 1,608 | 1,631 |
+| `emit_us`, average | 3,343 | 2,639 | 2,641 |
+| `encoding_us`, average | 4,808 | 4,248 | 4,273 |
+| frame `dur_us`, average | 21,909 | 17,523 | 19,922 |
+
+Rollback: the API change is mechanical and the two buffers are additive.
 
 ### Step 4: cache the fold geometry across frames (mode-local, animation only)
 
@@ -451,11 +507,14 @@ that quantizes the animated phase per tick without changing the still frame.
 
 Step 1 is landed with actuals: at 366x199 the whole-mode render is 1990 to 825 us
 (2.4x) and at 2000x1000 it is 53.7 to 11.0 ms (4.9x), measured through the knob
-sweep as 54.25 to 11.34 ms and 1.34 to 0.84 ms at 400x120. Steps 2 and 3 are still
-projections: at 366x199 application-side per-frame CPU from about 5.7 ms to roughly
-1.2 to 1.6 ms, and at 2000x1000 the encoder proportionally. On the one-shot path
-(problem 1) step 1 alone is already a 1.7 to 4.9x improvement in wall time for a
-large static render.
+sweep as 54.25 to 11.34 ms and 1.34 to 0.84 ms at 400x120. Step 2 is landed with
+actuals: the encoder is 1.1x to 6.1x faster than the code it replaced across
+sixteen modes at 366x199, and its live `encoding_us` at 366x199 with all knobs at
+max went 4,864 to 4,332. Step 3 is landed and is smaller than the projection in this
+plan, because UTF-8 validation turns out to be cheap on ASCII-dominated art
+payloads: 4 to 8 percent of `encoding` on glyph-dense modes and 1 to 2 percent on
+prismata, with the emitted bytes unchanged. On the one-shot path (problem 1) step 1
+alone is already a 1.7 to 4.9x improvement in wall time for a large static render.
 
 Under a GUI terminal at 400x200 the live cadence improves only modestly, because the
 measured consumer cost was 37.5 ms of a 40 ms frame; in the headless E2E the render
