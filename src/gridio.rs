@@ -213,6 +213,11 @@ pub(crate) struct FrameEncodeStats {
     /// Cells whose raw `Cell` matched the shadow, so only the diff option was
     /// written. This is what the per-cell conversion cost is no longer paid for.
     pub(crate) skipped: usize,
+    /// Cells whose raw `Cell` moved but whose adapted value (glyph and the two
+    /// mapped colors) did not, so the encoder adapted them and drew nothing: the
+    /// adapter work that a resting or invisible change still pays for. Zero on a
+    /// full repaint, which draws every cell.
+    pub(crate) invisible: usize,
     /// Per-cell adapter loop: one ratatui write per cell, paid on every frame.
     pub(crate) convert: std::time::Duration,
     /// Diff scan plus ratatui emission of the changed cells.
@@ -329,6 +334,7 @@ impl AnsiFrameEncoder {
             self.synced_wide.resize(cells, false);
         }
         let mut skipped = 0usize;
+        let mut invisible = 0usize;
         let Self { shadow, adapted, synced_wide, current, previous, .. } = self;
         // Ratatui clears the columns a wide glyph reserved by looking at the cell
         // it is replacing, so this marks the cell after one.
@@ -355,6 +361,7 @@ impl AnsiFrameEncoder {
             // value moved is drawn, which is the same set the retained-buffer
             // comparison produced.
             let draw = full_repaint || *seen != next;
+            invisible += usize::from(!draw);
             if draw && (after_wide || *kept || AdaptedCell::wide(next.ch) || AdaptedCell::wide(seen.ch)) {
                 let mut glyph = [0u8; 4];
                 prior
@@ -395,7 +402,7 @@ impl AnsiFrameEncoder {
         }
         let emit = emit_started.elapsed();
         self.initialized = true;
-        FrameEncodeStats { bytes: output.len() - payload_start, changed_cells, runs, full_repaint, convert, emit, skipped }
+        FrameEncodeStats { bytes: output.len() - payload_start, changed_cells, runs, full_repaint, convert, emit, skipped, invisible }
     }
 }
 
@@ -498,6 +505,7 @@ mod ansi_frame_tests {
         output.clear();
         let stats = encoder.encode(&frame(blue), false, &mut output);
         assert_eq!((stats.changed_cells, stats.skipped, stats.bytes), (0, 1, 0));
+        assert_eq!(stats.invisible, 1);
         assert_eq!(text(&output), "");
     }
 
@@ -617,7 +625,7 @@ mod ansi_frame_tests {
         assert!(text(&output).contains("38;5;68m"));
         output.clear();
         let stats = encoder.encode(&adjacent, false, &mut output);
-        assert_eq!(stats.changed_cells, 0);
+        assert_eq!((stats.changed_cells, stats.invisible), (0, 1));
         assert_eq!(text(&output), "");
     }
 }

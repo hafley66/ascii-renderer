@@ -343,6 +343,12 @@ Check, all green:
   to its earlier glyph is repainted, and a resting cell whose change is invisible
   (a blank cell's foreground) emits nothing. The pre-existing wide-glyph test
   (`replacing_double_width_glyph_repaints_its_reserved_cell`) passes unchanged.
+- A third counter rides the same path: `invisible`, the cells whose raw `Cell` moved
+  but whose adapted value did not, so the encoder adapted them and drew nothing. It
+  is in the stats, the tracing report, the frame record and the split probe. On
+  prismata at 366x199, dt 0.06, 5,630 cells enter the adapter branch on a delta frame
+  and 2,824 of them are invisible: half that frame's adapter work changes nothing on
+  the terminal, which is the churn the knobs are buying.
 - Suite: 454 passed / 3 failed / 17 ignored in the bin target, the three failures
   pre-existing (`gridio ansi_frame_tests::animation_encoder_collapses_adjacent_rgb_levels`,
   the gem regression above, `polytope::tests::snapshot_polytope_small`), plus

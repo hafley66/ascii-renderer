@@ -265,15 +265,15 @@ fn perf_split_probe() {
         "\n# split probe: {mode} {w}x{h} ({} cells), theme {theme}, seed 42, dt {dt}, {reps} reps, release\n",
         w * h
     );
-    println!("| stage | median us | min us | convert us | emit us | bytes | cells changed | cells skipped | runs |");
-    println!("| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |");
+    println!("| stage | median us | min us | convert us | emit us | bytes | cells changed | cells skipped | cells invisible | runs |");
+    println!("| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |");
     println!(
-        "| render (whole mode) | {:.1} | {:.1} | - | - | - | - | - | - |",
+        "| render (whole mode) | {:.1} | {:.1} | - | - | - | - | - | - | - |",
         median(render_us.clone()),
         min(&render_us)
     );
     println!(
-        "| blank grid build + row fill | {:.1} | {:.1} | - | - | - | - | - | - |",
+        "| blank grid build + row fill | {:.1} | {:.1} | - | - | - | - | - | - | - |",
         median(blank_us.clone()),
         min(&blank_us)
     );
@@ -284,9 +284,10 @@ fn perf_split_probe() {
         let bytes = median(s.iter().map(|x| x.bytes as f64).collect());
         let changed = median(s.iter().map(|x| x.changed_cells as f64).collect());
         let skipped = median(s.iter().map(|x| x.skipped as f64).collect());
+        let invisible = median(s.iter().map(|x| x.invisible as f64).collect());
         let runs = median(s.iter().map(|x| x.runs as f64).collect());
         println!(
-            "| {label} | {:.1} | {:.1} | {:.1} | {:.1} | {bytes:.0} | {changed:.0} | {skipped:.0} | {runs:.0} |",
+            "| {label} | {:.1} | {:.1} | {:.1} | {:.1} | {bytes:.0} | {changed:.0} | {skipped:.0} | {invisible:.0} | {runs:.0} |",
             median(total.clone()),
             min(&total),
             median(convert.clone()),
@@ -298,6 +299,10 @@ fn perf_split_probe() {
     row("encode identical frame", &identical);
 }
 
+/// Every mode `IterateFrameRenderer` can build in process: the legacy native modes,
+/// which are not in the registry, plus the registered ones. The registry-wide gate
+/// beside the timer gate covers the registered side independently, which is how the
+/// thirteen that were missing here were found.
 const NATIVE_MODES: &[&str] = &[
     "delta",
     "snakes",
@@ -356,7 +361,6 @@ const NATIVE_MODES: &[&str] = &[
     "opus-2-forest",
     "haiku-1-trees",
     "haiku-1-forest",
-    "opus-2-forest",
     "haiku-2-trees",
     "haiku-2-forest",
     "sonnet-2-trees",
@@ -365,6 +369,19 @@ const NATIVE_MODES: &[&str] = &[
     "sonnet-1-forest",
     "opus-5-dover",
     "prismata",
+    "astra-chaos-theory",
+    "astra-jurassic-park",
+    "astra-opus-1-chronofold",
+    "azulejo",
+    "bower",
+    "chimera-shadow-garden",
+    "gem-aetherium-2",
+    "gem-aetherium-3",
+    "moonwake",
+    "terminal-stress",
+    "tideglass",
+    "vesper",
+    "volute",
 ];
 
 #[test]

@@ -1588,6 +1588,7 @@ pub(crate) fn morph_worker_session(
                     emit: encode_stats.emit,
                     changed_cells: encode_stats.changed_cells,
                     skipped: encode_stats.skipped,
+                    invisible: encode_stats.invisible,
                     runs: encode_stats.runs,
                     full_repaint: encode_stats.full_repaint,
                     width: rw,

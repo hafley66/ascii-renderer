@@ -562,6 +562,9 @@ pub(crate) struct FrameSample {
     pub(crate) changed_cells: usize,
     /// Cells the encoder skipped because their raw `Cell` did not move.
     pub(crate) skipped: usize,
+    /// Cells the encoder adapted whose drawn value did not move, so it drew
+    /// nothing: the adapter work an invisible change still pays for.
+    pub(crate) invisible: usize,
     pub(crate) runs: usize,
     pub(crate) full_repaint: bool,
     pub(crate) width: usize,
@@ -584,6 +587,7 @@ struct FrameTotals {
     bytes: u128,
     changed_cells: u128,
     skipped: u128,
+    invisible: u128,
     runs: u128,
     full_repaints: u64,
     width: usize,
@@ -612,6 +616,7 @@ impl FrameTotals {
         self.bytes += sample.bytes as u128;
         self.changed_cells += sample.changed_cells as u128;
         self.skipped += sample.skipped as u128;
+        self.invisible += sample.invisible as u128;
         self.runs += sample.runs as u128;
         self.full_repaints += u64::from(sample.full_repaint);
         self.width = sample.width;
@@ -695,6 +700,7 @@ impl FrameProfiler {
                     "bytes": sample.bytes,
                     "changed_cells": sample.changed_cells,
                     "skipped": sample.skipped,
+                    "invisible": sample.invisible,
                     "runs": sample.runs,
                     "full_repaint": sample.full_repaint,
                     "grid": {"w": sample.width, "h": sample.height},
@@ -757,6 +763,8 @@ impl FrameProfiler {
             changed_cells_avg = self.totals.changed_cells as f64 / frames as f64,
             skipped_total = self.totals.skipped as u64,
             skipped_avg = self.totals.skipped as f64 / frames as f64,
+            invisible_total = self.totals.invisible as u64,
+            invisible_avg = self.totals.invisible as f64 / frames as f64,
             runs_total = self.totals.runs as u64,
             runs_avg = self.totals.runs as f64 / frames as f64,
             full_repaints = self.totals.full_repaints,
@@ -796,6 +804,7 @@ mod tests {
             bytes: 900,
             changed_cells: 80,
             skipped: 60,
+            invisible: 5,
             runs: 7,
             full_repaint: true,
             width: 80,
@@ -810,6 +819,7 @@ mod tests {
             bytes: 300,
             changed_cells: 20,
             skipped: 70,
+            invisible: 9,
             runs: 3,
             full_repaint: false,
             width: 80,
@@ -850,6 +860,7 @@ mod tests {
                 bytes: 1200,
                 changed_cells: 100,
                 skipped: 130,
+                invisible: 14,
                 runs: 10,
                 full_repaints: 1,
                 width: 80,

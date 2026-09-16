@@ -127,6 +127,16 @@ It rides `FrameEncodeStats` to `FrameSample`, the tracing report
 (`skipped_total/avg`) and the frame record, and it is what separates "the
 conversion got cheaper" from "the conversion stopped happening".
 
+A second counter on the same path is `invisible`: cells whose raw `Cell` moved but
+whose adapted value (glyph and the two mapped colors) did not, so the encoder adapted
+them and drew nothing. It rides the same four places (`invisible_total/avg` in the
+report, `invisible` in the frame record) and it is the adapter work that a resting or
+an invisible change still pays for. Zero on a full repaint by construction. The split
+probe prints it as `cells invisible` beside `cells skipped`. On prismata at 366x199
+with default knobs and dt 0.06, 5,630 cells enter the adapter branch on a delta frame
+and only 2,806 of them are drawn: 2,824, half the adapter work on that frame, moves
+raw and changes nothing on the terminal.
+
 The first live receipt already separates the two costs, from the E2E
 `max-400x200` case at 366x199 with every knob at max (17 frames, medians
 `convert` 1430 us, `emit` 3404 us, `encoding` 4869 us):
@@ -150,6 +160,14 @@ targets roughly 1.4 ms of every frame at this size, not the 3.4 ms.
 iterates `registered_modes()` and requires layer timers from every mode that
 `IterateFrameRenderer::new` can build (24 today). It reports its coverage, so a
 future run cannot pass by covering nothing. The original gate is untouched.
+
+The gap it exposed is closed: `NATIVE_MODES` was 66 entries with a duplicate and
+omitted 13 registered modes. It is now 78 unique names, every in-process mode
+`IterateFrameRenderer` can build, 55 of them legacy native modes that the registry
+does not hold and 23 registered ones, with the duplicate `opus-2-forest` removed.
+`every_native_mode_has_layer_timers` passes over the extended roster and the
+registry gate beside it still reports full coverage, so the thirteen modes that
+shipped outside the sweep are inside it now.
 
 ## 4. Verification
 
