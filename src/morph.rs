@@ -1573,6 +1573,8 @@ pub(crate) fn morph_worker_session(
                     encoding: encoding_elapsed.unwrap(),
                     presentation: presentation_started.unwrap().elapsed(),
                     bytes: frame_buffer.len(),
+                    convert: encode_stats.convert,
+                    emit: encode_stats.emit,
                     changed_cells: encode_stats.changed_cells,
                     runs: encode_stats.runs,
                     full_repaint: encode_stats.full_repaint,

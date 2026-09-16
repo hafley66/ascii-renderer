@@ -210,6 +210,10 @@ pub(crate) struct FrameEncodeStats {
     pub(crate) changed_cells: usize,
     pub(crate) runs: usize,
     pub(crate) full_repaint: bool,
+    /// Per-cell adapter loop: one ratatui write per cell, paid on every frame.
+    pub(crate) convert: std::time::Duration,
+    /// Diff scan plus ratatui emission of the changed cells.
+    pub(crate) emit: std::time::Duration,
 }
 
 /// Adapts the art grid to Ratatui's retained buffers and Crossterm backend.
@@ -256,12 +260,15 @@ impl AnsiFrameEncoder {
         }
         let full_repaint = force_full || !self.initialized;
         let option = if full_repaint { CellDiffOption::AlwaysUpdate } else { CellDiffOption::None };
+        let convert_started = std::time::Instant::now();
         for (source, target) in grid.iter().flatten().zip(&mut self.current.content) {
             target.set_char(source.ch)
                 .set_fg(if source.ch == ' ' { ratatui::style::Color::Reset } else { ratatui_color(source.fg) })
                 .set_bg(ratatui_color(source.bg))
                 .set_diff_option(option);
         }
+        let convert = convert_started.elapsed();
+        let emit_started = std::time::Instant::now();
         self.bytes.clear();
         let mut changed_cells = 0;
         let mut runs = 0;
@@ -284,8 +291,9 @@ impl AnsiFrameEncoder {
                 cell.set_diff_option(CellDiffOption::None);
             }
         }
+        let emit = emit_started.elapsed();
         self.initialized = true;
-        FrameEncodeStats { bytes: output.len(), changed_cells, runs, full_repaint }
+        FrameEncodeStats { bytes: output.len(), changed_cells, runs, full_repaint, convert, emit }
     }
 }
 

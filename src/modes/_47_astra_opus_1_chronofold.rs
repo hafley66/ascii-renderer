@@ -2,6 +2,7 @@
 //! Lease as `_N_astra_opus_1_chronofold.rs`; N is assigned by the integrator.
 //! Inline snapshots travel with this file when it is renamed.
 
+use crate::_0_profile::measure_layer;
 use crate::color::lerp_color;
 use crate::opts::param_f32;
 use crate::registry::{AnimKind, Mode, ModeFrame, Param};
@@ -220,47 +221,55 @@ fn draw_chronofold(frame: &mut ModeFrame<'_>, k: &[f32; 7]) {
     let p = frame.palette;
     let ink = p[0];
     let dim = lerp_color(ink, p[3], 0.23);
-    let ramp: [[Cell; 10]; 4] = std::array::from_fn(|band| {
-        std::array::from_fn(|light| {
-            let intensity = light as f32 / 9.0;
-            let color = lerp_color(p[[1, 3, 2, 3][band]], p[4], intensity.powi(3) * 0.85);
-            Cell::with_bg(
-                b".:-=+*#%@@"[light] as char,
-                lerp_color(ink, color, 0.32 + 0.68 * intensity),
-                lerp_color(ink, color, 0.06 + 0.20 * intensity),
-            )
+    let ramp: [[Cell; 10]; 4] = measure_layer("astra-opus-1-chronofold", "ramp", || {
+        std::array::from_fn(|band| {
+            std::array::from_fn(|light| {
+                let intensity = light as f32 / 9.0;
+                let color = lerp_color(p[[1, 3, 2, 3][band]], p[4], intensity.powi(3) * 0.85);
+                Cell::with_bg(
+                    b".:-=+*#%@@"[light] as char,
+                    lerp_color(ink, color, 0.32 + 0.68 * intensity),
+                    lerp_color(ink, color, 0.06 + 0.20 * intensity),
+                )
+            })
         })
     });
-    for (y, row) in frame.grid.iter_mut().take(height).enumerate() {
-        for (x, cell) in row.iter_mut().take(width).enumerate() {
-            let mut ch = ' ';
-            let ground = y as f32 / height as f32 - 0.72;
-            if ground > 0.0 && k[6] > 0.0 {
-                let perspective = 0.16 / (ground + 0.045);
-                let across = (x as f32 - width as f32 * 0.5) / height as f32 * perspective;
-                let course = perspective * 2.4 + phase(0.35) / TAU;
-                if across.rem_euclid(0.55) < 0.025 {
-                    ch = if x < width / 2 { '/' } else { '\\' };
+    measure_layer("astra-opus-1-chronofold", "stage", || {
+        for (y, row) in frame.grid.iter_mut().take(height).enumerate() {
+            for (x, cell) in row.iter_mut().take(width).enumerate() {
+                let mut ch = ' ';
+                let ground = y as f32 / height as f32 - 0.72;
+                if ground > 0.0 && k[6] > 0.0 {
+                    let perspective = 0.16 / (ground + 0.045);
+                    let across = (x as f32 - width as f32 * 0.5) / height as f32 * perspective;
+                    let course = perspective * 2.4 + phase(0.35) / TAU;
+                    if across.rem_euclid(0.55) < 0.025 {
+                        ch = if x < width / 2 { '/' } else { '\\' };
+                    }
+                    if course.rem_euclid(1.0) < 0.07 {
+                        ch = if ch == ' ' { '_' } else { '+' };
+                    }
                 }
-                if course.rem_euclid(1.0) < 0.07 {
-                    ch = if ch == ' ' { '_' } else { '+' };
-                }
+                *cell = Cell::with_bg(ch, lerp_color(ink, dim, k[6]), ink);
             }
-            *cell = Cell::with_bg(ch, lerp_color(ink, dim, k[6]), ink);
         }
-    }
+    });
     // Stable star identities; the number of samples is bounded independently of time.
-    for i in 0..(width.saturating_mul(height) / 110).min(400) {
-        let v = hash(identity.wrapping_add(i as u64));
-        let x = v as usize % width;
-        let y = (v >> 32) as usize % height;
-        if y < height * 3 / 4 {
-            frame.grid[y][x] = Cell::with_bg(if i % 7 == 0 { '+' } else { '.' }, dim, ink);
+    measure_layer("astra-opus-1-chronofold", "stars", || {
+        for i in 0..(width.saturating_mul(height) / 110).min(400) {
+            let v = hash(identity.wrapping_add(i as u64));
+            let x = v as usize % width;
+            let y = (v >> 32) as usize % height;
+            if y < height * 3 / 4 {
+                frame.grid[y][x] = Cell::with_bg(if i % 7 == 0 { '+' } else { '.' }, dim, ink);
+            }
         }
-    }
+    });
     let mut raster = Raster {
         grid: frame.grid,
-        depth: vec![0.0; width * height],
+        depth: measure_layer("astra-opus-1-chronofold", "depth", || {
+            vec![0.0; width * height]
+        }),
         width,
         height,
         scale: (height as f32 * 0.255).min(width as f32 * 0.13) * k[5],
@@ -279,102 +288,112 @@ fn draw_chronofold(frame: &mut ModeFrame<'_>, k: &[f32; 7]) {
         ]
     };
     let segments = (width.max(height).saturating_mul(3)).clamp(96, 640);
-    let mut world = Vec::<[V3; 8]>::with_capacity(segments + 1);
-    let mut projected = Vec::<[V3; 8]>::with_capacity(segments + 1);
-    // Integer winding closes the fluting seam even while the twist slider moves.
-    let twist = k[3].round();
-    for i in 0..=segments {
-        let u = (i % segments) as f32 / segments as f32 * TAU;
-        let center = knot(u);
-        let tangent = unit(sub(knot(u + 0.001), knot(u - 0.001)));
-        let radial = [(2.0 * u).cos(), (2.0 * u).sin(), 0.0];
-        let normal = unit(cross(tangent, radial));
-        let binormal = unit(cross(normal, tangent));
-        let vertices = std::array::from_fn(|j| {
-            let v = j as f32 / 8.0 * TAU + twist * u + phase(0.4);
-            let radius = k[2] * (1.0 + 0.12 * (lobes * u - phase(0.7)).sin());
-            raster.rotate(std::array::from_fn(|axis| {
-                center[axis] + radius * (normal[axis] * v.cos() + binormal[axis] * v.sin())
-            }))
-        });
-        projected.push(vertices.map(|v| raster.project(v)));
-        world.push(vertices);
-    }
-    for i in 0..segments {
-        for j in 0..8 {
-            let next = (j + 1) % 8;
-            let a = world[i][j];
-            let b = world[i + 1][j];
-            let c = world[i][next];
-            let n = unit(cross(sub(b, a), sub(c, a)));
-            let diffuse = (n[0] * -0.38 + n[1] * 0.64 + n[2] * 0.67).abs();
-            let light = ((0.15 + 0.70 * diffuse + 0.15 * n[2].abs().powi(12)) * 9.0)
-                .round()
-                .clamp(0.0, 9.0) as usize;
-            let band = (i * 12 / segments + (identity as usize & 3)) % 4;
-            let cell = ramp[band][light];
-            let a = projected[i][j];
-            let b = projected[i + 1][j];
-            let c = projected[i][next];
-            let d = projected[i + 1][next];
-            raster.triangle(a, b, c, cell);
-            raster.triangle(b, d, c, cell);
-            if i % (segments / 24).max(1) == 0 {
-                raster.line(
-                    a,
-                    c,
-                    Cell::with_bg('\0', lerp_color(cell.fg, p[4], 0.22), cell.bg),
-                );
-            }
+    let (world, projected) = measure_layer("astra-opus-1-chronofold", "section", || {
+        let mut world = Vec::<[V3; 8]>::with_capacity(segments + 1);
+        let mut projected = Vec::<[V3; 8]>::with_capacity(segments + 1);
+        // Integer winding closes the fluting seam even while the twist slider moves.
+        let twist = k[3].round();
+        for i in 0..=segments {
+            let u = (i % segments) as f32 / segments as f32 * TAU;
+            let center = knot(u);
+            let tangent = unit(sub(knot(u + 0.001), knot(u - 0.001)));
+            let radial = [(2.0 * u).cos(), (2.0 * u).sin(), 0.0];
+            let normal = unit(cross(tangent, radial));
+            let binormal = unit(cross(normal, tangent));
+            let vertices = std::array::from_fn(|j| {
+                let v = j as f32 / 8.0 * TAU + twist * u + phase(0.4);
+                let radius = k[2] * (1.0 + 0.12 * (lobes * u - phase(0.7)).sin());
+                raster.rotate(std::array::from_fn(|axis| {
+                    center[axis] + radius * (normal[axis] * v.cos() + binormal[axis] * v.sin())
+                }))
+            });
+            projected.push(vertices.map(|v| raster.project(v)));
+            world.push(vertices);
         }
-    }
-    for orbit in 0..k[4].round() as usize {
-        let hoop = |u: f32| {
-            let angle = orbit as f32 * 1.05 + 0.32;
-            let radius = 1.63 + orbit as f32 * 0.13;
-            raster.project(raster.rotate([
-                radius * u.cos(),
-                radius * u.sin() * angle.cos(),
-                radius * u.sin() * angle.sin(),
-            ]))
-        };
-        let points: Vec<_> = (0..=segments)
-            .map(|i| hoop(i as f32 / segments as f32 * TAU))
-            .collect();
-        let head = phase(0.55 + orbit as f64 * 0.19) + seed_phase + orbit as f32 * 2.0;
+        (world, projected)
+    });
+    measure_layer("astra-opus-1-chronofold", "facets", || {
         for i in 0..segments {
-            let u = i as f32 / segments as f32 * TAU;
-            let age = (head - u).rem_euclid(TAU);
-            let strength = (-age * 2.2).exp();
-            if i % 3 == 0 || strength > 0.2 {
-                let color = lerp_color(ink, p[3 - orbit % 3], 0.23 + 0.77 * strength);
-                raster.line(
-                    points[i],
-                    points[i + 1],
-                    Cell::with_bg(if strength > 0.7 { '*' } else { '\0' }, color, ink),
-                );
+            for j in 0..8 {
+                let next = (j + 1) % 8;
+                let a = world[i][j];
+                let b = world[i + 1][j];
+                let c = world[i][next];
+                let n = unit(cross(sub(b, a), sub(c, a)));
+                let diffuse = (n[0] * -0.38 + n[1] * 0.64 + n[2] * 0.67).abs();
+                let light = ((0.15 + 0.70 * diffuse + 0.15 * n[2].abs().powi(12)) * 9.0)
+                    .round()
+                    .clamp(0.0, 9.0) as usize;
+                let band = (i * 12 / segments + (identity as usize & 3)) % 4;
+                let cell = ramp[band][light];
+                let a = projected[i][j];
+                let b = projected[i + 1][j];
+                let c = projected[i][next];
+                let d = projected[i + 1][next];
+                raster.triangle(a, b, c, cell);
+                raster.triangle(b, d, c, cell);
+                if i % (segments / 24).max(1) == 0 {
+                    raster.line(
+                        a,
+                        c,
+                        Cell::with_bg('\0', lerp_color(cell.fg, p[4], 0.22), cell.bg),
+                    );
+                }
             }
         }
-    }
+    });
+    measure_layer("astra-opus-1-chronofold", "orbits", || {
+        for orbit in 0..k[4].round() as usize {
+            let hoop = |u: f32| {
+                let angle = orbit as f32 * 1.05 + 0.32;
+                let radius = 1.63 + orbit as f32 * 0.13;
+                raster.project(raster.rotate([
+                    radius * u.cos(),
+                    radius * u.sin() * angle.cos(),
+                    radius * u.sin() * angle.sin(),
+                ]))
+            };
+            let points: Vec<_> = (0..=segments)
+                .map(|i| hoop(i as f32 / segments as f32 * TAU))
+                .collect();
+            let head = phase(0.55 + orbit as f64 * 0.19) + seed_phase + orbit as f32 * 2.0;
+            for i in 0..segments {
+                let u = i as f32 / segments as f32 * TAU;
+                let age = (head - u).rem_euclid(TAU);
+                let strength = (-age * 2.2).exp();
+                if i % 3 == 0 || strength > 0.2 {
+                    let color = lerp_color(ink, p[3 - orbit % 3], 0.23 + 0.77 * strength);
+                    raster.line(
+                        points[i],
+                        points[i + 1],
+                        Cell::with_bg(if strength > 0.7 { '*' } else { '\0' }, color, ink),
+                    );
+                }
+            }
+        }
+    });
     // Labels are ASCII and clipped; small canvases retain the sculpture alone.
-    if width >= 48 && height >= 16 {
-        for (y, label) in [
-            (1, "ASTRA / OPUS REPLAY 01"),
-            (height - 2, "C H R O N O F O L D   /   TORUS STUDY"),
-        ] {
-            for (i, ch) in label.chars().enumerate().take(width.saturating_sub(4)) {
-                raster.grid[y][i + 2] = Cell::with_bg(ch, if y == 1 { dim } else { p[3] }, ink);
+    measure_layer("astra-opus-1-chronofold", "labels", || {
+        if width >= 48 && height >= 16 {
+            for (y, label) in [
+                (1, "ASTRA / OPUS REPLAY 01"),
+                (height - 2, "C H R O N O F O L D   /   TORUS STUDY"),
+            ] {
+                for (i, ch) in label.chars().enumerate().take(width.saturating_sub(4)) {
+                    raster.grid[y][i + 2] =
+                        Cell::with_bg(ch, if y == 1 { dim } else { p[3] }, ink);
+                }
+            }
+            for (x, y) in [
+                (0, 0),
+                (width - 1, 0),
+                (0, height - 1),
+                (width - 1, height - 1),
+            ] {
+                raster.grid[y][x] = Cell::with_bg('+', dim, ink);
             }
         }
-        for (x, y) in [
-            (0, 0),
-            (width - 1, 0),
-            (0, height - 1),
-            (width - 1, height - 1),
-        ] {
-            raster.grid[y][x] = Cell::with_bg('+', dim, ink);
-        }
-    }
+    });
 }
 
 #[cfg(test)]

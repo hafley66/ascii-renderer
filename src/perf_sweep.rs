@@ -2,7 +2,7 @@
 //! a large grid, fps table, then an in-process layer hotspot table for the worst.
 use crate::_0_profile::{layer_capture_begin, layer_capture_end};
 use crate::morph::IterateFrameRenderer;
-use crate::registry::mode_spec;
+use crate::registry::{mode_spec, registered_modes};
 use std::hint::black_box;
 use std::time::{Duration, Instant};
 
@@ -255,6 +255,7 @@ const NATIVE_MODES: &[&str] = &[
     "sonnet-1-trees",
     "sonnet-1-forest",
     "opus-5-dover",
+    "prismata",
 ];
 
 #[test]
@@ -276,6 +277,37 @@ fn every_native_mode_has_layer_timers() {
     assert!(
         missing.is_empty(),
         "modes without layer timers: {}",
+        missing.join(", ")
+    );
+}
+
+/// NATIVE_MODES is only the sweep's subset; the registry is the roster. A mode
+/// that renders in-process must fire layer timers or its hotspots are invisible,
+/// which is how eight registered modes shipped with no timers at all.
+#[test]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
+fn every_registered_mode_that_renders_in_process_has_layer_timers() {
+    let mut missing = Vec::new();
+    let mut covered = 0usize;
+    for (name, _) in registered_modes().iter() {
+        let Some(mut r) = IterateFrameRenderer::new(name, 42, "moss", 120, 40) else {
+            continue;
+        };
+        covered += 1;
+        layer_capture_begin();
+        let ok = r.render(0.5, None).is_some();
+        let layers = layer_capture_end();
+        if !ok || layers.is_empty() {
+            missing.push(name.to_string());
+        }
+    }
+    assert!(
+        covered > 0,
+        "no registered mode rendered in process; the gate proved nothing"
+    );
+    assert!(
+        missing.is_empty(),
+        "{covered} in-process registered modes checked, without layer timers: {}",
         missing.join(", ")
     );
 }

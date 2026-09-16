@@ -1,3 +1,4 @@
+use crate::_0_profile::measure_layer;
 use crate::color::{darken, lerp_color};
 use crate::opts::param_f32;
 use crate::registry::{AnimKind, Mode, ModeFrame, Param};
@@ -37,19 +38,21 @@ impl Mode for VoluteMode {
     fn render(&self, frame: &mut ModeFrame<'_>) {
         // Resolve positional arguments, native controls, then live/env defaults.
         // Sanitize each input before evaluating a frame with no retained state.
-        let controls = std::array::from_fn(|i| {
-            let p = &PARAMS[i];
-            let value = frame
-                .args
-                .get(i + 4)
-                .and_then(|v| v.parse::<f32>().ok())
-                .or_else(|| frame.param_values.and_then(|v| v.get(i)).copied())
-                .unwrap_or_else(|| param_f32(p.key, p.default));
-            if value.is_finite() {
-                value.clamp(p.min, p.max)
-            } else {
-                p.default
-            }
+        let controls: [f32; 6] = measure_layer("volute", "controls", || {
+            std::array::from_fn(|i| {
+                let p = &PARAMS[i];
+                let value = frame
+                    .args
+                    .get(i + 4)
+                    .and_then(|v| v.parse::<f32>().ok())
+                    .or_else(|| frame.param_values.and_then(|v| v.get(i)).copied())
+                    .unwrap_or_else(|| param_f32(p.key, p.default));
+                if value.is_finite() {
+                    value.clamp(p.min, p.max)
+                } else {
+                    p.default
+                }
+            })
         });
         draw_volute(frame, &controls);
     }
@@ -65,108 +68,128 @@ fn draw_volute(frame: &mut ModeFrame<'_>, controls: &[f32; 6]) {
         return;
     }
     let [scale, coil, chambers, nacre, tide, speed] = *controls;
-    let t = if frame.time.is_finite() {
-        frame.time.clamp(-1_000_000.0, 1_000_000.0) * speed
-    } else {
-        0.0
-    };
-    let seed_phase =
-        (frame.seed.wrapping_mul(0x9e3779b97f4a7c15) >> 40) as f32 / 16_777_216.0 * TAU;
-    let orientation = -0.65 + seed_phase + 0.13 * (t * 0.37).sin();
-    let radius = (w as f32 * 0.32).min(h as f32 * 0.76) * scale;
-    let cx = w as f32 * 0.48;
-    let cy = h as f32 * 0.49;
-    // Adjacent whorls nearly touch, leaving a dark spiral suture between them.
-    let thickness = (coil * TAU * 0.5).tanh() * 0.96;
-    let shrink = (-coil * TAU).exp();
-    let ink = darken(frame.palette[0], 18);
-    let pearl = frame.palette[4];
-    let current = lerp_color(ink, frame.palette[2], 0.42);
-    let ramp = ['.', ':', '-', '=', '+', '*', '#', '%', '@'];
-    // Quantized material ramps avoid per-cell color conversions in the shell.
-    let material: [[Cell; 32]; 8] = std::array::from_fn(|band| {
-        let pigment = lerp_color(frame.palette[1], frame.palette[3], band as f32 / 7.0);
-        std::array::from_fn(|level| {
-            let light = level as f32 / 31.0;
-            Cell::with_bg(
-                ramp[(light * 8.0) as usize],
-                lerp_color(pigment, pearl, light),
-                lerp_color(ink, pigment, 0.12 + light * 0.26),
+    let (t, seed_phase, orientation, radius, cx, cy, thickness, shrink, ink, pearl, current) =
+        measure_layer("volute", "geometry", || {
+            let t = if frame.time.is_finite() {
+                frame.time.clamp(-1_000_000.0, 1_000_000.0) * speed
+            } else {
+                0.0
+            };
+            let seed_phase =
+                (frame.seed.wrapping_mul(0x9e3779b97f4a7c15) >> 40) as f32 / 16_777_216.0 * TAU;
+            let orientation = -0.65 + seed_phase + 0.13 * (t * 0.37).sin();
+            let radius = (w as f32 * 0.32).min(h as f32 * 0.76) * scale;
+            let cx = w as f32 * 0.48;
+            let cy = h as f32 * 0.49;
+            // Adjacent whorls nearly touch, leaving a dark spiral suture between them.
+            let thickness = (coil * TAU * 0.5).tanh() * 0.96;
+            let shrink = (-coil * TAU).exp();
+            let ink = darken(frame.palette[0], 18);
+            let pearl = frame.palette[4];
+            let current = lerp_color(ink, frame.palette[2], 0.42);
+            (
+                t,
+                seed_phase,
+                orientation,
+                radius,
+                cx,
+                cy,
+                thickness,
+                shrink,
+                ink,
+                pearl,
+                current,
             )
+        });
+    let material: [[Cell; 32]; 8] = measure_layer("volute", "material", || {
+        let ramp = ['.', ':', '-', '=', '+', '*', '#', '%', '@'];
+        // Quantized material ramps avoid per-cell color conversions in the shell.
+        std::array::from_fn(|band| {
+            let pigment = lerp_color(frame.palette[1], frame.palette[3], band as f32 / 7.0);
+            std::array::from_fn(|level| {
+                let light = level as f32 / 31.0;
+                Cell::with_bg(
+                    ramp[(light * 8.0) as usize],
+                    lerp_color(pigment, pearl, light),
+                    lerp_color(ink, pigment, 0.12 + light * 0.26),
+                )
+            })
         })
     });
-    for (y, row) in frame.grid.iter_mut().enumerate() {
-        for (x, cell) in row.iter_mut().enumerate() {
-            let px = x as f32 + 0.5 - cx;
-            let py = (y as f32 + 0.5 - cy) * 2.0;
-            let r = px.hypot(py);
-            let angle = py.atan2(px);
-            let theta = (angle - orientation).rem_euclid(TAU);
-            let mut shell = None;
-            let mut center_r = radius * (-coil * theta).exp();
-            for turn in 0..4 {
-                let d = (r - center_r) / (center_r * thickness).max(0.001);
-                if d.abs() <= 1.0 {
-                    shell = Some((theta + turn as f32 * TAU, d, center_r));
-                    break;
+    measure_layer("volute", "shell", || {
+        for (y, row) in frame.grid.iter_mut().enumerate() {
+            for (x, cell) in row.iter_mut().enumerate() {
+                let px = x as f32 + 0.5 - cx;
+                let py = (y as f32 + 0.5 - cy) * 2.0;
+                let r = px.hypot(py);
+                let angle = py.atan2(px);
+                let theta = (angle - orientation).rem_euclid(TAU);
+                let mut shell = None;
+                let mut center_r = radius * (-coil * theta).exp();
+                for turn in 0..4 {
+                    let d = (r - center_r) / (center_r * thickness).max(0.001);
+                    if d.abs() <= 1.0 {
+                        shell = Some((theta + turn as f32 * TAU, d, center_r));
+                        break;
+                    }
+                    center_r *= shrink;
                 }
-                center_r *= shrink;
-            }
-            *cell = Cell::with_bg(' ', current, ink);
-            if let Some((a, d, local_radius)) = shell {
-                let chamber = a * chambers / TAU + 0.32 * (d * d - d);
-                let seam = chamber.rem_euclid(1.0);
-                let wall = (0.17 * chambers / local_radius.max(1.0)).clamp(0.045, 0.23);
-                let edge = (1.4 / (local_radius * thickness).max(1.0)).min(0.32);
-                let rib = (a * 83.0 + d * 12.0 + seed_phase).sin();
-                let shimmer = (a * 2.3 - d * 3.5 - t * 0.7).sin();
-                let light = (0.28
-                    + 0.43 * (1.0 - d * d).sqrt()
-                    + 0.13 * (angle + 2.2).cos()
-                    + nacre * (0.1 * rib + 0.12 * shimmer))
-                    .clamp(0.0, 1.0);
-                let band = ((chamber.floor() as i32).rem_euclid(8)) as usize;
-                *cell = material[band][(light * 31.0) as usize];
-                if d.abs() > 1.0 - edge {
-                    cell.ch = if px.abs() > py.abs() * 1.4 {
-                        '|'
-                    } else if py.abs() > px.abs() * 1.4 {
-                        '_'
-                    } else if px * py > 0.0 {
-                        '/'
-                    } else {
-                        '\\'
-                    };
-                    cell.fg = pearl;
-                } else if seam < wall {
-                    cell.ch = if py.abs() > px.abs() * 1.5 {
-                        '|'
-                    } else if px.abs() > py.abs() * 2.0 {
-                        '-'
-                    } else if px * py > 0.0 {
-                        '\\'
-                    } else {
-                        '/'
-                    };
-                    cell.fg = lerp_color(pearl, frame.palette[2], 0.25);
-                    cell.bg = ink;
-                }
-            } else if r < radius * (-coil * TAU * 4.0).exp() * 1.4 {
-                *cell = Cell::with_bg('o', pearl, ink);
-            } else if tide > 0.0 {
-                // Stream function bends parallel currents around the shell.
-                let u = px / radius.max(1.0);
-                let v = py / radius.max(1.0);
-                let stream = v * (1.0 - 0.65 / (u * u + v * v + 0.65))
-                    + tide * 0.09 * (u * 4.0 - t * 0.8 + seed_phase).sin();
-                let line = (stream * 9.0 + t * 0.16).rem_euclid(1.0);
-                let dash = (u * 8.0 - t * 1.3 + stream * 3.0).rem_euclid(3.0);
-                if line < 0.07 + 0.12 * tide && dash < 1.4 && r > radius * 0.32 {
-                    cell.ch = if line < 0.055 { '~' } else { '.' };
+                *cell = Cell::with_bg(' ', current, ink);
+                if let Some((a, d, local_radius)) = shell {
+                    let chamber = a * chambers / TAU + 0.32 * (d * d - d);
+                    let seam = chamber.rem_euclid(1.0);
+                    let wall = (0.17 * chambers / local_radius.max(1.0)).clamp(0.045, 0.23);
+                    let edge = (1.4 / (local_radius * thickness).max(1.0)).min(0.32);
+                    let rib = (a * 83.0 + d * 12.0 + seed_phase).sin();
+                    let shimmer = (a * 2.3 - d * 3.5 - t * 0.7).sin();
+                    let light = (0.28
+                        + 0.43 * (1.0 - d * d).sqrt()
+                        + 0.13 * (angle + 2.2).cos()
+                        + nacre * (0.1 * rib + 0.12 * shimmer))
+                        .clamp(0.0, 1.0);
+                    let band = ((chamber.floor() as i32).rem_euclid(8)) as usize;
+                    *cell = material[band][(light * 31.0) as usize];
+                    if d.abs() > 1.0 - edge {
+                        cell.ch = if px.abs() > py.abs() * 1.4 {
+                            '|'
+                        } else if py.abs() > px.abs() * 1.4 {
+                            '_'
+                        } else if px * py > 0.0 {
+                            '/'
+                        } else {
+                            '\\'
+                        };
+                        cell.fg = pearl;
+                    } else if seam < wall {
+                        cell.ch = if py.abs() > px.abs() * 1.5 {
+                            '|'
+                        } else if px.abs() > py.abs() * 2.0 {
+                            '-'
+                        } else if px * py > 0.0 {
+                            '\\'
+                        } else {
+                            '/'
+                        };
+                        cell.fg = lerp_color(pearl, frame.palette[2], 0.25);
+                        cell.bg = ink;
+                    }
+                } else if r < radius * (-coil * TAU * 4.0).exp() * 1.4 {
+                    *cell = Cell::with_bg('o', pearl, ink);
+                } else if tide > 0.0 {
+                    // Stream function bends parallel currents around the shell.
+                    let u = px / radius.max(1.0);
+                    let v = py / radius.max(1.0);
+                    let stream = v * (1.0 - 0.65 / (u * u + v * v + 0.65))
+                        + tide * 0.09 * (u * 4.0 - t * 0.8 + seed_phase).sin();
+                    let line = (stream * 9.0 + t * 0.16).rem_euclid(1.0);
+                    let dash = (u * 8.0 - t * 1.3 + stream * 3.0).rem_euclid(3.0);
+                    if line < 0.07 + 0.12 * tide && dash < 1.4 && r > radius * 0.32 {
+                        cell.ch = if line < 0.055 { '~' } else { '.' };
+                    }
                 }
             }
         }
-    }
+    });
 }
 
 #[cfg(test)]

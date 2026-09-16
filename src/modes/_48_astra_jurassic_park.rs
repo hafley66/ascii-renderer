@@ -1,6 +1,7 @@
 //! Astra's Fern Valley preserve: deterministic identities, terrain lanes and gaits.
 //! Every frame is evaluated independently from its explicit inputs.
 
+use crate::_0_profile::measure_layer;
 use crate::opts::param_f32;
 use crate::registry::{AnimKind, Mode, ModeFrame, Param};
 use crate::types::{Cell, Grid};
@@ -653,10 +654,8 @@ fn fern(canvas: &mut Canvas<'_>, base: Point, size: f32, phase: f32, color: Colo
 
 #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn draw_preserve(frame: &mut ModeFrame<'_>, k: &[f32; 15]) {
-    // Initialize the clipped canvas, seed identities, atmosphere and terrain.
-    // Evaluate herd gait, water, cloud and fern phases from the explicit clock.
-    // Rasterize bounded mountain columns, fence, plants and depth-sorted animals.
-    // Finish with sparse rain and corner foliage for foreground occlusion.
+    // Seed the clipped canvas, atmosphere and terrain, then paint in layer order:
+    // sky_terrain, mountains, backdrop, vegetation, herd, dinosaurs, rain, ferns.
     let height = frame.height.min(frame.grid.len());
     let width = frame.width.min(
         frame
@@ -716,135 +715,155 @@ fn draw_preserve(frame: &mut ModeFrame<'_>, k: &[f32; 15]) {
         width,
         height,
     };
-    for y in 0..height {
-        for x in 0..width {
-            let p = y as f32 / height as f32;
-            let noise = random(seed, (x + y * width) as u64);
-            let ground = y as f32 > horizon;
-            let stream = (x as f32 / width as f32 - 0.51 - (p * 8.0).sin() * 0.065).abs();
-            let ch = if ground && stream < 0.014 + p * 0.015 {
-                if ((x as f32 / unit + time * 2.0 + y as f32 / unit) * 0.7).sin() > 0.35 {
-                    '~'
+    measure_layer("astra-jurassic-park", "sky_terrain", || {
+        for y in 0..height {
+            for x in 0..width {
+                let p = y as f32 / height as f32;
+                let noise = random(seed, (x + y * width) as u64);
+                let ground = y as f32 > horizon;
+                let stream =
+                    (x as f32 / width as f32 - 0.51 - (p * 8.0).sin() * 0.065).abs();
+                let ch = if ground && stream < 0.014 + p * 0.015 {
+                    if ((x as f32 / unit + time * 2.0 + y as f32 / unit) * 0.7).sin() > 0.35 {
+                        '~'
+                    } else {
+                        ' '
+                    }
+                } else if ground && noise < 0.045 {
+                    ','
+                } else if ground && noise > 0.982 {
+                    '.'
+                } else if !ground && k[4] < 0.3 && noise < 0.016 {
+                    '*'
                 } else {
                     ' '
-                }
-            } else if ground && noise < 0.045 {
-                ','
-            } else if ground && noise > 0.982 {
-                '.'
-            } else if !ground && k[4] < 0.3 && noise < 0.016 {
-                '*'
-            } else {
-                ' '
-            };
-            canvas.grid[y][x] =
-                Cell::with_bg(ch, mist, if ground { tint(sky, leaf, 0.07) } else { sky });
+                };
+                canvas.grid[y][x] =
+                    Cell::with_bg(ch, mist, if ground { tint(sky, leaf, 0.07) } else { sky });
+            }
         }
-    }
+    });
     // Mountain silhouettes occupy only their clipped skyline-to-horizon interval.
-    for x in 0..width {
-        let nx = x as f32 / width as f32;
-        let ridge = ((nx * 4.0 + random(seed, 8)).fract() - 0.5).abs() * 2.0;
-        let top = (height as f32 * (0.12 + ridge * 0.14 + (1.0 - k[6]) * 0.06)) as usize;
-        for y in top..(horizon as usize).min(height) {
-            let ch = if y == top {
-                if ridge < 0.1 {
-                    '^'
-                } else if (nx * 4.0 + random(seed, 8)).fract() < 0.5 {
-                    '/'
+    measure_layer("astra-jurassic-park", "mountains", || {
+        for x in 0..width {
+            let nx = x as f32 / width as f32;
+            let ridge = ((nx * 4.0 + random(seed, 8)).fract() - 0.5).abs() * 2.0;
+            let top = (height as f32 * (0.12 + ridge * 0.14 + (1.0 - k[6]) * 0.06)) as usize;
+            for y in top..(horizon as usize).min(height) {
+                let ch = if y == top {
+                    if ridge < 0.1 {
+                        '^'
+                    } else if (nx * 4.0 + random(seed, 8)).fract() < 0.5 {
+                        '/'
+                    } else {
+                        '\\'
+                    }
+                } else if (x + y * 3) % 13 == 0 {
+                    '.'
                 } else {
-                    '\\'
-                }
-            } else if (x + y * 3) % 13 == 0 {
-                '.'
-            } else {
-                ' '
-            };
-            canvas.put([x as f32, y as f32], ch, mist);
+                    ' '
+                };
+                canvas.put([x as f32, y as f32], ch, mist);
+            }
         }
-    }
-    canvas.ellipse(
-        [width as f32 * 0.81, height as f32 * 0.08],
-        [2.0 * unit, 0.8 * unit],
-        gold,
-        seed,
-    );
-    for i in 0..3 {
-        let x = (random(seed, 40 + i) * width as f32 + time * unit * 0.5).rem_euclid(width as f32);
-        let y = (0.055 + i as f32 * 0.035) * height as f32;
-        canvas.line([x - 2.0 * unit, y], [x + 2.0 * unit, y], '_', mist);
-    }
-    let fence_y = (height as f32 * 0.35).round();
-    canvas.line([0.0, fence_y], [width as f32 - 1.0, fence_y], '-', gold);
-    let post_step = (6.0 * unit).round().max(2.0) as usize;
-    for x in (0..width).step_by(post_step) {
-        canvas.line(
-            [x as f32, fence_y - unit],
-            [x as f32, fence_y + unit],
-            '|',
+    });
+    let fence_y = measure_layer("astra-jurassic-park", "backdrop", || {
+        canvas.ellipse(
+            [width as f32 * 0.81, height as f32 * 0.08],
+            [2.0 * unit, 0.8 * unit],
             gold,
+            seed,
         );
-    }
-    let plant_count = ((width as f32 / (6.0 * unit)) * k[3]) as usize;
-    for i in 0..plant_count.min(width) {
-        let identity = hash(seed.wrapping_add(i as u64 * 97));
-        let x = random(identity, 1) * width as f32;
-        let y = horizon + unit * (1.4 + random(identity, 2) * 1.7);
-        fern(
-            &mut canvas,
-            [x, y],
-            unit * (0.7 + random(identity, 3)),
-            time + random(identity, 4) * TAU,
-            leaf,
-        );
-    }
-    if width >= 36 && height >= 12 {
-        let label = "[ FERN VALLEY ]";
-        let start = width / 2 - label.len() / 2;
-        for (i, ch) in label.chars().enumerate() {
-            canvas.put([(start + i) as f32, fence_y], ch, gold);
+        for i in 0..3 {
+            let x = (random(seed, 40 + i) * width as f32 + time * unit * 0.5)
+                .rem_euclid(width as f32);
+            let y = (0.055 + i as f32 * 0.035) * height as f32;
+            canvas.line([x - 2.0 * unit, y], [x + 2.0 * unit, y], '_', mist);
         }
-    }
-    let mut animals = herd(width, height, frame.seed, k, frame.palette);
-    for animal in &mut animals {
-        place_animal(animal, time, k);
-    }
-    animals.sort_by(|a, b| a.origin[1].total_cmp(&b.origin[1]));
-    for animal in &mut animals {
-        let distance = 1.0 - animal.origin[1] / height as f32;
-        animal.color = tint(
-            animal.color,
-            sky,
-            (1.0 - k[4]) * 0.38 + distance * k[6] * 0.25,
-        );
-        draw_dinosaur(&mut canvas, animal, time, k);
-    }
+        let fence_y = (height as f32 * 0.35).round();
+        canvas.line([0.0, fence_y], [width as f32 - 1.0, fence_y], '-', gold);
+        let post_step = (6.0 * unit).round().max(2.0) as usize;
+        for x in (0..width).step_by(post_step) {
+            canvas.line(
+                [x as f32, fence_y - unit],
+                [x as f32, fence_y + unit],
+                '|',
+                gold,
+            );
+        }
+        fence_y
+    });
+    measure_layer("astra-jurassic-park", "vegetation", || {
+        let plant_count = ((width as f32 / (6.0 * unit)) * k[3]) as usize;
+        for i in 0..plant_count.min(width) {
+            let identity = hash(seed.wrapping_add(i as u64 * 97));
+            let x = random(identity, 1) * width as f32;
+            let y = horizon + unit * (1.4 + random(identity, 2) * 1.7);
+            fern(
+                &mut canvas,
+                [x, y],
+                unit * (0.7 + random(identity, 3)),
+                time + random(identity, 4) * TAU,
+                leaf,
+            );
+        }
+        if width >= 36 && height >= 12 {
+            let label = "[ FERN VALLEY ]";
+            let start = width / 2 - label.len() / 2;
+            for (i, ch) in label.chars().enumerate() {
+                canvas.put([(start + i) as f32, fence_y], ch, gold);
+            }
+        }
+    });
+    let mut animals = measure_layer("astra-jurassic-park", "herd", || {
+        let mut animals = herd(width, height, frame.seed, k, frame.palette);
+        for animal in &mut animals {
+            place_animal(animal, time, k);
+        }
+        animals.sort_by(|a, b| a.origin[1].total_cmp(&b.origin[1]));
+        animals
+    });
+    measure_layer("astra-jurassic-park", "dinosaurs", || {
+        for animal in &mut animals {
+            let distance = 1.0 - animal.origin[1] / height as f32;
+            animal.color = tint(
+                animal.color,
+                sky,
+                (1.0 - k[4]) * 0.38 + distance * k[6] * 0.25,
+            );
+            draw_dinosaur(&mut canvas, animal, time, k);
+        }
+    });
     let drops = (width.saturating_mul(height) as f32 * k[8] * 0.022) as usize;
-    for i in 0..drops.min(width.saturating_mul(height)) {
-        let x = (random(seed, 500 + i as u64 * 2) * width as f32 - time * unit * 2.0)
-            .rem_euclid(width as f32);
-        let y = (random(seed, 501 + i as u64 * 2) * height as f32 + time * unit * 5.0)
-            .rem_euclid(height as f32);
-        // Sparse atmospheric marks only touch unoccupied cells.
-        if canvas.grid[y as usize][x as usize].ch == ' ' {
-            canvas.put([x.floor(), y.floor()], '/', mist);
+    measure_layer("astra-jurassic-park", "rain", || {
+        for i in 0..drops.min(width.saturating_mul(height)) {
+            let x = (random(seed, 500 + i as u64 * 2) * width as f32 - time * unit * 2.0)
+                .rem_euclid(width as f32);
+            let y = (random(seed, 501 + i as u64 * 2) * height as f32 + time * unit * 5.0)
+                .rem_euclid(height as f32);
+            // Sparse atmospheric marks only touch unoccupied cells.
+            if canvas.grid[y as usize][x as usize].ch == ' ' {
+                canvas.put([x.floor(), y.floor()], '/', mist);
+            }
         }
-    }
-    for i in 0..(k[3] * 6.0).ceil() as usize {
-        let left = i % 2 == 0;
-        let x = if left {
-            i as f32 * unit * 1.3
-        } else {
-            width as f32 - 1.0 - i as f32 * unit * 1.3
-        };
-        fern(
-            &mut canvas,
-            [x, height as f32 - 1.0],
-            unit * (1.5 + random(seed, 90 + i as u64)),
-            time * 1.3 + i as f32,
-            leaf,
-        );
-    }
+    });
+    measure_layer("astra-jurassic-park", "foreground_ferns", || {
+        for i in 0..(k[3] * 6.0).ceil() as usize {
+            let left = i % 2 == 0;
+            let x = if left {
+                i as f32 * unit * 1.3
+            } else {
+                width as f32 - 1.0 - i as f32 * unit * 1.3
+            };
+            fern(
+                &mut canvas,
+                [x, height as f32 - 1.0],
+                unit * (1.5 + random(seed, 90 + i as u64)),
+                time * 1.3 + i as f32,
+                leaf,
+            );
+        }
+    });
 }
 
 #[cfg(test)]

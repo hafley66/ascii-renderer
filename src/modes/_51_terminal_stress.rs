@@ -1,6 +1,7 @@
 //! O(width * height) terminal-output stress; fixed 256-entry stack wave table.
 //! Frame-owned inputs only. Density/churn/color/background maxima increase output
 //! work without adding nested passes or geometry allocations.
+use crate::_0_profile::measure_layer;
 use crate::opts::param_f32;
 use crate::registry::{AnimKind, Mode, ModeFrame, Param};
 use crate::types::Cell;
@@ -53,13 +54,15 @@ impl Mode for TerminalStress {
     #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn render(&self, frame: &mut ModeFrame<'_>) {
         // Resolve declared controls once, then precompute one periodic wave table.
-        let values: [f32; 8] = std::array::from_fn(|i| {
-            frame
-                .param_values
-                .and_then(|v| v.get(i))
-                .copied()
-                .unwrap_or_else(|| param_f32(PARAMS[i].key, PARAMS[i].default))
-                .clamp(PARAMS[i].min, PARAMS[i].max)
+        let values: [f32; 8] = measure_layer("terminal-stress", "knobs", || {
+            std::array::from_fn(|i| {
+                frame
+                    .param_values
+                    .and_then(|v| v.get(i))
+                    .copied()
+                    .unwrap_or_else(|| param_f32(PARAMS[i].key, PARAMS[i].default))
+                    .clamp(PARAMS[i].min, PARAMS[i].max)
+            })
         });
         let density = (values[0] * 1024.0) as u32;
         let churn = (values[1] * 1024.0) as u32;
@@ -67,60 +70,73 @@ impl Mode for TerminalStress {
         let background = (values[3] * 1024.0) as u32;
         let frequency = values[4] as u32;
         let tick = (frame.time.max(0.0) * values[5]).round() as u32;
-        let glyphs = if values[6] >= 0.5 {
-            ['·', '░', '▒', '▓', '█', '╳', '╬', '⣿']
-        } else {
-            ['.', ':', '+', 'o', 'x', '%', '#', '@']
-        };
-        let waves: [i32; 256] = std::array::from_fn(|i| {
-            ((i as f32 * std::f32::consts::TAU / 256.0).sin() * 127.0) as i32
+        let glyphs = measure_layer("terminal-stress", "glyphs", || {
+            if values[6] >= 0.5 {
+                ['·', '░', '▒', '▓', '█', '╳', '╬', '⣿']
+            } else {
+                ['.', ':', '+', 'o', 'x', '%', '#', '@']
+            }
+        });
+        let waves: [i32; 256] = measure_layer("terminal-stress", "wave_table", || {
+            std::array::from_fn(|i| {
+                ((i as f32 * std::f32::consts::TAU / 256.0).sin() * 127.0) as i32
+            })
         });
         // Evaluate each cell directly from seed, position and time. Every knob
         // preserves one visit per existing grid cell, including simultaneous max.
-        for (y, row) in frame.grid.iter_mut().enumerate() {
-            for (x, cell) in row.iter_mut().enumerate() {
-                let mut hash = (x as u32).wrapping_mul(0x9e3779b9)
-                    ^ (y as u32).wrapping_mul(0x85ebca6b)
-                    ^ frame.seed as u32;
-                hash ^= hash >> 16;
-                hash = hash.wrapping_mul(0x7feb352d);
-                hash ^= hash >> 15;
-                if hash & 1023 >= density {
-                    *cell = Cell {
-                        ch: ' ',
-                        fg: Color::Reset,
-                        bg: Color::Reset,
-                    };
-                    continue;
-                }
-                let phase = if (hash >> 10) & 1023 < churn { tick } else { 0 };
-                let u = (x as u32).wrapping_mul(frequency).wrapping_add(phase);
-                let v = (y as u32)
-                    .wrapping_mul(frequency * 2)
-                    .wrapping_add(frame.seed as u32);
-                let value = match values[7] as u32 {
-                    0 => ((waves[(u & 255) as usize] + waves[(v & 255) as usize] + 256) / 2) as u32,
-                    1 => {
-                        let radius = x.abs_diff(frame.width / 2) + y.abs_diff(frame.height / 2) * 2;
-                        (waves[((radius as u32).wrapping_mul(frequency).wrapping_add(phase) & 255)
-                            as usize]
-                            + 128) as u32
+        measure_layer("terminal-stress", "cells", || {
+            for (y, row) in frame.grid.iter_mut().enumerate() {
+                for (x, cell) in row.iter_mut().enumerate() {
+                    let mut hash = (x as u32).wrapping_mul(0x9e3779b9)
+                        ^ (y as u32).wrapping_mul(0x85ebca6b)
+                        ^ frame.seed as u32;
+                    hash ^= hash >> 16;
+                    hash = hash.wrapping_mul(0x7feb352d);
+                    hash ^= hash >> 15;
+                    if hash & 1023 >= density {
+                        *cell = Cell {
+                            ch: ' ',
+                            fg: Color::Reset,
+                            bg: Color::Reset,
+                        };
+                        continue;
                     }
-                    _ => hash.wrapping_add(phase.wrapping_mul(0x45d9f3b)) ^ phase.rotate_left(13),
-                };
-                *cell = Cell {
-                    ch: glyphs[(value as usize + phase as usize) % glyphs.len()],
-                    fg: Color::AnsiValue((16 + value.wrapping_add(phase) % colors) as u8),
-                    bg: if (hash >> 20) & 1023 < background {
-                        Color::AnsiValue(
-                            (16 + (value / 3).wrapping_add(phase.wrapping_mul(7)) % colors) as u8,
-                        )
-                    } else {
-                        Color::Reset
-                    },
-                };
+                    let phase = if (hash >> 10) & 1023 < churn { tick } else { 0 };
+                    let u = (x as u32).wrapping_mul(frequency).wrapping_add(phase);
+                    let v = (y as u32)
+                        .wrapping_mul(frequency * 2)
+                        .wrapping_add(frame.seed as u32);
+                    let value = match values[7] as u32 {
+                        0 => {
+                            ((waves[(u & 255) as usize] + waves[(v & 255) as usize] + 256) / 2)
+                                as u32
+                        }
+                        1 => {
+                            let radius =
+                                x.abs_diff(frame.width / 2) + y.abs_diff(frame.height / 2) * 2;
+                            (waves[((radius as u32)
+                                .wrapping_mul(frequency)
+                                .wrapping_add(phase)
+                                & 255) as usize]
+                                + 128) as u32
+                        }
+                        _ => hash.wrapping_add(phase.wrapping_mul(0x45d9f3b)) ^ phase.rotate_left(13),
+                    };
+                    *cell = Cell {
+                        ch: glyphs[(value as usize + phase as usize) % glyphs.len()],
+                        fg: Color::AnsiValue((16 + value.wrapping_add(phase) % colors) as u8),
+                        bg: if (hash >> 20) & 1023 < background {
+                            Color::AnsiValue(
+                                (16 + (value / 3).wrapping_add(phase.wrapping_mul(7)) % colors)
+                                    as u8,
+                            )
+                        } else {
+                            Color::Reset
+                        },
+                    };
+                }
             }
-        }
+        });
     }
 }
 

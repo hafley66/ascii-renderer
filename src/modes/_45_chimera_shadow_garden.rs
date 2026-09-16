@@ -1,3 +1,4 @@
+use crate::_0_profile::measure_layer;
 use crate::color::{darken, lerp_color};
 use crate::opts::param_f32;
 use crate::registry::{AnimKind, Mode, ModeFrame, Param};
@@ -137,196 +138,212 @@ fn draw_chimera_shadow_garden(frame: &mut ModeFrame<'_>, k: &[f32; 6]) {
     };
     let phase = |speed: f64, offset: f32| (t * speed + offset as f64).rem_euclid(TAU as f64) as f32;
     let ink = darken(frame.palette[0], 8);
-    let far = lerp_color(ink, frame.palette[2], 0.42);
+    let pool = frame.palette[2];
+    let far = lerp_color(ink, pool, 0.42);
     let middle = lerp_color(ink, frame.palette[1], 0.72);
     let rim = frame.palette[3];
     let light = frame.palette[4];
+    let seed = frame.seed;
     let grid = &mut *frame.grid;
-    for (y, row) in grid.iter_mut().enumerate() {
-        let depth = y as f32 / h as f32;
-        row.fill(Cell::with_bg(
-            ' ',
-            far,
-            lerp_color(ink, frame.palette[2], depth * 0.07),
-        ));
-    }
+    measure_layer("chimera-shadow-garden", "backdrop", || {
+        for (y, row) in grid.iter_mut().enumerate() {
+            let depth = y as f32 / h as f32;
+            row.fill(Cell::with_bg(
+                ' ',
+                far,
+                lerp_color(ink, pool, depth * 0.07),
+            ));
+        }
+    });
 
     // Nested distant vaults leave an open pocket around the central figure.
-    for ring in 0..3 {
-        let rx = 0.40 + ring as f32 * 0.035;
-        let ry = 0.47 + ring as f32 * 0.025;
-        for j in 0..=w + h {
-            let a = PI + PI * j as f32 / (w + h) as f32;
-            let ch = if a.sin().abs() > 0.9 {
-                '_'
-            } else if a.cos() > 0.0 {
-                '\\'
-            } else {
-                '/'
-            };
-            put(grid, [0.5 + rx * a.cos(), 0.60 + ry * a.sin()], ch, far);
-        }
-        for side in [-1.0, 1.0] {
-            curve(
-                grid,
-                [0.5 + side * rx, 0.60],
-                [0.5 + side * rx, 0.66],
-                [0.5 + side * rx, 0.71],
-                far,
-            );
-        }
-    }
-
-    // Perspective ripples and a broken reflection occupy the lower third.
-    let waterline = (h as f32 * 0.68) as usize;
-    for (y, row) in grid.iter_mut().enumerate().skip(waterline) {
-        let depth = (y as f32 / h as f32 - 0.68) / 0.32;
-        for (x, cell) in row.iter_mut().enumerate() {
-            let nx = (x as f32 / w as f32 - 0.5) / (0.25 + depth * 0.8);
-            let wave = (nx * nx * 6.0 + depth * 26.0 - phase(1.5, 0.0)).sin();
-            if wave > 1.0 - k[2] * 0.22 {
-                cell.ch = if depth > 0.35 { '~' } else { '-' };
-                cell.fg = lerp_color(far, rim, depth * 0.3);
+    measure_layer("chimera-shadow-garden", "vaults", || {
+        for ring in 0..3 {
+            let rx = 0.40 + ring as f32 * 0.035;
+            let ry = 0.47 + ring as f32 * 0.025;
+            for j in 0..=w + h {
+                let a = PI + PI * j as f32 / (w + h) as f32;
+                let ch = if a.sin().abs() > 0.9 {
+                    '_'
+                } else if a.cos() > 0.0 {
+                    '\\'
+                } else {
+                    '/'
+                };
+                put(grid, [0.5 + rx * a.cos(), 0.60 + ry * a.sin()], ch, far);
             }
-            let drift = phase(1.2, depth * 18.0).sin() * k[2] * 0.045;
-            if (nx + drift).abs() < 0.05 + 0.11 * (1.0 - depth) && (y % 2 == 0 || wave > 0.5) {
-                cell.ch = if x % 3 == 0 { ':' } else { '.' };
-                cell.fg = middle;
-            }
-        }
-    }
-
-    // Seeded garden layers: short distant shoots, tall foreground flowers.
-    for layer in 0..2 {
-        let count = ((8.0 + k[0] * 20.0) as usize).min(w / 2 + 1);
-        for i in 0..count {
-            let id = 100 + layer * 200 + i * 5;
-            let x = 0.02 + noise(frame.seed, id) * 0.96;
-            if (x - 0.5).abs() < 0.13 + layer as f32 * 0.06 {
-                continue;
-            }
-            let base = 0.70 + layer as f32 * 0.27;
-            let length = (0.05 + noise(frame.seed, id + 1) * 0.17)
-                * (0.35 + k[0])
-                * (0.7 + layer as f32 * 0.3);
-            let bend = phase(0.75, noise(frame.seed, id + 2) * TAU).sin() * k[4] * 0.025;
-            let tip = [x + bend, base - length];
-            let fg = if layer == 0 { far } else { middle };
-            curve(grid, [x, base], [x - bend, base - length * 0.5], tip, fg);
             for side in [-1.0, 1.0] {
                 curve(
                     grid,
-                    [x, base - length * 0.28],
-                    [x + side * 0.035, base - length * 0.55],
-                    [x + side * 0.025, base - length * 0.65],
-                    fg,
+                    [0.5 + side * rx, 0.60],
+                    [0.5 + side * rx, 0.66],
+                    [0.5 + side * rx, 0.71],
+                    far,
                 );
             }
-            put(
-                grid,
-                tip,
-                if layer == 0 { '*' } else { '@' },
-                if layer == 0 { middle } else { rim },
-            );
-            if layer == 1 && w >= 60 {
-                put(grid, [tip[0] - 1.0 / w as f32, tip[1]], '(', middle);
-                put(grid, [tip[0] + 1.0 / w as f32, tip[1]], ')', middle);
+        }
+    });
+
+    // Perspective ripples and a broken reflection occupy the lower third.
+    measure_layer("chimera-shadow-garden", "water", || {
+        let waterline = (h as f32 * 0.68) as usize;
+        for (y, row) in grid.iter_mut().enumerate().skip(waterline) {
+            let depth = (y as f32 / h as f32 - 0.68) / 0.32;
+            for (x, cell) in row.iter_mut().enumerate() {
+                let nx = (x as f32 / w as f32 - 0.5) / (0.25 + depth * 0.8);
+                let wave = (nx * nx * 6.0 + depth * 26.0 - phase(1.5, 0.0)).sin();
+                if wave > 1.0 - k[2] * 0.22 {
+                    cell.ch = if depth > 0.35 { '~' } else { '-' };
+                    cell.fg = lerp_color(far, rim, depth * 0.3);
+                }
+                let drift = phase(1.2, depth * 18.0).sin() * k[2] * 0.045;
+                if (nx + drift).abs() < 0.05 + 0.11 * (1.0 - depth) && (y % 2 == 0 || wave > 0.5) {
+                    cell.ch = if x % 3 == 0 { ':' } else { '.' };
+                    cell.fg = middle;
+                }
             }
         }
-    }
+    });
+
+    // Seeded garden layers: short distant shoots, tall foreground flowers.
+    measure_layer("chimera-shadow-garden", "garden", || {
+        for layer in 0..2 {
+            let count = ((8.0 + k[0] * 20.0) as usize).min(w / 2 + 1);
+            for i in 0..count {
+                let id = 100 + layer * 200 + i * 5;
+                let x = 0.02 + noise(seed, id) * 0.96;
+                if (x - 0.5).abs() < 0.13 + layer as f32 * 0.06 {
+                    continue;
+                }
+                let base = 0.70 + layer as f32 * 0.27;
+                let length = (0.05 + noise(seed, id + 1) * 0.17)
+                    * (0.35 + k[0])
+                    * (0.7 + layer as f32 * 0.3);
+                let bend = phase(0.75, noise(seed, id + 2) * TAU).sin() * k[4] * 0.025;
+                let tip = [x + bend, base - length];
+                let fg = if layer == 0 { far } else { middle };
+                curve(grid, [x, base], [x - bend, base - length * 0.5], tip, fg);
+                for side in [-1.0, 1.0] {
+                    curve(
+                        grid,
+                        [x, base - length * 0.28],
+                        [x + side * 0.035, base - length * 0.55],
+                        [x + side * 0.025, base - length * 0.65],
+                        fg,
+                    );
+                }
+                put(
+                    grid,
+                    tip,
+                    if layer == 0 { '*' } else { '@' },
+                    if layer == 0 { middle } else { rim },
+                );
+                if layer == 1 && w >= 60 {
+                    put(grid, [tip[0] - 1.0 / w as f32, tip[1]], '(', middle);
+                    put(grid, [tip[0] + 1.0 / w as f32, tip[1]], ')', middle);
+                }
+            }
+        }
+    });
 
     // A hollow crown, paired horn-petals, ribs, and spreading root feet.
     let sway = phase(0.7, 0.0).sin() * k[4] * 0.018;
     let cx = 0.5 + sway;
-    for side in [-1.0, 1.0] {
-        for rib in 0..4 {
-            let r = rib as f32;
-            let tip = [cx + side * (0.08 + r * 0.034) * k[1], 0.24 + r * 0.075];
+    measure_layer("chimera-shadow-garden", "chimera", || {
+        for side in [-1.0, 1.0] {
+            for rib in 0..4 {
+                let r = rib as f32;
+                let tip = [cx + side * (0.08 + r * 0.034) * k[1], 0.24 + r * 0.075];
+                curve(
+                    grid,
+                    [cx + side * 0.016, 0.61 - r * 0.022],
+                    [cx + side * (0.19 + r * 0.024) * k[1], 0.49 - r * 0.014],
+                    tip,
+                    middle,
+                );
+                curve(
+                    grid,
+                    tip,
+                    [cx + side * 0.06 * k[1], 0.40 + r * 0.027],
+                    [cx + side * 0.016, 0.61 - r * 0.022],
+                    rim,
+                );
+            }
             curve(
                 grid,
-                [cx + side * 0.016, 0.61 - r * 0.022],
-                [cx + side * (0.19 + r * 0.024) * k[1], 0.49 - r * 0.014],
-                tip,
-                middle,
-            );
-            curve(
-                grid,
-                tip,
-                [cx + side * 0.06 * k[1], 0.40 + r * 0.027],
-                [cx + side * 0.016, 0.61 - r * 0.022],
+                [cx + side * 0.027, 0.43],
+                [cx + side * 0.14 * k[1], 0.24],
+                [cx + side * 0.035 * k[1], 0.19],
                 rim,
             );
-        }
-        curve(
-            grid,
-            [cx + side * 0.027, 0.43],
-            [cx + side * 0.14 * k[1], 0.24],
-            [cx + side * 0.035 * k[1], 0.19],
-            rim,
-        );
-        curve(
-            grid,
-            [cx + side * 0.035 * k[1], 0.19],
-            [cx + side * 0.18 * k[1], 0.32],
-            [cx + side * 0.045, 0.47],
-            middle,
-        );
-        curve(
-            grid,
-            [cx + side * 0.033, 0.44],
-            [cx + side * 0.053, 0.56],
-            [0.5 + side * 0.015, 0.66],
-            rim,
-        );
-        for root in 0..3 {
-            let r = root as f32;
             curve(
                 grid,
-                [0.5 + side * 0.015, 0.63],
-                [0.5 + side * (0.055 + r * 0.025), 0.70],
-                [0.5 + side * (0.085 + r * 0.045), 0.68 + r * 0.025],
+                [cx + side * 0.035 * k[1], 0.19],
+                [cx + side * 0.18 * k[1], 0.32],
+                [cx + side * 0.045, 0.47],
                 middle,
             );
+            curve(
+                grid,
+                [cx + side * 0.033, 0.44],
+                [cx + side * 0.053, 0.56],
+                [0.5 + side * 0.015, 0.66],
+                rim,
+            );
+            for root in 0..3 {
+                let r = root as f32;
+                curve(
+                    grid,
+                    [0.5 + side * 0.015, 0.63],
+                    [0.5 + side * (0.055 + r * 0.025), 0.70],
+                    [0.5 + side * (0.085 + r * 0.045), 0.68 + r * 0.025],
+                    middle,
+                );
+            }
         }
-    }
-    // Clear the mask interior so its eyes remain legible over the ribs.
-    for y in (h as f32 * 0.39) as usize..((h as f32 * 0.48).ceil() as usize).min(h) {
-        for x in ((cx - 0.034) * w as f32) as usize..(((cx + 0.034) * w as f32) as usize).min(w) {
-            grid[y][x].ch = ' ';
+        // Clear the mask interior so its eyes remain legible over the ribs.
+        for y in (h as f32 * 0.39) as usize..((h as f32 * 0.48).ceil() as usize).min(h) {
+            for x in ((cx - 0.034) * w as f32) as usize..(((cx + 0.034) * w as f32) as usize).min(w) {
+                grid[y][x].ch = ' ';
+            }
         }
-    }
-    put(grid, [cx - 0.024, 0.425], '<', rim);
-    put(grid, [cx + 0.024, 0.425], '>', rim);
-    put(grid, [cx - 0.012, 0.425], 'o', light);
-    put(grid, [cx + 0.012, 0.425], 'o', light);
-    put(grid, [cx, 0.465], 'V', rim);
-    put(grid, [cx, 0.515], ':', light);
-    put(grid, [cx, 0.56], ':', rim);
+        put(grid, [cx - 0.024, 0.425], '<', rim);
+        put(grid, [cx + 0.024, 0.425], '>', rim);
+        put(grid, [cx - 0.012, 0.425], 'o', light);
+        put(grid, [cx + 0.012, 0.425], 'o', light);
+        put(grid, [cx, 0.465], 'V', rim);
+        put(grid, [cx, 0.515], ':', light);
+        put(grid, [cx, 0.56], ':', rim);
+    });
 
     // Drifting points only occupy empty cells, preserving silhouette contours.
-    let spores = ((k[3] * 110.0) as usize).min(w.saturating_mul(h) / 12);
-    for i in 0..spores {
-        let id = 1000 + i * 3;
-        let x = (noise(frame.seed, id) + phase(0.09, i as f32) / TAU).fract();
-        let y = 0.16 + 0.69 * (noise(frame.seed, id + 1) - phase(0.16, 0.0) / TAU).rem_euclid(1.0);
-        let cell = &mut grid[(y * h as f32) as usize][(x * w as f32) as usize];
-        if cell.ch == ' ' {
-            cell.ch = if noise(frame.seed, id + 2) > 0.8 {
-                '+'
-            } else {
-                '.'
-            };
-            cell.fg = if i % 3 == 0 { rim } else { far };
+    measure_layer("chimera-shadow-garden", "spores", || {
+        let spores = ((k[3] * 110.0) as usize).min(w.saturating_mul(h) / 12);
+        for i in 0..spores {
+            let id = 1000 + i * 3;
+            let x = (noise(seed, id) + phase(0.09, i as f32) / TAU).fract();
+            let y = 0.16 + 0.69 * (noise(seed, id + 1) - phase(0.16, 0.0) / TAU).rem_euclid(1.0);
+            let cell = &mut grid[(y * h as f32) as usize][(x * w as f32) as usize];
+            if cell.ch == ' ' {
+                cell.ch = if noise(seed, id + 2) > 0.8 {
+                    '+'
+                } else {
+                    '.'
+                };
+                cell.fg = if i % 3 == 0 { rim } else { far };
+            }
         }
-    }
-    if w >= TITLE.len() + 4 && h >= 12 {
-        let start = (w - TITLE.len()) / 2;
-        let row = &mut grid[h - 1];
-        row.fill(Cell::with_bg(' ', far, ink));
-        for (i, ch) in TITLE.chars().enumerate() {
-            row[start + i] = Cell::with_bg(ch, middle, ink);
+    });
+    measure_layer("chimera-shadow-garden", "title", || {
+        if w >= TITLE.len() + 4 && h >= 12 {
+            let start = (w - TITLE.len()) / 2;
+            let row = &mut grid[h - 1];
+            row.fill(Cell::with_bg(' ', far, ink));
+            for (i, ch) in TITLE.chars().enumerate() {
+                row[start + i] = Cell::with_bg(ch, middle, ink);
+            }
         }
-    }
+    });
 }
 
 #[cfg(test)]

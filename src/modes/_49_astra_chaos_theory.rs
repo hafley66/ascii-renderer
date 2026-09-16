@@ -1,6 +1,7 @@
 //! Chaos observatory: paired ODE trajectories and a logistic-map instrument.
 //! Complete orbit history is visible at every time; time moves its light and camera.
 
+use crate::_0_profile::measure_layer;
 use crate::color::{lerp_color, shift_hue};
 use crate::opts::param_f32;
 use crate::registry::{AnimKind, Mode, ModeFrame, Param};
@@ -393,14 +394,16 @@ fn draw_chaos(frame: &mut ModeFrame<'_>, knobs: &[f32; 24]) {
         height,
         z: vec![f32::NEG_INFINITY; area],
     };
-    for y in 0..height {
-        for x in 0..width {
-            canvas.grid[y][x] = Cell::with_bg(' ', palette[4], palette[0]);
-            if random(frame.seed, y * width + x) < grain * 0.13 {
-                canvas.put(x, y, '.', ink(2, 0.22), -10.0);
+    measure_layer("astra-chaos-theory", "background", || {
+        for y in 0..height {
+            for x in 0..width {
+                canvas.grid[y][x] = Cell::with_bg(' ', palette[4], palette[0]);
+                if random(frame.seed, y * width + x) < grain * 0.13 {
+                    canvas.put(x, y, '.', ink(2, 0.22), -10.0);
+                }
             }
         }
-    }
+    });
     let split = width >= 48 && height >= 16;
     let main_width = if split { width * 7 / 10 } else { width };
     let framed = main_width >= 8 && height >= 6;
@@ -419,48 +422,50 @@ fn draw_chaos(frame: &mut ModeFrame<'_>, knobs: &[f32; 24]) {
             h: height,
         }
     };
-    if graticule > 0.0 {
-        for y in 0..plot.h {
-            for x in 0..plot.w {
-                let cross = (x == plot.w / 2 && y % 2 == 0) || (y == plot.h / 2 && x % 4 == 0);
-                if cross || (x % 8 == 0 && y % 4 == 0) {
-                    canvas.point(
-                        plot,
-                        x as f32,
-                        y as f32,
-                        if cross { '+' } else { '.' },
-                        ink(2, graticule * 0.32),
-                        -8.0,
-                    );
+    measure_layer("astra-chaos-theory", "graticule", || {
+        if graticule > 0.0 {
+            for y in 0..plot.h {
+                for x in 0..plot.w {
+                    let cross = (x == plot.w / 2 && y % 2 == 0) || (y == plot.h / 2 && x % 4 == 0);
+                    if cross || (x % 8 == 0 && y % 4 == 0) {
+                        canvas.point(
+                            plot,
+                            x as f32,
+                            y as f32,
+                            if cross { '+' } else { '.' },
+                            ink(2, graticule * 0.32),
+                            -8.0,
+                        );
+                    }
+                }
+            }
+            for ring in 0..3 {
+                let radius = 0.35 + ring as f32 * 0.055;
+                let segments = (plot.w + plot.h).clamp(24, 256);
+                let mut previous = None;
+                for i in 0..=segments {
+                    let phase = i as f32 / segments as f32 * std::f32::consts::TAU;
+                    let (s, c) = phase.sin_cos();
+                    let p = [
+                        (plot.w - 1) as f32 * (0.5 + radius * c),
+                        (plot.h - 1) as f32 * (0.79 + radius * s * 0.28),
+                        0.0,
+                    ];
+                    if let Some(a) = previous {
+                        canvas.line(
+                            plot,
+                            a,
+                            p,
+                            if ring == 1 { '-' } else { '.' },
+                            ink(2, graticule * 0.4),
+                            -7.0,
+                        );
+                    }
+                    previous = Some(p);
                 }
             }
         }
-        for ring in 0..3 {
-            let radius = 0.35 + ring as f32 * 0.055;
-            let segments = (plot.w + plot.h).clamp(24, 256);
-            let mut previous = None;
-            for i in 0..=segments {
-                let phase = i as f32 / segments as f32 * std::f32::consts::TAU;
-                let (s, c) = phase.sin_cos();
-                let p = [
-                    (plot.w - 1) as f32 * (0.5 + radius * c),
-                    (plot.h - 1) as f32 * (0.79 + radius * s * 0.28),
-                    0.0,
-                ];
-                if let Some(a) = previous {
-                    canvas.line(
-                        plot,
-                        a,
-                        p,
-                        if ring == 1 { '-' } else { '.' },
-                        ink(2, graticule * 0.4),
-                        -7.0,
-                    );
-                }
-                previous = Some(p);
-            }
-        }
-    }
+    });
 
     // Reconstruct complete paths before evaluating moving light. No work grows
     // with ASCII_T: <=12 pairs, <=2048 samples each, <=6 RK2 substeps/sample.
@@ -508,12 +513,14 @@ fn draw_chaos(frame: &mut ModeFrame<'_>, knobs: &[f32; 24]) {
         let dt = step * [1.0, 2.5, 12.0][family];
         // Small dt refines integration without shortening the visible history.
         let substeps = (0.012 / step).ceil().clamp(1.0, 6.0) as usize;
-        for _ in 0..steps {
-            for _ in 0..substeps {
-                pair = advance(pair, dt, family, damping, coupling);
+        measure_layer("astra-chaos-theory", "integrate", || {
+            for _ in 0..steps {
+                for _ in 0..substeps {
+                    pair = advance(pair, dt, family, damping, coupling);
+                }
+                history.push(pair);
             }
-            history.push(pair);
-        }
+        });
         let screen = |p| {
             let v = project(p, family, angle, projection, depth);
             [
@@ -525,205 +532,213 @@ fn draw_chaos(frame: &mut ModeFrame<'_>, knobs: &[f32; 24]) {
         // Rear paths preserve the whole attractor even for a sixteen-sample
         // highlight. Connected strokes and periodic dashes replace point thinning.
         let mut previous = None;
-        for (i, pair) in history.iter().enumerate().skip(burn) {
-            let projected = pair.map(screen);
-            if let Some(prev) = previous {
-                let prev: [Point; 2] = prev;
-                for j in 0..2 {
-                    let v = projected[j];
-                    let band = (i / 24 + orbit * 3 + j * 2) % 8;
-                    if band as f32 <= 2.0 + density * 5.0 {
-                        canvas.line(
-                            plot,
-                            prev[j],
-                            v,
-                            if glyphs < 0.5 { ':' } else { '\0' },
-                            ink(
-                                if j == 0 { 1 } else { 3 },
-                                0.28 + density * 0.16 - v[2] * depth * 0.06,
-                            ),
-                            -1.0 - v[2] * depth,
-                        );
-                    }
-                    if ghosts > 0.0 {
-                        let floor = |p: Point| {
-                            [
-                                p[0],
-                                (plot.h - 1) as f32 * (0.83 + p[2] * 0.055 * depth),
-                                0.0,
-                            ]
-                        };
-                        canvas.line(
-                            plot,
-                            floor(prev[j]),
-                            floor(v),
-                            if ghosts > 0.65 { ':' } else { '.' },
-                            ink(2, ghosts * 0.45),
-                            -3.0,
-                        );
+        measure_layer("astra-chaos-theory", "rear_paths", || {
+            for (i, pair) in history.iter().enumerate().skip(burn) {
+                let projected = pair.map(screen);
+                if let Some(prev) = previous {
+                    let prev: [Point; 2] = prev;
+                    for j in 0..2 {
+                        let v = projected[j];
+                        let band = (i / 24 + orbit * 3 + j * 2) % 8;
+                        if band as f32 <= 2.0 + density * 5.0 {
+                            canvas.line(
+                                plot,
+                                prev[j],
+                                v,
+                                if glyphs < 0.5 { ':' } else { '\0' },
+                                ink(
+                                    if j == 0 { 1 } else { 3 },
+                                    0.28 + density * 0.16 - v[2] * depth * 0.06,
+                                ),
+                                -1.0 - v[2] * depth,
+                            );
+                        }
+                        if ghosts > 0.0 {
+                            let floor = |p: Point| {
+                                [
+                                    p[0],
+                                    (plot.h - 1) as f32 * (0.83 + p[2] * 0.055 * depth),
+                                    0.0,
+                                ]
+                            };
+                            canvas.line(
+                                plot,
+                                floor(prev[j]),
+                                floor(v),
+                                if ghosts > 0.65 { ':' } else { '.' },
+                                ink(2, ghosts * 0.45),
+                                -3.0,
+                            );
+                        }
                     }
                 }
+                previous = Some(projected);
             }
-            previous = Some(projected);
-        }
+        });
         // Overlay a complete bright window at every t, with depth-ordered pair
         // colors, a luminous crest and moving heads. Never join a history wrap.
-        for (i, pair) in history.iter().enumerate().take(head + 1).skip(start) {
-            let age = (i - start + 1) as f32 / tail as f32;
-            if orbit == 0 {
-                let distance = (0..3)
-                    .map(|j| (pair[0][j] - pair[1][j]).powi(2))
-                    .sum::<f32>()
-                    .sqrt();
-                // Fixed scale: log10 separation from 1e-6 through 1e2.
-                separation.push(((distance.max(1e-6).log10() + 6.0) / 8.0).clamp(0.0, 1.0));
-            }
-            for (j, &p) in pair.iter().enumerate() {
-                let v = screen(p);
-                let [x, y, _] = v;
-                if (i / 6 + orbit + j) % 10 <= (density * 9.0) as usize {
-                    let strength = (age * 0.48 + 0.48 - v[2] * depth * 0.13).clamp(0.1, 1.0);
-                    let ch = glyph_set[(strength * 6.0) as usize] as char;
-                    canvas.line(
-                        plot,
-                        screen(history[i.saturating_sub(1).max(start)][j]),
-                        v,
-                        ch,
-                        ink(if j == 0 { 1 } else { 3 }, strength),
-                        2.0 + age - v[2] * depth,
-                    );
+        measure_layer("astra-chaos-theory", "highlight", || {
+            for (i, pair) in history.iter().enumerate().take(head + 1).skip(start) {
+                let age = (i - start + 1) as f32 / tail as f32;
+                if orbit == 0 {
+                    let distance = (0..3)
+                        .map(|j| (pair[0][j] - pair[1][j]).powi(2))
+                        .sum::<f32>()
+                        .sqrt();
+                    // Fixed scale: log10 separation from 1e-6 through 1e2.
+                    separation.push(((distance.max(1e-6).log10() + 6.0) / 8.0).clamp(0.0, 1.0));
                 }
-                if i == head && heads >= 1.0 {
-                    canvas.point(
-                        plot,
-                        x,
-                        y,
-                        if j == 0 { '@' } else { 'o' },
-                        ink(if j == 0 { 4 } else { 3 }, 1.0),
-                        20.0,
-                    );
-                    for d in 1..heads.round() as usize {
-                        for side in [-1.0, 1.0] {
-                            canvas.point(plot, x + d as f32 * side, y, '-', ink(4, 0.7), 19.0);
-                            canvas.point(plot, x, y + d as f32 * side, '|', ink(4, 0.7), 19.0);
+                for (j, &p) in pair.iter().enumerate() {
+                    let v = screen(p);
+                    let [x, y, _] = v;
+                    if (i / 6 + orbit + j) % 10 <= (density * 9.0) as usize {
+                        let strength = (age * 0.48 + 0.48 - v[2] * depth * 0.13).clamp(0.1, 1.0);
+                        let ch = glyph_set[(strength * 6.0) as usize] as char;
+                        canvas.line(
+                            plot,
+                            screen(history[i.saturating_sub(1).max(start)][j]),
+                            v,
+                            ch,
+                            ink(if j == 0 { 1 } else { 3 }, strength),
+                            2.0 + age - v[2] * depth,
+                        );
+                    }
+                    if i == head && heads >= 1.0 {
+                        canvas.point(
+                            plot,
+                            x,
+                            y,
+                            if j == 0 { '@' } else { 'o' },
+                            ink(if j == 0 { 4 } else { 3 }, 1.0),
+                            20.0,
+                        );
+                        for d in 1..heads.round() as usize {
+                            for side in [-1.0, 1.0] {
+                                canvas.point(plot, x + d as f32 * side, y, '-', ink(4, 0.7), 19.0);
+                                canvas.point(plot, x, y + d as f32 * side, '|', ink(4, 0.7), 19.0);
+                            }
                         }
                     }
                 }
             }
-        }
+        });
     }
 
     // Draw measured separation and the independent logistic bifurcation map.
-    if split {
-        let right = Panel {
-            x: main_width,
-            y: 0,
-            w: width - main_width,
-            h: height / 2 + 1,
-        };
-        let map = Panel {
-            x: right.x + 2,
-            y: 2,
-            w: right.w - 4,
-            h: right.h - 4,
-        };
-        let scan = ((time * 0.21).sin() * 0.5 + 0.5) * (map.w - 1) as f32;
-        let map_iterations = area.min(160);
-        for x in 0..map.w {
-            let r =
-                (threshold + span * (x as f32 / (map.w - 1).max(1) as f32 - 0.5)).clamp(0.0, 4.0);
-            let mut value = 0.43 + variation * (random(frame.seed, x + 22000) - 0.5) * 0.1;
-            for n in 0..map_iterations {
-                value = (r * value * (1.0 - value)).clamp(0.0, 1.0);
-                if n >= map_iterations / 2 {
-                    canvas.point(
-                        map,
-                        x as f32,
-                        (1.0 - value) * (map.h - 1) as f32,
-                        if x == scan.round() as usize { '*' } else { ':' },
-                        ink(3, 0.8),
-                        4.0,
-                    );
+    measure_layer("astra-chaos-theory", "panels", || {
+        if split {
+            let right = Panel {
+                x: main_width,
+                y: 0,
+                w: width - main_width,
+                h: height / 2 + 1,
+            };
+            let map = Panel {
+                x: right.x + 2,
+                y: 2,
+                w: right.w - 4,
+                h: right.h - 4,
+            };
+            let scan = ((time * 0.21).sin() * 0.5 + 0.5) * (map.w - 1) as f32;
+            let map_iterations = area.min(160);
+            for x in 0..map.w {
+                let r =
+                    (threshold + span * (x as f32 / (map.w - 1).max(1) as f32 - 0.5)).clamp(0.0, 4.0);
+                let mut value = 0.43 + variation * (random(frame.seed, x + 22000) - 0.5) * 0.1;
+                for n in 0..map_iterations {
+                    value = (r * value * (1.0 - value)).clamp(0.0, 1.0);
+                    if n >= map_iterations / 2 {
+                        canvas.point(
+                            map,
+                            x as f32,
+                            (1.0 - value) * (map.h - 1) as f32,
+                            if x == scan.round() as usize { '*' } else { ':' },
+                            ink(3, 0.8),
+                            4.0,
+                        );
+                    }
                 }
             }
-        }
-        canvas.border(right, " LOGISTIC / r ", ink(2, 0.8));
-        let range = format!(
-            "{:.2} < r < {:.2}",
-            (threshold - span / 2.0).max(0.0),
-            (threshold + span / 2.0).min(4.0)
-        );
-        canvas.text(
-            map.x,
-            right.h - 2,
-            &range.chars().take(map.w).collect::<String>(),
-            ink(4, 0.65),
-        );
-        let lower = Panel {
-            x: main_width,
-            y: right.h - 1,
-            w: right.w,
-            h: height - right.h + 1,
-        };
-        let scope = Panel {
-            x: lower.x + 2,
-            y: lower.y + 2,
-            w: lower.w - 4,
-            h: lower.h - 4,
-        };
-        for x in 0..scope.w {
-            let index = x * separation.len().saturating_sub(1) / (scope.w - 1).max(1);
-            let value = separation.get(index).copied().unwrap_or(0.0);
-            let y = (1.0 - value) * (scope.h - 1) as f32;
-            canvas.point(
-                scope,
-                x as f32,
-                y,
-                if x + 1 == scope.w { '@' } else { '*' },
-                ink(1, 0.95),
-                6.0,
+            canvas.border(right, " LOGISTIC / r ", ink(2, 0.8));
+            let range = format!(
+                "{:.2} < r < {:.2}",
+                (threshold - span / 2.0).max(0.0),
+                (threshold + span / 2.0).min(4.0)
             );
-            canvas.point(
-                scope,
-                x as f32,
-                (scope.h - 1) as f32,
-                '.',
-                ink(2, 0.35),
-                -2.0,
+            canvas.text(
+                map.x,
+                right.h - 2,
+                &range.chars().take(map.w).collect::<String>(),
+                ink(4, 0.65),
+            );
+            let lower = Panel {
+                x: main_width,
+                y: right.h - 1,
+                w: right.w,
+                h: height - right.h + 1,
+            };
+            let scope = Panel {
+                x: lower.x + 2,
+                y: lower.y + 2,
+                w: lower.w - 4,
+                h: lower.h - 4,
+            };
+            for x in 0..scope.w {
+                let index = x * separation.len().saturating_sub(1) / (scope.w - 1).max(1);
+                let value = separation.get(index).copied().unwrap_or(0.0);
+                let y = (1.0 - value) * (scope.h - 1) as f32;
+                canvas.point(
+                    scope,
+                    x as f32,
+                    y,
+                    if x + 1 == scope.w { '@' } else { '*' },
+                    ink(1, 0.95),
+                    6.0,
+                );
+                canvas.point(
+                    scope,
+                    x as f32,
+                    (scope.h - 1) as f32,
+                    '.',
+                    ink(2, 0.35),
+                    -2.0,
+                );
+            }
+            canvas.border(lower, " LOG10 |A-B| ", ink(2, 0.8));
+            canvas.text(
+                scope.x,
+                height - 2,
+                &"-6 ... +2 / time >"
+                    .chars()
+                    .take(scope.w)
+                    .collect::<String>(),
+                ink(4, 0.65),
             );
         }
-        canvas.border(lower, " LOG10 |A-B| ", ink(2, 0.8));
-        canvas.text(
-            scope.x,
-            height - 2,
-            &"-6 ... +2 / time >"
-                .chars()
-                .take(scope.w)
-                .collect::<String>(),
-            ink(4, 0.65),
-        );
-    }
-    if framed {
-        let name = ["LORENZ", "ROSSLER", "THOMAS"][family];
-        canvas.border(
-            Panel {
-                x: 0,
-                y: 0,
-                w: main_width,
-                h: height,
-            },
-            &format!(" ASTRA / {name} "),
-            ink(2, 0.8),
-        );
-        canvas.text(2, 1, "PHASE SPACE   A:@ B:o", ink(4, 0.7));
-        let status = format!("dt:{step:.3}  pairs:{count}  eps:{divergence:.5}");
-        canvas.text(
-            2,
-            height - 2,
-            &status.chars().take(main_width - 4).collect::<String>(),
-            ink(4, 0.65),
-        );
-    }
+    });
+    measure_layer("astra-chaos-theory", "chrome", || {
+        if framed {
+            let name = ["LORENZ", "ROSSLER", "THOMAS"][family];
+            canvas.border(
+                Panel {
+                    x: 0,
+                    y: 0,
+                    w: main_width,
+                    h: height,
+                },
+                &format!(" ASTRA / {name} "),
+                ink(2, 0.8),
+            );
+            canvas.text(2, 1, "PHASE SPACE   A:@ B:o", ink(4, 0.7));
+            let status = format!("dt:{step:.3}  pairs:{count}  eps:{divergence:.5}");
+            canvas.text(
+                2,
+                height - 2,
+                &status.chars().take(main_width - 4).collect::<String>(),
+                ink(4, 0.65),
+            );
+        }
+    });
 }
 
 #[cfg(test)]

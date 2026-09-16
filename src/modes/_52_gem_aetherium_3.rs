@@ -1,6 +1,7 @@
 //! Celestial engraving with bounded animated ink. Independent of Gem 1 and 2.
 //! Per frame: O(W*H + R*min(3*(W+H),4096) + M*log(M)), M <= 638.
 //! Bounded circle/mark/sort scratch; no retained simulation or per-cell IO.
+use crate::_0_profile::measure_layer;
 use crate::opts::param_f32;
 use crate::registry::{AnimKind, Mode, ModeFrame, Param};
 use crate::types::{Cell, Grid};
@@ -168,353 +169,367 @@ fn draw(
 
     // Stationary, continuous bands use arithmetic only at cell scale. Their
     // glyph/color values never change with time, so retained terminal diffs omit them.
-    for (y, row) in grid.iter_mut().enumerate() {
-        let v = (y as f32 - cy) / cy.max(1.0);
-        for (x, cell) in row.iter_mut().enumerate() {
-            let u = (x as f32 - cx) / cx.max(1.0);
-            let field = match layout {
-                1 => ((u.abs() - 0.48).powi(2) * 2.0 + v * v) * 24.0,
-                3 => (u * u + v * v) * 15.0 + (u - v) * 8.0,
-                4 => ((u + 0.35).powi(2) + v * v) * 22.0,
-                _ => (u * u * 1.7 + v * v * 0.6 + u * v * tilt) * 19.0,
-            };
-            let band = (field + phase) as i32;
-            let in_cloud = u * u + v * v < 0.92
-                && match layout {
-                    1 => (u.abs() - 0.48).abs() < nebula * 0.4,
-                    // Tower background stays clear of bands, including random rolls.
-                    2 => false,
-                    3 => (u - v * 0.7).abs() < nebula * 0.65,
-                    4 => (u + 0.35).powi(2) + v * v < nebula * 0.8,
-                    _ => (u * 0.6 + v).abs() < nebula * 0.65,
+    measure_layer("gem-aetherium-3", "bands", || {
+        for (y, row) in grid.iter_mut().enumerate() {
+            let v = (y as f32 - cy) / cy.max(1.0);
+            for (x, cell) in row.iter_mut().enumerate() {
+                let u = (x as f32 - cx) / cx.max(1.0);
+                let field = match layout {
+                    1 => ((u.abs() - 0.48).powi(2) * 2.0 + v * v) * 24.0,
+                    3 => (u * u + v * v) * 15.0 + (u - v) * 8.0,
+                    4 => ((u + 0.35).powi(2) + v * v) * 22.0,
+                    _ => (u * u * 1.7 + v * v * 0.6 + u * v * tilt) * 19.0,
                 };
-            let ch = if in_cloud && band.rem_euclid(4) == 0 {
-                if (x + y * 2) % 4 == 0 { ':' } else { '.' }
-            } else {
-                ' '
-            };
-            *cell = Cell {
-                ch,
-                fg: if ch == ' ' { Color::Reset } else { faint },
-                bg: Color::Reset,
-            };
+                let band = (field + phase) as i32;
+                let in_cloud = u * u + v * v < 0.92
+                    && match layout {
+                        1 => (u.abs() - 0.48).abs() < nebula * 0.4,
+                        // Tower background stays clear of bands, including random rolls.
+                        2 => false,
+                        3 => (u - v * 0.7).abs() < nebula * 0.65,
+                        4 => (u + 0.35).powi(2) + v * v < nebula * 0.8,
+                        _ => (u * 0.6 + v).abs() < nebula * 0.65,
+                    };
+                let ch = if in_cloud && band.rem_euclid(4) == 0 {
+                    if (x + y * 2) % 4 == 0 { ':' } else { '.' }
+                } else {
+                    ' '
+                };
+                *cell = Cell {
+                    ch,
+                    fg: if ch == ' ' { Color::Reset } else { faint },
+                    bg: Color::Reset,
+                };
+            }
         }
-    }
-    for i in 0..dust as usize {
-        let h = seed.wrapping_add((i as u64).wrapping_mul(0x9e3779b97f4a7c15));
-        let x = unit(h ^ 0x613b) * (width - 1) as f32;
-        let y = unit(h ^ 0x72c9) * (height - 1) as f32;
-        put(
-            grid,
-            x,
-            y,
-            if i % 13 == 0 { '+' } else { '.' },
-            if i % 13 == 0 { ink } else { faint },
-        );
-    }
+    });
+    measure_layer("gem-aetherium-3", "dust", || {
+        for i in 0..dust as usize {
+            let h = seed.wrapping_add((i as u64).wrapping_mul(0x9e3779b97f4a7c15));
+            let x = unit(h ^ 0x613b) * (width - 1) as f32;
+            let y = unit(h ^ 0x72c9) * (height - 1) as f32;
+            put(
+                grid,
+                x,
+                y,
+                if i % 13 == 0 { '+' } else { '.' },
+                if i % 13 == 0 { ink } else { faint },
+            );
+        }
+    });
 
     // One shared unit-circle/rosette table; no trigonometry per ring sample.
-    let samples = width
-        .saturating_add(height)
-        .saturating_mul(3)
-        .clamp(32, 4096);
-    let circle: Vec<_> = (0..samples)
-        .map(|i| {
-            let a = i as f32 * TAU / samples as f32;
-            let (s, c) = a.sin_cos();
-            (s, c, 1.0 + petals * 0.16 * (a * harmonic + phase).cos())
-        })
-        .collect();
-    for ring in 0..rings as usize {
-        let (cx, cy, sx, sy) = site(ring);
-        let radius = 0.22 + 0.75 * (ring + 1) as f32 / rings;
-        let turn = phase + ring as f32 * PI / rings;
-        let (rs, rc) = turn.sin_cos();
-        let flatten = 0.2 + (1.0 - tilt) * 0.6 + eccentric * 0.12;
-        for (i, &(s, c, wave)) in circle.iter().enumerate() {
-            if layout == 4 && c < -0.25 - eccentric * 0.55 {
-                continue;
-            }
-            let radius = radius
-                * if layout == 3 {
-                    0.25 + 0.75 * i as f32 / samples as f32
+    measure_layer("gem-aetherium-3", "rings", || {
+        let samples = width
+            .saturating_add(height)
+            .saturating_mul(3)
+            .clamp(32, 4096);
+        let circle: Vec<_> = (0..samples)
+            .map(|i| {
+                let a = i as f32 * TAU / samples as f32;
+                let (s, c) = a.sin_cos();
+                (s, c, 1.0 + petals * 0.16 * (a * harmonic + phase).cos())
+            })
+            .collect();
+        for ring in 0..rings as usize {
+            let (cx, cy, sx, sy) = site(ring);
+            let radius = 0.22 + 0.75 * (ring + 1) as f32 / rings;
+            let turn = phase + ring as f32 * PI / rings;
+            let (rs, rc) = turn.sin_cos();
+            let flatten = 0.2 + (1.0 - tilt) * 0.6 + eccentric * 0.12;
+            for (i, &(s, c, wave)) in circle.iter().enumerate() {
+                if layout == 4 && c < -0.25 - eccentric * 0.55 {
+                    continue;
+                }
+                let radius = radius
+                    * if layout == 3 {
+                        0.25 + 0.75 * i as f32 / samples as f32
+                    } else {
+                        1.0
+                    };
+                let x = radius * wave * (c * rc - s * flatten * rs);
+                let y = radius * wave * (c * rs + s * flatten * rc);
+                let ch = if i % (samples / 16).max(1) == 0 {
+                    '+'
+                } else if (s * rc + c * flatten * rs).abs() > 0.65 {
+                    '-'
                 } else {
-                    1.0
+                    '.'
                 };
-            let x = radius * wave * (c * rc - s * flatten * rs);
-            let y = radius * wave * (c * rs + s * flatten * rc);
-            let ch = if i % (samples / 16).max(1) == 0 {
-                '+'
-            } else if (s * rc + c * flatten * rs).abs() > 0.65 {
-                '-'
-            } else {
-                '.'
-            };
-            put(
-                grid,
-                cx + sx * x,
-                cy + sy * y,
-                ch,
-                if ring % 3 == 0 { bright } else { ink },
-            );
+                put(
+                    grid,
+                    cx + sx * x,
+                    cy + sy * y,
+                    ch,
+                    if ring % 3 == 0 { bright } else { ink },
+                );
+            }
         }
-    }
+    });
     // Fixed radial ticks make the outer dial immediately legible at t=0.
-    for i in 0..48 {
-        let (cx, cy, sx, sy) = site(i);
-        let a = (i / sites) as f32 * TAU / (48 / sites) as f32;
-        let (s, c) = a.sin_cos();
-        put(
-            grid,
-            cx + sx * c,
-            cy + sy * s,
-            if i % 4 == 0 { '+' } else { '.' },
-            ink,
-        );
-        if i % 4 == 0 {
+    measure_layer("gem-aetherium-3", "dial", || {
+        for i in 0..48 {
+            let (cx, cy, sx, sy) = site(i);
+            let a = (i / sites) as f32 * TAU / (48 / sites) as f32;
+            let (s, c) = a.sin_cos();
             put(
                 grid,
-                cx + sx * c * 1.05,
-                cy + sy * s * 1.05,
-                b"*|:V+X*X+V:|"[i / 4] as char,
-                warm,
+                cx + sx * c,
+                cy + sy * s,
+                if i % 4 == 0 { '+' } else { '.' },
+                ink,
             );
+            if i % 4 == 0 {
+                put(
+                    grid,
+                    cx + sx * c * 1.05,
+                    cy + sy * s * 1.05,
+                    b"*|:V+X*X+V:|"[i / 4] as char,
+                    warm,
+                );
+            }
         }
-    }
+    });
 
     // Stationary reticles and lattice struts expose a different silhouette at
     // each site; bounded to 24*16 stamps, independent of grid area and time.
-    for ray in 0..(filigree * 24.0) as usize {
-        let (cx, cy, sx, sy) = site(ray);
-        let a = phase + (ray / sites) as f32 * TAU / harmonic;
-        let (s, c) = a.sin_cos();
-        for k in 1..=16 {
-            let r = k as f32 / 16.0;
-            let bend = if layout == 3 { r * r * 0.25 } else { 0.0 };
-            put(
-                grid,
-                cx + sx * (r * c + bend),
-                cy + sy * r * s,
-                if k % 4 == 0 {
-                    '+'
-                } else if c.abs() > s.abs() {
-                    '-'
-                } else {
-                    '|'
-                },
-                ink,
-            );
+    measure_layer("gem-aetherium-3", "lattice", || {
+        for ray in 0..(filigree * 24.0) as usize {
+            let (cx, cy, sx, sy) = site(ray);
+            let a = phase + (ray / sites) as f32 * TAU / harmonic;
+            let (s, c) = a.sin_cos();
+            for k in 1..=16 {
+                let r = k as f32 / 16.0;
+                let bend = if layout == 3 { r * r * 0.25 } else { 0.0 };
+                put(
+                    grid,
+                    cx + sx * (r * c + bend),
+                    cy + sy * r * s,
+                    if k % 4 == 0 {
+                        '+'
+                    } else if c.abs() > s.abs() {
+                        '-'
+                    } else {
+                        '|'
+                    },
+                    ink,
+                );
+            }
         }
-    }
+    });
 
     // The dial is stationary; all moving geometry shares one depth-sorted list.
     // Reconstructed each frame, with a proven 638-mark upper bound below.
     let mut moving = Vec::with_capacity(MAX_MOVING_MARKS);
     let gimbals = 2 + (rings as usize - 2) / 5;
     let ring_samples = 192 / gimbals;
-    for ring in 0..gimbals {
-        let (cx, cy, sx, sy) = site(ring);
-        let orientation = Plane::new(
-            0.35 + tilt * 0.9 + (t * 0.43 + ring as f32).sin() * 0.6,
-            phase
-                + ring as f32 * PI / gimbals as f32
-                + t * if ring % 2 == 0 { 0.31 } else { -0.23 },
-        );
-        let radius = 0.48 + 0.34 * (ring + 1) as f32 / gimbals as f32;
-        for j in 0..ring_samples {
-            let a = j as f32 * TAU / ring_samples as f32;
-            let r = radius * (1.0 + petals * 0.06 * (a * harmonic + phase).cos());
-            let [x, y, z] = orientation.point(r, a);
-            // Solid foreground graduations, dotted rear arc; the z sort also
-            // resolves crossings with planets, gears and the sighting arm.
-            mark(
-                &mut moving,
-                cx,
-                cy,
-                sx,
-                sy,
-                [x, y, z],
-                if j % 8 == 0 {
-                    '+'
-                } else if z < 0.0 {
-                    '.'
-                } else {
-                    '='
-                },
-                if z < 0.0 { ink } else { bright },
+    measure_layer("gem-aetherium-3", "instruments", || {
+        for ring in 0..gimbals {
+            let (cx, cy, sx, sy) = site(ring);
+            let orientation = Plane::new(
+                0.35 + tilt * 0.9 + (t * 0.43 + ring as f32).sin() * 0.6,
+                phase
+                    + ring as f32 * PI / gimbals as f32
+                    + t * if ring % 2 == 0 { 0.31 } else { -0.23 },
             );
-        }
-    }
-
-    // The alidade spans the dial, including a broad sweeping silhouette at t=0.
-    // <=129 samples independently of terminal dimensions. No interpolated fill.
-    let arm_samples = width.max(height).clamp(16, 128);
-    for j in 0..=arm_samples {
-        let (cx, cy, sx, sy) = site(j);
-        let branch = j % sites;
-        let (arm_s, arm_c) =
-            (phase + branch as f32 * 1.7 + t * (0.72 + branch as f32 * 0.19)).sin_cos();
-        let r = ((j / sites) as f32 / (arm_samples / sites).max(1) as f32 * 2.0 - 1.0) * 0.94;
-        let [x, y, z] = [r * arm_c, r * arm_s, r * 0.15];
-        mark(
-            &mut moving,
-            cx,
-            cy,
-            sx,
-            sy,
-            [x, y, z + 0.12],
-            if j == 0 || j == arm_samples {
-                '@'
-            } else if j % 12 == 0 {
-                '+'
-            } else {
-                '-'
-            },
-            warm,
-        );
-    }
-
-    // Three counter-rotating gear trains: teeth, four spokes, and orbiting hubs.
-    for gear in 0..3 {
-        let (cx, cy, sx, sy) = site(gear);
-        let a = phase + gear as f32 * TAU / 3.0;
-        let (s, c) = a.sin_cos();
-        let gx = c * 0.22;
-        let gy = s * 0.22;
-        let spin = t * if gear % 2 == 0 { 1.0 } else { -1.33 };
-        for j in 0..16 {
-            let a = j as f32 * TAU / 16.0 + spin;
-            let r = if j % 2 == 0 { 0.17 } else { 0.145 };
-            let (s, c) = a.sin_cos();
-            mark(
-                &mut moving,
-                cx,
-                cy,
-                sx,
-                sy,
-                [gx + r * c, gy + r * s, 0.3],
-                if j % 2 == 0 { '#' } else { '+' },
-                bright,
-            );
-        }
-        for spoke in 0..4 {
-            let (s, c) = (spin + spoke as f32 * PI * 0.5).sin_cos();
-            for k in 1..=2 {
-                let r = k as f32 * 0.056;
+            let radius = 0.48 + 0.34 * (ring + 1) as f32 / gimbals as f32;
+            for j in 0..ring_samples {
+                let a = j as f32 * TAU / ring_samples as f32;
+                let r = radius * (1.0 + petals * 0.06 * (a * harmonic + phase).cos());
+                let [x, y, z] = orientation.point(r, a);
+                // Solid foreground graduations, dotted rear arc; the z sort also
+                // resolves crossings with planets, gears and the sighting arm.
                 mark(
                     &mut moving,
                     cx,
                     cy,
                     sx,
                     sy,
-                    [gx + r * c, gy + r * s, 0.31],
-                    '.',
-                    warm,
+                    [x, y, z],
+                    if j % 8 == 0 {
+                        '+'
+                    } else if z < 0.0 {
+                        '.'
+                    } else {
+                        '='
+                    },
+                    if z < 0.0 { ink } else { bright },
                 );
             }
         }
-    }
 
-    for i in 0..planets as usize {
-        let (cx, cy, sx, sy) = site(i);
-        let turn = phase + i as f32 * 2.399963;
-        let plane = Plane::new(0.3 + tilt * 0.75, turn);
-        let radius = 0.26 + 0.61 * (i + 1) as f32 / planets;
-        let a = turn + t * (1.0 + (i % 3) as f32 / harmonic);
-        for k in (1..=trail as usize).rev().step_by(2) {
+        // The alidade spans the dial, including a broad sweeping silhouette at t=0.
+        // <=129 samples independently of terminal dimensions. No interpolated fill.
+        let arm_samples = width.max(height).clamp(16, 128);
+        for j in 0..=arm_samples {
+            let (cx, cy, sx, sy) = site(j);
+            let branch = j % sites;
+            let (arm_s, arm_c) =
+                (phase + branch as f32 * 1.7 + t * (0.72 + branch as f32 * 0.19)).sin_cos();
+            let r = ((j / sites) as f32 / (arm_samples / sites).max(1) as f32 * 2.0 - 1.0) * 0.94;
+            let [x, y, z] = [r * arm_c, r * arm_s, r * 0.15];
             mark(
                 &mut moving,
                 cx,
                 cy,
                 sx,
                 sy,
-                plane.point(radius, a - k as f32 * 0.055),
-                '.',
-                ink,
+                [x, y, z + 0.12],
+                if j == 0 || j == arm_samples {
+                    '@'
+                } else if j % 12 == 0 {
+                    '+'
+                } else {
+                    '-'
+                },
+                warm,
             );
         }
-        let [x, y, z] = plane.point(radius, a);
-        // Seven-cell bodies vary by planet, with two independently orbiting moons.
-        // Offsets are in screen cells, so silhouettes survive small terminal sizes.
-        let perspective = 1.0 / (1.0 - z * 0.18);
-        let px = cx + sx * x * perspective;
-        let py = cy + sy * y * perspective;
-        for (dx, dy, ch) in [
-            (-2.0, 0.0, '-'),
-            (-1.0, 0.0, '('),
-            (1.0, 0.0, ')'),
-            (2.0, 0.0, '-'),
-            (0.0, -1.0, '.'),
-            (0.0, 1.0, '.'),
-            (0.0, 0.0, b"O@o*"[i % 4] as char),
-        ] {
-            moving.push(Mark {
-                x: px + dx,
-                y: py + dy,
-                z: z + 0.02,
-                ch,
-                fg: white,
-            });
-        }
-        for moon in 0..2 {
-            let (s, c) = (t * (2.0 + moon as f32) + turn + moon as f32 * PI).sin_cos();
-            moving.push(Mark {
-                x: px + c * (3.0 + moon as f32),
-                y: py + s * 2.0,
-                z: z + s * 0.08,
-                ch: if moon == 0 { 'o' } else { '*' },
-                fg: warm,
-            });
-        }
-    }
-    for i in 0..comets as usize {
-        let (cx, cy, sx, sy) = site(i);
-        for k in (0..trail as usize).rev() {
-            let a = phase + i as f32 * TAU / comets - t * 1.35 + k as f32 * 0.04;
+
+        // Three counter-rotating gear trains: teeth, four spokes, and orbiting hubs.
+        for gear in 0..3 {
+            let (cx, cy, sx, sy) = site(gear);
+            let a = phase + gear as f32 * TAU / 3.0;
             let (s, c) = a.sin_cos();
-            let r = 0.83 + 0.11 * (a * harmonic).sin();
+            let gx = c * 0.22;
+            let gy = s * 0.22;
+            let spin = t * if gear % 2 == 0 { 1.0 } else { -1.33 };
+            for j in 0..16 {
+                let a = j as f32 * TAU / 16.0 + spin;
+                let r = if j % 2 == 0 { 0.17 } else { 0.145 };
+                let (s, c) = a.sin_cos();
+                mark(
+                    &mut moving,
+                    cx,
+                    cy,
+                    sx,
+                    sy,
+                    [gx + r * c, gy + r * s, 0.3],
+                    if j % 2 == 0 { '#' } else { '+' },
+                    bright,
+                );
+            }
+            for spoke in 0..4 {
+                let (s, c) = (spin + spoke as f32 * PI * 0.5).sin_cos();
+                for k in 1..=2 {
+                    let r = k as f32 * 0.056;
+                    mark(
+                        &mut moving,
+                        cx,
+                        cy,
+                        sx,
+                        sy,
+                        [gx + r * c, gy + r * s, 0.31],
+                        '.',
+                        warm,
+                    );
+                }
+            }
+        }
+    });
+
+    measure_layer("gem-aetherium-3", "orbits", || {
+        for i in 0..planets as usize {
+            let (cx, cy, sx, sy) = site(i);
+            let turn = phase + i as f32 * 2.399963;
+            let plane = Plane::new(0.3 + tilt * 0.75, turn);
+            let radius = 0.26 + 0.61 * (i + 1) as f32 / planets;
+            let a = turn + t * (1.0 + (i % 3) as f32 / harmonic);
+            for k in (1..=trail as usize).rev().step_by(2) {
+                mark(
+                    &mut moving,
+                    cx,
+                    cy,
+                    sx,
+                    sy,
+                    plane.point(radius, a - k as f32 * 0.055),
+                    '.',
+                    ink,
+                );
+            }
+            let [x, y, z] = plane.point(radius, a);
+            // Seven-cell bodies vary by planet, with two independently orbiting moons.
+            // Offsets are in screen cells, so silhouettes survive small terminal sizes.
+            let perspective = 1.0 / (1.0 - z * 0.18);
+            let px = cx + sx * x * perspective;
+            let py = cy + sy * y * perspective;
+            for (dx, dy, ch) in [
+                (-2.0, 0.0, '-'),
+                (-1.0, 0.0, '('),
+                (1.0, 0.0, ')'),
+                (2.0, 0.0, '-'),
+                (0.0, -1.0, '.'),
+                (0.0, 1.0, '.'),
+                (0.0, 0.0, b"O@o*"[i % 4] as char),
+            ] {
+                moving.push(Mark {
+                    x: px + dx,
+                    y: py + dy,
+                    z: z + 0.02,
+                    ch,
+                    fg: white,
+                });
+            }
+            for moon in 0..2 {
+                let (s, c) = (t * (2.0 + moon as f32) + turn + moon as f32 * PI).sin_cos();
+                moving.push(Mark {
+                    x: px + c * (3.0 + moon as f32),
+                    y: py + s * 2.0,
+                    z: z + s * 0.08,
+                    ch: if moon == 0 { 'o' } else { '*' },
+                    fg: warm,
+                });
+            }
+        }
+        for i in 0..comets as usize {
+            let (cx, cy, sx, sy) = site(i);
+            for k in (0..trail as usize).rev() {
+                let a = phase + i as f32 * TAU / comets - t * 1.35 + k as f32 * 0.04;
+                let (s, c) = a.sin_cos();
+                let r = 0.83 + 0.11 * (a * harmonic).sin();
+                mark(
+                    &mut moving,
+                    cx,
+                    cy,
+                    sx,
+                    sy,
+                    [r * c, r * s, 0.5 * s],
+                    if k == 0 { '*' } else { '.' },
+                    if k == 0 { white } else { warm },
+                );
+            }
+        }
+        for i in 0..tracers as usize {
+            let (cx, cy, sx, sy) = site(i);
+            let a = t * 0.65 + phase + i as f32 * TAU / tracers;
             mark(
                 &mut moving,
                 cx,
                 cy,
                 sx,
                 sy,
-                [r * c, r * s, 0.5 * s],
-                if k == 0 { '*' } else { '.' },
-                if k == 0 { white } else { warm },
+                [
+                    0.45 * (a * 2.0).sin(),
+                    0.45 * (a * 3.0).sin(),
+                    0.6 * a.cos(),
+                ],
+                '+',
+                bright,
             );
         }
-    }
-    for i in 0..tracers as usize {
-        let (cx, cy, sx, sy) = site(i);
-        let a = t * 0.65 + phase + i as f32 * TAU / tracers;
-        mark(
-            &mut moving,
-            cx,
-            cy,
-            sx,
-            sy,
-            [
-                0.45 * (a * 2.0).sin(),
-                0.45 * (a * 3.0).sin(),
-                0.6 * a.cos(),
-            ],
-            '+',
-            bright,
-        );
-    }
-    let (core_x, core_y, _, _) = site(0);
-    moving.push(Mark {
-        x: core_x,
-        y: core_y,
-        z: 1.1,
-        ch: '@',
-        fg: white,
+        let (core_x, core_y, _, _) = site(0);
+        moving.push(Mark {
+            x: core_x,
+            y: core_y,
+            z: 1.1,
+            ch: '@',
+            fg: white,
+        });
     });
     // 192 gimbal + 129 arm + 72 gear + 12*(4+9) planet +
     // 8*8 comet + 24 tracer + 1 core = 638, below the allocation bound.
     assert!(moving.len() <= MAX_MOVING_MARKS);
-    composite(grid, &mut moving);
+    measure_layer("gem-aetherium-3", "composite", || composite(grid, &mut moving));
 }
 
 const MAX_MOVING_MARKS: usize = 638;

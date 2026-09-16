@@ -555,6 +555,9 @@ pub(crate) struct FrameSample {
     pub(crate) generation: Duration,
     pub(crate) encoding: Duration,
     pub(crate) presentation: Duration,
+    /// Encoder sub-phases: per-cell adapter loop, then diff scan plus emission.
+    pub(crate) convert: Duration,
+    pub(crate) emit: Duration,
     pub(crate) bytes: usize,
     pub(crate) changed_cells: usize,
     pub(crate) runs: usize,
@@ -570,6 +573,10 @@ struct FrameTotals {
     generation_ns_max: u128,
     encoding_ns: u128,
     encoding_ns_max: u128,
+    convert_ns: u128,
+    convert_ns_max: u128,
+    emit_ns: u128,
+    emit_ns_max: u128,
     presentation_ns: u128,
     presentation_ns_max: u128,
     bytes: u128,
@@ -591,6 +598,12 @@ impl FrameTotals {
         self.generation_ns_max = self.generation_ns_max.max(generation_ns);
         self.encoding_ns += encoding_ns;
         self.encoding_ns_max = self.encoding_ns_max.max(encoding_ns);
+        let convert_ns = sample.convert.as_nanos();
+        let emit_ns = sample.emit.as_nanos();
+        self.convert_ns += convert_ns;
+        self.convert_ns_max = self.convert_ns_max.max(convert_ns);
+        self.emit_ns += emit_ns;
+        self.emit_ns_max = self.emit_ns_max.max(emit_ns);
         self.presentation_ns += presentation_ns;
         self.presentation_ns_max = self.presentation_ns_max.max(presentation_ns);
         self.bytes += sample.bytes as u128;
@@ -672,6 +685,8 @@ impl FrameProfiler {
                     "dur_us": total.as_micros() as u64,
                     "render_us": sample.generation.as_micros() as u64,
                     "encoding_us": sample.encoding.as_micros() as u64,
+                    "convert_us": sample.convert.as_micros() as u64,
+                    "emit_us": sample.emit.as_micros() as u64,
                     "presentation_us": sample.presentation.as_micros() as u64,
                     "bytes": sample.bytes,
                     "changed_cells": sample.changed_cells,
@@ -725,6 +740,10 @@ impl FrameProfiler {
             generation_us_max = self.totals.generation_ns_max as f64 / 1_000.0,
             encoding_us_avg = self.totals.encoding_ns as f64 / divisor,
             encoding_us_max = self.totals.encoding_ns_max as f64 / 1_000.0,
+            convert_us_avg = self.totals.convert_ns as f64 / divisor,
+            convert_us_max = self.totals.convert_ns_max as f64 / 1_000.0,
+            emit_us_avg = self.totals.emit_ns as f64 / divisor,
+            emit_us_max = self.totals.emit_ns_max as f64 / 1_000.0,
             presentation_us_avg = self.totals.presentation_ns as f64 / divisor,
             presentation_us_max = self.totals.presentation_ns_max as f64 / 1_000.0,
             bytes_total = self.totals.bytes as u64,
@@ -765,6 +784,8 @@ mod tests {
             generation: Duration::from_micros(120),
             encoding: Duration::from_micros(40),
             presentation: Duration::from_micros(600),
+            convert: Duration::from_micros(25),
+            emit: Duration::from_micros(15),
             bytes: 900,
             changed_cells: 80,
             runs: 7,
@@ -776,6 +797,8 @@ mod tests {
             generation: Duration::from_micros(80),
             encoding: Duration::from_micros(60),
             presentation: Duration::from_micros(400),
+            convert: Duration::from_micros(35),
+            emit: Duration::from_micros(25),
             bytes: 300,
             changed_cells: 20,
             runs: 3,
@@ -809,6 +832,10 @@ mod tests {
                 generation_ns_max: 120000,
                 encoding_ns: 100000,
                 encoding_ns_max: 60000,
+                convert_ns: 60000,
+                convert_ns_max: 35000,
+                emit_ns: 40000,
+                emit_ns_max: 25000,
                 presentation_ns: 1000000,
                 presentation_ns_max: 600000,
                 bytes: 1200,

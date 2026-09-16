@@ -1250,6 +1250,8 @@ mod tests {
                         encoding: encoding_elapsed,
                         presentation: Duration::ZERO,
                         bytes: stats.bytes,
+                        convert: stats.convert,
+                        emit: stats.emit,
                         changed_cells: stats.changed_cells,
                         runs: stats.runs,
                         full_repaint: stats.full_repaint,
