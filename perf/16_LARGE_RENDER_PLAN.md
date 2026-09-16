@@ -238,105 +238,121 @@ Basis: 1992 us for an identical frame, 0 bytes emitted, at 366x199; 5132 us at
 800x240. The work is the unconditional target-population loop plus ratatui's
 full-grid diff.
 
-Landed in `src/gridio.rs`, and the shape that survived the guards is not the one
-this step first proposed. The encoder keeps a raw `Vec<Cell>` shadow (12 bytes per
-cell), and each frame walks the grid once:
+Landed in `src/gridio.rs`. The encoder keeps two parallel caches of the frame it
+last adapted: the raw `Vec<Cell>` shadow (12 bytes per cell) and an `AdaptedCell`
+cache (`char` plus the two mapped Ratatui colors, 12 bytes per cell). Each frame
+walks the grid once:
 
-- A cell whose raw `Cell` matches the shadow is left alone and marked
-  `CellDiffOption::Skip`, so ratatui neither converts nor compares it. This is
-  what makes the saving larger than the plan predicted: the identical-frame row
-  also loses the full-grid content comparison.
-- A cell that moved is converted as before, and `previous` takes a clone of the
-  value being replaced while `current` takes the new one. `previous` is the diff's
-  reference, so it must hold the value the terminal shows. Refreshing it at the
-  moment a cell changes is what makes skipping safe for later frames, and it costs
-  one clone per changed cell rather than one per resting cell.
-- Full repaints keep `AlwaysUpdate` on every cell and skip the reference clone
-  entirely: they emit everything, and the frame after one refreshes each cell it
-  changes, so an older entry is never read.
+- A cell whose raw `Cell` matches the shadow keeps what the terminal already shows,
+  gets `CellDiffOption::Skip`, and is neither converted nor compared. A fully
+  resting frame therefore converts nothing and compares nothing.
+- A cell that moved is adapted, and the adapted value is what decides emission: it
+  is drawn only when the adapted cache differs, which is the same set the
+  retained-buffer comparison produced, since a space hides its foreground and
+  adjacent RGB levels collapse into one palette index.
+- `previous` is no longer a reference the diff compares against; it exists only
+  because Ratatui consults the cell it is replacing to clear the columns a wide
+  glyph reserved. Only those cells are put back in step, plus a per-cell flag for
+  cells that still hold a wide glyph, so the retained buffer stays a cache of
+  exactly the cases that read it.
 
-Two designs were implemented, measured and rejected first, both caught by the
-byte-identity guards rather than by inspection:
+This is the third shape to survive the guards, and the first two are worth
+recording because neither was visible by inspection:
 
-1. `Skip` plus the existing per-frame buffer flip. `ratatui::buffer::Cell` equality
-   includes `diff_option`, and a flipped buffer leaves the skipped guard cells
-   holding the value from two frames back, so the delta frame emitted 45,510 bytes
-   against 25,421 and `gem_bad_roll6_ansi_regression` totals moved by 250 KB.
-2. Forcing the reference cell's option to `None` on write. That restored the byte
-   counts but left a missed repaint: a cell that changes, rests, then returns to
-   its earlier value was compared against the stale hole instead of against the
-   terminal, so nothing was emitted. The encoder unit test for that sequence fails
-   on that revision and passes on the landed one.
+1. `Skip` plus the per-frame buffer flip. `ratatui::buffer::Cell` equality includes
+   `diff_option`, and a flipped buffer leaves the skipped cells holding the value
+   from two frames back, so a delta frame emitted 45,510 bytes against 25,421 and
+   the gem 60-frame totals moved by 250 KB.
+2. `Skip` plus refreshing the reference at each changed cell, with `Cell::clone_from`.
+   Byte-identical, and it is what the first commit of this step shipped, but the
+   48-byte reference copy cost more than the conversions it saved: 15 ns per changed
+   cell, measured by building the same tree with the refresh removed. That is what
+   made the churn-heavy modes slower than the code they replaced: at 34 percent
+   churn `pendulum-wave` went 2,342 to 2,856 us. Replacing `clone_from` with a
+   field-wise copy was measured too and is worse (3,013 us), so the copy was not a
+   `CompactString` pathology: it is the memory traffic of keeping a second 48-byte
+   cell per changed cell in step.
 
-Measured, pristine HEAD against the landed revision, interleaved runs of the two
-binaries in one session at 15 reps, prismata, moss, seed 42, dt 0.06. Bytes and
-changed cells are identical in every row of every table below:
+Measured, pristine HEAD against the adapted-cache revision, alternating runs of the
+three binaries in one session, 11 reps, prismata at 366x199 unless noted. Bytes,
+changed cells and skipped cells are identical in all 48 rows, so the emitted set is
+unchanged for every mode measured including the wide-glyph ones:
 
-| stage, 366x199 | HEAD | landed | ratio |
+| mode | cells changed per frame | HEAD us | landed us | adapted us | adapted vs HEAD |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| snakes | 5 (0.0%) | 1,395 | 207 | 228 | 6.13x |
+| chladni | 4 (0.0%) | 1,628 | 266 | 294 | 5.53x |
+| astrolabe | 344 (0.5%) | 1,445 | 264 | 283 | 5.10x |
+| flux | 216 (0.3%) | 1,390 | 249 | 286 | 4.87x |
+| arboretum | 2,017 (2.8%) | 1,901 | 420 | 442 | 4.30x |
+| tideglass | 1,337 (1.8%) | 1,728 | 646 | 509 | 3.39x |
+| prismata | 2,806 (3.9%) | 1,904 | 704 | 591 | 3.22x |
+| cosmograph | 2,752 (3.8%) | 1,796 | 735 | 628 | 2.86x |
+| illuminarium | 5,763 (7.9%) | 2,095 | 917 | 886 | 2.36x |
+| gem-aetherium-2 | 5,432 (7.5%) | 1,914 | 1,114 | 823 | 2.33x |
+| poincare | 7,318 (10.0%) | 2,048 | 1,148 | 937 | 2.19x |
+| delta | 9,338 (12.8%) | 1,972 | 1,004 | 910 | 2.17x |
+| mahoraga-5 | 21,775 (29.9%) | 2,216 | 1,689 | 1,414 | 1.57x |
+| pendulum-wave | 25,028 (34.4%) | 2,342 | 2,856 | 1,764 | 1.33x |
+| hyperloom | 21,227 (29.1%) | 3,005 | 3,156 | 2,310 | 1.30x |
+| terminal-stress | 55,776 (76.6%) | 3,409 | 3,414 | 3,136 | 1.09x |
+
+The per-mode churn column is the point of the table: this is an animation library,
+but only four of sixteen sampled modes move more than a quarter of their cells in
+one 0.06 s step, the median mode moves 4 percent, and `snakes`, `chladni`, `flux`
+and `astrolabe` move under a fifth of a percent. The adapted cache wins in both
+regimes, which the 48-byte reference refresh could not: it moved the encoder's cost
+from `convert` per cell to `convert` per changed cell, but paid a fixed cost per
+changed cell to do it.
+
+Live pipeline, E2E `max-400x200`, prismata at 366x199 with all twelve knobs at max:
+
+| live, 366x199 all knobs max | HEAD | landed | adapted |
 | --- | ---: | ---: | ---: |
-| encode identical frame | 1791.7 / 1799.7 | 275.1 / 283.4 | 6.5x |
-| encode delta over one dt step | 1986.0 / 1957.6 | 796.7 / 784.2 | 2.5x |
-| encode full repaint | 2268.0 / 2221.3 | 2238.2 / 2350.5 | parity |
+| frames | 17 | 18 | 18 |
+| cells changed, average | 49,697 | 49,126 | 49,126 |
+| cells skipped, average | 0 | 19,270 | 19,270 |
+| `convert_us`, average | 1,460 | 1,726 | 1,613 |
+| `emit_us`, average | 3,352 | 3,122 | 2,674 |
+| `encoding_us`, average | 4,864 | 4,893 | 4,332 |
+| `render_us`, average | 1,372 | 1,256 | 1,153 |
+| frame `dur_us`, average | 22,286 | 22,593 | 17,730 |
+| bytes, average | 492,233 | 491,572 | 491,572 |
 
-At 800x240 (192,000 cells) the identical frame goes 4696.8 / 5506.3 to 859.2, the
-delta 5123.3 / 5184.4 to 2442.8, and the full repaint 5704.9 / 5737.3 to 6364.4 on
-the intermediate revision; `gem-aetherium-2` at 366x199 goes 1574.2 to 237.4
-identical and 1925.6 to 1007.9 delta. Full repaints land within noise of HEAD once
-the reference clone is confined to compared frames, and there is at most one per
-session in the live pipeline.
-
-Why the delta win is 2.5x while the identical win is 6.5x: `emit` still scales with
-churn and only `convert` responds to resting cells, which is what the earlier
-`convert`/`emit` split predicted, and the delta row at 3.9 percent cell churn keeps
-a fixed share of conversions.
-
-Live pipeline, E2E `max-400x200`, prismata at 366x199 with all twelve knobs at max,
-HEAD (`perf/results/e2e-1789593387274`, 17 frames) against the landed revision
-(`perf/results/e2e-1789595082362`, 18 frames):
-
-| live, 366x199 all knobs max | HEAD | landed |
-| --- | ---: | ---: |
-| cells changed, average | 49,697 | 49,126 |
-| cells skipped, average | 0 | 19,270 |
-| `convert_us`, average | 1,460 | 1,726 |
-| `emit_us`, average | 3,352 | 3,122 |
-| `encoding_us`, average | 4,864 | 4,893 |
-| `render_us`, average | 1,372 | 1,256 |
-| frame `dur_us`, average | 22,286 | 22,593 |
-
-This is the adversarial end of the range, and it is a wash: all knobs at max makes
-prismata churn 67 percent of its cells per frame, so the per-changed-cell reference
-clone, the 12 bytes per cell of shadow stores and the now-unpredictable skip branch
-cost about what the skipped conversions save, `convert` rises 18 percent, and total
-encode and frame duration sit at parity with the terminal still owning about 90
-percent of the frame. The controlled probe rows above are the other end, where the
-delta encoder is 2.5x faster at 3.9 percent churn and 6.5x faster on a frame that did
-not change at all, because a fully resting frame clones nothing. A future revision
-could pick between the two shapes per frame from a counted churn, at the cost of a
-second pass over the grid and a second code path; it is not worth that today, since
-the encoder is a minority share of a terminal-bound frame.
+Artifacts `perf/results/e2e-1789593387274` (HEAD), `e2e-1789595082362` (landed),
+`e2e-1789596519290` (adapted), each 9 of 9 checks passed. The adapted revision
+encodes 11 percent faster than HEAD and 12 percent faster than the landed shape even
+at 67 percent churn, and the emitted bytes are identical to the landed shape cell for
+cell. `emit` is where the churn-heavy case turns: HEAD compares all 72,834 cells in
+the diff, the adapted revision compares none, because every cell is either skipped or
+explicitly marked for update.
 
 Check, all green:
 
 - Byte identity at grid level: the probe's three encode rows report the same bytes,
-  changed cells and runs on both revisions at 366x199 and 800x240 for `prismata`
-  and `gem-aetherium-2`.
+  changed cells and skipped cells on all three revisions across sixteen modes at
+  366x199 plus `prismata` at 800x240, 48 rows with no difference. Two of those modes
+  (`gem-aetherium-2`, `cosmograph`) draw the zodiac wide glyphs, so the wide-column
+  path is exercised rather than assumed.
 - Byte identity on a long sequence: `gem_bad_roll6_ansi_regression` is red at HEAD
   (its expected foreground constant is 4,748,083 against 0 observed, so it never
   asserted what it intended), but its observed totals are an exact comparator and
-  they are identical on both revisions: 5,124,966 bytes, 357,555 control bytes,
+  they are identical on all three revisions: 5,124,966 bytes, 357,555 control bytes,
   2,019,066 glyph bytes, 2,976,090 cursor bytes.
 - Two new encoder tests in `src/gridio.rs`: a cell that changes, rests, then returns
   to its earlier glyph is repainted, and a resting cell whose change is invisible
-  (a blank cell's foreground) emits nothing.
+  (a blank cell's foreground) emits nothing. The pre-existing wide-glyph test
+  (`replacing_double_width_glyph_repaints_its_reserved_cell`) passes unchanged.
 - Suite: 454 passed / 3 failed / 17 ignored in the bin target, the three failures
   pre-existing (`gridio ansi_frame_tests::animation_encoder_collapses_adjacent_rgb_levels`,
   the gem regression above, `polytope::tests::snapshot_polytope_small`), plus
   `tests/snapshot_modes.rs` 190 passed / 1 failed where `polytope_seed_42` is
   pre-existing too, proved by stashing the change and re-running it on HEAD. No
   `.snap.new` files left.
+- E2E `max-400x200`: 9 of 9 checks on the adapted revision, artifacts
+  `perf/results/e2e-1789596519290`.
 
-Rollback: the shadow is additive and the skip is one branch in `encode`.
+Rollback: the two caches are additive and the loop is one branch per cell.
 
 ### Step 3: buffer hygiene on the frame path
 

@@ -219,6 +219,50 @@ pub(crate) struct FrameEncodeStats {
     pub(crate) emit: std::time::Duration,
 }
 
+/// What a grid cell becomes on the terminal: the glyph and the two mapped
+/// colors. This is the encoder's cache of what the terminal is showing, and it is
+/// what decides emission, because comparing it costs twelve bytes where comparing
+/// a retained Ratatui cell costs a heap-capable string.
+#[derive(Clone, Copy, PartialEq, Eq)]
+struct AdaptedCell {
+    ch: char,
+    fg: ratatui::style::Color,
+    bg: ratatui::style::Color,
+}
+
+impl AdaptedCell {
+    /// What a cell holds before anything is drawn into it: a space, both colors
+    /// reset. This is what an empty Ratatui cell compares equal to.
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
+    fn blank() -> Self {
+        Self {
+            ch: ' ',
+            fg: ratatui::style::Color::Reset,
+            bg: ratatui::style::Color::Reset,
+        }
+    }
+
+    /// A leading byte of `0x11` or more can still be narrow, so the cheap test
+    /// only proposes candidates; the width check decides.
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
+    fn wide(ch: char) -> bool {
+        ch as u32 >= 0x1100 && char_width(ch) == 2
+    }
+
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
+    fn of(cell: &crate::types::Cell) -> Self {
+        Self {
+            ch: cell.ch,
+            fg: if cell.ch == ' ' {
+                ratatui::style::Color::Reset
+            } else {
+                ratatui_color(cell.fg)
+            },
+            bg: ratatui_color(cell.bg),
+        }
+    }
+}
+
 /// Adapts the art grid to Ratatui's retained buffers and Crossterm backend.
 /// Ratatui owns cell comparison, wide-character handling and ANSI generation.
 /// Output stays in a reusable byte buffer for the cancellable playback relay.
@@ -231,6 +275,11 @@ pub(crate) struct AnsiFrameEncoder {
     /// against the raw `Cell` skips both color conversions for every cell that
     /// did not move.
     shadow: Vec<crate::types::Cell>,
+    /// The adapted art of the same frame, which decides what gets drawn.
+    adapted: Vec<AdaptedCell>,
+    /// True where `previous` holds a wide glyph from an earlier frame, so it has
+    /// to be put back in step before Ratatui consults it again.
+    synced_wide: Vec<bool>,
 }
 
 impl AnsiFrameEncoder {
@@ -244,6 +293,8 @@ impl AnsiFrameEncoder {
             bytes: Vec::new(),
             initialized: false,
             shadow: Vec::new(),
+            adapted: Vec::new(),
+            synced_wide: Vec::new(),
         }
     }
 
@@ -267,49 +318,60 @@ impl AnsiFrameEncoder {
             self.initialized = false;
         }
         let full_repaint = force_full || !self.initialized;
-        let option = if full_repaint { CellDiffOption::AlwaysUpdate } else { CellDiffOption::None };
         let convert_started = std::time::Instant::now();
         if self.shadow.len() != self.current.content.len() {
-            self.shadow
-                .resize(self.current.content.len(), crate::types::Cell::blank());
+            let cells = self.current.content.len();
+            self.shadow.resize(cells, crate::types::Cell::blank());
+            self.adapted.resize(cells, AdaptedCell::blank());
+            self.synced_wide.resize(cells, false);
         }
         let mut skipped = 0usize;
-        let Self { shadow, current, previous, .. } = self;
-        for ((source, raw), (target, prior)) in grid
+        let Self { shadow, adapted, synced_wide, current, previous, .. } = self;
+        // Ratatui clears the columns a wide glyph reserved by looking at the cell
+        // it is replacing, so this marks the cell after one.
+        let mut after_wide = false;
+        for (((((source, raw), seen), kept), target), prior) in grid
             .iter()
             .flatten()
             .zip(shadow.iter_mut())
-            .zip(current.content.iter_mut().zip(previous.content.iter_mut()))
+            .zip(adapted.iter_mut())
+            .zip(synced_wide.iter_mut())
+            .zip(current.content.iter_mut())
+            .zip(previous.content.iter_mut())
         {
             // An unchanged raw cell already holds the value the terminal shows,
-            // so the adapter loop and both color conversions are skipped and the
-            // cell is marked so the diff does not compare it.
+            // so both color conversions and the comparison are skipped.
             if !full_repaint && source == raw {
                 target.set_diff_option(CellDiffOption::Skip);
                 skipped += 1;
+                after_wide = false;
                 continue;
             }
-            // `previous` is the reference the diff compares against, so it takes
-            // the value being replaced while `current` takes the new one. Only a
-            // compared frame needs it: a full repaint emits every cell, and the
-            // frame after it refreshes each cell it changes, so its older entry
-            // is never read.
-            if !full_repaint {
-                prior.clone_from(target);
-                // `Cell` equality includes the diff option, so both sides of a
-                // compared cell must carry the same one or an unchanged value
-                // would look changed.
-                prior.set_diff_option(option);
+            let next = AdaptedCell::of(source);
+            // A full repaint draws every cell; otherwise only a cell whose adapted
+            // value moved is drawn, which is the same set the retained-buffer
+            // comparison produced.
+            let draw = full_repaint || *seen != next;
+            if draw && (after_wide || *kept || AdaptedCell::wide(next.ch) || AdaptedCell::wide(seen.ch)) {
+                let mut glyph = [0u8; 4];
+                prior
+                    .set_symbol(seen.ch.encode_utf8(&mut glyph))
+                    .set_fg(seen.fg)
+                    .set_bg(seen.bg)
+                    .set_diff_option(CellDiffOption::None);
+                *kept = AdaptedCell::wide(seen.ch);
             }
-            target
-                .set_char(source.ch)
-                .set_fg(if source.ch == ' ' {
-                    ratatui::style::Color::Reset
-                } else {
-                    ratatui_color(source.fg)
-                })
-                .set_bg(ratatui_color(source.bg))
-                .set_diff_option(option);
+            after_wide = AdaptedCell::wide(next.ch);
+            if draw {
+                target
+                    .set_char(next.ch)
+                    .set_fg(next.fg)
+                    .set_bg(next.bg)
+                    .set_diff_option(CellDiffOption::AlwaysUpdate);
+                *seen = next;
+            } else {
+                target.set_diff_option(CellDiffOption::Skip);
+            }
             *raw = *source;
         }
         let convert = convert_started.elapsed();
