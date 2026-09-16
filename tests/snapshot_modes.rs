@@ -1379,3 +1379,20 @@ fn opus_5_dover_seed_42() {
 fn opus_5_dover_graph_chapter_t40() {
     insta::assert_snapshot!(render_t(&["7", "opus-5-dover", "ember", "2"], "40"));
 }
+
+#[test]
+fn prismata_seed_42() {
+    insta::assert_snapshot!(render(&["42", "prismata", "moss"]));
+}
+
+#[test]
+fn prismata_mosaic_ripple_floating_t9() {
+    insta::assert_snapshot!(render_t(&["42", "prismata", "deep", "6", "2", "1", "7"], "9"));
+}
+
+#[test]
+fn prismata_pinwheel_mosaic_seed_1701() {
+    insta::assert_snapshot!(render(&[
+        "1701", "prismata", "neon", "2", "2", "1", "8", "5", "0.3", "0.6", "0.5", "0.8", "0.5"
+    ]));
+}
