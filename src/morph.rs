@@ -1231,6 +1231,9 @@ pub(crate) fn morph_session(
 }
 
 #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
+/// The relay never drops a `Displayed`; this only bounds a hung relay.
+const ACK_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(5);
+
 pub(crate) fn morph_worker_session(
     mode_a: &str,
     seed_a: u64,
@@ -1238,7 +1241,7 @@ pub(crate) fn morph_worker_session(
     seed_b: u64,
     strat0: &str,
     theme: &str,
-    input: Option<std::sync::mpsc::Receiver<crossterm::event::Event>>,
+    input: Option<std::sync::mpsc::Receiver<crate::_1_playback::Control>>,
     size: Option<(u16, u16)>,
 ) {
     use crossterm::{
@@ -1279,7 +1282,13 @@ pub(crate) fn morph_worker_session(
     let mut walk = mode_a == mode_b;
     let mut walk_seed = seed_b;
 
-    execute!(io::stdout(), cursor::Hide).unwrap();
+    // Framed output carries the cursor hide inside the first frame.
+    if input.is_none() {
+        execute!(io::stdout(), cursor::Hide).unwrap();
+    }
+    let mut hide_cursor = input.is_some();
+    let mut frames_sent = 0u64;
+    let mut frames_displayed = 0u64;
 
     // `phase` is the linear clock; `t` is the eased morph position fed to the
     // renderer. Easing the value (not the clock) is what makes playback slow at
@@ -1290,6 +1299,7 @@ pub(crate) fn morph_worker_session(
     let mut playing = true;
     let mut clock = 0.0_f32;
     let speed = 0.011_f32;
+    let mut last_frame = Instant::now();
 
     // Live knob editing while animating: same declared config + pane as the demo
     // browser. Auto-open when the mode declares knobs so they're visible on entry.
@@ -1367,9 +1377,13 @@ pub(crate) fn morph_worker_session(
                 .unwrap_or_else(|| vec![vec![Cell::blank(); w]; h]);
             st = Some(MorphState::new(fa, fb));
         }
+        // Steps scale with wall time so a slow terminal drops frames instead of
+        // slowing the animation; a stall longer than one second is not caught up.
+        let ticks = (frame_started.duration_since(last_frame).as_secs_f32() * 60.0).min(60.0);
+        last_frame = frame_started;
         if playing {
-            clock += 0.06;
-            phase += dir * speed;
+            clock += 0.06 * ticks;
+            phase += dir * speed * ticks;
             if phase >= 1.0 {
                 if walk {
                     walk_seed = walk_seed.wrapping_add(1);
@@ -1434,6 +1448,13 @@ pub(crate) fn morph_worker_session(
         // payload afterwards: the prefix used to be inserted in front of it after
         // the fact, which memmoved the whole frame twice.
         frame_buffer.clear();
+        if input.is_some() {
+            frame_buffer.extend_from_slice(&[0; crate::_1_playback::FRAME_HEADER]);
+        }
+        if hide_cursor {
+            frame_buffer.extend_from_slice(b"\x1b[?25l");
+            hide_cursor = false;
+        }
         let sync_output = input.is_some() && crate::_1_playback::synchronized_output();
         if sync_output {
             frame_buffer.extend_from_slice(b"\x1b[?2026h");
@@ -1542,16 +1563,22 @@ pub(crate) fn morph_worker_session(
             frame_buffer.extend_from_slice(b"\x1b[?2026l");
         }
         let mut events = Vec::new();
+        let mut controls = Vec::new();
         let presented = {
             #[cfg(unix)]
             if let Some(receiver) = &input {
+                let payload = (frame_buffer.len() - crate::_1_playback::FRAME_HEADER) as u32;
+                frame_buffer[..crate::_1_playback::FRAME_HEADER].copy_from_slice(&payload.to_le_bytes());
                 match crate::_1_playback::write_frame(
                     pipe_output.as_mut().unwrap(),
                     frame_buffer.as_slice(),
                     receiver,
-                    &mut events,
+                    &mut controls,
                 ) {
-                    Ok(done) => done,
+                    Ok(done) => {
+                        frames_sent += u64::from(done);
+                        done
+                    }
                     Err(_) => break 'frames,
                 }
             } else {
@@ -1622,18 +1649,43 @@ pub(crate) fn morph_worker_session(
             );
         }
 
-        if events.is_empty() {
-            // Rendering and output backpressure consume the frame budget too.
-            // An over-budget frame polls input immediately before continuing.
-            let input_wait = Duration::from_millis(16).saturating_sub(frame_started.elapsed());
-            if let Some(receiver) = &input {
-                match receiver.recv_timeout(input_wait) {
-                    Ok(event) => events.push(event),
-                    Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => break,
-                    Err(_) => {}
+        for control in controls.drain(..) {
+            match control {
+                crate::_1_playback::Control::Input(event) => events.push(event),
+                crate::_1_playback::Control::Displayed(frame) => frames_displayed = frames_displayed.max(frame),
+            }
+        }
+        // The frame budget is the lower bound on the wait. The next frame is
+        // held until the terminal accepted this one, so a slow terminal has at
+        // most one frame queued behind the one it is drawing.
+        let budget = frame_started + Duration::from_millis(16);
+        if let Some(receiver) = &input {
+            let ack_deadline = Instant::now() + ACK_TIMEOUT;
+            loop {
+                let now = Instant::now();
+                let waiting_ack = frames_displayed < frames_sent;
+                let deadline = if waiting_ack { ack_deadline.max(budget) } else { budget };
+                if now >= deadline || (!waiting_ack && !events.is_empty()) {
+                    break;
                 }
-                events.extend(receiver.try_iter().take(31));
-            } else if event::poll(input_wait).unwrap_or(false) {
+                match receiver.recv_timeout(deadline - now) {
+                    Ok(crate::_1_playback::Control::Input(event)) => events.push(event),
+                    Ok(crate::_1_playback::Control::Displayed(frame)) => {
+                        frames_displayed = frames_displayed.max(frame);
+                    }
+                    Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => break 'frames,
+                    Err(_) => break,
+                }
+            }
+            for control in receiver.try_iter().take(31) {
+                match control {
+                    crate::_1_playback::Control::Input(event) => events.push(event),
+                    crate::_1_playback::Control::Displayed(frame) => frames_displayed = frames_displayed.max(frame),
+                }
+            }
+        } else if events.is_empty() {
+            let input_wait = Duration::from_millis(16).saturating_sub(frame_started.elapsed());
+            if event::poll(input_wait).unwrap_or(false) {
                 if let Ok(event) = event::read() {
                     events.push(event);
                 }
@@ -1765,6 +1817,9 @@ pub(crate) fn morph_worker_session(
         }
     }
 
-    // restore cursor; caller owns alt-screen/raw-mode teardown.
-    let _ = execute!(io::stdout(), cursor::Show);
+    // restore cursor; caller owns alt-screen/raw-mode teardown. The relay
+    // restores it itself for framed sessions.
+    if input.is_none() {
+        let _ = execute!(io::stdout(), cursor::Show);
+    }
 }

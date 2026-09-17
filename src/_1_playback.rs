@@ -31,6 +31,69 @@ pub(crate) enum Exit {
     Input(Event),
 }
 
+/// One line of the relay-to-worker control pipe.
+#[derive(Debug, PartialEq, serde::Serialize, serde::Deserialize)]
+pub(crate) enum Control {
+    Input(Event),
+    /// The terminal accepted every byte of this frame (1-based count).
+    Displayed(u64),
+}
+
+/// Worker frames arrive as a 4-byte little-endian length and the payload.
+pub(crate) const FRAME_HEADER: usize = 4;
+
+/// Strips frame headers from the worker stream and records where each frame
+/// ends inside the current display buffer.
+#[derive(Default)]
+struct Framing {
+    header: Vec<u8>,
+    remaining: usize,
+    frames: u64,
+    ends: VecDeque<(usize, u64)>,
+}
+
+impl Framing {
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
+    fn unpack(&mut self, mut bytes: &[u8], display: &mut Vec<u8>) {
+        self.ends.clear();
+        while !bytes.is_empty() {
+            if self.remaining == 0 {
+                let take = (FRAME_HEADER - self.header.len()).min(bytes.len());
+                self.header.extend_from_slice(&bytes[..take]);
+                bytes = &bytes[take..];
+                if self.header.len() == FRAME_HEADER {
+                    self.remaining = u32::from_le_bytes(self.header[..].try_into().unwrap()) as usize;
+                    self.header.clear();
+                    self.frames += 1;
+                    if self.remaining == 0 {
+                        self.ends.push_back((display.len(), self.frames));
+                    }
+                }
+                continue;
+            }
+            let take = self.remaining.min(bytes.len());
+            display.extend_from_slice(&bytes[..take]);
+            bytes = &bytes[take..];
+            self.remaining -= take;
+            if self.remaining == 0 {
+                self.ends.push_back((display.len(), self.frames));
+            }
+        }
+    }
+
+    /// Frames whose last byte the terminal has accepted, in order.
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
+    fn displayed(&mut self, written: usize) -> impl Iterator<Item = u64> + '_ {
+        std::iter::from_fn(move || {
+            let (end, frame) = *self.ends.front()?;
+            (end <= written).then(|| {
+                self.ends.pop_front();
+                frame
+            })
+        })
+    }
+}
+
 #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn quit(event: &Event) -> Option<Exit> {
     match event {
@@ -144,6 +207,7 @@ fn pump(
     let mut eof = false;
     let mut consecutive_write_stalls = 0;
     let mut next_input = Instant::now();
+    let mut framing = Framing::default();
     loop {
         profile.tick();
         let input_started = Instant::now();
@@ -171,7 +235,7 @@ fn pump(
                 if !animation {
                     return Ok(Exit::Input(event));
                 }
-                let mut encoded = serde_json::to_vec(&event)?;
+                let mut encoded = serde_json::to_vec(&Control::Input(event))?;
                 encoded.push(b'\n');
                 // Under saturation retain recent controls. Never drop a partial
                 // record already being written, and never enqueue quit commands.
@@ -221,7 +285,7 @@ fn pump(
                     display.clear();
                     displayed = 0;
                     if animation {
-                        display.extend_from_slice(&bytes[..n]);
+                        framing.unpack(&bytes[..n], &mut display);
                     } else {
                         for &byte in &bytes[..n] {
                             // Preview CLI output uses LF, while raw terminal mode
@@ -257,6 +321,12 @@ fn pump(
                     profile.totals.bytes += n;
                     profile.totals.max_write_bytes = profile.totals.max_write_bytes.max(n);
                     progressed = true;
+                    // Acks are never dropped: the worker holds its next frame for them.
+                    for frame in framing.displayed(displayed) {
+                        let mut encoded = serde_json::to_vec(&Control::Displayed(frame))?;
+                        encoded.push(b'\n');
+                        pending.push_back(encoded);
+                    }
                 }
                 Err(e)
                     if matches!(
@@ -350,10 +420,10 @@ pub(crate) fn worker(args: &[String]) {
             let Ok(line) = line else {
                 break;
             };
-            let Ok(event) = serde_json::from_str::<Event>(&line) else {
+            let Ok(control) = serde_json::from_str::<Control>(&line) else {
                 break;
             };
-            if sender.send(event).is_err() {
+            if sender.send(control).is_err() {
                 break;
             }
         }
@@ -391,13 +461,13 @@ fn synchronized_output_for(term_program: Option<&str>, in_tmux: bool, in_screen:
 pub(crate) fn write_frame(
     output: &mut (impl Write + AsFd),
     mut bytes: &[u8],
-    input: &std::sync::mpsc::Receiver<Event>,
-    events: &mut Vec<Event>,
+    input: &std::sync::mpsc::Receiver<Control>,
+    events: &mut Vec<Control>,
 ) -> io::Result<bool> {
     while !bytes.is_empty() {
         for _ in events.len()..INPUT_EVENTS {
             match input.try_recv() {
-                Ok(event) => events.push(event),
+                Ok(control) => events.push(control),
                 Err(std::sync::mpsc::TryRecvError::Empty) => break,
                 Err(std::sync::mpsc::TryRecvError::Disconnected) => {
                     return Err(io::ErrorKind::BrokenPipe.into());
@@ -430,6 +500,112 @@ mod tests {
     use super::*;
     use crossterm::event::KeyEvent;
 
+    /// A real PTY pair; the master is drained as fast as a thread can read it.
+    fn drained_pty(chunk: usize, pause: Duration) -> (std::fs::File, std::thread::JoinHandle<usize>) {
+        let pty = nix::pty::openpty(None, None).unwrap();
+        let mut master = std::fs::File::from(pty.master);
+        let slave = std::fs::File::from(pty.slave);
+        let drain = std::thread::spawn(move || {
+            let mut total = 0;
+            let mut buffer = vec![0u8; chunk];
+            loop {
+                match master.read(&mut buffer) {
+                    Ok(0) | Err(_) => break,
+                    Ok(n) => total += n,
+                }
+                std::thread::sleep(pause);
+            }
+            total
+        });
+        (slave, drain)
+    }
+
+    fn frame_file(bytes: usize) -> (tempfile::TempDir, std::path::PathBuf) {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("frames.ans");
+        let mut grid = vec![vec![crate::types::Cell::blank(); 200]; 50];
+        for (y, row) in grid.iter_mut().enumerate() {
+            for (x, cell) in row.iter_mut().enumerate() {
+                let v = ((x * 7 + y * 13) % 200) as u8;
+                *cell = crate::types::Cell::with_bg(
+                    if (x + y) % 3 == 0 { '#' } else { '.' },
+                    crossterm::style::Color::Rgb { r: v, g: 255 - v, b: 64 },
+                    crossterm::style::Color::Rgb { r: 10, g: 10, b: v / 4 },
+                );
+            }
+        }
+        let frame = crate::gridio::grid_to_ansi(&grid);
+        let mut file = std::fs::File::create(&path).unwrap();
+        for _ in 0..bytes / frame.len() {
+            file.write_all(&(frame.len() as u32).to_le_bytes()).unwrap();
+            file.write_all(frame.as_bytes()).unwrap();
+        }
+        (directory, path)
+    }
+
+    /// `cat` straight into a PTY is the ceiling; the relay must reach half of it
+    /// (plans/terminal-throughput/01_measurement_audit.md, defect 2).
+    #[test]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
+    fn relay_moves_bytes_at_least_half_as_fast_as_cat() {
+        relay_against_cat(32 << 20, 65536, Duration::ZERO);
+    }
+
+    /// A consumer taking 4 KiB per 500 us is the shape of tmux or iTerm at 1000x1000.
+    #[test]
+    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
+    fn relay_keeps_pace_with_cat_into_a_slow_consumer() {
+        relay_against_cat(4 << 20, 4096, Duration::from_micros(500));
+    }
+
+    fn relay_against_cat(bytes: usize, chunk: usize, pause: Duration) {
+        let (_directory, path) = frame_file(bytes);
+        let cat_rate = {
+            let (slave, drain) = drained_pty(chunk, pause);
+            let started = Instant::now();
+            let status = Command::new("/bin/cat")
+                .arg(&path)
+                .stdout(Stdio::from(slave))
+                .status()
+                .unwrap();
+            assert!(status.success());
+            let total = drain.join().unwrap();
+            total as f64 / started.elapsed().as_secs_f64()
+        };
+        let relay_rate = {
+            let (slave, drain) = drained_pty(chunk, pause);
+            nonblocking(&slave).unwrap();
+            let mut terminal = slave.try_clone().unwrap();
+            let readiness = slave.as_fd();
+            let started = Instant::now();
+            let exit = pump(
+                Command::new("/bin/cat").arg(&path),
+                true,
+                &mut terminal,
+                Some(readiness),
+                || Ok(None),
+            )
+            .unwrap();
+            assert_eq!(exit, Exit::Finished);
+            let elapsed = started.elapsed().as_secs_f64();
+            drop(terminal);
+            drop(slave);
+            let total = drain.join().unwrap();
+            total as f64 / elapsed
+        };
+        eprintln!(
+            "cat {:.1} MiB/s, relay {:.1} MiB/s",
+            cat_rate / 1048576.0,
+            relay_rate / 1048576.0
+        );
+        assert!(
+            relay_rate >= cat_rate * 0.5,
+            "relay {:.1} MiB/s is below half of cat {:.1} MiB/s",
+            relay_rate / 1048576.0,
+            cat_rate / 1048576.0
+        );
+    }
+
     #[test]
     #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn synchronized_output_is_limited_to_direct_iterm_sessions() {
@@ -449,7 +625,7 @@ mod tests {
     fn controls_are_collected_without_abandoning_frames_and_disconnected_workers_stop() {
         struct PartialWriter {
             readiness: std::fs::File,
-            sender: std::sync::mpsc::Sender<Event>,
+            sender: std::sync::mpsc::Sender<Control>,
             written: Vec<u8>,
             writes: usize,
         }
@@ -465,7 +641,7 @@ mod tests {
                 if self.writes == 1 {
                     self.writes += 1;
                     self.sender
-                        .send(Event::Key(KeyEvent::new(KeyCode::Left, KeyModifiers::NONE)))
+                        .send(Control::Input(Event::Key(KeyEvent::new(KeyCode::Left, KeyModifiers::NONE))))
                         .unwrap();
                     return Err(io::ErrorKind::WouldBlock.into());
                 }
@@ -490,7 +666,7 @@ mod tests {
         assert_eq!(writer.written, b"abcdef");
         assert_eq!(
             events,
-            [Event::Key(KeyEvent::new(KeyCode::Left, KeyModifiers::NONE))]
+            [Control::Input(Event::Key(KeyEvent::new(KeyCode::Left, KeyModifiers::NONE)))]
         );
 
         let mut file = tempfile::tempfile().unwrap();
@@ -541,7 +717,7 @@ mod tests {
                 Ok(())
             }
         }
-        let (sender, receiver) = std::sync::mpsc::channel();
+        let (sender, receiver) = std::sync::mpsc::channel::<Control>();
         let frame = vec![b'x'; 300 * 1024];
         let mut writer = BatchWriter {
             readiness: OpenOptions::new().write(true).open("/dev/null").unwrap(),
