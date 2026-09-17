@@ -20,7 +20,6 @@ use crate::braid2::cli_braid2;
 use crate::chladni::cli_chladni;
 use crate::opus_5_dover::cli_opus_5_dover;
 use crate::aurora2::cli_aurora2;
-use crate::reef::cli_reef;
 use crate::cli_basic::*;
 use crate::cli_catalog::*;
 use crate::cli_city::*;
@@ -465,9 +464,6 @@ fn run_render(args: Vec<String>) {
         );
         eprintln!(
             "  opus-5-dover  six-chapter math shelf on a timer: Fourier epicycles, torus curvature, a graph waking up, a lambda term reducing, a Mobius band, a matrix bending the plane (a=animate) [chapter] [dwell] [speed] [harm] [nodes] [chords] [steps] [twist] [tube] [mesh] [trail] [label] [aspect]"
-        );
-        eprintln!(
-            "  reef      DLA coral colonies under a caustic water column, bubbles and fish (a=animate) [colonies] [walkers] [stickiness] [depth] [bubbles] [fish]"
         );
         for (_, mode) in registered_modes().iter() {
             eprintln!("  {:<16} {}", mode.name(), mode.help());
@@ -2058,15 +2054,6 @@ fn run_render(args: Vec<String>) {
         }
     } else if mode == "aurora2" {
         let (g, done) = cli_aurora2(
-            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
-            theme_name,
-        );
-        grid = g;
-        if done {
-            return;
-        }
-    } else if mode == "reef" {
-        let (g, done) = cli_reef(
             grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
             theme_name,
         );
