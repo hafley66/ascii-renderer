@@ -327,7 +327,9 @@ impl Look {
             0.0
         };
         let h_w = h as f32;
-        let unit_r = (h as f32).powf(0.62) * 0.55 * p[2];
+        // A lamp stays a lamp at any pane size: past ~28 rows the defocus radius
+        // is held in cells, so a taller terminal earns more lamps, not one wash.
+        let unit_r = (h_w.powf(0.62) * 0.55).min(4.0) * p[2];
         // Bigger defocus means fewer lights: the pane holds a bounded amount of
         // glow, so the knob moves light around instead of spending more of it.
         let bokeh2 = (p[2] * p[2]).max(0.12);
@@ -343,9 +345,11 @@ impl Look {
         let cool = lerp_color(rgb(108, 178, 255), palette[2], 0.20);
         let rose = lerp_color(rgb(255, 104, 172), palette[4], 0.14);
         let hot = lerp_color(rgb(255, 244, 230), palette[4], 0.2);
-        // Bokeh count is a knob, but a small terminal cannot hold a crowd.
-        let crowd = ((w * h) as f32 / 2600.0).clamp(0.40, 1.0) / bokeh2;
-        let lights = (p[0] * crowd).round().clamp(3.0, 220.0) as usize;
+        // Bokeh count is a knob, but a small terminal cannot hold a crowd: the
+        // count follows pane area up to the cap, so a tall pane fills with lamps
+        // instead of spreading the same few over a black field.
+        let crowd = ((w * h) as f32 / 2600.0).clamp(0.40, 24.0) / bokeh2;
+        let lights = (p[0] * crowd).round().clamp(3.0, 900.0) as usize;
         Look {
             seed,
             w,
@@ -378,7 +382,7 @@ impl Look {
             rain: p[5],
             rain_gate: (0.05 + 0.30 * p[5]).clamp(0.0, 1.0),
             rain_speed: h as f32 * 0.36 * (0.7 + 0.3 * p[5]),
-            rain_len: unit_r * 3.2,
+            rain_len: (unit_r * 3.2).max(h_w * 0.14),
             rain_lit: 0.20 * p[5],
             wind: p[6],
             haze: p[7],
@@ -797,6 +801,7 @@ fn splat(
             };
             // Broad shapes ring, small ones fill: below a few cells a "ring" is
             // the whole light anyway.
+            let point = (1.0 - d2 * 1.35).max(0.0);
             let core = if kind == K_COLUMN {
                 (1.0 - dx.abs() * 0.7).clamp(0.0, 1.0) * (1.0 - dy.abs() * 0.62).clamp(0.0, 1.0)
             } else {
@@ -804,7 +809,6 @@ fn splat(
                 // than the middle, so a light reads as a circle, not a fuzzy ball.
                 let inside = (1.0 - d2.sqrt()) * rx.min(ry);
                 let rim = (1.0 - ((inside - 0.55) / 0.78).powi(2)).max(0.0);
-                let point = (1.0 - d2 * 1.35).max(0.0);
                 rim * (1.0 - tiny) + point * tiny
             };
             let lit = lit_gain * halo;
@@ -814,9 +818,11 @@ fn splat(
             f[0] += col[0] * (lit + body * 0.95) + col[2] * fringe;
             f[1] += col[1] * (lit + body * 0.95) + col[1] * fringe;
             f[2] += col[2] * (lit + body * 0.95) + col[0] * fringe;
-            // Only a bright lamp takes a glyph: a disc's edge is carried by
-            // brightness, which keeps a pale street from becoming a wall of tiles.
-            let mark = if tiny > 0.5 { body * 1.25 - 0.55 } else { 0.0 };
+            // A lamp keeps a core of its own: a cell or two of glyph, dimmed as
+            // the defocus spreads it, so lamps still read on a tall pane. The
+            // halo stays brightness, which keeps a pale street off a wall of tiles.
+            let mark = (if kind == K_COLUMN { core } else { point } * bright * 1.25 - 0.55)
+                * (3.6 / (rx.min(ry) + 1.4)).min(1.0);
             if mark > f[3] {
                 f[3] = mark;
             }
@@ -884,7 +890,7 @@ fn hero_cluster(field: &mut [[f32; 4]], look: &Look, k: usize) {
 /// Lit windows inside the dark masses: a few panes in a loose grid per building.
 /// They are drawn after the silhouettes, so they survive the clipping.
 fn splat_panes(field: &mut [[f32; 4]], look: &Look) {
-    let blocks = (look.w / 26).clamp(3, 12) as u64;
+    let blocks = (look.w / 18).clamp(3, 26) as u64;
     for b in 0..blocks {
         let salt = 4_000 + b;
         let bx = span(look.at(L_ROOF, salt, 0), 0.04, 0.96) * look.w as f32;
@@ -902,7 +908,7 @@ fn splat_panes(field: &mut [[f32; 4]], look: &Look) {
                 if unit(hh) < 0.34 {
                     continue;
                 }
-                let cell = span(hh, 0.22, 0.62);
+                let cell = span(hh, 0.34, 0.90);
                 splat(
                     field,
                     look,

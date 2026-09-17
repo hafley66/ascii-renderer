@@ -35,9 +35,9 @@ than a blur. Knob rolls move every element, not just the shading: `LIGHTS`,
 
 | knob | range | default | what it changes |
 | --- | --- | --- | --- |
-| LIGHTS | 6..90 step 2 | 26 | lamp population; scaled down as the frame shrinks and as defocus grows |
+| LIGHTS | 6..90 step 2 | 26 | lamp population; follows pane area (1 lamp per ~2.6k cells) and shrinks as defocus grows |
 | GLOW | 0..1.8 step 0.05 | 1.05 | halo gain and exposure |
-| BOKEH | 0.35..2 step 0.05 | 1 | defocus scale: every scene element is sized in these units |
+| BOKEH | 0.35..2 step 0.05 | 1 | defocus scale: every scene element is sized in these units, but a lamp's cell radius is held at 4 |
 | DROPS | 0..2.2 step 0.1 | 1 | resolved beads and the mist glitter (0 is clear glass) |
 | SLIDE | 0..2 step 0.1 | 1 | running drops, their tracks, and how much glass they wipe |
 | RAIN | 0..2 step 0.1 | 0.9 | rain lanes that are wet, dash length and how hard a dash is lit |
@@ -67,9 +67,11 @@ bounded lens work:
 1. `sky` — night gradient, light-pollution band with district zones, pane sheen, the passing car.
 2. `city` — additive lamps (discs with a rim band about a cell thick, rain-smeared
    columns, blown-out points), then the two skyline ridges clip what stood behind
-   them, then lit windows are drawn on top of the dark mass. Splat work is capped:
-   a point lamp's bloom reach is bounded by a per-frame budget, so neither a large
-   terminal nor a large defocus can make this pass unbounded.
+   them, then lit windows are drawn on top of the dark mass. Splat work is capped
+   three ways: a lamp's defocus radius is held at 4 cells, so a tall pane earns
+   more lamps instead of four giant ones; the count follows pane area; and a point
+   lamp's bloom reach is bounded by a per-frame budget, so neither a large terminal
+   nor a large defocus can make this pass unbounded.
 3. `rain` — the dash field solved per cell: lane = floor of the wind-skewed
    coordinate, then one hash chain gives the lane its speed, length and head.
 4. `compose` — one field cell plus its position become a drawable cell.
@@ -80,11 +82,15 @@ bounded lens work:
    dark crown shades the top edge; a specular glint marks the crown.
 
 The glyph channel carries two alphabets in one float: **positive is light** and
-fills the cell with shade (`▒ ▓ █`, only for lamps bright enough to earn one),
-**negative is rain** and draws a stroke (`╎ │ ┊`, or `/ \` under wind). Droplet
-rims mark a sparse dither of `·`/`∙`, and the sheen pass stamps `· + ✦` glints. At
-cell resolution a dotted ring around a disc reads as a rectangle, so discs carry
-their edge in brightness alone.
+fills the cell with shade (`▒ ▓ █`), **negative is rain** and draws a stroke
+(`╎ │ ┊`, or `/ \` under wind). Every lamp writes its core into that channel — a
+cell or two wide, dimmed as the defocus spreads it — so lamps still read as lamps
+on a tall pane; the halo stays brightness, which keeps a defocused disc from
+becoming a wall of tiles. Because the mark is a core and not the disc, a lamp's
+cost and its glyph are both independent of the pane size. Droplet rims mark a
+sparse dither of `·`/`∙`, and the sheen pass stamps `· + ✦` glints. At cell
+resolution a dotted ring around a disc reads as a rectangle, so discs carry their
+edge in brightness alone.
 
 Running drops wipe the glass: a bead already swept this cycle is not drawn, and
 the drop lays its own small beads along the track, which is what makes a trail
@@ -96,19 +102,21 @@ read as a trail rather than as noise.
 
 | knob at max | fps | avg ms | vs baseline |
 | --- | ---: | ---: | ---: |
-| baseline | 33.0 | 30.31 | 1.00x |
-| LIGHTS=90 | 27.5 | 36.38 | 1.20x |
-| BOKEH=2 | 29.5 | 33.84 | 1.12x |
-| SLIDE=2 | 31.7 | 31.51 | 1.04x |
-| RAIN=2 | 31.8 | 31.40 | 1.04x |
-| DROPS=2.2 | 32.2 | 31.02 | 1.02x |
-| TWINKLE=1 | 32.3 | 30.94 | 1.02x |
+| baseline | 46.6 | 21.46 | 1.00x |
+| RAIN=2 | 43.5 | 23.01 | 1.07x |
+| LIGHTS=90 | 45.9 | 21.77 | 1.01x |
+| BOKEH=2 | 45.8 | 21.82 | 1.02x |
+| DROPS=2.2 | 46.7 | 21.42 | 1.00x |
+| SLIDE=2 | 46.8 | 21.39 | 1.00x |
+| TWINKLE=1 | 45.6 | 21.94 | 1.02x |
 
-The knob spread is 1.20x, and no knob is a cliff: the only knob that costs real
-work is `LIGHTS`, which is meant to. Layer shares at the worst frame (LIGHTS=90,
-2000x1000): city 31.1%, compose 19.3%, beads 18.4%, drops 14.6%, sky 9.2%, rain
-4.6%, sheen 0.0%. `perf/layer_coverage.sh 400 120 3 moss nightglass` reports 7
-layers, 97.6% attributed, not thin.
+The knob spread is 1.07x, and no knob is a cliff: `RAIN` is now the worst knob at
+2000x1000, and `LIGHTS` costs 1% because the count follows area rather than being
+free to explode. Layer shares at the worst frame (RAIN=2, 2000x1000): compose
+29.8%, drops 18.5%, city 15.8%, rain 15.8%, sky 14.4%, beads 1.3%, sheen 0.0%.
+`perf/layer_coverage.sh 400 120 3 moss nightglass` reports 7 layers, 97.6%
+attributed, not thin. At the 426x135 pane the baseline is 486.9 fps (2.05 ms) and
+the worst knob 421.8 fps (2.37 ms).
 
 The receipt is `perf/results/nightglass.md`.
 
@@ -123,13 +131,19 @@ The receipt is `perf/results/nightglass.md`.
    fades to zero by construction so the cut is invisible; and the lamp count scales
    as `BOKEH^-2`, so a larger defocus moves the same amount of light around instead
    of spending more of it.
-3. Beads are laid down until their lens area would pass 11% of the frame, so the
+3. A lamp's defocus radius is capped at 4 cells and the count follows pane area.
+   Before this, the radius grew as `H^0.62` while the count was pinned at 26: a
+   2000x1000 pane got 26 lamps with 40-cell halos, which both cost the most of any
+   layer and sank below the glyph threshold, so the pane read as black. Capping the
+   radius and scaling the count took the baseline from 33.0 to 46.6 fps at
+   2000x1000 and gave 426x135 a 572-lamp field instead of a void.
+4. Beads are laid down until their lens area would pass 11% of the frame, so the
    `DROPS` knob costs the same on a 2000x1000 terminal as on an 80x24 one. This is
    what removed the previous worst knob: `BOKEH=2` went from 17.7 to 29.5 fps,
    with the bead layer from 27.6 ms to 6.7 ms.
-4. `BOKEH=2` also used to blow up `drops` (7.4 ms) and `city` (8.0 ms); the caps
+5. `BOKEH=2` also used to blow up `drops` (7.4 ms) and `city` (8.0 ms); the caps
    above plus the drop radius clamp bring both under 6 ms.
-5. Row passes shade on rayon above 20,480 cells; the splat pass and the lens
+6. Row passes shade on rayon above 20,480 cells; the splat pass and the lens
    passes stay serial because they write overlapping cells, and their work is
    bounded by the caps rather than by the frame.
 
