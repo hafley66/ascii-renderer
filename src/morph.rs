@@ -1391,7 +1391,12 @@ pub(crate) fn morph_worker_session(
     let spec = mode_spec(mode_a);
     let mut saved = load_options();
     let mut randomize = load_randomize(&saved);
-    let mut roll: u64 = 0; // re-roll nonce for randomize mode
+    // The demo hands its re-roll nonce over so the animation opens on the same
+    // random knob set the preview showed.
+    let mut roll: u64 = std::env::var("ASCII_ROLL")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or_else(|| crate::opts::LIVE_ROLL.with(|r| r.get()));
     let mut pvals: Vec<f32> = pvals_for(&spec, mode_a, &saved);
     let mut psel: usize = 0;
     let mut pane_open = !spec.params.is_empty();

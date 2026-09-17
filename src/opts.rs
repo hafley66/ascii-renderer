@@ -55,6 +55,8 @@ use crate::warps::*;
 thread_local! {
     pub(crate) static LIVE_PARAMS: std::cell::RefCell<std::collections::BTreeMap<&'static str, Option<f32>>> =
         const { std::cell::RefCell::new(std::collections::BTreeMap::new()) };
+    /// The demo's randomize re-roll nonce, handed to the animation worker.
+    pub(crate) static LIVE_ROLL: std::cell::Cell<u64> = const { std::cell::Cell::new(0) };
 }
 
 #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
@@ -70,6 +72,7 @@ pub(crate) fn param_f32(key: &str, default: f32) -> f32 {
 
 #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn live_params_to_command(command: &mut std::process::Command) {
+    command.env("ASCII_ROLL", LIVE_ROLL.with(|r| r.get()).to_string());
     LIVE_PARAMS.with(|values| {
         for (key, value) in values.borrow().iter() {
             let name = format!("ASCII_P_{key}");
@@ -904,6 +907,7 @@ pub(crate) fn run_demo(initial_seed: u64) {
                 KeyCode::Char('a') => {
                     // Animate via the declared strategy with the UI thread
                     // overrides and explicit subprocess environments.
+                    LIVE_ROLL.with(|r| r.set(roll));
                     if morph_session(
                         current_mode,
                         seed,
