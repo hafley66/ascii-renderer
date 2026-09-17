@@ -1398,6 +1398,8 @@ pub(crate) fn morph_worker_session(
         .and_then(|v| v.parse().ok())
         .unwrap_or_else(|| crate::opts::LIVE_ROLL.with(|r| r.get()));
     let mut pvals: Vec<f32> = pvals_for(&spec, mode_a, &saved);
+    // Every knob state (roll, values, randomize) a key leaves; b walks back.
+    let mut history: Vec<(u64, Vec<f32>, bool)> = Vec::new();
     let mut psel: usize = 0;
     let mut pane_open = !spec.params.is_empty();
     let has_params = !spec.params.is_empty();
@@ -1569,7 +1571,7 @@ pub(crate) fn morph_worker_session(
         // bottom-right autoscroll that spammed scrollback).
         let status = if pane_open && has_params {
             format!(
-                " term={}x{} grid={}x{} | morph {} | {} | t={:.2} | {} | o=close opts  \u{2191}\u{2193}=select  \u{2190}\u{2192}=adjust  r=reset  i=iterate  q ",
+                " term={}x{} grid={}x{} | morph {} | {} | t={:.2} | {} | o=close opts  \u{2191}\u{2193}=select  \u{2190}\u{2192}=adjust  r=reset  b=back  i=iterate  q ",
                 w,
                 th,
                 rw,
@@ -1784,9 +1786,19 @@ pub(crate) fn morph_worker_session(
         for event in events {
             let input_started = Instant::now();
             let recorded_event = event.clone();
+            let knob_view = (roll, pvals.clone(), randomize);
             match event {
                 Event::Key(key) => match key.code {
                     KeyCode::Char('q' | 'Q') | KeyCode::Esc => break 'frames,
+                    KeyCode::Char('b') => {
+                        if let Some((r, values, rnd)) = history.pop() {
+                            roll = r;
+                            pvals = values;
+                            randomize = rnd;
+                            store_pvals(mode_a, &spec, &pvals, &mut saved);
+                            store_randomize(&mut saved, randomize);
+                        }
+                    }
                     KeyCode::Char('c' | 'C') if key.modifiers.contains(KeyModifiers::CONTROL) => {
                         break 'frames;
                     }
@@ -1897,6 +1909,13 @@ pub(crate) fn morph_worker_session(
                     clear_frame = true;
                 }
                 _ => {}
+            }
+            let went_back = matches!(event, Event::Key(k) if k.code == KeyCode::Char('b'));
+            if !went_back && (roll, &pvals, randomize) != (knob_view.0, &knob_view.1, knob_view.2) {
+                history.push(knob_view);
+                if history.len() > 512 {
+                    history.remove(0);
+                }
             }
             crate::_0_profile::playback_event(
                 crate::_0_profile::PlaybackStage::InputApplied,
