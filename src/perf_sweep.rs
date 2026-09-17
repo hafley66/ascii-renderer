@@ -474,6 +474,7 @@ const NATIVE_MODES: &[&str] = &[
     "sonnet-1-forest",
     "opus-5-dover",
     "prismata",
+    "nightglass",
     "astra-chaos-theory",
     "astra-jurassic-park",
     "astra-opus-1-chronofold",

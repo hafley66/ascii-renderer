@@ -1396,3 +1396,13 @@ fn prismata_pinwheel_mosaic_seed_1701() {
         "1701", "prismata", "neon", "2", "2", "1", "8", "5", "0.3", "0.6", "0.5", "0.8", "0.5"
     ]));
 }
+
+#[test]
+fn nightglass_seed_42() {
+    insta::assert_snapshot!(render(&["42", "nightglass", "moss"]));
+}
+
+#[test]
+fn nightglass_rain_running_t9() {
+    insta::assert_snapshot!(render_t(&["7", "nightglass", "ember", "26", "1.2"], "9"));
+}
