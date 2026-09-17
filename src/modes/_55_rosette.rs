@@ -14,8 +14,8 @@ pub(super) struct Rosette;
 pub(super) static MODE: Rosette = Rosette;
 
 const NAME: &str = "rosette";
-const KNOBS: usize = 10;
-const HELP: &str = "rosette: kaleidoscopic rose window, sun sweeping the panes [fold] [rings] [petals] [lead] [spin] [sun] [warp] [hue] [aspect] [margin]";
+const KNOBS: usize = 11;
+const HELP: &str = "rosette: kaleidoscopic rose window, sun sweeping the panes [fold] [rings] [petals] [lead] [spin] [sun] [warp] [hue] [aspect] [margin] [floor]";
 
 /// Glass density ramp, dark pane to full sun.
 const GLASS: [char; 10] = [' ', '.', ':', '-', '=', '+', '*', 'o', 'O', '@'];
@@ -26,6 +26,9 @@ const RING_W: f32 = 0.4;
 const GLINT: char = '+';
 /// Wall texture outside the window.
 const STONE: [char; 3] = ['.', ':', '\''];
+const MORTAR: [char; 2] = ['-', '|'];
+const COURSE: usize = 2;
+const BLOCK: usize = 7;
 
 const L_STONE: u64 = 0x11;
 const L_PANE: u64 = 0x12;
@@ -43,6 +46,7 @@ const PARAMS: &[Param] = &[
     param!("HUE", "hue step per ring", 0.0, 180.0, 47.0, 1.0),
     param!("ASPECT", "cols per row", 0.25, 4.0, 2.0, 0.25),
     param!("MARGIN", "wall margin cells", 0.0, 12.0, 1.0, 1.0),
+    param!("FLOOR", "light cast on the floor", 0.0, 1.5, 0.8, 0.05),
 ];
 
 impl Mode for Rosette {
@@ -131,6 +135,10 @@ struct Look {
     hue_step: f32,
     base_hue: f32,
     time: f32,
+    floor: f32,
+    floor_top: f32,
+    eye_r: f32,
+    eye_at: f32,
     wall: Color,
     stone: Color,
     lead_fg: Color,
@@ -142,9 +150,14 @@ impl Look {
     fn new(seed: u64, w: usize, h: usize, palette: &[Color; 5], time: f32, p: &[f32; KNOBS]) -> Self {
         let aspect = p[8].max(0.25);
         let margin = p[9].round().max(0.0);
+        let floor = p[10];
         let cx = w as f32 * 0.5;
-        let cy = h as f32 * 0.5;
-        let radius = ((h as f32 * 0.5 - margin).min(w as f32 * 0.5 / aspect - margin)).max(2.0);
+        let vspan = if floor > 0.0 { 0.44 } else { 0.5 };
+        let radius = ((h as f32 * vspan - margin).min(w as f32 * 0.5 / aspect - margin)).max(2.0);
+        let cy = if floor > 0.0 { margin + radius + 0.5 } else { h as f32 * 0.5 };
+        let floor_top = (cy + radius + 1.0).floor();
+        let eye_r = (radius * 0.13).max(1.3);
+        let eye_at = radius * 0.78;
         let base_hue = unit(hash(seed, L_PANE, 0, 7)) * 360.0;
         Look {
             seed,
@@ -162,6 +175,10 @@ impl Look {
             hue_step: p[7],
             base_hue,
             time,
+            floor,
+            floor_top,
+            eye_r,
+            eye_at,
             wall: darken(palette[0], 12),
             stone: lerp_color(palette[0], palette[2], 0.3),
             lead_fg: darken(palette[2], 70),
@@ -181,6 +198,7 @@ struct Sample {
     petal: i32,
     light: f32,
     theta: f32,
+    lens: bool,
 }
 
 thread_local! {
@@ -219,6 +237,7 @@ fn draw(frame: &mut ModeFrame<'_>, p: &[f32; KNOBS]) {
         measure_layer(NAME, "glass", || paint_glass(frame.grid, field, w, h, &look));
         measure_layer(NAME, "leads", || paint_leads(frame.grid, field, w, h, &look));
         measure_layer(NAME, "boss", || paint_boss(frame.grid, w, h, &look));
+        measure_layer(NAME, "floor", || paint_floor(frame.grid, field, w, h, &look));
     });
 }
 
@@ -255,14 +274,29 @@ fn sample_field(field: &mut [Sample], w: usize, h: usize, look: &Look) {
             }
             let facing = (theta - sun).cos();
             let light = 0.5 + 0.5 * facing;
+            let eye_ang = ((turned / wedge).floor() + 0.5) * wedge;
+            let eye_d = (r * r + look.eye_at * look.eye_at
+                - 2.0 * r * look.eye_at * (turned - eye_ang).cos())
+            .max(0.0)
+            .sqrt();
+            let lens = eye_d < look.eye_r + RING_W;
+            let (f, edge, ring, petal) = if lens {
+                let inner = look.eye_r * 0.45;
+                let rim = ((eye_d - look.eye_r).abs()).min((eye_d - inner).abs()) / RING_W;
+                let f = if eye_d < inner { 1.0 } else { -0.8 };
+                (f, rim, 90, (eye_d < inner) as i32)
+            } else {
+                (f, edge, (u + n * 0.25).floor() as i32, (v + n * 0.35).floor() as i32)
+            };
             *s = Sample {
                 r,
                 field: f,
                 edge,
-                ring: (u + n * 0.25).floor() as i32,
-                petal: (v + n * 0.35).floor() as i32,
+                ring,
+                petal,
                 light,
                 theta,
+                lens,
             };
         }
     });
@@ -284,12 +318,20 @@ fn paint_wall(grid: &mut Grid, field: &[Sample], w: usize, h: usize, look: &Look
             } else {
                 let g = hash(look.seed, L_STONE, x as u64, y as u64);
                 let k = unit(g);
-                let ch = if k < 0.12 {
+                let course = y / COURSE;
+                let joint = (x + course * 4) % BLOCK == 0;
+                let seam = y % COURSE == COURSE - 1;
+                let ch = if k < 0.05 {
                     STONE[(g >> 8) as usize % STONE.len()]
+                } else if seam && k < 0.2 {
+                    MORTAR[0]
+                } else if joint && !seam {
+                    MORTAR[1]
                 } else {
                     ' '
                 };
-                Cell::with_bg(ch, darken(look.stone, 40), look.wall)
+                let bg = if seam { darken(look.wall, 5) } else { look.wall };
+                Cell::with_bg(ch, darken(look.stone, 44), bg)
             };
         }
     };
@@ -363,6 +405,52 @@ fn paint_leads(grid: &mut Grid, field: &[Sample], w: usize, h: usize, look: &Loo
                 (LEAD[1], darken(look.lead_fg, 20))
             };
             *cell = Cell::with_bg(ch, fg, look.lead_bg);
+        }
+    };
+    if w * h >= PARALLEL_MIN_CELLS {
+        slice.par_iter_mut().enumerate().with_min_len(8).for_each(paint);
+    } else {
+        slice.iter_mut().enumerate().for_each(paint);
+    }
+}
+
+/// Light through the window lands on the floor: the lower half of the rose,
+/// mirrored, spread and dimmed with distance, leads casting shadow gaps.
+fn paint_floor(grid: &mut Grid, field: &[Sample], w: usize, h: usize, look: &Look) {
+    let top = look.floor_top as usize;
+    let rows = grid.len().min(h);
+    if look.floor <= 0.0 || top >= rows {
+        return;
+    }
+    let span = (rows - top).max(1) as f32;
+    let slice = &mut grid[top..rows];
+    let paint = |(i, row): (usize, &mut Vec<Cell>)| {
+        let v = i as f32 / span;
+        let src_y = look.cy + look.radius * (0.82 - 0.82 * v) - 0.5;
+        let fade = (1.0 - v).powf(0.8) * look.floor;
+        for (x, cell) in row.iter_mut().enumerate().take(w) {
+            let src_x = look.cx + (x as f32 + 0.5 - look.cx) / (1.0 + 0.3 * v);
+            let (sx, sy) = (src_x.floor(), src_y.floor());
+            let hit = sx >= 0.0 && sy >= 0.0 && (sx as usize) < w && (sy as usize) < h;
+            let s = if hit { Some(&field[sy as usize * w + sx as usize]) } else { None };
+            *cell = match s {
+                Some(s) if s.r < look.radius && s.edge >= 1.0 => {
+                    let (fg, bg) = pane_color(look, s);
+                    let glow = (fade * (0.6 + 0.4 * s.light)).min(1.0);
+                    let level = (glow * 0.85).clamp(0.0, 0.999);
+                    Cell::with_bg(
+                        GLASS[(level * GLASS.len() as f32) as usize],
+                        lerp_color(look.wall, fg, glow),
+                        lerp_color(look.wall, bg, glow),
+                    )
+                }
+                Some(s) if s.r < look.radius => Cell::with_bg(' ', look.wall, look.wall),
+                _ => {
+                    let g = hash(look.seed, L_STONE, x as u64, (top + i) as u64);
+                    let ch = if unit(g) < 0.05 { STONE[0] } else { ' ' };
+                    Cell::with_bg(ch, darken(look.stone, 44), look.wall)
+                }
+            };
         }
     };
     if w * h >= PARALLEL_MIN_CELLS {

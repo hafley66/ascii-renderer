@@ -1,7 +1,7 @@
 ---
-source: src/modes/_55_rosette.rs
-assertion_line: 522
-expression: "text(&frame(80, 24, 42, 0.0, &knobs()))"
+source: tests/snapshot_modes.rs
+assertion_line: 1412
+expression: "render(&[\"42\", \"rosette\", \"moss\"])"
 ---
 |      |    : |   '  |      |      |      |      | :    |      |      :      |  
    :        --  --            '  @@@@@@@@@@@@@@     -- -  :    --  -       -'   
