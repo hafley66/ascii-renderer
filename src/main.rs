@@ -94,6 +94,7 @@ mod types;
 mod walker;
 mod warps;
 mod opus_5_dover;
+mod reef;
 
 use crossterm::style::Color;
 use rand::RngExt;

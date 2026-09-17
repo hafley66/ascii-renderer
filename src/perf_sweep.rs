@@ -488,6 +488,7 @@ const NATIVE_MODES: &[&str] = &[
     "tideglass",
     "vesper",
     "volute",
+    "reef",
 ];
 
 #[test]

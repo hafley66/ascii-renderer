@@ -884,6 +884,11 @@ fn iterate_grid_into(
             crate::opus_5_dover::draw_opus_5_dover(grid, w, h, seed, palette, t, &knobs);
             true
         }
+        "reef" => {
+            let knobs = crate::reef::ReefKnobs::from_env();
+            crate::reef::draw_reef(grid, w, h, seed, palette, t, &knobs);
+            true
+        }
         _ => false,
     }
 }

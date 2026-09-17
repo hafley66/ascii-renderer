@@ -1245,6 +1245,23 @@ pub(crate) static MODE_FORMS: &[ModeForm] = &[
             ),
         ],
     },
+    ModeForm {
+        names: &["reef"],
+        animate: AnimKind::Iterate,
+        params: &[
+            param!("COLONIES", "coral colonies", 1.0, 12.0, 4.0, 1.0),
+            param!("WALKERS", "dla walker budget", 40.0, 12000.0, 1400.0, 40.0),
+            param!("STICK", "stickiness", 0.02, 1.0, 0.5, 0.02),
+            param!("DEPTH", "water column depth", 0.35, 0.98, 0.86, 0.02),
+            param!("BUBBLES", "bubble density", 0.0, 3.0, 0.7, 0.05),
+            param!("FISH", "fish per 80 columns", 0.0, 40.0, 7.0, 1.0),
+            param!("SPREAD", "colony spread", 0.2, 1.0, 0.86, 0.02),
+            param!("CAUST", "caustics and shafts", 0.0, 1.5, 0.7, 0.05),
+            param!("GROW", "colony size", 0.1, 1.5, 1.0, 0.05),
+            param!("HUE", "hue rotation deg", -180.0, 180.0, 0.0, 10.0),
+            param!("SPEED", "time scale", 0.0, 3.0, 1.0, 0.1),
+        ],
+    },
 ];
 
 /// Look up a mode's declared config. Unlisted modes default to iterate, no knobs:

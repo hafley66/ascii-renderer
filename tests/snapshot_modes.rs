@@ -1406,3 +1406,13 @@ fn nightglass_seed_42() {
 fn nightglass_rain_running_t9() {
     insta::assert_snapshot!(render_t(&["7", "nightglass", "ember", "26", "1.2"], "9"));
 }
+
+#[test]
+fn reef_seed_42() {
+    insta::assert_snapshot!(render(&["42", "reef", "deep"]));
+}
+
+#[test]
+fn reef_drifting_t9() {
+    insta::assert_snapshot!(render_t(&["1701", "reef", "moss", "6", "2200"], "9"));
+}
