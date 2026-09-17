@@ -189,6 +189,111 @@ fn perf_knob_sweep() {
     }
 }
 
+/// Report-only companion to the two timer gates: per mode, how many layer timers
+/// fired and what share of the render call they attribute. The `add-mode` skill asks
+/// for 3 to 8 layers covering at least 85 percent of the frame and nothing enforces
+/// it, which is how eight registered modes shipped with no timers at all. This prints
+/// the roster so a thin mode is visible at review instead of at the next perf
+/// question. It asserts nothing on purpose: a coverage floor cannot be a hard gate
+/// until layers stop nesting (`gem-aetherium-2` attributes 177 percent because
+/// `background` wraps `nebula` and `rays`), and a report that fails the suite would
+/// have to be waived instead of read.
+#[test]
+#[ignore = "release-only layer coverage report; run via perf/layer_coverage.sh"]
+#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
+fn layer_coverage_report() {
+    let w: usize = env_or("ASCII_LAYER_WIDTH", 400);
+    let h: usize = env_or("ASCII_LAYER_HEIGHT", 120);
+    let theme: String = env_or("ASCII_LAYER_THEME", "moss".to_string());
+    let reps: usize = env_or("ASCII_LAYER_REPS", 3);
+    let filter: String = env_or("ASCII_LAYER_FILTER", String::new());
+
+    println!(
+        "\n# layer coverage: {w}x{h}, theme {theme}, seed 42, dt 0.06, {reps} reps, release\n"
+    );
+    println!("| mode | layers | calls/frame | attributed | nested | thin |");
+    println!("| --- | ---: | ---: | ---: | --- | --- |");
+    let mut thin: Vec<(String, f64)> = Vec::new();
+    let mut nested: Vec<(String, f64)> = Vec::new();
+    let mut untraced: Vec<String> = Vec::new();
+    let mut named: Vec<String> = Vec::new();
+    let mut reported = 0usize;
+    for mode in NATIVE_MODES {
+        if !filter.is_empty() && !mode.contains(filter.as_str()) {
+            continue;
+        }
+        let Some(mut r) = IterateFrameRenderer::new(mode, 42, &theme, w, h) else {
+            continue;
+        };
+        reported += 1;
+        r.render(0.0, None);
+        layer_capture_begin();
+        let mut render_ns = 0u128;
+        for rep in 0..reps {
+            let started = Instant::now();
+            let rendered = r.render(0.5 + rep as f32 * 0.06, None);
+            render_ns += started.elapsed().as_nanos();
+            if rendered.is_none() {
+                break;
+            }
+        }
+        let mut layers = layer_capture_end();
+        if layers.is_empty() {
+            untraced.push(mode.to_string());
+            println!("| {mode} | 0 | - | - | - | yes |");
+            continue;
+        }
+        layers.sort_by(|a, b| b.total_ns.cmp(&a.total_ns));
+        let calls: u128 = layers.iter().map(|l| l.calls as u128).sum();
+        let attributed_ns: u128 = layers.iter().map(|l| l.total_ns).sum();
+        let share = attributed_ns as f64 / render_ns.max(1) as f64 * 100.0;
+        let is_nested = share > 102.0;
+        let is_thin = share < 85.0;
+        if is_nested {
+            nested.push((mode.to_string(), share));
+        }
+        if is_thin || is_nested {
+            named.push(format!(
+                "  - {mode} ({share:.1}%): {}",
+                layers
+                    .iter()
+                    .map(|l| l.layer)
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ));
+        }
+        if is_thin {
+            thin.push((mode.to_string(), share));
+        }
+        println!(
+            "| {mode} | {} | {:.1} | {share:.1}% | {} | {} |",
+            layers.len(),
+            calls as f64 / reps.max(1) as f64,
+            if is_nested { "yes" } else { "no" },
+            if is_thin { "yes" } else { "no" },
+        );
+    }
+    println!();
+    if !named.is_empty() {
+        println!("modes worth reading (thin or nested):");
+        for line in &named {
+            println!("{line}");
+        }
+        println!();
+    }
+    println!(
+        "{reported} modes reported: {} thin under 85 percent, {} nested over 100 percent, {} with no timers at all{}",
+        thin.len(),
+        nested.len(),
+        untraced.len(),
+        if untraced.is_empty() {
+            String::new()
+        } else {
+            format!(": {}", untraced.join(", "))
+        }
+    );
+}
+
 /// The ruler for `perf/16_LARGE_RENDER_PLAN.md`: whole-mode render, blank grid
 /// build, and the three encoder stages at one grid size, so every later change
 /// is measurable in the same units instead of through a throwaway bench.

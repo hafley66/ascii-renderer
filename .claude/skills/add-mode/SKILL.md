@@ -32,9 +32,9 @@ Handler signature: `cli_<name>(grid, width, height, seed, palette, rng, t_anim, 
 
 6. **`CLAUDE.md`.** Append the mode name at the end of the modes list.
 
-7. **Layer timers.** Wrap each painter section of the draw fn in `crate::_0_profile::measure_layer("<mode>", "<layer>", || ...)`, 3 to 8 layers covering at least 85 percent of the frame. Pattern and rules: `perf/INSTRUMENT.md`. Reference wraps: `src/chladni.rs`, `src/pendwave.rs`.
+7. **Layer timers.** Wrap each painter section of the draw fn in `crate::_0_profile::measure_layer("<mode>", "<layer>", || ...)`, 3 to 8 layers covering at least 85 percent of the frame. Pattern and rules: `perf/INSTRUMENT.md`. Reference wraps: `src/chladni.rs`, `src/pendwave.rs`. Do this while writing the mode, not after: the wrap re-indents the body it encloses, so retrofitting one costs about fifty churned lines per wrap. `perf/layer_coverage.sh` prints the attributed share once the mode renders.
 
-8. **`src/perf_sweep.rs` `NATIVE_MODES`.** Append the mode name as the last entry. The `every_native_mode_has_layer_timers` test in `cargo test` fails for any listed mode that renders with no timers, and a mode missing from the list is never checked.
+8. **`src/perf_sweep.rs` `NATIVE_MODES`.** Optional now: the list is the sweep's roster and is complete, but a registered mode is checked by `every_registered_mode_that_renders_in_process_has_layer_timers`, which iterates the registry, so a new mode needs no entry here. `every_native_mode_has_layer_timers` fails only for a mode that is listed and renders with no timers. Note that neither gate checks how much of the frame a mode attributes, so a mode with one token wrap passes: run `perf/layer_coverage.sh` to see the share.
 
 ## Native animation
 

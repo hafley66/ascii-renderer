@@ -48,8 +48,28 @@ ASCII_PERF_MODE=<mode> ASCII_PERF_SECS=1 ASCII_PERF_WIDTH=400 ASCII_PERF_HEIGHT=
 
 The last command must print a layer table, never the line `no measure_layer timers fired`.
 
+## Coverage
+
+Rule 2 asks for 85 percent of the frame and neither `cargo test` gate checks it, because layers
+nest and a share can read over 100 percent (`gem-aetherium-2` attributes 180 percent: its
+`background` wraps `nebula` and `rays`). `perf/layer_coverage.sh` is the report that does:
+
+```bash
+perf/layer_coverage.sh                    # 400x120, 3 reps, whole roster
+perf/layer_coverage.sh 400 120 3 moss tide  # filter by mode-name substring
+```
+
+It prints one row per mode: layers, calls per frame, attributed share, and whether the share is
+thin (under 85 percent) or nested (over 100 percent), then names the layers of every mode worth
+reading. It asserts nothing on purpose, so a thin mode is caught at review rather than being a
+waived failure. The last full run is `perf/results/layer_coverage.md`: 37 of 78 modes were under
+85 percent, and the worst were the tree and forest families, whose frames are dominated by the
+shared `tree_draw`, `walker`, `sprites` and `scene` code that carries no timers of its own.
+
 ## Gate
 
 `every_native_mode_has_layer_timers` in `src/perf_sweep.rs` runs with `cargo test`. It renders
-every native mode once with a capture open and fails naming any mode with no timers. A new
-native mode must be added to `NATIVE_MODES` there and wrapped before it lands.
+every native mode on the `NATIVE_MODES` roster once with a capture open and fails naming any
+mode with no timers. The roster is complete and a registered mode needs no entry in it:
+`every_registered_mode_that_renders_in_process_has_layer_timers` iterates the registry instead,
+so a new mode is checked without touching the roster.

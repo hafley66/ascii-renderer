@@ -29,7 +29,7 @@ cargo insta accept            # accept all pending changes (use after visual rev
 ### Rules
 
 - Every mode gets at least one snapshot test with a fixed seed
-- When adding a new mode: add a snapshot test before committing, wrap its painters in `measure_layer` timers, and list it in `NATIVE_MODES` (`perf/INSTRUMENT.md`)
+- When adding a new mode: add a snapshot test before committing and wrap its painters in `measure_layer` timers as you write them (`perf/INSTRUMENT.md`); the registry gate checks that a registered mode has timers, and `perf/layer_coverage.sh` reports the share of the frame they attribute
 - When modifying a mode: run `cargo test` first. If snapshots break, visually verify the new output before accepting
 - Never `cargo insta accept` blindly -- the whole point is to catch unintended visual regressions
 - Snapshot files land in `src/snapshots/` (in-module tests) and `tests/snapshots/` (integration tests); `cargo insta` may not be installed -- accept with `mv *.snap.new *.snap` after visual inspection

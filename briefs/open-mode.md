@@ -72,9 +72,12 @@ middle, never reorder:
 7. `CLAUDE.md`: append your mode name to the end of the modes list.
 8. Layer timers: wrap each painter section of `draw_<name>` in
    `crate::_0_profile::measure_layer("<mode>", "<layer>", || ...)`, 3 to 8 layers, at least 85
-   percent of the frame inside them. Rules and validation: `perf/INSTRUMENT.md`.
-9. `src/perf_sweep.rs`: append `"<mode>"` as the last entry of `NATIVE_MODES`. `cargo test` then
-   fails if the mode renders with no timers.
+   percent of the frame inside them. Rules and validation: `perf/INSTRUMENT.md`. Write them as
+   you write the painters: a retrofit re-indents the body it encloses.
+9. `src/perf_sweep.rs`: nothing required. `NATIVE_MODES` is the sweep's roster and a registered
+   mode is checked by `every_registered_mode_that_renders_in_process_has_layer_timers`, which
+   iterates the registry. Run `perf/layer_coverage.sh` to see what share of the frame the mode
+   attributes; the gates only require that some layer fires.
 
 ## Hard constraints
 
