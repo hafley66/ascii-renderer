@@ -892,6 +892,91 @@ fn iterate_grid_into(
 mod iterate_frame_tests {
     use super::*;
 
+    /// Replays a recorded session's frames in-process and prices encodings:
+    /// ASCII_PROBE_TRACE (ndjson), ASCII_PROBE_PID, ASCII_PROBE_FROM (time), ASCII_PROBE_LAST (frames).
+    #[test]
+    #[ignore = "encoder cost probe over a recorded animation trace"]
+    fn encoder_cost_from_trace() {
+        let path = std::env::var("ASCII_PROBE_TRACE").unwrap();
+        let pid: u64 = std::env::var("ASCII_PROBE_PID").unwrap().parse().unwrap();
+        let last: usize = std::env::var("ASCII_PROBE_LAST").map(|v| v.parse().unwrap()).unwrap_or(12);
+        let records: Vec<serde_json::Value> = std::fs::read_to_string(&path)
+            .unwrap()
+            .lines()
+            .filter_map(|line| serde_json::from_str(line).ok())
+            .filter(|r: &serde_json::Value| r["pid"] == pid && r.get("grid").is_some() && r.get("time").is_some())
+            .collect();
+        let from: f64 = std::env::var("ASCII_PROBE_FROM").map(|v| v.parse().unwrap()).unwrap_or(0.0);
+        let start = records.iter().position(|r| r["time"].as_f64().unwrap() >= from).unwrap_or(0);
+        let records = &records[start..(start + last).min(records.len())];
+        let first = &records[0];
+        let mode = first["mode"].as_str().unwrap();
+        let theme = first["theme"].as_str().unwrap_or("");
+        let seed = first["seed"].as_u64().unwrap();
+        let (w, h) = (first["grid"]["w"].as_u64().unwrap() as usize, first["grid"]["h"].as_u64().unwrap() as usize);
+        let spec = mode_spec(mode);
+        let mut renderer = IterateFrameRenderer::new(mode, seed, theme, w, h).unwrap();
+        let mut delta = AnsiFrameEncoder::new();
+        let mut full = AnsiFrameEncoder::new();
+        let mut out = Vec::new();
+        let mut previous: Option<Grid> = None;
+        eprintln!("{mode} {theme} seed={seed} {w}x{h}");
+        eprintln!("{:>10} {:>8} {:>8} {:>9} {:>9} {:>9} {:>9}", "time", "changed", "runs", "delta_B", "full_B", "rows_B", "rowfull_B");
+        for record in records {
+            let time = record["time"].as_f64().unwrap() as f32;
+            let knobs = record["knobs"].as_object().unwrap();
+            let values: Vec<f32> = spec.params.iter().map(|p| knobs[p.key].as_f64().unwrap() as f32).collect();
+            let grid = renderer.render(time, Some(&values)).unwrap().clone();
+            out.clear();
+            let d = delta.encode(&grid, false, &mut out);
+            out.clear();
+            let f = full.encode(&grid, true, &mut out);
+            let (rows_b, rowfull_b) = previous
+                .as_ref()
+                .map(|prev| (row_rewrite_bytes(prev, &grid, false), row_rewrite_bytes(prev, &grid, true)))
+                .unwrap_or((0, 0));
+            eprintln!("{time:>10.3} {:>8} {:>8} {:>9} {:>9} {:>9} {:>9}", d.changed_cells, d.runs, d.bytes, f.bytes, rows_b, rowfull_b);
+            previous = Some(grid);
+        }
+    }
+
+    /// Row-rewrite encoding: one cursor move per changed row, then the span from
+    /// first to last changed cell (or the whole row) with SGR only on change.
+    fn row_rewrite_bytes(prev: &Grid, next: &Grid, whole_row: bool) -> usize {
+        let mut s = String::new();
+        let mut fg = crossterm::style::Color::Reset;
+        let mut bg = crossterm::style::Color::Reset;
+        for (y, (a, b)) in prev.iter().zip(next).enumerate() {
+            let changed: Vec<usize> = (0..b.len()).filter(|&x| a[x] != b[x]).collect();
+            let (Some(&lo), Some(&hi)) = (changed.first(), changed.last()) else { continue };
+            let (lo, hi) = if whole_row { (0, b.len() - 1) } else { (lo, hi) };
+            use std::fmt::Write as _;
+            let _ = write!(s, "\x1b[{};{}H", y + 1, lo + 1);
+            for cell in &b[lo..=hi] {
+                let cfg = if cell.ch == ' ' { fg } else { crate::gridio::terminal_color(cell.fg) };
+                let cbg = crate::gridio::terminal_color(cell.bg);
+                if cfg != fg && cbg != bg {
+                    let _ = write!(s, "\x1b[38;5;{};48;5;{}m", ansi_index(cfg), ansi_index(cbg));
+                } else if cfg != fg {
+                    let _ = write!(s, "\x1b[38;5;{}m", ansi_index(cfg));
+                } else if cbg != bg {
+                    let _ = write!(s, "\x1b[48;5;{}m", ansi_index(cbg));
+                }
+                fg = cfg;
+                bg = cbg;
+                s.push(cell.ch);
+            }
+        }
+        s.len()
+    }
+
+    fn ansi_index(c: crossterm::style::Color) -> u8 {
+        match c {
+            crossterm::style::Color::AnsiValue(v) => v,
+            _ => 0,
+        }
+    }
+
     #[test]
     #[ignore = "exports bounded recorded frames for terminal A/B validation"]
     #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]

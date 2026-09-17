@@ -46,3 +46,16 @@ Run each in its own terminal; results land in `perf/results/30_tty_ceiling/<labe
 | tmux hidden (done) | `perf/tty_ceiling.sh --tmux-hidden` | tmux parse only |
 
 Each row prints bytes/s; the ratio between rows is the cost of that layer.
+
+## Visible pane result and the relay defect it exposed
+
+`perf/tty_ceiling.sh` in a visible tmux split (196x30, dense prismata knobs, 20 frames): **12.7 MB/s, 88 fps**. The live relay in the same stack was delivering 1.3 MB/s with 87% of nonblocking writes returning EAGAIN. Same bytes, same tmux, same iTerm; the only difference was blocking `cat` versus the relay's nonblocking write + poll + 1 ms backoff (`_1_playback.rs` `TERMINAL_RETRY`). tmux drains the pane pty about 1 KiB per event-loop pass; poll reports POLLOUT before the write can succeed; eight EAGAINs later the relay sleeps 1 ms. Net: one 1 KiB write per millisecond.
+
+Defect 2 from page 01 is real. The in-process `pump` vs `cat` tests could not show it because a reader in the same process drains faster than the backoff cycle; the receipt is the live run.
+
+| run | window | delivered | writes/s | EAGAIN | frames in 10 s |
+| --- | --- | ---: | ---: | ---: | ---: |
+| before, your session pid 14604 | 320x104 | 1.3 MB/s | 10,000 | 86% | ~50 (5 fps) |
+| after, blocking 4 KiB slices | 320x105 | 7.2 MB/s | 1,800 | 0% | 581 (58 fps) |
+
+Logs: `perf/results/31_blocking_tty/` (gitignored).

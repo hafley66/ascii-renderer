@@ -11,14 +11,18 @@ use std::collections::VecDeque;
 use std::fs::OpenOptions;
 use std::io::{self, Read, Write};
 use std::os::fd::{AsFd, BorrowedFd};
-use std::os::unix::{fs::OpenOptionsExt, process::CommandExt};
+use std::os::unix::process::CommandExt;
 use std::process::{Child, Command, Stdio};
 use std::time::{Duration, Instant};
 
 const RELAY_BATCH_BYTES: usize = 256 * 1024;
+/// Darwin accepts 1 KiB per tty write; a blocking 4 KiB slice returns after four
+/// drains, which bounds how long input goes unpolled. Nonblocking tty writes
+/// through tmux measured 1.3 MB/s (poll false-ready, EAGAIN, 1 ms backoff) against
+/// 12.7 MB/s for a blocking `cat` into the same pane.
+const RELAY_WRITE_SLICE: usize = 4096;
 // POLLOUT on a macOS PTY can remain asserted while nonblocking writes return
-// EAGAIN. A sub-millisecond retry loop generated 64k write calls/second in the
-// 1718x348 repro. Keep input polling frequent, but pace terminal retries.
+// EAGAIN; in-memory test writers still exercise that path.
 const TERMINAL_RETRY: Duration = Duration::from_millis(1);
 const INPUT_EVENTS: usize = 32;
 const INPUT_POLL: Duration = Duration::from_millis(2);
@@ -137,16 +141,12 @@ fn nonblocking(fd: impl AsFd) -> io::Result<()> {
 #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn supervise(command: &mut Command, animation: bool) -> io::Result<Exit> {
     // A distinct open file description avoids changing the caller's stdout flags.
-    let mut terminal = OpenOptions::new()
-        .write(true)
-        .custom_flags(OFlag::O_NONBLOCK.bits())
-        .open("/dev/tty")?;
-    let readiness = terminal.try_clone()?;
+    let mut terminal = OpenOptions::new().write(true).open("/dev/tty")?;
     let result = pump(
         command,
         animation,
         &mut terminal,
-        Some(readiness.as_fd()),
+        None,
         || {
             if event::poll(Duration::ZERO)? {
                 event::read().map(Some)
@@ -308,7 +308,8 @@ fn pump(
         }
         if displayed < display.len() {
             let write_started = Instant::now();
-            let written = terminal.write(&display[displayed..]);
+            let slice_end = display.len().min(displayed + RELAY_WRITE_SLICE);
+            let written = terminal.write(&display[displayed..slice_end]);
             profile.totals.write_calls += 1;
             let write_us = write_started.elapsed().as_micros() as u64;
             profile.totals.write_us += write_us;
@@ -513,7 +514,11 @@ mod tests {
                     Ok(0) | Err(_) => break,
                     Ok(n) => total += n,
                 }
-                std::thread::sleep(pause);
+                // Spin: macOS sleep granularity is ~1 ms, too coarse to model tmux.
+                let until = Instant::now() + pause;
+                while Instant::now() < until {
+                    std::hint::spin_loop();
+                }
             }
             total
         });
@@ -551,11 +556,12 @@ mod tests {
         relay_against_cat(32 << 20, 65536, Duration::ZERO);
     }
 
-    /// A consumer taking 4 KiB per 500 us is the shape of tmux or iTerm at 1000x1000.
+    /// tmux reads the pane 1 KiB at a time between redraws: a consumer that
+    /// drains 1 KiB then pauses 50 us can take 20 MiB/s from a blocking writer.
     #[test]
     #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
-    fn relay_keeps_pace_with_cat_into_a_slow_consumer() {
-        relay_against_cat(4 << 20, 4096, Duration::from_micros(500));
+    fn relay_keeps_pace_with_cat_into_a_tmux_shaped_consumer() {
+        relay_against_cat(8 << 20, 1024, Duration::from_micros(50));
     }
 
     fn relay_against_cat(bytes: usize, chunk: usize, pause: Duration) {

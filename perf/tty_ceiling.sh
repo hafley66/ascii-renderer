@@ -6,6 +6,7 @@ cd "$(dirname "$0")/.."
 BIN=${ASCII_PERF_BIN:-target/release/ascii-renderer}
 FRAMES=${FRAMES:-30}
 MODE=${MODE:-prismata}
+THEME=${THEME:-moss}
 mkdir -p perf/results/30_tty_ceiling
 hidden=0
 if [ "${1:-}" = "--tmux-hidden" ]; then hidden=1; shift; fi
@@ -36,7 +37,7 @@ for size in $sizes; do
     i=0
     while [ $i -lt "$FRAMES" ]; do
         ASCII_GRID_W=$w ASCII_GRID_H=$h ASCII_T=$(awk "BEGIN{print $i*0.06}") \
-            "$BIN" 42 "$MODE" moss >> "$file"
+            "$BIN" 42 "$MODE" "$THEME" >> "$file"
         i=$((i+1))
     done
     total=$(wc -c < "$file" | tr -d ' ')
