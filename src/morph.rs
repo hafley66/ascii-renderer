@@ -889,6 +889,11 @@ fn iterate_grid_into(
             crate::aurora2::draw_aurora2(grid, w, h, seed, palette, t, &knobs);
             true
         }
+        "reef" => {
+            let knobs = crate::reef::ReefKnobs::from_env();
+            crate::reef::draw_reef(grid, w, h, seed, palette, t, &knobs);
+            true
+        }
         _ => false,
     }
 }

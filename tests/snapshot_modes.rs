@@ -1426,3 +1426,13 @@ fn aurora2_seed_42() {
 fn aurora2_wide_curtains_t6() {
     insta::assert_snapshot!(render_t(&["1701", "aurora2", "arctic", "7", "11", "1.4"], "6"));
 }
+
+#[test]
+fn reef_seed_42() {
+    insta::assert_snapshot!(render(&["42", "reef", "deep"]));
+}
+
+#[test]
+fn reef_drifting_t9() {
+    insta::assert_snapshot!(render_t(&["1701", "reef", "moss", "6", "2200"], "9"));
+}
