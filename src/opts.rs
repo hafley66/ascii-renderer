@@ -742,6 +742,8 @@ pub(crate) fn run_demo(initial_seed: u64) {
     let mut pvals: Vec<f32> = pvals_for(&spec, all_modes[mode_idx], &saved);
     let mut psel: usize = 0;
     let mut last_saved_preset = None::<String>;
+    // Every view (mode, seed, theme, roll) the browser leaves; b walks back.
+    let mut history: Vec<(usize, u64, usize, u64)> = Vec::new();
 
     let exe = std::env::current_exe().unwrap();
 
@@ -842,12 +844,12 @@ pub(crate) fn run_demo(initial_seed: u64) {
         };
         let status = if pane_open {
             format!(
-                " {} | {}{}o=close opts  \u{2191}\u{2193}=select  {}  r=reset  s=save  g=rand-knobs  a=animate  q=quit ",
+                " {} | {}{}o=close opts  \u{2191}\u{2193}=select  {}  r=reset  s=save  g=rand-knobs  a=animate  b=back  q=quit ",
                 current_mode, save_tag, knob_tag, lr_hint
             )
         } else {
             format!(
-                " {} | seed:{} | theme:{} | {}{}/=find  s=save  o=opts  g=rand  a=animate  f/j=prev/next  \u{2191}\u{2193}=seed  \u{2190}\u{2192}=theme  enter=reseed  q=quit ",
+                " {} | seed:{} | theme:{} | {}{}/=find  s=save  o=opts  g=rand  a=animate  f/j=prev/next  \u{2191}\u{2193}=seed  \u{2190}\u{2192}=theme  enter=reseed  b=back  q=quit ",
                 current_mode, seed, theme_label, save_tag, knob_tag
             )
         };
@@ -862,9 +864,16 @@ pub(crate) fn run_demo(initial_seed: u64) {
         io::stdout().flush().unwrap();
 
         let has_params = !spec.params.is_empty();
+        let view = (mode_idx, seed, theme_idx, roll);
         if let Ok(Event::Key(key)) = pending_event.map(Ok).unwrap_or_else(event::read) {
             match key.code {
                 KeyCode::Char('q' | 'Q') => break,
+                KeyCode::Char('b') => {
+                    if let Some(back) = history.pop() {
+                        (mode_idx, seed, theme_idx, roll) = back;
+                    }
+                    continue;
+                }
                 KeyCode::Char('c' | 'C') if key.modifiers.contains(KeyModifiers::CONTROL) => break,
                 KeyCode::Char('s') => {
                     let knobs = spec
@@ -959,6 +968,12 @@ pub(crate) fn run_demo(initial_seed: u64) {
                     seed = rand::rng().random_range(0..10000u64);
                 }
                 _ => {}
+            }
+            if (mode_idx, seed, theme_idx, roll) != view {
+                history.push(view);
+                if history.len() > 512 {
+                    history.remove(0);
+                }
             }
         }
     }
