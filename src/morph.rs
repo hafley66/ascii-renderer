@@ -884,11 +884,6 @@ fn iterate_grid_into(
             crate::opus_5_dover::draw_opus_5_dover(grid, w, h, seed, palette, t, &knobs);
             true
         }
-        "aurora2" => {
-            let knobs = crate::aurora2::Aurora2Knobs::from_env();
-            crate::aurora2::draw_aurora2(grid, w, h, seed, palette, t, &knobs);
-            true
-        }
         _ => false,
     }
 }

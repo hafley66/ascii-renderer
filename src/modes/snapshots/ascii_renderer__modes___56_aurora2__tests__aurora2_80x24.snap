@@ -1,6 +1,6 @@
 ---
-source: tests/snapshot_modes.rs
-expression: "render(&[\"42\", \"aurora2\", \"deep\"])"
+source: src/modes/_56_aurora2.rs
+expression: "text(&frame(80, 24, 42, 0.0, &knobs()))"
 ---
                    ·                                                            
                               ·                                                .
