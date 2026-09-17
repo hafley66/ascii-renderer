@@ -614,7 +614,7 @@ impl Look {
         let sway = self.drift * (0.6 + 2.6 * depth) * self.unit * 0.075;
         // Lights gather into districts: a city is not evenly lit, and the
         // clustering is most of the composition.
-        let (mut cx, mut cy, spread) = if unit(self.at(L_LIGHT, hi, 13)) < 0.68 {
+        let (mut cx, mut cy) = if unit(self.at(L_LIGHT, hi, 13)) < 0.68 {
             let d = self.districts[(unit(self.at(L_LIGHT, hi, 14)) * 2.999) as usize];
             let jx = (unit(self.at(L_LIGHT, hi, 7)) + unit(self.at(L_LIGHT, hi, 15)) - 1.0)
                 * self.w as f32
@@ -622,15 +622,13 @@ impl Look {
             let jy = (unit(self.at(L_LIGHT, hi, 9)) + unit(self.at(L_LIGHT, hi, 16)) - 1.0)
                 * self.h as f32
                 * 0.22;
-            (d[0] + jx, d[1] + jy, 1.0)
+            (d[0] + jx, d[1] + jy)
         } else {
             (
                 (unit(self.at(L_LIGHT, hi, 7)) * 1.2 - 0.1) * self.w as f32,
                 self.h as f32 * (0.20 + 0.52 * unit(self.at(L_LIGHT, hi, 9))),
-                1.0,
             )
         };
-        let _ = spread;
         cx = cx.clamp(-(self.w as f32) * 0.08, self.w as f32 * 1.08)
             + sway
                 * self.sin_of(self.time * span(self.at(L_LIGHT, hi, 8), 0.05, 0.22) + depth * TAU);
