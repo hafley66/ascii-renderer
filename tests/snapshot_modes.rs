@@ -1415,7 +1415,9 @@ fn rosette_seed_42() {
 #[test]
 fn rosette_twelve_fold_turning_t6() {
     insta::assert_snapshot!(render_t(&["7", "rosette", "ember", "12", "3", "1"], "6"));
+}
 
+#[test]
 fn aurora2_seed_42() {
     insta::assert_snapshot!(render(&["42", "aurora2", "deep"]));
 }
