@@ -218,7 +218,12 @@ fn layer_coverage_report() {
     let mut untraced: Vec<String> = Vec::new();
     let mut named: Vec<String> = Vec::new();
     let mut reported = 0usize;
-    for mode in NATIVE_MODES {
+    let roster: Vec<&str> = NATIVE_MODES
+        .iter()
+        .copied()
+        .chain(registered_modes().iter().map(|(name, _)| name))
+        .collect();
+    for mode in roster {
         if !filter.is_empty() && !mode.contains(filter.as_str()) {
             continue;
         }
