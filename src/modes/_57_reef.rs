@@ -1,9 +1,10 @@
-//! reef -- coral colonies grown by half-space DLA off the seabed, lit by a
+//! reef: coral colonies grown by half-space DLA off the seabed, lit by a
 //! caustic water column with sun shafts, rising bubbles and drifting fish.
 use crate::_0_profile::measure_layer;
 use crate::color::{hsl_to_rgb, lerp_color, lighten};
 use crate::opts::param_f32;
-use crate::types::*;
+use crate::registry::{AnimKind, Mode, ModeFrame, Param};
+use crate::types::{Cell, Grid};
 use crossterm::style::Color;
 use rand::RngExt;
 use rand::SeedableRng;
@@ -11,6 +12,13 @@ use rand::rngs::StdRng;
 use std::cell::RefCell;
 use std::f32::consts::TAU;
 use std::sync::LazyLock;
+
+pub(super) struct Reef;
+pub(super) static MODE: Reef = Reef;
+
+const NAME: &str = "reef";
+const KNOBS: usize = 11;
+const HELP: &str = "reef: DLA coral colonies under a caustic water column, bubbles and fish [colonies] [walkers] [stickiness] [depth] [bubbles] [fish] [spread] [caustics] [grow] [hue] [speed]";
 
 /// Branch thickness ramp, fine tips first, trunk last.
 const RAMP: [char; 8] = ['.', ':', 'o', 'O', '@', '#', '%', '&'];
@@ -31,19 +39,72 @@ const L_MOTE: u64 = 0x26;
 
 const WAVE_N: usize = 2048;
 
+const PARAMS: &[Param] = &[
+    param!("COLONIES", "coral colonies", 1.0, 12.0, 4.0, 1.0),
+    param!("WALKERS", "dla walker budget", 40.0, 12000.0, 1400.0, 40.0),
+    param!("STICK", "stickiness", 0.02, 1.0, 0.5, 0.02),
+    param!("DEPTH", "water column depth", 0.35, 0.98, 0.86, 0.02),
+    param!("BUBBLES", "bubble density", 0.0, 3.0, 0.7, 0.05),
+    param!("FISH", "fish per 80 columns", 0.0, 40.0, 7.0, 1.0),
+    param!("SPREAD", "colony spread", 0.2, 1.0, 0.86, 0.02),
+    param!("CAUST", "caustics and shafts", 0.0, 1.5, 0.7, 0.05),
+    param!("GROW", "colony size", 0.1, 1.5, 1.0, 0.05),
+    param!("HUE", "hue rotation deg", -180.0, 180.0, 0.0, 10.0),
+    param!("SPEED", "time scale", 0.0, 3.0, 1.0, 0.1),
+];
+
+impl Mode for Reef {
+    fn name(&self) -> &'static str {
+        NAME
+    }
+    fn help(&self) -> &'static str {
+        HELP
+    }
+    fn animation(&self) -> AnimKind {
+        AnimKind::Iterate
+    }
+    fn params(&self) -> &'static [Param] {
+        PARAMS
+    }
+    fn render(&self, frame: &mut ModeFrame<'_>) {
+        let p: [f32; KNOBS] = std::array::from_fn(|i| {
+            let param = &PARAMS[i];
+            let value = frame
+                .args
+                .get(i + 4)
+                .and_then(|v| v.parse::<f32>().ok())
+                .or_else(|| frame.param_values.and_then(|v| v.get(i)).copied())
+                .unwrap_or_else(|| param_f32(param.key, param.default));
+            if value.is_finite() {
+                value.clamp(param.min, param.max)
+            } else {
+                param.default
+            }
+        });
+        let k = ReefKnobs::from_slice(&p);
+        draw_reef(
+            frame.grid,
+            frame.width,
+            frame.height,
+            frame.seed,
+            frame.palette,
+            frame.time,
+            &k,
+        );
+    }
+}
+
 /// One period of sine. The caustic pass touches every water cell twice, so the
 /// table replaces two libm calls per cell with a multiply, a mask and a load.
 static WAVE: LazyLock<[f32; WAVE_N]> =
     LazyLock::new(|| std::array::from_fn(|i| (i as f32 * TAU / WAVE_N as f32).sin()));
 
 #[inline(always)]
-#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn wsin(x: f32) -> f32 {
     let i = (x * (WAVE_N as f32 / TAU)) as i32 as usize & (WAVE_N - 1);
     WAVE[i]
 }
 
-#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn mix64(seed: u64, layer: u64, idx: u64, salt: u64) -> u64 {
     let mut x = seed
         ^ layer.wrapping_mul(0x9E37_79B9_7F4A_7C15)
@@ -58,12 +119,10 @@ fn mix64(seed: u64, layer: u64, idx: u64, salt: u64) -> u64 {
 
 /// Side stream for one indexed element: never the main rng, so adding a bubble
 /// cannot shift a fish.
-#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn h01(seed: u64, layer: u64, idx: u64, salt: u64) -> f32 {
     (mix64(seed, layer, idx, salt) & 0xFF_FFFF) as f32 / 16_777_216.0
 }
 
-#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn ramp_idx(weight: u32) -> usize {
     match weight {
         1 => 0,
@@ -77,43 +136,38 @@ fn ramp_idx(weight: u32) -> usize {
     }
 }
 
-// ── Knobs ───────────────────────────────────────────────────────────
-
 #[derive(Clone, PartialEq)]
-pub struct ReefKnobs {
-    pub colony_count: f32,
-    pub walker_budget: f32,
-    pub stickiness: f32,
-    pub water_depth_frac: f32,
-    pub bubble_density: f32,
-    pub fish_count: f32,
-    pub spread: f32,
-    pub caustics: f32,
-    pub grow: f32,
-    pub hue: f32,
-    pub speed: f32,
+struct ReefKnobs {
+    colony_count: f32,
+    walker_budget: f32,
+    stickiness: f32,
+    water_depth_frac: f32,
+    bubble_density: f32,
+    fish_count: f32,
+    spread: f32,
+    caustics: f32,
+    grow: f32,
+    hue: f32,
+    speed: f32,
 }
 
 impl ReefKnobs {
-    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
-    pub fn from_env() -> Self {
+    fn from_slice(p: &[f32; KNOBS]) -> Self {
         ReefKnobs {
-            colony_count: param_f32("COLONIES", 4.0).clamp(1.0, 12.0),
-            walker_budget: param_f32("WALKERS", 1400.0).clamp(40.0, 12000.0),
-            stickiness: param_f32("STICK", 0.5).clamp(0.02, 1.0),
-            water_depth_frac: param_f32("DEPTH", 0.86).clamp(0.35, 0.98),
-            bubble_density: param_f32("BUBBLES", 0.7).clamp(0.0, 3.0),
-            fish_count: param_f32("FISH", 7.0).clamp(0.0, 40.0),
-            spread: param_f32("SPREAD", 0.86).clamp(0.2, 1.0),
-            caustics: param_f32("CAUST", 0.7).clamp(0.0, 1.5),
-            grow: param_f32("GROW", 1.0).clamp(0.1, 1.5),
-            hue: param_f32("HUE", 0.0).clamp(-180.0, 180.0),
-            speed: param_f32("SPEED", 1.0).clamp(0.0, 3.0),
+            colony_count: p[0],
+            walker_budget: p[1],
+            stickiness: p[2],
+            water_depth_frac: p[3],
+            bubble_density: p[4],
+            fish_count: p[5],
+            spread: p[6],
+            caustics: p[7],
+            grow: p[8],
+            hue: p[9],
+            speed: p[10],
         }
     }
 }
-
-// ── The grown bed, cached across animation frames ───────────────────
 
 #[derive(Clone, Copy)]
 struct Coral {
@@ -136,7 +190,6 @@ thread_local! {
     static BED: RefCell<Option<Bed>> = const { RefCell::new(None) };
 }
 
-#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn seabed_profile(w: usize, h: usize, seed: u64, k: &ReefKnobs) -> Vec<i32> {
     let base = (h as f32 * k.water_depth_frac).round();
     let a1 = h01(seed, L_FLOOR, 0, 1) * TAU;
@@ -163,7 +216,6 @@ struct Colony {
     base: i32,
 }
 
-#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn put(
     owner: &mut [i32],
     sites: &mut Vec<(i32, i32)>,
@@ -185,7 +237,6 @@ fn put(
 
 /// Grow one colony by DLA inside its own ellipse: a seeded base arc on the
 /// seabed, then walkers launched on the rim that stick to kin only.
-#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn grow_colony(
     w: usize,
     h: usize,
@@ -316,7 +367,6 @@ fn grow_colony(
     (start, sites.len())
 }
 
-#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn build_bed(w: usize, h: usize, seed: u64, k: &ReefKnobs) -> Bed {
     let floor = seabed_profile(w, h, seed, k);
     let mut corals: Vec<Coral> = Vec::new();
@@ -432,12 +482,8 @@ fn build_bed(w: usize, h: usize, seed: u64, k: &ReefKnobs) -> Bed {
     }
 }
 
-
-// ── Painters ────────────────────────────────────────────────────────
-
 /// Water column colors per row: blue-green shallows down to near-black navy,
 /// tinted toward the theme background so a palette still reads.
-#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn water_rows(h: usize, deep: i32, palette: &[Color; 5]) -> Vec<Color> {
     let span = (deep.max(1)) as f32;
     (0..h)
@@ -451,7 +497,6 @@ fn water_rows(h: usize, deep: i32, palette: &[Color; 5]) -> Vec<Color> {
         .collect()
 }
 
-#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn paint_water(
     grid: &mut Grid,
     w: usize,
@@ -502,7 +547,6 @@ fn paint_water(
 
 /// Sun shafts first as a background lift, then the crossing caustic net that
 /// sits in the upper reach of the column and thins out with depth.
-#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn paint_caustics(
     grid: &mut Grid,
     w: usize,
@@ -593,7 +637,6 @@ fn paint_caustics(
     }
 }
 
-#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn paint_coral(grid: &mut Grid, w: usize, h: usize, corals: &[Coral], deep: i32, t: f32, speed: f32) {
     let tt = t * speed;
     let span = deep.max(1) as f32;
@@ -615,7 +658,6 @@ fn paint_coral(grid: &mut Grid, w: usize, h: usize, corals: &[Coral], deep: i32,
     }
 }
 
-#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn paint_bubbles(
     grid: &mut Grid,
     w: usize,
@@ -659,7 +701,6 @@ fn paint_bubbles(
     }
 }
 
-#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn paint_fish(grid: &mut Grid, w: usize, h: usize, seed: u64, floor: &[i32], t: f32, k: &ReefKnobs) {
     let hscale = (h as f32 / 24.0).sqrt().clamp(1.0, 7.0);
     let count = (k.fish_count * (w as f32 / 80.0) * hscale).round() as usize;
@@ -706,10 +747,7 @@ fn paint_fish(grid: &mut Grid, w: usize, h: usize, seed: u64, floor: &[i32], t: 
     }
 }
 
-// ── Frame ───────────────────────────────────────────────────────────
-
-#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
-pub fn draw_reef(
+fn draw_reef(
     grid: &mut Grid,
     w: usize,
     h: usize,
@@ -724,159 +762,102 @@ pub fn draw_reef(
     let key = (seed, w, h, k.clone());
     let fresh = BED.with(|b| b.borrow().as_ref().map(|bed| bed.key != key).unwrap_or(true));
     if fresh {
-        let bed = measure_layer("reef", "dla_grow", || build_bed(w, h, seed, k));
+        let bed = measure_layer(NAME, "dla_grow", || build_bed(w, h, seed, k));
         BED.with(|b| *b.borrow_mut() = Some(bed));
     } else {
-        measure_layer("reef", "dla_grow", || ());
+        measure_layer(NAME, "dla_grow", || ());
     }
     BED.with(|cell| {
         let borrow = cell.borrow();
         let bed = borrow.as_ref().expect("reef bed built above");
         let deep = *bed.floor.iter().max().unwrap_or(&(h as i32));
         let rows = water_rows(h, deep, palette);
-        measure_layer("reef", "water", || {
-            paint_water(
-                grid, w, h, seed, &bed.floor, &rows, palette, t, k.speed,
-            )
+        measure_layer(NAME, "water", || {
+            paint_water(grid, w, h, seed, &bed.floor, &rows, palette, t, k.speed)
         });
-        measure_layer("reef", "caustics", || {
+        measure_layer(NAME, "caustics", || {
             paint_caustics(grid, w, h, seed, &bed.floor, palette, t, k)
         });
-        measure_layer("reef", "coral_paint", || {
+        measure_layer(NAME, "coral_paint", || {
             paint_coral(grid, w, h, &bed.corals, deep, t, k.speed)
         });
-        measure_layer("reef", "bubbles", || {
+        measure_layer(NAME, "bubbles", || {
             paint_bubbles(grid, w, h, seed, &bed.vents, t, k)
         });
-        measure_layer("reef", "fish", || {
+        measure_layer(NAME, "fish", || {
             paint_fish(grid, w, h, seed, &bed.floor, t, k)
         });
     });
 }
 
-// ── CLI dispatch arm ────────────────────────────────────────────────
-
-#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
-pub(crate) fn cli_reef(
-    mut grid: Grid,
-    width: usize,
-    height: usize,
-    seed: u64,
-    palette: [Color; 5],
-    rng: StdRng,
-    t_anim: f32,
-    term_w: u16,
-    term_h: u16,
-    args: &[String],
-    mode: &str,
-    theme_name: &str,
-) -> (Grid, bool) {
-    // reef [colonies] [walkers] [stickiness] [depth] [bubbles] [fish]
-    let mut k = ReefKnobs::from_env();
-    let arg = |i: usize| args.get(i).and_then(|v| v.parse::<f32>().ok());
-    if let Some(v) = arg(4) {
-        k.colony_count = v.clamp(1.0, 12.0);
-    }
-    if let Some(v) = arg(5) {
-        k.walker_budget = v.clamp(40.0, 12000.0);
-    }
-    if let Some(v) = arg(6) {
-        k.stickiness = v.clamp(0.02, 1.0);
-    }
-    if let Some(v) = arg(7) {
-        k.water_depth_frac = v.clamp(0.35, 0.98);
-    }
-    if let Some(v) = arg(8) {
-        k.bubble_density = v.clamp(0.0, 3.0);
-    }
-    if let Some(v) = arg(9) {
-        k.fish_count = v.clamp(0.0, 40.0);
-    }
-    let _ = (rng, term_w, term_h, mode, theme_name);
-    draw_reef(&mut grid, width, height, seed, &palette, t_anim, &k);
-    (grid, false)
-}
-
-// ── Tests ───────────────────────────────────────────────────────────
-
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::render::grid_to_plain;
 
-    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
-    fn make(w: usize, h: usize, seed: u64) -> (Grid, [Color; 5]) {
-        (
-            vec![vec![Cell::blank(); w]; h],
-            crate::color::make_palette(seed),
-        )
+    fn knobs() -> Vec<f32> {
+        PARAMS.iter().map(|p| p.default).collect()
     }
 
-    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
-    fn plain(grid: &Grid) -> String {
-        grid.iter()
-            .map(|row| row.iter().map(|c| c.ch).collect::<String>())
-            .collect::<Vec<_>>()
-            .join("\n")
+    fn frame(w: usize, h: usize, seed: u64, time: f32, values: &[f32]) -> Grid {
+        let mut grid = vec![vec![Cell::blank(); w]; h];
+        let palette = crate::color::make_palette(seed);
+        let mut rng = StdRng::seed_from_u64(seed);
+        MODE.render(&mut ModeFrame {
+            grid: &mut grid,
+            width: w,
+            height: h,
+            seed,
+            palette: &palette,
+            rng: &mut rng,
+            time,
+            args: &[],
+            param_values: Some(values),
+        });
+        grid
     }
 
-    #[test]
-    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
-    fn snapshot_reef_standard() {
-        let (mut g, p) = make(80, 24, 42);
-        let k = ReefKnobs::from_env();
-        draw_reef(&mut g, 80, 24, 42, &p, 0.0, &k);
-        insta::assert_snapshot!("reef_42", plain(&g));
-    }
-
-    #[test]
-    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
-    fn snapshot_reef_tiny_grid() {
-        let (mut g, p) = make(46, 14, 7);
-        let k = ReefKnobs::from_env();
-        draw_reef(&mut g, 46, 14, 7, &p, 0.0, &k);
-        insta::assert_snapshot!("reef_tiny_7", plain(&g));
+    fn text(grid: &Grid) -> String {
+        grid_to_plain(grid).join("\n")
     }
 
     #[test]
-    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
+    fn reef_seed42() {
+        insta::assert_snapshot!("reef_80x24", text(&frame(80, 24, 42, 0.0, &knobs())));
+    }
+
+    #[test]
+    fn reef_seed42_t6() {
+        insta::assert_snapshot!("reef_80x24_t6", text(&frame(80, 24, 42, 6.0, &knobs())));
+    }
+
+    #[test]
+    fn reef_tiny_grid() {
+        insta::assert_snapshot!("reef_tiny_7", text(&frame(46, 14, 7, 0.0, &knobs())));
+    }
+
+    #[test]
     fn deterministic_and_seed_sensitive() {
-        let run = |seed: u64| {
-            let (mut g, p) = make(80, 24, seed);
-            let k = ReefKnobs::from_env();
-            draw_reef(&mut g, 80, 24, seed, &p, 0.0, &k);
-            plain(&g)
-        };
-        assert_eq!(run(42), run(42), "same seed -> same reef");
-        assert_ne!(run(42), run(7), "new seed -> new reef");
+        let k = knobs();
+        assert_eq!(text(&frame(80, 24, 42, 0.0, &k)), text(&frame(80, 24, 42, 0.0, &k)));
+        assert_ne!(text(&frame(80, 24, 42, 0.0, &k)), text(&frame(80, 24, 7, 0.0, &k)));
     }
 
     #[test]
-    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn t_zero_is_the_static_frame_and_time_moves() {
-        let run = |t: f32| {
-            let (mut g, p) = make(80, 24, 42);
-            let k = ReefKnobs::from_env();
-            draw_reef(&mut g, 80, 24, 42, &p, t, &k);
-            plain(&g)
-        };
-        assert_eq!(run(0.0), run(0.0), "t=0 is byte identical across calls");
-        assert_ne!(run(0.0), run(3.5), "bubbles, fish and caustics move");
-        assert_ne!(run(3.5), run(7.0), "motion keeps going");
+        let k = knobs();
+        assert_eq!(text(&frame(80, 24, 42, 0.0, &k)), text(&frame(80, 24, 42, 0.0, &k)));
+        assert_ne!(text(&frame(80, 24, 42, 0.0, &k)), text(&frame(80, 24, 42, 3.5, &k)));
+        assert_ne!(text(&frame(80, 24, 42, 3.5, &k)), text(&frame(80, 24, 42, 7.0, &k)));
     }
 
     #[test]
-    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn coral_holds_still_while_the_water_moves() {
-        let frame = |t: f32| {
-            let (mut g, p) = make(80, 24, 42);
-            let mut k = ReefKnobs::from_env();
-            k.fish_count = 0.0;
-            k.bubble_density = 0.0;
-            draw_reef(&mut g, 80, 24, 42, &p, t, &k);
-            g
-        };
-        let a = frame(0.0);
-        let b = frame(0.4);
+        let mut k = knobs();
+        k[4] = 0.0;
+        k[5] = 0.0;
+        let a = frame(80, 24, 42, 0.0, &k);
+        let b = frame(80, 24, 42, 0.4, &k);
         let trunk = ['@', '#', '%', '&'];
         let mut same = 0usize;
         let mut total = 0usize;
@@ -895,12 +876,9 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn every_glyph_is_one_column_wide() {
         use unicode_width::UnicodeWidthChar;
-        let (mut g, p) = make(80, 24, 1701);
-        let k = ReefKnobs::from_env();
-        draw_reef(&mut g, 80, 24, 1701, &p, 2.0, &k);
+        let g = frame(80, 24, 1701, 2.0, &knobs());
         for row in &g {
             for cell in row {
                 assert_eq!(cell.ch.width().unwrap_or(0), 1, "wide glyph {:?}", cell.ch);
@@ -909,18 +887,33 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn knobs_change_the_reef() {
-        let run = |f: fn(&mut ReefKnobs)| {
-            let (mut g, p) = make(80, 24, 42);
-            let mut k = ReefKnobs::from_env();
-            f(&mut k);
-            draw_reef(&mut g, 80, 24, 42, &p, 0.0, &k);
-            plain(&g)
+        let base = text(&frame(80, 24, 42, 0.0, &knobs()));
+        let run = |i: usize, v: f32| {
+            let mut k = knobs();
+            k[i] = v;
+            text(&frame(80, 24, 42, 0.0, &k))
         };
-        let base = run(|_| {});
-        assert_ne!(base, run(|k| k.colony_count = 7.0), "colony count");
-        assert_ne!(base, run(|k| k.water_depth_frac = 0.6), "water depth");
-        assert_ne!(base, run(|k| k.fish_count = 0.0), "fish count");
+        assert_ne!(base, run(0, 7.0), "colony count");
+        assert_ne!(base, run(3, 0.6), "water depth");
+        assert_ne!(base, run(5, 0.0), "fish count");
+    }
+
+    #[test]
+    fn frame_cost() {
+        let (w, h) = (200usize, 60usize);
+        let k = knobs();
+        let mut worst = 0.0f64;
+        let start = std::time::Instant::now();
+        for f in 0..100 {
+            let t0 = std::time::Instant::now();
+            frame(w, h, 42, f as f32 * 0.05, &k);
+            worst = worst.max(t0.elapsed().as_secs_f64() * 1000.0);
+        }
+        let avg = start.elapsed().as_secs_f64() * 1000.0 / 100.0;
+        eprintln!("reef frame_cost 200x60: avg {:.3} ms, worst {:.3} ms", avg, worst);
+        if !cfg!(debug_assertions) {
+            assert!(avg < 6.0, "avg frame {:.3} ms", avg);
+        }
     }
 }
