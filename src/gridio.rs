@@ -434,21 +434,18 @@ pub(crate) fn ratatui_color(color: Color) -> ratatui::style::Color {
 
 #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn terminal_color(color: Color) -> Color {
+    // Round each channel to 32 levels so adjacent shades share one SGR run
+    // while the output stays truecolor; the 6x6x6 cube crushed every dark bg to black.
     #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
-    fn cube_index(value: u8) -> u8 {
-        match value {
-            0..=47 => 0,
-            48..=114 => 1,
-            115..=154 => 2,
-            155..=194 => 3,
-            195..=234 => 4,
-            235..=255 => 5,
-        }
+    fn five_bits(value: u8) -> u8 {
+        ((value as u16 + 4) & !7).min(255) as u8
     }
     match color {
-        Color::Rgb { r, g, b } => {
-            Color::AnsiValue(16 + 36 * cube_index(r) + 6 * cube_index(g) + cube_index(b))
-        }
+        Color::Rgb { r, g, b } => Color::Rgb {
+            r: five_bits(r),
+            g: five_bits(g),
+            b: five_bits(b),
+        },
         other => other,
     }
 }
@@ -622,7 +619,7 @@ mod ansi_frame_tests {
             },
         )]];
         encoder.encode(&first, true, &mut output);
-        assert!(text(&output).contains("38;5;68m"));
+        assert!(text(&output).contains("38;2;104;152;200"));
         output.clear();
         let stats = encoder.encode(&adjacent, false, &mut output);
         assert_eq!((stats.changed_cells, stats.invisible), (0, 1));

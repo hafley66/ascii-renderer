@@ -768,8 +768,10 @@ mod tests {
                         peak = (i, output.len());
                     }
                 }
+                // Truecolor SGRs run 19 bytes against 11 for the cube; 366x199
+                // peaks at 22.7k after the cube was dropped for crushing dark bgs.
                 assert!(
-                    peak.1 <= 20_000,
+                    peak.1 <= 24_000,
                     "layout {layout} {w}x{h} frame {}: {} encoded bytes",
                     peak.0,
                     peak.1
