@@ -1245,6 +1245,21 @@ pub(crate) static MODE_FORMS: &[ModeForm] = &[
             ),
         ],
     },
+    ModeForm {
+        names: &["aurora2"],
+        animate: AnimKind::Iterate,
+        params: &[
+            param!("RIBBONS", "curtain count", 1.0, 16.0, 5.0, 1.0),
+            param!("RWIDTH", "curtain width in columns", 2.0, 30.0, 7.0, 1.0),
+            param!("DRIFT", "flow drift speed", 0.0, 4.0, 1.0, 0.1),
+            param!("HORIZON", "horizon height fraction", 0.3, 0.95, 0.72, 0.02),
+            param!("STARS", "star density", 0.0, 3.0, 1.0, 0.1),
+            param!("SPREAD", "hue spread green to cyan", 0.0, 2.0, 1.0, 0.05),
+            param!("PINES", "treeline density", 0.0, 3.0, 1.0, 0.1),
+            param!("FOLD", "ray contrast", 0.0, 2.0, 1.0, 0.05),
+            param!("GAIN", "curtain brightness", 0.2, 2.5, 1.0, 0.05),
+        ],
+    },
 ];
 
 /// Look up a mode's declared config. Unlisted modes default to iterate, no knobs:

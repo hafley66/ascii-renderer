@@ -19,6 +19,7 @@ use crate::braid::cli_braid;
 use crate::braid2::cli_braid2;
 use crate::chladni::cli_chladni;
 use crate::opus_5_dover::cli_opus_5_dover;
+use crate::aurora2::cli_aurora2;
 use crate::cli_basic::*;
 use crate::cli_catalog::*;
 use crate::cli_city::*;
@@ -499,6 +500,9 @@ fn run_render(args: Vec<String>) {
         );
         eprintln!(
             "  sonnet-1-forest  depth-layered stand of the sonnet-1 species with fog, fireflies or leaf fall (a=animate) [density] [layers] [sway] [speed] [hue] [atmos] [energy] [fruit] [branch] [detail] [cycle] [horizon]"
+        );
+        eprintln!(
+            "  aurora2  flow-field light curtains over a pine horizon, lit snow below (a=animate) [ribbons] [width] [drift] [horizon] [stars] [spread] [pines] [fold] [gain]"
         );
         eprintln!(
             "  ascii-renderer 1 morph forest            # forest seed 1 \u{2194} 2, walks seeds"
@@ -2041,6 +2045,15 @@ fn run_render(args: Vec<String>) {
         }
     } else if mode == "opus-5-dover" {
         let (g, done) = cli_opus_5_dover(
+            grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
+            theme_name,
+        );
+        grid = g;
+        if done {
+            return;
+        }
+    } else if mode == "aurora2" {
+        let (g, done) = cli_aurora2(
             grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode,
             theme_name,
         );
