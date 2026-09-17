@@ -1,78 +1,97 @@
----
-name: add-mode
-description: Scaffold a new rendering mode for ascii-renderer. Trigger on "new mode", "add mode", "make a X mode", or any request to create a new visual mode.
----
-
 # Add Mode
 
-Scaffold a new rendering mode in ascii-renderer with snapshot test coverage.
-Reference implementation: `src/arboretum.rs` (new-module mode with 10-knob genome, 11 registry params, native lifecycle+sway animation, both snapshot styles).
+Scaffold a new rendering mode in ascii-renderer as a trait mode with snapshot coverage.
+Reference implementations: `src/modes/_54_nightglass.rs` (12 knobs, rayon rows, scratch buffer),
+`src/modes/_55_rosette.rs` (10 knobs, 5 layers, small).
 
-## Wiring checklist (8 touchpoints)
+## One file, one script (the only wiring)
 
-1. **`src/cli.rs` -- dispatch arm.** Append `} else if mode == "NEW_NAME"` as the LAST arm, directly before the final `} else {` / `cli_default` fallback. Never splice into the middle of the chain (dispatch lives here, not main.rs; main.rs is `cli::run()` + tests):
+1. Create `src/modes/_NN_<name>.rs` where NN is the next unused number (`ls src/modes | tail -1`).
+2. Run `scripts/0_generate_modes.sh`. It rewrites `src/modes/mod.rs` (generated, never hand-edit).
+3. Append the mode name at the end of the modes list in `CLAUDE.md`.
+
+Registration through `registered_modes()` feeds everything else with no list edits:
+CLI dispatch (`src/cli.rs:613`), `a`-key animation (`src/morph.rs:304`), the demo picker
+(`src/opts.rs:712`), help (`src/cli.rs:472`), the perf roster (`src/perf_sweep.rs:526`),
+and the layer-timer gate. Never touch `cli.rs`, `main.rs`, `opts.rs`, `registry.rs` `MODE_FORMS`,
+`morph.rs` `iterate_grid`, or `perf_sweep.rs` `NATIVE_MODES` for a new mode; that chain is legacy.
+
+## File skeleton
+
 ```rust
-} else if mode == "arboretum" {
-    let (g, done) = cli_arboretum(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, &args, mode, theme_name);
-    grid = g;
-    if done {
-        return;
+use crate::_0_profile::measure_layer;
+use crate::opts::param_f32;
+use crate::registry::{AnimKind, Mode, ModeFrame, Param};
+use crate::types::{Cell, Grid};
+
+pub(super) struct Foo;
+pub(super) static MODE: Foo = Foo;
+
+const NAME: &str = "foo";
+const KNOBS: usize = 3;
+const HELP: &str = "foo: one line [knob1] [knob2] [knob3]";
+
+const PARAMS: &[Param] = &[
+    param!("KNOB1", "label", min, max, default, step),
+    ...
+];
+
+impl Mode for Foo {
+    fn name(&self) -> &'static str { NAME }
+    fn help(&self) -> &'static str { HELP }
+    fn animation(&self) -> AnimKind { AnimKind::Iterate }
+    fn params(&self) -> &'static [Param] { PARAMS }
+    fn render(&self, frame: &mut ModeFrame<'_>) {
+        // positional args (i + 4), then frame.param_values, then param_f32 env; clamp; see rosette
+        draw(frame, &p);
     }
 }
 ```
-Handler signature: `cli_<name>(grid, width, height, seed, palette, rng, t_anim, term_w, term_h, args, mode, theme_name) -> (Grid, bool)`. Handlers live in the `cli_*.rs` family (cli_basic, cli_forest, cli_scenes, cli_city, cli_fa, cli_catalog) or your own module. If the handler is in a new module, add `use crate::<mod>::cli_<fn>;` -- cli.rs only glob-imports the six existing cli_* modules.
 
-2. **`src/main.rs` -- module decl.** Append `mod <name>;` after the last `mod` line. No `use <name>::*;` (cli.rs and morph.rs path-import what they need; glob re-exports collide across modules that share type names).
+`ModeFrame` fields: `grid, width, height, seed, palette: &[Color; 5], rng, time, args, param_values`.
+Knob resolution order is fixed: positional CLI arg `args[i + 4]`, then `param_values[i]`
+(live demo knobs), then `param_f32(KEY, default)` from env `ASCII_P_<KEY>`; clamp to `[min, max]`.
 
-3. **`src/opts.rs` `run_demo()`.** Append the mode string as the last entry of `all_modes` (before `];`) or it won't show in the demo picker.
+## Animation
 
-4. **`src/registry.rs` `MODE_FORMS`.** Append one `ModeForm` row as the last element (before the closing `];`). Params are read at render time via `param_f32(KEY, default)` from env `ASCII_P_<KEY>`; keys must be unique within the form.
+`frame.time` is the clock. `time == 0.0` MUST render the static frame byte-identical (snapshots).
+Per-element phases come from a splitmix hash of `(seed, layer, index)` (copy `hash`/`unit` from
+rosette), never from `frame.rng`, so the static render and the rng stream stay untouched.
 
-5. **`tests/snapshot_modes.rs`.** Append at end of file. CLI snapshot: `insta::assert_snapshot!(render(&["42", "NEW_NAME", "theme"]))`. In-module `#[cfg(test)]` tests may call draw fns directly (pattern in `src/tree_draw.rs`, `src/arboretum.rs`).
+## Layer timers
 
-6. **`CLAUDE.md`.** Append the mode name at the end of the modes list.
+Wrap each painter in `measure_layer(NAME, "<layer>", || ...)`, 3 to 8 layers covering at least
+85 percent of the frame. Rules: `perf/INSTRUMENT.md`. Do it while writing; retrofitting re-indents.
+The registry gate `every_registered_mode_that_renders_in_process_has_layer_timers` fails without them.
+Bound every painter to the cells it touches (a 3-cell boss scanning the whole grid was 14 percent
+of a rosette frame).
 
-7. **Layer timers.** Wrap each painter section of the draw fn in `crate::_0_profile::measure_layer("<mode>", "<layer>", || ...)`, 3 to 8 layers covering at least 85 percent of the frame. Pattern and rules: `perf/INSTRUMENT.md`. Reference wraps: `src/chladni.rs`, `src/pendwave.rs`. Do this while writing the mode, not after: the wrap re-indents the body it encloses, so retrofitting one costs about fifty churned lines per wrap. `perf/layer_coverage.sh` prints the attributed share once the mode renders.
+## Tests
 
-8. **`src/perf_sweep.rs` `NATIVE_MODES`.** Optional now: the list is the sweep's roster and is complete, but a registered mode is checked by `every_registered_mode_that_renders_in_process_has_layer_timers`, which iterates the registry, so a new mode needs no entry here. `every_native_mode_has_layer_timers` fails only for a mode that is listed and renders with no timers. Note that neither gate checks how much of the frame a mode attributes, so a mode with one token wrap passes: run `perf/layer_coverage.sh` to see the share.
+In-module `#[cfg(test)]` (pattern: rosette `tests`): `MODE.render(&mut ModeFrame { .. })` at 80x24
+seed 42, `insta::assert_snapshot!("<name>_80x24", text)`, plus a `t6` snapshot, determinism,
+seed sensitivity, time sensitivity, and `frame_cost` at 200x60 (release budget under 6 ms avg).
+Integration: append at the END of `tests/snapshot_modes.rs`:
+`insta::assert_snapshot!(render(&["42", "<name>", "<theme>"]))`.
 
-## Native animation
-
-If the mode does not consume `t_anim`, pressing `a` in demo falls back to `warp_wind` (the `.unwrap_or_else` fallback in morph.rs `iterate_grid`). For native animation:
-- Consume the `t` param in the draw fn, and add an arm to `iterate_grid` in `src/morph.rs` calling the draw fn in-process. Append it as the last arm before `_ => false`.
-- t=0 MUST render the static frame byte-identical (snapshot stability): gate animation on `t > 0.0`.
-- Derive per-item animation phases/cycles from a SIDE rng seeded from a hash of (seed, layer, index) so the main rng stream and static render are untouched.
-- Verified pattern: `draw_arboretum` / `grow_tree` in `src/arboretum.rs`.
+`cargo insta` may be missing. Accept after visual inspection: `mv *.snap.new *.snap`.
+Snapshots land in `src/modes/snapshots/` and `tests/snapshots/`.
 
 ## Perf receipt
 
-Before committing, run the knob sweep once and paste the fps table plus the hotspot table into `briefs/<mode>.md`:
-
 ```bash
-perf/knob_sweep.sh <mode> 2000 1000 2
+perf/layer_coverage.sh 400 120 3 moss <name>     # width height secs theme filter
+perf/knob_sweep.sh <name> 2000 1000 2            # fps table + hotspot table
 ```
-
-Every registry knob is driven to its max; the worst one gets a per-layer hotspot table. `perf/results/<mode>.md` holds the output and `perf/sweep_all.sh 1` re-ranks every mode into `perf/results/SUMMARY.md`.
-
-## Snapshots
-
-`cargo insta` may not be installed. Accept after visual inspection: `mv *.snap.new *.snap`. Snapshot files land in both `src/snapshots/` (in-module tests) and `tests/snapshots/` (integration tests).
+Paste both tables into `briefs/<name>.md`. `perf/results/<name>.md` holds the raw output.
 
 ## Rules
 
-- Every list append goes at the END (dispatch chain, mod list, all_modes, MODE_FORMS, morph match, tests, CLAUDE.md). Fixed-index or alphabetical splicing is banned.
-
-- Never modify existing modes
-- Use fixed seed for deterministic output
-- Expose tuning knobs: positional CLI args (`args.get(4).and_then(|s| s.parse().ok()).unwrap_or(DEFAULT)`) and/or registry form params -- don't hardcode
-- Keep the mode self-contained in its handler (call into walker/scene/sprites as needed)
-- Background fill patterns: use `fill_truchet`, `fill_noise`, or `Cell::blank()`
-- Sprites: `draw_tree`, `draw_flower`, `draw_fruit`, `draw_mask` from sprites.rs
-- Composition: `render_scene` with `Layer` and `FillGen` from scene.rs
-
-## Gotchas
-
-- `hsl_to_rgb` takes f64; knob values are f32 -- cast.
-- `Bole::draw` is a `BoleStyle` trait method, not inherent -- import the trait.
-- Stop hook comment-prod: max 2 consecutive comment lines in new code (`///` doc lines count).
-- Glyph safety: reuse chars from existing pools (`src/sprites.rs`, `src/tree_draw/species*.rs`) -- all width-1 verified. New exotic glyphs risk unicode-width assertion failures in main.rs display-width tests.
+- Never modify existing modes. Check the name is free: `grep -rn '"<name>"' src/ | head`.
+- Fixed seed for deterministic output. All knobs exposed through `PARAMS`; nothing hardcoded.
+- Glyph safety: reuse chars already in `src/sprites.rs`, `src/tree_draw/species*.rs`, or another
+  mode; exotic glyphs risk the unicode-width assertions in `main.rs`.
+- `hsl_to_rgb` takes f64; knob values are f32, cast.
+- Max 2 consecutive comment lines (`///` and `//!` count); the Stop hook rejects more.
+- No em dashes. Banned identifiers: `provenance`, `substrate`, `load_bearing`, `regime`.
+- Grids at or above 20_480 cells: run row passes on rayon (`par_chunks_mut(w)`), pattern in rosette.
