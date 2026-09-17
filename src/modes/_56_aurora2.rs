@@ -1,10 +1,11 @@
-//! aurora2 -- flow-field curtains of northern light over a pine horizon. Ribbons
+//! aurora2: flow-field curtains of northern light over a pine horizon. Ribbons
 //! accumulate additively into intensity and hue fields, then resolve to a ramp.
 use crate::_0_profile::measure_layer;
-use crate::color::*;
+use crate::color::{hsl_to_rgb, lerp_color, rgb};
 use crate::opts::param_f32;
 use crate::pp::{pp_fbm, pp_vnoise};
-use crate::types::*;
+use crate::registry::{AnimKind, Mode, ModeFrame, Param};
+use crate::types::{Cell, Grid};
 use crossterm::style::Color;
 use rand::RngExt;
 use rand::SeedableRng;
@@ -12,41 +13,91 @@ use rand::rngs::StdRng;
 use std::cell::RefCell;
 use std::f32::consts::TAU;
 
+pub(super) struct Aurora2;
+pub(super) static MODE: Aurora2 = Aurora2;
+
+const NAME: &str = "aurora2";
+const KNOBS: usize = 9;
+const HELP: &str = "aurora2: flow-field light curtains over a pine horizon, lit snow below [ribbons] [width] [drift] [horizon] [stars] [spread] [pines] [fold] [gain]";
+
+const PARAMS: &[Param] = &[
+    param!("RIBBONS", "curtain count", 1.0, 16.0, 5.0, 1.0),
+    param!("RWIDTH", "curtain width in columns", 2.0, 30.0, 7.0, 1.0),
+    param!("DRIFT", "flow drift speed", 0.0, 4.0, 1.0, 0.1),
+    param!("HORIZON", "horizon height fraction", 0.3, 0.95, 0.72, 0.02),
+    param!("STARS", "star density", 0.0, 3.0, 1.0, 0.1),
+    param!("SPREAD", "hue spread green to cyan", 0.0, 2.0, 1.0, 0.05),
+    param!("PINES", "treeline density", 0.0, 3.0, 1.0, 0.1),
+    param!("FOLD", "ray contrast", 0.0, 2.0, 1.0, 0.05),
+    param!("GAIN", "curtain brightness", 0.2, 2.5, 1.0, 0.05),
+];
+
 const RAMP: [char; 9] = [' ', '.', ':', '-', '=', '+', '*', '#', '@'];
 const REF_COLS: f32 = 80.0;
 
-pub(crate) struct Aurora2Knobs {
-    pub ribbons: f32,
-    pub width: f32,
-    pub drift: f32,
-    pub horizon: f32,
-    pub stars: f32,
-    pub spread: f32,
-    pub pines: f32,
-    pub fold: f32,
-    pub gain: f32,
+struct Knobs {
+    ribbons: f32,
+    width: f32,
+    drift: f32,
+    horizon: f32,
+    stars: f32,
+    spread: f32,
+    pines: f32,
+    fold: f32,
+    gain: f32,
 }
 
-impl Aurora2Knobs {
-    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
-    pub(crate) fn from_env() -> Self {
-        Aurora2Knobs {
-            ribbons: param_f32("RIBBONS", 5.0),
-            width: param_f32("RWIDTH", 7.0),
-            drift: param_f32("DRIFT", 1.0),
-            horizon: param_f32("HORIZON", 0.72),
-            stars: param_f32("STARS", 1.0),
-            spread: param_f32("SPREAD", 1.0),
-            pines: param_f32("PINES", 1.0),
-            fold: param_f32("FOLD", 1.0),
-            gain: param_f32("GAIN", 1.0),
+impl Knobs {
+    fn from_values(p: &[f32; KNOBS]) -> Self {
+        Knobs {
+            ribbons: p[0],
+            width: p[1],
+            drift: p[2],
+            horizon: p[3],
+            stars: p[4],
+            spread: p[5],
+            pines: p[6],
+            fold: p[7],
+            gain: p[8],
         }
+    }
+}
+
+impl Mode for Aurora2 {
+    fn name(&self) -> &'static str {
+        NAME
+    }
+    fn help(&self) -> &'static str {
+        HELP
+    }
+    fn animation(&self) -> AnimKind {
+        AnimKind::Iterate
+    }
+    fn params(&self) -> &'static [Param] {
+        PARAMS
+    }
+    fn render(&self, frame: &mut ModeFrame<'_>) {
+        let p: [f32; KNOBS] = std::array::from_fn(|i| {
+            let param = &PARAMS[i];
+            let value = frame
+                .args
+                .get(i + 4)
+                .and_then(|v| v.parse::<f32>().ok())
+                .or_else(|| frame.param_values.and_then(|v| v.get(i)).copied())
+                .unwrap_or_else(|| param_f32(param.key, param.default));
+            if value.is_finite() {
+                value.clamp(param.min, param.max)
+            } else {
+                param.default
+            }
+        });
+        let k = Knobs::from_values(&p);
+        draw(frame.grid, frame.width, frame.height, frame.seed, frame.palette, frame.time, &k);
     }
 }
 
 /// Stream splitter: every roll is keyed to (seed, layer, index) so one curtain
 /// or star never shifts its neighbors when a knob moves.
-#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn side_rng(seed: u64, layer: u64, index: u64) -> StdRng {
     let mut h = seed ^ layer.wrapping_mul(0x9E37_79B9_7F4A_7C15);
     h ^= index.wrapping_mul(0xBF58_476D_1CE4_E5B9);
@@ -56,7 +107,6 @@ fn side_rng(seed: u64, layer: u64, index: u64) -> StdRng {
     StdRng::seed_from_u64(h.wrapping_mul(0x94D0_49BB_1331_11EB))
 }
 
-#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn hash01(x: i64, y: i64, k: u64, seed: u64) -> f32 {
     let mut h = (x as u64).wrapping_mul(0x9E37_79B9_7F4A_7C15)
         ^ (y as u64).wrapping_mul(0xBF58_476D_1CE4_E5B9)
@@ -70,7 +120,6 @@ fn hash01(x: i64, y: i64, k: u64, seed: u64) -> f32 {
 
 /// Hue walk along a curtain: green at the hem, magenta mid, cyan at the crown.
 /// `spread` scales every excursion away from the green anchor.
-#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn hue_path(u: f32, spread: f32) -> f32 {
     let u = u.rem_euclid(1.0);
     let raw = if u < 0.5 {
@@ -94,7 +143,6 @@ struct Ribbon {
     ray: f32,
 }
 
-#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn roll_ribbons(seed: u64, n: usize) -> Vec<Ribbon> {
     let mut out = Vec::with_capacity(n);
     let span = 1.0 / n as f32;
@@ -128,8 +176,7 @@ thread_local! {
     static FIELD: RefCell<Field> = RefCell::new(Field { inten: Vec::new(), hue: Vec::new() });
 }
 
-#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
-fn accumulate(f: &mut Field, w: usize, sky: usize, seed: u64, t: f32, k: &Aurora2Knobs, ribs: &[Ribbon]) {
+fn accumulate(f: &mut Field, w: usize, sky: usize, seed: u64, t: f32, k: &Knobs, ribs: &[Ribbon]) {
     let cells = w * sky;
     f.inten.clear();
     f.hue.clear();
@@ -198,14 +245,12 @@ fn accumulate(f: &mut Field, w: usize, sky: usize, seed: u64, t: f32, k: &Aurora
     }
 }
 
-#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn sky_bg(palette: &[Color; 5], v: f32) -> Color {
     let top = lerp_color(rgb(2, 3, 9), palette[0], 0.16);
     let low = lerp_color(rgb(5, 9, 21), palette[0], 0.30);
     lerp_color(top, low, v.clamp(0.0, 1.0).powf(1.6))
 }
 
-#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn paint_sky(grid: &mut Grid, w: usize, h: usize, sky: usize, palette: &[Color; 5]) {
     for y in 0..h {
         let v = if sky > 0 {
@@ -220,8 +265,7 @@ fn paint_sky(grid: &mut Grid, w: usize, h: usize, sky: usize, palette: &[Color; 
     }
 }
 
-#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
-fn paint_stars(grid: &mut Grid, w: usize, sky: usize, seed: u64, t: f32, k: &Aurora2Knobs, palette: &[Color; 5]) {
+fn paint_stars(grid: &mut Grid, w: usize, sky: usize, seed: u64, t: f32, k: &Knobs) {
     if sky == 0 {
         return;
     }
@@ -253,12 +297,10 @@ fn paint_stars(grid: &mut Grid, w: usize, sky: usize, seed: u64, t: f32, k: &Aur
         let warm = lerp_color(cold, hsl_to_rgb((205.0 + tint) as f64, 0.35, 0.86), 0.5);
         let bg = grid[y][x].bg;
         let fg = lerp_color(bg, lerp_color(warm, rgb(255, 255, 255), b * 0.5), 0.30 + b * 0.70);
-        let _ = palette;
         grid[y][x] = Cell::with_bg(ch, fg, bg);
     }
 }
 
-#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn paint_curtains(grid: &mut Grid, w: usize, sky: usize, f: &Field) {
     for y in 0..sky {
         let row = y * w;
@@ -279,10 +321,8 @@ fn paint_curtains(grid: &mut Grid, w: usize, sky: usize, f: &Field) {
     }
 }
 
-#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 /// Snow does not mirror the sky, it pools the light falling on it. Average each
 /// column over the lower sky, then blur sideways so the foreground reads smooth.
-#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn column_glow(f: &Field, w: usize, sky: usize) -> (Vec<f32>, Vec<f64>) {
     let mut a = vec![0.0f32; w];
     let mut hue = vec![150.0f64; w];
@@ -316,7 +356,6 @@ fn column_glow(f: &Field, w: usize, sky: usize) -> (Vec<f32>, Vec<f64>) {
     (blur, hue)
 }
 
-#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn paint_ground(grid: &mut Grid, w: usize, h: usize, sky: usize, seed: u64, f: &Field, palette: &[Color; 5]) {
     if sky >= h {
         return;
@@ -352,7 +391,6 @@ fn paint_ground(grid: &mut Grid, w: usize, h: usize, sky: usize, seed: u64, f: &
     }
 }
 
-#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn pine_glyph(x: i32, y: i32, seed: u64) -> char {
     match (hash01(x as i64, y as i64, 7, seed) * 4.0) as u32 {
         0 => '#',
@@ -362,7 +400,6 @@ fn pine_glyph(x: i32, y: i32, seed: u64) -> char {
     }
 }
 
-#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 fn stamp_pine(grid: &mut Grid, w: usize, sky: usize, base: i32, cx: i32, ph: i32, spread: f32, fg: Color, seed: u64) {
     for i in 0..ph {
         let y = base - (ph - 1 - i);
@@ -390,8 +427,7 @@ fn stamp_pine(grid: &mut Grid, w: usize, sky: usize, base: i32, cx: i32, ph: i32
     }
 }
 
-#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
-fn paint_pines(grid: &mut Grid, w: usize, h: usize, sky: usize, seed: u64, k: &Aurora2Knobs, palette: &[Color; 5]) {
+fn paint_pines(grid: &mut Grid, w: usize, h: usize, sky: usize, seed: u64, k: &Knobs, palette: &[Color; 5]) {
     if sky == 0 || sky >= h {
         return;
     }
@@ -439,146 +475,95 @@ fn paint_pines(grid: &mut Grid, w: usize, h: usize, sky: usize, seed: u64, k: &A
             } else {
                 (sky as i32 - 1).min(anchor + r.random_range(1..3i32))
             };
-            stamp_pine(
-                grid,
-                w,
-                sky,
-                base.min(sky as i32 - 1),
-                cx,
-                ph,
-                spread,
-                fg,
-                seed ^ rank,
-            );
+            stamp_pine(grid, w, sky, base.min(sky as i32 - 1), cx, ph, spread, fg, seed ^ rank);
         }
     }
 }
 
-#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
-pub fn draw_aurora2(
-    grid: &mut Grid,
-    w: usize,
-    h: usize,
-    seed: u64,
-    palette: &[Color; 5],
-    t: f32,
-    k: &Aurora2Knobs,
-) {
+fn draw(grid: &mut Grid, w: usize, h: usize, seed: u64, palette: &[Color; 5], t: f32, k: &Knobs) {
     if w == 0 || h == 0 {
         return;
     }
     let sky = ((h as f32 * k.horizon.clamp(0.15, 0.98)).round() as usize).clamp(1, h.saturating_sub(1).max(1));
-    measure_layer("aurora2", "sky", || paint_sky(grid, w, h, sky, palette));
-    measure_layer("aurora2", "stars", || {
-        paint_stars(grid, w, sky, seed, t, k, palette)
-    });
+    measure_layer(NAME, "sky", || paint_sky(grid, w, h, sky, palette));
+    measure_layer(NAME, "stars", || paint_stars(grid, w, sky, seed, t, k));
     let n = (k.ribbons.round() as i32).clamp(1, 24) as usize;
     let ribs = roll_ribbons(seed, n);
     FIELD.with(|slot| {
         let mut f = slot.borrow_mut();
-        measure_layer("aurora2", "field", || {
-            accumulate(&mut f, w, sky, seed, t, k, &ribs)
-        });
-        measure_layer("aurora2", "curtains", || paint_curtains(grid, w, sky, &f));
-        measure_layer("aurora2", "ground", || {
-            paint_ground(grid, w, h, sky, seed, &f, palette)
-        });
+        measure_layer(NAME, "field", || accumulate(&mut f, w, sky, seed, t, k, &ribs));
+        measure_layer(NAME, "curtains", || paint_curtains(grid, w, sky, &f));
+        measure_layer(NAME, "ground", || paint_ground(grid, w, h, sky, seed, &f, palette));
     });
-    measure_layer("aurora2", "pines", || {
-        paint_pines(grid, w, h, sky, seed, k, palette)
-    });
-}
-
-#[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
-pub fn cli_aurora2(
-    mut grid: Grid,
-    width: usize,
-    height: usize,
-    seed: u64,
-    palette: [Color; 5],
-    rng: StdRng,
-    t_anim: f32,
-    term_w: u16,
-    term_h: u16,
-    args: &[String],
-    mode: &str,
-    theme_name: &str,
-) -> (Grid, bool) {
-    let _ = (rng, term_w, term_h, mode, theme_name);
-    let mut k = Aurora2Knobs::from_env();
-    let pos: Vec<f32> = args.iter().skip(4).filter_map(|a| a.parse().ok()).collect();
-    let slots: [&mut f32; 9] = [
-        &mut k.ribbons,
-        &mut k.width,
-        &mut k.drift,
-        &mut k.horizon,
-        &mut k.stars,
-        &mut k.spread,
-        &mut k.pines,
-        &mut k.fold,
-        &mut k.gain,
-    ];
-    for (slot, v) in slots.into_iter().zip(pos.iter()) {
-        *slot = *v;
-    }
-    draw_aurora2(&mut grid, width, height, seed, &palette, t_anim, &k);
-    (grid, false)
+    measure_layer(NAME, "pines", || paint_pines(grid, w, h, sky, seed, k, palette));
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::render::grid_to_plain;
+    use rand::{SeedableRng, rngs::StdRng};
 
-    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
-    fn run(w: usize, h: usize, seed: u64, t: f32) -> String {
-        let mut g = vec![vec![Cell::blank(); w]; h];
-        let p = crate::color::make_palette(seed);
-        let k = Aurora2Knobs::from_env();
-        draw_aurora2(&mut g, w, h, seed, &p, t, &k);
-        g.iter()
-            .map(|row| row.iter().map(|c| c.ch).collect::<String>())
-            .collect::<Vec<_>>()
-            .join("\n")
+    fn knobs() -> Vec<f32> {
+        PARAMS.iter().map(|p| p.default).collect()
+    }
+
+    fn frame(w: usize, h: usize, seed: u64, time: f32, values: &[f32]) -> Grid {
+        let mut grid = vec![vec![Cell::blank(); w]; h];
+        let palette = crate::color::make_palette(seed);
+        let mut rng = StdRng::seed_from_u64(seed);
+        MODE.render(&mut ModeFrame {
+            grid: &mut grid,
+            width: w,
+            height: h,
+            seed,
+            palette: &palette,
+            rng: &mut rng,
+            time,
+            args: &[],
+            param_values: Some(values),
+        });
+        grid
+    }
+
+    fn text(grid: &Grid) -> String {
+        grid_to_plain(grid).join("\n")
     }
 
     #[test]
-    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
-    fn snapshot_aurora_standard() {
-        insta::assert_snapshot!("aurora2_80x24", run(80, 24, 42, 0.0));
+    fn aurora2_80x24() {
+        insta::assert_snapshot!("aurora2_80x24", text(&frame(80, 24, 42, 0.0, &knobs())));
     }
 
     #[test]
-    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
-    fn snapshot_aurora_wide() {
-        insta::assert_snapshot!("aurora2_120x36", run(120, 36, 1701, 0.0));
+    fn aurora2_120x36() {
+        insta::assert_snapshot!("aurora2_120x36", text(&frame(120, 36, 1701, 0.0, &knobs())));
     }
 
     #[test]
-    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
+    fn aurora2_80x24_t6() {
+        insta::assert_snapshot!("aurora2_80x24_t6", text(&frame(80, 24, 42, 6.0, &knobs())));
+    }
+
+    #[test]
     fn deterministic_and_seed_sensitive() {
-        assert_eq!(run(90, 30, 42, 0.0), run(90, 30, 42, 0.0));
-        assert_ne!(run(90, 30, 42, 0.0), run(90, 30, 7, 0.0));
+        let k = knobs();
+        assert_eq!(text(&frame(90, 30, 42, 0.0, &k)), text(&frame(90, 30, 42, 0.0, &k)));
+        assert_ne!(text(&frame(90, 30, 42, 0.0, &k)), text(&frame(90, 30, 7, 0.0, &k)));
     }
 
     #[test]
-    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn t_drifts_the_curtains() {
-        assert_ne!(run(90, 30, 42, 0.0), run(90, 30, 42, 3.0));
-        assert_ne!(run(90, 30, 42, 3.0), run(90, 30, 42, 7.0));
+        let k = knobs();
+        assert_ne!(text(&frame(90, 30, 42, 0.0, &k)), text(&frame(90, 30, 42, 3.0, &k)));
+        assert_ne!(text(&frame(90, 30, 42, 3.0, &k)), text(&frame(90, 30, 42, 7.0, &k)));
     }
 
     #[test]
-    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn treeline_stays_still_while_the_sky_moves() {
-        let frame = |t: f32| {
-            let mut g = vec![vec![Cell::blank(); 90]; 30];
-            let p = crate::color::make_palette(42);
-            let k = Aurora2Knobs::from_env();
-            draw_aurora2(&mut g, 90, 30, 42, &p, t, &k);
-            g
-        };
-        let a = frame(0.0);
-        let b = frame(4.0);
+        let k = knobs();
+        let a = frame(90, 30, 42, 0.0, &k);
+        let b = frame(90, 30, 42, 4.0, &k);
         let sky = (30.0f32 * 0.72).round() as usize;
         let row = |g: &Grid, y: usize| g[y].iter().map(|c| c.ch).collect::<String>();
         assert_eq!(row(&a, sky - 1), row(&b, sky - 1), "the ridge crest drifted");
@@ -592,25 +577,19 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn tiny_grids_terminate() {
+        let k = knobs();
         for (w, h) in [(1usize, 1usize), (6, 2), (12, 3), (3, 20)] {
-            let mut g = vec![vec![Cell::blank(); w]; h];
-            let p = crate::color::make_palette(5);
-            let k = Aurora2Knobs::from_env();
-            draw_aurora2(&mut g, w, h, 5, &p, 2.0, &k);
+            frame(w, h, 5, 2.0, &k);
         }
     }
 
     #[test]
-    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn every_glyph_is_single_width() {
         use unicode_width::UnicodeWidthChar;
-        let mut g = vec![vec![Cell::blank(); 120]; 40];
-        let p = crate::color::make_palette(42);
-        let k = Aurora2Knobs::from_env();
+        let k = knobs();
         for step in 0..12 {
-            draw_aurora2(&mut g, 120, 40, 42, &p, step as f32 * 0.7, &k);
+            let g = frame(120, 40, 42, step as f32 * 0.7, &k);
             for row in &g {
                 for c in row {
                     assert_eq!(c.ch.width().unwrap_or(0), 1, "glyph {:?} is not width 1", c.ch);
@@ -620,19 +599,16 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
     fn frame_cost() {
         let (w, h) = (200usize, 60usize);
-        let mut g = vec![vec![Cell::blank(); w]; h];
-        let p = crate::color::make_palette(42);
-        let k = Aurora2Knobs::from_env();
-        draw_aurora2(&mut g, w, h, 42, &p, 0.0, &k);
+        let k = knobs();
+        frame(w, h, 42, 0.0, &k);
         let start = std::time::Instant::now();
         for f in 0..200 {
-            draw_aurora2(&mut g, w, h, 42, &p, f as f32 * 0.05, &k);
+            frame(w, h, 42, f as f32 * 0.05, &k);
         }
         let avg = start.elapsed().as_secs_f64() * 1000.0 / 200.0;
-        eprintln!("aurora frame_cost 200x60: avg {:.3} ms", avg);
+        eprintln!("aurora2 frame_cost 200x60: avg {:.3} ms", avg);
         if !cfg!(debug_assertions) {
             assert!(avg < 6.0, "avg frame {:.3} ms", avg);
         }

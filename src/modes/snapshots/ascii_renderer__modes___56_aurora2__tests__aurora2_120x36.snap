@@ -1,7 +1,6 @@
 ---
-source: src/aurora2.rs
-assertion_line: 553
-expression: "run(120, 36, 1701, 0.0)"
+source: src/modes/_56_aurora2.rs
+expression: "text(&frame(120, 36, 1701, 0.0, &knobs()))"
 ---
        +                                    +            + ·          ·                                                ·
                .                        .   · .:.                     .                           * .                   

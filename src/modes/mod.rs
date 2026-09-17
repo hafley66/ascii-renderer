@@ -26,6 +26,7 @@ mod _52_gem_aetherium_3;
 mod _53_prismata;
 mod _54_nightglass;
 mod _55_rosette;
+mod _56_aurora2;
 
 #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn register_all(registry: &mut crate::registry::ModeRegistry) {
@@ -55,4 +56,5 @@ pub(crate) fn register_all(registry: &mut crate::registry::ModeRegistry) {
     registry.add(&_53_prismata::MODE);
     registry.add(&_54_nightglass::MODE);
     registry.add(&_55_rosette::MODE);
+    registry.add(&_56_aurora2::MODE);
 }
