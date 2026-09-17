@@ -50,6 +50,15 @@ than a blur. Knob rolls move every element, not just the shading: `LIGHTS`,
 
 Positional order: lights glow bokeh drops slide rain wind haze glass twinkle drift sweep.
 
+## Themes
+
+The four lamp families (warm, cool, rose, blown-out white) are anchored to real
+city light and take only a 14-22% tint from the theme, so the mode reads as a
+night city under every palette rather than collapsing into the theme's hue. The
+theme still owns the ambience: night gradient, light-pollution band, district haze,
+glass sheen and the rain, so `bone` is a monochrome night, `ember` a warm one and
+`neon` a magenta one, from the same frame.
+
 ## How a frame is built
 
 Three O(W*H) passes over one reusable RGBA scratch, a bounded splat pass, then
