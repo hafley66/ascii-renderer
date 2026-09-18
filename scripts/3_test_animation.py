@@ -143,7 +143,12 @@ def check(width, height):
             elif args.frames >= 40:
                 assert len({event['roll'] for event in frames}) >= 10
                 assert len({json.dumps(event['knobs'], sort_keys=True) for event in frames}) >= 10
-            assert all(event['seed'] == seed for event in frames), 'seed differed from fixture'
+            if fixed:
+                assert all(event['seed'] == seed for event in frames), 'seed differed from fixture'
+            else:
+                assert all(0 <= event['seed'] < 10000 for event in frames), 'exploration seed out of range'
+                if args.frames >= 40:
+                    assert any(event['seed'] != seed for event in frames), 'exploration did not reroll geometry seed'
             assert all(event['grid'] == {'w': width, 'h': height} for event in frames)
             assert all(event['terminal_size'] == {'w': width + 34, 'h': height + 1} for event in frames)
             for stage in ('render_us', 'encoding_us', 'presentation_us', 'dur_us'):
