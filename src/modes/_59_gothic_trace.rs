@@ -613,7 +613,7 @@ fn paint_stroke(grid: &mut Grid, s: &Stroke, start: f32, end: f32, color: Color,
                 let ch = if dy.abs() <= 0.4142 * dx.abs() { '-' }
                 else if dy.abs() >= 2.4142 * dx.abs() { '|' }
                 else if dx * dy >= 0.0 { '\\' } else { '/' };
-                cell.ch = if cell.ch != ' ' && cell.ch != ch { '+' } else { ch };
+                cell.ch = if cell.ch != ' ' && cell.ch != '.' && cell.ch != ch { '+' } else { ch };
                 cell.fg = color;
             }
         }
@@ -767,6 +767,17 @@ mod tests {
         paint_stroke(&mut grid, &strokes[0], 0., 1., Color::White, false);
         assert!(grid[1].iter().any(|cell| cell.ch == '-'));
         assert!(grid.iter().any(|row| row.iter().any(|cell| cell.ch == '|')));
+    }
+
+    #[test]
+    fn foreground_replaces_ghost_without_crossing() {
+        let mut strokes = Vec::new();
+        add_stroke(&mut strokes, vec![Point { x: 1., y: 1. }, Point { x: 4., y: 1. }], 0, 0, 0.);
+        let mut grid = vec![vec![Cell::blank(); 12]; 4];
+        paint_stroke(&mut grid, &strokes[0], 0., 1., Color::DarkGrey, true);
+        paint_stroke(&mut grid, &strokes[0], 0., 1., Color::White, false);
+        assert!(grid[1].iter().all(|cell| cell.ch != '+'));
+        assert!(grid[1].iter().any(|cell| cell.ch == '-'));
     }
 
     #[test]
