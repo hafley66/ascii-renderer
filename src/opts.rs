@@ -418,6 +418,23 @@ pub(crate) fn demo_filter_modes(all_modes: &[&str], query: &str) -> Vec<usize> {
         .collect()
 }
 
+fn demo_picker_selection(
+    sel: usize,
+    matches: usize,
+    direction: Option<crossterm::event::KeyCode>,
+) -> usize {
+    let sel = sel.min(matches);
+    match direction {
+        Some(crossterm::event::KeyCode::Up) => {
+            if sel == 0 { matches } else { sel - 1 }
+        }
+        Some(crossterm::event::KeyCode::Down) => {
+            if sel == matches { 0 } else { sel + 1 }
+        }
+        _ => sel,
+    }
+}
+
 /// Full-screen list+filter picker. Type to filter (substring, case-insensitive),
 /// Up/Down to move, Enter to select, Esc to cancel. Returns the chosen index into
 /// `all_modes`, or None if cancelled. Caller must have raw mode enabled.
@@ -436,9 +453,7 @@ pub(crate) fn demo_pick_mode(all_modes: &[&str], current: usize) -> Option<usize
 
     loop {
         let filtered = demo_filter_modes(all_modes, &query);
-        if sel >= filtered.len() {
-            sel = filtered.len().saturating_sub(1);
-        }
+        sel = demo_picker_selection(sel, filtered.len(), None);
 
         let (tw, th) = terminal::size().unwrap_or((80, 45));
         let tw = tw as usize;
@@ -525,8 +540,8 @@ pub(crate) fn demo_pick_mode(all_modes: &[&str], current: usize) -> Option<usize
                     return filtered.get(sel).copied();
                 }
                 // wrap around top<->bottom; cancel_idx is the bottom-most entry.
-                KeyCode::Up => sel = if sel == 0 { cancel_idx } else { sel - 1 },
-                KeyCode::Down => sel = if sel >= cancel_idx { 0 } else { sel + 1 },
+                KeyCode::Up => sel = demo_picker_selection(sel, cancel_idx, Some(KeyCode::Up)),
+                KeyCode::Down => sel = demo_picker_selection(sel, cancel_idx, Some(KeyCode::Down)),
                 KeyCode::Backspace => {
                     query.pop();
                     sel = 0;
@@ -1069,5 +1084,32 @@ mod live_param_tests {
         })
         .join()
         .unwrap();
+    }
+}
+
+#[cfg(test)]
+mod picker_tests {
+    use super::{demo_filter_modes, demo_picker_selection};
+    use crossterm::event::KeyCode;
+
+    #[test]
+    fn demo_picker_wraps_through_cancel() {
+        let timeline = [
+            0,
+            demo_picker_selection(0, 3, Some(KeyCode::Up)),
+            demo_picker_selection(3, 3, None),
+            demo_picker_selection(3, 3, Some(KeyCode::Down)),
+            demo_picker_selection(2, 3, Some(KeyCode::Down)),
+            demo_picker_selection(3, 3, Some(KeyCode::Down)),
+            demo_picker_selection(0, 3, Some(KeyCode::Up)),
+        ];
+        assert_eq!(timeline, [0, 3, 3, 0, 3, 0, 3]);
+        assert_eq!(demo_picker_selection(9, 0, Some(KeyCode::Up)), 0);
+        assert_eq!(demo_picker_selection(9, 0, Some(KeyCode::Down)), 0);
+
+        let roster = ["Gothic-Trace", "reef", "other"];
+        assert_eq!(demo_filter_modes(&roster, "gOtHiC"), vec![0]);
+        assert_eq!(demo_picker_selection(3, 1, None), 1);
+        assert_eq!(demo_picker_selection(1, 1, Some(KeyCode::Down)), 0);
     }
 }
