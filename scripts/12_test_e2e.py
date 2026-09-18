@@ -166,7 +166,10 @@ class DemoCase:
     async def open_terminal(self, size):
         import iterm2
         import Quartz
-        watch_pid = int(subprocess.check_output(['pgrep','-x','iTerm2'], text=True).strip())
+        from AppKit import NSRunningApplication
+        terminals = NSRunningApplication.runningApplicationsWithBundleIdentifier_('com.googlecode.iterm2')
+        assert len(terminals) == 1, f'expected one running iTerm application, found {len(terminals)}'
+        watch_pid = terminals[0].processIdentifier()
         def window_ids():
             return {int(w['kCGWindowNumber']) for w in Quartz.CGWindowListCopyWindowInfo(
                 Quartz.kCGWindowListOptionOnScreenOnly, 0)
@@ -252,9 +255,9 @@ class DemoCase:
             await self.screen_until('mode-filter', lambda s: mode in s)
             if self.name == 'seed-search':
                 await self.key('picker-up-to-cancel','\x1b[A')
-                await self.screen_until('picker-cancel-selected', lambda s: '\x1b[7m \u25b8 \u2715 cancel' in s)
+                await self.screen_until('picker-cancel-selected', lambda s: '\u25b8 \u2715 cancel' in s)
                 await self.key('picker-down-to-mode','\x1b[B')
-                await self.screen_until('picker-mode-selected', lambda s: f'\x1b[7m \u25b8 {mode}' in s)
+                await self.screen_until('picker-mode-selected', lambda s: f'\u25b8 {mode}' in s)
             await self.key('select-gem','\r')
             await self.screen_until('gem-preview', lambda s: mode in s and 'a=animate' in s)
             self.checkpoint('mode-search-and-preview')
@@ -316,7 +319,7 @@ class DemoCase:
         assert any(str(t['pid'])==worker and t['samples']>0 for t in summary['threads']), 'animation worker absent from profile'
         support.write_json(self.d/'profile-summary.json', summary)
         self.checkpoint('profile-includes-render-worker', **summary)
-        if self.name != 'workflow':
+        if self.name in ('bad-400x200', 'max-400x200'):
             measured = self.result['steady']['interval_ms']
             if getattr(self.args, 'headless', False):
                 self.result['performance_gate'] = 'native-consumer cadence; GUI painting untested'
@@ -374,7 +377,8 @@ class DemoCase:
     async def seed_search(self):
         await self.key('typed-seed-123','e123\r')
         await self.wait('typed seed reaches frame', lambda _: self.frames()[-1]['seed'] == 123)
-        assert 'seed:123' in await self.capture('typed-seed-footer')
+        await self.screen_until('typed-seed-footer', lambda s: 'seed:123' in s)
+        await self.capture('typed-seed-art')
         typed = self.frames()[-1]
         await self.key('randomize-geometry','\r')
         await self.wait('random geometry seed', lambda _: self.frames()[-1]['seed'] != 123)

@@ -50,3 +50,19 @@ Remaining limitations:
 - The live seed-search workflow has not been observed through a real terminal.
 - The full E2E suite has not established GUI motion, terminal-cell behavior, latency, cadence, profiler evidence, or termios restoration.
 - The two reproduced Rust regression failures remain unresolved and are outside the requested files.
+
+## Primary checkout verification
+
+All requested implementation changes are integrated. Existing uncommitted ferrofluid files and registry entries are preserved.
+
+- Picker regression: passed.
+- Gothic mode tests: 8 passed; five snapshots reviewed as ASCII.
+- Seed input, renderer reseeding, and seed/roll independence: 3 passed.
+- Primary binary suite: 507 passed, 2 failed, 18 ignored. Failures: existing encoder RGB assertion (also reproduced before seed/art integration) and gem_bad_roll6_ansi_regression.
+- Registry generator check and E2E runner tests: passed.
+- Unsandboxed watchdog tests: 4 passed.
+- Guarded headless gothic-trace seed-search: passed. Artifacts: perf/results/e2e-1789749322886/.
+- Guarded GUI gothic-trace seed-search: passed. Artifacts: perf/results/e2e-1789749329385/.
+- Full GUI suite attempt: failed. Artifacts: perf/results/e2e-1789748950639/. Backpressure failed an existing terminal-wait assertion; GUI cases initially failed exact-name PID lookup. Bundle-ID lookup was then corrected and the requested GUI functional case passed. Full-suite pass is not claimed.
+
+Primary harness corrections: compare picker markers against plain screen text, check the seed footer against screen text rather than screenshot hashes, obtain terminal PID through the application bundle ID, and retain cadence gates only for performance cases. Watchdog limits are unchanged.
