@@ -267,6 +267,42 @@ impl IterateFrameRenderer {
             None
         }
     }
+
+    pub(crate) fn reseed(&mut self, seed: u64, theme: &str) {
+        self.seed = seed;
+        self.palette = if theme.is_empty() { make_palette(seed) }
+        else { named_theme(theme).unwrap_or_else(|| make_palette(seed)) };
+        self.rng = StdRng::seed_from_u64(seed);
+    }
+}
+
+#[derive(Debug, PartialEq)]
+enum SeedInput { Pass, Consumed, Set(u64) }
+
+fn animation_seed_input(
+    edit: &mut Option<String>, key: crossterm::event::KeyEvent, current: u64,
+    pane_has_params: bool, random_seed: impl FnOnce() -> u64,
+) -> SeedInput {
+    use crossterm::event::{KeyCode, KeyEventKind, KeyModifiers};
+    if key.kind == KeyEventKind::Release { return SeedInput::Consumed; }
+    if key.code == KeyCode::Esc || matches!(key.code, KeyCode::Char('c' | 'C')) && key.modifiers.contains(KeyModifiers::CONTROL) || matches!(key.code, KeyCode::Char('q' | 'Q')) { return SeedInput::Pass; }
+    if let Some(value) = edit {
+        match key.code {
+            KeyCode::Char(c) if c.is_ascii_digit() => { if value.len() < 20 { value.push(c); } SeedInput::Consumed }
+            KeyCode::Backspace => { value.pop(); SeedInput::Consumed }
+            KeyCode::Char('e' | 'E') => { *edit = None; SeedInput::Consumed }
+            KeyCode::Enter => match value.parse::<u64>() { Ok(seed) => { *edit = None; SeedInput::Set(seed) }, Err(_) => SeedInput::Consumed },
+            _ => SeedInput::Consumed,
+        }
+    } else {
+        match key.code {
+            KeyCode::Char('e' | 'E') => { *edit = Some(String::new()); SeedInput::Consumed }
+            KeyCode::Enter => { let sample = random_seed(); debug_assert!(sample < 10_000); SeedInput::Set(if sample == current {(sample + 1) % 10_000} else {sample}) }
+            KeyCode::Up if !pane_has_params => SeedInput::Set(current.wrapping_add(1)),
+            KeyCode::Down if !pane_has_params => SeedInput::Set(current.wrapping_sub(1)),
+            _ => SeedInput::Pass,
+        }
+    }
 }
 
 /// In-process iterate render for callers that need an owned one-shot grid.
@@ -892,6 +928,40 @@ fn iterate_grid_into(
 mod iterate_frame_tests {
     use super::*;
 
+    #[test]
+    fn animation_seed_controls() {
+        use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
+        let key = |code| KeyEvent::new(code, KeyModifiers::NONE);
+        let mut edit = None;
+        assert_eq!(animation_seed_input(&mut edit, key(KeyCode::Char('e')), 42, false, || 7), SeedInput::Consumed);
+        assert_eq!(animation_seed_input(&mut edit, key(KeyCode::Char('1')), 42, false, || 7), SeedInput::Consumed);
+        assert_eq!(animation_seed_input(&mut edit, key(KeyCode::Enter), 42, false, || 7), SeedInput::Set(1));
+        assert_eq!(animation_seed_input(&mut edit, key(KeyCode::Enter), 7, false, || 7), SeedInput::Set(8));
+        assert_eq!(animation_seed_input(&mut edit, key(KeyCode::Down), 0, false, || 7), SeedInput::Set(u64::MAX));
+        assert_eq!(animation_seed_input(&mut edit, key(KeyCode::Up), u64::MAX, false, || 7), SeedInput::Set(0));
+        assert_eq!(animation_seed_input(&mut edit, key(KeyCode::Up), 42, true, || 7), SeedInput::Pass);
+        let release = KeyEvent::new_with_kind(KeyCode::Char('1'), KeyModifiers::NONE, KeyEventKind::Release);
+        assert_eq!(animation_seed_input(&mut edit, release, 42, false, || 7), SeedInput::Consumed);
+    }
+
+    #[test]
+    fn animation_reseed_renderer() {
+        let mut reused = IterateFrameRenderer::new("gothic-trace", 42, "", 80, 24).unwrap();
+        reused.render(4.5, None); reused.reseed(123, "deep");
+        let mut fresh = IterateFrameRenderer::new("gothic-trace", 123, "deep", 80, 24).unwrap();
+        assert_eq!(reused.render(0., None), fresh.render(0., None));
+        assert_eq!(reused.palette, fresh.palette);
+    }
+
+    #[test]
+    fn animation_geometry_seed_and_roll() {
+        let spec = mode_spec("gothic-trace"); let saved = vec![0.0; spec.params.len()];
+        let a = effective_pvals(&spec, &saved, 42, true, 0);
+        assert_ne!(a, effective_pvals(&spec, &saved, 43, true, 0));
+        assert_ne!(a, effective_pvals(&spec, &saved, 42, true, 1));
+        assert_eq!(effective_pvals(&spec, &saved, 42, false, 99), saved);
+    }
+
     /// Replays a recorded session's frames in-process and prices encodings:
     /// ASCII_PROBE_TRACE (ndjson), ASCII_PROBE_PID, ASCII_PROBE_FROM (time), ASCII_PROBE_LAST (frames).
     #[test]
@@ -1349,7 +1419,7 @@ pub(crate) fn morph_worker_session(
     let mut h = (th as usize).saturating_sub(1).max(1); // leave a status row
 
     // palette for native animators (wind/vflow) that synthesize rather than morph.
-    let palette = if theme.is_empty() {
+    let mut palette = if theme.is_empty() {
         make_palette(seed_a)
     } else {
         named_theme(theme).unwrap_or_else(|| make_palette(seed_a))
@@ -1358,14 +1428,17 @@ pub(crate) fn morph_worker_session(
     // Native registered animation needs no endpoint grids, ink sorting, or SDFs.
     // Retain the seed pair so switching to a morph strategy can build it lazily.
     let mut st: Option<MorphState> = None;
-    let mut endpoint_a = seed_a;
-    let mut endpoint_b = seed_b;
+    let mut geometry_seed = seed_a;
+    let seed_delta = seed_b.wrapping_sub(seed_a);
+    let mut target_seed = seed_b;
+    let mut endpoint_a = geometry_seed;
+    let mut endpoint_b = target_seed;
     let mut endpoint_mode_a = mode_a;
     let mut endpoint_mode_b = mode_b;
 
     // walk state: when on, finishing 0->1 shifts B into A and loads the next seed.
     let mut walk = mode_a == mode_b;
-    let mut walk_seed = seed_b;
+    let mut walk_seed = target_seed;
 
     // Framed output carries the cursor hide inside the first frame.
     if input.is_none() {
@@ -1399,13 +1472,14 @@ pub(crate) fn morph_worker_session(
         .unwrap_or_else(|| crate::opts::LIVE_ROLL.with(|r| r.get()));
     let mut pvals: Vec<f32> = pvals_for(&spec, mode_a, &saved);
     // Every knob state (roll, values, randomize) a key leaves; b walks back.
-    let mut history: Vec<(u64, Vec<f32>, bool)> = Vec::new();
+    let mut history: Vec<(u64, u64, Vec<f32>, bool)> = Vec::new();
+    let mut seed_edit: Option<String> = None;
     let mut psel: usize = 0;
     let mut pane_open = !spec.params.is_empty();
     let has_params = !spec.params.is_empty();
     let pane_w = if pane_open { 34.min(w / 2) } else { 0 };
     let initial_rw = w.saturating_sub(pane_w).max(1);
-    let mut iterate_renderer = IterateFrameRenderer::new(mode_a, seed_a, theme, initial_rw, h);
+    let mut iterate_renderer = IterateFrameRenderer::new(mode_a, geometry_seed, theme, initial_rw, h);
     let mut frame_encoder = AnsiFrameEncoder::new();
     let mut frame_buffer = Vec::with_capacity(w * h * 8);
     let mut pane_buffer = String::new();
@@ -1433,7 +1507,7 @@ pub(crate) fn morph_worker_session(
         // branches resolve the UI-thread overrides through param_f32.
         eff.clear();
         if randomize {
-            let random_seed = seed_a ^ roll.wrapping_mul(0x9E37_79B9_7F4A_7C15);
+            let random_seed = geometry_seed ^ roll.wrapping_mul(0x9E37_79B9_7F4A_7C15);
             eff.extend(
                 spec.params
                     .iter()
@@ -1442,7 +1516,9 @@ pub(crate) fn morph_worker_session(
         } else {
             eff.extend_from_slice(&pvals);
         }
-        if !registered_native_params {
+        let needs_endpoints = strat != "iterate" || registered_mode(mode_a).is_none();
+        LIVE_ROLL.with(|value| value.set(roll));
+        if !registered_native_params || needs_endpoints {
             LIVE_PARAMS.with(|values| {
                 values
                     .borrow_mut()
@@ -1455,13 +1531,11 @@ pub(crate) fn morph_worker_session(
         let rw = w.saturating_sub(pane_w).max(1);
         let renderer_size_changed = iterate_renderer
             .as_ref()
-            .is_none_or(|renderer| renderer.width != rw || renderer.height != h);
+            .is_none_or(|renderer| renderer.width != rw || renderer.height != h || renderer.seed != geometry_seed);
         if renderer_size_changed {
-            iterate_renderer = IterateFrameRenderer::new(mode_a, seed_a, theme, rw, h);
+            iterate_renderer = IterateFrameRenderer::new(mode_a, geometry_seed, theme, rw, h);
             clear_frame = true;
         }
-
-        let needs_endpoints = strat != "iterate" || registered_mode(mode_a).is_none();
         if needs_endpoints && st.is_none() {
             let fa = render_frame(&exe, endpoint_a, endpoint_mode_a, theme, w, h)
                 .unwrap_or_else(|| vec![vec![Cell::blank(); w]; h]);
@@ -1530,7 +1604,7 @@ pub(crate) fn morph_worker_session(
                 "swirl" => warp_swirl(&st.as_ref().unwrap().a, clock, 1.0),
                 "ripple" => warp_ripple(&st.as_ref().unwrap().a, clock, 2.2),
                 "breathe" => warp_breathe(&st.as_ref().unwrap().a, clock, 1.0),
-                "vflow" => voronoi_flow_frame(rw, h, seed_a, clock, &palette),
+                "vflow" => voronoi_flow_frame(rw, h, geometry_seed, clock, &palette),
                 _ => st.as_ref().unwrap().frame(t, &strat),
             })
         };
@@ -1569,13 +1643,17 @@ pub(crate) fn morph_worker_session(
         // Overwrite in place: every grid row is full-width so it repaints every
         // cell -- no Clear needed (Clear + full-width writes were causing the
         // bottom-right autoscroll that spammed scrollback).
-        let status = if pane_open && has_params {
+        let status = if let Some(edit) = &seed_edit {
+            let error = (!edit.is_empty() && edit.parse::<u64>().is_err()).then_some(" invalid").unwrap_or("");
+            format!(" term={}x{} grid={}x{} | seed:{} | seed> {}{}  enter=apply e=cancel esc/q=leave", w, th, rw, h, geometry_seed, edit, error)
+        } else if pane_open && has_params {
             format!(
-                " term={}x{} grid={}x{} | morph {} | {} | t={:.2} | {} | o=close opts  \u{2191}\u{2193}=select  \u{2190}\u{2192}=adjust  r=reset  b=back  i=iterate  q ",
+                " term={}x{} grid={}x{} | seed:{} | morph {} | {} | t={:.2} | {} | o=close opts  \u{2191}\u{2193}=select  \u{2190}\u{2192}=adjust  r=reset  b=back  i=iterate  q ",
                 w,
                 th,
                 rw,
                 h,
+                geometry_seed,
                 mode_a,
                 strat,
                 t,
@@ -1589,9 +1667,9 @@ pub(crate) fn morph_worker_session(
                 rw,
                 h,
                 mode_a,
-                seed_a,
+                geometry_seed,
                 if walk { mode_a } else { mode_b },
-                if walk { walk_seed } else { seed_b },
+                if walk { walk_seed } else { target_seed },
                 strat,
                 t,
                 if playing { "\u{25b6}" } else { "\u{2161}" },
@@ -1640,7 +1718,7 @@ pub(crate) fn morph_worker_session(
                 &spec,
                 &eff,
                 psel,
-                seed_a,
+                geometry_seed,
                 theme,
                 randomize,
             );
@@ -1717,7 +1795,7 @@ pub(crate) fn morph_worker_session(
                     let mut inputs = crate::_0_profile::FrameInputs {
                         mode: mode_a,
                         theme,
-                        seed: seed_a,
+                        seed: geometry_seed,
                         width: rw,
                         height: h,
                         terminal_size: Some((w as u16, th)),
@@ -1731,6 +1809,7 @@ pub(crate) fn morph_worker_session(
                     inputs.as_object_mut().unwrap().extend(
                         serde_json::json!({
                             "phase": phase, "randomize": randomize, "roll": roll,
+                            "target_seed": target_seed,
                         })
                         .as_object()
                         .unwrap()
@@ -1786,12 +1865,17 @@ pub(crate) fn morph_worker_session(
         for event in events {
             let input_started = Instant::now();
             let recorded_event = event.clone();
-            let knob_view = (roll, pvals.clone(), randomize);
+            let knob_view = (geometry_seed, roll, pvals.clone(), randomize);
+            let mut requested_seed = None;
+            let seed_input = match &event { Event::Key(key) => animation_seed_input(&mut seed_edit, *key, geometry_seed, pane_open && has_params, || rand::rng().random_range(0..10_000u64)), _ => SeedInput::Pass };
             match event {
-                Event::Key(key) => match key.code {
+                Event::Key(key) => if !matches!(seed_input, SeedInput::Pass) {
+                    if let SeedInput::Set(seed) = seed_input { requested_seed = Some(seed); }
+                } else { match key.code {
                     KeyCode::Char('q' | 'Q') | KeyCode::Esc => break 'frames,
                     KeyCode::Char('b') => {
-                        if let Some((r, values, rnd)) = history.pop() {
+                        if let Some((s, r, values, rnd)) = history.pop() {
+                            requested_seed = Some(s);
                             roll = r;
                             pvals = values;
                             randomize = rnd;
@@ -1880,29 +1964,22 @@ pub(crate) fn morph_worker_session(
                         phase = (phase + 0.02).min(1.0);
                     }
                     KeyCode::Char('n') => {
-                        // jump to next seed pair immediately
-                        walk_seed = walk_seed.wrapping_add(1);
-                        endpoint_a = endpoint_b;
-                        endpoint_b = walk_seed;
-                        endpoint_mode_a = endpoint_mode_b;
-                        endpoint_mode_b = mode_a;
-                        st = None;
-                        phase = 0.0;
-                        dir = 1.0;
+                        if strat == "iterate" { requested_seed = Some(geometry_seed.wrapping_add(1)); }
+                        else { walk_seed = walk_seed.wrapping_add(1); endpoint_a = endpoint_b; endpoint_b = walk_seed; endpoint_mode_a = endpoint_mode_b; endpoint_mode_b = mode_a; st = None; phase = 0.0; dir = 1.0; }
                     }
                     _ => {}
-                },
+                }},
                 Event::Resize(nw, nh) => {
                     // re-render both frames at the new size and rebuild state.
                     th = nh;
                     w = nw as usize;
                     h = (nh as usize).saturating_sub(1).max(1);
-                    endpoint_a = seed_a;
-                    endpoint_b = if walk { walk_seed } else { seed_b };
+                    endpoint_a = geometry_seed;
+                    endpoint_b = if walk { walk_seed } else { target_seed };
                     endpoint_mode_a = mode_a;
                     endpoint_mode_b = if walk { mode_a } else { mode_b };
                     st = None;
-                    iterate_renderer = IterateFrameRenderer::new(mode_a, seed_a, theme, w, h);
+                    iterate_renderer = IterateFrameRenderer::new(mode_a, geometry_seed, theme, w, h);
                     frame_encoder.invalidate();
                     phase = 0.0;
                     dir = 1.0;
@@ -1910,8 +1987,14 @@ pub(crate) fn morph_worker_session(
                 }
                 _ => {}
             }
-            let went_back = matches!(event, Event::Key(k) if k.code == KeyCode::Char('b'));
-            if !went_back && (roll, &pvals, randomize) != (knob_view.0, &knob_view.1, knob_view.2) {
+            if let Some(seed) = requested_seed { if seed != geometry_seed {
+                geometry_seed = seed; target_seed = seed.wrapping_add(seed_delta); endpoint_a = seed; endpoint_b = target_seed; walk_seed = target_seed; endpoint_mode_a = mode_a; endpoint_mode_b = mode_b; st = None;
+                palette = if theme.is_empty() { make_palette(seed) } else { named_theme(theme).unwrap_or_else(|| make_palette(seed)) };
+                if let Some(renderer) = iterate_renderer.as_mut() { renderer.reseed(seed, theme); }
+                phase = 0.0; dir = 1.0; clock = 0.0; last_frame = Instant::now(); frame_encoder.invalidate(); previous_status.clear(); previous_pane.clear(); clear_frame = true;
+            }}
+            let went_back = matches!(recorded_event, Event::Key(k) if k.code == KeyCode::Char('b'));
+            if !went_back && (geometry_seed, roll, &pvals, randomize) != (knob_view.0, knob_view.1, &knob_view.2, knob_view.3) {
                 history.push(knob_view);
                 if history.len() > 512 {
                     history.remove(0);
