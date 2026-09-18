@@ -661,7 +661,8 @@ fn build_bed(w: usize, h: usize, seed: u64, k: &ReefKnobs) -> Bed {
         let tall = 0.46 + h01(seed, L_COLONY, c as u64, 11) * 0.42;
         let room = ((cx - 1).min(w as i32 - 2 - cx)).max(2) as f32;
         let (sx, sy) = form.shape();
-        let ax = (slot * 0.40 * bulk * sx).clamp(3.0, room.min(slot * 0.58));
+        let available = room.min(slot * 0.58);
+        let ax = (slot * 0.40 * bulk * sx).clamp(3.0_f32.min(available), available);
         let ay = (ax * tall * sy).clamp(2.5, column * 0.86);
         let cells = ((ax * ay * 1.20).round() as usize).clamp(6, 4200);
         let effort = k.walker_budget / 1400.0;
@@ -1319,6 +1320,18 @@ mod tests {
     #[test]
     fn reef_tiny_grid() {
         insta::assert_snapshot!("reef_tiny_7", text(&frame(46, 14, 7, 0.0, &knobs())));
+    }
+
+    #[test]
+    fn dense_colonies_fit_a_narrow_spread() {
+        let mut values = knobs();
+        values[0] = PARAMS[0].max;
+        values[6] = PARAMS[6].min;
+        let a = frame(80, 24, 42, 0.0, &values);
+        assert_eq!(a, frame(80, 24, 42, 0.0, &values));
+        assert_eq!(a.len(), 24);
+        assert!(a.iter().all(|row| row.len() == 80));
+        assert!(a.iter().flatten().any(|cell| cell.ch != ' '));
     }
 
     #[test]
