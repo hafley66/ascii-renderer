@@ -542,10 +542,10 @@ mod tests {
     fn randomize_knobs_per_seed() {
         let spec = mode_spec("snakes");
         let zeros = vec![0.0f32; spec.params.len()];
-        let a = effective_pvals(&spec, &zeros, 7, true, 0);
-        let a2 = effective_pvals(&spec, &zeros, 7, true, 0);
-        let b = effective_pvals(&spec, &zeros, 8, true, 0);
-        let rolled = effective_pvals(&spec, &zeros, 7, true, 1);
+        let a = effective_pvals(&spec, &zeros, 7, true, 0, &[]);
+        let a2 = effective_pvals(&spec, &zeros, 7, true, 0, &[]);
+        let b = effective_pvals(&spec, &zeros, 8, true, 0, &[]);
+        let rolled = effective_pvals(&spec, &zeros, 7, true, 1, &[]);
         assert_eq!(a, a2, "randomize is deterministic for a given seed+roll");
         assert_ne!(a, b, "randomize re-rolls when the seed changes");
         assert_ne!(a, rolled, "bumping the roll nonce re-rolls the set");
@@ -554,7 +554,7 @@ mod tests {
         }
         // toggled off -> passes the tuned values straight through.
         let pv = vec![1.0f32; spec.params.len()];
-        assert_eq!(effective_pvals(&spec, &pv, 7, false, 0), pv);
+        assert_eq!(effective_pvals(&spec, &pv, 7, false, 0, &[]), pv);
     }
 
     #[test]

@@ -1359,11 +1359,12 @@ pub(crate) fn draw_options_pane(
     seed: u64,
     theme: &str,
     randomize: bool,
+    pins: &[bool],
 ) {
     use std::io::Write;
     let mut out = String::new();
     options_pane_to_ansi(
-        &mut out, x0, th, mode, spec, pvals, psel, seed, theme, randomize,
+        &mut out, x0, th, mode, spec, pvals, psel, seed, theme, randomize, pins,
     );
     let mut stdout = io::stdout().lock();
     stdout.write_all(out.as_bytes()).unwrap();
@@ -1384,6 +1385,7 @@ pub(crate) fn options_pane_to_ansi(
     seed: u64,
     theme: &str,
     randomize: bool,
+    pins: &[bool],
 ) {
     let col = x0 + 2; // 1-based content column (column x0+1 holds the divider)
     let rows = th.saturating_sub(1) as usize; // last terminal row is the status bar
@@ -1413,7 +1415,9 @@ pub(crate) fn options_pane_to_ansi(
     line(0, "\x1b[1mANIM OPTIONS\x1b[0m");
     line(1, &format!("mode  {}", mode));
     line(2, &format!("anim  {}", kind));
-    line(3, &format!("seed  {}  theme {}", seed, theme_label));
+    let seed_pin = if pins.get(spec.params.len()).copied().unwrap_or(false) { "x" } else { " " };
+    let seed_row = format!("{} [{}] seed {} theme {}", if psel == spec.params.len() { ">" } else { " " }, seed_pin, seed, theme_label);
+    line(3, &if psel == spec.params.len() { format!("\x1b[7m{seed_row}\x1b[0m") } else { seed_row });
     line(5, &format!("knobs {}", knobs_mode));
     line(
         4,
@@ -1424,23 +1428,27 @@ pub(crate) fn options_pane_to_ansi(
         line(8, "press \x1b[1ma\x1b[0m to animate");
     } else {
         let bar_w = 12usize;
+        let visible = (rows.saturating_sub(8) / 2).max(1);
+        let offset = if psel < spec.params.len() { psel.saturating_sub(visible - 1) } else { 0 };
         for (i, p) in spec.params.iter().enumerate() {
+            if i < offset || i >= offset + visible { continue; }
             let v = pvals[i];
             let frac = ((v - p.min) / (p.max - p.min)).clamp(0.0, 1.0);
             let filled = (frac * bar_w as f32).round() as usize;
             let bar: String = (0..bar_w)
                 .map(|k| if k < filled { '\u{2588}' } else { '\u{2591}' })
                 .collect();
-            let row = 6 + i * 2;
+            let row = 6 + (i - offset) * 2;
+            let pin = if pins.get(i).copied().unwrap_or(false) { "x" } else { " " };
             if i == psel {
-                line(row, &format!("\x1b[7m> {:<10}\x1b[0m", p.label));
+                line(row, &format!("\x1b[7m> [{}] {:<10}\x1b[0m", pin, p.label));
             } else {
-                line(row, &format!("  {:<10}", p.label));
+                line(row, &format!("  [{}] {:<10}", pin, p.label));
             }
             line(row + 1, &format!("  {} {:>7.3}", bar, v));
         }
-        let foot = 6 + spec.params.len() * 2 + 1;
-        line(foot, "\x1b[90m<>=adjust ^v=select r=reset\x1b[0m");
+        let foot = 6 + spec.params.len().min(visible) * 2 + 1;
+        line(foot, "\x1b[90menter=pin ^v=select r=reset\x1b[0m");
         line(foot + 1, "press \x1b[1ma\x1b[0m to animate");
     }
 }

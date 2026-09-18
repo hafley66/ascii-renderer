@@ -220,7 +220,7 @@ class DemoCase:
         (config/'options.tsv').write_text('__global\tRAND\t0\n'+''.join(
             f'{mode}\t{k}\t{v}\n' for k,v in fixture['knobs'].items()))
         support.write_json(self.d/'fixture.json', fixture)
-        size = (160,40) if self.name in ('workflow', 'seed-search') else (400,200)
+        size = (160,40) if self.name in ('workflow', 'seed-search', 'pin-inputs') else (400,200)
         watch_pid = await self.open_terminal(size)
         support.write_json(self.d/'observer.json', {'ts_ms': time.time_ns()//1_000_000, 'focused': True})
         self.observer = asyncio.create_task(self.heartbeat())
@@ -270,6 +270,13 @@ class DemoCase:
                 assert len(saved)==1 and saved[0]['mode']==mode and saved[0]['seed']==42, saved
                 assert all(abs(saved[0]['knobs'][k]-v)<1e-5 for k,v in fixture['knobs'].items()), saved
                 self.checkpoint('modeless-save', file=str(config/'presets.json'))
+            if self.name == 'pin-inputs':
+                await self.key('demo-open-options','o')
+                await self.key('demo-pin-first-input','\r')
+                await self.screen_until('demo-checkbox-pinned', lambda s: '[x]' in s)
+                await self.key('demo-unpin-first-input','\r')
+                await self.screen_until('demo-checkbox-unpinned', lambda s: '[x]' not in s and '[ ]' in s)
+                self.checkpoint('demo-enter-toggles-checkbox')
             await self.key('animate','a')
         await self.wait('first native frame', lambda _: bool(self.frames()), 3)
         first = self.frames()[0]
@@ -289,6 +296,8 @@ class DemoCase:
             await self.workflow()
         elif self.name == 'seed-search':
             await self.seed_search()
+        elif self.name == 'pin-inputs':
+            await self.pin_inputs()
         else:
             # Validate steady-state cadence before changing the recorded configuration.
             await self.wait('ten recorded frames', lambda _: len(self.frames())>=10)
@@ -380,10 +389,12 @@ class DemoCase:
         await self.screen_until('typed-seed-footer', lambda s: 'seed:123' in s)
         await self.capture('typed-seed-art')
         typed = self.frames()[-1]
+        await self.key('close-pane-for-reseed','o')
         await self.key('randomize-geometry','\r')
         await self.wait('random geometry seed', lambda _: self.frames()[-1]['seed'] != 123)
         random_seed = self.frames()[-1]['seed']
         assert 0 <= random_seed < 10000
+        await self.key('reopen-pane-after-reseed','o')
         await self.key('enable-seed-random-knobs','g')
         await self.key('restore-seed-123','e123\r')
         await self.wait('seed 123 with random knobs', lambda _: self.frames()[-1]['seed'] == 123 and self.frames()[-1]['randomize'])
@@ -391,11 +402,12 @@ class DemoCase:
         await self.key('reroll-seed-123','+')
         await self.wait('roll changes at seed 123', lambda _: self.frames()[-1]['roll'] != first['roll'])
         rerolled = self.frames()[-1]
+        assert rerolled['seed'] != first['seed'], (first, rerolled)
         await self.key('typed-seed-124','e124\r')
         await self.wait('typed seed 124', lambda _: self.frames()[-1]['seed'] == 124)
         assert self.frames()[-1]['roll'] == rerolled['roll']
-        await self.key('restore-seed-123','e123\r')
-        await self.wait('restore seed 123 roll', lambda _: self.frames()[-1]['seed'] == 123 and self.frames()[-1]['roll'] == rerolled['roll'])
+        await self.key('restore-rerolled-seed',f"e{rerolled['seed']}\r")
+        await self.wait('restore rerolled seed', lambda _: self.frames()[-1]['seed'] == rerolled['seed'] and self.frames()[-1]['roll'] == rerolled['roll'])
         restored = self.frames()[-1]
         assert all(abs(restored['knobs'][key] - rerolled['knobs'][key]) < 1e-5 for key in rerolled['knobs']), (restored, rerolled)
         await self.key('close-options','o')
@@ -404,6 +416,41 @@ class DemoCase:
         await self.wait('closed pane seed up', lambda _: self.frames()[-1]['seed'] == (before + 1) % (1 << 64))
         await self.key('reopen-options','o')
         self.checkpoint('seed-search-controls', typed=typed, random_seed=random_seed, rerolled=rerolled, final=self.frames()[-1])
+
+    async def pin_inputs(self):
+        before = self.frames()[-1]
+        await self.key('pin-first-input','\r')
+        await self.wait('first input pinned', lambda _: bool(self.frames()[-1]['pins']))
+        pinned = self.frames()[-1]['pins'][0]
+        await self.screen_until('checkbox-pinned', lambda s: '[x]' in s)
+        await self.key('enable-pinned-exploration','g')
+        await self.wait('random enabled with pin', lambda _: self.frames()[-1]['randomize'])
+        previous = self.frames()[-1]
+        await self.key('explore-with-pinned-input','+')
+        await self.wait('exploration changes seed and roll', lambda _: self.frames()[-1]['roll'] != previous['roll'])
+        explored = self.frames()[-1]
+        assert explored['seed'] != previous['seed'], (previous, explored)
+        assert explored['knobs'][pinned] == before['knobs'][pinned]
+        assert any(explored['knobs'][k] != previous['knobs'][k] for k in explored['knobs'] if k != pinned)
+        await self.key('back-restores-exploration','b')
+        await self.wait('back seed and roll restored', lambda _: self.frames()[-1]['seed'] == previous['seed'] and self.frames()[-1]['roll'] == previous['roll'])
+        assert self.frames()[-1]['knobs'] == previous['knobs']
+        await self.key('focus-seed','\x1b[A')
+        await self.key('pin-seed','\r')
+        await self.wait('seed pinned', lambda _: 'SEED' in self.frames()[-1]['pins'])
+        held = self.frames()[-1]
+        await self.key('explore-with-pinned-seed','+')
+        await self.wait('roll changes with pinned seed', lambda _: self.frames()[-1]['roll'] != held['roll'])
+        assert self.frames()[-1]['seed'] == held['seed']
+        assert self.frames()[-1]['knobs'][pinned] == before['knobs'][pinned]
+        await self.key('unpin-seed','\r')
+        await self.wait('seed unpinned', lambda _: 'SEED' not in self.frames()[-1]['pins'])
+        await self.key('explore-after-unpin','+')
+        await self.wait('seed resumes exploration', lambda _: self.frames()[-1]['seed'] != held['seed'])
+        await self.key('focus-first-input','\x1b[B')
+        await self.key('unpin-first-input','\r')
+        await self.wait('first input unpinned', lambda _: pinned not in self.frames()[-1]['pins'])
+        self.checkpoint('pinned-exploration-controls', pinned=pinned, explored=explored, held=held, final=self.frames()[-1])
 
     async def cleanup(self):
         # Fail the heartbeat first, allowing the independent guard to stop its tree.
@@ -456,9 +503,9 @@ def backpressure_case(args):
 async def suite(connection, args):
     import iterm2
     app = await iterm2.async_get_app(connection)
-    names = ['backpressure','workflow','seed-search','bad-400x200','max-400x200'] if args.case == 'all' else [args.case]
+    names = ['backpressure','workflow','seed-search','pin-inputs','bad-400x200','max-400x200'] if args.case == 'all' else [args.case]
     if args.case == 'all' and args.function_trace:
-        names = ['workflow','seed-search','bad-400x200','max-400x200','backpressure']
+        names = ['workflow','seed-search','pin-inputs','bad-400x200','max-400x200','backpressure']
     report = {'status':'running','cases':[{'case':name,'status':'not_run'} for name in names],
               'scope':'actual iTerm2 demo; screenshots prove motion, no paint-FPS claim',
               'complete_suite':args.case=='all'}
@@ -496,7 +543,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--binary', type=Path, default=ROOT/'target/release/ascii-renderer')
     parser.add_argument('--directory', type=Path, default=ROOT/f'perf/results/e2e-{time.time_ns()//1_000_000}')
-    parser.add_argument('--case', choices=['all','backpressure','workflow','seed-search','bad-400x200','max-400x200'], default='all')
+    parser.add_argument('--case', choices=['all','backpressure','workflow','seed-search','pin-inputs','bad-400x200','max-400x200'], default='all')
     parser.add_argument('--mode', default='gem-aetherium-2', help='Registered mode exercised by the shared demo workflow')
     parser.add_argument('--function-trace', action='store_true', help='Record every instrumented function into each guarded case directory; run GUI cases first')
     parser.add_argument('--headless', action='store_true', help='Real demo/PTY with native portable-pty and vt100; no GUI focus or painting measurements')

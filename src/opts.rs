@@ -352,8 +352,7 @@ pub(crate) fn rand_knob(seed: u64, p: &Param) -> f32 {
 }
 
 /// The values actually pushed to the renderer: the tuned `pvals` (deterministic),
-/// or random samples for every knob when `randomize` is on. `roll` is a nonce the
-/// UI bumps with left/right to re-roll a fresh random set without changing seed.
+/// Randomization retains pinned values; unpinned knobs sample from seed and roll.
 #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn effective_pvals(
     spec: &ModeSpec,
@@ -361,13 +360,35 @@ pub(crate) fn effective_pvals(
     seed: u64,
     randomize: bool,
     roll: u64,
+    pins: &[bool],
 ) -> Vec<f32> {
     if randomize {
         let s = seed ^ roll.wrapping_mul(0x9E37_79B9_7F4A_7C15);
-        spec.params.iter().map(|p| rand_knob(s, p)).collect()
+        spec.params.iter().enumerate().map(|(i, p)| {
+            if pins.get(i).copied().unwrap_or(false) { pvals[i] } else { rand_knob(s, p) }
+        }).collect()
     } else {
         pvals.to_vec()
     }
+}
+
+pub(crate) fn pins_for(spec: &ModeSpec, mode: &str, saved: &OptMap) -> Vec<bool> {
+    spec.params.iter().map(|p| p.key).chain(std::iter::once("SEED")).map(|key| {
+        saved.get(mode).and_then(|values| values.get(&format!("__PIN_{key}")))
+            .copied().unwrap_or(0.0) > 0.5
+    }).collect()
+}
+
+pub(crate) fn store_pins(spec: &ModeSpec, mode: &str, pins: &[bool], saved: &mut OptMap) {
+    let values = saved.entry(mode.to_string()).or_default();
+    for (key, pin) in spec.params.iter().map(|p| p.key).chain(std::iter::once("SEED")).zip(pins) {
+        values.insert(format!("__PIN_{key}"), if *pin { 1.0 } else { 0.0 });
+    }
+    save_options(saved);
+}
+
+pub(crate) fn exploration_seed(current: u64, sample: u64) -> u64 {
+    if sample == current { (sample + 1) % 10_000 } else { sample }
 }
 
 /// The global deterministic-vs-random toggle, stored under a reserved pseudo-mode.
@@ -755,10 +776,11 @@ pub(crate) fn run_demo(initial_seed: u64) {
     let mut randomize = load_randomize(&saved);
     let mut roll: u64 = 0; // re-roll nonce for randomize mode
     let mut pvals: Vec<f32> = pvals_for(&spec, all_modes[mode_idx], &saved);
+    let mut pins = pins_for(&spec, all_modes[mode_idx], &saved);
     let mut psel: usize = 0;
     let mut last_saved_preset = None::<String>;
     // Every view (mode, seed, theme, roll) the browser leaves; b walks back.
-    let mut history: Vec<(usize, u64, usize, u64)> = Vec::new();
+    let mut history: Vec<(usize, u64, usize, u64, Vec<f32>, Vec<bool>, bool)> = Vec::new();
 
     let exe = std::env::current_exe().unwrap();
 
@@ -773,6 +795,7 @@ pub(crate) fn run_demo(initial_seed: u64) {
         if current_mode != last_mode {
             spec = mode_spec(current_mode);
             pvals = pvals_for(&spec, current_mode, &saved);
+            pins = pins_for(&spec, current_mode, &saved);
             psel = 0;
             last_mode = current_mode;
         }
@@ -787,7 +810,7 @@ pub(crate) fn run_demo(initial_seed: u64) {
         };
         let render_w = (tw as usize).saturating_sub(pane_w);
 
-        let eff = effective_pvals(&spec, &pvals, seed, randomize, roll);
+        let eff = effective_pvals(&spec, &pvals, seed, randomize, roll, &pins);
         LIVE_PARAMS.with(|values| {
             values
                 .borrow_mut()
@@ -838,6 +861,7 @@ pub(crate) fn run_demo(initial_seed: u64) {
                 seed,
                 current_theme,
                 randomize,
+                &pins,
             );
         }
 
@@ -859,8 +883,8 @@ pub(crate) fn run_demo(initial_seed: u64) {
         };
         let status = if pane_open {
             format!(
-                " {} | {}{}o=close opts  \u{2191}\u{2193}=select  {}  r=reset  s=save  g=rand-knobs  a=animate  b=back  q=quit ",
-                current_mode, save_tag, knob_tag, lr_hint
+                " {} | seed:{} | {}{}enter=pin o=close opts  \u{2191}\u{2193}=select  {}  r=reset  s=save  g=rand-knobs  a=animate  b=back  q=quit ",
+                current_mode, seed, save_tag, knob_tag, lr_hint
             )
         } else {
             format!(
@@ -878,14 +902,19 @@ pub(crate) fn run_demo(initial_seed: u64) {
         print!("\x1b[7m{}\x1b[0m", padded);
         io::stdout().flush().unwrap();
 
-        let has_params = !spec.params.is_empty();
-        let view = (mode_idx, seed, theme_idx, roll);
+        let view = (mode_idx, seed, theme_idx, roll, pvals.clone(), pins.clone(), randomize);
         if let Ok(Event::Key(key)) = pending_event.map(Ok).unwrap_or_else(event::read) {
             match key.code {
                 KeyCode::Char('q' | 'Q') => break,
                 KeyCode::Char('b') => {
                     if let Some(back) = history.pop() {
-                        (mode_idx, seed, theme_idx, roll) = back;
+                        (mode_idx, seed, theme_idx, roll, pvals, pins, randomize) = back;
+                        spec = mode_spec(all_modes[mode_idx]);
+                        last_mode = all_modes[mode_idx];
+                        psel = 0;
+                        store_pvals(last_mode, &spec, &pvals, &mut saved);
+                        store_pins(&spec, last_mode, &pins, &mut saved);
+                        store_randomize(&mut saved, randomize);
                     }
                     continue;
                 }
@@ -924,7 +953,7 @@ pub(crate) fn run_demo(initial_seed: u64) {
                         mode_idx = idx;
                     }
                 }
-                KeyCode::Char('r') if pane_open && has_params => {
+                KeyCode::Char('r') if pane_open && psel < spec.params.len() => {
                     pvals[psel] = spec.params[psel].default;
                     store_pvals(current_mode, &spec, &pvals, &mut saved);
                 }
@@ -942,49 +971,68 @@ pub(crate) fn run_demo(initial_seed: u64) {
                     ) {
                         break;
                     }
+                    saved = load_options();
+                    pvals = pvals_for(&spec, current_mode, &saved);
+                    pins = pins_for(&spec, current_mode, &saved);
+                    randomize = load_randomize(&saved);
                 }
                 KeyCode::Up => {
-                    if pane_open && has_params {
-                        psel = (psel + spec.params.len() - 1) % spec.params.len();
+                    if pane_open {
+                        psel = (psel + spec.params.len()) % (spec.params.len() + 1);
                     } else {
                         seed = seed.wrapping_add(1);
                     }
                 }
                 KeyCode::Down => {
-                    if pane_open && has_params {
-                        psel = (psel + 1) % spec.params.len();
+                    if pane_open {
+                        psel = (psel + 1) % (spec.params.len() + 1);
                     } else {
                         seed = seed.wrapping_sub(1);
                     }
                 }
                 KeyCode::Right => {
-                    if pane_open && has_params && randomize {
+                    if pane_open && randomize {
                         roll = roll.wrapping_add(1); // re-roll the random set
-                    } else if pane_open && has_params {
+                    } else if pane_open && psel < spec.params.len() {
                         let p = &spec.params[psel];
                         pvals[psel] = (pvals[psel] + p.step).min(p.max);
                         store_pvals(current_mode, &spec, &pvals, &mut saved);
+                    } else if pane_open {
+                        seed = seed.wrapping_add(1);
                     } else {
                         theme_idx = (theme_idx + 1) % all_themes.len();
                     }
                 }
                 KeyCode::Left => {
-                    if pane_open && has_params && randomize {
+                    if pane_open && randomize {
                         roll = roll.wrapping_sub(1);
-                    } else if pane_open && has_params {
+                    } else if pane_open && psel < spec.params.len() {
                         let p = &spec.params[psel];
                         pvals[psel] = (pvals[psel] - p.step).max(p.min);
                         store_pvals(current_mode, &spec, &pvals, &mut saved);
+                    } else if pane_open {
+                        seed = seed.wrapping_sub(1);
                     } else {
                         theme_idx = (theme_idx + all_themes.len() - 1) % all_themes.len();
                     }
                 }
+                KeyCode::Enter if pane_open => {
+                    pins[psel] = !pins[psel];
+                    if pins[psel] && psel < spec.params.len() {
+                        pvals[psel] = eff[psel];
+                        store_pvals(current_mode, &spec, &pvals, &mut saved);
+                    }
+                    store_pins(&spec, current_mode, &pins, &mut saved);
+                }
                 KeyCode::Enter => {
-                    seed = rand::rng().random_range(0..10000u64);
+                    seed = exploration_seed(seed, rand::rng().random_range(0..10_000u64));
                 }
                 _ => {}
             }
-            if (mode_idx, seed, theme_idx, roll) != view {
+            if roll != view.3 && !pins[spec.params.len()] {
+                seed = exploration_seed(seed, rand::rng().random_range(0..10_000u64));
+            }
+            if (mode_idx, seed, theme_idx, roll, &pvals, &pins, randomize) != (view.0, view.1, view.2, view.3, &view.4, &view.5, view.6) {
                 history.push(view);
                 if history.len() > 512 {
                     history.remove(0);
@@ -1111,5 +1159,47 @@ mod picker_tests {
         assert_eq!(demo_filter_modes(&roster, "gOtHiC"), vec![0]);
         assert_eq!(demo_picker_selection(3, 1, None), 1);
         assert_eq!(demo_picker_selection(1, 1, Some(KeyCode::Down)), 0);
+    }
+}
+
+#[cfg(test)]
+mod pin_tests {
+    use super::*;
+
+    #[test]
+    fn pinned_inputs_keep_the_displayed_value_across_seed_and_roll() {
+        let spec = mode_spec("gothic-trace");
+        let mut values: Vec<_> = spec.params.iter().map(|p| p.default).collect();
+        let mut pins = vec![false; spec.params.len() + 1];
+        let first = effective_pvals(&spec, &values, 42, true, 0, &pins);
+        values[2] = first[2];
+        pins[2] = true;
+        let changed = effective_pvals(&spec, &values, 123, true, 1, &pins);
+        assert_eq!(changed[2], first[2]);
+        assert_ne!(changed, first);
+        pins[2] = false;
+        assert_eq!(effective_pvals(&spec, &values, 123, true, 1, &pins)[2], rand_knob(123 ^ 0x9E37_79B9_7F4A_7C15, &spec.params[2]));
+        assert_eq!(effective_pvals(&spec, &values, 123, false, 9, &pins), values);
+    }
+
+    #[test]
+    fn pins_load_per_mode_without_overwriting_saved_values() {
+        let spec = mode_spec("gothic-trace");
+        let saved = OptMap::from([("gothic-trace".into(), std::collections::HashMap::from([
+            ("__PIN_GT_SCENE".into(), 1.0), ("__PIN_SEED".into(), 1.0), ("GT_SCENE".into(), 1.0),
+        ]))]);
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("options.tsv");
+        save_options_to(&path, &saved);
+        let loaded = load_options_from(&path);
+        let pins = pins_for(&spec, "gothic-trace", &loaded);
+        assert_eq!(pins.iter().enumerate().filter_map(|(i, p)| p.then_some(i)).collect::<Vec<_>>(), vec![0, spec.params.len()]);
+        assert_eq!(pvals_for(&spec, "gothic-trace", &loaded)[0], 1.0);
+        assert_eq!(pins_for(&spec, "other-mode", &loaded), vec![false; spec.params.len() + 1]);
+    }
+
+    #[test]
+    fn exploration_seed_always_changes_when_unpinned() {
+        assert_eq!([exploration_seed(42, 17), exploration_seed(42, 42), exploration_seed(9999, 9999), exploration_seed(u64::MAX, 0)], [17, 43, 0, 0]);
     }
 }

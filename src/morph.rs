@@ -281,7 +281,7 @@ enum SeedInput { Pass, Consumed, Set(u64) }
 
 fn animation_seed_input(
     edit: &mut Option<String>, key: crossterm::event::KeyEvent, current: u64,
-    pane_has_params: bool, random_seed: impl FnOnce() -> u64,
+    pane_open: bool, random_seed: impl FnOnce() -> u64,
 ) -> SeedInput {
     use crossterm::event::{KeyCode, KeyEventKind, KeyModifiers};
     if key.kind == KeyEventKind::Release { return SeedInput::Consumed; }
@@ -297,9 +297,9 @@ fn animation_seed_input(
     } else {
         match key.code {
             KeyCode::Char('e' | 'E') => { *edit = Some(String::new()); SeedInput::Consumed }
-            KeyCode::Enter => { let sample = random_seed(); debug_assert!(sample < 10_000); SeedInput::Set(if sample == current {(sample + 1) % 10_000} else {sample}) }
-            KeyCode::Up if !pane_has_params => SeedInput::Set(current.wrapping_add(1)),
-            KeyCode::Down if !pane_has_params => SeedInput::Set(current.wrapping_sub(1)),
+            KeyCode::Enter if !pane_open => SeedInput::Set(exploration_seed(current, random_seed())),
+            KeyCode::Up if !pane_open => SeedInput::Set(current.wrapping_add(1)),
+            KeyCode::Down if !pane_open => SeedInput::Set(current.wrapping_sub(1)),
             _ => SeedInput::Pass,
         }
     }
@@ -939,6 +939,7 @@ mod iterate_frame_tests {
         assert_eq!(animation_seed_input(&mut edit, key(KeyCode::Enter), 7, false, || 7), SeedInput::Set(8));
         assert_eq!(animation_seed_input(&mut edit, key(KeyCode::Down), 0, false, || 7), SeedInput::Set(u64::MAX));
         assert_eq!(animation_seed_input(&mut edit, key(KeyCode::Up), u64::MAX, false, || 7), SeedInput::Set(0));
+        assert_eq!(animation_seed_input(&mut edit, key(KeyCode::Enter), 42, true, || 7), SeedInput::Pass);
         assert_eq!(animation_seed_input(&mut edit, key(KeyCode::Up), 42, true, || 7), SeedInput::Pass);
         edit = Some("18446744073709551615".into());
         assert_eq!(animation_seed_input(&mut edit, key(KeyCode::Enter), 42, false, || 7), SeedInput::Set(u64::MAX));
@@ -964,10 +965,10 @@ mod iterate_frame_tests {
     #[test]
     fn animation_geometry_seed_and_roll() {
         let spec = mode_spec("gothic-trace"); let saved = vec![0.0; spec.params.len()];
-        let a = effective_pvals(&spec, &saved, 42, true, 0);
-        assert_ne!(a, effective_pvals(&spec, &saved, 43, true, 0));
-        assert_ne!(a, effective_pvals(&spec, &saved, 42, true, 1));
-        assert_eq!(effective_pvals(&spec, &saved, 42, false, 99), saved);
+        let a = effective_pvals(&spec, &saved, 42, true, 0, &[]);
+        assert_ne!(a, effective_pvals(&spec, &saved, 43, true, 0, &[]));
+        assert_ne!(a, effective_pvals(&spec, &saved, 42, true, 1, &[]));
+        assert_eq!(effective_pvals(&spec, &saved, 42, false, 99, &[]), saved);
     }
 
     /// Replays a recorded session's frames in-process and prices encodings:
@@ -1479,12 +1480,12 @@ pub(crate) fn morph_worker_session(
         .and_then(|v| v.parse().ok())
         .unwrap_or_else(|| crate::opts::LIVE_ROLL.with(|r| r.get()));
     let mut pvals: Vec<f32> = pvals_for(&spec, mode_a, &saved);
+    let mut pins = pins_for(&spec, mode_a, &saved);
     // Every knob state (roll, values, randomize) a key leaves; b walks back.
-    let mut history: Vec<(u64, u64, Vec<f32>, bool)> = Vec::new();
+    let mut history: Vec<(u64, u64, Vec<f32>, bool, Vec<bool>)> = Vec::new();
     let mut seed_edit: Option<String> = None;
     let mut psel: usize = 0;
     let mut pane_open = !spec.params.is_empty();
-    let has_params = !spec.params.is_empty();
     let pane_w = if pane_open { 34.min(w / 2) } else { 0 };
     let initial_rw = w.saturating_sub(pane_w).max(1);
     let mut iterate_renderer = IterateFrameRenderer::new(mode_a, geometry_seed, theme, initial_rw, h);
@@ -1519,7 +1520,7 @@ pub(crate) fn morph_worker_session(
             eff.extend(
                 spec.params
                     .iter()
-                    .map(|param| rand_knob(random_seed, param)),
+                    .enumerate().map(|(i, param)| if pins[i] { pvals[i] } else { rand_knob(random_seed, param) }),
             );
         } else {
             eff.extend_from_slice(&pvals);
@@ -1654,9 +1655,9 @@ pub(crate) fn morph_worker_session(
         let status = if let Some(edit) = &seed_edit {
             let error = (!edit.is_empty() && edit.parse::<u64>().is_err()).then_some(" invalid").unwrap_or("");
             format!(" term={}x{} grid={}x{} | seed:{} | seed> {}{}  enter=apply e=cancel esc/q=leave", w, th, rw, h, geometry_seed, edit, error)
-        } else if pane_open && has_params {
+        } else if pane_open {
             format!(
-                " term={}x{} grid={}x{} | seed:{} | morph {} | {} | t={:.2} | {} | o=close opts  \u{2191}\u{2193}=select  \u{2190}\u{2192}=adjust  r=reset  b=back  i=iterate  q ",
+                " term={}x{} grid={}x{} | seed:{} | morph {} | {} | t={:.2} | {} | enter=pin e=seed o=close opts  \u{2191}\u{2193}=select  \u{2190}\u{2192}=adjust  r=reset  b=back  i=iterate  q ",
                 w,
                 th,
                 rw,
@@ -1729,6 +1730,7 @@ pub(crate) fn morph_worker_session(
                 geometry_seed,
                 theme,
                 randomize,
+                &pins,
             );
             if pane_buffer != previous_pane {
                 frame_buffer.extend_from_slice(pane_buffer.as_bytes());
@@ -1818,6 +1820,7 @@ pub(crate) fn morph_worker_session(
                         serde_json::json!({
                             "phase": phase, "randomize": randomize, "roll": roll,
                             "target_seed": target_seed,
+                            "pins": spec.params.iter().map(|p| p.key).chain(std::iter::once("SEED")).zip(&pins).filter_map(|(key, pin)| pin.then_some(key)).collect::<Vec<_>>(),
                         })
                         .as_object()
                         .unwrap()
@@ -1873,20 +1876,22 @@ pub(crate) fn morph_worker_session(
         for event in events {
             let input_started = Instant::now();
             let recorded_event = event.clone();
-            let knob_view = (geometry_seed, roll, pvals.clone(), randomize);
+            let knob_view = (geometry_seed, roll, pvals.clone(), randomize, pins.clone());
             let mut requested_seed = None;
-            let seed_input = match &event { Event::Key(key) => animation_seed_input(&mut seed_edit, *key, geometry_seed, pane_open && has_params, || rand::rng().random_range(0..10_000u64)), _ => SeedInput::Pass };
+            let seed_input = match &event { Event::Key(key) => animation_seed_input(&mut seed_edit, *key, geometry_seed, pane_open, || rand::rng().random_range(0..10_000u64)), _ => SeedInput::Pass };
             match event {
                 Event::Key(key) => if !matches!(seed_input, SeedInput::Pass) {
                     if let SeedInput::Set(seed) = seed_input { requested_seed = Some(seed); }
                 } else { match key.code {
                     KeyCode::Char('q' | 'Q') | KeyCode::Esc => break 'frames,
                     KeyCode::Char('b') => {
-                        if let Some((s, r, values, rnd)) = history.pop() {
+                        if let Some((s, r, values, rnd, saved_pins)) = history.pop() {
                             requested_seed = Some(s);
                             roll = r;
                             pvals = values;
                             randomize = rnd;
+                            pins = saved_pins;
+                            store_pins(&spec, mode_a, &pins, &mut saved);
                             store_pvals(mode_a, &spec, &pvals, &mut saved);
                             store_randomize(&mut saved, randomize);
                         }
@@ -1917,48 +1922,62 @@ pub(crate) fn morph_worker_session(
                     KeyCode::Char('i') => strat = "iterate".to_string(),
                     KeyCode::Char('w') => walk = !walk,
                     KeyCode::Char('o') => pane_open = !pane_open,
-                    KeyCode::Up if pane_open && has_params => {
-                        psel = (psel + spec.params.len() - 1) % spec.params.len();
+                    KeyCode::Enter if pane_open => {
+                        pins[psel] = !pins[psel];
+                        if pins[psel] && psel < spec.params.len() {
+                            pvals[psel] = effective_pvals(&spec, &pvals, geometry_seed, randomize, roll, &knob_view.4)[psel];
+                            store_pvals(mode_a, &spec, &pvals, &mut saved);
+                        }
+                        store_pins(&spec, mode_a, &pins, &mut saved);
                     }
-                    KeyCode::Down if pane_open && has_params => {
-                        psel = (psel + 1) % spec.params.len();
+                    KeyCode::Up if pane_open => {
+                        psel = (psel + spec.params.len()) % (spec.params.len() + 1);
+                    }
+                    KeyCode::Down if pane_open => {
+                        psel = (psel + 1) % (spec.params.len() + 1);
+                    }
+                    KeyCode::Left | KeyCode::Char('-' | '_') if pane_open && psel == spec.params.len() && !randomize => {
+                        requested_seed = Some(geometry_seed.wrapping_sub(1));
+                    }
+                    KeyCode::Right | KeyCode::Char('+' | '=') if pane_open && psel == spec.params.len() && !randomize => {
+                        requested_seed = Some(geometry_seed.wrapping_add(1));
                     }
                     KeyCode::Char('-') | KeyCode::Char('_')
-                        if pane_open && has_params && randomize =>
+                        if pane_open && randomize =>
                     {
                         roll = roll.wrapping_sub(1);
                     }
                     KeyCode::Char('+') | KeyCode::Char('=')
-                        if pane_open && has_params && randomize =>
+                        if pane_open && randomize =>
                     {
                         roll = roll.wrapping_add(1);
                     }
-                    KeyCode::Char('-') | KeyCode::Char('_') if pane_open && has_params => {
+                    KeyCode::Char('-') | KeyCode::Char('_') if pane_open && psel < spec.params.len() => {
                         let p = &spec.params[psel];
                         pvals[psel] = (pvals[psel] - p.step).max(p.min);
                         store_pvals(mode_a, &spec, &pvals, &mut saved);
                     }
-                    KeyCode::Char('+') | KeyCode::Char('=') if pane_open && has_params => {
+                    KeyCode::Char('+') | KeyCode::Char('=') if pane_open && psel < spec.params.len() => {
                         let p = &spec.params[psel];
                         pvals[psel] = (pvals[psel] + p.step).min(p.max);
                         store_pvals(mode_a, &spec, &pvals, &mut saved);
                     }
-                    KeyCode::Char('r') if pane_open && has_params => {
+                    KeyCode::Char('r') if pane_open && psel < spec.params.len() => {
                         pvals[psel] = spec.params[psel].default;
                         store_pvals(mode_a, &spec, &pvals, &mut saved);
                     }
-                    KeyCode::Left if pane_open && has_params && randomize => {
+                    KeyCode::Left if pane_open && randomize => {
                         roll = roll.wrapping_sub(1);
                     }
-                    KeyCode::Right if pane_open && has_params && randomize => {
+                    KeyCode::Right if pane_open && randomize => {
                         roll = roll.wrapping_add(1);
                     }
-                    KeyCode::Left if pane_open && has_params => {
+                    KeyCode::Left if pane_open && psel < spec.params.len() => {
                         let p = &spec.params[psel];
                         pvals[psel] = (pvals[psel] - p.step).max(p.min);
                         store_pvals(mode_a, &spec, &pvals, &mut saved);
                     }
-                    KeyCode::Right if pane_open && has_params => {
+                    KeyCode::Right if pane_open && psel < spec.params.len() => {
                         let p = &spec.params[psel];
                         pvals[psel] = (pvals[psel] + p.step).min(p.max);
                         store_pvals(mode_a, &spec, &pvals, &mut saved);
@@ -1995,14 +2014,17 @@ pub(crate) fn morph_worker_session(
                 }
                 _ => {}
             }
+            let went_back = matches!(recorded_event, Event::Key(k) if k.code == KeyCode::Char('b'));
+            if !went_back && roll != knob_view.1 && !pins[spec.params.len()] {
+                requested_seed = Some(exploration_seed(geometry_seed, rand::rng().random_range(0..10_000u64)));
+            }
             if let Some(seed) = requested_seed { if seed != geometry_seed {
                 geometry_seed = seed; target_seed = seed.wrapping_add(seed_delta); endpoint_a = seed; endpoint_b = target_seed; walk_seed = target_seed; endpoint_mode_a = mode_a; endpoint_mode_b = mode_b; st = None;
                 palette = if theme.is_empty() { make_palette(seed) } else { named_theme(theme).unwrap_or_else(|| make_palette(seed)) };
                 if let Some(renderer) = iterate_renderer.as_mut() { renderer.reseed(seed, theme); }
                 phase = 0.0; dir = 1.0; clock = 0.0; last_frame = Instant::now(); frame_encoder.invalidate(); previous_status.clear(); previous_pane.clear(); clear_frame = true;
             }}
-            let went_back = matches!(recorded_event, Event::Key(k) if k.code == KeyCode::Char('b'));
-            if !went_back && (geometry_seed, roll, &pvals, randomize) != (knob_view.0, knob_view.1, &knob_view.2, knob_view.3) {
+            if !went_back && (geometry_seed, roll, &pvals, randomize, &pins) != (knob_view.0, knob_view.1, &knob_view.2, knob_view.3, &knob_view.4) {
                 history.push(knob_view);
                 if history.len() > 512 {
                     history.remove(0);
