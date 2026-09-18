@@ -940,6 +940,14 @@ mod iterate_frame_tests {
         assert_eq!(animation_seed_input(&mut edit, key(KeyCode::Down), 0, false, || 7), SeedInput::Set(u64::MAX));
         assert_eq!(animation_seed_input(&mut edit, key(KeyCode::Up), u64::MAX, false, || 7), SeedInput::Set(0));
         assert_eq!(animation_seed_input(&mut edit, key(KeyCode::Up), 42, true, || 7), SeedInput::Pass);
+        edit = Some("18446744073709551615".into());
+        assert_eq!(animation_seed_input(&mut edit, key(KeyCode::Enter), 42, false, || 7), SeedInput::Set(u64::MAX));
+        edit = Some("18446744073709551616".into());
+        assert_eq!(animation_seed_input(&mut edit, key(KeyCode::Enter), 42, false, || 7), SeedInput::Consumed);
+        assert_eq!(edit, Some("18446744073709551616".into()));
+        assert_eq!(animation_seed_input(&mut edit, key(KeyCode::Char('e')), 42, false, || 7), SeedInput::Consumed);
+        assert_eq!(edit, None);
+        assert_eq!(animation_seed_input(&mut edit, key(KeyCode::Up), 42, true, || 7), SeedInput::Pass);
         let release = KeyEvent::new_with_kind(KeyCode::Char('1'), KeyModifiers::NONE, KeyEventKind::Release);
         assert_eq!(animation_seed_input(&mut edit, release, 42, false, || 7), SeedInput::Consumed);
     }

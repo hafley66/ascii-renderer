@@ -8,6 +8,7 @@ Commits:
 - `2c4769c` animation seed prompt, reseeding, history, random-knob state, footer and trace inputs
 - `ae43c6d` `_59_gothic_trace` mode, generated registry entry, and reviewed snapshots
 - `172a157` `seed-search` GUI/headless roster and E2E documentation
+- pending correction milestone: curved segment rasterization, completed-path hold rendering, trace timing, mirrored frame corners, tiny-grid diagonals, and seed-search picker/effective-knob assertions
 
 Touched files:
 
@@ -24,7 +25,7 @@ Touched files:
 Validation:
 
 - `cargo test demo_picker_wraps_through_cancel`: pass
-- `cargo test gothic_trace`: pass, 4 passed
+- `cargo test gothic_trace`: pass, 7 passed, with five reviewed fixed-seed snapshots
 - `cargo test animation_`: seed/reseed tests passed; an unrelated existing `gridio::ansi_frame_tests::animation_encoder_collapses_adjacent_rgb_levels` failed in the filtered run
 - `cargo test every_registered_mode_that_renders_in_process`: pass after adding the gothic trace layer timer
 - `cargo test --locked -j 2`: 494 passed, 4 failed, 18 ignored. Failures: `gridio::ansi_frame_tests::animation_encoder_collapses_adjacent_rgb_levels`, `morph::iterate_frame_tests::gem_bad_roll6_ansi_regression`, plus one transient `_1_playback::tests::writable_descriptor_with_rejected_writes_has_bounded_retries` failure and the layer-timer gate before its fix. Individual reruns passed for the playback and layer-timer tests; the gridio and gem regression failures reproduced individually.
@@ -35,7 +36,7 @@ Validation:
 
 Snapshot review:
 
-The three new ASCII snapshots were inspected directly: `t0` shows the guide frame, `t4.5` shows the partially/completely revealed lancet, and the rosette snapshot shows the woven tracing geometry. No bulk snapshot acceptance was used.
+The five ASCII snapshots were inspected directly: `t0` shows the guide frame, `t1` shows partial reveal and pen tips, `t4.5` shows completed paths during hold, `t6` shows wrapped traces, and the rosette snapshot shows woven tracing geometry. No bulk snapshot acceptance was used.
 
 E2E case results:
 

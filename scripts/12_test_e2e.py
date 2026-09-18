@@ -250,6 +250,11 @@ class DemoCase:
             await self.screen_until('mode-picker', lambda s: 'cancel' in s.lower())
             await self.key('find-mode',mode)
             await self.screen_until('mode-filter', lambda s: mode in s)
+            if self.name == 'seed-search':
+                await self.key('picker-up-to-cancel','\x1b[A')
+                await self.screen_until('picker-cancel-selected', lambda s: '\x1b[7m \u25b8 \u2715 cancel' in s)
+                await self.key('picker-down-to-mode','\x1b[B')
+                await self.screen_until('picker-mode-selected', lambda s: f'\x1b[7m \u25b8 {mode}' in s)
             await self.key('select-gem','\r')
             await self.screen_until('gem-preview', lambda s: mode in s and 'a=animate' in s)
             self.checkpoint('mode-search-and-preview')
@@ -387,6 +392,8 @@ class DemoCase:
         assert self.frames()[-1]['roll'] == rerolled['roll']
         await self.key('restore-seed-123','e123\r')
         await self.wait('restore seed 123 roll', lambda _: self.frames()[-1]['seed'] == 123 and self.frames()[-1]['roll'] == rerolled['roll'])
+        restored = self.frames()[-1]
+        assert all(abs(restored['knobs'][key] - rerolled['knobs'][key]) < 1e-5 for key in rerolled['knobs']), (restored, rerolled)
         await self.key('close-options','o')
         before = self.frames()[-1]['seed']
         await self.key('seed-up-closed-pane','\x1b[A')

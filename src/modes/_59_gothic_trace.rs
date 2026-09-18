@@ -422,23 +422,13 @@ fn build_geometry(width: usize, height: usize, seed: u64, k: &Knobs) -> Vec<Stro
         (1., -1., 0.06),
         (-1., -1., 0.12),
     ] {
+        let ax = if sx > 0. { p } else { w - p };
+        let ay = if sy > 0. { p } else { h - p };
         let pts = vec![
-            Point {
-                x: p + n * sx,
-                y: p,
-            },
-            Point {
-                x: p + 1.2 * n * sx,
-                y: p,
-            },
-            Point {
-                x: p + n * sx,
-                y: p + n * sy,
-            },
-            Point {
-                x: p,
-                y: p + 1.2 * n * sy,
-            },
+            Point { x: ax + n * sx, y: ay },
+            Point { x: ax + 1.2 * n * sx, y: ay },
+            Point { x: ax + n * sx, y: ay + n * sy },
+            Point { x: ax, y: ay + 1.2 * n * sy },
         ];
         add_stroke(&mut out, pts, 0, 0, delay);
     }
@@ -537,15 +527,21 @@ fn draw_ease(x: f32) -> f32 {
 }
 fn stroke_window(time: f32, index: usize, extra: f32, k: &Knobs) -> (f32, f32, bool) {
     let d = k.draw;
-    let cycle = d + 1. + d + 0.5;
+    let reveal_end = d + 1.;
+    let hold_end = reveal_end + 1.;
+    let trace_end = hold_end + d;
+    let cycle = trace_end + 0.5;
     let t = (time.max(0.) * k.speed).rem_euclid(cycle);
     let delay = (index as f32 * k.stagger).min(0.8) + extra;
-    if t < d + 1. {
+    if t < reveal_end {
         let e = draw_ease(((t - delay) / d).clamp(0., 1.));
         return (0., e, t > delay && t < delay + d);
     }
-    if t < d + 2. {
-        let head = (t - d - 2.) / d;
+    if t < hold_end {
+        return (0., 1., false);
+    }
+    if t < trace_end {
+        let head = (t - hold_end) / d;
         return (head - k.trail, head, true);
     }
     (0., 0., false)
@@ -578,48 +574,64 @@ fn paint_stroke(grid: &mut Grid, s: &Stroke, start: f32, end: f32, color: Color,
     if end <= start {
         return;
     }
-    let a = stroke_point(s, start);
-    let b = stroke_point(s, end);
-    let steps = ((b.x - a.x).abs().max((b.y - a.y).abs()) * 2.)
-        .ceil()
-        .max(1.) as usize;
-    for i in 0..=steps {
-        let q = i as f32 / steps as f32;
-        let x = (a.x + (b.x - a.x) * q).round() as isize * 2;
-        let y = (a.y + (b.y - a.y) * q).round() as isize;
-        if y < 0 || x < 0 || y as usize >= grid.len() || x as usize >= grid[y as usize].len() {
+    let from = start.clamp(0., 1.) * s.length;
+    let to = end.clamp(0., 1.) * s.length;
+    for segment in 0..s.points.len() - 1 {
+        let seg_from = s.distance[segment];
+        let seg_to = s.distance[segment + 1];
+        let clipped_from = from.max(seg_from);
+        let clipped_to = to.min(seg_to);
+        if clipped_to <= clipped_from {
             continue;
         }
-        let cell = &mut grid[y as usize][x as usize];
-        if ghost {
-            if cell.ch == ' ' {
-                *cell = Cell::new('.', color);
+        let q0 = (clipped_from - seg_from) / (seg_to - seg_from).max(1e-6);
+        let q1 = (clipped_to - seg_from) / (seg_to - seg_from).max(1e-6);
+        let a = Point {
+            x: s.points[segment].x + (s.points[segment + 1].x - s.points[segment].x) * q0,
+            y: s.points[segment].y + (s.points[segment + 1].y - s.points[segment].y) * q0,
+        };
+        let b = Point {
+            x: s.points[segment].x + (s.points[segment + 1].x - s.points[segment].x) * q1,
+            y: s.points[segment].y + (s.points[segment + 1].y - s.points[segment].y) * q1,
+        };
+        let ax = a.x * 2.;
+        let ay = a.y;
+        let bx = b.x * 2.;
+        let by = b.y;
+        let steps = (bx - ax).abs().max((by - ay).abs()).ceil().max(1.) as usize;
+        for i in 0..=steps {
+            let q = i as f32 / steps as f32;
+            let x = (ax + (bx - ax) * q).round() as isize;
+            let y = (ay + (by - ay) * q).round() as isize;
+            if y < 0 || x < 0 || y as usize >= grid.len() || x as usize >= grid[y as usize].len() { continue; }
+            let cell = &mut grid[y as usize][x as usize];
+            if ghost {
+                if cell.ch == ' ' { *cell = Cell::new('.', color); }
+            } else {
+                let dx = bx - ax;
+                let dy = by - ay;
+                let ch = if dy.abs() <= 0.4142 * dx.abs() { '-' }
+                else if dy.abs() >= 2.4142 * dx.abs() { '|' }
+                else if dx * dy >= 0.0 { '\\' } else { '/' };
+                cell.ch = if cell.ch != ' ' && cell.ch != ch { '+' } else { ch };
+                cell.fg = color;
             }
-        } else {
-            let ch = if i == 0 {
-                '*'
-            } else if (b.y - a.y).abs() <= 0.4142 * (b.x - a.x).abs() {
-                '-'
-            } else if (b.y - a.y).abs() >= 2.4142 * (b.x - a.x).abs() {
-                '|'
-            } else if (b.x - a.x) * (b.y - a.y) >= 0.0 {
-                '\\'
-            } else {
-                '/'
-            };
-            cell.ch = if cell.ch != ' ' && cell.ch != ch {
-                '+'
-            } else {
-                ch
-            };
-            cell.fg = color;
         }
     }
 }
 fn draw_trace(grid: &mut Grid, strokes: &[Stroke], palette: &[Color; 5], time: f32, k: &Knobs) {
     if grid.len() < 4 || grid[0].len() < 4 {
-        if grid.len() == 1 && !grid[0].is_empty() {
+        if grid.is_empty() || grid[0].is_empty() { return; }
+        if grid.len() == 1 && grid[0].len() == 1 {
             grid[0][0] = Cell::new('*', lighten(palette[0], 45));
+            return;
+        }
+        let steps = grid.len().max(grid[0].len()).saturating_sub(1).max(1);
+        for i in 0..=steps {
+            let x = (i as f32 * (grid[0].len() - 1) as f32 / steps as f32).round() as usize;
+            let y = ((steps - i) as f32 * (grid.len() - 1) as f32 / steps as f32).round() as usize;
+            grid[y][x].ch = if i == 0 || i == steps { '*' } else { '\\' };
+            grid[y][x].fg = lighten(palette[0], 45);
         }
         return;
     }
@@ -635,9 +647,10 @@ fn draw_trace(grid: &mut Grid, strokes: &[Stroke], palette: &[Color; 5], time: f
             );
         }
     }
+    let mut tips = Vec::new();
     for (i, s) in strokes.iter().enumerate() {
         let (a, b, active) = stroke_window(time, i, s.delay, k);
-        if active {
+        if b > a {
             if a < 0. {
                 paint_stroke(
                     grid,
@@ -665,6 +678,14 @@ fn draw_trace(grid: &mut Grid, strokes: &[Stroke], palette: &[Color; 5], time: f
                     false,
                 );
             }
+            if active { tips.push((stroke_point(s, b), s.ink)); }
+        }
+    }
+    for (point, ink) in tips {
+        let x = (point.x * 2.).round() as isize;
+        let y = point.y.round() as isize;
+        if y >= 0 && x >= 0 && (y as usize) < grid.len() && (x as usize) < grid[y as usize].len() {
+            grid[y as usize][x as usize] = Cell::new('*', lighten(palette[ink], 45));
         }
     }
 }
@@ -697,10 +718,12 @@ mod tests {
     #[test]
     fn gothic_trace_fixed_seed_views() {
         insta::assert_snapshot!("gothic_trace_lancet_seed42_t0", frame(42, 0., 0., 80, 24));
+        insta::assert_snapshot!("gothic_trace_lancet_seed42_t1", frame(42, 1., 0., 80, 24));
         insta::assert_snapshot!(
             "gothic_trace_lancet_seed42_t4_5",
             frame(42, 4.5, 0., 80, 24)
         );
+        insta::assert_snapshot!("gothic_trace_lancet_seed42_t6", frame(42, 6., 0., 80, 24));
         insta::assert_snapshot!(
             "gothic_trace_rosette_seed42_t4_5",
             frame(42, 4.5, 1., 80, 24)
@@ -710,7 +733,7 @@ mod tests {
     #[test]
     fn gothic_trace_tiny_gallery() {
         assert_eq!(frame(42, 0., 0., 1, 1), "*");
-        assert!(frame(42, 0., 0., 2, 3).len() > 0);
+        assert!(frame(42, 0., 0., 2, 3).chars().any(|c| c != ' '));
         assert!(!frame(42, 0., 0., 7, 4).is_empty());
     }
 
@@ -734,5 +757,31 @@ mod tests {
             0.,
         );
         assert!((stroke_point(&s[0], 0.5).y - 1.).abs() < 1e-5);
+    }
+
+    #[test]
+    fn stroke_paint_visits_each_curve_segment() {
+        let mut strokes = Vec::new();
+        add_stroke(&mut strokes, vec![Point { x: 1., y: 1. }, Point { x: 4., y: 1. }, Point { x: 4., y: 4. }], 0, 0, 0.);
+        let mut grid = vec![vec![Cell::blank(); 12]; 6];
+        paint_stroke(&mut grid, &strokes[0], 0., 1., Color::White, false);
+        assert!(grid[1].iter().any(|cell| cell.ch == '-'));
+        assert!(grid.iter().any(|row| row.iter().any(|cell| cell.ch == '|')));
+    }
+
+    #[test]
+    fn reveal_hold_trace_windows_are_distinct() {
+        let k = Knobs { scene: 0, depth: 3, slender: 0.82, asymmetry: 0.14, lobes: 8, winding: 3, bulge: 0.3, strands: 2, speed: 1., draw: 3., stagger: 0., trail: 0.12, ghost: 0.18 };
+        assert!(stroke_window(1., 0, 0., &k).1 < 1.);
+        assert_eq!(stroke_window(3.5, 0, 0., &k), (0., 1., false));
+        assert!(stroke_window(5.5, 0, 0., &k).2);
+    }
+
+    #[test]
+    fn cache_reentry_is_cell_exact() {
+        let a = frame(42, 1., 0., 80, 24);
+        let _ = frame(43, 6., 0., 80, 24);
+        assert_eq!(a, frame(42, 1., 0., 80, 24));
+        assert_ne!(a, frame(42, 4.5, 0., 80, 24));
     }
 }
