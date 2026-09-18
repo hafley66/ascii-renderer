@@ -100,7 +100,7 @@ class HeadlessCase(base.DemoCase):
 
 
 async def run(args):
-    names = ['workflow', 'bad-400x200', 'max-400x200', 'backpressure'] if args.case == 'all' else [args.case]
+    names = ['workflow', 'seed-search', 'bad-400x200', 'max-400x200', 'backpressure'] if args.case == 'all' else [args.case]
     report = {'status': 'running', 'complete_suite': args.case == 'all',
               'scope': 'native headless real demo/PTY and terminal-cell assertions; GUI painting untested',
               'function_trace': args.function_trace,

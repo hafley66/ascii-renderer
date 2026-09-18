@@ -217,7 +217,7 @@ class DemoCase:
         (config/'options.tsv').write_text('__global\tRAND\t0\n'+''.join(
             f'{mode}\t{k}\t{v}\n' for k,v in fixture['knobs'].items()))
         support.write_json(self.d/'fixture.json', fixture)
-        size = (160,40) if self.name == 'workflow' else (400,200)
+        size = (160,40) if self.name in ('workflow', 'seed-search') else (400,200)
         watch_pid = await self.open_terminal(size)
         support.write_json(self.d/'observer.json', {'ts_ms': time.time_ns()//1_000_000, 'focused': True})
         self.observer = asyncio.create_task(self.heartbeat())
@@ -279,6 +279,8 @@ class DemoCase:
         self.checkpoint('terminal-cell-motion' if getattr(self.args, 'headless', False) else 'visible-art-motion', before=pixels_before, after=pixels_after)
         if self.name == 'workflow':
             await self.workflow()
+        elif self.name == 'seed-search':
+            await self.seed_search()
         else:
             # Validate steady-state cadence before changing the recorded configuration.
             await self.wait('ten recorded frames', lambda _: len(self.frames())>=10)
@@ -364,6 +366,34 @@ class DemoCase:
             self.failures.append(str(error))
             self.checks.append({'name':'resize-reaches-grid-and-footer','status':'failed','error':str(error)})
 
+    async def seed_search(self):
+        await self.key('typed-seed-123','e123\r')
+        await self.wait('typed seed reaches frame', lambda _: self.frames()[-1]['seed'] == 123)
+        assert 'seed:123' in await self.capture('typed-seed-footer')
+        typed = self.frames()[-1]
+        await self.key('randomize-geometry','\r')
+        await self.wait('random geometry seed', lambda _: self.frames()[-1]['seed'] != 123)
+        random_seed = self.frames()[-1]['seed']
+        assert 0 <= random_seed < 10000
+        await self.key('enable-seed-random-knobs','g')
+        await self.key('restore-seed-123','e123\r')
+        await self.wait('seed 123 with random knobs', lambda _: self.frames()[-1]['seed'] == 123 and self.frames()[-1]['randomize'])
+        first = self.frames()[-1]
+        await self.key('reroll-seed-123','+')
+        await self.wait('roll changes at seed 123', lambda _: self.frames()[-1]['roll'] != first['roll'])
+        rerolled = self.frames()[-1]
+        await self.key('typed-seed-124','e124\r')
+        await self.wait('typed seed 124', lambda _: self.frames()[-1]['seed'] == 124)
+        assert self.frames()[-1]['roll'] == rerolled['roll']
+        await self.key('restore-seed-123','e123\r')
+        await self.wait('restore seed 123 roll', lambda _: self.frames()[-1]['seed'] == 123 and self.frames()[-1]['roll'] == rerolled['roll'])
+        await self.key('close-options','o')
+        before = self.frames()[-1]['seed']
+        await self.key('seed-up-closed-pane','\x1b[A')
+        await self.wait('closed pane seed up', lambda _: self.frames()[-1]['seed'] == (before + 1) % (1 << 64))
+        await self.key('reopen-options','o')
+        self.checkpoint('seed-search-controls', typed=typed, random_seed=random_seed, rerolled=rerolled, final=self.frames()[-1])
+
     async def cleanup(self):
         # Fail the heartbeat first, allowing the independent guard to stop its tree.
         if self.observer:
@@ -415,9 +445,9 @@ def backpressure_case(args):
 async def suite(connection, args):
     import iterm2
     app = await iterm2.async_get_app(connection)
-    names = ['backpressure','workflow','bad-400x200','max-400x200'] if args.case == 'all' else [args.case]
+    names = ['backpressure','workflow','seed-search','bad-400x200','max-400x200'] if args.case == 'all' else [args.case]
     if args.case == 'all' and args.function_trace:
-        names = ['workflow','bad-400x200','max-400x200','backpressure']
+        names = ['workflow','seed-search','bad-400x200','max-400x200','backpressure']
     report = {'status':'running','cases':[{'case':name,'status':'not_run'} for name in names],
               'scope':'actual iTerm2 demo; screenshots prove motion, no paint-FPS claim',
               'complete_suite':args.case=='all'}
@@ -455,7 +485,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--binary', type=Path, default=ROOT/'target/release/ascii-renderer')
     parser.add_argument('--directory', type=Path, default=ROOT/f'perf/results/e2e-{time.time_ns()//1_000_000}')
-    parser.add_argument('--case', choices=['all','backpressure','workflow','bad-400x200','max-400x200'], default='all')
+    parser.add_argument('--case', choices=['all','backpressure','workflow','seed-search','bad-400x200','max-400x200'], default='all')
     parser.add_argument('--mode', default='gem-aetherium-2', help='Registered mode exercised by the shared demo workflow')
     parser.add_argument('--function-trace', action='store_true', help='Record every instrumented function into each guarded case directory; run GUI cases first')
     parser.add_argument('--headless', action='store_true', help='Real demo/PTY with native portable-pty and vt100; no GUI focus or painting measurements')
