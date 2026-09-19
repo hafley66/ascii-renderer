@@ -96,7 +96,8 @@ fn solve(seed: u64, time: f32, p: &[f32; 5]) -> Mantle {
                         / (1.0 + 50.0 * p[2] * (m.strain[j] - m.strain[i]).abs())
                 })
                 .sum::<f32>();
-            let load = 0.016 * p[4] * (1.0 + 2.0 * m.strain[i]);
+            let u = i as f32 * TAU / N as f32;
+            let load = (0.006 + 0.02 * u.sin().max(0.0)) * p[4] * (1.0 + 2.0 * m.strain[i]);
             energy[i] += flow + 0.065 * (source[i] - m.energy[i]) - load * m.energy[i];
             let target = p[2] * (m.energy[i] - 0.42) * 0.75;
             strain[i] += 0.16
@@ -147,12 +148,153 @@ fn project(v: Vertex, width: usize, height: usize, time: f32) -> Vertex {
     let y = s * v.x + c * v.y;
     let tilt = 0.58 + 0.12 * (time * 0.13).sin();
     let (s, c) = tilt.sin_cos();
-    let scale = (width as f32 / 5.6).min(height as f32 / 3.7);
+    // The membrane is an oblate organism; 1.25 lateral stretch is geometric,
+    // in addition to the terminal's two-columns-per-row aspect correction.
+    let scale = (width as f32 / 6.6).min(height as f32 / 3.05);
     Vertex {
-        x: width as f32 * 0.5 + x * scale * 2.0,
-        y: height as f32 * 0.30 + (y * s - v.z * c) * scale,
+        x: width as f32 * 0.5 + x * scale * 2.5,
+        y: height as f32 * 0.34 + (y * s - v.z * c) * scale,
         z: y * c + v.z * s,
         energy: v.energy,
+    }
+}
+
+#[derive(Clone, Copy)]
+struct FacetPoint {
+    point: Vertex,
+    u: f32,
+    v: f32,
+    light: f32,
+}
+
+struct Canvas<'a> {
+    grid: &'a mut Grid,
+    depth: Vec<f32>,
+    w: usize,
+    h: usize,
+    bg: Color,
+    cool: [Color; 64],
+    warm: [Color; 64],
+}
+
+fn direction(dx: f32, dy: f32) -> char {
+    if dy.abs() < dx.abs() * 0.24 {
+        '-'
+    } else if dx.abs() < dy.abs() * 0.65 {
+        '|'
+    } else if dx * dy > 0.0 {
+        '\\'
+    } else {
+        '/'
+    }
+}
+
+impl Canvas<'_> {
+    fn put(&mut self, x: isize, y: isize, z: f32, ch: char, light: f32, warm: bool) {
+        if x < 0 || y < 0 || x as usize >= self.w || y as usize >= self.h {
+            return;
+        }
+        let index = y as usize * self.w + x as usize;
+        if z < self.depth[index] {
+            return;
+        }
+        self.depth[index] = z;
+        let level = (light.clamp(0.0, 1.0) * 63.0) as usize;
+        self.grid[y as usize][x as usize] = Cell::with_bg(
+            ch,
+            if warm {
+                self.warm[level]
+            } else {
+                self.cool[level]
+            },
+            self.bg,
+        );
+    }
+
+    fn triangle(&mut self, tri: [FacetPoint; 3], phase: f32) {
+        // Barycentric interpolation visits only the clipped triangle bounds.
+        let [a, b, c] = tri;
+        let edge = |a: Vertex, b: Vertex, x: f32, y: f32| {
+            (b.x - a.x) * (y - a.y) - (b.y - a.y) * (x - a.x)
+        };
+        let area = edge(a.point, b.point, c.point.x, c.point.y);
+        if area.abs() < 0.00001 {
+            return;
+        }
+        let min_x = a.point.x.min(b.point.x).min(c.point.x).floor().max(0.0) as usize;
+        let max_x = a
+            .point
+            .x
+            .max(b.point.x)
+            .max(c.point.x)
+            .ceil()
+            .min(self.w as f32) as usize;
+        let min_y = a.point.y.min(b.point.y).min(c.point.y).floor().max(0.0) as usize;
+        let max_y = a
+            .point
+            .y
+            .max(b.point.y)
+            .max(c.point.y)
+            .ceil()
+            .min(self.h as f32) as usize;
+        let rib = direction(c.point.x - a.point.x, c.point.y - a.point.y);
+        for y in min_y..max_y {
+            for x in min_x..max_x {
+                let wa = edge(b.point, c.point, x as f32 + 0.5, y as f32 + 0.5) / area;
+                let wb = edge(c.point, a.point, x as f32 + 0.5, y as f32 + 0.5) / area;
+                let wc = 1.0 - wa - wb;
+                if wa < -0.0001 || wb < -0.0001 || wc < -0.0001 {
+                    continue;
+                }
+                let z = a.point.z * wa + b.point.z * wb + c.point.z * wc;
+                if z < self.depth[y * self.w + x] {
+                    continue;
+                }
+                let u = a.u * wa + b.u * wb + c.u * wc;
+                let v = a.v * wa + b.v * wb + c.v * wc;
+                let energy = a.point.energy * wa + b.point.energy * wb + c.point.energy * wc;
+                let base = a.light * wa + b.light * wb + c.light * wc;
+                let ridge = (24.0 * u + 1.8 * v.sin() + phase).cos().max(0.0).powi(6);
+                let rings = (12.0 * v + 2.0 * (3.0 * u + phase).sin())
+                    .cos()
+                    .max(0.0)
+                    .powi(12);
+                let light = (base + ridge * 0.22 + energy * 0.14).clamp(0.0, 1.0);
+                let ch = if ridge > 0.48 {
+                    rib
+                } else if rings > 0.75 && self.w >= 110 {
+                    '='
+                } else {
+                    b"..,:;=+*#%"[(light * 9.0) as usize] as char
+                };
+                self.put(
+                    x as isize,
+                    y as isize,
+                    z,
+                    ch,
+                    light,
+                    v.sin() > 0.3 && energy > 0.44,
+                );
+            }
+        }
+    }
+
+    fn line(&mut self, a: Vertex, b: Vertex, light: f32, warm: bool, bead: bool) {
+        let dx = b.x - a.x;
+        let dy = b.y - a.y;
+        let steps = (dx.abs().max(dy.abs()).ceil() as usize).clamp(1, 4096);
+        let ch = if bead { 'o' } else { direction(dx, dy) };
+        for i in 0..=steps {
+            let f = i as f32 / steps as f32;
+            self.put(
+                (a.x + f * dx).floor() as isize,
+                (a.y + f * dy).floor() as isize,
+                a.z + (b.z - a.z) * f + 0.006,
+                ch,
+                light,
+                warm,
+            );
+        }
     }
 }
 
@@ -170,33 +312,110 @@ fn draw(frame: &mut ModeFrame<'_>, p: &[f32; 5]) {
             *cell = Cell::with_bg(' ', bg, bg);
         }
     }
-    let mut depth = vec![f32::NEG_INFINITY; w * h];
-    // Foundation view: bounded projected samples with depth-tested engraving.
-    for i in 0..256 {
-        for j in 0..64 {
-            let v = project(
-                surface(&mantle, i as f32 * TAU / 256.0, j as f32 * TAU / 64.0, p),
-                w,
-                h,
-                mantle.clock,
-            );
-            let (x, y) = (v.x.round() as isize, v.y.round() as isize);
-            if x < 0 || y < 0 || x as usize >= w || y as usize >= h {
-                continue;
-            }
-            let index = y as usize * w + x as usize;
-            if v.z > depth[index] {
-                depth[index] = v.z;
-                let light = (v.energy + 0.3 * v.z).clamp(0.0, 1.0);
-                let glyph = b".,:;=+*#@"[(light * 8.0) as usize] as char;
-                frame.grid[y as usize][x as usize] = Cell::with_bg(
-                    glyph,
-                    lerp_color(rgb(27, 88, 109), rgb(225, 231, 187), light),
-                    bg,
-                );
-            }
+    let mut canvas = Canvas {
+        grid: frame.grid,
+        depth: vec![f32::NEG_INFINITY; w * h],
+        w,
+        h,
+        bg,
+        cool: std::array::from_fn(|i| {
+            let t = i as f32 / 63.0;
+            lerp_color(
+                lerp_color(rgb(12, 43, 64), rgb(96, 204, 200), t),
+                frame.palette[3],
+                0.12,
+            )
+        }),
+        warm: std::array::from_fn(|i| {
+            lerp_color(rgb(56, 80, 79), rgb(247, 224, 165), i as f32 / 63.0)
+        }),
+    };
+    // Geometry sampling is resolution-adaptive, independent of artistic knobs.
+    let nu = (w * 2).clamp(96, 256);
+    let nv = h.clamp(24, 64);
+    let mut mesh = Vec::with_capacity((nu + 1) * (nv + 1));
+    for i in 0..=nu {
+        for j in 0..=nv {
+            let u = i as f32 * TAU / nu as f32;
+            let v = j as f32 * TAU / nv as f32;
+            let world = surface(&mantle, u, v, p);
+            let normal = [v.cos() * u.cos(), v.cos() * u.sin(), v.sin()];
+            let diffuse = (-0.35 * normal[0] + 0.25 * normal[1] + 0.9 * normal[2]).max(0.0);
+            let rim = (1.0 - (normal[1] * 0.84 + normal[2] * 0.54).abs())
+                .max(0.0)
+                .powi(3);
+            mesh.push(FacetPoint {
+                point: project(world, w, h, mantle.clock),
+                u,
+                v,
+                light: 0.14 + diffuse * 0.53 + rim * 0.23,
+            });
         }
     }
+    measure_layer("pelagium", "membrane", || {
+        for i in 0..nu {
+            for j in 0..nv {
+                let a = i * (nv + 1) + j;
+                let b = a + nv + 1;
+                canvas.triangle([mesh[a], mesh[b], mesh[a + 1]], mantle.phase[3]);
+                canvas.triangle([mesh[b], mesh[b + 1], mesh[a + 1]], mantle.phase[3]);
+            }
+        }
+        // Two material sutures follow the same deforming surface. Occlusion
+        // hides their far arcs; energy brightens the exposed inner lip.
+        for v in [0.55, 2.55] {
+            let at = |u: f32| project(surface(&mantle, u, v, p), w, h, mantle.clock);
+            let mut a = at(0.0);
+            for i in 1..=256 {
+                let u = i as f32 * TAU / 256.0;
+                let b = at(u);
+                canvas.line(a, b, 0.4 + b.energy * 0.65, v > 2.0, false);
+                a = b;
+            }
+        }
+    });
+    // Filaments continue the membrane's fixed material meridians. The energy
+    // field that they load also governs their excursion and travelling light.
+    measure_layer("pelagium", "filaments", || {
+        for i in 0..12 {
+            let u = (i as f32 + 0.5) * PI / 12.0;
+            let root = surface(&mantle, u, -PI * 0.5, p);
+            let e = root.energy;
+            let gradient =
+                (sample(&mantle.energy, u + 0.12) - sample(&mantle.energy, u - 0.12)) / 0.24;
+            let length = (0.48 + 0.90 * p[4]) * (0.6 + e);
+            let at = |s: f32| {
+                let swirl = u
+                    + p[2] * s * (0.35 + 1.6 * gradient)
+                    + 0.5 * s * s * (mantle.clock * 0.35 + u * 2.0).sin();
+                let radius = (root.x * root.x + root.y * root.y).sqrt() * (1.0 - 0.32 * s)
+                    + 0.13 * p[2] * (s * PI).sin() * (7.0 * s - mantle.clock + u * 2.0).sin();
+                project(
+                    Vertex {
+                        x: radius * swirl.cos(),
+                        y: radius * swirl.sin(),
+                        z: root.z - length * s,
+                        energy: e,
+                    },
+                    w,
+                    h,
+                    mantle.clock,
+                )
+            };
+            let mut a = at(0.0);
+            for j in 1..=128 {
+                let s = j as f32 / 128.0;
+                let b = at(s);
+                let pulse = (s * 18.0 - mantle.clock * 2.3 + u * 3.0)
+                    .cos()
+                    .max(0.0)
+                    .powi(10);
+                let light = (0.22 + e * 0.42 + pulse * 0.3) * (1.0 - 0.5 * s);
+                canvas.line(a, b, light, pulse > 0.72, pulse > 0.93 && w >= 110);
+                a = b;
+            }
+        }
+    });
 }
 
 #[cfg(test)]
