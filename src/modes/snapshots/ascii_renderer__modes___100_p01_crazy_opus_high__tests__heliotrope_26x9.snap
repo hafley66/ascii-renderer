@@ -1,0 +1,14 @@
+---
+source: src/modes/_100_p01_crazy_opus_high.rs
+assertion_line: 1118
+expression: "text(&frame(26, 9, 42, 2.0, &knobs()))"
+---
+              o           
+             //\o         
+         ` `.o*o. *```    
+         * o@..-o /_*     
+        , \,  --o//       
+         *--\_    |       
+             ---\/|       
+_________'_____'_\______"_
+                | \

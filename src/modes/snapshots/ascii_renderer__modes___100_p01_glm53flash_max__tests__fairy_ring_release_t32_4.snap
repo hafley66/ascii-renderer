@@ -1,0 +1,29 @@
+---
+source: src/modes/_100_p01_glm53flash_max.rs
+assertion_line: 715
+expression: "text(&frame(80, 24, 42, 32.4, &knobs()))"
+---
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                  *               *       *                     
+                                    *        *                                  
+                  o        *     ooooo        ooooo         o*                  
+        *   ooo ooooo  ooooo     ooooo        ooooo       o*oooooo              
+          Ooo*ooooooo .o.oo*     ooo.o.      .o.ooo       o*o*ooooo OOO         
+        O*oo**o*oooooOOooo.o       ||           ||        ooooooo.o.oooO        
+        Oooo:*:ooOo|ooooO||    OOOO||       OOO ||  OOO     o|ooooooooooO       
+        O*::oooooo||oooooO    OOoooOO     OOoooOO OOoooOO   ||oooo|O:::O        
+         .OOO||::OOooooooO   OoooooooO   OOoooooOOOoooooO   Ooooo||:OOOO        
+           ||:::OO:::::::O   OoooooooO   OoooooooOOoooooOO  OO::::OOO||         
+ -- -      ||OOO|OO:::::OO   O:::::::O- -OO:::::OOO:::::O   -OO:::OO|||-        
+    ;          ||  OOOOO ;    OO:::OO     OO:::OO OO:::OO   .; OOO ~|| ~    .   
+        ;      ||,   || ,      OOOOO.  ; , .OOO.    OOO| .  . ,||~    ;   ;     
+             . ~  ,  ||  ,  ;   .||          ||       ||                      ..
+      ~             .            ||   , .    ||. .. ;.||          . .  .    ~   
+   .     ~               .                                     ~    .           
+          ,                      ,       ~~                                 .   
+         ~                           ~                ~        .              .~
+                             , ,         ~     ;  .     .      .      ~

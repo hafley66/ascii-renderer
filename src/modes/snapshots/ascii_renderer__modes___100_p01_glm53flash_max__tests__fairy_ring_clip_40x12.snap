@@ -1,0 +1,17 @@
+---
+source: src/modes/_100_p01_glm53flash_max.rs
+assertion_line: 728
+expression: "text(&frame(40, 12, 42, 19.8, &knobs()))"
+---
+                                        
+                                        
+                                        
+              ooo     OOO               
+              ooo    OoooO ooo          
+              ooo   Ooooooooooo         
+               |     O:::O ooo          
+ -- -      -- -  -  - OOO   |   -  -  - 
+       ;   ~      .-- ~||   |          ~
+     ;         ------  || ;    , ,      
+              +++-- - .           ;     
+              . ~-+,      ,  ;
