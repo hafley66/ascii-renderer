@@ -341,6 +341,7 @@ pub(crate) fn pvals_for(
 /// the seed changes -- "controlled randomness" rather than per-frame jitter.
 #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn rand_knob(seed: u64, p: &Param) -> f32 {
+    if !p.randomize { return p.default; }
     let mut h = seed ^ 0x9E37_79B9_7F4A_7C15;
     for b in p.key.bytes() {
         h = h.wrapping_mul(0x0000_0100_0000_01B3).wrapping_add(b as u64);
@@ -365,7 +366,7 @@ pub(crate) fn effective_pvals(
     if randomize {
         let s = seed ^ roll.wrapping_mul(0x9E37_79B9_7F4A_7C15);
         spec.params.iter().enumerate().map(|(i, p)| {
-            if pins.get(i).copied().unwrap_or(false) { pvals[i] } else { rand_knob(s, p) }
+            if pins.get(i).copied().unwrap_or(false) || !p.randomize { pvals[i] } else { rand_knob(s, p) }
         }).collect()
     } else {
         pvals.to_vec()

@@ -1520,7 +1520,7 @@ pub(crate) fn morph_worker_session(
             eff.extend(
                 spec.params
                     .iter()
-                    .enumerate().map(|(i, param)| if pins[i] { pvals[i] } else { rand_knob(random_seed, param) }),
+                    .enumerate().map(|(i, param)| if pins[i] || !param.randomize { pvals[i] } else { rand_knob(random_seed, param) }),
             );
         } else {
             eff.extend_from_slice(&pvals);
@@ -1657,7 +1657,7 @@ pub(crate) fn morph_worker_session(
             format!(" term={}x{} grid={}x{} | seed:{} | seed> {}{}  enter=apply e=cancel esc/q=leave", w, th, rw, h, geometry_seed, edit, error)
         } else if pane_open {
             format!(
-                " term={}x{} grid={}x{} | seed:{} | morph {} | {} | t={:.2} | {} | enter=pin e=seed o=close opts  \u{2191}\u{2193}=select  \u{2190}\u{2192}=adjust  r=reset  b=back  i=iterate  q ",
+                " term={}x{} grid={}x{} | seed:{} | morph {} | {} | t={:.2} | {} | enter=pin e=seed o=close opts  \u{2191}\u{2193}=select  {}  g=rand r=reset b=back i=iterate q ",
                 w,
                 th,
                 rw,
@@ -1667,6 +1667,7 @@ pub(crate) fn morph_worker_session(
                 strat,
                 t,
                 if playing { "\u{25b6}" } else { "\u{2161}" },
+                if randomize { "\u{2190}\u{2192}/+-=roll" } else { "\u{2190}\u{2192}/+-=adjust" },
             )
         } else {
             format!(
@@ -1984,11 +1985,13 @@ pub(crate) fn morph_worker_session(
                     }
                     KeyCode::Left => {
                         playing = false;
-                        phase = (phase - 0.02).max(0.0);
+                        if strat == "iterate" { clock = (clock - 0.06).max(0.0); }
+                        else { phase = (phase - 0.02).max(0.0); }
                     }
                     KeyCode::Right => {
                         playing = false;
-                        phase = (phase + 0.02).min(1.0);
+                        if strat == "iterate" { clock += 0.06; }
+                        else { phase = (phase + 0.02).min(1.0); }
                     }
                     KeyCode::Char('n') => {
                         if strat == "iterate" { requested_seed = Some(geometry_seed.wrapping_add(1)); }

@@ -1,1 +1,1 @@
-20260917.0.ascii-renderer-terminal-throughput-xterm-webgl.md
+20260918.0.rust-ink-ascii-foundation.md

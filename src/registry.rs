@@ -60,6 +60,9 @@ pub(crate) struct Param {
     pub(crate) max: f32,
     pub(crate) default: f32,
     pub(crate) step: f32,
+    pub(crate) choices: &'static [&'static str],
+    /// False keeps this knob's tuned value during random exploration.
+    pub(crate) randomize: bool,
 }
 
 /// How the `a` key animates a mode.
@@ -150,6 +153,9 @@ pub(crate) fn registered_mode(name: &str) -> Option<&'static dyn Mode> {
 /// (ASCII_P_<KEY>); the renderer reads it via `param_f32(KEY, default)`.
 macro_rules! param {
     ($key:literal, $label:literal, $min:expr, $max:expr, $default:expr, $step:expr) => {
+        param!($key, $label, $min, $max, $default, $step, &[])
+    };
+    ($key:literal, $label:literal, $min:expr, $max:expr, $default:expr, $step:expr, $choices:expr) => {
         Param {
             key: $key,
             label: $label,
@@ -157,6 +163,8 @@ macro_rules! param {
             max: $max,
             default: $default,
             step: $step,
+            choices: $choices,
+            randomize: true,
         }
     };
 }
@@ -1439,13 +1447,19 @@ pub(crate) fn options_pane_to_ansi(
                 .map(|k| if k < filled { '\u{2588}' } else { '\u{2591}' })
                 .collect();
             let row = 6 + (i - offset) * 2;
+            let label: String = p.label.chars().take(26).collect();
             let pin = if pins.get(i).copied().unwrap_or(false) { "x" } else { " " };
             if i == psel {
-                line(row, &format!("\x1b[7m> [{}] {:<10}\x1b[0m", pin, p.label));
+                line(row, &format!("\x1b[7m> [{}] {:<10}\x1b[0m", pin, label));
             } else {
-                line(row, &format!("  [{}] {:<10}", pin, p.label));
+                line(row, &format!("  [{}] {:<10}", pin, label));
             }
-            line(row + 1, &format!("  {} {:>7.3}", bar, v));
+            if let Some(choice) = p.choices.get(v.round().max(0.0) as usize) {
+                let choice: String = choice.chars().take(25).collect();
+                line(row + 1, &format!("  {:>4.0} {}", v, choice));
+            } else {
+                line(row + 1, &format!("  {} {:>7.3}", bar, v));
+            }
         }
         let foot = 6 + spec.params.len().min(visible) * 2 + 1;
         line(foot, "\x1b[90menter=pin ^v=select r=reset\x1b[0m");
