@@ -35,7 +35,7 @@
 //!     casts the moving shafts that decide where grass and motes light up.
 
 use crate::_0_profile::measure_layer;
-use crate::color::{hsl_to_rgb, lerp_color, lighten, rgb};
+use crate::color::{hsl_to_rgb, lerp_color, lighten};
 use crate::opts::param_f32;
 use crate::registry::{AnimKind, Mode, ModeFrame, Param};
 use crate::types::{Cell, Grid};
@@ -539,9 +539,9 @@ fn grow(seed: u64, st: &Stage, k: &Knobs) -> Plant {
                 }
                 let (tx, ty) = (st.sx - n.x, st.sy - n.y);
                 let tl = (tx * tx + ty * ty).sqrt().max(1e-4);
-                let bend = k.photo * (0.35 + 0.65 * light);
-                dx = dx * (1.0 - k.photo * 0.6) + tx / tl * bend;
-                dy = dy * (1.0 - k.photo * 0.6) + ty / tl * bend;
+                let bend = k.photo * 0.9 * (0.35 + 0.65 * light);
+                dx += tx / tl * bend;
+                dy += ty / tl * bend;
                 len = step * (0.45 + 0.55 * light);
             }
             // Wander: a smooth seeded angle field bends straight runs into arcs.
@@ -550,15 +550,23 @@ fn grow(seed: u64, st: &Stage, k: &Knobs) -> Plant {
             dx = dx / dl + swirl.cos() * 0.45;
             dy = dy / dl + swirl.sin() * 0.45;
             let dl = (dx * dx + dy * dy).sqrt().max(1e-4);
-            let x = (n.x + dx / dl * len).clamp(0.2, st.fw - 0.2);
-            let y = n.y + dy / dl * len;
+            let mut x = (n.x + dx / dl * len).clamp(0.2, st.fw - 0.2);
+            let mut y = n.y + dy / dl * len;
+            // A limb that meets the sun's disk slides along its rim instead of stalling.
+            let (ox, oy) = (x - st.sx, y - st.sy);
+            let od = (ox * ox + oy * oy).sqrt();
+            let rim = st.radius * 1.12;
+            if !n.under && od < rim {
+                let od = od.max(1e-3);
+                x = st.sx + ox / od * rim;
+                y = st.sy + oy / od * rim;
+            }
             if n.under {
                 if y < st.ground + 0.3 || y > st.fh - 0.2 {
                     continue;
                 }
             } else {
-                let sun2 = (x - st.sx).powi(2) + (y - st.sy).powi(2);
-                if y > st.ground - 0.3 || y < 0.2 || sun2 < (st.radius * 1.1).powi(2) {
+                if y > st.ground - 0.3 || y < 0.2 || x < 0.2 || x > st.fw - 0.2 {
                     continue;
                 }
             }
@@ -794,7 +802,7 @@ struct Look {
 impl Look {
     fn new(k: &Knobs, palette: &[Color; 5]) -> Self {
         let h = k.hue as f64;
-        let bark = lerp_color(rgb(128, 92, 66), palette[1], 0.12);
+        let bark = lerp_color(hsl_to_rgb(26.0, 0.42, 0.4), palette[1], 0.1);
         Look {
             sky_top: hsl_to_rgb((h + 215.0).rem_euclid(360.0), 0.45, 0.04),
             sky_low: hsl_to_rgb((h + 195.0).rem_euclid(360.0), 0.35, 0.12),
@@ -989,7 +997,7 @@ fn paint_plant(grid: &mut Grid, w: usize, h: usize, seed: u64, t: f32, st: &Stag
         let flat = ch == '_';
         let signed = if n.under { -n.dist } else { n.dist };
         let phase = (signed / wave + t * k.sap).rem_euclid(1.0);
-        let pulse = (-((phase - 0.5) * 7.0).powi(2)).exp() * if n.under { 0.5 } else { n.light };
+        let pulse = (-((phase - 0.5) * 7.0).powi(2)).exp() * if n.under { 0.45 } else { 0.35 + 0.65 * n.light };
         let body = if n.under { lerp_color(look.soil, look.root, 0.5 + 0.5 * (1.0 - n.dist / plant.reach)) } else { lerp_color(look.bark, look.bark_lit, n.light.powf(0.45)) };
         let fg = lerp_color(body, look.sap, pulse);
         let hr = n.width * 0.5;
