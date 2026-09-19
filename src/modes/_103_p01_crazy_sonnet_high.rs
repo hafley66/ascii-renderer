@@ -28,14 +28,25 @@ const L_ATTR: u64 = 0x42;
 const L_GROW: u64 = 0x43;
 const L_PATH: u64 = 0x44;
 
-const MAX_NODES: usize = 300;
-const MAX_ITERS: usize = 240;
+const MAX_NODES: usize = 420;
+const NODE_REF_AREA: f32 = 80.0 * 24.0;
+const MAX_ITERS: usize = 260;
 const MISS_LIMIT: u32 = 5;
+const MIN_SEGMENT: u32 = 4;
 const PULSES_PER_SOMA: usize = 3;
 const PULSE_GAP_FRAC: f32 = 0.5;
-const GROWTH_SECONDS: f32 = 15.0;
+const BREATH_PERIOD: f32 = 18.0;
+const BREATH_DEPTH: f32 = 0.24;
+
+/// 1.0 at `t == 0` (default render fully grown); dips to `1 - BREATH_DEPTH`.
+#[inline]
+fn breathing_frac(t: f32) -> f32 {
+    let base = 1.0 - BREATH_DEPTH * 0.5;
+    base + BREATH_DEPTH * 0.5 * (t * std::f32::consts::TAU / BREATH_PERIOD).cos()
+}
 const FIELD_W: usize = 40;
 const FIELD_H: usize = 20;
+const SHEAR_GAIN: f32 = 3.2;
 
 const PARAMS: &[Param] = &[
     param!("SOMAS", "ganglion roots", 1.0, 4.0, 2.0, 1.0),
@@ -151,11 +162,11 @@ impl Vec3 {
 }
 
 /// One dendrite node. `parent` indexes an earlier node (roots use -1).
-/// `order` is the global birth sequence used for growth reveal and pulse gating.
+/// `dlen` is the arc length from this node's root, used for growth reveal.
 struct Node {
     pos: Vec3,
     parent: i32,
-    order: u32,
+    dlen: f32,
     thickness: f32,
 }
 
@@ -173,6 +184,7 @@ struct TipState {
     dir: Vec3,
     node_idx: usize,
     miss: u32,
+    since_branch: u32,
 }
 
 /// The grown ganglion: nodes, the attractant cloud, the density field the
@@ -182,7 +194,7 @@ struct Ganglion {
     fh: f32,
     depth: f32,
     nodes: Vec<Node>,
-    max_order: f32,
+    max_dlen: f32,
     attractors: Vec<Vec3>,
     consumed: Vec<bool>,
     paths: Vec<PulsePath>,
@@ -254,7 +266,9 @@ impl Ganglion {
         let (fw, fh) = ((w as f32 / aspect).max(4.0), (h as f32).max(4.0));
         let depth = p[8];
         let somas = p[0].round().max(1.0) as usize;
-        let attract_n = p[1].round().max(1.0) as usize;
+        let area_ratio = ((w * h) as f32 / NODE_REF_AREA).sqrt().clamp(0.3, 2.5);
+        let attract_n = (p[1].round().max(1.0) * area_ratio).clamp(30.0, 900.0) as usize;
+        let max_nodes = ((MAX_NODES as f32) * area_ratio).clamp(120.0, 900.0) as usize;
         let perceive = p[2];
         let kill = p[3];
         let step = p[4];
@@ -271,7 +285,7 @@ impl Ganglion {
         }
         let mut consumed = vec![false; attractors.len()];
 
-        let mut nodes: Vec<Node> = Vec::with_capacity(MAX_NODES);
+        let mut nodes: Vec<Node> = Vec::with_capacity(max_nodes);
         let mut tips: Vec<TipState> = Vec::with_capacity(somas * 2);
         for i in 0..somas as u64 {
             let swing = std::f32::consts::TAU * (i as f32 + 0.5) / somas as f32
@@ -282,20 +296,19 @@ impl Ganglion {
             let cz = (unit(hash(seed, L_SOMA, i, 1)) * 2.0 - 1.0) * depth * 0.3;
             let pos = Vec3 { x: cx, y: cy, z: cz };
             let dir = Vec3 { x: swing.cos() * 0.3, y: -1.0, z: 0.0 }.norm();
-            nodes.push(Node { pos, parent: -1, order: i as u32, thickness: 0.0 });
-            tips.push(TipState { pos, dir, node_idx: i as usize, miss: 0 });
+            nodes.push(Node { pos, parent: -1, dlen: 0.0, thickness: 0.0 });
+            tips.push(TipState { pos, dir, node_idx: i as usize, miss: 0, since_branch: 0 });
         }
-        let mut order_counter = somas as u32;
 
         let mut field = vec![0.0f32; FIELD_W * FIELD_H];
         let tropism_vec = Vec3 { x: 0.0, y: -tropism, z: 0.0 };
 
         let mut iter = 0usize;
-        while iter < MAX_ITERS && !tips.is_empty() && nodes.len() < MAX_NODES {
+        while iter < MAX_ITERS && !tips.is_empty() && nodes.len() < max_nodes {
             iter += 1;
             let mut next_tips: Vec<TipState> = Vec::with_capacity(tips.len() + 2);
             for tip in tips.iter() {
-                if nodes.len() >= MAX_NODES {
+                if nodes.len() >= max_nodes {
                     break;
                 }
                 let (mut mean, mut mean_w, mut max_angle) = (Vec3::ZERO, 0.0f32, 0.0f32);
@@ -329,7 +342,13 @@ impl Ganglion {
                     }
                     let dir = tip.dir.add(tropism_vec.scale(0.25)).norm();
                     let pos = tip.pos.add(dir.scale(step * 0.7));
-                    next_tips.push(TipState { pos, dir, node_idx: tip.node_idx, miss: tip.miss + 1 });
+                    next_tips.push(TipState {
+                        pos,
+                        dir,
+                        node_idx: tip.node_idx,
+                        miss: tip.miss + 1,
+                        since_branch: tip.since_branch + 1,
+                    });
                     continue;
                 }
                 let mean_dir = mean.scale(1.0 / mean_w.max(1e-5)).norm();
@@ -348,13 +367,15 @@ impl Ganglion {
                 let grad = field_gradient(&field, tip.pos, fw, fh);
                 let repulse = grad.scale(repel * 0.6);
 
-                let split_p = smoothstep(split * 0.7, split * 1.3, max_angle);
+                let split_p = smoothstep(split * 1.1, split * 1.9, max_angle);
                 let roll = unit(hash(seed, L_GROW, tip.node_idx as u64, iter as u64));
-                let do_split = roll < split_p && lw > 0.0 && rw > 0.0;
+                let ripe = tip.since_branch >= MIN_SEGMENT;
+                let balanced = lw.min(rw) > (lw + rw) * 0.3;
+                let do_split = ripe && balanced && roll < split_p;
 
-                let mut push_branch = |dir_raw: Vec3, from: &TipState, next_tips: &mut Vec<TipState>| {
+                let mut push_branch = |dir_raw: Vec3, from: &TipState, branched: bool, next_tips: &mut Vec<TipState>| {
                     let mut dir = dir_raw.sub(repulse).add(tropism_vec.scale(0.35));
-                    dir = dir.add(from.dir.scale(0.5)).norm();
+                    dir = dir.add(from.dir.scale(0.6)).norm();
                     let pos = from.pos.add(dir.scale(step));
                     let pos = Vec3 {
                         x: pos.x.clamp(0.0, fw),
@@ -362,25 +383,26 @@ impl Ganglion {
                         z: pos.z.clamp(-depth.max(0.01), depth.max(0.01)),
                     };
                     let subtree_root = from.node_idx;
-                    nodes.push(Node { pos, parent: subtree_root as i32, order: order_counter, thickness: 0.0 });
+                    let dlen = nodes[subtree_root].dlen + pos.dist(from.pos);
+                    nodes.push(Node { pos, parent: subtree_root as i32, dlen, thickness: 0.0 });
                     let new_idx = nodes.len() - 1;
-                    order_counter += 1;
                     deposit(&mut field, pos, fw, fh, depth);
                     for (aj, aa) in attractors.iter().enumerate() {
                         if !consumed[aj] && pos.dist(*aa) < kill {
                             consumed[aj] = true;
                         }
                     }
-                    next_tips.push(TipState { pos, dir, node_idx: new_idx, miss: 0 });
+                    let since_branch = if branched { 0 } else { from.since_branch + 1 };
+                    next_tips.push(TipState { pos, dir, node_idx: new_idx, miss: 0, since_branch });
                 };
 
                 if do_split {
                     let ld = lmean.scale(1.0 / lw.max(1e-5)).norm();
                     let rd = rmean.scale(1.0 / rw.max(1e-5)).norm();
-                    push_branch(ld, tip, &mut next_tips);
-                    push_branch(rd, tip, &mut next_tips);
+                    push_branch(ld, tip, true, &mut next_tips);
+                    push_branch(rd, tip, true, &mut next_tips);
                 } else {
-                    push_branch(mean_dir, tip, &mut next_tips);
+                    push_branch(mean_dir, tip, false, &mut next_tips);
                 }
             }
             tips = next_tips;
@@ -406,7 +428,7 @@ impl Ganglion {
             nodes[i].thickness = ((subtree[i] as f32).sqrt() * 0.5).min(3.2);
         }
 
-        let max_order = nodes.last().map(|n| n.order as f32).unwrap_or(0.0).max(1.0);
+        let max_dlen = nodes.iter().fold(0.0f32, |m, n| m.max(n.dlen)).max(1e-3);
 
         let mut leaves_by_root: Vec<Vec<usize>> = vec![Vec::new(); somas];
         for (i, n) in nodes.iter().enumerate() {
@@ -427,7 +449,7 @@ impl Ganglion {
                 continue;
             }
             let mut sorted = leaves.clone();
-            sorted.sort_by(|a, b| nodes[*b].order.cmp(&nodes[*a].order));
+            sorted.sort_by(|a, b| nodes[*b].dlen.partial_cmp(&nodes[*a].dlen).unwrap());
             for pick in 0..PULSES_PER_SOMA.min(sorted.len()) {
                 let leaf = sorted[(pick * 7) % sorted.len()];
                 let mut chain = vec![leaf];
@@ -450,18 +472,15 @@ impl Ganglion {
             }
         }
 
-        Ganglion { fw, fh, depth, nodes, max_order, attractors, consumed, paths }
+        Ganglion { fw, fh, depth, nodes, max_dlen, attractors, consumed, paths }
     }
 
     #[inline]
     fn project(&self, pos: Vec3, theta: f32, aspect: f32) -> (f32, f32, f32) {
-        let cx = self.fw * 0.5;
-        let (dx, dz) = (pos.x - cx, pos.z);
-        let rx = dx * theta.cos() - dz * theta.sin();
-        let rz = dx * theta.sin() + dz * theta.cos();
-        let col = (rx + cx) * aspect;
+        let shear = theta.sin() * SHEAR_GAIN;
+        let col = (pos.x + pos.z * shear) * aspect;
         let row = pos.y;
-        (col, row, rz)
+        (col, row, pos.z)
     }
 }
 
@@ -473,8 +492,8 @@ fn draw(frame: &mut ModeFrame<'_>, p: &[f32; KNOBS]) {
     let ganglion = Ganglion::build(frame.seed, w, h, p);
     let aspect = p[12].max(0.25);
     let theta = frame.time * p[9];
-    let growth_frac = smoothstep(0.0, GROWTH_SECONDS, frame.time);
-    let frontier = growth_frac * ganglion.max_order;
+    let growth_frac = breathing_frac(frame.time);
+    let frontier = growth_frac * ganglion.max_dlen;
     let hue = p[11] as f64;
     let plate = darken(frame.palette[0], 18);
 
@@ -586,9 +605,9 @@ fn paint_edges(
             continue;
         }
         let parent = &g.nodes[child.parent as usize];
-        let order_a = parent.order as f32;
-        let order_b = child.order as f32;
-        let reveal = if order_b > order_a { ((frontier - order_a) / (order_b - order_a)).clamp(0.0, 1.0) } else { 1.0 };
+        let len_a = parent.dlen;
+        let len_b = child.dlen;
+        let reveal = if len_b > len_a { ((frontier - len_a) / (len_b - len_a)).clamp(0.0, 1.0) } else { 1.0 };
         if reveal <= 0.0 {
             continue;
         }
@@ -698,14 +717,14 @@ fn paint_pulses(
 fn revealed_length(g: &Ganglion, path: &PulsePath, frontier: f32) -> f32 {
     let mut len = 0.0f32;
     for i in 0..path.nodes.len() {
-        let order = g.nodes[path.nodes[i]].order as f32;
-        if order > frontier {
+        let dlen = g.nodes[path.nodes[i]].dlen;
+        if dlen > frontier {
             if i == 0 {
                 return 0.0;
             }
-            let order_prev = g.nodes[path.nodes[i - 1]].order as f32;
+            let dlen_prev = g.nodes[path.nodes[i - 1]].dlen;
             let seg = path.cum[i] - path.cum[i - 1];
-            let frac = if order > order_prev { ((frontier - order_prev) / (order - order_prev)).clamp(0.0, 1.0) } else { 1.0 };
+            let frac = if dlen > dlen_prev { ((frontier - dlen_prev) / (dlen - dlen_prev)).clamp(0.0, 1.0) } else { 1.0 };
             return path.cum[i - 1] + seg * frac;
         }
         len = path.cum[i];
@@ -751,12 +770,12 @@ mod tests {
     }
 
     #[test]
-    fn synaptic_bloom_seed42_mid_growth() {
-        insta::assert_snapshot!("synaptic_bloom_80x24_t7", text(&frame(80, 24, 42, 7.0, &knobs())));
+    fn synaptic_bloom_seed42_breath_trough() {
+        insta::assert_snapshot!("synaptic_bloom_80x24_t9", text(&frame(80, 24, 42, 9.0, &knobs())));
     }
 
     #[test]
-    fn synaptic_bloom_seed42_grown() {
+    fn synaptic_bloom_seed42_later_phase() {
         insta::assert_snapshot!("synaptic_bloom_80x24_t20", text(&frame(80, 24, 42, 20.0, &knobs())));
     }
 
@@ -801,14 +820,13 @@ mod tests {
     }
 
     #[test]
-    fn growth_advances_with_time() {
+    fn breathing_frontier_varies_with_time() {
         let k = knobs();
-        let early = text(&frame(90, 30, 42, 1.0, &k));
-        let late = text(&frame(90, 30, 42, 20.0, &k));
-        assert_ne!(early, late);
-        let ink_early = early.chars().filter(|c| !c.is_whitespace()).count();
-        let ink_late = late.chars().filter(|c| !c.is_whitespace()).count();
-        assert!(ink_late >= ink_early, "growth should not shrink ink: {ink_early} -> {ink_late}");
+        let full = text(&frame(90, 30, 42, 0.0, &k));
+        let trough = text(&frame(90, 30, 42, 9.0, &k));
+        assert_ne!(full, trough);
+        assert!((breathing_frac(0.0) - 1.0).abs() < 1e-5);
+        assert!(breathing_frac(9.0) < breathing_frac(0.0));
     }
 
     #[test]
