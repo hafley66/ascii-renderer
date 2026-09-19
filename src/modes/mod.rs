@@ -32,6 +32,7 @@ mod _58_opus_3_ferrofluid;
 mod _59_gothic_trace;
 mod _100_p01_crazy_sol_high;
 mod _101_p01_crazy_astra_high;
+mod _102_p01_crazy_opus_high;
 
 #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn register_all(registry: &mut crate::registry::ModeRegistry) {
@@ -67,4 +68,5 @@ pub(crate) fn register_all(registry: &mut crate::registry::ModeRegistry) {
     registry.add(&_59_gothic_trace::MODE);
     registry.add(&_100_p01_crazy_sol_high::MODE);
     registry.add(&_101_p01_crazy_astra_high::MODE);
+    registry.add(&_102_p01_crazy_opus_high::MODE);
 }
