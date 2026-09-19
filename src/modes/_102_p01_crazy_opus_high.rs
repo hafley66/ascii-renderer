@@ -257,38 +257,6 @@ impl Buckets {
         let (cx, cy) = self.coord(x, y);
         self.slots[cy * self.cols + cx].push(id);
     }
-    /// Nearest id accepted by `keep`, searching rings outward until no closer ring can win.
-    fn nearest(&self, x: f32, y: f32, keep: impl Fn(u32) -> Option<f32>) -> Option<(f32, u32)> {
-        let (cx, cy) = self.coord(x, y);
-        let mut best: Option<(f32, u32)> = None;
-        let rings = self.cols.max(self.rows);
-        for ring in 0..=rings {
-            if let Some((d2, _)) = best {
-                let reach = (ring as f32 - 1.0).max(0.0) * self.cell;
-                if reach * reach > d2 {
-                    break;
-                }
-            }
-            let (lo_x, hi_x) = (cx as i64 - ring as i64, cx as i64 + ring as i64);
-            let (lo_y, hi_y) = (cy as i64 - ring as i64, cy as i64 + ring as i64);
-            for by in lo_y.max(0)..=hi_y.min(self.rows as i64 - 1) {
-                for bx in lo_x.max(0)..=hi_x.min(self.cols as i64 - 1) {
-                    if by != lo_y && by != hi_y && bx != lo_x && bx != hi_x {
-                        continue;
-                    }
-                    for &id in &self.slots[by as usize * self.cols + bx as usize] {
-                        if let Some(d2) = keep(id) {
-                            if best.is_none_or(|b| d2 < b.0) {
-                                best = Some((d2, id));
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        best
-    }
-
     fn near(&self, x: f32, y: f32, mut f: impl FnMut(u32)) {
         let (cx, cy) = self.coord(x, y);
         for by in cy.saturating_sub(1)..=(cy + 1).min(self.rows - 1) {
@@ -478,6 +446,10 @@ fn grow(seed: u64, st: &Stage, k: &Knobs) -> Plant {
     }
 
     let mut live = vec![true; attr.len()];
+    // Nodes are never removed, so each attractor's nearest node only changes
+    // when a newer node beats it; checking just the newborn keeps rounds linear.
+    let mut best: Vec<(f32, u32)> = vec![(f32::MAX, NONE); attr.len()];
+    let mut seen = 0usize;
     let mut pull: Vec<(f32, f32, u32)> = Vec::new();
     let min2 = (step * 0.45).powi(2);
     for round in 0..MAX_ROUNDS {
@@ -486,19 +458,30 @@ fn grow(seed: u64, st: &Stage, k: &Knobs) -> Plant {
         }
         pull.clear();
         pull.resize(nodes.len(), (0.0, 0.0, 0));
-        // Each live attractor pulls its nearest node of the same kind.
         for (i, &(ax, ay, under)) in attr.iter().enumerate() {
             if !live[i] {
                 continue;
             }
-            // Every attractor pulls its nearest node; beyond `di` the pull fades with distance.
-            let found = buckets.nearest(ax, ay, |id| {
-                let n = &nodes[id as usize];
-                (n.under == under).then(|| (n.x - ax).powi(2) + (n.y - ay).powi(2))
-            });
-            let Some((d2, id)) = found else {
+            for (id, n) in nodes.iter().enumerate().skip(seen) {
+                if n.under == under {
+                    let d2 = (n.x - ax).powi(2) + (n.y - ay).powi(2);
+                    if d2 < best[i].0 {
+                        best[i] = (d2, id as u32);
+                    }
+                }
+            }
+        }
+        seen = nodes.len();
+        // Each live attractor pulls its nearest node of the same kind.
+        for (i, &(ax, ay, _)) in attr.iter().enumerate() {
+            if !live[i] {
                 continue;
-            };
+            }
+            // Every attractor pulls its nearest node; beyond `di` the pull fades with distance.
+            let (d2, id) = best[i];
+            if id == NONE {
+                continue;
+            }
             if d2 < dk * dk {
                 live[i] = false;
                 continue;
