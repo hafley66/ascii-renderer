@@ -722,6 +722,27 @@ mod tests {
     }
 
     #[test]
+    fn time_and_every_live_control_change_the_frame() {
+        let base = defaults();
+        let still = frame(64, 20, 314, 3.0, &base);
+        assert_ne!(still, frame(64, 20, 314, 3.2, &base));
+        for (index, param) in PARAMS.iter().enumerate() {
+            let mut changed = base;
+            changed[index] = if (base[index] - param.min).abs() > f32::EPSILON {
+                param.min
+            } else {
+                param.max
+            };
+            assert_ne!(
+                still,
+                frame(64, 20, 314, 3.0, &changed),
+                "{} did not change the plain frame",
+                param.key
+            );
+        }
+    }
+
+    #[test]
     fn tiny_grids_clip_without_panicking() {
         for (w, h) in [(0, 0), (1, 1), (2, 3), (7, 4), (12, 6)] {
             let grid = frame(w, h, 7, 1.0, &defaults());
