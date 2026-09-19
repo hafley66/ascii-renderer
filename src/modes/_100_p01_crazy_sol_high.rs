@@ -114,6 +114,9 @@ struct Projected {
 struct FieldCell {
     density: f32,
     light: f32,
+    light_peak: f32,
+    light_tangent: f32,
+    response: f32,
     depth: f32,
     tangent: f32,
     crossings: u8,
@@ -124,6 +127,9 @@ impl Default for FieldCell {
         Self {
             density: 0.0,
             light: 0.0,
+            light_peak: 0.0,
+            light_tangent: 0.0,
+            response: 0.0,
             depth: -10.0,
             tangent: 0.0,
             crossings: 0,
@@ -285,18 +291,162 @@ fn draw(frame: &mut ModeFrame<'_>, p: &[f32; KNOBS]) {
 
         // Deposit fixed-topology parametric rings into a shared density/depth field.
         measure_layer(NAME, "lattice", || build_lattice(field, &look, w, h));
-        // The foundation frame paints the coupled-field slots; later milestones fill
-        // light tracing and response without changing storage or object identity.
+        // Photons read lattice density while tracing and write irradiance back.
+        measure_layer(NAME, "flux", || trace_flux(field, &look, w, h));
+        // Irradiance and its local gradient excite the lattice before final paint.
+        measure_layer(NAME, "response", || answer_light(field, &look, w, h));
         measure_layer(NAME, "paint", || paint(frame.grid, field, &look, w, h));
     });
+}
+
+#[inline]
+fn field_index(x: isize, y: isize, w: usize, h: usize) -> Option<usize> {
+    if x < 0 || y < 0 || x as usize >= w || y as usize >= h {
+        None
+    } else {
+        Some(y as usize * w + x as usize)
+    }
+}
+
+#[inline]
+fn density_gradient(field: &[FieldCell], x: isize, y: isize, w: usize, h: usize) -> (f32, f32) {
+    let read = |sx: isize, sy: isize| {
+        field_index(sx, sy, w, h)
+            .map(|i| field[i].density)
+            .unwrap_or(0.0)
+    };
+    (
+        read(x + 1, y) - read(x - 1, y),
+        read(x, y + 1) - read(x, y - 1),
+    )
+}
+
+fn trace_flux(field: &mut [FieldCell], look: &Look, w: usize, h: usize) {
+    let ray_count = h.clamp(14, 30);
+    let trail_steps = ((w + h) / 3).clamp(32, 104);
+    let core = 0.045 + look.aperture * 0.055;
+    let dt = 0.020 + 0.018 * look.gravity;
+
+    for ray in 0..ray_count {
+        let ray_id = ray as u64;
+        let jitter = unit(hash(look.seed, 0x5048_4f54, ray_id, 0));
+        let orbit = 0.43 + 0.58 * unit(hash(look.seed, 0x5048_4f54, ray_id, 1));
+        let rate = 0.13 + 0.22 * unit(hash(look.seed, 0x5048_4f54, ray_id, 2));
+        let direction = if hash(look.seed, 0x5048_4f54, ray_id, 3) & 1 == 0 {
+            1.0
+        } else {
+            -1.0
+        };
+        let angle =
+            TAU * (ray as f32 / ray_count as f32 + jitter * 0.08) + look.phase * rate * direction;
+        let (s, c) = angle.sin_cos();
+        let mut px = c * orbit;
+        let mut py = s * orbit * (0.62 + 0.12 * look.fold);
+        let circular = (0.28 + look.gravity * 0.19) / orbit.sqrt().max(0.4);
+        let mut vx = -s * circular * direction;
+        let mut vy = c * circular * direction * (0.68 + 0.15 * look.fold);
+        let energy = look.flux * (0.58 + 0.62 * unit(hash(look.seed, 0x5048_4f54, ray_id, 4)));
+
+        for step in 0..trail_steps {
+            let sx = look.cx + px * look.sx;
+            let sy = look.cy + py * look.sy;
+            let ix = sx.round() as isize;
+            let iy = sy.round() as isize;
+            if ix < -2 || iy < -2 || ix > w as isize + 1 || iy > h as isize + 1 {
+                break;
+            }
+
+            let (gx, gy) = density_gradient(field, ix, iy, w, h);
+            let r2 = px * px + py * py + core;
+            let inv = r2.sqrt().recip();
+            let gravity = look.gravity * 0.052 * inv * inv * inv;
+            let density_turn = 0.010 * look.bloom;
+            vx += (-px * gravity - gx * density_turn) * dt;
+            vy += (-py * gravity - gy * density_turn) * dt;
+            let damping = 1.0 - 0.0012 * dt;
+            vx *= damping;
+            vy *= damping;
+            px += vx * dt;
+            py += vy * dt;
+
+            let fade = (1.0 - step as f32 / trail_steps as f32).powf(1.35);
+            let pulse = 0.68
+                + 0.32
+                    * (look.phase * 1.7 - step as f32 * 0.23
+                        + jitter * TAU
+                        + field_index(ix, iy, w, h)
+                            .map(|i| field[i].density * 0.3)
+                            .unwrap_or(0.0))
+                    .sin();
+            let deposit = (energy * fade * pulse.max(0.08)).max(0.0);
+            let tangent = vy.atan2(vx * (look.sy / look.sx).max(0.1));
+            deposit_light(field, w, h, ix, iy, deposit, tangent, look.bloom);
+        }
+    }
+}
+
+fn deposit_light(
+    field: &mut [FieldCell],
+    w: usize,
+    h: usize,
+    x: isize,
+    y: isize,
+    energy: f32,
+    tangent: f32,
+    bloom: f32,
+) {
+    let radius = if bloom > 0.65 { 1 } else { 0 };
+    for oy in -radius..=radius {
+        for ox in -radius..=radius {
+            let Some(index) = field_index(x + ox, y + oy, w, h) else {
+                continue;
+            };
+            let spread = if ox == 0 && oy == 0 {
+                1.0
+            } else {
+                0.045 * bloom
+            };
+            let amount = energy * spread;
+            let cell = &mut field[index];
+            cell.light = (cell.light + amount).min(6.0);
+            if amount > cell.light_peak {
+                cell.light_peak = amount;
+                cell.light_tangent = tangent;
+            }
+        }
+    }
+}
+
+fn answer_light(field: &mut [FieldCell], look: &Look, w: usize, h: usize) {
+    for y in 0..h {
+        for x in 0..w {
+            let index = y * w + x;
+            if field[index].density <= 0.0 {
+                continue;
+            }
+            let read = |sx: isize, sy: isize| {
+                field_index(sx, sy, w, h)
+                    .map(|i| field[i].light)
+                    .unwrap_or(0.0)
+            };
+            let around = (read(x as isize - 1, y as isize)
+                + read(x as isize + 1, y as isize)
+                + read(x as isize, y as isize - 1)
+                + read(x as isize, y as isize + 1))
+                * 0.25;
+            let depth_gain = ((field[index].depth + 1.0) * 0.5).clamp(0.16, 1.0);
+            field[index].response =
+                ((field[index].light * 0.72 + around * 0.48) * look.bloom * depth_gain).min(3.0);
+        }
+    }
 }
 
 fn build_lattice(field: &mut [FieldCell], look: &Look, w: usize, h: usize) {
     let u_steps = (w.saturating_mul(2)).clamp(72, 192);
     let v_steps = (h.saturating_mul(4)).clamp(48, 128);
 
-    for ring in 0..11 {
-        let v = TAU * ring as f32 / 11.0 + look.seed_phase[0] * 0.015;
+    for ring in 0..9 {
+        let v = TAU * ring as f32 / 9.0 + look.seed_phase[0] * 0.015;
         let mut previous = project(0.0, v, look);
         for step in 1..=u_steps {
             let u = TAU * step as f32 / u_steps as f32;
@@ -306,8 +456,8 @@ fn build_lattice(field: &mut [FieldCell], look: &Look, w: usize, h: usize) {
         }
     }
 
-    for spoke in 0..9 {
-        let u = TAU * spoke as f32 / 9.0 + look.seed_phase[1] * 0.022;
+    for spoke in 0..7 {
+        let u = TAU * spoke as f32 / 7.0 + look.seed_phase[1] * 0.022;
         let mut previous = project(u, 0.0, look);
         for step in 1..=v_steps {
             let v = TAU * step as f32 / v_steps as f32;
@@ -372,12 +522,47 @@ fn paint(grid: &mut Grid, field: &[FieldCell], look: &Look, w: usize, h: usize) 
             *cell = Cell::with_bg(' ', look.far, look.void);
             let ux = (x as f32 - look.cx) / (w as f32 * (0.065 + look.aperture * 0.075));
             let uy = (y as f32 - look.cy) / (h as f32 * (0.055 + look.aperture * 0.065));
-            if ux * ux + uy * uy < 1.0 || sample.density <= 0.0 {
+            let umbra = ux * ux + uy * uy;
+            if umbra < 1.0 {
+                continue;
+            }
+            let light = 1.0 - (-sample.light * 0.34).exp();
+            if sample.density <= 0.0 {
+                if light > 0.115 {
+                    let ch = if light > 0.78 {
+                        '*'
+                    } else if light > 0.48 {
+                        direction_glyph(sample.light_tangent, false, false)
+                    } else if light > 0.23 {
+                        '~'
+                    } else {
+                        '.'
+                    };
+                    let color = lerp_color(look.body, look.hot, light);
+                    *cell =
+                        Cell::with_bg(ch, if light > 0.82 { look.white } else { color }, look.void);
+                    continue;
+                }
+
+                let px = (x as f32 - look.cx) / look.sx.max(1.0);
+                let py = (y as f32 - look.cy) / look.sy.max(1.0);
+                let radius = (px * px + py * py).sqrt();
+                let diffraction = (radius * (17.0 + look.gravity * 4.0) - look.phase * 0.28
+                    + look.seed_phase[2])
+                    .sin();
+                let azimuth = (py.atan2(px) * 7.0 + look.seed_phase[3]).cos();
+                if radius > 0.32
+                    && radius < 1.24
+                    && diffraction + azimuth * 0.22 > 1.18
+                    && unit(hash(look.seed, 0x4449_4646, x as u64, y as u64)) > 0.84
+                {
+                    *cell = Cell::with_bg('.', look.far, look.void);
+                }
                 continue;
             }
             let front = ((sample.depth + 0.8) / 1.6).clamp(0.0, 1.0);
             let mass = (sample.density / 2.5).clamp(0.0, 1.0);
-            let lit = (sample.light * look.flux).clamp(0.0, 1.0);
+            let lit = (light * look.flux + sample.response * 0.18).clamp(0.0, 1.0);
             let color = lerp_color(
                 lerp_color(look.far, look.body, front),
                 look.hot,
@@ -385,8 +570,11 @@ fn paint(grid: &mut Grid, field: &[FieldCell], look: &Look, w: usize, h: usize) 
             );
             let bright = front + lit + mass > 1.35;
             let crossing = sample.density > 2.8;
+            let response_mix = (sample.response * 0.32).clamp(0.0, 0.72);
+            let tangent =
+                sample.tangent * (1.0 - response_mix) + sample.light_tangent * response_mix;
             *cell = Cell::with_bg(
-                direction_glyph(sample.tangent, crossing, bright),
+                direction_glyph(tangent, crossing, bright),
                 if bright && lit > 0.72 {
                     look.white
                 } else {
@@ -440,10 +628,96 @@ mod tests {
     }
 
     #[test]
+    fn sol_reliquary_motion_middle() {
+        insta::assert_snapshot!(
+            "sol_reliquary_motion_t2_75",
+            text(&frame(80, 24, 42, 2.75, &defaults()))
+        );
+    }
+
+    #[test]
+    fn sol_reliquary_motion_later() {
+        insta::assert_snapshot!(
+            "sol_reliquary_motion_t7",
+            text(&frame(80, 24, 42, 7.0, &defaults()))
+        );
+    }
+
+    #[test]
+    fn sol_reliquary_open_aperture_variant() {
+        let mut p = defaults();
+        p[0] = 0.24;
+        p[1] = 1.45;
+        p[5] = 0.94;
+        insta::assert_snapshot!(
+            "sol_reliquary_open_aperture",
+            text(&frame(80, 24, 1701, 2.75, &p))
+        );
+    }
+
+    #[test]
+    fn sol_reliquary_small_clip() {
+        insta::assert_snapshot!(
+            "sol_reliquary_small_34x10",
+            text(&frame(34, 10, 7, 3.5, &defaults()))
+        );
+    }
+
+    #[test]
+    fn sol_reliquary_nearby_fold_049() {
+        let mut p = defaults();
+        p[0] = 0.49;
+        insta::assert_snapshot!("sol_reliquary_fold_049", text(&frame(80, 24, 314, 3.0, &p)));
+    }
+
+    #[test]
+    fn sol_reliquary_nearby_fold_051() {
+        let mut p = defaults();
+        p[0] = 0.51;
+        insta::assert_snapshot!("sol_reliquary_fold_051", text(&frame(80, 24, 314, 3.0, &p)));
+    }
+
+    #[test]
+    fn fold_sweep_gallery() {
+        let mut panels = Vec::new();
+        for fold in [0.15, 0.45, 0.49, 0.51, 0.85] {
+            let mut p = defaults();
+            p[0] = fold;
+            panels.push(format!(
+                "fold={fold:.2}\n{}",
+                text(&frame(56, 16, 314, 3.0, &p))
+            ));
+        }
+        insta::assert_snapshot!("sol_reliquary_fold_sweep", panels.join("\n\n"));
+    }
+
+    #[test]
+    fn seed_gallery() {
+        let panels = [7, 42, 1701]
+            .into_iter()
+            .map(|seed| {
+                format!(
+                    "seed={seed}\n{}",
+                    text(&frame(56, 16, seed, 2.75, &defaults()))
+                )
+            })
+            .collect::<Vec<_>>();
+        insta::assert_snapshot!("sol_reliquary_seed_gallery", panels.join("\n\n"));
+    }
+
+    #[test]
     fn same_inputs_are_cell_exact() {
         assert_eq!(
             frame(80, 24, 1701, 2.5, &defaults()),
             frame(80, 24, 1701, 2.5, &defaults())
+        );
+    }
+
+    #[test]
+    fn seeds_change_the_structure() {
+        assert_ne!(
+            text(&frame(80, 24, 41, 2.5, &defaults())),
+            text(&frame(80, 24, 42, 2.5, &defaults()))
         );
     }
 
