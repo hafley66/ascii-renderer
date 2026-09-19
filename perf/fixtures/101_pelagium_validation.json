@@ -1,0 +1,75 @@
+{
+  "status": "blocked",
+  "mode": "pelagium",
+  "art_input_number": "p01",
+  "art_run_name": "p01__crazy-astra-high",
+  "art_mode_path": "src/modes/_101_p01_crazy_astra_high.rs",
+  "starting_commit": "57b9baf",
+  "rendering_commit": "2ecaef468e619b8f6f3019011c54fb03f03f5621",
+  "binary_sha256": "df3d7fc54974fdf3b53ba6d9248e7b4351265a1797b1a673b526c25faaaf7001",
+  "mode_tests": {"command": "env -u NO_COLOR cargo test modes::_101", "passed": 12},
+  "full_unit_suite": {
+    "command": "env -u NO_COLOR cargo test",
+    "passed": 524,
+    "failed": 1,
+    "ignored": 18,
+    "failure": "morph::iterate_frame_tests::gem_bad_roll6_ansi_regression",
+    "actual": [14175131, 850398, 8769485, 2414016, 2860585, 0],
+    "expected": [9950827, 710305, 4748083, 2019066, 2976090, 0]
+  },
+  "integration_failures": [
+    {"test": "pause_reaches_the_screen_without_replaying_stale_frames", "seconds": 2.126073875, "limit_seconds": 2.0},
+    {"test": "slow_terminal_drops_frames_instead_of_slowing_the_animation", "seed": 44, "expected_seed": 46, "minimum_seed": 45},
+    {"test": "nightglass_seed_42", "args": ["42", "nightglass", "moss"], "size": [80, 24], "time": 0},
+    {"test": "nightglass_rain_running_t9", "args": ["7", "nightglass", "ember", "26", "1.2"], "size": [80, 24], "time": 9}
+  ],
+  "e2e_command": [
+    "scripts/13_e2e.sh", "--mode", "pelagium", "--binary",
+    "/Users/chrishafley/.agent/lanes/art-crazy-astra-high/target/release/ascii-renderer",
+    "--directory", "perf/results/pelagium-e2e"
+  ],
+  "e2e_cases": {
+    "backpressure": "failed",
+    "workflow": "passed",
+    "seed-search": "passed",
+    "pin-inputs": "passed",
+    "bad-400x200": "failed",
+    "max-400x200": "not_run"
+  },
+  "backpressure": {
+    "knob_applied_ms": 1003.1042079999679,
+    "limit_ms": 250,
+    "terminal_wait_us": 0,
+    "required_terminal_wait_us_exclusive": 500000,
+    "quit_subcase": "not_run"
+  },
+  "large_failure": {
+    "seed": 42,
+    "theme": "",
+    "terminal": [400, 200],
+    "grid": [366, 199],
+    "knobs": {"APERTURE": 0.5, "COUPLING": 0.699999988079071, "FLOW": 0.6000000238418579, "TENSION": 0.550000011920929, "TRAIL": 0.6499999761581421},
+    "entry": ["42", "demo"],
+    "keys": ["/", "pelagium", "\r", "a"],
+    "error": "AssertionError: art pixels did not change during animation",
+    "guard_reason": "observer_requested_stop",
+    "observer_stop_reason": "cleanup",
+    "frames": 27,
+    "first_time": 0.0007289999630302191,
+    "last_time": 1.641229271888733,
+    "last_changed_cells": 3803,
+    "render_us": {"min": 4339, "median": 4498, "max": 6997},
+    "peak_sampled_owned_kib": 197568,
+    "peak_sampled_iterm_kib": 458336,
+    "guard_limits_changed": false
+  },
+  "unexecuted_after_stop": [
+    "max-400x200",
+    "backpressure separate quit-latency subcase",
+    "remaining bad-400x200 controls, cadence and restoration assertions",
+    "100 simultaneous-max frames at 2000x2000",
+    "100 random-knob frames at 2000x2000",
+    "2000x2000 input latency with 10-second consumer stall"
+  ],
+  "boop_ask": "Should the parent expand scope to resolve the shared validation failures and authorize rerunning the remaining guarded checks?"
+}
