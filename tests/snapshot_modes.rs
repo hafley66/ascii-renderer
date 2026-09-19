@@ -1446,3 +1446,20 @@ fn synaptic_bloom_seed_42() {
 fn synaptic_bloom_breathing_t9() {
     insta::assert_snapshot!(render_t(&["42", "synaptic-bloom", "ember"], "9"));
 }
+
+#[test]
+fn heliotrope_seed_42() {
+    insta::with_settings!({snapshot_path => "../src/modes/snapshots"}, {
+        insta::assert_snapshot!("heliotrope_cli_seed_42", render(&["42", "heliotrope", "ember"]));
+    });
+}
+
+#[test]
+fn heliotrope_leaning_dusk_t9() {
+    insta::with_settings!({snapshot_path => "../src/modes/snapshots"}, {
+        insta::assert_snapshot!(
+            "heliotrope_cli_leaning_t9",
+            render_t(&["1701", "heliotrope", "ember", "1.4", "1.1", "0.6"], "9")
+        );
+    });
+}
