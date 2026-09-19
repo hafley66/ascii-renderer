@@ -57,6 +57,7 @@ const L_SUN: u64 = 0x37;
 const L_CAM: u64 = 0x38;
 const L_LEAF: u64 = 0x39;
 const L_TIE: u64 = 0x3A;
+const L_WOOD: u64 = 0x3B;
 
 /// Growth light is refreshed on this stride; between refreshes the tips read the
 /// occlusion the last refresh measured.
@@ -468,9 +469,9 @@ impl Look {
         let (cs, sn) = cam_az.sin_cos();
         let sun_xr = sun.x * cs - sun.z * sn;
         let sky_h = horizon.max(1.0);
-        let sun_px = cx + sun_xr * w as f32 * 0.40;
-        let sun_py = sky_h * 0.10 + (1.0 - sun.y) * sky_h * 0.72;
-        let sun_r = (ppu * 0.075).max(0.8);
+        let sun_px = cx + sun_xr * w as f32 * 0.42;
+        let sun_py = sky_h * 0.08 + (1.0 - sun.y) * sky_h * 0.66;
+        let sun_r = (ppu * 0.085).max(0.9);
 
         let accent = palette[3];
         let text = palette[4];
@@ -649,10 +650,12 @@ fn grow(l: &Look, field: &mut Field, st: &mut Stand) {
     st.attr_light.clear();
 
     let rad = V3::new(0.48 * k.crown, 0.38 * k.crown, 0.42 * k.crown);
+    // The crown leans sunward, but never so far that the root cannot reach it.
+    let off = (0.45 * k.lean).min(0.46);
     let center = V3::new(
-        l.sun_seed.x * 0.30 * k.lean,
+        l.sun_seed.x * off,
         0.60 + 0.14 * k.crown,
-        l.sun_seed.z * 0.30 * k.lean,
+        l.sun_seed.z * off,
     );
     for i in 0..l.budget.attractors as u64 {
         let r = unit(hash(l.seed, L_ATTR, i, 0)).cbrt();
@@ -681,7 +684,7 @@ fn grow(l: &Look, field: &mut Field, st: &mut Stand) {
     });
     st.tips.push(0);
 
-    let reach = 0.30 + 0.35 * k.crown;
+    let reach = 0.40 + 0.35 * k.crown;
     let step = 0.05;
     let mut forks: u64 = 0;
 
@@ -740,7 +743,7 @@ fn grow(l: &Look, field: &mut Field, st: &mut Stand) {
             let mut want = st.acc[t].norm();
             // Only a shoot that is actually starved of light reaches for it, so
             // well-lit limbs keep the form the attractors gave them.
-            let starved = (1.0 - exposure).max(0.0);
+            let starved = (1.0 - exposure * 0.8).max(0.0);
             want = want
                 .add(l.sun_seed.mul(k.lean * 1.3 * starved * starved))
                 .norm();
@@ -903,22 +906,31 @@ fn paint_sky(grid: &mut Grid, l: &Look, sc: &mut Scratch) {
     let rows = grid.len().min(l.h);
     let sun_gx = l.sun_px / l.aspect;
     let reach = (l.sun_r * 5.5).max(3.0);
+    let reach2 = reach * reach;
+    let glow_k = 4.0 * l.sun_r * l.sun_r;
     for y in 0..rows {
         let v = (y as f32 / l.horizon.max(1.0)).clamp(0.0, 1.0);
         let row = lerp_color(l.sky_top, l.sky_low, v * v * v);
         let band = smoothstep((v - 0.82) / 0.18) * 0.28;
         let row = lerp_color(row, l.sky_low, band);
+        let fill = Cell::with_bg(' ', Color::Reset, row);
+        let span = grid[y].len().min(l.w);
+        grid[y][..span].iter_mut().for_each(|c| *c = fill);
         let dy = y as f32 - l.sun_py;
-        for x in 0..grid[y].len().min(l.w) {
+        if dy * dy >= reach2 {
+            continue;
+        }
+        // Only the halo patch pays for the radial falloff.
+        let x0 = (((sun_gx - reach) * l.aspect).floor().max(0.0) as usize).min(span);
+        let x1 = (((sun_gx + reach) * l.aspect).ceil().max(0.0) as usize + 1).min(span);
+        for x in x0..x1 {
             let dx = x as f32 / l.aspect - sun_gx;
-            let d = (dx * dx + dy * dy).sqrt();
-            let glow = (0.62 / (1.0 + (d / (2.0 * l.sun_r)).powi(2)) - 0.03).clamp(0.0, 0.6);
-            let bg = if d < reach {
-                lerp_color(row, l.sun_mid, glow)
-            } else {
-                row
-            };
-            grid[y][x] = Cell::with_bg(' ', Color::Reset, bg);
+            let d2 = dx * dx + dy * dy;
+            if d2 >= reach2 {
+                continue;
+            }
+            let glow = (0.62 / (1.0 + d2 / glow_k) - 0.03).clamp(0.0, 0.6);
+            grid[y][x] = Cell::with_bg(' ', Color::Reset, lerp_color(row, l.sun_mid, glow));
         }
     }
     let motes = ((l.w * l.h) / 500).clamp(8, 36);
@@ -964,13 +976,13 @@ fn paint_sun(grid: &mut Grid, l: &Look) {
                 Some(Cell::with_bg(SUN_CORE, l.sun_core, l.sun_mid))
             } else if d < r * 1.05 {
                 Some(Cell::with_bg(SUN_RIM, l.sun_core, l.sun_mid))
-            } else if d < r * 1.7 && u < 0.5 {
+            } else if d < r * 1.75 && u < 0.34 {
                 Some(Cell::with_bg(
                     CORONA[(u * 4.0) as usize % 4],
                     l.sun_mid,
                     bg_at(grid, x as usize, y as usize),
                 ))
-            } else if d < r * 2.6 && u < 0.14 {
+            } else if d < r * 2.9 && u < 0.09 {
                 Some(Cell::with_bg(
                     ':',
                     darken(l.sun_mid, 40),
@@ -1156,11 +1168,16 @@ fn ink_wood(grid: &mut Grid, l: &Look, s: &Stamp, bright: &mut Vec<(u16, u16, Co
     let base = lerp_color(l.bark_dead, l.bark_live, s.surv);
     let sunn = lerp_color(base, l.sun_mid, 0.30 * smoothstep((s.light - 0.45) / 0.55));
     let col = lerp_color(sunn, l.sky_low, haze);
-    let stride = (1.0 / (0.30 + 0.70 * s.surv)).round().max(1.0) as usize;
-    for i in (0..=samples).step_by(stride) {
+    // Shade-starved wood keeps its place but loses ink: a stable halftone keyed
+    // to the world cell, not to the frame, so thinning is smooth in time.
+    let ink = 0.55 + 0.45 * s.surv;
+    for i in 0..=samples {
         let f = i as f32 / samples.max(1) as f32;
         let x = s.ax + dx * f;
         let y = s.ay + dy * f;
+        if ink < 1.0 && unit(hash(l.seed, L_WOOD, x as u64 & !1, y as u64)) > ink {
+            continue;
+        }
         plot(grid, x, y, ch, col);
         if s.w > 1.0 {
             plot(grid, x - 1.0, y, ch, darken_frac(col, 0.7));
@@ -1303,15 +1320,14 @@ mod tests {
     }
 
     fn diff_ratio(a: &str, b: &str) -> f64 {
-        let mut diff = 0usize;
-        let mut total = 0usize;
-        for (ca, cb) in a.chars().zip(b.chars()) {
-            total += 1;
-            if ca != cb {
-                diff += 1;
-            }
-        }
-        diff as f64 / total.max(1) as f64
+        let diff = a.chars().zip(b.chars()).filter(|(x, y)| x != y).count();
+        diff as f64 / a.chars().count().max(1) as f64
+    }
+
+    /// A cell-level comparison of two frames, used by the time and parameter
+    /// checks to prove motion and control response actually reach the grid.
+    fn cell_diff(a: &Grid, b: &Grid) -> f64 {
+        diff_ratio(&text(a), &text(b))
     }
 
     #[test]
@@ -1345,12 +1361,38 @@ mod tests {
     }
 
     #[test]
-    fn heliotrope_lean_near_midpoint() {
+    fn heliotrope_lean_below_midpoint() {
         let mut k = knobs();
         k[0] = 0.95;
         insta::assert_snapshot!("heliotrope_lean_095", text(&frame(80, 24, 42, 0.0, &k)));
+    }
+
+    #[test]
+    fn heliotrope_lean_above_midpoint() {
+        let mut k = knobs();
         k[0] = 1.05;
         insta::assert_snapshot!("heliotrope_lean_105", text(&frame(80, 24, 42, 0.0, &k)));
+    }
+
+    /// Growth owns the geometry from the seed alone; time may only move the
+    /// light. This is the temporal identity the animation depends on.
+    #[test]
+    fn skeleton_is_time_invariant() {
+        fn skeleton(seed: u64, time: f32) -> Vec<(f32, f32, f32)> {
+            let palette = crate::color::make_palette(seed);
+            let values = knobs();
+            let p: [f32; KNOBS] = std::array::from_fn(|i| values[i]);
+            let look = Look::new(seed, 80, 24, &palette, time, &p);
+            let mut field = Field::default();
+            field.ensure(FX, FY, FX);
+            let mut st = Stand::default();
+            grow(&look, &mut field, &mut st);
+            st.nodes.iter().map(|n| (n.pos.x, n.pos.y, n.pos.z)).collect()
+        }
+        let base = skeleton(42, 0.0);
+        assert!(base.len() > 60, "stand is too small to judge: {}", base.len());
+        assert_eq!(base, skeleton(42, 21.0));
+        assert_ne!(base, skeleton(7, 0.0));
     }
 
     #[test]
@@ -1373,27 +1415,62 @@ mod tests {
     #[test]
     fn time_moves_the_light() {
         let k = knobs();
-        assert_ne!(
-            text(&frame(90, 30, 42, 0.0, &k)),
-            text(&frame(90, 30, 42, 6.0, &k))
-        );
+        let start = frame(90, 30, 42, 0.0, &k);
+        let soon = frame(90, 30, 42, 0.05, &k);
+        let later = frame(90, 30, 42, 6.0, &k);
+        let step = cell_diff(&start, &soon);
+        let sweep = cell_diff(&start, &later);
+        assert!(step < 0.03, "adjacent frames churn {step:.3} of the grid");
+        assert!(sweep > 0.05, "sun drift barely changed the frame: {sweep:.3}");
+    }
+
+    /// Ink occupancy on a coarse block lattice: the structure of the stand
+    /// without the per-cell glyph churn that growth amplification causes.
+    fn ink_blocks(grid: &Grid) -> Vec<bool> {
+        let h = grid.len();
+        let w = grid.iter().map(|r| r.len()).min().unwrap_or(0);
+        let mut out = Vec::new();
+        let mut y = 0;
+        while y + 2 <= h {
+            let mut x = 0;
+            while x + 4 <= w {
+                let mut ink = false;
+                for row in grid.iter().take(h).skip(y).take(2) {
+                    for cell in row.iter().skip(x).take(4) {
+                        ink |= cell.ch != ' ';
+                    }
+                }
+                out.push(ink);
+                x += 4;
+            }
+            y += 2;
+        }
+        out
+    }
+
+    fn block_diff(a: &[bool], b: &[bool]) -> f64 {
+        let diff = a.iter().zip(b).filter(|(x, y)| x != y).count();
+        diff as f64 / a.len().max(1) as f64
     }
 
     #[test]
     fn nearby_lean_is_continuous() {
         let mut k = knobs();
-        k[0] = 0.2;
-        let far_low = text(&frame(80, 24, 42, 0.0, &k));
-        k[0] = 1.8;
-        let far_high = text(&frame(80, 24, 42, 0.0, &k));
         k[0] = 0.95;
-        let mid_low = text(&frame(80, 24, 42, 0.0, &k));
+        let near_lo = ink_blocks(&frame(80, 24, 42, 0.0, &k));
         k[0] = 1.05;
-        let mid_high = text(&frame(80, 24, 42, 0.0, &k));
-        let near = diff_ratio(&mid_low, &mid_high);
-        let far = diff_ratio(&far_low, &far_high);
-        assert!(near < 0.2, "nearby lean values differ by {near}");
-        assert!(far > near * 2.0, "lean sweep is flat: {near} vs {far}");
+        let near_hi = ink_blocks(&frame(80, 24, 42, 0.0, &k));
+        k[0] = 0.2;
+        let far_lo = ink_blocks(&frame(80, 24, 42, 0.0, &k));
+        k[0] = 1.8;
+        let far_hi = ink_blocks(&frame(80, 24, 42, 0.0, &k));
+        let other_seed = ink_blocks(&frame(80, 24, 7, 0.0, &knobs()));
+        let near = block_diff(&near_lo, &near_hi);
+        let far = block_diff(&far_lo, &far_hi);
+        let seed = block_diff(&near_lo, &other_seed);
+        assert!(near < 0.10, "nearby lean values moved {near:.3} of the blocks");
+        assert!(far > near * 2.5, "lean sweep barely deforms: {near:.3} vs {far:.3}");
+        assert!(seed > far, "seeds must reorganize more than a control does");
     }
 
     #[test]
