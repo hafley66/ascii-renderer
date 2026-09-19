@@ -1,0 +1,29 @@
+---
+source: tests/snapshot_modes.rs
+assertion_line: 1447
+expression: "render_t(&[\"42\", \"synaptic-bloom\", \"ember\"], \"9\")"
+---
+                                                                                
+                                                             -                  
+                           OO Oooo                   ooo----                    
+       \     OOOO         O       o             OOooo   /----  - -              
+        \\ooO    OOOo     O       /         OOOO     ooo/  o---    //  |/       
+            ---    o*o   O        /      ##O       oo    o o     ///  //        
+       o  oooo      oO OO              █## #######OO OOOooooo--////   ||        
+      o  o              #             █           O##           o/    o|        
+      o  O              █ o           █       o###              O      o        
+     oO  O               █*o          ████████*█###             O      O        
+      OOOO                o█         ██  ---ooo    ##             O   O         
+          O######      ███████      █                 O            OOO          
+                 #██████       ██  ---o OO     ooo    Oo\           #           
+                  █             █ █    Oo OO OOo@oOOOO   \\  -      █     \     
+                ██               ██      oOOO  ooo██       --       █      \    
+               █                    █    O     ███               ███        \   
+           ####             O       ooo #         o██████████ ███           |   
+       O ##oo O              O      o@o  #         ooOO      ##             |   
+        OOo   O               OO    ooo  #           █O        #          oo    
+        oo    O                 O##########         ██ OO       ####OO OOo      
+          o oo               OO OO          █    o   ██ OOO   \ O    o          
+          --  oo             O               ████*███  ████OOOOOOO    o         
+                o                          - -----             \\-O- -o         
+                                                  -ooooo         O-

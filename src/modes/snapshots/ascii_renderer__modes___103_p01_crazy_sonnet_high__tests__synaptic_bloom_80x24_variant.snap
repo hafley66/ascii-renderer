@@ -1,0 +1,29 @@
+---
+source: src/modes/_103_p01_crazy_sonnet_high.rs
+assertion_line: 787
+expression: "text(&frame(80, 24, 42, 20.0, &k))"
+---
+         --      ----oooooO              / \                                    
+         oo                O           //    \-              --                 
+      |    oooOOO          O        --/        \\        ----                   
+       |         O     | #OOOO  oooo             o     o-      |       /        
+        \--OOooooo---   \-    Oo########         o    o        |    / /         
+         oO        -| ### --o O         ########  o  ooooooo-- |  //   |  //    
+     /|o   O          ##     oo       / █      OOO   O    -----  o     | /  ----
+   -//\     #          █     o o     / █     ooo    O         |  oo  o/   ---   
+---\oo \    #          █        ------ █   /o     # #         |     o    o      
+      oO/OO#        '   █            ------████######O       o      O    O      
+      oooo  █            ██            ██ |  /       OOOOOooo        O   O      
+    Oo    \-|████      ███████   \   ██   |  /              o-\      #  OO      
+    O         █████████       ███ \-█-- -/  |   ooo           --     # O        
+    OOO   #███              \    ██*o  o     |  o@o         ---     ##O         
+       O O#                 \     o*█  O     o  ooo    \\          ██       |   
+         #             \\    |     o█    OO o    o*█    \o/      ██          |  
+         O               --- |     ooo     Oo     o █████*██ ████            |  
+         O           \---   \|     o@o      O        █   oo █#O             /|  
+          ooo     -|     \   oO    ooo      #        █     o   OO          o    
+         o   ooo--        o    OOOOOOO       #       █      OOOO OOOoo\ooo      
+         |   .    /--oooooOoOOOO#######███    #       █       OOOO    \         
+         |                                ███████   ██ #######O--\     \        
+         \                   . .   '            █████             \    \        
+          \     '                                                  \
