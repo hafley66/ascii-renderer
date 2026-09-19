@@ -12,7 +12,7 @@ use std::f32::consts::{PI, TAU};
 pub(super) struct Heliotrope;
 pub(super) static MODE: Heliotrope = Heliotrope;
 
-const NAME: &str = "heliotrope-flash41-flash41";
+const NAME: &str = "heliotrope-flash41";
 const KNOBS: usize = 12;
 const HELP: &str = "heliotrope-flash41: a sun-chasing vine grown in 3d, thinned by its own shade [lean] [crown] [fork] [crowd] [light] [prune] [leaf] [sap] [sun] [cam] [haze] [aspect]";
 

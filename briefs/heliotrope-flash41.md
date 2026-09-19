@@ -1,4 +1,4 @@
-# heliotrope-flash41-flash41
+# heliotrope-flash41
 
 One coupled system: a vine grown by 3D space colonization toward the dawn sun,
 lit by that sun through its own accumulated wood, thickened in proportion to the
