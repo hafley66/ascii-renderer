@@ -1436,3 +1436,13 @@ fn reef_seed_42() {
 fn reef_drifting_t9() {
     insta::assert_snapshot!(render_t(&["1701", "reef", "moss", "6", "2200"], "9"));
 }
+
+#[test]
+fn fairy_ring_seed_42() {
+    insta::assert_snapshot!(render(&["42", "fairy-ring", "deep"]));
+}
+
+#[test]
+fn fairy_ring_mature_ring_t12() {
+    insta::assert_snapshot!(render_t(&["7", "fairy-ring", "ember", "21", "0.7"], "12"));
+}

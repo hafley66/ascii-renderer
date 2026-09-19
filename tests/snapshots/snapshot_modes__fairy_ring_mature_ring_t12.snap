@@ -1,0 +1,29 @@
+---
+source: tests/snapshot_modes.rs
+assertion_line: 1447
+expression: "render_t(&[\"7\", \"fairy-ring\", \"ember\", \"21\", \"0.7\"], \"12\")"
+---
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                           ooo       ooo                        
+                                          ooooo     ooooo                       
+                                o          ooo       ooo         OOO            
+             ooo                            |         |     OOOOOoooO           
+            ooooo       OOOOO                         |    OOooOoooooO          
+             ooo       OoooooO                OOO          OooooOoooO           
+              |o       OoooooO               OoooO         OO:::OO|O            
+  - - -- - -  -- --o   O:::::O- --  ooo -  -OoooooO- -      OOOOO ||  - --   ---
+, ,             .       OOOOO~.    ,ooo,---  O:::O;     o   , ||  ||.     .   . 
+ ;    ;              ~    ||      ~ ooo -++-- OOO ~     ,     ||                
+         ,          ~   ; ||   . ~.  |.  ++----||-  -     .                     
+   .           ~                    .|     -+-  ++--- .               ~.      ..
+  ;.        ~  ;   ,                 ,  -+-+++-------                  ~        
+                ~. ; .       ..         - -   ;+ + --   ;          ~            
+          ;           ;.          .     .---        -- .         ~    . .       
+                           .~         ,  ,--                             .
