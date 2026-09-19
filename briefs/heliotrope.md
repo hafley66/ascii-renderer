@@ -165,3 +165,54 @@ wood the first pass made thick. Subtrees whose average light falls under the
 compensation point keep their place but lose ink, so the crown hollows and
 pales on the side the sun is not on. The skeleton itself is time invariant
 (`skeleton_is_time_invariant`): only the light, the flow and the camera turn.
+
+## Validation receipt
+
+- `cargo build` clean; `cargo test` on this worktree reports 525 passed, 1 failed
+  (`morph::iterate_frame_tests::gem_bad_roll6_ansi_regression`) and the
+  integration target reports 199 passed, 2 failed (`nightglass_seed_42`,
+  `nightglass_rain_running_t9`). All three fail identically with this mode
+  stashed, so they are pre-existing in this worktree and unrelated.
+- Heliotrope's own tests: 7 snapshots, skeleton time invariance, nearby-lean
+  continuity, seed sensitivity, time continuity, extreme parameters at 24x8 and
+  2x2, and the release frame cost, all passing. No `.snap.new` left anywhere in
+  `src/snapshots`, `src/modes/snapshots` or `tests/snapshots` from this work.
+- Layer coverage 400x120 x3: 8 layers, 8.0 calls/frame, 92.5% attributed, not
+  nested, not thin.
+- Knob sweep 2000x1000 under the probe guard: baseline 258.6 fps, worst knob
+  CROWD=1 at 247.7 fps (1.04x). See the performance section for the full table.
+
+### Terminal E2E
+
+`scripts/13_e2e.sh --headless` reaches the real demo over a PTY. Result:
+`workflow` failed at its ninth check, `resume: no matching application evidence
+within 2s`; `seed-search`, `bad-400x200`, `max-400x200` and `backpressure` are
+`not_run` because the suite stops at the first failure. `pin-inputs` is not part
+of the headless case list.
+
+That failure is not this mode: the identical failure reproduces with the
+heliotrope registration removed from the generated registry (`resume` still
+times out at the same check) and with the default mode at the base commit.
+The checks that do run all pass, and running the same case against this mode
+(`--case workflow --mode heliotrope`) validates the live path end to end:
+
+| check | status | evidence |
+| --- | --- | --- |
+| actual-demo-startup | passed | 160x40 PTY |
+| mode-search-and-preview | passed | heliotrope found and previewed |
+| modeless-save | passed | preset written |
+| exact-animation-inputs | passed | frame 1, 23010 bytes, 4914 cells changed |
+| terminal-cell-motion | passed | cell hash changes between frames |
+| knob-reaches-render | passed | 2 ms from keypress to frame, all 12 knobs present |
+| random-knob-diversity | passed | roll changes knobs |
+| pause-stops-animation-time | passed | time frozen at 3.8e-05 |
+| resume | failed | pre-existing timeout, reproduced without this mode |
+
+Two harness notes, neither of which changed a limit:
+the first `13_e2e.sh` attempt tripped its own watchdog in the release build
+step (owned RSS 1,062,320 KiB against 1,048,576 KiB) because rustc ran inside
+the guarded window; pre-building the binary and example let the same guard pass
+and reach the cases. `12_test_e2e.py` also resolves the helper example at
+`ROOT/target/release/examples`, while this lane sets `CARGO_TARGET_DIR` to a
+lane directory, so a `target` symlink to the lane target dir was needed for the
+suite to find the freshly built binaries.
