@@ -1436,3 +1436,13 @@ fn reef_seed_42() {
 fn reef_drifting_t9() {
     insta::assert_snapshot!(render_t(&["1701", "reef", "moss", "6", "2200"], "9"));
 }
+
+#[test]
+fn synaptic_bloom_seed_42() {
+    insta::assert_snapshot!(render(&["42", "synaptic-bloom", "moss"]));
+}
+
+#[test]
+fn synaptic_bloom_breathing_t9() {
+    insta::assert_snapshot!(render_t(&["42", "synaptic-bloom", "ember"], "9"));
+}

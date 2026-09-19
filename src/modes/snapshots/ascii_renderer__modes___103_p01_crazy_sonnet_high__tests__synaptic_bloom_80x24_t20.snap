@@ -1,0 +1,29 @@
+---
+source: src/modes/_103_p01_crazy_sonnet_high.rs
+assertion_line: 779
+expression: "text(&frame(80, 24, 42, 20.0, &knobs()))"
+---
+                                                                                
+                                                          ---                   
+             o             OOOoo                   ooo----       /              
+       \    O*OO          O      o            OOOoo     --------/   /   /       
+        \ooo o  O----   OO       /        OOOOO     oo/   o---   |  // // /     
+           ------  O    O       //       O #      oo    ooo     | /// //        
+       --------     OOOO        |       █## ######   OOooooo----///   ||        
+      o  o     ---\    #       |      █          O##O           o/    o|        
+     o   O         \   █              █        ###              O      o        
+     oO  O              ██          ---█████████##              O      O        
+       OOO                █o     \  █ █-----o     ###             O   O         
+         OO#####       ████*██    \---               OO            OOO          
+                ##█████    o  ███  █ ---     O  ooo  O o\           #           
+             \\   █              ███    oo   o Oo@oOO    \\   -     █    \      
+     /         \██          /      ██    o OOoO ooo        ---      █     \     
+     /        /█   ------  /        █     O-o o   ██             █ █       \    
+     |     ####          --o       ooo  //-    o ---ooo██████████          |    
+     \ O###oo O             O      o@o//  #  / /-    █ ooO   ##            |    
+      \ OO   O               OOO   ooo    #-- /      █   O     #          oo    
+       o     O           -      OO#########-//       █   O      ####OOOO o      
+        o   o        ---- OOOOOOOO         /██      o*█  O O  #O|O    o         
+        ---- o   ----    O                    ████████ ████OOOOOOO    o         
+       -      o--        o o     o /        ---------            \O--o          
+                           ooo---*-                  -oooo       O-
