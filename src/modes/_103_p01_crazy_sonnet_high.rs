@@ -1,4 +1,4 @@
-//! synaptic-bloom: dendritic growth coupled to its own density field. Design: `plans/synaptic-bloom.md`.
+//! synaptic-bloom: dendritic growth coupled to its own density field. Design: `plans/1_synaptic_bloom.md`.
 //! Author: Claude Sonnet 5. Written: 2026-09-19.
 
 use crate::_0_profile::measure_layer;
