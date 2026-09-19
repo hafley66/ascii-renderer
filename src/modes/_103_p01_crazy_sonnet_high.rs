@@ -489,7 +489,7 @@ fn draw(frame: &mut ModeFrame<'_>, p: &[f32; KNOBS]) {
     if w == 0 || h == 0 {
         return;
     }
-    let ganglion = Ganglion::build(frame.seed, w, h, p);
+    let ganglion = measure_layer(NAME, "grow", || Ganglion::build(frame.seed, w, h, p));
     let aspect = p[12].max(0.25);
     let theta = frame.time * p[9];
     let growth_frac = breathing_frac(frame.time);
