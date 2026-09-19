@@ -35,6 +35,7 @@ mod _101_p01_crazy_astra_high;
 mod _102_p01_crazy_opus_high;
 mod _103_p01_crazy_sonnet_high;
 mod _104_p01_omp_flash41_max;
+mod _105_p01_glm53flash_max;
 
 #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn register_all(registry: &mut crate::registry::ModeRegistry) {
@@ -73,4 +74,5 @@ pub(crate) fn register_all(registry: &mut crate::registry::ModeRegistry) {
     registry.add(&_102_p01_crazy_opus_high::MODE);
     registry.add(&_103_p01_crazy_sonnet_high::MODE);
     registry.add(&_104_p01_omp_flash41_max::MODE);
+    registry.add(&_105_p01_glm53flash_max::MODE);
 }
