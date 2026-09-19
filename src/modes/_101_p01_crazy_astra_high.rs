@@ -446,11 +446,152 @@ mod tests {
     }
 
     #[test]
-    fn pelagium_foundation() {
+    fn pelagium_canonical() {
         insta::assert_snapshot!(
             "pelagium_canonical",
             plain(&frame(80, 24, 42, 0.0, &defaults()))
         );
+    }
+
+    macro_rules! snapshot {
+        ($name:ident, $w:expr, $h:expr, $time:expr, $knobs:expr) => {
+            #[test]
+            fn $name() {
+                insta::assert_snapshot!(
+                    stringify!($name),
+                    plain(&frame($w, $h, 42, $time, &$knobs))
+                );
+            }
+        };
+    }
+    snapshot!(pelagium_t4, 80, 24, 4.0, defaults());
+    snapshot!(pelagium_t11, 80, 24, 11.0, defaults());
+    snapshot!(pelagium_open, 80, 24, 4.0, [0.82, 0.2, 0.95, 0.6, 0.4]);
+    snapshot!(pelagium_small, 24, 9, 0.0, defaults());
+    snapshot!(
+        pelagium_aperture049,
+        80,
+        24,
+        0.0,
+        [0.49, 0.55, 0.7, 0.6, 0.65]
+    );
+    snapshot!(
+        pelagium_aperture051,
+        80,
+        24,
+        0.0,
+        [0.51, 0.55, 0.7, 0.6, 0.65]
+    );
+    snapshot!(
+        pelagium_max,
+        80,
+        24,
+        7.0,
+        std::array::from_fn(|i| PARAMS[i].max)
+    );
+
+    #[test]
+    fn registered_frames_preserve_identity_and_live_controls() {
+        let mode = crate::registry::registered_mode("pelagium").unwrap();
+        assert_eq!(mode.name(), MODE.name());
+        assert!(mode.animation() == AnimKind::Iterate);
+        let p = defaults();
+        let canonical = frame(80, 24, 42, 4.0, &p);
+        for seed in [7, 913] {
+            assert_ne!(canonical, frame(80, 24, seed, 4.0, &p));
+        }
+        assert_ne!(canonical, frame(80, 24, 42, 11.0, &p));
+        for i in 0..PARAMS.len() {
+            let mut changed = p;
+            changed[i] = PARAMS[i].max;
+            assert_ne!(
+                canonical,
+                frame(80, 24, 42, 4.0, &changed),
+                "{}",
+                PARAMS[i].key
+            );
+        }
+        // Re-entry after seeds, time and knobs change must reproduce every color.
+        assert_eq!(canonical, frame(80, 24, 42, 4.0, &p));
+        let a = frame(80, 24, 42, 4.0, &[0.49, 0.55, 0.7, 0.6, 0.65]);
+        let b = frame(80, 24, 42, 4.0, &[0.51, 0.55, 0.7, 0.6, 0.65]);
+        let changed = a
+            .iter()
+            .flatten()
+            .zip(b.iter().flatten())
+            .filter(|(a, b)| a.ch != b.ch)
+            .count();
+        assert!(
+            changed > 0 && changed < 80 * 24 / 5,
+            "nearby control changed {changed} cells"
+        );
+    }
+
+    #[test]
+    fn clipping_and_invalid_knobs_are_bounded() {
+        for (w, h) in [(0, 0), (0, 7), (1, 1), (2, 3), (7, 2), (24, 9)] {
+            for p in [
+                defaults(),
+                std::array::from_fn(|i| PARAMS[i].min),
+                std::array::from_fn(|i| PARAMS[i].max),
+            ] {
+                let result = frame(w, h, 913, 11.0, &p);
+                assert_eq!(result.len(), h);
+                assert!(
+                    result
+                        .iter()
+                        .all(|row| row.len() == w && row.iter().all(|cell| cell.ch.is_ascii()))
+                );
+            }
+        }
+        assert_eq!(
+            frame(80, 24, 42, 4.0, &defaults()),
+            frame(80, 24, 42, 4.0, &[f32::NAN; 5])
+        );
+    }
+
+    #[test]
+    fn energy_and_strain_have_reciprocal_effects() {
+        let mut p = defaults();
+        let coupled = solve(42, 4.0, &p);
+        p[2] = 0.0;
+        let uncoupled = solve(42, 4.0, &p);
+        assert_eq!(uncoupled.strain, [0.0; N]);
+        assert!(coupled.strain.iter().any(|x| x.abs() > 0.02));
+        assert!(
+            coupled
+                .energy
+                .iter()
+                .zip(uncoupled.energy)
+                .any(|(a, b)| (a - b).abs() > 0.001)
+        );
+        // Each primary dimension traverses one continuous geometric system.
+        for index in 0..5 {
+            let mut previous = None;
+            for f in [0.0, 0.25, 0.49, 0.5, 0.51, 0.75, 1.0] {
+                let mut p = defaults();
+                p[index] = PARAMS[index].min + (PARAMS[index].max - PARAMS[index].min) * f;
+                let m = solve(42, 4.0, &p);
+                let points: Vec<_> = (0..32)
+                    .map(|i| surface(&m, i as f32 * TAU / 32.0, 1.2, &p))
+                    .collect();
+                if let Some((f0, before)) = previous {
+                    let before: Vec<Vertex> = before;
+                    let movement = points
+                        .iter()
+                        .zip(before)
+                        .map(|(a, b)| (a.x - b.x).abs() + (a.y - b.y).abs() + (a.z - b.z).abs())
+                        .sum::<f32>()
+                        / 32.0;
+                    assert!(
+                        movement < 2.0 * (f - f0),
+                        "{} moved {movement}",
+                        PARAMS[index].key
+                    );
+                }
+                previous = Some((f, points));
+            }
+        }
     }
 
     #[test]
