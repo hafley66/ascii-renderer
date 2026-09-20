@@ -43,3 +43,7 @@ Checkpoint 2 verified: commit dac1186, module and CLI green, the pre-existing fa
 ## 5. 2026-09-20T06:12:40-0400 (recorded at receipt) | parent go for checkpoint 4 (boop m-686add2f from herd)
 
 Checkpoint 3 verified: commit 0c407dc, the lantern wave drives flash, shimmer and twinkle coherently, phase snapshots at t4 and t9. Go for checkpoint 4/5 (seeded structural variation and sweep hardening: 3-seed snapshots, 5-value sweep with adjacent midpoints, frame_cost budget, layer coverage). Same protocol: commit, hail the receipt, end your turn.
+
+## 6. 2026-09-20T06:20:05-0400 (recorded at receipt) | parent go for checkpoint 5 (boop m-08c1b6a1 from herd)
+
+Checkpoint 4 verified: commit 7a51399, seed divergence plus the 5-value WEAVE sweep with adjacent-midpoint continuity. Go for checkpoint 5/5 (final validation: full cargo test, scripts/13_e2e.sh under the guard with unexecuted cases named, perf receipts, final commit with Boop-Status: done). Two cleanups before the final commit: remove the stray tests/snapshots/*.snap.new files left by the pre-existing nightglass failures, and land perf/results/isfahan.md. Same protocol: commit, hail the receipt, end your turn.
