@@ -1478,3 +1478,8 @@ fn fairy_ring_mature_ring_t12() {
 fn kolam_seed_42() {
     insta::assert_snapshot!(render(&["42", "kolam", "deep"]));
 }
+
+#[test]
+fn shamsa_seed_42() {
+    insta::assert_snapshot!(render(&["42", "shamsa", "moss"]));
+}
