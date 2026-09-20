@@ -830,6 +830,49 @@ mod tests {
     }
 
     #[test]
+    fn isfahan_seed7() {
+        insta::assert_snapshot!("isfahan_80x24_seed7", text(&frame(80, 24, 7, 0.0, &knobs())));
+    }
+
+    #[test]
+    fn isfahan_seed2026() {
+        insta::assert_snapshot!("isfahan_80x24_seed2026", text(&frame(80, 24, 2026, 0.0, &knobs())));
+    }
+
+    #[test]
+    fn seeds_diverge_and_weave_sweeps_continuously() {
+        let k = knobs();
+        let a = text(&frame(90, 30, 42, 0.0, &k));
+        let b = text(&frame(90, 30, 7, 0.0, &k));
+        let c = text(&frame(90, 30, 2026, 0.0, &k));
+        assert_ne!(a, b);
+        assert_ne!(b, c);
+        assert_ne!(a, c);
+        let sweep = |weave: f32| {
+            let mut k = knobs();
+            k[3] = weave;
+            text(&frame(90, 30, 42, 0.0, &k))
+        };
+        let frames: Vec<String> = [0.0, 0.25, 0.5, 0.75, 1.0]
+            .iter()
+            .map(|v| sweep(*v))
+            .collect();
+        let far = diff_cells(&frames[0], &frames[4]);
+        assert!(far > 0);
+        for pair in frames.windows(2) {
+            assert_ne!(pair[0], pair[1]);
+            assert!(
+                diff_cells(&pair[0], &pair[1]) < far,
+                "adjacent weave values must stay closer than the sweep endpoints"
+            );
+        }
+    }
+
+    fn diff_cells(a: &str, b: &str) -> usize {
+        a.chars().zip(b.chars()).filter(|(x, y)| x != y).count()
+    }
+
+    #[test]
     fn small_dims_terminate() {
         let k = knobs();
         for (w, h) in [(40usize, 12usize), (24usize, 8usize), (17usize, 6usize)] {

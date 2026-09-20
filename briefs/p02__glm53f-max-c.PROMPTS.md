@@ -39,3 +39,7 @@ Checkpoint 1 verified: commit 8cfbd6f, 749-line isfahan mode, focused and cli su
 ## 4. 2026-09-20T05:41:10-0400 (recorded at receipt) | parent go for checkpoint 3 (boop m-08895793 from herd)
 
 Checkpoint 2 verified: commit dac1186, module and CLI green, the pre-existing failures attributed correctly, and the crown tiers read as concentric rings with radial seams. Go for checkpoint 3/5 (subdivision-wave animation and live knobs). Same protocol: commit, hail the receipt, end your turn.
+
+## 5. 2026-09-20T06:12:40-0400 (recorded at receipt) | parent go for checkpoint 4 (boop m-686add2f from herd)
+
+Checkpoint 3 verified: commit 0c407dc, the lantern wave drives flash, shimmer and twinkle coherently, phase snapshots at t4 and t9. Go for checkpoint 4/5 (seeded structural variation and sweep hardening: 3-seed snapshots, 5-value sweep with adjacent midpoints, frame_cost budget, layer coverage). Same protocol: commit, hail the receipt, end your turn.
