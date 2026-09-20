@@ -1473,3 +1473,13 @@ fn fairy_ring_seed_42() {
 fn fairy_ring_mature_ring_t12() {
     insta::assert_snapshot!(render_t(&["7", "fairy-ring", "ember", "21", "0.7"], "12"));
 }
+
+#[test]
+fn moongate_seed_42() {
+    insta::assert_snapshot!(render(&["42", "moongate", "ember"]));
+}
+
+#[test]
+fn moongate_lantern_t9() {
+    insta::assert_snapshot!(render_t(&["42", "moongate", "ember"], "9"));
+}
