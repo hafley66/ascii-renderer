@@ -341,3 +341,14 @@ Checkpoint 1 verified: commit 25aa0ef, tests green, the knot lattice reads clean
 ```text
 Checkpoint 2 verified: commit 3cf34f9, 6 tests green, the restructured composition reads as an inner knot court inside a petal band with ink-weighted florets. Go for checkpoint 3/5 (motion: ember transport along ink, wheel rotation, petal breathing, full layer timers, time identity tests). Same protocol: commit, hail the receipt, end your turn.
 ```
+
+---
+
+## Entry 6
+
+- channel: boop m-c02c1723 from herd (parent)
+- received: 2026-09-20T05:38Z (approx, on resume)
+
+```text
+Checkpoint 3 verified: commit 78d47f7, 8 tests green, motion phases inspected, ember glyphs ride the ink lines and the wheel breathes. Go for checkpoint 4/5 (visual refinement and the full snapshot set: canonical, two phases, variant, small grid, nearby control pair, all inspected). Same protocol: commit, hail the receipt, end your turn.
+```

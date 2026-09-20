@@ -687,6 +687,21 @@ mod tests {
         wide[2] = 6.0;
         assert_ne!(a, text(&frame(90, 30, 42, 0.0, &wide)));
     }
+    #[test]
+    fn kolam_80x24_t12() {
+        insta::assert_snapshot!("kolam_80x24_t12", text(&frame(80, 24, 42, 12.0, &knobs())));
+    }
+
+    #[test]
+    fn curl_control_pair() {
+        let mut lo = knobs();
+        lo[0] = 0.425;
+        let mut hi = lo.clone();
+        hi[0] = 0.575;
+        insta::assert_snapshot!("kolam_curl_lo", text(&frame(80, 24, 42, 0.0, &lo)));
+        insta::assert_snapshot!("kolam_curl_hi", text(&frame(80, 24, 42, 0.0, &hi)));
+    }
+
 
     #[test]
     fn deterministic_and_seed_sensitive() {
