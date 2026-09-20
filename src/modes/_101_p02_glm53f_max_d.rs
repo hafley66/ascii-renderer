@@ -33,6 +33,13 @@ const M_HV: u8 = C_H | C_V;
 const M_FB: u8 = C_F | C_B;
 /// The moon gate ring: a bold bright circle framing the aperture.
 const RIM: char = '@';
+/// Bloom and cloud hash layers.
+const L_BLOOM: u64 = 0x25;
+const L_CLOUD: u64 = 0x26;
+/// Meihua petal marks, alternating weight around the junction.
+const PETAL: [char; 2] = ['*', '·'];
+/// Xiangyun band glyphs, curl row to base row.
+const CLOUD: [char; 3] = ['⌒', '~', '≈'];
 
 const PARALLEL_MIN_CELLS: usize = 20_480;
 /// Terminal cells are about twice as tall as wide.
@@ -119,6 +126,8 @@ struct Look {
     fret: f32,
     root: f32,
     glow: f32,
+    bloom: f32,
+    drift: f32,
     u0: f32,
     u1: f32,
     v0: f32,
@@ -132,6 +141,10 @@ struct Look {
     gate_bg: Color,
     gate_dust: Color,
     fret_color: Color,
+    petal_dim: Color,
+    petal_lit: Color,
+    cloud_dim: Color,
+    cloud_lit: Color,
 }
 
 impl Look {
@@ -152,6 +165,8 @@ impl Look {
             fret: p[2],
             root: p[3],
             glow: p[4],
+            bloom: p[5],
+            drift: p[6],
             u0,
             u1,
             v0,
@@ -165,6 +180,10 @@ impl Look {
             gate_bg: darken(palette[0], 45),
             gate_dust: darken(palette[1], 45),
             fret_color: lerp_color(palette[1], palette[3], 0.35),
+            petal_dim: darken(palette[3], 20),
+            petal_lit: lighten(palette[4], 15),
+            cloud_dim: darken(palette[2], 35),
+            cloud_lit: lighten(palette[2], 8),
         }
     }
 
@@ -486,6 +505,10 @@ fn draw(frame: &mut ModeFrame<'_>, p: &[f32; KNOBS]) {
             // the ring wins collisions, so it paints after the lattice
             measure_layer(NAME, "gate", || paint_gate(frame.grid, w, h, &look));
             measure_layer(NAME, "fret", || paint_fret(frame.grid, w, h, &look));
+            measure_layer(NAME, "bloom", || {
+                paint_blooms(frame.grid, masks, ords, w, h, &look)
+            });
+            measure_layer(NAME, "clouds", || paint_clouds(frame.grid, w, h, &look));
         })
     });
 }
@@ -719,6 +742,132 @@ fn join_glyph(indir: (isize, isize), outdir: (isize, isize)) -> char {
     }
 }
 
+/// Meihua rosettes bloom at lattice joints: the crossing itself becomes the
+/// flower, a bright eye with four dim specks, likelier on younger growth.
+fn paint_blooms(
+    grid: &mut Grid,
+    masks: &[u8],
+    ords: &[f32],
+    w: usize,
+    h: usize,
+    look: &Look,
+) {
+    if look.bloom <= 0.01 {
+        return;
+    }
+    let rows = grid.len().min(h);
+    for y in 1..rows.saturating_sub(1) {
+        for x in 1..w.saturating_sub(1) {
+            let idx = y * w + x;
+            if masks[idx].count_ones() < 2 {
+                continue;
+            }
+            let pick = unit(hash(look.seed, L_BLOOM, x as u64, y as u64));
+            if pick >= look.bloom * (0.3 + 0.7 * ords[idx]) {
+                continue;
+            }
+            let fk = unit(hash(look.seed, L_BLOOM, (x as u64) << 8 | y as u64, 3));
+            let fcol = lerp_color(look.petal_dim, look.petal_lit, 0.45 + 0.55 * fk);
+            grid[y][x] = Cell::new('*', fcol);
+            for d in 0..4u64 {
+                let (dx, dy) = match d {
+                    0 => (-1i64, -1i64),
+                    1 => (1, -1),
+                    2 => (-1, 1),
+                    _ => (1, 1),
+                };
+                let (nx, ny) = (x as i64 + dx, y as i64 + dy);
+                if nx < 1 || ny < 1 || nx as usize >= w - 1 || ny as usize >= rows - 1 {
+                    continue;
+                }
+                let cell = &mut grid[ny as usize][nx as usize];
+                if cell.ch != ' ' && !WALL.contains(&cell.ch) {
+                    continue;
+                }
+                let pk = unit(hash(
+                    look.seed,
+                    L_BLOOM,
+                    ((x as u64) << 16) | ((y as u64) << 4),
+                    4 + d,
+                ));
+                let col = lerp_color(look.petal_dim, look.petal_lit, 0.25 + 0.5 * pk);
+                *cell = Cell::new(if d & 1 == 0 { '·' } else { ',' }, col);
+            }
+        }
+    }
+}
+
+/// Xiangyun clouds drift through the aperture on the lantern wind.
+/// Three undulating bands and a curl each, clipped to the interior circle.
+fn paint_clouds(grid: &mut Grid, w: usize, h: usize, look: &Look) {
+    if look.gate_r < 2.5 {
+        return;
+    }
+    let count = ((look.gate_r / 2.6).ceil() as usize).clamp(1, 4);
+    let cu = look.cu();
+    let cv = look.cv();
+    let span = look.gate_r * 2.0;
+    let gcx = cu * ASPECT - 0.5;
+    let gcy = cv - 0.5;
+    let rows = grid.len().min(h);
+    for c in 0..count as u64 {
+        let hsh = hash(look.seed, L_CLOUD, c, 9);
+        let base_x = unit(hsh) * span;
+        let base_y = (unit(hsh >> 9) * 1.3 - 0.65) * look.gate_r;
+        let speed = 0.9 + 0.7 * unit(hsh >> 18);
+        let scale = 0.55 + 0.3 * unit(hsh >> 27);
+        let phase = unit(hsh >> 33) * TAU;
+        let xc = (base_x + look.time * look.drift * speed) % span - look.gate_r;
+        let ccx = gcx + xc * ASPECT;
+        let ccy = gcy + base_y;
+        let pulse = 0.5 + 0.5 * (look.time * look.glow * 1.2 + c as f32 * 2.1).sin();
+        for row in 0..3usize {
+            let half = ((2.0 + row as f32 * 1.2) * scale * 2.5).round() as i64;
+            let yoff = row as f32;
+            let xoff = if row == 1 { -1.5 } else { 0.0 };
+            for s in -half..=half {
+                let gx = ccx + xoff + s as f32;
+                let gy = ccy + yoff + (s as f32 * 0.7 + phase).sin() * 0.4;
+                let ix = gx.round() as i64;
+                let iy = gy.round() as i64;
+                if ix < 0 || iy < 0 || ix as usize >= w || iy as usize >= rows {
+                    continue;
+                }
+                let ux = (ix as f32 + 0.5) / ASPECT - cu;
+                let vy = iy as f32 + 0.5 - cv;
+                if ux * ux + vy * vy > (look.gate_r - 0.45) * (look.gate_r - 0.45) {
+                    continue;
+                }
+                let (ry, rx) = (iy as usize, ix as usize);
+                if ry >= grid.len() || rx >= grid[ry].len() {
+                    continue;
+                }
+                let cell = &mut grid[ry][rx];
+                if cell.ch != ' ' {
+                    continue;
+                }
+                let lit = (0.4 + 0.4 * pulse - row as f32 * 0.1).clamp(0.05, 0.95);
+                *cell = Cell::new(CLOUD[row], lerp_color(look.cloud_dim, look.cloud_lit, lit));
+            }
+        }
+        let hx = (ccx - 2.0 * scale * 2.5).round() as i64;
+        let hy = ccy.round() as i64;
+        if hx >= 0
+            && hy >= 0
+            && (hx as usize) < w
+            && (hy as usize) < rows
+            && (hx as usize) < grid[hy as usize].len()
+        {
+            let ux = (hx as f32 + 0.5) / ASPECT - cu;
+            let vy = hy as f32 + 0.5 - cv;
+            let cell = &mut grid[hy as usize][hx as usize];
+            if ux * ux + vy * vy <= (look.gate_r - 0.45) * (look.gate_r - 0.45) && cell.ch == ' ' {
+                *cell = Cell::new('o', lerp_color(look.cloud_dim, look.cloud_lit, 0.85));
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -780,6 +929,30 @@ mod tests {
         let a = text(&frame(90, 30, 42, 0.0, &k));
         k[1] = 7.0;
         assert_ne!(a, text(&frame(90, 30, 42, 0.0, &k)));
+    }
+
+    #[test]
+    fn bloom_changes_the_wall() {
+        let mut k = knobs();
+        let a = text(&frame(90, 30, 42, 0.0, &k));
+        k[5] = 0.0;
+        assert_ne!(a, text(&frame(90, 30, 42, 0.0, &k)));
+    }
+
+    #[test]
+    fn drift_moves_the_clouds() {
+        let mut k = knobs();
+        let a = text(&frame(90, 30, 42, 4.0, &k));
+        k[6] = 0.0;
+        assert_ne!(a, text(&frame(90, 30, 42, 4.0, &k)));
+    }
+
+    #[test]
+    fn moongate_seed42_full_bloom() {
+        let mut k = knobs();
+        k[5] = 1.0;
+        k[6] = 1.5;
+        insta::assert_snapshot!("moongate_80x24_bloom", text(&frame(80, 24, 42, 3.0, &k)));
     }
 
     #[test]
