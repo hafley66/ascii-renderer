@@ -87,3 +87,43 @@ fn draw(frame: &mut ModeFrame<'_>, p: &[f32; 10])
     LANTERN 0.40/0.45 nearby pair (crown block shifts, continuity held).
 20. Integration entry appended at the end of tests/snapshot_modes.rs; the
     CLI render with theme moss matches the module canonical byte for byte.
+
+## Checkpoint 5: performance and E2E receipt
+
+Layer coverage (perf/layer_coverage.sh 400 120 3 moss shamsa, release):
+6 layers (field, vault, straps, vines, boss, glow), 6.0 calls/frame,
+98.9% of the render call attributed; 0 thin, 0 nested, 0 without timers.
+
+Knob sweep (perf/knob_sweep.sh shamsa 2000 1000 2, 2M cells, release):
+baseline 5.9 fps / 168.32 ms avg; every knob at max stays within noise
+(0.91x-1.00x: FLOW 163.95 ms worst, VINE=1 160.81 ms, STRAP=0.3 162.59 ms);
+ASPECT=4 halves the frame (0.48x) because the dome covers fewer columns.
+Hotspots at the worst knob: field 95.4% (per-cell girih projection, by
+design), vault 2.5%, straps 1.1%, boss 0.2%, vines 0.1%, glow 0.0%.
+Frame budget: 200x60 release frame_cost asserts avg < 6 ms and passes.
+
+Continuity: LANTERN swept 0.10/0.20/0.30/0.40/0.50 at 80x24; the lit crown
+migrates smoothly with no jumps, matching the accepted lantern40/45
+nearby-pair snapshots.
+
+E2E (scripts/13_e2e.sh, probe guard 900 s / 1024 MiB / 32 MiB artifacts,
+safety suites passed on every run; binary sha256 ddf193b1..., commit
+54b27c8): six cases, each executed, all artifacts preserved under
+perf/results/e2e-*/; no limits were raised.
+- workflow: passed. seed-search: passed.
+- pin-inputs: passed (first attempt tripped on foreground focus loss,
+  foreground=instant; retry with identical limits passed).
+- backpressure: failed twice, same assertion (4_test_input_latency.py:
+  sum terminal_wait_us > 500_000). Shared demo relay, fixture modes only
+  (gem-aetherium-2/party); no shamsa code in the path. Guard completed
+  with no breaker; both runs preserved.
+- bad-400x200: failed, terminal RPC key:animate exceeded 750 ms (mode
+  party, relay terminal_wait_us=0). Reproduced identically with a binary
+  built at cp1 commit 6f1f801 before the strapwork and vine work, so the
+  trip predates this lane's changes; environmental (tmux-nested iTerm,
+  taskpolicy nice 19).
+- max-400x200: failed, one focus trip (foreground=Google Chrome), then the
+  same key:animate 750 ms trip as bad-400x200.
+Unexecuted cases: none; every suite case was attempted, failures preserved
+with exact inputs (report.json, command.json, guard.ndjson, rpc/terminal
+logs) for upstream triage.
