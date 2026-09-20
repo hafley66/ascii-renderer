@@ -56,3 +56,22 @@ fn draw(frame: &mut ModeFrame<'_>, p: &[f32; 10])
 12. Feedback: vines (checkpoint 3) steer toward light and away from an ink
     field they deposit; ink then stains the vault shading; straps occlude the
     light field that gates both strap brightness and vine steering.
+
+## Checkpoint 3: arabesque vines and motion
+
+13. Growth: fronds root at ring nodes (ring B gated by the rb detail factor),
+    each root spawning 1-3 fronds, budget gated by VINE (0 = bare dome).
+    Hard bounds: 240 fronds, 44 segments each.
+14. Steering: three candidates (straight, +/-0.45 rad plus an oscillating
+    curl) scored by lantern light minus a squared ink penalty; scores below
+    the viability floor end the frond. Squared (sublinear-near-zero) penalty
+    lets a frond run its own fresh path while dense ink repels.
+15. Feedback: each step deposits ink (core 0.55, ring 0.18, cap 1.5) into a
+    per-frame thread-local field cleared each draw, so later fronds inherit
+    earlier occupancy deterministically; no state crosses frames.
+16. Motion: fronds paint a root-to-tip pulse (exp wave over rem_euclid of
+    time and arc position); glow dust breathes with a 0.78-1.00 factor at
+    1.7 rad/s; both are pure functions of t, so t=0 stays byte-stable.
+17. Palette: vines lerp vine_a (dim verdigris-gold, hue+off) to vine_b
+    (lit) by the pulse; glyphs ( ) ' , are vine-exclusive so presence is
+    testable.

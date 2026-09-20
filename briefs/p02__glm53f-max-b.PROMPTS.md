@@ -311,3 +311,12 @@ Go: plan approved. Execute checkpoint 1 now. At every checkpoint: finish, valida
 ```text
 Checkpoint 1 verified: commit 6f1f801, generator check and 5 tests green, the dome-crown snapshot reads with its decagonal medallion and muqarnas rim. Go for checkpoint 2/5 (strapwork and muqarnas tiers). Same protocol: commit, hail the receipt, end your turn.
 ```
+
+## Entry 4
+
+- timestamp: 2026-09-20T05:32:22Z
+- channel: boop m-724b2957 (parent herd -> lane, reply to receipt m-a36bfdb3)
+
+```text
+Checkpoint 2 verified: commit 693ce8c, 6 focused tests green, full-suite failures correctly attributed as pre-existing, and thanks for the asin-domain NaN fix note. Go for checkpoint 3/5 (arabesque vines grown through the light field with the ink-occupancy feedback, plus the motion system). Same protocol: commit, hail the receipt, end your turn.
+```

@@ -35,6 +35,11 @@ const L_VAULT: u64 = 0x22;
 const L_STRAP: u64 = 0x23;
 const L_BOSS: u64 = 0x24;
 const L_GLOW: u64 = 0x26;
+const L_VINE: u64 = 0x27;
+
+/// Hard bounds on frond count and segment count keep growth cost fixed.
+const MAX_FRONDS: u64 = 240;
+const MAX_SEG: usize = 44;
 
 const PARALLEL_MIN_CELLS: usize = 20_480;
 
@@ -150,6 +155,8 @@ struct Look {
     size_b: f32,
     strap_hot: Color,
     vine_a: Color,
+    vine_b: Color,
+    breath: f32,
     boss: Color,
 }
 
@@ -246,6 +253,8 @@ impl Look {
             strap_lit: col(-168.0, 0.78, 0.62),
             strap_hot: col(-172.0, 0.85, 0.78),
             vine_a: col(-48.0, 0.55, 0.34),
+            vine_b: col(-36.0, 0.80, 0.72),
+            breath: 0.78 + 0.22 * (0.5 + 0.5 * (time * 1.7).sin()),
             boss: col(-170.0, 0.70, 0.82),
         }
     }
@@ -269,6 +278,7 @@ struct Sample {
 
 thread_local! {
     static SCRATCH: RefCell<Vec<Sample>> = const { RefCell::new(Vec::new()) };
+    static INK: RefCell<Vec<f32>> = const { RefCell::new(Vec::new()) };
 }
 
 #[inline(always)]
@@ -301,6 +311,7 @@ fn draw(frame: &mut ModeFrame<'_>, p: &[f32; KNOBS]) {
         measure_layer(NAME, "field", || sample_field(field, w, h, &look));
         measure_layer(NAME, "vault", || paint_vault(frame.grid, field, w, h, &look));
         measure_layer(NAME, "straps", || paint_straps(frame.grid, field, w, h, &look));
+        measure_layer(NAME, "vines", || paint_vines(frame.grid, w, h, &look));
         measure_layer(NAME, "boss", || paint_boss(frame.grid, w, h, &look));
         measure_layer(NAME, "glow", || paint_glow(frame.grid, w, h, &look));
     });
@@ -687,6 +698,139 @@ fn paint_boss(grid: &mut Grid, w: usize, h: usize, look: &Look) {
     }
 }
 
+/// Lantern light at a float cell position; negative once off the dome.
+fn light_at(look: &Look, x: f32, y: f32) -> f32 {
+    let dx = (x - look.cx) / look.aspect;
+    let dy = y - look.cy;
+    let r = (dx * dx + dy * dy).sqrt();
+    if r > look.radius * 0.99 {
+        return -1.0;
+    }
+    let n = r / look.radius;
+    let u = u_of_r(n, look.depth);
+    let theta = dy.atan2(dx) + look.spin_now;
+    let du_l = u - look.light_u;
+    let dth_l = wrap_pi(theta - look.light_az) * n.max(0.06);
+    let d2 = du_l * du_l + dth_l * dth_l;
+    1.35 * (-d2 / 0.18).exp() + 0.55 * (-(u * 3.4) * (u * 3.4)).exp()
+}
+
+fn ink_at(ink: &[f32], w: usize, h: usize, x: f32, y: f32) -> f32 {
+    let cx = x as isize;
+    let cy = y as isize;
+    if cx < 0 || cy < 0 || cx >= w as isize || cy >= h as isize {
+        return 1.5;
+    }
+    ink[cy as usize * w + cx as usize]
+}
+
+fn deposit_ink(ink: &mut [f32], w: usize, h: usize, x: f32, y: f32) {
+    let cx = x as isize;
+    let cy = y as isize;
+    for oy in -1i32..=1 {
+        for ox in -1i32..=1 {
+            let nx = cx + ox as isize;
+            let ny = cy + oy as isize;
+            if nx < 0 || ny < 0 || nx >= w as isize || ny >= h as isize {
+                continue;
+            }
+            let core = ox == 0 && oy == 0;
+            let i = ny as usize * w + nx as usize;
+            ink[i] = (ink[i] + if core { 0.55 } else { 0.18 }).min(1.5);
+        }
+    }
+}
+
+/// One frond: curling segments scored by light minus ink, painted with a
+/// root-to-tip light pulse.
+fn grow_frond(
+    grid: &mut Grid, w: usize, h: usize, look: &Look, ink: &mut [f32], fid: u64,
+    x0: f32, y0: f32,
+) {
+    let segs = 12 + (hash(look.seed, L_VINE, fid, 3) as usize) % 33;
+    let mut x = x0 + (unit(hash(look.seed, L_VINE, fid, 4)) - 0.5) * 2.0;
+    let mut y = y0 + (unit(hash(look.seed, L_VINE, fid, 5)) - 0.5) * 2.0;
+    let out_dir = (y - look.cy).atan2((x - look.cx) / look.aspect);
+    let mut ang = out_dir + (unit(hash(look.seed, L_VINE, fid, 6)) - 0.5) * 1.2;
+    let flip = if hash(look.seed, L_VINE, fid, 7) & 1 == 0 { 1.0 } else { -1.0 };
+    let phase = unit(hash(look.seed, L_VINE, fid, 8)) * TAU;
+    for seg in 0..segs {
+        let s = seg as f32 / segs as f32;
+        let curl = flip * 0.6 * (s * 7.0 + phase).sin();
+        let mut best = f32::MIN;
+        let mut best_ang = ang;
+        for k in -1i32..=1 {
+            let cand = ang + k as f32 * 0.45 + curl;
+            let nx = x + cand.cos();
+            let ny = y + cand.sin();
+            let iv = ink_at(ink, w, h, nx, ny);
+            let score = 1.6 * light_at(look, nx + 0.5, ny + 0.5)
+                - 1.2 * iv * iv
+                - (k.abs() as f32) * 0.08;
+            if score > best {
+                best = score;
+                best_ang = cand;
+            }
+        }
+        if best < -0.35 {
+            break;
+        }
+        ang = best_ang;
+        x += ang.cos();
+        y += ang.sin();
+        if x < 0.5 || y < 0.5 || x >= w as f32 - 0.5 || y >= h as f32 - 0.5 {
+            break;
+        }
+        deposit_ink(ink, w, h, x, y);
+        let w_wave = (look.time * 0.33 - s + phase / TAU).rem_euclid(1.0);
+        let pulse = (-(w_wave * w_wave) * 22.0).exp();
+        let color = lerp_color(look.vine_a, look.vine_b, pulse);
+        let ch = if curl.abs() > 0.38 {
+            if curl > 0.0 { ')' } else { '(' }
+        } else if s < 0.2 {
+            '\''
+        } else {
+            ','
+        };
+        grid[y as usize][x as usize] = Cell::new(ch, color);
+    }
+}
+
+/// Arabesque fronds rooted at the rosette nodes; growth deposits ink that
+/// repels later fronds, so the flora partitions the dome asymmetrically.
+fn paint_vines(grid: &mut Grid, w: usize, h: usize, look: &Look) {
+    if look.vine <= 0.01 {
+        return;
+    }
+    INK.with(|slot| {
+        let mut buf = slot.borrow_mut();
+        if buf.len() < w * h {
+            buf.resize(w * h, 0.0);
+        }
+        for v in buf[..w * h].iter_mut() {
+            *v = 0.0;
+        }
+        let ink = &mut buf[..w * h];
+        for (ni, node) in look.nodes.iter().enumerate().skip(1) {
+            if ni > 10 && look.rb < 0.05 {
+                continue;
+            }
+            let ri = ni as u64;
+            if unit(hash(look.seed, L_VINE, ri, 1)) > look.vine * 1.15 {
+                continue;
+            }
+            let fronds = 1 + hash(look.seed, L_VINE, ri, 2) % 3;
+            for f in 0..fronds {
+                let fid = ri * 8 + f;
+                if fid >= MAX_FRONDS {
+                    break;
+                }
+                grow_frond(grid, w, h, look, ink, fid, node.x, node.y);
+            }
+        }
+    });
+}
+
 /// Sparse glow dust around bright knots; never paints over structure.
 fn paint_glow(grid: &mut Grid, w: usize, h: usize, look: &Look) {
     if look.bloom <= 0.01 {
@@ -709,7 +853,7 @@ fn paint_glow(grid: &mut Grid, w: usize, h: usize, look: &Look) {
                 if d >= 1.0 {
                     continue;
                 }
-                let f = (1.0 - d) * (1.0 - d) * look.bloom * node.b;
+                let f = (1.0 - d) * (1.0 - d) * look.bloom * node.b * look.breath;
                 if f < 0.22 {
                     continue;
                 }
@@ -769,8 +913,22 @@ mod tests {
     use super::*;
     use crate::render::grid_to_plain;
     use rand::{rngs::StdRng, SeedableRng};
+
     fn knobs() -> Vec<f32> {
         PARAMS.iter().map(|p| p.default).collect()
+    }
+
+    #[test]
+    fn vine_budget_scales_growth() {
+        let mut off = knobs();
+        off[5] = 0.0;
+        let mut on = knobs();
+        on[5] = 1.0;
+        let bare = text(&frame(90, 30, 42, 0.0, &off));
+        let grown = text(&frame(90, 30, 42, 0.0, &on));
+        assert_eq!(bare.matches('(').count() + bare.matches(')').count(), 0);
+        assert!(grown.matches('(').count() + grown.matches(')').count() >= 20);
+        assert_ne!(bare, grown);
     }
     fn frame(w: usize, h: usize, seed: u64, time: f32, values: &[f32]) -> Grid {
         let mut grid = vec![vec![Cell::blank(); w]; h];
