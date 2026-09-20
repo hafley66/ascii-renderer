@@ -1,0 +1,4169 @@
+{
+  "model": "jev-1.13.0",
+  "answers": {
+    "x0_y0": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.98,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.98,
+        "root": 0.02,
+        "water": 0.0,
+        "glass": 0.0
+      }
+    },
+    "x1_y0": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.98,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.99,
+        "root": 0.01,
+        "water": 0.0,
+        "glass": 0.0
+      }
+    },
+    "x2_y0": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.98,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.98,
+        "root": 0.02,
+        "water": 0.0,
+        "glass": 0.0
+      }
+    },
+    "x3_y0": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.97,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.98,
+        "root": 0.02,
+        "water": 0.0,
+        "glass": 0.0
+      }
+    },
+    "x4_y0": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.96,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.02,
+        "void": 0.97,
+        "root": 0.01,
+        "water": 0.0,
+        "glass": 0.0
+      }
+    },
+    "x5_y0": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.94,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.04,
+        "void": 0.95,
+        "root": 0.01,
+        "water": 0.0,
+        "glass": 0.0
+      }
+    },
+    "x6_y0": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.92,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.05,
+        "void": 0.93,
+        "root": 0.01,
+        "water": 0.0,
+        "glass": 0.01
+      }
+    },
+    "x7_y0": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.87,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.09,
+        "void": 0.89,
+        "root": 0.01,
+        "water": 0.0,
+        "glass": 0.01
+      }
+    },
+    "x8_y0": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.85,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.11,
+        "void": 0.88,
+        "root": 0.0,
+        "water": 0.0,
+        "glass": 0.01
+      }
+    },
+    "x9_y0": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.88,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.09,
+        "void": 0.9,
+        "root": 0.0,
+        "water": 0.0,
+        "glass": 0.01
+      }
+    },
+    "x10_y0": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.89,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.08,
+        "void": 0.9,
+        "root": 0.0,
+        "water": 0.0,
+        "glass": 0.02
+      }
+    },
+    "x11_y0": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.91,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.06,
+        "void": 0.93,
+        "root": 0.0,
+        "water": 0.0,
+        "glass": 0.01
+      }
+    },
+    "x12_y0": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.93,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.05,
+        "void": 0.95,
+        "root": 0.0,
+        "water": 0.0,
+        "glass": 0.0
+      }
+    },
+    "x13_y0": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.93,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.04,
+        "void": 0.95,
+        "root": 0.01,
+        "water": 0.0,
+        "glass": 0.0
+      }
+    },
+    "x14_y0": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.95,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.03,
+        "void": 0.96,
+        "root": 0.01,
+        "water": 0.0,
+        "glass": 0.0
+      }
+    },
+    "x15_y0": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.98,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.01,
+        "void": 0.98,
+        "root": 0.01,
+        "water": 0.0,
+        "glass": 0.0
+      }
+    },
+    "x16_y0": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.99,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.99,
+        "root": 0.01,
+        "water": 0.0,
+        "glass": 0.0
+      }
+    },
+    "x17_y0": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.99,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.99,
+        "root": 0.01,
+        "water": 0.0,
+        "glass": 0.0
+      }
+    },
+    "x18_y0": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.99,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 1.0,
+        "root": 0.0,
+        "water": 0.0,
+        "glass": 0.0
+      }
+    },
+    "x19_y0": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.99,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 1.0,
+        "root": 0.0,
+        "water": 0.0,
+        "glass": 0.0
+      }
+    },
+    "x0_y1": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.94,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.96,
+        "root": 0.04,
+        "water": 0.0,
+        "glass": 0.0
+      }
+    },
+    "x1_y1": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.94,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.96,
+        "root": 0.04,
+        "water": 0.0,
+        "glass": 0.0
+      }
+    },
+    "x2_y1": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.92,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.01,
+        "void": 0.94,
+        "root": 0.05,
+        "water": 0.0,
+        "glass": 0.0
+      }
+    },
+    "x3_y1": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.87,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.03,
+        "void": 0.89,
+        "root": 0.08,
+        "water": 0.0,
+        "glass": 0.0
+      }
+    },
+    "x4_y1": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.85,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.07,
+        "void": 0.88,
+        "root": 0.05,
+        "water": 0.0,
+        "glass": 0.0
+      }
+    },
+    "x5_y1": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.81,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.1,
+        "void": 0.84,
+        "root": 0.05,
+        "water": 0.0,
+        "glass": 0.01
+      }
+    },
+    "x6_y1": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.72,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.17,
+        "void": 0.77,
+        "root": 0.05,
+        "water": 0.0,
+        "glass": 0.01
+      }
+    },
+    "x7_y1": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.71,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.2,
+        "void": 0.76,
+        "root": 0.02,
+        "water": 0.0,
+        "glass": 0.02
+      }
+    },
+    "x8_y1": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.68,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.22,
+        "void": 0.74,
+        "root": 0.0,
+        "water": 0.0,
+        "glass": 0.04
+      }
+    },
+    "x9_y1": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.73,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.17,
+        "void": 0.79,
+        "root": 0.0,
+        "water": 0.0,
+        "glass": 0.04
+      }
+    },
+    "x10_y1": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.73,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.17,
+        "void": 0.78,
+        "root": 0.0,
+        "water": 0.0,
+        "glass": 0.05
+      }
+    },
+    "x11_y1": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.77,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.16,
+        "void": 0.81,
+        "root": 0.0,
+        "water": 0.0,
+        "glass": 0.03
+      }
+    },
+    "x12_y1": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.84,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.11,
+        "void": 0.86,
+        "root": 0.01,
+        "water": 0.0,
+        "glass": 0.02
+      }
+    },
+    "x13_y1": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.86,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.09,
+        "void": 0.88,
+        "root": 0.02,
+        "water": 0.0,
+        "glass": 0.01
+      }
+    },
+    "x14_y1": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.87,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.07,
+        "void": 0.9,
+        "root": 0.02,
+        "water": 0.0,
+        "glass": 0.01
+      }
+    },
+    "x15_y1": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.95,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.01,
+        "void": 0.97,
+        "root": 0.02,
+        "water": 0.0,
+        "glass": 0.0
+      }
+    },
+    "x16_y1": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.96,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.98,
+        "root": 0.02,
+        "water": 0.0,
+        "glass": 0.0
+      }
+    },
+    "x17_y1": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.97,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.98,
+        "root": 0.02,
+        "water": 0.0,
+        "glass": 0.0
+      }
+    },
+    "x18_y1": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.98,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.99,
+        "root": 0.01,
+        "water": 0.0,
+        "glass": 0.0
+      }
+    },
+    "x19_y1": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.99,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.99,
+        "root": 0.01,
+        "water": 0.0,
+        "glass": 0.0
+      }
+    },
+    "x0_y2": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.89,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.92,
+        "root": 0.08,
+        "water": 0.0,
+        "glass": 0.0
+      }
+    },
+    "x1_y2": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.87,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.01,
+        "void": 0.9,
+        "root": 0.09,
+        "water": 0.0,
+        "glass": 0.0
+      }
+    },
+    "x2_y2": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.81,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.03,
+        "void": 0.85,
+        "root": 0.12,
+        "water": 0.0,
+        "glass": 0.0
+      }
+    },
+    "x3_y2": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.74,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.07,
+        "void": 0.79,
+        "root": 0.14,
+        "water": 0.0,
+        "glass": 0.0
+      }
+    },
+    "x4_y2": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.69,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.17,
+        "void": 0.74,
+        "root": 0.08,
+        "water": 0.0,
+        "glass": 0.01
+      }
+    },
+    "x5_y2": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.52,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.29,
+        "void": 0.61,
+        "root": 0.08,
+        "water": 0.0,
+        "glass": 0.02
+      }
+    },
+    "x6_y2": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.46,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.34,
+        "void": 0.55,
+        "root": 0.06,
+        "water": 0.0,
+        "glass": 0.04
+      }
+    },
+    "x7_y2": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.36,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.43,
+        "void": 0.47,
+        "root": 0.03,
+        "water": 0.0,
+        "glass": 0.07
+      }
+    },
+    "x8_y2": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.42,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.28,
+        "void": 0.52,
+        "root": 0.0,
+        "water": 0.0,
+        "glass": 0.2
+      }
+    },
+    "x9_y2": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.47,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.26,
+        "void": 0.56,
+        "root": 0.0,
+        "water": 0.0,
+        "glass": 0.18
+      }
+    },
+    "x10_y2": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.37,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.2,
+        "void": 0.48,
+        "root": 0.0,
+        "water": 0.0,
+        "glass": 0.32
+      }
+    },
+    "x11_y2": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.45,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.28,
+        "void": 0.54,
+        "root": 0.0,
+        "water": 0.0,
+        "glass": 0.17
+      }
+    },
+    "x12_y2": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.4,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.3,
+        "void": 0.49,
+        "root": 0.01,
+        "water": 0.0,
+        "glass": 0.19
+      }
+    },
+    "x13_y2": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.54,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.24,
+        "void": 0.62,
+        "root": 0.01,
+        "water": 0.0,
+        "glass": 0.12
+      }
+    },
+    "x14_y2": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.5,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.32,
+        "void": 0.59,
+        "root": 0.05,
+        "water": 0.0,
+        "glass": 0.03
+      }
+    },
+    "x15_y2": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.87,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.04,
+        "void": 0.9,
+        "root": 0.06,
+        "water": 0.0,
+        "glass": 0.0
+      }
+    },
+    "x16_y2": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.92,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.01,
+        "void": 0.93,
+        "root": 0.05,
+        "water": 0.0,
+        "glass": 0.0
+      }
+    },
+    "x17_y2": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.93,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.01,
+        "void": 0.94,
+        "root": 0.05,
+        "water": 0.0,
+        "glass": 0.0
+      }
+    },
+    "x18_y2": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.95,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.97,
+        "root": 0.03,
+        "water": 0.0,
+        "glass": 0.0
+      }
+    },
+    "x19_y2": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.97,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.98,
+        "root": 0.02,
+        "water": 0.0,
+        "glass": 0.0
+      }
+    },
+    "x0_y3": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.79,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.01,
+        "void": 0.83,
+        "root": 0.16,
+        "water": 0.0,
+        "glass": 0.0
+      }
+    },
+    "x1_y3": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.75,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.02,
+        "void": 0.8,
+        "root": 0.17,
+        "water": 0.0,
+        "glass": 0.0
+      }
+    },
+    "x2_y3": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.58,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.11,
+        "void": 0.65,
+        "root": 0.23,
+        "water": 0.0,
+        "glass": 0.01
+      }
+    },
+    "x3_y3": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.53,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.14,
+        "void": 0.61,
+        "root": 0.24,
+        "water": 0.0,
+        "glass": 0.01
+      }
+    },
+    "x4_y3": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.35,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.35,
+        "void": 0.47000000000000003,
+        "root": 0.16,
+        "water": 0.0,
+        "glass": 0.02
+      }
+    },
+    "x5_y3": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.51,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.59,
+        "void": 0.26,
+        "root": 0.13,
+        "water": 0.0,
+        "glass": 0.02
+      }
+    },
+    "x6_y3": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.61,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.68,
+        "void": 0.18,
+        "root": 0.09,
+        "water": 0.0,
+        "glass": 0.05
+      }
+    },
+    "x7_y3": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.72,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.77,
+        "void": 0.11,
+        "root": 0.04,
+        "water": 0.0,
+        "glass": 0.08
+      }
+    },
+    "x8_y3": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.45,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.53,
+        "void": 0.17,
+        "root": 0.01,
+        "water": 0.0,
+        "glass": 0.28
+      }
+    },
+    "x9_y3": {
+      "type": "choice",
+      "choice": "glass",
+      "confidence": 0.36,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.34,
+        "void": 0.18,
+        "root": 0.0,
+        "water": 0.0,
+        "glass": 0.48
+      }
+    },
+    "x10_y3": {
+      "type": "choice",
+      "choice": "glass",
+      "confidence": 0.47,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.22,
+        "void": 0.22,
+        "root": 0.0,
+        "water": 0.0,
+        "glass": 0.55
+      }
+    },
+    "x11_y3": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.31,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.43,
+        "void": 0.19,
+        "root": 0.0,
+        "water": 0.0,
+        "glass": 0.37
+      }
+    },
+    "x12_y3": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.49,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.57,
+        "void": 0.2,
+        "root": 0.01,
+        "water": 0.0,
+        "glass": 0.21
+      }
+    },
+    "x13_y3": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.45,
+      "probabilities": {
+        "spore": 0.02,
+        "stone": 0.54,
+        "void": 0.25,
+        "root": 0.01,
+        "water": 0.0,
+        "glass": 0.18
+      }
+    },
+    "x14_y3": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.5,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.59,
+        "void": 0.26,
+        "root": 0.07,
+        "water": 0.0,
+        "glass": 0.07
+      }
+    },
+    "x15_y3": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.63,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.12,
+        "void": 0.7,
+        "root": 0.16,
+        "water": 0.0,
+        "glass": 0.01
+      }
+    },
+    "x16_y3": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.8,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.02,
+        "void": 0.84,
+        "root": 0.13,
+        "water": 0.0,
+        "glass": 0.0
+      }
+    },
+    "x17_y3": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.87,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.01,
+        "void": 0.89,
+        "root": 0.09,
+        "water": 0.0,
+        "glass": 0.0
+      }
+    },
+    "x18_y3": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.92,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.9400000000000001,
+        "root": 0.06,
+        "water": 0.0,
+        "glass": 0.0
+      }
+    },
+    "x19_y3": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.96,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.97,
+        "root": 0.03,
+        "water": 0.0,
+        "glass": 0.0
+      }
+    },
+    "x0_y4": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.78,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.01,
+        "void": 0.83,
+        "root": 0.16,
+        "water": 0.0,
+        "glass": 0.0
+      }
+    },
+    "x1_y4": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.69,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.03,
+        "void": 0.75,
+        "root": 0.22,
+        "water": 0.0,
+        "glass": 0.0
+      }
+    },
+    "x2_y4": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.48,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.13,
+        "void": 0.58,
+        "root": 0.28,
+        "water": 0.0,
+        "glass": 0.01
+      }
+    },
+    "x3_y4": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.34,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.22,
+        "void": 0.45,
+        "root": 0.32,
+        "water": 0.0,
+        "glass": 0.01
+      }
+    },
+    "x4_y4": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.4,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.51,
+        "void": 0.27,
+        "root": 0.19,
+        "water": 0.0,
+        "glass": 0.03
+      }
+    },
+    "x5_y4": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.8,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.83,
+        "void": 0.04,
+        "root": 0.09,
+        "water": 0.0,
+        "glass": 0.04
+      }
+    },
+    "x6_y4": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.83,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.87,
+        "void": 0.02,
+        "root": 0.05,
+        "water": 0.0,
+        "glass": 0.06
+      }
+    },
+    "x7_y4": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.76,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.81,
+        "void": 0.02,
+        "root": 0.02,
+        "water": 0.0,
+        "glass": 0.15
+      }
+    },
+    "x8_y4": {
+      "type": "choice",
+      "choice": "glass",
+      "confidence": 0.54,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.36,
+        "void": 0.02,
+        "root": 0.0,
+        "water": 0.0,
+        "glass": 0.62
+      }
+    },
+    "x9_y4": {
+      "type": "choice",
+      "choice": "glass",
+      "confidence": 0.9,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.07,
+        "void": 0.01,
+        "root": 0.0,
+        "water": 0.0,
+        "glass": 0.92
+      }
+    },
+    "x10_y4": {
+      "type": "choice",
+      "choice": "glass",
+      "confidence": 0.96,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.03,
+        "void": 0.0,
+        "root": 0.0,
+        "water": 0.0,
+        "glass": 0.97
+      }
+    },
+    "x11_y4": {
+      "type": "choice",
+      "choice": "glass",
+      "confidence": 0.64,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.27,
+        "void": 0.02,
+        "root": 0.0,
+        "water": 0.0,
+        "glass": 0.7
+      }
+    },
+    "x12_y4": {
+      "type": "choice",
+      "choice": "glass",
+      "confidence": 0.4,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.45,
+        "void": 0.03,
+        "root": 0.0,
+        "water": 0.0,
+        "glass": 0.51
+      }
+    },
+    "x13_y4": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.59,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.66,
+        "void": 0.05,
+        "root": 0.01,
+        "water": 0.0,
+        "glass": 0.27
+      }
+    },
+    "x14_y4": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.76,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.79,
+        "void": 0.04,
+        "root": 0.04,
+        "water": 0.0,
+        "glass": 0.12
+      }
+    },
+    "x15_y4": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.32,
+      "probabilities": {
+        "spore": 0.02,
+        "stone": 0.26,
+        "void": 0.44,
+        "root": 0.24,
+        "water": 0.0,
+        "glass": 0.04
+      }
+    },
+    "x16_y4": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.75,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.03,
+        "void": 0.79,
+        "root": 0.16,
+        "water": 0.0,
+        "glass": 0.01
+      }
+    },
+    "x17_y4": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.76,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.03,
+        "void": 0.8,
+        "root": 0.15,
+        "water": 0.0,
+        "glass": 0.01
+      }
+    },
+    "x18_y4": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.88,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.01,
+        "void": 0.9,
+        "root": 0.08,
+        "water": 0.0,
+        "glass": 0.0
+      }
+    },
+    "x19_y4": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.92,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.95,
+        "root": 0.05,
+        "water": 0.0,
+        "glass": 0.0
+      }
+    },
+    "x0_y5": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.6,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.02,
+        "void": 0.68,
+        "root": 0.29,
+        "water": 0.01,
+        "glass": 0.0
+      }
+    },
+    "x1_y5": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.47,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.05,
+        "void": 0.55,
+        "root": 0.37,
+        "water": 0.01,
+        "glass": 0.01
+      }
+    },
+    "x2_y5": {
+      "type": "choice",
+      "choice": "root",
+      "confidence": 0.36,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.17,
+        "void": 0.35,
+        "root": 0.47000000000000003,
+        "water": 0.0,
+        "glass": 0.01
+      }
+    },
+    "x3_y5": {
+      "type": "choice",
+      "choice": "root",
+      "confidence": 0.34,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.2,
+        "void": 0.33,
+        "root": 0.46,
+        "water": 0.0,
+        "glass": 0.01
+      }
+    },
+    "x4_y5": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.49,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.58,
+        "void": 0.14,
+        "root": 0.27,
+        "water": 0.0,
+        "glass": 0.01
+      }
+    },
+    "x5_y5": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.82,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.86,
+        "void": 0.01,
+        "root": 0.12,
+        "water": 0.0,
+        "glass": 0.01
+      }
+    },
+    "x6_y5": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.86,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.89,
+        "void": 0.01,
+        "root": 0.08,
+        "water": 0.0,
+        "glass": 0.02
+      }
+    },
+    "x7_y5": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.9,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.91,
+        "void": 0.01,
+        "root": 0.04,
+        "water": 0.0,
+        "glass": 0.04
+      }
+    },
+    "x8_y5": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.75,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.8,
+        "void": 0.02,
+        "root": 0.0,
+        "water": 0.0,
+        "glass": 0.18
+      }
+    },
+    "x9_y5": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.51,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.59,
+        "void": 0.02,
+        "root": 0.0,
+        "water": 0.0,
+        "glass": 0.38
+      }
+    },
+    "x10_y5": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.4,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.49,
+        "void": 0.03,
+        "root": 0.0,
+        "water": 0.0,
+        "glass": 0.47
+      }
+    },
+    "x11_y5": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.68,
+      "probabilities": {
+        "spore": 0.02,
+        "stone": 0.74,
+        "void": 0.02,
+        "root": 0.0,
+        "water": 0.0,
+        "glass": 0.22
+      }
+    },
+    "x12_y5": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.86,
+      "probabilities": {
+        "spore": 0.02,
+        "stone": 0.87,
+        "void": 0.02,
+        "root": 0.01,
+        "water": 0.0,
+        "glass": 0.08
+      }
+    },
+    "x13_y5": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.85,
+      "probabilities": {
+        "spore": 0.02,
+        "stone": 0.87,
+        "void": 0.02,
+        "root": 0.02,
+        "water": 0.0,
+        "glass": 0.07
+      }
+    },
+    "x14_y5": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.82,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.85,
+        "void": 0.02,
+        "root": 0.09,
+        "water": 0.0,
+        "glass": 0.03
+      }
+    },
+    "x15_y5": {
+      "type": "choice",
+      "choice": "root",
+      "confidence": 0.24,
+      "probabilities": {
+        "spore": 0.03,
+        "stone": 0.32,
+        "void": 0.26,
+        "root": 0.37,
+        "water": 0.0,
+        "glass": 0.02
+      }
+    },
+    "x16_y5": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.53,
+      "probabilities": {
+        "spore": 0.03,
+        "stone": 0.06,
+        "void": 0.61,
+        "root": 0.29,
+        "water": 0.0,
+        "glass": 0.01
+      }
+    },
+    "x17_y5": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.58,
+      "probabilities": {
+        "spore": 0.03,
+        "stone": 0.05,
+        "void": 0.66,
+        "root": 0.25,
+        "water": 0.0,
+        "glass": 0.01
+      }
+    },
+    "x18_y5": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.8,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.01,
+        "void": 0.84,
+        "root": 0.14,
+        "water": 0.0,
+        "glass": 0.0
+      }
+    },
+    "x19_y5": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.91,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.0,
+        "void": 0.93,
+        "root": 0.06,
+        "water": 0.0,
+        "glass": 0.0
+      }
+    },
+    "x0_y6": {
+      "type": "choice",
+      "choice": "root",
+      "confidence": 0.48,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.02,
+        "void": 0.27,
+        "root": 0.57,
+        "water": 0.14,
+        "glass": 0.0
+      }
+    },
+    "x1_y6": {
+      "type": "choice",
+      "choice": "root",
+      "confidence": 0.64,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.04,
+        "void": 0.2,
+        "root": 0.71,
+        "water": 0.05,
+        "glass": 0.0
+      }
+    },
+    "x2_y6": {
+      "type": "choice",
+      "choice": "root",
+      "confidence": 0.68,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.12,
+        "void": 0.12,
+        "root": 0.74,
+        "water": 0.02,
+        "glass": 0.0
+      }
+    },
+    "x3_y6": {
+      "type": "choice",
+      "choice": "root",
+      "confidence": 0.66,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.17,
+        "void": 0.09,
+        "root": 0.72,
+        "water": 0.02,
+        "glass": 0.0
+      }
+    },
+    "x4_y6": {
+      "type": "choice",
+      "choice": "root",
+      "confidence": 0.42,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.44,
+        "void": 0.03,
+        "root": 0.52,
+        "water": 0.0,
+        "glass": 0.01
+      }
+    },
+    "x5_y6": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.7,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.76,
+        "void": 0.0,
+        "root": 0.24,
+        "water": 0.0,
+        "glass": 0.0
+      }
+    },
+    "x6_y6": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.78,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.8200000000000001,
+        "void": 0.0,
+        "root": 0.18,
+        "water": 0.0,
+        "glass": 0.0
+      }
+    },
+    "x7_y6": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.92,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.93,
+        "void": 0.0,
+        "root": 0.06,
+        "water": 0.0,
+        "glass": 0.01
+      }
+    },
+    "x8_y6": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.94,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.96,
+        "void": 0.01,
+        "root": 0.01,
+        "water": 0.0,
+        "glass": 0.02
+      }
+    },
+    "x9_y6": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.94,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.95,
+        "void": 0.01,
+        "root": 0.01,
+        "water": 0.0,
+        "glass": 0.03
+      }
+    },
+    "x10_y6": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.9,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.91,
+        "void": 0.01,
+        "root": 0.0,
+        "water": 0.0,
+        "glass": 0.07
+      }
+    },
+    "x11_y6": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.93,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.94,
+        "void": 0.01,
+        "root": 0.01,
+        "water": 0.0,
+        "glass": 0.03
+      }
+    },
+    "x12_y6": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.92,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.93,
+        "void": 0.01,
+        "root": 0.02,
+        "water": 0.0,
+        "glass": 0.02
+      }
+    },
+    "x13_y6": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.88,
+      "probabilities": {
+        "spore": 0.02,
+        "stone": 0.89,
+        "void": 0.01,
+        "root": 0.07,
+        "water": 0.0,
+        "glass": 0.01
+      }
+    },
+    "x14_y6": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.83,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.87,
+        "void": 0.0,
+        "root": 0.11,
+        "water": 0.0,
+        "glass": 0.01
+      }
+    },
+    "x15_y6": {
+      "type": "choice",
+      "choice": "root",
+      "confidence": 0.46,
+      "probabilities": {
+        "spore": 0.03,
+        "stone": 0.28,
+        "void": 0.12,
+        "root": 0.55,
+        "water": 0.01,
+        "glass": 0.01
+      }
+    },
+    "x16_y6": {
+      "type": "choice",
+      "choice": "root",
+      "confidence": 0.4,
+      "probabilities": {
+        "spore": 0.04,
+        "stone": 0.07,
+        "void": 0.37,
+        "root": 0.49,
+        "water": 0.02,
+        "glass": 0.01
+      }
+    },
+    "x17_y6": {
+      "type": "choice",
+      "choice": "root",
+      "confidence": 0.41,
+      "probabilities": {
+        "spore": 0.03,
+        "stone": 0.05,
+        "void": 0.38,
+        "root": 0.52,
+        "water": 0.01,
+        "glass": 0.01
+      }
+    },
+    "x18_y6": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.7,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.01,
+        "void": 0.76,
+        "root": 0.21000000000000002,
+        "water": 0.01,
+        "glass": 0.0
+      }
+    },
+    "x19_y6": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.78,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.01,
+        "void": 0.81,
+        "root": 0.15,
+        "water": 0.01,
+        "glass": 0.0
+      }
+    },
+    "x0_y7": {
+      "type": "choice",
+      "choice": "root",
+      "confidence": 0.43,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.02,
+        "void": 0.27,
+        "root": 0.53,
+        "water": 0.18,
+        "glass": 0.0
+      }
+    },
+    "x1_y7": {
+      "type": "choice",
+      "choice": "root",
+      "confidence": 0.63,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.03,
+        "void": 0.18,
+        "root": 0.7,
+        "water": 0.09,
+        "glass": 0.0
+      }
+    },
+    "x2_y7": {
+      "type": "choice",
+      "choice": "root",
+      "confidence": 0.7,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.13,
+        "void": 0.09,
+        "root": 0.75,
+        "water": 0.03,
+        "glass": 0.0
+      }
+    },
+    "x3_y7": {
+      "type": "choice",
+      "choice": "root",
+      "confidence": 0.71,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.16,
+        "void": 0.05,
+        "root": 0.77,
+        "water": 0.02,
+        "glass": 0.0
+      }
+    },
+    "x4_y7": {
+      "type": "choice",
+      "choice": "root",
+      "confidence": 0.48,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.41,
+        "void": 0.01,
+        "root": 0.57,
+        "water": 0.01,
+        "glass": 0.0
+      }
+    },
+    "x5_y7": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.64,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.71,
+        "void": 0.0,
+        "root": 0.29,
+        "water": 0.0,
+        "glass": 0.0
+      }
+    },
+    "x6_y7": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.76,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.81,
+        "void": 0.0,
+        "root": 0.19,
+        "water": 0.0,
+        "glass": 0.0
+      }
+    },
+    "x7_y7": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.89,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.92,
+        "void": 0.0,
+        "root": 0.08,
+        "water": 0.0,
+        "glass": 0.0
+      }
+    },
+    "x8_y7": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.94,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.95,
+        "void": 0.0,
+        "root": 0.03,
+        "water": 0.01,
+        "glass": 0.01
+      }
+    },
+    "x9_y7": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.95,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.96,
+        "void": 0.01,
+        "root": 0.01,
+        "water": 0.01,
+        "glass": 0.01
+      }
+    },
+    "x10_y7": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.93,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.94,
+        "void": 0.01,
+        "root": 0.01,
+        "water": 0.0,
+        "glass": 0.03
+      }
+    },
+    "x11_y7": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.91,
+      "probabilities": {
+        "spore": 0.02,
+        "stone": 0.93,
+        "void": 0.01,
+        "root": 0.03,
+        "water": 0.0,
+        "glass": 0.01
+      }
+    },
+    "x12_y7": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.91,
+      "probabilities": {
+        "spore": 0.02,
+        "stone": 0.93,
+        "void": 0.0,
+        "root": 0.04,
+        "water": 0.0,
+        "glass": 0.01
+      }
+    },
+    "x13_y7": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.85,
+      "probabilities": {
+        "spore": 0.02,
+        "stone": 0.87,
+        "void": 0.01,
+        "root": 0.09,
+        "water": 0.0,
+        "glass": 0.01
+      }
+    },
+    "x14_y7": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.75,
+      "probabilities": {
+        "spore": 0.02,
+        "stone": 0.79,
+        "void": 0.0,
+        "root": 0.18,
+        "water": 0.0,
+        "glass": 0.01
+      }
+    },
+    "x15_y7": {
+      "type": "choice",
+      "choice": "root",
+      "confidence": 0.57,
+      "probabilities": {
+        "spore": 0.04,
+        "stone": 0.22,
+        "void": 0.07,
+        "root": 0.65,
+        "water": 0.01,
+        "glass": 0.01
+      }
+    },
+    "x16_y7": {
+      "type": "choice",
+      "choice": "root",
+      "confidence": 0.59,
+      "probabilities": {
+        "spore": 0.04,
+        "stone": 0.07,
+        "void": 0.21,
+        "root": 0.65,
+        "water": 0.02,
+        "glass": 0.01
+      }
+    },
+    "x17_y7": {
+      "type": "choice",
+      "choice": "root",
+      "confidence": 0.45,
+      "probabilities": {
+        "spore": 0.04,
+        "stone": 0.06,
+        "void": 0.33,
+        "root": 0.54,
+        "water": 0.02,
+        "glass": 0.01
+      }
+    },
+    "x18_y7": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.56,
+      "probabilities": {
+        "spore": 0.02,
+        "stone": 0.02,
+        "void": 0.64,
+        "root": 0.28,
+        "water": 0.04,
+        "glass": 0.0
+      }
+    },
+    "x19_y7": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.74,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.01,
+        "void": 0.79,
+        "root": 0.15,
+        "water": 0.04,
+        "glass": 0.0
+      }
+    },
+    "x0_y8": {
+      "type": "choice",
+      "choice": "root",
+      "confidence": 0.32,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.01,
+        "void": 0.13,
+        "root": 0.44,
+        "water": 0.42,
+        "glass": 0.0
+      }
+    },
+    "x1_y8": {
+      "type": "choice",
+      "choice": "root",
+      "confidence": 0.62,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.02,
+        "void": 0.09,
+        "root": 0.68,
+        "water": 0.2,
+        "glass": 0.0
+      }
+    },
+    "x2_y8": {
+      "type": "choice",
+      "choice": "root",
+      "confidence": 0.76,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.06,
+        "void": 0.03,
+        "root": 0.8,
+        "water": 0.11,
+        "glass": 0.0
+      }
+    },
+    "x3_y8": {
+      "type": "choice",
+      "choice": "root",
+      "confidence": 0.74,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.07,
+        "void": 0.03,
+        "root": 0.78,
+        "water": 0.12,
+        "glass": 0.0
+      }
+    },
+    "x4_y8": {
+      "type": "choice",
+      "choice": "root",
+      "confidence": 0.6,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.28,
+        "void": 0.0,
+        "root": 0.67,
+        "water": 0.04,
+        "glass": 0.0
+      }
+    },
+    "x5_y8": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.43,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.53,
+        "void": 0.0,
+        "root": 0.44,
+        "water": 0.03,
+        "glass": 0.0
+      }
+    },
+    "x6_y8": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.48,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.58,
+        "void": 0.0,
+        "root": 0.38,
+        "water": 0.04,
+        "glass": 0.0
+      }
+    },
+    "x7_y8": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.72,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.78,
+        "void": 0.0,
+        "root": 0.2,
+        "water": 0.02,
+        "glass": 0.0
+      }
+    },
+    "x8_y8": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.86,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.88,
+        "void": 0.0,
+        "root": 0.04,
+        "water": 0.07,
+        "glass": 0.01
+      }
+    },
+    "x9_y8": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.79,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.83,
+        "void": 0.0,
+        "root": 0.03,
+        "water": 0.13,
+        "glass": 0.01
+      }
+    },
+    "x10_y8": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.84,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.87,
+        "void": 0.01,
+        "root": 0.01,
+        "water": 0.09,
+        "glass": 0.01
+      }
+    },
+    "x11_y8": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.78,
+      "probabilities": {
+        "spore": 0.02,
+        "stone": 0.82,
+        "void": 0.0,
+        "root": 0.06,
+        "water": 0.09,
+        "glass": 0.01
+      }
+    },
+    "x12_y8": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.77,
+      "probabilities": {
+        "spore": 0.03,
+        "stone": 0.81,
+        "void": 0.0,
+        "root": 0.11,
+        "water": 0.04,
+        "glass": 0.01
+      }
+    },
+    "x13_y8": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.72,
+      "probabilities": {
+        "spore": 0.03,
+        "stone": 0.77,
+        "void": 0.0,
+        "root": 0.15,
+        "water": 0.04,
+        "glass": 0.01
+      }
+    },
+    "x14_y8": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.61,
+      "probabilities": {
+        "spore": 0.02,
+        "stone": 0.67,
+        "void": 0.0,
+        "root": 0.27,
+        "water": 0.03,
+        "glass": 0.01
+      }
+    },
+    "x15_y8": {
+      "type": "choice",
+      "choice": "root",
+      "confidence": 0.6,
+      "probabilities": {
+        "spore": 0.04,
+        "stone": 0.17,
+        "void": 0.02,
+        "root": 0.67,
+        "water": 0.1,
+        "glass": 0.0
+      }
+    },
+    "x16_y8": {
+      "type": "choice",
+      "choice": "root",
+      "confidence": 0.58,
+      "probabilities": {
+        "spore": 0.04,
+        "stone": 0.03,
+        "void": 0.12,
+        "root": 0.65,
+        "water": 0.16,
+        "glass": 0.0
+      }
+    },
+    "x17_y8": {
+      "type": "choice",
+      "choice": "root",
+      "confidence": 0.5,
+      "probabilities": {
+        "spore": 0.04,
+        "stone": 0.03,
+        "void": 0.18,
+        "root": 0.58,
+        "water": 0.17,
+        "glass": 0.0
+      }
+    },
+    "x18_y8": {
+      "type": "choice",
+      "choice": "root",
+      "confidence": 0.22,
+      "probabilities": {
+        "spore": 0.02,
+        "stone": 0.02,
+        "void": 0.32,
+        "root": 0.35,
+        "water": 0.29,
+        "glass": 0.0
+      }
+    },
+    "x19_y8": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.52,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.01,
+        "void": 0.6,
+        "root": 0.17,
+        "water": 0.21,
+        "glass": 0.0
+      }
+    },
+    "x0_y9": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.47,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.01,
+        "void": 0.08,
+        "root": 0.35,
+        "water": 0.56,
+        "glass": 0.0
+      }
+    },
+    "x1_y9": {
+      "type": "choice",
+      "choice": "root",
+      "confidence": 0.41,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.01,
+        "void": 0.06,
+        "root": 0.52,
+        "water": 0.41,
+        "glass": 0.0
+      }
+    },
+    "x2_y9": {
+      "type": "choice",
+      "choice": "root",
+      "confidence": 0.62,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.04,
+        "void": 0.01,
+        "root": 0.68,
+        "water": 0.26,
+        "glass": 0.0
+      }
+    },
+    "x3_y9": {
+      "type": "choice",
+      "choice": "root",
+      "confidence": 0.57,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.04,
+        "void": 0.01,
+        "root": 0.64,
+        "water": 0.31,
+        "glass": 0.0
+      }
+    },
+    "x4_y9": {
+      "type": "choice",
+      "choice": "root",
+      "confidence": 0.53,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.21,
+        "void": 0.0,
+        "root": 0.62,
+        "water": 0.17,
+        "glass": 0.0
+      }
+    },
+    "x5_y9": {
+      "type": "choice",
+      "choice": "root",
+      "confidence": 0.39,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.33,
+        "void": 0.0,
+        "root": 0.5,
+        "water": 0.17,
+        "glass": 0.0
+      }
+    },
+    "x6_y9": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.29,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.41,
+        "void": 0.0,
+        "root": 0.39,
+        "water": 0.19,
+        "glass": 0.0
+      }
+    },
+    "x7_y9": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.44,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.54,
+        "void": 0.0,
+        "root": 0.25,
+        "water": 0.2,
+        "glass": 0.0
+      }
+    },
+    "x8_y9": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.64,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.7,
+        "void": 0.0,
+        "root": 0.06,
+        "water": 0.22,
+        "glass": 0.01
+      }
+    },
+    "x9_y9": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.6,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.67,
+        "void": 0.0,
+        "root": 0.04,
+        "water": 0.27,
+        "glass": 0.01
+      }
+    },
+    "x10_y9": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.63,
+      "probabilities": {
+        "spore": 0.02,
+        "stone": 0.69,
+        "void": 0.0,
+        "root": 0.03,
+        "water": 0.25,
+        "glass": 0.01
+      }
+    },
+    "x11_y9": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.47,
+      "probabilities": {
+        "spore": 0.03,
+        "stone": 0.55,
+        "void": 0.0,
+        "root": 0.05,
+        "water": 0.36,
+        "glass": 0.01
+      }
+    },
+    "x12_y9": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.58,
+      "probabilities": {
+        "spore": 0.03,
+        "stone": 0.65,
+        "void": 0.0,
+        "root": 0.13,
+        "water": 0.18,
+        "glass": 0.01
+      }
+    },
+    "x13_y9": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.51,
+      "probabilities": {
+        "spore": 0.04,
+        "stone": 0.59,
+        "void": 0.0,
+        "root": 0.19,
+        "water": 0.17,
+        "glass": 0.01
+      }
+    },
+    "x14_y9": {
+      "type": "choice",
+      "choice": "stone",
+      "confidence": 0.36,
+      "probabilities": {
+        "spore": 0.03,
+        "stone": 0.47,
+        "void": 0.0,
+        "root": 0.32,
+        "water": 0.17,
+        "glass": 0.01
+      }
+    },
+    "x15_y9": {
+      "type": "choice",
+      "choice": "root",
+      "confidence": 0.45,
+      "probabilities": {
+        "spore": 0.03,
+        "stone": 0.12,
+        "void": 0.01,
+        "root": 0.55,
+        "water": 0.29,
+        "glass": 0.0
+      }
+    },
+    "x16_y9": {
+      "type": "choice",
+      "choice": "root",
+      "confidence": 0.46,
+      "probabilities": {
+        "spore": 0.03,
+        "stone": 0.03,
+        "void": 0.05,
+        "root": 0.55,
+        "water": 0.34,
+        "glass": 0.0
+      }
+    },
+    "x17_y9": {
+      "type": "choice",
+      "choice": "root",
+      "confidence": 0.34,
+      "probabilities": {
+        "spore": 0.03,
+        "stone": 0.02,
+        "void": 0.07,
+        "root": 0.46,
+        "water": 0.42,
+        "glass": 0.0
+      }
+    },
+    "x18_y9": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.35,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.01,
+        "void": 0.2,
+        "root": 0.31,
+        "water": 0.47000000000000003,
+        "glass": 0.0
+      }
+    },
+    "x19_y9": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.28,
+      "probabilities": {
+        "spore": 0.02,
+        "stone": 0.01,
+        "void": 0.37,
+        "root": 0.2,
+        "water": 0.4,
+        "glass": 0.0
+      }
+    },
+    "x0_y10": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.77,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.03,
+        "root": 0.16,
+        "water": 0.81,
+        "glass": 0.0
+      }
+    },
+    "x1_y10": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.64,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.01,
+        "void": 0.01,
+        "root": 0.28,
+        "water": 0.7,
+        "glass": 0.0
+      }
+    },
+    "x2_y10": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.58,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.01,
+        "void": 0.0,
+        "root": 0.33,
+        "water": 0.66,
+        "glass": 0.0
+      }
+    },
+    "x3_y10": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.57,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.01,
+        "void": 0.0,
+        "root": 0.34,
+        "water": 0.65,
+        "glass": 0.0
+      }
+    },
+    "x4_y10": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.37,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.09,
+        "void": 0.0,
+        "root": 0.43,
+        "water": 0.48,
+        "glass": 0.0
+      }
+    },
+    "x5_y10": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.46,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.14,
+        "void": 0.0,
+        "root": 0.3,
+        "water": 0.56,
+        "glass": 0.0
+      }
+    },
+    "x6_y10": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.54,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.13,
+        "void": 0.0,
+        "root": 0.25,
+        "water": 0.62,
+        "glass": 0.0
+      }
+    },
+    "x7_y10": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.44,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.26,
+        "void": 0.0,
+        "root": 0.2,
+        "water": 0.53,
+        "glass": 0.0
+      }
+    },
+    "x8_y10": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.52,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.34,
+        "void": 0.0,
+        "root": 0.05,
+        "water": 0.6,
+        "glass": 0.0
+      }
+    },
+    "x9_y10": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.57,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.31,
+        "void": 0.0,
+        "root": 0.03,
+        "water": 0.65,
+        "glass": 0.0
+      }
+    },
+    "x10_y10": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.53,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.35,
+        "void": 0.0,
+        "root": 0.02,
+        "water": 0.61,
+        "glass": 0.01
+      }
+    },
+    "x11_y10": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.64,
+      "probabilities": {
+        "spore": 0.02,
+        "stone": 0.24,
+        "void": 0.0,
+        "root": 0.04,
+        "water": 0.7,
+        "glass": 0.0
+      }
+    },
+    "x12_y10": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.51,
+      "probabilities": {
+        "spore": 0.02,
+        "stone": 0.31,
+        "void": 0.0,
+        "root": 0.07,
+        "water": 0.6,
+        "glass": 0.0
+      }
+    },
+    "x13_y10": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.57,
+      "probabilities": {
+        "spore": 0.02,
+        "stone": 0.24,
+        "void": 0.0,
+        "root": 0.09,
+        "water": 0.65,
+        "glass": 0.0
+      }
+    },
+    "x14_y10": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.48,
+      "probabilities": {
+        "spore": 0.02,
+        "stone": 0.23,
+        "void": 0.0,
+        "root": 0.18,
+        "water": 0.57,
+        "glass": 0.0
+      }
+    },
+    "x15_y10": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.63,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.04,
+        "void": 0.0,
+        "root": 0.26,
+        "water": 0.69,
+        "glass": 0.0
+      }
+    },
+    "x16_y10": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.63,
+      "probabilities": {
+        "spore": 0.02,
+        "stone": 0.01,
+        "void": 0.01,
+        "root": 0.26,
+        "water": 0.7,
+        "glass": 0.0
+      }
+    },
+    "x17_y10": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.64,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.01,
+        "void": 0.02,
+        "root": 0.26,
+        "water": 0.7,
+        "glass": 0.0
+      }
+    },
+    "x18_y10": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.65,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.01,
+        "void": 0.09,
+        "root": 0.18,
+        "water": 0.71,
+        "glass": 0.0
+      }
+    },
+    "x19_y10": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.63,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.01,
+        "void": 0.16,
+        "root": 0.13,
+        "water": 0.69,
+        "glass": 0.0
+      }
+    },
+    "x0_y11": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.83,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.02,
+        "root": 0.12,
+        "water": 0.86,
+        "glass": 0.0
+      }
+    },
+    "x1_y11": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.77,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.01,
+        "root": 0.18,
+        "water": 0.81,
+        "glass": 0.0
+      }
+    },
+    "x2_y11": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.79,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.0,
+        "root": 0.17,
+        "water": 0.83,
+        "glass": 0.0
+      }
+    },
+    "x3_y11": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.75,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.01,
+        "void": 0.0,
+        "root": 0.2,
+        "water": 0.79,
+        "glass": 0.0
+      }
+    },
+    "x4_y11": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.8,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.02,
+        "void": 0.0,
+        "root": 0.14,
+        "water": 0.84,
+        "glass": 0.0
+      }
+    },
+    "x5_y11": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.77,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.05,
+        "void": 0.0,
+        "root": 0.14,
+        "water": 0.81,
+        "glass": 0.0
+      }
+    },
+    "x6_y11": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.79,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.05,
+        "void": 0.0,
+        "root": 0.11,
+        "water": 0.84,
+        "glass": 0.0
+      }
+    },
+    "x7_y11": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.77,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.08,
+        "void": 0.0,
+        "root": 0.1,
+        "water": 0.81,
+        "glass": 0.0
+      }
+    },
+    "x8_y11": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.75,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.17,
+        "void": 0.0,
+        "root": 0.03,
+        "water": 0.8,
+        "glass": 0.0
+      }
+    },
+    "x9_y11": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.81,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.13,
+        "void": 0.0,
+        "root": 0.02,
+        "water": 0.84,
+        "glass": 0.0
+      }
+    },
+    "x10_y11": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.8,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.13,
+        "void": 0.0,
+        "root": 0.02,
+        "water": 0.84,
+        "glass": 0.0
+      }
+    },
+    "x11_y11": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.75,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.15,
+        "void": 0.0,
+        "root": 0.04,
+        "water": 0.8,
+        "glass": 0.0
+      }
+    },
+    "x12_y11": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.74,
+      "probabilities": {
+        "spore": 0.02,
+        "stone": 0.14,
+        "void": 0.0,
+        "root": 0.06,
+        "water": 0.78,
+        "glass": 0.0
+      }
+    },
+    "x13_y11": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.75,
+      "probabilities": {
+        "spore": 0.02,
+        "stone": 0.12,
+        "void": 0.0,
+        "root": 0.07,
+        "water": 0.79,
+        "glass": 0.0
+      }
+    },
+    "x14_y11": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.72,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.08,
+        "void": 0.0,
+        "root": 0.13,
+        "water": 0.78,
+        "glass": 0.0
+      }
+    },
+    "x15_y11": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.8,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.02,
+        "void": 0.0,
+        "root": 0.14,
+        "water": 0.83,
+        "glass": 0.0
+      }
+    },
+    "x16_y11": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.8,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.01,
+        "void": 0.01,
+        "root": 0.14,
+        "water": 0.83,
+        "glass": 0.0
+      }
+    },
+    "x17_y11": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.7,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.01,
+        "void": 0.02,
+        "root": 0.21,
+        "water": 0.75,
+        "glass": 0.0
+      }
+    },
+    "x18_y11": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.75,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.0,
+        "void": 0.07,
+        "root": 0.13,
+        "water": 0.79,
+        "glass": 0.0
+      }
+    },
+    "x19_y11": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.73,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.0,
+        "void": 0.12,
+        "root": 0.1,
+        "water": 0.77,
+        "glass": 0.0
+      }
+    },
+    "x0_y12": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.87,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.01,
+        "root": 0.1,
+        "water": 0.89,
+        "glass": 0.0
+      }
+    },
+    "x1_y12": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.85,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.01,
+        "root": 0.12,
+        "water": 0.87,
+        "glass": 0.0
+      }
+    },
+    "x2_y12": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.85,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.0,
+        "root": 0.12,
+        "water": 0.88,
+        "glass": 0.0
+      }
+    },
+    "x3_y12": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.84,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.0,
+        "root": 0.13,
+        "water": 0.87,
+        "glass": 0.0
+      }
+    },
+    "x4_y12": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.88,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.01,
+        "void": 0.0,
+        "root": 0.09,
+        "water": 0.9,
+        "glass": 0.0
+      }
+    },
+    "x5_y12": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.89,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.01,
+        "void": 0.0,
+        "root": 0.07,
+        "water": 0.92,
+        "glass": 0.0
+      }
+    },
+    "x6_y12": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.92,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.02,
+        "void": 0.0,
+        "root": 0.05,
+        "water": 0.93,
+        "glass": 0.0
+      }
+    },
+    "x7_y12": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.93,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.02,
+        "void": 0.0,
+        "root": 0.04,
+        "water": 0.94,
+        "glass": 0.0
+      }
+    },
+    "x8_y12": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.94,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.03,
+        "void": 0.0,
+        "root": 0.01,
+        "water": 0.96,
+        "glass": 0.0
+      }
+    },
+    "x9_y12": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.94,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.04,
+        "void": 0.0,
+        "root": 0.01,
+        "water": 0.95,
+        "glass": 0.0
+      }
+    },
+    "x10_y12": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.95,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.03,
+        "void": 0.0,
+        "root": 0.0,
+        "water": 0.97,
+        "glass": 0.0
+      }
+    },
+    "x11_y12": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.92,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.05,
+        "void": 0.0,
+        "root": 0.01,
+        "water": 0.93,
+        "glass": 0.0
+      }
+    },
+    "x12_y12": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.89,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.05,
+        "void": 0.0,
+        "root": 0.03,
+        "water": 0.91,
+        "glass": 0.0
+      }
+    },
+    "x13_y12": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.89,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.03,
+        "void": 0.0,
+        "root": 0.04,
+        "water": 0.92,
+        "glass": 0.0
+      }
+    },
+    "x14_y12": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.91,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.02,
+        "void": 0.0,
+        "root": 0.04,
+        "water": 0.93,
+        "glass": 0.0
+      }
+    },
+    "x15_y12": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.88,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.0,
+        "root": 0.09,
+        "water": 0.91,
+        "glass": 0.0
+      }
+    },
+    "x16_y12": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.82,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.0,
+        "void": 0.01,
+        "root": 0.13,
+        "water": 0.85,
+        "glass": 0.0
+      }
+    },
+    "x17_y12": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.8,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.0,
+        "void": 0.01,
+        "root": 0.14,
+        "water": 0.84,
+        "glass": 0.0
+      }
+    },
+    "x18_y12": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.8,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.0,
+        "void": 0.06,
+        "root": 0.1,
+        "water": 0.83,
+        "glass": 0.0
+      }
+    },
+    "x19_y12": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.69,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.0,
+        "void": 0.17,
+        "root": 0.08,
+        "water": 0.74,
+        "glass": 0.0
+      }
+    },
+    "x0_y13": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.91,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.01,
+        "root": 0.07,
+        "water": 0.92,
+        "glass": 0.0
+      }
+    },
+    "x1_y13": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.92,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.01,
+        "root": 0.06,
+        "water": 0.93,
+        "glass": 0.0
+      }
+    },
+    "x2_y13": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.92,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.0,
+        "root": 0.06,
+        "water": 0.94,
+        "glass": 0.0
+      }
+    },
+    "x3_y13": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.91,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.0,
+        "root": 0.07,
+        "water": 0.93,
+        "glass": 0.0
+      }
+    },
+    "x4_y13": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.92,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.0,
+        "root": 0.06,
+        "water": 0.9400000000000001,
+        "glass": 0.0
+      }
+    },
+    "x5_y13": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.96,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.0,
+        "root": 0.03,
+        "water": 0.97,
+        "glass": 0.0
+      }
+    },
+    "x6_y13": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.95,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.01,
+        "void": 0.0,
+        "root": 0.03,
+        "water": 0.96,
+        "glass": 0.0
+      }
+    },
+    "x7_y13": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.97,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.01,
+        "void": 0.0,
+        "root": 0.01,
+        "water": 0.98,
+        "glass": 0.0
+      }
+    },
+    "x8_y13": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.98,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.01,
+        "void": 0.0,
+        "root": 0.0,
+        "water": 0.99,
+        "glass": 0.0
+      }
+    },
+    "x9_y13": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.97,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.02,
+        "void": 0.0,
+        "root": 0.0,
+        "water": 0.98,
+        "glass": 0.0
+      }
+    },
+    "x10_y13": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.98,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.01,
+        "void": 0.0,
+        "root": 0.0,
+        "water": 0.99,
+        "glass": 0.0
+      }
+    },
+    "x11_y13": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.97,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.02,
+        "void": 0.0,
+        "root": 0.0,
+        "water": 0.98,
+        "glass": 0.0
+      }
+    },
+    "x12_y13": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.96,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.01,
+        "void": 0.0,
+        "root": 0.01,
+        "water": 0.98,
+        "glass": 0.0
+      }
+    },
+    "x13_y13": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.96,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.01,
+        "void": 0.0,
+        "root": 0.02,
+        "water": 0.97,
+        "glass": 0.0
+      }
+    },
+    "x14_y13": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.94,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.01,
+        "void": 0.0,
+        "root": 0.03,
+        "water": 0.96,
+        "glass": 0.0
+      }
+    },
+    "x15_y13": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.91,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.0,
+        "root": 0.07,
+        "water": 0.93,
+        "glass": 0.0
+      }
+    },
+    "x16_y13": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.86,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.0,
+        "void": 0.01,
+        "root": 0.1,
+        "water": 0.88,
+        "glass": 0.0
+      }
+    },
+    "x17_y13": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.87,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.01,
+        "root": 0.09,
+        "water": 0.9,
+        "glass": 0.0
+      }
+    },
+    "x18_y13": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.85,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.0,
+        "void": 0.04,
+        "root": 0.07,
+        "water": 0.88,
+        "glass": 0.0
+      }
+    },
+    "x19_y13": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.77,
+      "probabilities": {
+        "spore": 0.01,
+        "stone": 0.0,
+        "void": 0.11,
+        "root": 0.07,
+        "water": 0.81,
+        "glass": 0.0
+      }
+    },
+    "x0_y14": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.92,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.01,
+        "root": 0.05,
+        "water": 0.94,
+        "glass": 0.0
+      }
+    },
+    "x1_y14": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.92,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.0,
+        "root": 0.06,
+        "water": 0.94,
+        "glass": 0.0
+      }
+    },
+    "x2_y14": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.95,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.0,
+        "root": 0.04,
+        "water": 0.96,
+        "glass": 0.0
+      }
+    },
+    "x3_y14": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.94,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.0,
+        "root": 0.05,
+        "water": 0.95,
+        "glass": 0.0
+      }
+    },
+    "x4_y14": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.97,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.0,
+        "root": 0.02,
+        "water": 0.98,
+        "glass": 0.0
+      }
+    },
+    "x5_y14": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.96,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.0,
+        "root": 0.03,
+        "water": 0.97,
+        "glass": 0.0
+      }
+    },
+    "x6_y14": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.98,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.0,
+        "root": 0.01,
+        "water": 0.99,
+        "glass": 0.0
+      }
+    },
+    "x7_y14": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.99,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.0,
+        "root": 0.01,
+        "water": 0.99,
+        "glass": 0.0
+      }
+    },
+    "x8_y14": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.99,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.01,
+        "void": 0.0,
+        "root": 0.0,
+        "water": 0.99,
+        "glass": 0.0
+      }
+    },
+    "x9_y14": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.99,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.01,
+        "void": 0.0,
+        "root": 0.0,
+        "water": 0.99,
+        "glass": 0.0
+      }
+    },
+    "x10_y14": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.99,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.0,
+        "root": 0.0,
+        "water": 1.0,
+        "glass": 0.0
+      }
+    },
+    "x11_y14": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.99,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.01,
+        "void": 0.0,
+        "root": 0.0,
+        "water": 0.99,
+        "glass": 0.0
+      }
+    },
+    "x12_y14": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.98,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.01,
+        "void": 0.0,
+        "root": 0.0,
+        "water": 0.99,
+        "glass": 0.0
+      }
+    },
+    "x13_y14": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.98,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.01,
+        "void": 0.0,
+        "root": 0.01,
+        "water": 0.98,
+        "glass": 0.0
+      }
+    },
+    "x14_y14": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.97,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.01,
+        "void": 0.0,
+        "root": 0.02,
+        "water": 0.97,
+        "glass": 0.0
+      }
+    },
+    "x15_y14": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.96,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.0,
+        "root": 0.03,
+        "water": 0.97,
+        "glass": 0.0
+      }
+    },
+    "x16_y14": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.92,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.01,
+        "root": 0.05,
+        "water": 0.93,
+        "glass": 0.0
+      }
+    },
+    "x17_y14": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.91,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.01,
+        "root": 0.05,
+        "water": 0.93,
+        "glass": 0.0
+      }
+    },
+    "x18_y14": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.87,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.05,
+        "root": 0.05,
+        "water": 0.9,
+        "glass": 0.0
+      }
+    },
+    "x19_y14": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.84,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.08,
+        "root": 0.04,
+        "water": 0.88,
+        "glass": 0.0
+      }
+    },
+    "x0_y15": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.91,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.02,
+        "root": 0.05,
+        "water": 0.93,
+        "glass": 0.0
+      }
+    },
+    "x1_y15": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.95,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.01,
+        "root": 0.04,
+        "water": 0.95,
+        "glass": 0.0
+      }
+    },
+    "x2_y15": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.97,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.0,
+        "root": 0.02,
+        "water": 0.98,
+        "glass": 0.0
+      }
+    },
+    "x3_y15": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.96,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.0,
+        "root": 0.03,
+        "water": 0.97,
+        "glass": 0.0
+      }
+    },
+    "x4_y15": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.98,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.0,
+        "root": 0.01,
+        "water": 0.99,
+        "glass": 0.0
+      }
+    },
+    "x5_y15": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.98,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.0,
+        "root": 0.01,
+        "water": 0.99,
+        "glass": 0.0
+      }
+    },
+    "x6_y15": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.99,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.0,
+        "root": 0.01,
+        "water": 0.99,
+        "glass": 0.0
+      }
+    },
+    "x7_y15": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.99,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.0,
+        "root": 0.0,
+        "water": 1.0,
+        "glass": 0.0
+      }
+    },
+    "x8_y15": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.99,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.0,
+        "root": 0.0,
+        "water": 1.0,
+        "glass": 0.0
+      }
+    },
+    "x9_y15": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.99,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.0,
+        "root": 0.0,
+        "water": 1.0,
+        "glass": 0.0
+      }
+    },
+    "x10_y15": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.99,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.0,
+        "root": 0.0,
+        "water": 1.0,
+        "glass": 0.0
+      }
+    },
+    "x11_y15": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.99,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.01,
+        "void": 0.0,
+        "root": 0.0,
+        "water": 0.99,
+        "glass": 0.0
+      }
+    },
+    "x12_y15": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.99,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.0,
+        "root": 0.0,
+        "water": 1.0,
+        "glass": 0.0
+      }
+    },
+    "x13_y15": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.99,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.0,
+        "root": 0.0,
+        "water": 1.0,
+        "glass": 0.0
+      }
+    },
+    "x14_y15": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.98,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.0,
+        "root": 0.01,
+        "water": 0.99,
+        "glass": 0.0
+      }
+    },
+    "x15_y15": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.95,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.01,
+        "root": 0.03,
+        "water": 0.96,
+        "glass": 0.0
+      }
+    },
+    "x16_y15": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.94,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.01,
+        "root": 0.03,
+        "water": 0.96,
+        "glass": 0.0
+      }
+    },
+    "x17_y15": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.93,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.02,
+        "root": 0.04,
+        "water": 0.94,
+        "glass": 0.0
+      }
+    },
+    "x18_y15": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.88,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.05,
+        "root": 0.04,
+        "water": 0.91,
+        "glass": 0.0
+      }
+    },
+    "x19_y15": {
+      "type": "choice",
+      "choice": "water",
+      "confidence": 0.77,
+      "probabilities": {
+        "spore": 0.0,
+        "stone": 0.0,
+        "void": 0.15,
+        "root": 0.03,
+        "water": 0.8200000000000001,
+        "glass": 0.0
+      }
+    }
+  },
+  "usage": {
+    "input_tokens": 53210,
+    "output_tokens": 19483
+  }
+}

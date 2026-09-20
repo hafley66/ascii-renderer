@@ -1,0 +1,337 @@
+{
+  "model": "jev-latest",
+  "state": {
+    "scenes": {
+      "cathedral": "A drowned monastery remembering that it was once a forest. Enormous ribbed vaults, a burning rose window, roots, silver floodwater, cyan stone and amber spores.",
+      "cosmos": "An impossible astronomical instrument grown inside an ammonite. Nested gold orbits collide with turquoise spiral storms. A diagram of a universe whose gravity has become musical.",
+      "kolam": "An alien moth becomes a Tamil kolam ritual diagram. Its wings are luminous knotted paths, eyes become rings of tiny flowers, the body becomes a golden spine. Intricate bilateral sacred biology."
+    },
+    "task": "Art-direct these procedural ASCII scenes. Each question controls a real renderer parameter or transformation."
+  },
+  "questions": {
+    "cathedral_NAVES": {
+      "type": "choice",
+      "instructions": "For the artwork described in state.scenes.cathedral, choose the NAVES setting that best realizes its composition. Available numerical values are [3, 5, 9].",
+      "criteria": {
+        "low": "3: sparse or restrained",
+        "medium": "5: balanced",
+        "high": "9: intricate, large or intense"
+      }
+    },
+    "cathedral_TOWERS": {
+      "type": "choice",
+      "instructions": "For the artwork described in state.scenes.cathedral, choose the TOWERS setting that best realizes its composition. Available numerical values are [0, 2, 4].",
+      "criteria": {
+        "low": "0: sparse or restrained",
+        "medium": "2: balanced",
+        "high": "4: intricate, large or intense"
+      }
+    },
+    "cathedral_ROSE": {
+      "type": "choice",
+      "instructions": "For the artwork described in state.scenes.cathedral, choose the ROSE setting that best realizes its composition. Available numerical values are [6, 12, 18].",
+      "criteria": {
+        "low": "6: sparse or restrained",
+        "medium": "12: balanced",
+        "high": "18: intricate, large or intense"
+      }
+    },
+    "cathedral_CANDLES": {
+      "type": "choice",
+      "instructions": "For the artwork described in state.scenes.cathedral, choose the CANDLES setting that best realizes its composition. Available numerical values are [0, 18, 40].",
+      "criteria": {
+        "low": "0: sparse or restrained",
+        "medium": "18: balanced",
+        "high": "40: intricate, large or intense"
+      }
+    },
+    "cathedral_RAY": {
+      "type": "choice",
+      "instructions": "For the artwork described in state.scenes.cathedral, choose the RAY setting that best realizes its composition. Available numerical values are [0.2, 0.6, 1].",
+      "criteria": {
+        "low": "0.2: sparse or restrained",
+        "medium": "0.6: balanced",
+        "high": "1: intricate, large or intense"
+      }
+    },
+    "cathedral_SMOKE": {
+      "type": "choice",
+      "instructions": "For the artwork described in state.scenes.cathedral, choose the SMOKE setting that best realizes its composition. Available numerical values are [0, 12, 24].",
+      "criteria": {
+        "low": "0: sparse or restrained",
+        "medium": "12: balanced",
+        "high": "24: intricate, large or intense"
+      }
+    },
+    "cathedral_DEPTH": {
+      "type": "choice",
+      "instructions": "For the artwork described in state.scenes.cathedral, choose the DEPTH setting that best realizes its composition. Available numerical values are [1, 3, 5].",
+      "criteria": {
+        "low": "1: sparse or restrained",
+        "medium": "3: balanced",
+        "high": "5: intricate, large or intense"
+      }
+    },
+    "cathedral_MOSAIC": {
+      "type": "choice",
+      "instructions": "For the artwork described in state.scenes.cathedral, choose the MOSAIC setting that best realizes its composition. Available numerical values are [0.1, 0.6, 1].",
+      "criteria": {
+        "low": "0.1: sparse or restrained",
+        "medium": "0.6: balanced",
+        "high": "1: intricate, large or intense"
+      }
+    },
+    "cathedral_GLOW": {
+      "type": "choice",
+      "instructions": "For the artwork described in state.scenes.cathedral, choose the GLOW setting that best realizes its composition. Available numerical values are [0.3, 0.9, 1.5].",
+      "criteria": {
+        "low": "0.3: sparse or restrained",
+        "medium": "0.9: balanced",
+        "high": "1.5: intricate, large or intense"
+      }
+    },
+    "cathedral_ARCH": {
+      "type": "choice",
+      "instructions": "For the artwork described in state.scenes.cathedral, choose the ARCH setting that best realizes its composition. Available numerical values are [0, 0.6, 1].",
+      "criteria": {
+        "low": "0: sparse or restrained",
+        "medium": "0.6: balanced",
+        "high": "1: intricate, large or intense"
+      }
+    },
+    "cathedral_BANNERS": {
+      "type": "choice",
+      "instructions": "For the artwork described in state.scenes.cathedral, choose the BANNERS setting that best realizes its composition. Available numerical values are [0, 4, 8].",
+      "criteria": {
+        "low": "0: sparse or restrained",
+        "medium": "4: balanced",
+        "high": "8: intricate, large or intense"
+      }
+    },
+    "cathedral_transform": {
+      "type": "choice",
+      "instructions": "Which spatial transformation best develops state.scenes.cathedral into an impossible dream?",
+      "criteria": {
+        "mirror": "bilateral reflection",
+        "vortex": "spiral gravity distortion",
+        "kaleidoscope": "sixfold radial symmetry"
+      }
+    },
+    "cathedral_palette": {
+      "type": "choice",
+      "instructions": "Which palette best realizes state.scenes.cathedral?",
+      "criteria": {
+        "abyss": "midnight, cyan, ivory, amber",
+        "ember": "black, red, copper, gold",
+        "lichen": "black, mint, pale jade, silver"
+      }
+    },
+    "cosmos_RINGS": {
+      "type": "choice",
+      "instructions": "For the artwork described in state.scenes.cosmos, choose the RINGS setting that best realizes its composition. Available numerical values are [2, 6, 10].",
+      "criteria": {
+        "low": "2: sparse or restrained",
+        "medium": "6: balanced",
+        "high": "10: intricate, large or intense"
+      }
+    },
+    "cosmos_PLANETS": {
+      "type": "choice",
+      "instructions": "For the artwork described in state.scenes.cosmos, choose the PLANETS setting that best realizes its composition. Available numerical values are [1, 4, 7].",
+      "criteria": {
+        "low": "1: sparse or restrained",
+        "medium": "4: balanced",
+        "high": "7: intricate, large or intense"
+      }
+    },
+    "cosmos_MOONS": {
+      "type": "choice",
+      "instructions": "For the artwork described in state.scenes.cosmos, choose the MOONS setting that best realizes its composition. Available numerical values are [0, 1, 3].",
+      "criteria": {
+        "low": "0: sparse or restrained",
+        "medium": "1: balanced",
+        "high": "3: intricate, large or intense"
+      }
+    },
+    "cosmos_ZODIAC": {
+      "type": "choice",
+      "instructions": "For the artwork described in state.scenes.cosmos, choose the ZODIAC setting that best realizes its composition. Available numerical values are [0, 0.5, 1].",
+      "criteria": {
+        "low": "0: sparse or restrained",
+        "medium": "0.5: balanced",
+        "high": "1: intricate, large or intense"
+      }
+    },
+    "cosmos_SPIRAL": {
+      "type": "choice",
+      "instructions": "For the artwork described in state.scenes.cosmos, choose the SPIRAL setting that best realizes its composition. Available numerical values are [0, 0.5, 1].",
+      "criteria": {
+        "low": "0: sparse or restrained",
+        "medium": "0.5: balanced",
+        "high": "1: intricate, large or intense"
+      }
+    },
+    "cosmos_AURORA": {
+      "type": "choice",
+      "instructions": "For the artwork described in state.scenes.cosmos, choose the AURORA setting that best realizes its composition. Available numerical values are [0, 1.5, 3].",
+      "criteria": {
+        "low": "0: sparse or restrained",
+        "medium": "1.5: balanced",
+        "high": "3: intricate, large or intense"
+      }
+    },
+    "cosmos_STARS": {
+      "type": "choice",
+      "instructions": "For the artwork described in state.scenes.cosmos, choose the STARS setting that best realizes its composition. Available numerical values are [0.1, 0.5, 1].",
+      "criteria": {
+        "low": "0.1: sparse or restrained",
+        "medium": "0.5: balanced",
+        "high": "1: intricate, large or intense"
+      }
+    },
+    "cosmos_TRAIL": {
+      "type": "choice",
+      "instructions": "For the artwork described in state.scenes.cosmos, choose the TRAIL setting that best realizes its composition. Available numerical values are [0, 20, 40].",
+      "criteria": {
+        "low": "0: sparse or restrained",
+        "medium": "20: balanced",
+        "high": "40: intricate, large or intense"
+      }
+    },
+    "cosmos_MOTES": {
+      "type": "choice",
+      "instructions": "For the artwork described in state.scenes.cosmos, choose the MOTES setting that best realizes its composition. Available numerical values are [0, 35, 70].",
+      "criteria": {
+        "low": "0: sparse or restrained",
+        "medium": "35: balanced",
+        "high": "70: intricate, large or intense"
+      }
+    },
+    "cosmos_GLOW": {
+      "type": "choice",
+      "instructions": "For the artwork described in state.scenes.cosmos, choose the GLOW setting that best realizes its composition. Available numerical values are [0.3, 0.9, 1.5].",
+      "criteria": {
+        "low": "0.3: sparse or restrained",
+        "medium": "0.9: balanced",
+        "high": "1.5: intricate, large or intense"
+      }
+    },
+    "cosmos_TILT": {
+      "type": "choice",
+      "instructions": "For the artwork described in state.scenes.cosmos, choose the TILT setting that best realizes its composition. Available numerical values are [0.2, 0.6, 1].",
+      "criteria": {
+        "low": "0.2: sparse or restrained",
+        "medium": "0.6: balanced",
+        "high": "1: intricate, large or intense"
+      }
+    },
+    "cosmos_transform": {
+      "type": "choice",
+      "instructions": "Which spatial transformation best develops state.scenes.cosmos into an impossible dream?",
+      "criteria": {
+        "mirror": "bilateral reflection",
+        "vortex": "spiral gravity distortion",
+        "kaleidoscope": "sixfold radial symmetry"
+      }
+    },
+    "cosmos_palette": {
+      "type": "choice",
+      "instructions": "Which palette best realizes state.scenes.cosmos?",
+      "criteria": {
+        "abyss": "midnight, cyan, ivory, amber",
+        "ember": "black, red, copper, gold",
+        "lichen": "black, mint, pale jade, silver"
+      }
+    },
+    "kolam_CURL": {
+      "type": "choice",
+      "instructions": "For the artwork described in state.scenes.kolam, choose the CURL setting that best realizes its composition. Available numerical values are [0.1, 0.6, 1.2].",
+      "criteria": {
+        "low": "0.1: sparse or restrained",
+        "medium": "0.6: balanced",
+        "high": "1.2: intricate, large or intense"
+      }
+    },
+    "kolam_RINGS": {
+      "type": "choice",
+      "instructions": "For the artwork described in state.scenes.kolam, choose the RINGS setting that best realizes its composition. Available numerical values are [2, 4, 7].",
+      "criteria": {
+        "low": "2: sparse or restrained",
+        "medium": "4: balanced",
+        "high": "7: intricate, large or intense"
+      }
+    },
+    "kolam_PETALS": {
+      "type": "choice",
+      "instructions": "For the artwork described in state.scenes.kolam, choose the PETALS setting that best realizes its composition. Available numerical values are [6, 18, 36].",
+      "criteria": {
+        "low": "6: sparse or restrained",
+        "medium": "18: balanced",
+        "high": "36: intricate, large or intense"
+      }
+    },
+    "kolam_FLORETS": {
+      "type": "choice",
+      "instructions": "For the artwork described in state.scenes.kolam, choose the FLORETS setting that best realizes its composition. Available numerical values are [0.2, 0.6, 1].",
+      "criteria": {
+        "low": "0.2: sparse or restrained",
+        "medium": "0.6: balanced",
+        "high": "1: intricate, large or intense"
+      }
+    },
+    "kolam_SPREAD": {
+      "type": "choice",
+      "instructions": "For the artwork described in state.scenes.kolam, choose the SPREAD setting that best realizes its composition. Available numerical values are [0.5, 0.8, 1].",
+      "criteria": {
+        "low": "0.5: sparse or restrained",
+        "medium": "0.8: balanced",
+        "high": "1: intricate, large or intense"
+      }
+    },
+    "kolam_PERSIST": {
+      "type": "choice",
+      "instructions": "For the artwork described in state.scenes.kolam, choose the PERSIST setting that best realizes its composition. Available numerical values are [0.2, 0.6, 1].",
+      "criteria": {
+        "low": "0.2: sparse or restrained",
+        "medium": "0.6: balanced",
+        "high": "1: intricate, large or intense"
+      }
+    },
+    "kolam_EMBERS": {
+      "type": "choice",
+      "instructions": "For the artwork described in state.scenes.kolam, choose the EMBERS setting that best realizes its composition. Available numerical values are [0.2, 0.8, 1.5].",
+      "criteria": {
+        "low": "0.2: sparse or restrained",
+        "medium": "0.8: balanced",
+        "high": "1.5: intricate, large or intense"
+      }
+    },
+    "kolam_GLOW": {
+      "type": "choice",
+      "instructions": "For the artwork described in state.scenes.kolam, choose the GLOW setting that best realizes its composition. Available numerical values are [0.5, 1, 1.6].",
+      "criteria": {
+        "low": "0.5: sparse or restrained",
+        "medium": "1: balanced",
+        "high": "1.6: intricate, large or intense"
+      }
+    },
+    "kolam_transform": {
+      "type": "choice",
+      "instructions": "Which spatial transformation best develops state.scenes.kolam into an impossible dream?",
+      "criteria": {
+        "mirror": "bilateral reflection",
+        "vortex": "spiral gravity distortion",
+        "kaleidoscope": "sixfold radial symmetry"
+      }
+    },
+    "kolam_palette": {
+      "type": "choice",
+      "instructions": "Which palette best realizes state.scenes.kolam?",
+      "criteria": {
+        "abyss": "midnight, cyan, ivory, amber",
+        "ember": "black, red, copper, gold",
+        "lichen": "black, mint, pale jade, silver"
+      }
+    }
+  }
+}

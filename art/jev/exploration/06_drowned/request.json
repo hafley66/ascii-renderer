@@ -1,0 +1,3851 @@
+{
+  "model": "jev-latest",
+  "state": {
+    "image": "A drowned monastery remembering that it was once a forest. A symmetrical ruined Gothic cathedral fills the center. A rose window at (0.50,0.30); ribbed arches rise between x=0.25 and 0.75. Tree roots swallow columns from both sides. Luminous fungi sprout from stone. The lower third is dark water reflecting the architecture. The upper corners are night sky. Blue silver light from the window, amber fungi, deep teal water. Perspective view down the central nave.",
+    "width": 20,
+    "height": 16,
+    "task": "Imagine one coherent image. Evaluate each question against this same composition."
+  },
+  "questions": {
+    "x0_y0": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.0250, y=0.0312, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x1_y0": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.0750, y=0.0312, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x2_y0": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.1250, y=0.0312, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x3_y0": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.1750, y=0.0312, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x4_y0": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.2250, y=0.0312, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x5_y0": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.2750, y=0.0312, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x6_y0": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.3250, y=0.0312, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x7_y0": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.3750, y=0.0312, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x8_y0": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.4250, y=0.0312, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x9_y0": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.4750, y=0.0312, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x10_y0": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.5250, y=0.0312, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x11_y0": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.5750, y=0.0312, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x12_y0": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.6250, y=0.0312, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x13_y0": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.6750, y=0.0312, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x14_y0": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.7250, y=0.0312, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x15_y0": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.7750, y=0.0312, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x16_y0": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.8250, y=0.0312, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x17_y0": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.8750, y=0.0312, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x18_y0": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.9250, y=0.0312, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x19_y0": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.9750, y=0.0312, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x0_y1": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.0250, y=0.0938, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x1_y1": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.0750, y=0.0938, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x2_y1": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.1250, y=0.0938, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x3_y1": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.1750, y=0.0938, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x4_y1": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.2250, y=0.0938, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x5_y1": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.2750, y=0.0938, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x6_y1": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.3250, y=0.0938, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x7_y1": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.3750, y=0.0938, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x8_y1": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.4250, y=0.0938, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x9_y1": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.4750, y=0.0938, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x10_y1": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.5250, y=0.0938, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x11_y1": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.5750, y=0.0938, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x12_y1": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.6250, y=0.0938, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x13_y1": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.6750, y=0.0938, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x14_y1": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.7250, y=0.0938, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x15_y1": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.7750, y=0.0938, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x16_y1": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.8250, y=0.0938, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x17_y1": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.8750, y=0.0938, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x18_y1": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.9250, y=0.0938, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x19_y1": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.9750, y=0.0938, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x0_y2": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.0250, y=0.1562, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x1_y2": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.0750, y=0.1562, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x2_y2": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.1250, y=0.1562, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x3_y2": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.1750, y=0.1562, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x4_y2": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.2250, y=0.1562, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x5_y2": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.2750, y=0.1562, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x6_y2": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.3250, y=0.1562, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x7_y2": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.3750, y=0.1562, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x8_y2": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.4250, y=0.1562, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x9_y2": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.4750, y=0.1562, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x10_y2": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.5250, y=0.1562, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x11_y2": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.5750, y=0.1562, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x12_y2": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.6250, y=0.1562, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x13_y2": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.6750, y=0.1562, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x14_y2": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.7250, y=0.1562, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x15_y2": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.7750, y=0.1562, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x16_y2": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.8250, y=0.1562, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x17_y2": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.8750, y=0.1562, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x18_y2": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.9250, y=0.1562, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x19_y2": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.9750, y=0.1562, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x0_y3": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.0250, y=0.2188, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x1_y3": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.0750, y=0.2188, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x2_y3": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.1250, y=0.2188, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x3_y3": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.1750, y=0.2188, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x4_y3": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.2250, y=0.2188, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x5_y3": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.2750, y=0.2188, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x6_y3": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.3250, y=0.2188, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x7_y3": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.3750, y=0.2188, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x8_y3": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.4250, y=0.2188, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x9_y3": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.4750, y=0.2188, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x10_y3": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.5250, y=0.2188, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x11_y3": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.5750, y=0.2188, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x12_y3": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.6250, y=0.2188, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x13_y3": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.6750, y=0.2188, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x14_y3": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.7250, y=0.2188, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x15_y3": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.7750, y=0.2188, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x16_y3": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.8250, y=0.2188, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x17_y3": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.8750, y=0.2188, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x18_y3": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.9250, y=0.2188, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x19_y3": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.9750, y=0.2188, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x0_y4": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.0250, y=0.2812, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x1_y4": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.0750, y=0.2812, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x2_y4": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.1250, y=0.2812, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x3_y4": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.1750, y=0.2812, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x4_y4": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.2250, y=0.2812, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x5_y4": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.2750, y=0.2812, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x6_y4": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.3250, y=0.2812, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x7_y4": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.3750, y=0.2812, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x8_y4": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.4250, y=0.2812, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x9_y4": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.4750, y=0.2812, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x10_y4": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.5250, y=0.2812, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x11_y4": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.5750, y=0.2812, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x12_y4": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.6250, y=0.2812, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x13_y4": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.6750, y=0.2812, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x14_y4": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.7250, y=0.2812, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x15_y4": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.7750, y=0.2812, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x16_y4": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.8250, y=0.2812, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x17_y4": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.8750, y=0.2812, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x18_y4": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.9250, y=0.2812, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x19_y4": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.9750, y=0.2812, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x0_y5": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.0250, y=0.3438, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x1_y5": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.0750, y=0.3438, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x2_y5": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.1250, y=0.3438, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x3_y5": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.1750, y=0.3438, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x4_y5": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.2250, y=0.3438, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x5_y5": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.2750, y=0.3438, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x6_y5": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.3250, y=0.3438, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x7_y5": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.3750, y=0.3438, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x8_y5": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.4250, y=0.3438, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x9_y5": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.4750, y=0.3438, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x10_y5": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.5250, y=0.3438, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x11_y5": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.5750, y=0.3438, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x12_y5": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.6250, y=0.3438, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x13_y5": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.6750, y=0.3438, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x14_y5": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.7250, y=0.3438, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x15_y5": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.7750, y=0.3438, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x16_y5": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.8250, y=0.3438, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x17_y5": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.8750, y=0.3438, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x18_y5": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.9250, y=0.3438, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x19_y5": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.9750, y=0.3438, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x0_y6": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.0250, y=0.4062, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x1_y6": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.0750, y=0.4062, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x2_y6": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.1250, y=0.4062, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x3_y6": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.1750, y=0.4062, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x4_y6": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.2250, y=0.4062, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x5_y6": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.2750, y=0.4062, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x6_y6": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.3250, y=0.4062, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x7_y6": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.3750, y=0.4062, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x8_y6": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.4250, y=0.4062, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x9_y6": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.4750, y=0.4062, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x10_y6": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.5250, y=0.4062, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x11_y6": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.5750, y=0.4062, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x12_y6": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.6250, y=0.4062, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x13_y6": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.6750, y=0.4062, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x14_y6": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.7250, y=0.4062, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x15_y6": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.7750, y=0.4062, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x16_y6": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.8250, y=0.4062, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x17_y6": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.8750, y=0.4062, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x18_y6": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.9250, y=0.4062, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x19_y6": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.9750, y=0.4062, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x0_y7": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.0250, y=0.4688, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x1_y7": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.0750, y=0.4688, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x2_y7": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.1250, y=0.4688, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x3_y7": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.1750, y=0.4688, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x4_y7": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.2250, y=0.4688, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x5_y7": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.2750, y=0.4688, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x6_y7": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.3250, y=0.4688, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x7_y7": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.3750, y=0.4688, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x8_y7": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.4250, y=0.4688, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x9_y7": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.4750, y=0.4688, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x10_y7": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.5250, y=0.4688, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x11_y7": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.5750, y=0.4688, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x12_y7": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.6250, y=0.4688, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x13_y7": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.6750, y=0.4688, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x14_y7": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.7250, y=0.4688, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x15_y7": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.7750, y=0.4688, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x16_y7": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.8250, y=0.4688, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x17_y7": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.8750, y=0.4688, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x18_y7": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.9250, y=0.4688, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x19_y7": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.9750, y=0.4688, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x0_y8": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.0250, y=0.5312, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x1_y8": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.0750, y=0.5312, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x2_y8": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.1250, y=0.5312, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x3_y8": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.1750, y=0.5312, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x4_y8": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.2250, y=0.5312, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x5_y8": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.2750, y=0.5312, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x6_y8": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.3250, y=0.5312, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x7_y8": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.3750, y=0.5312, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x8_y8": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.4250, y=0.5312, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x9_y8": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.4750, y=0.5312, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x10_y8": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.5250, y=0.5312, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x11_y8": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.5750, y=0.5312, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x12_y8": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.6250, y=0.5312, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x13_y8": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.6750, y=0.5312, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x14_y8": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.7250, y=0.5312, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x15_y8": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.7750, y=0.5312, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x16_y8": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.8250, y=0.5312, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x17_y8": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.8750, y=0.5312, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x18_y8": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.9250, y=0.5312, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x19_y8": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.9750, y=0.5312, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x0_y9": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.0250, y=0.5938, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x1_y9": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.0750, y=0.5938, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x2_y9": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.1250, y=0.5938, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x3_y9": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.1750, y=0.5938, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x4_y9": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.2250, y=0.5938, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x5_y9": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.2750, y=0.5938, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x6_y9": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.3250, y=0.5938, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x7_y9": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.3750, y=0.5938, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x8_y9": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.4250, y=0.5938, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x9_y9": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.4750, y=0.5938, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x10_y9": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.5250, y=0.5938, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x11_y9": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.5750, y=0.5938, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x12_y9": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.6250, y=0.5938, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x13_y9": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.6750, y=0.5938, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x14_y9": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.7250, y=0.5938, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x15_y9": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.7750, y=0.5938, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x16_y9": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.8250, y=0.5938, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x17_y9": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.8750, y=0.5938, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x18_y9": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.9250, y=0.5938, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x19_y9": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.9750, y=0.5938, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x0_y10": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.0250, y=0.6562, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x1_y10": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.0750, y=0.6562, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x2_y10": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.1250, y=0.6562, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x3_y10": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.1750, y=0.6562, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x4_y10": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.2250, y=0.6562, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x5_y10": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.2750, y=0.6562, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x6_y10": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.3250, y=0.6562, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x7_y10": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.3750, y=0.6562, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x8_y10": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.4250, y=0.6562, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x9_y10": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.4750, y=0.6562, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x10_y10": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.5250, y=0.6562, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x11_y10": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.5750, y=0.6562, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x12_y10": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.6250, y=0.6562, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x13_y10": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.6750, y=0.6562, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x14_y10": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.7250, y=0.6562, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x15_y10": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.7750, y=0.6562, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x16_y10": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.8250, y=0.6562, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x17_y10": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.8750, y=0.6562, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x18_y10": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.9250, y=0.6562, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x19_y10": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.9750, y=0.6562, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x0_y11": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.0250, y=0.7188, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x1_y11": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.0750, y=0.7188, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x2_y11": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.1250, y=0.7188, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x3_y11": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.1750, y=0.7188, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x4_y11": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.2250, y=0.7188, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x5_y11": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.2750, y=0.7188, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x6_y11": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.3250, y=0.7188, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x7_y11": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.3750, y=0.7188, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x8_y11": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.4250, y=0.7188, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x9_y11": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.4750, y=0.7188, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x10_y11": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.5250, y=0.7188, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x11_y11": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.5750, y=0.7188, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x12_y11": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.6250, y=0.7188, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x13_y11": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.6750, y=0.7188, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x14_y11": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.7250, y=0.7188, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x15_y11": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.7750, y=0.7188, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x16_y11": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.8250, y=0.7188, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x17_y11": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.8750, y=0.7188, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x18_y11": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.9250, y=0.7188, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x19_y11": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.9750, y=0.7188, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x0_y12": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.0250, y=0.7812, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x1_y12": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.0750, y=0.7812, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x2_y12": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.1250, y=0.7812, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x3_y12": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.1750, y=0.7812, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x4_y12": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.2250, y=0.7812, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x5_y12": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.2750, y=0.7812, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x6_y12": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.3250, y=0.7812, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x7_y12": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.3750, y=0.7812, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x8_y12": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.4250, y=0.7812, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x9_y12": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.4750, y=0.7812, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x10_y12": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.5250, y=0.7812, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x11_y12": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.5750, y=0.7812, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x12_y12": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.6250, y=0.7812, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x13_y12": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.6750, y=0.7812, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x14_y12": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.7250, y=0.7812, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x15_y12": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.7750, y=0.7812, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x16_y12": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.8250, y=0.7812, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x17_y12": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.8750, y=0.7812, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x18_y12": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.9250, y=0.7812, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x19_y12": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.9750, y=0.7812, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x0_y13": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.0250, y=0.8438, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x1_y13": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.0750, y=0.8438, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x2_y13": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.1250, y=0.8438, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x3_y13": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.1750, y=0.8438, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x4_y13": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.2250, y=0.8438, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x5_y13": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.2750, y=0.8438, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x6_y13": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.3250, y=0.8438, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x7_y13": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.3750, y=0.8438, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x8_y13": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.4250, y=0.8438, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x9_y13": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.4750, y=0.8438, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x10_y13": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.5250, y=0.8438, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x11_y13": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.5750, y=0.8438, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x12_y13": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.6250, y=0.8438, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x13_y13": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.6750, y=0.8438, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x14_y13": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.7250, y=0.8438, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x15_y13": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.7750, y=0.8438, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x16_y13": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.8250, y=0.8438, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x17_y13": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.8750, y=0.8438, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x18_y13": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.9250, y=0.8438, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x19_y13": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.9750, y=0.8438, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x0_y14": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.0250, y=0.9062, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x1_y14": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.0750, y=0.9062, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x2_y14": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.1250, y=0.9062, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x3_y14": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.1750, y=0.9062, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x4_y14": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.2250, y=0.9062, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x5_y14": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.2750, y=0.9062, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x6_y14": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.3250, y=0.9062, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x7_y14": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.3750, y=0.9062, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x8_y14": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.4250, y=0.9062, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x9_y14": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.4750, y=0.9062, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x10_y14": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.5250, y=0.9062, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x11_y14": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.5750, y=0.9062, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x12_y14": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.6250, y=0.9062, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x13_y14": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.6750, y=0.9062, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x14_y14": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.7250, y=0.9062, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x15_y14": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.7750, y=0.9062, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x16_y14": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.8250, y=0.9062, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x17_y14": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.8750, y=0.9062, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x18_y14": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.9250, y=0.9062, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x19_y14": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.9750, y=0.9062, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x0_y15": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.0250, y=0.9688, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x1_y15": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.0750, y=0.9688, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x2_y15": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.1250, y=0.9688, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x3_y15": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.1750, y=0.9688, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x4_y15": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.2250, y=0.9688, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x5_y15": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.2750, y=0.9688, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x6_y15": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.3250, y=0.9688, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x7_y15": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.3750, y=0.9688, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x8_y15": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.4250, y=0.9688, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x9_y15": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.4750, y=0.9688, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x10_y15": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.5250, y=0.9688, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x11_y15": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.5750, y=0.9688, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x12_y15": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.6250, y=0.9688, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x13_y15": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.6750, y=0.9688, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x14_y15": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.7250, y=0.9688, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x15_y15": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.7750, y=0.9688, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x16_y15": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.8250, y=0.9688, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x17_y15": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.8750, y=0.9688, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x18_y15": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.9250, y=0.9688, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    },
+    "x19_y15": {
+      "type": "choice",
+      "instructions": "Which material occupies normalized image point x=0.9750, y=0.9688, origin top-left?",
+      "criteria": {
+        "void": "empty dark sky or negative space",
+        "stone": "cathedral columns, vaults and masonry",
+        "root": "tree trunks, roots, branches or organic growth",
+        "water": "floodwater or reflections",
+        "glass": "luminous stained glass or moonlight",
+        "spore": "bioluminescent fungi and floating spores"
+      }
+    }
+  }
+}

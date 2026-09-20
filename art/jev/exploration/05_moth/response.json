@@ -1,0 +1,8649 @@
+{
+  "model": "jev-1.13.0",
+  "answers": {
+    "x0_y0": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.93,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.95,
+        "cobalt": 0.0,
+        "coral": 0.0,
+        "amber": 0.0,
+        "ivory": 0.02,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x1_y0": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.86,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.88,
+        "cobalt": 0.0,
+        "coral": 0.02,
+        "cyan": 0.0,
+        "ivory": 0.08,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x2_y0": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.65,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.7,
+        "cobalt": 0.0,
+        "coral": 0.04,
+        "cyan": 0.0,
+        "ivory": 0.24,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x3_y0": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.6,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.66,
+        "cobalt": 0.0,
+        "coral": 0.05,
+        "amber": 0.0,
+        "ivory": 0.26,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x4_y0": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.54,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.6,
+        "cobalt": 0.0,
+        "coral": 0.07,
+        "cyan": 0.0,
+        "ivory": 0.3,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x5_y0": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.63,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.68,
+        "cobalt": 0.0,
+        "coral": 0.04,
+        "cyan": 0.0,
+        "ivory": 0.24,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x6_y0": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.53,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.6,
+        "cobalt": 0.0,
+        "coral": 0.06,
+        "amber": 0.0,
+        "ivory": 0.3,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x7_y0": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.4,
+      "probabilities": {
+        "midnight": 0.05,
+        "void": 0.48,
+        "cobalt": 0.0,
+        "coral": 0.08,
+        "cyan": 0.0,
+        "ivory": 0.39,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x8_y0": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.53,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.6,
+        "cobalt": 0.0,
+        "coral": 0.06,
+        "cyan": 0.0,
+        "ivory": 0.31,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x9_y0": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.52,
+      "probabilities": {
+        "midnight": 0.05,
+        "void": 0.59,
+        "cobalt": 0.0,
+        "coral": 0.06,
+        "cyan": 0.0,
+        "ivory": 0.3,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x10_y0": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.58,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.63,
+        "cobalt": 0.0,
+        "coral": 0.04,
+        "amber": 0.01,
+        "ivory": 0.28,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x11_y0": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.51,
+      "probabilities": {
+        "midnight": 0.05,
+        "void": 0.58,
+        "cobalt": 0.0,
+        "coral": 0.04,
+        "cyan": 0.0,
+        "ivory": 0.32,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x12_y0": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.58,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.63,
+        "cobalt": 0.0,
+        "coral": 0.04,
+        "amber": 0.02,
+        "ivory": 0.27,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x13_y0": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.58,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.64,
+        "cobalt": 0.0,
+        "coral": 0.03,
+        "amber": 0.04,
+        "ivory": 0.25,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x14_y0": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.65,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.7,
+        "cobalt": 0.0,
+        "coral": 0.07,
+        "cyan": 0.0,
+        "ivory": 0.19,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x15_y0": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.66,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.72,
+        "cobalt": 0.0,
+        "coral": 0.07,
+        "amber": 0.0,
+        "ivory": 0.17,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x16_y0": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.64,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.6900000000000001,
+        "cobalt": 0.0,
+        "coral": 0.09,
+        "amber": 0.0,
+        "ivory": 0.18,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x17_y0": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.66,
+      "probabilities": {
+        "midnight": 0.05,
+        "void": 0.71,
+        "cobalt": 0.0,
+        "coral": 0.1,
+        "amber": 0.0,
+        "ivory": 0.14,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x18_y0": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.65,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.7,
+        "cobalt": 0.0,
+        "coral": 0.11,
+        "cyan": 0.0,
+        "ivory": 0.16,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x19_y0": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.56,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.62,
+        "cobalt": 0.0,
+        "coral": 0.15,
+        "cyan": 0.0,
+        "ivory": 0.2,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x20_y0": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.64,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.69,
+        "cobalt": 0.0,
+        "coral": 0.12,
+        "amber": 0.0,
+        "ivory": 0.16,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x21_y0": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.56,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.62,
+        "cobalt": 0.0,
+        "coral": 0.15,
+        "amber": 0.0,
+        "ivory": 0.2,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x22_y0": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.73,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.77,
+        "cobalt": 0.0,
+        "coral": 0.09,
+        "cyan": 0.0,
+        "ivory": 0.11,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x23_y0": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.87,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.89,
+        "cobalt": 0.0,
+        "coral": 0.03,
+        "amber": 0.0,
+        "ivory": 0.04,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x0_y1": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.83,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.86,
+        "cobalt": 0.0,
+        "coral": 0.02,
+        "cyan": 0.0,
+        "ivory": 0.09,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x1_y1": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.92,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.93,
+        "cobalt": 0.0,
+        "coral": 0.01,
+        "cyan": 0.0,
+        "ivory": 0.04,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x2_y1": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.44,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.52,
+        "cobalt": 0.0,
+        "coral": 0.06,
+        "amber": 0.0,
+        "ivory": 0.4,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x3_y1": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.44,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.51,
+        "cobalt": 0.0,
+        "coral": 0.08,
+        "cyan": 0.0,
+        "ivory": 0.37,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x4_y1": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.45,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.52,
+        "cobalt": 0.0,
+        "coral": 0.09,
+        "amber": 0.0,
+        "ivory": 0.36,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x5_y1": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.45,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.52,
+        "cobalt": 0.0,
+        "coral": 0.08,
+        "amber": 0.0,
+        "ivory": 0.37,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x6_y1": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.38,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.41,
+        "cobalt": 0.0,
+        "coral": 0.09,
+        "cyan": 0.0,
+        "ivory": 0.47000000000000003,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x7_y1": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.35,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.42,
+        "cobalt": 0.0,
+        "coral": 0.1,
+        "cyan": 0.0,
+        "ivory": 0.44,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x8_y1": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.42,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.38,
+        "cobalt": 0.0,
+        "coral": 0.08,
+        "cyan": 0.0,
+        "ivory": 0.5,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x9_y1": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.45,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.34,
+        "cobalt": 0.0,
+        "coral": 0.09,
+        "cyan": 0.0,
+        "ivory": 0.53,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x10_y1": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.4,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.48,
+        "cobalt": 0.0,
+        "coral": 0.06,
+        "amber": 0.0,
+        "ivory": 0.42,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x11_y1": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.41,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.41,
+        "cobalt": 0.0,
+        "coral": 0.06,
+        "cyan": 0.0,
+        "ivory": 0.48,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x12_y1": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.41,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.38,
+        "cobalt": 0.0,
+        "coral": 0.04,
+        "cyan": 0.0,
+        "ivory": 0.5,
+        "amber": 0.04,
+        "moss": 0.0
+      }
+    },
+    "x13_y1": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.38,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.46,
+        "cobalt": 0.0,
+        "coral": 0.05,
+        "amber": 0.01,
+        "ivory": 0.44,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x14_y1": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.4,
+      "probabilities": {
+        "midnight": 0.05,
+        "void": 0.47,
+        "cobalt": 0.0,
+        "coral": 0.12,
+        "cyan": 0.0,
+        "ivory": 0.35,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x15_y1": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.34,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.43,
+        "cobalt": 0.0,
+        "coral": 0.19,
+        "amber": 0.0,
+        "ivory": 0.35,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x16_y1": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.37,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.46,
+        "cobalt": 0.0,
+        "coral": 0.19,
+        "cyan": 0.0,
+        "ivory": 0.32,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x17_y1": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.4,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.48,
+        "cobalt": 0.0,
+        "coral": 0.24,
+        "amber": 0.0,
+        "ivory": 0.25,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x18_y1": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.37,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.45,
+        "cobalt": 0.0,
+        "coral": 0.24,
+        "amber": 0.0,
+        "ivory": 0.28,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x19_y1": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.47,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.54,
+        "cobalt": 0.0,
+        "coral": 0.22,
+        "amber": 0.0,
+        "ivory": 0.22,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x20_y1": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.45,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.53,
+        "cobalt": 0.0,
+        "coral": 0.19,
+        "amber": 0.0,
+        "ivory": 0.25,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x21_y1": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.35,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.44,
+        "cobalt": 0.0,
+        "coral": 0.26,
+        "amber": 0.0,
+        "ivory": 0.28,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x22_y1": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.49,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.55,
+        "cobalt": 0.0,
+        "coral": 0.17,
+        "amber": 0.0,
+        "ivory": 0.25,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x23_y1": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.81,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.84,
+        "cobalt": 0.0,
+        "coral": 0.06,
+        "cyan": 0.0,
+        "ivory": 0.06,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x0_y2": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.65,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.7,
+        "cobalt": 0.0,
+        "coral": 0.05,
+        "amber": 0.0,
+        "ivory": 0.23,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x1_y2": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.43,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.5,
+        "cobalt": 0.0,
+        "coral": 0.07,
+        "cyan": 0.0,
+        "ivory": 0.41,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x2_y2": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.59,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.24,
+        "cobalt": 0.0,
+        "coral": 0.08,
+        "cyan": 0.0,
+        "ivory": 0.65,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x3_y2": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.51,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.28,
+        "cobalt": 0.0,
+        "coral": 0.11,
+        "amber": 0.0,
+        "ivory": 0.58,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x4_y2": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.57,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.24,
+        "cobalt": 0.0,
+        "coral": 0.1,
+        "cyan": 0.0,
+        "ivory": 0.63,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x5_y2": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.49,
+      "probabilities": {
+        "midnight": 0.05,
+        "void": 0.29,
+        "cobalt": 0.0,
+        "coral": 0.1,
+        "amber": 0.0,
+        "ivory": 0.56,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x6_y2": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.62,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.19,
+        "cobalt": 0.0,
+        "coral": 0.1,
+        "amber": 0.0,
+        "ivory": 0.68,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x7_y2": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.46,
+      "probabilities": {
+        "midnight": 0.05,
+        "void": 0.31,
+        "cobalt": 0.0,
+        "coral": 0.11,
+        "amber": 0.0,
+        "ivory": 0.53,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x8_y2": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.54,
+      "probabilities": {
+        "midnight": 0.05,
+        "void": 0.25,
+        "cobalt": 0.0,
+        "coral": 0.1,
+        "cyan": 0.0,
+        "ivory": 0.6,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x9_y2": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.5,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.28,
+        "cobalt": 0.0,
+        "coral": 0.11,
+        "amber": 0.0,
+        "ivory": 0.56,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x10_y2": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.52,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.31,
+        "cobalt": 0.0,
+        "coral": 0.06,
+        "cyan": 0.0,
+        "ivory": 0.58,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x11_y2": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.51,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.31,
+        "cobalt": 0.0,
+        "coral": 0.07,
+        "amber": 0.01,
+        "ivory": 0.57,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x12_y2": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.52,
+      "probabilities": {
+        "midnight": 0.05,
+        "void": 0.25,
+        "cobalt": 0.0,
+        "coral": 0.04,
+        "amber": 0.08,
+        "ivory": 0.58,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x13_y2": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.44,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.33,
+        "cobalt": 0.0,
+        "coral": 0.08,
+        "amber": 0.03,
+        "ivory": 0.52,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x14_y2": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.36,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.28,
+        "cobalt": 0.0,
+        "coral": 0.23,
+        "cyan": 0.0,
+        "ivory": 0.45,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x15_y2": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.31,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.29,
+        "cobalt": 0.0,
+        "coral": 0.27,
+        "cyan": 0.0,
+        "ivory": 0.4,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x16_y2": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.25,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.29,
+        "cobalt": 0.0,
+        "coral": 0.32,
+        "amber": 0.0,
+        "ivory": 0.36,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x17_y2": {
+      "type": "choice",
+      "choice": "coral",
+      "confidence": 0.4,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.22,
+        "cobalt": 0.0,
+        "coral": 0.48,
+        "cyan": 0.0,
+        "ivory": 0.26,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x18_y2": {
+      "type": "choice",
+      "choice": "coral",
+      "confidence": 0.47,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.2,
+        "cobalt": 0.0,
+        "coral": 0.55,
+        "cyan": 0.0,
+        "ivory": 0.22,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x19_y2": {
+      "type": "choice",
+      "choice": "coral",
+      "confidence": 0.38,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.24,
+        "cobalt": 0.0,
+        "coral": 0.45,
+        "amber": 0.0,
+        "ivory": 0.27,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x20_y2": {
+      "type": "choice",
+      "choice": "coral",
+      "confidence": 0.43,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.18,
+        "cobalt": 0.0,
+        "coral": 0.51,
+        "amber": 0.0,
+        "ivory": 0.28,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x21_y2": {
+      "type": "choice",
+      "choice": "coral",
+      "confidence": 0.45,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.18,
+        "cobalt": 0.0,
+        "coral": 0.53,
+        "cyan": 0.0,
+        "ivory": 0.27,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x22_y2": {
+      "type": "choice",
+      "choice": "coral",
+      "confidence": 0.23,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.32,
+        "cobalt": 0.0,
+        "coral": 0.33,
+        "cyan": 0.0,
+        "ivory": 0.32,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x23_y2": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.59,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.65,
+        "cobalt": 0.0,
+        "coral": 0.15,
+        "amber": 0.0,
+        "ivory": 0.17,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x0_y3": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.59,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.66,
+        "cobalt": 0.0,
+        "coral": 0.05,
+        "cyan": 0.0,
+        "ivory": 0.26,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x1_y3": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.42,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.39,
+        "cobalt": 0.0,
+        "coral": 0.09,
+        "cyan": 0.0,
+        "ivory": 0.5,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x2_y3": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.82,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.07,
+        "cobalt": 0.0,
+        "coral": 0.08,
+        "amber": 0.0,
+        "ivory": 0.84,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x3_y3": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.66,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.15,
+        "cobalt": 0.0,
+        "coral": 0.11,
+        "cyan": 0.0,
+        "ivory": 0.72,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x4_y3": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.73,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.09,
+        "cobalt": 0.0,
+        "coral": 0.12,
+        "amber": 0.0,
+        "ivory": 0.77,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x5_y3": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.69,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.13,
+        "cobalt": 0.0,
+        "coral": 0.11,
+        "cyan": 0.0,
+        "ivory": 0.73,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x6_y3": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.74,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.06,
+        "cobalt": 0.0,
+        "coral": 0.15000000000000002,
+        "amber": 0.0,
+        "ivory": 0.78,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x7_y3": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.72,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.09,
+        "cobalt": 0.0,
+        "coral": 0.13,
+        "cyan": 0.0,
+        "ivory": 0.76,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x8_y3": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.72,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.06,
+        "cobalt": 0.0,
+        "coral": 0.17,
+        "cyan": 0.0,
+        "ivory": 0.76,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x9_y3": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.72,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.1,
+        "cobalt": 0.0,
+        "coral": 0.12,
+        "amber": 0.0,
+        "ivory": 0.76,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x10_y3": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.81,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.06,
+        "cobalt": 0.0,
+        "coral": 0.07,
+        "cyan": 0.0,
+        "ivory": 0.84,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x11_y3": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.84,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.05,
+        "cobalt": 0.0,
+        "coral": 0.05,
+        "cyan": 0.0,
+        "ivory": 0.87,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x12_y3": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.8,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.04,
+        "cobalt": 0.0,
+        "coral": 0.04,
+        "amber": 0.08,
+        "ivory": 0.83,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x13_y3": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.71,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.09,
+        "cobalt": 0.0,
+        "coral": 0.08,
+        "cyan": 0.0,
+        "ivory": 0.76,
+        "amber": 0.05,
+        "moss": 0.0
+      }
+    },
+    "x14_y3": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.45,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.09,
+        "cobalt": 0.0,
+        "coral": 0.35,
+        "cyan": 0.0,
+        "ivory": 0.53,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x15_y3": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.41,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.07,
+        "cobalt": 0.0,
+        "coral": 0.42,
+        "amber": 0.01,
+        "ivory": 0.48,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x16_y3": {
+      "type": "choice",
+      "choice": "coral",
+      "confidence": 0.53,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.06,
+        "cobalt": 0.0,
+        "coral": 0.6,
+        "amber": 0.0,
+        "ivory": 0.33,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x17_y3": {
+      "type": "choice",
+      "choice": "coral",
+      "confidence": 0.65,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.06,
+        "cobalt": 0.0,
+        "coral": 0.7,
+        "cyan": 0.0,
+        "ivory": 0.23,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x18_y3": {
+      "type": "choice",
+      "choice": "coral",
+      "confidence": 0.66,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.07,
+        "cobalt": 0.0,
+        "coral": 0.71,
+        "amber": 0.0,
+        "ivory": 0.21000000000000002,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x19_y3": {
+      "type": "choice",
+      "choice": "coral",
+      "confidence": 0.68,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.07,
+        "cobalt": 0.0,
+        "coral": 0.72,
+        "amber": 0.0,
+        "ivory": 0.19,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x20_y3": {
+      "type": "choice",
+      "choice": "coral",
+      "confidence": 0.74,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.06,
+        "cobalt": 0.0,
+        "coral": 0.78,
+        "amber": 0.0,
+        "ivory": 0.15,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x21_y3": {
+      "type": "choice",
+      "choice": "coral",
+      "confidence": 0.71,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.05,
+        "cobalt": 0.0,
+        "coral": 0.75,
+        "amber": 0.0,
+        "ivory": 0.19,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x22_y3": {
+      "type": "choice",
+      "choice": "coral",
+      "confidence": 0.51,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.17,
+        "cobalt": 0.0,
+        "coral": 0.58,
+        "cyan": 0.0,
+        "ivory": 0.23,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x23_y3": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.51,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.58,
+        "cobalt": 0.0,
+        "coral": 0.22,
+        "cyan": 0.0,
+        "ivory": 0.17,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x0_y4": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.61,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.66,
+        "cobalt": 0.0,
+        "coral": 0.06,
+        "amber": 0.0,
+        "ivory": 0.25,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x1_y4": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.43,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.5,
+        "cobalt": 0.0,
+        "coral": 0.08,
+        "amber": 0.0,
+        "ivory": 0.4,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x2_y4": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.71,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.12,
+        "cobalt": 0.0,
+        "coral": 0.1,
+        "cyan": 0.0,
+        "ivory": 0.76,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x3_y4": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.67,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.14,
+        "cobalt": 0.0,
+        "coral": 0.13,
+        "amber": 0.0,
+        "ivory": 0.71,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x4_y4": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.64,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.18,
+        "cobalt": 0.0,
+        "coral": 0.1,
+        "amber": 0.0,
+        "ivory": 0.7,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x5_y4": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.77,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.06,
+        "cobalt": 0.0,
+        "coral": 0.11,
+        "cyan": 0.0,
+        "ivory": 0.81,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x6_y4": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.7,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.05,
+        "cobalt": 0.0,
+        "coral": 0.19,
+        "cyan": 0.0,
+        "ivory": 0.75,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x7_y4": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.71,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.07,
+        "cobalt": 0.0,
+        "coral": 0.16,
+        "cyan": 0.0,
+        "ivory": 0.74,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x8_y4": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.71,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.06,
+        "cobalt": 0.0,
+        "coral": 0.16,
+        "amber": 0.01,
+        "ivory": 0.75,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x9_y4": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.72,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.06,
+        "cobalt": 0.0,
+        "coral": 0.15,
+        "cyan": 0.0,
+        "ivory": 0.76,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x10_y4": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.67,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.1,
+        "cobalt": 0.0,
+        "coral": 0.06,
+        "cyan": 0.0,
+        "ivory": 0.71,
+        "amber": 0.09,
+        "moss": 0.0
+      }
+    },
+    "x11_y4": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.35,
+      "probabilities": {
+        "midnight": 0.05,
+        "void": 0.15,
+        "cobalt": 0.0,
+        "coral": 0.06,
+        "cyan": 0.0,
+        "ivory": 0.44,
+        "amber": 0.3,
+        "moss": 0.0
+      }
+    },
+    "x12_y4": {
+      "type": "choice",
+      "choice": "amber",
+      "confidence": 0.48,
+      "probabilities": {
+        "midnight": 0.06,
+        "void": 0.18,
+        "cobalt": 0.0,
+        "coral": 0.03,
+        "cyan": 0.0,
+        "ivory": 0.18,
+        "amber": 0.55,
+        "moss": 0.0
+      }
+    },
+    "x13_y4": {
+      "type": "choice",
+      "choice": "amber",
+      "confidence": 0.28,
+      "probabilities": {
+        "midnight": 0.06,
+        "void": 0.21,
+        "cobalt": 0.0,
+        "coral": 0.03,
+        "cyan": 0.0,
+        "ivory": 0.32,
+        "amber": 0.38,
+        "moss": 0.0
+      }
+    },
+    "x14_y4": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.27,
+      "probabilities": {
+        "midnight": 0.06,
+        "void": 0.28,
+        "cobalt": 0.0,
+        "coral": 0.12,
+        "amber": 0.18,
+        "ivory": 0.36,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x15_y4": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.44,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.09,
+        "cobalt": 0.0,
+        "coral": 0.28,
+        "cyan": 0.0,
+        "ivory": 0.52,
+        "amber": 0.08,
+        "moss": 0.0
+      }
+    },
+    "x16_y4": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.4,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.1,
+        "cobalt": 0.0,
+        "coral": 0.37,
+        "amber": 0.03,
+        "ivory": 0.48,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x17_y4": {
+      "type": "choice",
+      "choice": "coral",
+      "confidence": 0.63,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.05,
+        "cobalt": 0.0,
+        "coral": 0.68,
+        "cyan": 0.0,
+        "ivory": 0.25,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x18_y4": {
+      "type": "choice",
+      "choice": "coral",
+      "confidence": 0.52,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.08,
+        "cobalt": 0.0,
+        "coral": 0.58,
+        "amber": 0.01,
+        "ivory": 0.31,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x19_y4": {
+      "type": "choice",
+      "choice": "coral",
+      "confidence": 0.64,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.06,
+        "cobalt": 0.0,
+        "coral": 0.6900000000000001,
+        "amber": 0.0,
+        "ivory": 0.23,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x20_y4": {
+      "type": "choice",
+      "choice": "coral",
+      "confidence": 0.65,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.06,
+        "cobalt": 0.0,
+        "coral": 0.71,
+        "amber": 0.0,
+        "ivory": 0.22,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x21_y4": {
+      "type": "choice",
+      "choice": "coral",
+      "confidence": 0.73,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.05,
+        "cobalt": 0.0,
+        "coral": 0.77,
+        "cyan": 0.0,
+        "ivory": 0.17,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x22_y4": {
+      "type": "choice",
+      "choice": "coral",
+      "confidence": 0.53,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.16,
+        "cobalt": 0.0,
+        "coral": 0.59,
+        "cyan": 0.0,
+        "ivory": 0.23,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x23_y4": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.63,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.68,
+        "cobalt": 0.0,
+        "coral": 0.14,
+        "cyan": 0.0,
+        "ivory": 0.14,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x0_y5": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.58,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.64,
+        "cobalt": 0.0,
+        "coral": 0.05,
+        "cyan": 0.0,
+        "ivory": 0.29000000000000004,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x1_y5": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.41,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.42,
+        "cobalt": 0.0,
+        "coral": 0.07,
+        "amber": 0.0,
+        "ivory": 0.49,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x2_y5": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.74,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.07,
+        "cobalt": 0.0,
+        "coral": 0.13,
+        "cyan": 0.0,
+        "ivory": 0.79,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x3_y5": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.74,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.09,
+        "cobalt": 0.0,
+        "coral": 0.12,
+        "cyan": 0.0,
+        "ivory": 0.78,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x4_y5": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.74,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.04,
+        "cobalt": 0.0,
+        "coral": 0.17,
+        "amber": 0.0,
+        "ivory": 0.78,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x5_y5": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.69,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.11,
+        "cobalt": 0.0,
+        "coral": 0.13,
+        "cyan": 0.0,
+        "ivory": 0.74,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x6_y5": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.76,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.02,
+        "cobalt": 0.01,
+        "coral": 0.16,
+        "amber": 0.01,
+        "ivory": 0.79,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x7_y5": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.79,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.02,
+        "cobalt": 0.0,
+        "coral": 0.12,
+        "cyan": 0.0,
+        "ivory": 0.81,
+        "amber": 0.03,
+        "moss": 0.0
+      }
+    },
+    "x8_y5": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.8,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.01,
+        "cobalt": 0.0,
+        "coral": 0.12,
+        "amber": 0.03,
+        "ivory": 0.83,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x9_y5": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.78,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.02,
+        "cobalt": 0.0,
+        "coral": 0.13,
+        "cyan": 0.0,
+        "ivory": 0.81,
+        "amber": 0.03,
+        "moss": 0.0
+      }
+    },
+    "x10_y5": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.51,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.03,
+        "cobalt": 0.0,
+        "coral": 0.05,
+        "cyan": 0.0,
+        "ivory": 0.58,
+        "amber": 0.32,
+        "moss": 0.0
+      }
+    },
+    "x11_y5": {
+      "type": "choice",
+      "choice": "amber",
+      "confidence": 0.44,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.07,
+        "cobalt": 0.0,
+        "coral": 0.04,
+        "cyan": 0.0,
+        "ivory": 0.35,
+        "amber": 0.52,
+        "moss": 0.0
+      }
+    },
+    "x12_y5": {
+      "type": "choice",
+      "choice": "amber",
+      "confidence": 0.79,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.09,
+        "cobalt": 0.0,
+        "coral": 0.0,
+        "cyan": 0.0,
+        "ivory": 0.07,
+        "amber": 0.81,
+        "moss": 0.0
+      }
+    },
+    "x13_y5": {
+      "type": "choice",
+      "choice": "amber",
+      "confidence": 0.78,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.07,
+        "cobalt": 0.0,
+        "coral": 0.01,
+        "amber": 0.8,
+        "ivory": 0.09,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x14_y5": {
+      "type": "choice",
+      "choice": "amber",
+      "confidence": 0.29,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.13,
+        "cobalt": 0.0,
+        "coral": 0.11,
+        "amber": 0.38,
+        "ivory": 0.35000000000000003,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x15_y5": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.33,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.12,
+        "cobalt": 0.0,
+        "coral": 0.11,
+        "cyan": 0.0,
+        "ivory": 0.42,
+        "amber": 0.32,
+        "moss": 0.0
+      }
+    },
+    "x16_y5": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.4,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.09,
+        "cobalt": 0.0,
+        "coral": 0.17,
+        "amber": 0.23,
+        "ivory": 0.48,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x17_y5": {
+      "type": "choice",
+      "choice": "coral",
+      "confidence": 0.48,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.07,
+        "cobalt": 0.01,
+        "coral": 0.53,
+        "amber": 0.04,
+        "ivory": 0.33,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x18_y5": {
+      "type": "choice",
+      "choice": "coral",
+      "confidence": 0.47,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.07,
+        "cobalt": 0.01,
+        "coral": 0.54,
+        "amber": 0.06,
+        "ivory": 0.3,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x19_y5": {
+      "type": "choice",
+      "choice": "coral",
+      "confidence": 0.71,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.05,
+        "cobalt": 0.0,
+        "coral": 0.76,
+        "cyan": 0.0,
+        "ivory": 0.18,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x20_y5": {
+      "type": "choice",
+      "choice": "coral",
+      "confidence": 0.68,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.05,
+        "cobalt": 0.0,
+        "coral": 0.72,
+        "cyan": 0.0,
+        "ivory": 0.22,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x21_y5": {
+      "type": "choice",
+      "choice": "coral",
+      "confidence": 0.7,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.06,
+        "cobalt": 0.0,
+        "coral": 0.74,
+        "amber": 0.0,
+        "ivory": 0.19,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x22_y5": {
+      "type": "choice",
+      "choice": "coral",
+      "confidence": 0.54,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.16,
+        "cobalt": 0.0,
+        "coral": 0.6,
+        "amber": 0.0,
+        "ivory": 0.22,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x23_y5": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.58,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.65,
+        "cobalt": 0.0,
+        "coral": 0.18,
+        "amber": 0.0,
+        "ivory": 0.15,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x0_y6": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.46,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.53,
+        "cobalt": 0.01,
+        "coral": 0.06,
+        "cyan": 0.0,
+        "ivory": 0.38,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x1_y6": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.38,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.43,
+        "cobalt": 0.01,
+        "coral": 0.08,
+        "cyan": 0.0,
+        "ivory": 0.46,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x2_y6": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.75,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.11,
+        "cobalt": 0.01,
+        "coral": 0.08,
+        "cyan": 0.0,
+        "ivory": 0.78,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x3_y6": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.73,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.09,
+        "cobalt": 0.01,
+        "coral": 0.12,
+        "cyan": 0.0,
+        "ivory": 0.77,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x4_y6": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.77,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.05,
+        "cobalt": 0.0,
+        "coral": 0.13,
+        "cyan": 0.0,
+        "ivory": 0.8,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x5_y6": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.81,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.02,
+        "cobalt": 0.01,
+        "coral": 0.1,
+        "cyan": 0.0,
+        "ivory": 0.84,
+        "amber": 0.02,
+        "moss": 0.0
+      }
+    },
+    "x6_y6": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.71,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.06,
+        "cobalt": 0.01,
+        "coral": 0.14,
+        "amber": 0.02,
+        "ivory": 0.75,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x7_y6": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.8,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.02,
+        "cobalt": 0.01,
+        "coral": 0.12,
+        "amber": 0.02,
+        "ivory": 0.82,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x8_y6": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.75,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.01,
+        "cobalt": 0.0,
+        "coral": 0.12,
+        "cyan": 0.0,
+        "ivory": 0.79,
+        "amber": 0.07,
+        "moss": 0.0
+      }
+    },
+    "x9_y6": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.79,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.02,
+        "cobalt": 0.01,
+        "coral": 0.12,
+        "amber": 0.03,
+        "ivory": 0.81,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x10_y6": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.45,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.01,
+        "cobalt": 0.0,
+        "coral": 0.04,
+        "amber": 0.41,
+        "ivory": 0.53,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x11_y6": {
+      "type": "choice",
+      "choice": "amber",
+      "confidence": 0.75,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.01,
+        "cobalt": 0.0,
+        "coral": 0.02,
+        "cyan": 0.0,
+        "ivory": 0.17,
+        "amber": 0.79,
+        "moss": 0.0
+      }
+    },
+    "x12_y6": {
+      "type": "choice",
+      "choice": "amber",
+      "confidence": 0.96,
+      "probabilities": {
+        "midnight": 0.0,
+        "void": 0.0,
+        "cobalt": 0.0,
+        "coral": 0.0,
+        "amber": 0.98,
+        "ivory": 0.02,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x13_y6": {
+      "type": "choice",
+      "choice": "amber",
+      "confidence": 0.95,
+      "probabilities": {
+        "midnight": 0.0,
+        "void": 0.0,
+        "cobalt": 0.0,
+        "coral": 0.0,
+        "cyan": 0.0,
+        "ivory": 0.03,
+        "amber": 0.97,
+        "moss": 0.0
+      }
+    },
+    "x14_y6": {
+      "type": "choice",
+      "choice": "amber",
+      "confidence": 0.51,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.03,
+        "cobalt": 0.0,
+        "coral": 0.08,
+        "amber": 0.58,
+        "ivory": 0.29000000000000004,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x15_y6": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.38,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.04,
+        "cobalt": 0.01,
+        "coral": 0.12,
+        "cyan": 0.0,
+        "ivory": 0.46,
+        "amber": 0.35,
+        "moss": 0.0
+      }
+    },
+    "x16_y6": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.3,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.03,
+        "cobalt": 0.0,
+        "coral": 0.18,
+        "cyan": 0.0,
+        "ivory": 0.39,
+        "amber": 0.39,
+        "moss": 0.0
+      }
+    },
+    "x17_y6": {
+      "type": "choice",
+      "choice": "coral",
+      "confidence": 0.31,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.05,
+        "cobalt": 0.01,
+        "coral": 0.38,
+        "cyan": 0.0,
+        "ivory": 0.37,
+        "amber": 0.17,
+        "moss": 0.0
+      }
+    },
+    "x18_y6": {
+      "type": "choice",
+      "choice": "coral",
+      "confidence": 0.23,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.07,
+        "cobalt": 0.01,
+        "coral": 0.32,
+        "amber": 0.26,
+        "ivory": 0.31,
+        "cyan": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x19_y6": {
+      "type": "choice",
+      "choice": "coral",
+      "confidence": 0.61,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.05,
+        "cobalt": 0.01,
+        "coral": 0.65,
+        "cyan": 0.0,
+        "ivory": 0.26,
+        "amber": 0.02,
+        "moss": 0.0
+      }
+    },
+    "x20_y6": {
+      "type": "choice",
+      "choice": "coral",
+      "confidence": 0.65,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.05,
+        "cobalt": 0.01,
+        "coral": 0.7,
+        "cyan": 0.0,
+        "ivory": 0.22,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x21_y6": {
+      "type": "choice",
+      "choice": "coral",
+      "confidence": 0.67,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.05,
+        "cobalt": 0.01,
+        "coral": 0.71,
+        "amber": 0.01,
+        "ivory": 0.21,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x22_y6": {
+      "type": "choice",
+      "choice": "coral",
+      "confidence": 0.5,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.16,
+        "cobalt": 0.01,
+        "coral": 0.56,
+        "amber": 0.0,
+        "ivory": 0.24,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x23_y6": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.58,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.63,
+        "cobalt": 0.01,
+        "coral": 0.19,
+        "cyan": 0.0,
+        "ivory": 0.14,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x0_y7": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.66,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.7,
+        "cobalt": 0.01,
+        "coral": 0.04,
+        "amber": 0.0,
+        "ivory": 0.23,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x1_y7": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.4,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.48,
+        "cobalt": 0.01,
+        "coral": 0.06,
+        "cyan": 0.0,
+        "ivory": 0.42,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x2_y7": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.8,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.07,
+        "cobalt": 0.01,
+        "coral": 0.09,
+        "amber": 0.0,
+        "ivory": 0.82,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x3_y7": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.74,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.08,
+        "cobalt": 0.01,
+        "coral": 0.12,
+        "cyan": 0.0,
+        "ivory": 0.78,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x4_y7": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.71,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.03,
+        "cobalt": 0.01,
+        "coral": 0.2,
+        "amber": 0.0,
+        "ivory": 0.75,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x5_y7": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.78,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.02,
+        "cobalt": 0.01,
+        "coral": 0.15,
+        "cyan": 0.0,
+        "ivory": 0.8,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x6_y7": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.66,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.01,
+        "cobalt": 0.01,
+        "coral": 0.25,
+        "cyan": 0.0,
+        "ivory": 0.71,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x7_y7": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.7,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.02,
+        "cobalt": 0.01,
+        "coral": 0.2,
+        "amber": 0.01,
+        "ivory": 0.75,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x8_y7": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.72,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.02,
+        "cobalt": 0.01,
+        "coral": 0.2,
+        "amber": 0.01,
+        "ivory": 0.75,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x9_y7": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.71,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.02,
+        "cobalt": 0.01,
+        "coral": 0.19,
+        "amber": 0.02,
+        "ivory": 0.75,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x10_y7": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.65,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.01,
+        "cobalt": 0.0,
+        "coral": 0.06,
+        "cyan": 0.0,
+        "ivory": 0.69,
+        "amber": 0.23,
+        "moss": 0.0
+      }
+    },
+    "x11_y7": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.48,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.01,
+        "cobalt": 0.0,
+        "coral": 0.05,
+        "cyan": 0.0,
+        "ivory": 0.56,
+        "amber": 0.37,
+        "moss": 0.0
+      }
+    },
+    "x12_y7": {
+      "type": "choice",
+      "choice": "amber",
+      "confidence": 0.95,
+      "probabilities": {
+        "midnight": 0.0,
+        "void": 0.0,
+        "cobalt": 0.0,
+        "coral": 0.0,
+        "amber": 0.97,
+        "ivory": 0.03,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x13_y7": {
+      "type": "choice",
+      "choice": "amber",
+      "confidence": 0.92,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.01,
+        "cobalt": 0.0,
+        "coral": 0.01,
+        "cyan": 0.0,
+        "ivory": 0.05,
+        "amber": 0.92,
+        "moss": 0.0
+      }
+    },
+    "x14_y7": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.37,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.02,
+        "cobalt": 0.01,
+        "coral": 0.1,
+        "amber": 0.4,
+        "ivory": 0.46,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x15_y7": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.45,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.05,
+        "cobalt": 0.01,
+        "coral": 0.12,
+        "cyan": 0.0,
+        "ivory": 0.52,
+        "amber": 0.28,
+        "moss": 0.0
+      }
+    },
+    "x16_y7": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.46,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.04,
+        "cobalt": 0.01,
+        "coral": 0.19,
+        "amber": 0.22,
+        "ivory": 0.53,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x17_y7": {
+      "type": "choice",
+      "choice": "coral",
+      "confidence": 0.4,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.05,
+        "cobalt": 0.01,
+        "coral": 0.49,
+        "amber": 0.05,
+        "ivory": 0.39,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x18_y7": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.4,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.05,
+        "cobalt": 0.03,
+        "coral": 0.35,
+        "amber": 0.08,
+        "ivory": 0.47,
+        "cyan": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x19_y7": {
+      "type": "choice",
+      "choice": "coral",
+      "confidence": 0.52,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.07,
+        "cobalt": 0.02,
+        "coral": 0.57,
+        "amber": 0.01,
+        "ivory": 0.31,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x20_y7": {
+      "type": "choice",
+      "choice": "coral",
+      "confidence": 0.53,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.09,
+        "cobalt": 0.02,
+        "coral": 0.6,
+        "amber": 0.01,
+        "ivory": 0.26,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x21_y7": {
+      "type": "choice",
+      "choice": "coral",
+      "confidence": 0.6,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.1,
+        "cobalt": 0.02,
+        "coral": 0.65,
+        "amber": 0.01,
+        "ivory": 0.2,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x22_y7": {
+      "type": "choice",
+      "choice": "coral",
+      "confidence": 0.53,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.19,
+        "cobalt": 0.01,
+        "coral": 0.59,
+        "amber": 0.0,
+        "ivory": 0.2,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x23_y7": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.67,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.71,
+        "cobalt": 0.01,
+        "coral": 0.14,
+        "cyan": 0.0,
+        "ivory": 0.11,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x0_y8": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.62,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.67,
+        "cobalt": 0.02,
+        "coral": 0.04,
+        "cyan": 0.0,
+        "ivory": 0.24,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x1_y8": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.45,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.4,
+        "cobalt": 0.01,
+        "coral": 0.05,
+        "cyan": 0.0,
+        "ivory": 0.52,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x2_y8": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.76,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.09,
+        "cobalt": 0.01,
+        "coral": 0.1,
+        "cyan": 0.0,
+        "ivory": 0.79,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x3_y8": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.66,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.09,
+        "cobalt": 0.01,
+        "coral": 0.18,
+        "amber": 0.0,
+        "ivory": 0.71,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x4_y8": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.71,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.03,
+        "cobalt": 0.02,
+        "coral": 0.19,
+        "cyan": 0.0,
+        "ivory": 0.75,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x5_y8": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.75,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.01,
+        "cobalt": 0.01,
+        "coral": 0.17,
+        "cyan": 0.0,
+        "ivory": 0.79,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x6_y8": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.62,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.02,
+        "cobalt": 0.02,
+        "coral": 0.28,
+        "cyan": 0.0,
+        "ivory": 0.66,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x7_y8": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.68,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.01,
+        "cobalt": 0.02,
+        "coral": 0.22,
+        "cyan": 0.0,
+        "ivory": 0.73,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x8_y8": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.7,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.04,
+        "cobalt": 0.02,
+        "coral": 0.17,
+        "cyan": 0.0,
+        "ivory": 0.74,
+        "amber": 0.02,
+        "moss": 0.0
+      }
+    },
+    "x9_y8": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.74,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.02,
+        "cobalt": 0.02,
+        "coral": 0.15,
+        "cyan": 0.0,
+        "ivory": 0.78,
+        "amber": 0.02,
+        "moss": 0.0
+      }
+    },
+    "x10_y8": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.61,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.01,
+        "cobalt": 0.0,
+        "coral": 0.08,
+        "amber": 0.24,
+        "ivory": 0.66,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x11_y8": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.57,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.01,
+        "cobalt": 0.0,
+        "coral": 0.06,
+        "cyan": 0.0,
+        "ivory": 0.63,
+        "amber": 0.29,
+        "moss": 0.0
+      }
+    },
+    "x12_y8": {
+      "type": "choice",
+      "choice": "amber",
+      "confidence": 0.92,
+      "probabilities": {
+        "midnight": 0.0,
+        "void": 0.0,
+        "cobalt": 0.0,
+        "coral": 0.01,
+        "cyan": 0.0,
+        "ivory": 0.06,
+        "amber": 0.93,
+        "moss": 0.0
+      }
+    },
+    "x13_y8": {
+      "type": "choice",
+      "choice": "amber",
+      "confidence": 0.89,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.01,
+        "cobalt": 0.0,
+        "coral": 0.01,
+        "amber": 0.9,
+        "ivory": 0.07,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x14_y8": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.43,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.03,
+        "cobalt": 0.01,
+        "coral": 0.11,
+        "amber": 0.33,
+        "ivory": 0.51,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x15_y8": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.46,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.06,
+        "cobalt": 0.01,
+        "coral": 0.19,
+        "cyan": 0.0,
+        "ivory": 0.53,
+        "amber": 0.19,
+        "moss": 0.0
+      }
+    },
+    "x16_y8": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.5,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.04,
+        "cobalt": 0.01,
+        "coral": 0.23,
+        "cyan": 0.0,
+        "ivory": 0.56,
+        "amber": 0.14,
+        "moss": 0.0
+      }
+    },
+    "x17_y8": {
+      "type": "choice",
+      "choice": "coral",
+      "confidence": 0.42,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.07,
+        "cobalt": 0.02,
+        "coral": 0.51,
+        "amber": 0.02,
+        "ivory": 0.37,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x18_y8": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.34,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.07,
+        "cobalt": 0.03,
+        "coral": 0.41,
+        "cyan": 0.01,
+        "ivory": 0.42,
+        "amber": 0.04,
+        "moss": 0.0
+      }
+    },
+    "x19_y8": {
+      "type": "choice",
+      "choice": "coral",
+      "confidence": 0.46,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.12,
+        "cobalt": 0.03,
+        "coral": 0.53,
+        "cyan": 0.01,
+        "ivory": 0.28,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x20_y8": {
+      "type": "choice",
+      "choice": "coral",
+      "confidence": 0.53,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.09,
+        "cobalt": 0.02,
+        "coral": 0.59,
+        "cyan": 0.01,
+        "ivory": 0.27,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x21_y8": {
+      "type": "choice",
+      "choice": "coral",
+      "confidence": 0.58,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.1,
+        "cobalt": 0.03,
+        "coral": 0.63,
+        "cyan": 0.01,
+        "ivory": 0.2,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x22_y8": {
+      "type": "choice",
+      "choice": "coral",
+      "confidence": 0.54,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.15,
+        "cobalt": 0.02,
+        "coral": 0.6,
+        "cyan": 0.0,
+        "ivory": 0.2,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x23_y8": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.67,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.71,
+        "cobalt": 0.01,
+        "coral": 0.13,
+        "amber": 0.01,
+        "ivory": 0.12,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x0_y9": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.61,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.65,
+        "cobalt": 0.02,
+        "coral": 0.04,
+        "cyan": 0.0,
+        "ivory": 0.26,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x1_y9": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.41,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.42,
+        "cobalt": 0.01,
+        "coral": 0.06,
+        "amber": 0.0,
+        "ivory": 0.49,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x2_y9": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.7,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.11,
+        "cobalt": 0.02,
+        "coral": 0.12,
+        "amber": 0.0,
+        "ivory": 0.74,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x3_y9": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.67,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.09,
+        "cobalt": 0.02,
+        "coral": 0.17,
+        "cyan": 0.0,
+        "ivory": 0.71,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x4_y9": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.63,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.04,
+        "cobalt": 0.02,
+        "coral": 0.25,
+        "cyan": 0.0,
+        "ivory": 0.68,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x5_y9": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.7,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.02,
+        "cobalt": 0.03,
+        "coral": 0.19,
+        "amber": 0.01,
+        "ivory": 0.74,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x6_y9": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.64,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.02,
+        "cobalt": 0.03,
+        "coral": 0.24,
+        "cyan": 0.0,
+        "ivory": 0.69,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x7_y9": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.62,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.01,
+        "cobalt": 0.03,
+        "coral": 0.26,
+        "cyan": 0.0,
+        "ivory": 0.67,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x8_y9": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.62,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.02,
+        "cobalt": 0.02,
+        "coral": 0.25,
+        "cyan": 0.0,
+        "ivory": 0.68,
+        "amber": 0.02,
+        "moss": 0.0
+      }
+    },
+    "x9_y9": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.55,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.07,
+        "cobalt": 0.06,
+        "coral": 0.19,
+        "cyan": 0.01,
+        "ivory": 0.6,
+        "amber": 0.05,
+        "moss": 0.0
+      }
+    },
+    "x10_y9": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.62,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.01,
+        "cobalt": 0.01,
+        "coral": 0.06,
+        "amber": 0.24,
+        "ivory": 0.67,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x11_y9": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.58,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.01,
+        "cobalt": 0.01,
+        "coral": 0.08,
+        "amber": 0.26,
+        "ivory": 0.63,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x12_y9": {
+      "type": "choice",
+      "choice": "amber",
+      "confidence": 0.9,
+      "probabilities": {
+        "midnight": 0.0,
+        "void": 0.0,
+        "cobalt": 0.0,
+        "coral": 0.01,
+        "amber": 0.92,
+        "ivory": 0.07,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x13_y9": {
+      "type": "choice",
+      "choice": "amber",
+      "confidence": 0.86,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.01,
+        "cobalt": 0.0,
+        "coral": 0.01,
+        "amber": 0.88,
+        "ivory": 0.09,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x14_y9": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.43,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.04,
+        "cobalt": 0.01,
+        "coral": 0.14,
+        "amber": 0.29,
+        "ivory": 0.5,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x15_y9": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.41,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.05,
+        "cobalt": 0.01,
+        "coral": 0.19,
+        "amber": 0.23,
+        "ivory": 0.49,
+        "cyan": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x16_y9": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.52,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.03,
+        "cobalt": 0.01,
+        "coral": 0.25,
+        "cyan": 0.0,
+        "ivory": 0.59,
+        "amber": 0.11,
+        "moss": 0.0
+      }
+    },
+    "x17_y9": {
+      "type": "choice",
+      "choice": "coral",
+      "confidence": 0.39,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.06,
+        "cobalt": 0.04,
+        "coral": 0.47,
+        "amber": 0.02,
+        "ivory": 0.38,
+        "cyan": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x18_y9": {
+      "type": "choice",
+      "choice": "coral",
+      "confidence": 0.28,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.1,
+        "cobalt": 0.08,
+        "coral": 0.38,
+        "amber": 0.04,
+        "ivory": 0.36,
+        "cyan": 0.02,
+        "moss": 0.0
+      }
+    },
+    "x19_y9": {
+      "type": "choice",
+      "choice": "coral",
+      "confidence": 0.43,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.12,
+        "cobalt": 0.07,
+        "coral": 0.51,
+        "amber": 0.01,
+        "ivory": 0.24,
+        "cyan": 0.02,
+        "moss": 0.0
+      }
+    },
+    "x20_y9": {
+      "type": "choice",
+      "choice": "coral",
+      "confidence": 0.35,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.14,
+        "cobalt": 0.06,
+        "coral": 0.43,
+        "amber": 0.02,
+        "ivory": 0.3,
+        "cyan": 0.02,
+        "moss": 0.0
+      }
+    },
+    "x21_y9": {
+      "type": "choice",
+      "choice": "coral",
+      "confidence": 0.41,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.17,
+        "cobalt": 0.08,
+        "coral": 0.48,
+        "cyan": 0.02,
+        "ivory": 0.21,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x22_y9": {
+      "type": "choice",
+      "choice": "coral",
+      "confidence": 0.47,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.2,
+        "cobalt": 0.04,
+        "coral": 0.53,
+        "amber": 0.01,
+        "ivory": 0.19,
+        "cyan": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x23_y9": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.67,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.7,
+        "cobalt": 0.02,
+        "coral": 0.13,
+        "cyan": 0.0,
+        "ivory": 0.12,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x0_y10": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.9,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.91,
+        "cobalt": 0.01,
+        "coral": 0.01,
+        "cyan": 0.0,
+        "ivory": 0.05,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x1_y10": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.43,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.51,
+        "cobalt": 0.02,
+        "coral": 0.06,
+        "amber": 0.0,
+        "ivory": 0.39,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x2_y10": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.66,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.12,
+        "cobalt": 0.03,
+        "coral": 0.12,
+        "cyan": 0.0,
+        "ivory": 0.71,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x3_y10": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.65,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.08,
+        "cobalt": 0.02,
+        "coral": 0.19,
+        "cyan": 0.0,
+        "ivory": 0.7,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x4_y10": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.56,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.04,
+        "cobalt": 0.06,
+        "coral": 0.27,
+        "cyan": 0.0,
+        "ivory": 0.62,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x5_y10": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.59,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.04,
+        "cobalt": 0.12,
+        "coral": 0.16,
+        "amber": 0.01,
+        "ivory": 0.65,
+        "cyan": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x6_y10": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.46,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.05,
+        "cobalt": 0.15,
+        "coral": 0.22,
+        "amber": 0.02,
+        "ivory": 0.53,
+        "cyan": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x7_y10": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.45,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.04,
+        "cobalt": 0.18,
+        "coral": 0.2,
+        "amber": 0.02,
+        "ivory": 0.52,
+        "cyan": 0.02,
+        "moss": 0.0
+      }
+    },
+    "x8_y10": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.53,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.03,
+        "cobalt": 0.12,
+        "coral": 0.22,
+        "cyan": 0.01,
+        "ivory": 0.6,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x9_y10": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.5,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.04,
+        "cobalt": 0.14,
+        "coral": 0.19,
+        "cyan": 0.02,
+        "ivory": 0.57,
+        "amber": 0.02,
+        "moss": 0.0
+      }
+    },
+    "x10_y10": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.41,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.08,
+        "cobalt": 0.04,
+        "coral": 0.04,
+        "cyan": 0.01,
+        "ivory": 0.49,
+        "amber": 0.3,
+        "moss": 0.0
+      }
+    },
+    "x11_y10": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.62,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.02,
+        "cobalt": 0.01,
+        "coral": 0.05,
+        "amber": 0.22,
+        "ivory": 0.68,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x12_y10": {
+      "type": "choice",
+      "choice": "amber",
+      "confidence": 0.79,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.0,
+        "cobalt": 0.0,
+        "coral": 0.02,
+        "amber": 0.82,
+        "ivory": 0.15,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x13_y10": {
+      "type": "choice",
+      "choice": "amber",
+      "confidence": 0.61,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.01,
+        "cobalt": 0.0,
+        "coral": 0.03,
+        "amber": 0.66,
+        "ivory": 0.28,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x14_y10": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.34,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.12,
+        "cobalt": 0.05,
+        "coral": 0.08,
+        "amber": 0.27,
+        "ivory": 0.43,
+        "cyan": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x15_y10": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.28,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.18,
+        "cobalt": 0.06,
+        "coral": 0.1,
+        "cyan": 0.02,
+        "ivory": 0.37,
+        "amber": 0.23,
+        "moss": 0.0
+      }
+    },
+    "x16_y10": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.38,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.11,
+        "cobalt": 0.07,
+        "coral": 0.13,
+        "cyan": 0.02,
+        "ivory": 0.47000000000000003,
+        "amber": 0.17,
+        "moss": 0.0
+      }
+    },
+    "x17_y10": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.11,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.2,
+        "cobalt": 0.22,
+        "coral": 0.18,
+        "amber": 0.05,
+        "ivory": 0.22,
+        "cyan": 0.09,
+        "moss": 0.0
+      }
+    },
+    "x18_y10": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.15,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.24,
+        "cobalt": 0.27,
+        "coral": 0.12,
+        "cyan": 0.12,
+        "ivory": 0.14,
+        "amber": 0.07,
+        "moss": 0.0
+      }
+    },
+    "x19_y10": {
+      "type": "choice",
+      "choice": "coral",
+      "confidence": 0.13,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.17,
+        "cobalt": 0.23,
+        "coral": 0.25,
+        "amber": 0.03,
+        "ivory": 0.19,
+        "cyan": 0.1,
+        "moss": 0.0
+      }
+    },
+    "x20_y10": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.13,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.2,
+        "cobalt": 0.24,
+        "coral": 0.21,
+        "amber": 0.02,
+        "ivory": 0.19,
+        "cyan": 0.1,
+        "moss": 0.0
+      }
+    },
+    "x21_y10": {
+      "type": "choice",
+      "choice": "coral",
+      "confidence": 0.2,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.19,
+        "cobalt": 0.24000000000000002,
+        "coral": 0.31,
+        "amber": 0.01,
+        "ivory": 0.14,
+        "cyan": 0.08,
+        "moss": 0.0
+      }
+    },
+    "x22_y10": {
+      "type": "choice",
+      "choice": "coral",
+      "confidence": 0.28,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.29,
+        "cobalt": 0.08,
+        "coral": 0.36,
+        "cyan": 0.02,
+        "ivory": 0.21,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x23_y10": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.84,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.86,
+        "cobalt": 0.02,
+        "coral": 0.05,
+        "cyan": 0.0,
+        "ivory": 0.04,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x0_y11": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.83,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.85,
+        "cobalt": 0.02,
+        "coral": 0.01,
+        "cyan": 0.0,
+        "ivory": 0.09,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x1_y11": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.44,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.51,
+        "cobalt": 0.03,
+        "coral": 0.05,
+        "amber": 0.0,
+        "ivory": 0.39,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x2_y11": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.56,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.19,
+        "cobalt": 0.05,
+        "coral": 0.12,
+        "cyan": 0.0,
+        "ivory": 0.62,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x3_y11": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.55,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.12,
+        "cobalt": 0.06,
+        "coral": 0.18,
+        "cyan": 0.0,
+        "ivory": 0.62,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x4_y11": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.54,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.04,
+        "cobalt": 0.1,
+        "coral": 0.24,
+        "cyan": 0.01,
+        "ivory": 0.59,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x5_y11": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.47,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.05,
+        "cobalt": 0.24,
+        "coral": 0.11,
+        "amber": 0.01,
+        "ivory": 0.55,
+        "cyan": 0.02,
+        "moss": 0.0
+      }
+    },
+    "x6_y11": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.32,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.08,
+        "cobalt": 0.28,
+        "coral": 0.15,
+        "cyan": 0.03,
+        "ivory": 0.4,
+        "amber": 0.02,
+        "moss": 0.01
+      }
+    },
+    "x7_y11": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.31,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.04,
+        "cobalt": 0.31,
+        "coral": 0.17,
+        "cyan": 0.04,
+        "ivory": 0.4,
+        "amber": 0.02,
+        "moss": 0.0
+      }
+    },
+    "x8_y11": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.4,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.04,
+        "cobalt": 0.24,
+        "coral": 0.18,
+        "cyan": 0.02,
+        "ivory": 0.48,
+        "amber": 0.02,
+        "moss": 0.0
+      }
+    },
+    "x9_y11": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.34,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.06,
+        "cobalt": 0.27,
+        "coral": 0.14,
+        "cyan": 0.04,
+        "ivory": 0.41,
+        "amber": 0.04,
+        "moss": 0.01
+      }
+    },
+    "x10_y11": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.48,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.05,
+        "cobalt": 0.05,
+        "coral": 0.05,
+        "cyan": 0.01,
+        "ivory": 0.54,
+        "amber": 0.27,
+        "moss": 0.0
+      }
+    },
+    "x11_y11": {
+      "type": "choice",
+      "choice": "amber",
+      "confidence": 0.35,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.11,
+        "cobalt": 0.03,
+        "coral": 0.02,
+        "cyan": 0.01,
+        "ivory": 0.35,
+        "amber": 0.44,
+        "moss": 0.0
+      }
+    },
+    "x12_y11": {
+      "type": "choice",
+      "choice": "amber",
+      "confidence": 0.9,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.01,
+        "cobalt": 0.01,
+        "coral": 0.01,
+        "cyan": 0.0,
+        "ivory": 0.06,
+        "amber": 0.9,
+        "moss": 0.0
+      }
+    },
+    "x13_y11": {
+      "type": "choice",
+      "choice": "amber",
+      "confidence": 0.64,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.01,
+        "cobalt": 0.01,
+        "coral": 0.03,
+        "cyan": 0.0,
+        "ivory": 0.24,
+        "amber": 0.7,
+        "moss": 0.0
+      }
+    },
+    "x14_y11": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.25,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.13,
+        "cobalt": 0.08,
+        "coral": 0.07,
+        "amber": 0.31,
+        "ivory": 0.35,
+        "cyan": 0.02,
+        "moss": 0.0
+      }
+    },
+    "x15_y11": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.35,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.16,
+        "cobalt": 0.08,
+        "coral": 0.09,
+        "amber": 0.17,
+        "ivory": 0.44,
+        "cyan": 0.02,
+        "moss": 0.0
+      }
+    },
+    "x16_y11": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.33,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.14,
+        "cobalt": 0.08,
+        "coral": 0.16,
+        "cyan": 0.03,
+        "ivory": 0.42,
+        "amber": 0.13,
+        "moss": 0.0
+      }
+    },
+    "x17_y11": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.22,
+      "probabilities": {
+        "midnight": 0.06,
+        "void": 0.21,
+        "cobalt": 0.32,
+        "coral": 0.08,
+        "amber": 0.06,
+        "ivory": 0.14,
+        "cyan": 0.13,
+        "moss": 0.0
+      }
+    },
+    "x18_y11": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.19,
+      "probabilities": {
+        "midnight": 0.06,
+        "void": 0.29,
+        "cobalt": 0.27,
+        "coral": 0.08,
+        "amber": 0.07,
+        "ivory": 0.1,
+        "cyan": 0.13,
+        "moss": 0.0
+      }
+    },
+    "x19_y11": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.27,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.18,
+        "cobalt": 0.37,
+        "coral": 0.11,
+        "cyan": 0.2,
+        "ivory": 0.07,
+        "amber": 0.03,
+        "moss": 0.0
+      }
+    },
+    "x20_y11": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.17,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.21,
+        "cobalt": 0.27,
+        "coral": 0.17,
+        "amber": 0.02,
+        "ivory": 0.16,
+        "cyan": 0.13,
+        "moss": 0.0
+      }
+    },
+    "x21_y11": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.24,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.21,
+        "cobalt": 0.34,
+        "coral": 0.16,
+        "amber": 0.02,
+        "ivory": 0.09,
+        "cyan": 0.14,
+        "moss": 0.0
+      }
+    },
+    "x22_y11": {
+      "type": "choice",
+      "choice": "coral",
+      "confidence": 0.29,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.28,
+        "cobalt": 0.09,
+        "coral": 0.38,
+        "cyan": 0.02,
+        "ivory": 0.19,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x23_y11": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.82,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.85,
+        "cobalt": 0.02,
+        "coral": 0.06,
+        "cyan": 0.01,
+        "ivory": 0.03,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x0_y12": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.84,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.86,
+        "cobalt": 0.05,
+        "coral": 0.01,
+        "amber": 0.0,
+        "ivory": 0.05,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x1_y12": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.59,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.65,
+        "cobalt": 0.13,
+        "coral": 0.03,
+        "cyan": 0.01,
+        "ivory": 0.15,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x2_y12": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.25,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.28,
+        "cobalt": 0.24,
+        "coral": 0.09,
+        "amber": 0.01,
+        "ivory": 0.33999999999999997,
+        "cyan": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x3_y12": {
+      "type": "choice",
+      "choice": "ivory",
+      "confidence": 0.29,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.18,
+        "cobalt": 0.31,
+        "coral": 0.09,
+        "cyan": 0.01,
+        "ivory": 0.37,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x4_y12": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.4,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.1,
+        "cobalt": 0.45999999999999996,
+        "coral": 0.1,
+        "cyan": 0.03,
+        "ivory": 0.27,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x5_y12": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.8,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.06,
+        "cobalt": 0.82,
+        "coral": 0.0,
+        "amber": 0.01,
+        "ivory": 0.01,
+        "cyan": 0.07,
+        "moss": 0.0
+      }
+    },
+    "x6_y12": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.85,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.04,
+        "cobalt": 0.86,
+        "coral": 0.0,
+        "amber": 0.01,
+        "ivory": 0.01,
+        "cyan": 0.05,
+        "moss": 0.0
+      }
+    },
+    "x7_y12": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.78,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.06,
+        "cobalt": 0.81,
+        "coral": 0.0,
+        "cyan": 0.07,
+        "ivory": 0.01,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x8_y12": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.71,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.06,
+        "cobalt": 0.74,
+        "coral": 0.01,
+        "cyan": 0.11,
+        "ivory": 0.03,
+        "amber": 0.02,
+        "moss": 0.0
+      }
+    },
+    "x9_y12": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.65,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.09,
+        "cobalt": 0.7,
+        "coral": 0.01,
+        "cyan": 0.11,
+        "ivory": 0.03,
+        "amber": 0.02,
+        "moss": 0.0
+      }
+    },
+    "x10_y12": {
+      "type": "choice",
+      "choice": "amber",
+      "confidence": 0.21,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.07,
+        "cobalt": 0.3,
+        "coral": 0.01,
+        "amber": 0.32,
+        "ivory": 0.23,
+        "cyan": 0.03,
+        "moss": 0.0
+      }
+    },
+    "x11_y12": {
+      "type": "choice",
+      "choice": "amber",
+      "confidence": 0.28,
+      "probabilities": {
+        "midnight": 0.05,
+        "void": 0.12,
+        "cobalt": 0.36,
+        "coral": 0.0,
+        "cyan": 0.04,
+        "ivory": 0.06,
+        "amber": 0.37,
+        "moss": 0.0
+      }
+    },
+    "x12_y12": {
+      "type": "choice",
+      "choice": "amber",
+      "confidence": 0.6,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.17,
+        "cobalt": 0.09,
+        "coral": 0.0,
+        "cyan": 0.02,
+        "ivory": 0.03,
+        "amber": 0.65,
+        "moss": 0.0
+      }
+    },
+    "x13_y12": {
+      "type": "choice",
+      "choice": "amber",
+      "confidence": 0.41,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.16,
+        "cobalt": 0.24,
+        "coral": 0.0,
+        "amber": 0.48,
+        "ivory": 0.02,
+        "cyan": 0.06,
+        "moss": 0.0
+      }
+    },
+    "x14_y12": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.47,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.1,
+        "cobalt": 0.55,
+        "coral": 0.0,
+        "cyan": 0.14,
+        "ivory": 0.01,
+        "amber": 0.15,
+        "moss": 0.0
+      }
+    },
+    "x15_y12": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.46,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.13,
+        "cobalt": 0.53,
+        "coral": 0.0,
+        "cyan": 0.17,
+        "ivory": 0.01,
+        "amber": 0.12,
+        "moss": 0.0
+      }
+    },
+    "x16_y12": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.49,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.1,
+        "cobalt": 0.55,
+        "coral": 0.0,
+        "amber": 0.07,
+        "ivory": 0.01,
+        "cyan": 0.23,
+        "moss": 0.0
+      }
+    },
+    "x17_y12": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.57,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.08,
+        "cobalt": 0.62,
+        "coral": 0.0,
+        "cyan": 0.24,
+        "ivory": 0.01,
+        "amber": 0.02,
+        "moss": 0.0
+      }
+    },
+    "x18_y12": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.5,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.07,
+        "cobalt": 0.56,
+        "coral": 0.0,
+        "amber": 0.01,
+        "ivory": 0.01,
+        "cyan": 0.31,
+        "moss": 0.0
+      }
+    },
+    "x19_y12": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.42,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.11,
+        "cobalt": 0.5,
+        "coral": 0.01,
+        "cyan": 0.33,
+        "ivory": 0.01,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x20_y12": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.42,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.17,
+        "cobalt": 0.5,
+        "coral": 0.01,
+        "cyan": 0.27,
+        "ivory": 0.01,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x21_y12": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.48,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.13,
+        "cobalt": 0.54,
+        "coral": 0.02,
+        "amber": 0.01,
+        "ivory": 0.01,
+        "cyan": 0.27,
+        "moss": 0.0
+      }
+    },
+    "x22_y12": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.24,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.3,
+        "cobalt": 0.34,
+        "coral": 0.11,
+        "amber": 0.01,
+        "ivory": 0.03,
+        "cyan": 0.18,
+        "moss": 0.0
+      }
+    },
+    "x23_y12": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.85,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.88,
+        "cobalt": 0.03,
+        "coral": 0.03,
+        "cyan": 0.01,
+        "ivory": 0.02,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x0_y13": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.87,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.9,
+        "cobalt": 0.06,
+        "coral": 0.0,
+        "cyan": 0.0,
+        "ivory": 0.02,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x1_y13": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.6,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.65,
+        "cobalt": 0.19,
+        "coral": 0.02,
+        "amber": 0.0,
+        "ivory": 0.09,
+        "cyan": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x2_y13": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.35,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.28,
+        "cobalt": 0.43,
+        "coral": 0.04,
+        "cyan": 0.02,
+        "ivory": 0.18,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x3_y13": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.48,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.19,
+        "cobalt": 0.55,
+        "coral": 0.04,
+        "cyan": 0.02,
+        "ivory": 0.15,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x4_y13": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.68,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.1,
+        "cobalt": 0.71,
+        "coral": 0.03,
+        "cyan": 0.04,
+        "ivory": 0.08,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x5_y13": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.86,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.03,
+        "cobalt": 0.88,
+        "coral": 0.0,
+        "amber": 0.0,
+        "ivory": 0.01,
+        "cyan": 0.06,
+        "moss": 0.0
+      }
+    },
+    "x6_y13": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.85,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.02,
+        "cobalt": 0.87,
+        "coral": 0.0,
+        "cyan": 0.09,
+        "ivory": 0.0,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x7_y13": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.8,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.04,
+        "cobalt": 0.82,
+        "coral": 0.0,
+        "cyan": 0.1,
+        "ivory": 0.01,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x8_y13": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.79,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.04,
+        "cobalt": 0.81,
+        "coral": 0.0,
+        "cyan": 0.1,
+        "ivory": 0.01,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x9_y13": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.7,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.05,
+        "cobalt": 0.75,
+        "coral": 0.0,
+        "cyan": 0.15,
+        "ivory": 0.01,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x10_y13": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.56,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.09,
+        "cobalt": 0.62,
+        "coral": 0.0,
+        "cyan": 0.06,
+        "ivory": 0.05,
+        "amber": 0.14,
+        "moss": 0.0
+      }
+    },
+    "x11_y13": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.6,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.08,
+        "cobalt": 0.66,
+        "coral": 0.0,
+        "cyan": 0.07,
+        "ivory": 0.03,
+        "amber": 0.12,
+        "moss": 0.0
+      }
+    },
+    "x12_y13": {
+      "type": "choice",
+      "choice": "amber",
+      "confidence": 0.46,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.12,
+        "cobalt": 0.25,
+        "coral": 0.0,
+        "amber": 0.53,
+        "ivory": 0.01,
+        "cyan": 0.06,
+        "moss": 0.0
+      }
+    },
+    "x13_y13": {
+      "type": "choice",
+      "choice": "amber",
+      "confidence": 0.36,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.14,
+        "cobalt": 0.28,
+        "coral": 0.0,
+        "cyan": 0.08,
+        "ivory": 0.01,
+        "amber": 0.45,
+        "moss": 0.0
+      }
+    },
+    "x14_y13": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.46,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.09,
+        "cobalt": 0.53,
+        "coral": 0.0,
+        "cyan": 0.22,
+        "ivory": 0.01,
+        "amber": 0.12,
+        "moss": 0.0
+      }
+    },
+    "x15_y13": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.44,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.08,
+        "cobalt": 0.52,
+        "coral": 0.0,
+        "cyan": 0.31,
+        "ivory": 0.01,
+        "amber": 0.05,
+        "moss": 0.0
+      }
+    },
+    "x16_y13": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.45,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.08,
+        "cobalt": 0.51,
+        "coral": 0.0,
+        "cyan": 0.32,
+        "ivory": 0.01,
+        "amber": 0.05,
+        "moss": 0.0
+      }
+    },
+    "x17_y13": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.48,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.05,
+        "cobalt": 0.56,
+        "coral": 0.0,
+        "amber": 0.01,
+        "ivory": 0.0,
+        "cyan": 0.36,
+        "moss": 0.0
+      }
+    },
+    "x18_y13": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.41,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.05,
+        "cobalt": 0.49,
+        "coral": 0.0,
+        "amber": 0.01,
+        "ivory": 0.01,
+        "cyan": 0.42,
+        "moss": 0.0
+      }
+    },
+    "x19_y13": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.34,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.12,
+        "cobalt": 0.43,
+        "coral": 0.0,
+        "amber": 0.01,
+        "ivory": 0.01,
+        "cyan": 0.41,
+        "moss": 0.0
+      }
+    },
+    "x20_y13": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.38,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.16,
+        "cobalt": 0.45,
+        "coral": 0.01,
+        "cyan": 0.33,
+        "ivory": 0.01,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x21_y13": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.44,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.12,
+        "cobalt": 0.5,
+        "coral": 0.01,
+        "amber": 0.01,
+        "ivory": 0.01,
+        "cyan": 0.33,
+        "moss": 0.0
+      }
+    },
+    "x22_y13": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.25,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.33,
+        "cobalt": 0.33999999999999997,
+        "coral": 0.07,
+        "cyan": 0.2,
+        "ivory": 0.02,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x23_y13": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.81,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.84,
+        "cobalt": 0.07,
+        "coral": 0.03,
+        "cyan": 0.03,
+        "ivory": 0.01,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x0_y14": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.62,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.67,
+        "cobalt": 0.26,
+        "coral": 0.0,
+        "amber": 0.0,
+        "ivory": 0.01,
+        "cyan": 0.02,
+        "moss": 0.0
+      }
+    },
+    "x1_y14": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.5,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.5700000000000001,
+        "cobalt": 0.35,
+        "coral": 0.01,
+        "cyan": 0.02,
+        "ivory": 0.02,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x2_y14": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.73,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.15,
+        "cobalt": 0.76,
+        "coral": 0.0,
+        "cyan": 0.04,
+        "ivory": 0.01,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x3_y14": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.76,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.13,
+        "cobalt": 0.8,
+        "coral": 0.0,
+        "amber": 0.0,
+        "ivory": 0.01,
+        "cyan": 0.03,
+        "moss": 0.0
+      }
+    },
+    "x4_y14": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.85,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.05,
+        "cobalt": 0.88,
+        "coral": 0.0,
+        "amber": 0.0,
+        "ivory": 0.0,
+        "cyan": 0.05,
+        "moss": 0.0
+      }
+    },
+    "x5_y14": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.86,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.02,
+        "cobalt": 0.89,
+        "coral": 0.0,
+        "amber": 0.0,
+        "ivory": 0.0,
+        "cyan": 0.08,
+        "moss": 0.0
+      }
+    },
+    "x6_y14": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.86,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.01,
+        "cobalt": 0.89,
+        "coral": 0.0,
+        "amber": 0.0,
+        "ivory": 0.0,
+        "cyan": 0.09,
+        "moss": 0.0
+      }
+    },
+    "x7_y14": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.82,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.02,
+        "cobalt": 0.84,
+        "coral": 0.0,
+        "amber": 0.0,
+        "ivory": 0.01,
+        "cyan": 0.11,
+        "moss": 0.0
+      }
+    },
+    "x8_y14": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.78,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.02,
+        "cobalt": 0.81,
+        "coral": 0.0,
+        "cyan": 0.13,
+        "ivory": 0.01,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x9_y14": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.72,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.04,
+        "cobalt": 0.76,
+        "coral": 0.0,
+        "amber": 0.01,
+        "ivory": 0.01,
+        "cyan": 0.15,
+        "moss": 0.0
+      }
+    },
+    "x10_y14": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.74,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.05,
+        "cobalt": 0.78,
+        "coral": 0.0,
+        "cyan": 0.09,
+        "ivory": 0.01,
+        "amber": 0.05,
+        "moss": 0.0
+      }
+    },
+    "x11_y14": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.72,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.05,
+        "cobalt": 0.76,
+        "coral": 0.0,
+        "cyan": 0.09,
+        "ivory": 0.01,
+        "amber": 0.06,
+        "moss": 0.0
+      }
+    },
+    "x12_y14": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.47,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.03,
+        "cobalt": 0.54,
+        "coral": 0.0,
+        "amber": 0.27,
+        "ivory": 0.01,
+        "cyan": 0.13,
+        "moss": 0.0
+      }
+    },
+    "x13_y14": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.42,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.05,
+        "cobalt": 0.48,
+        "coral": 0.0,
+        "amber": 0.22,
+        "ivory": 0.01,
+        "cyan": 0.21,
+        "moss": 0.0
+      }
+    },
+    "x14_y14": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.47,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.07,
+        "cobalt": 0.54,
+        "coral": 0.0,
+        "amber": 0.07,
+        "ivory": 0.01,
+        "cyan": 0.27,
+        "moss": 0.0
+      }
+    },
+    "x15_y14": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.45,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.04,
+        "cobalt": 0.51,
+        "coral": 0.0,
+        "cyan": 0.4,
+        "ivory": 0.01,
+        "amber": 0.02,
+        "moss": 0.0
+      }
+    },
+    "x16_y14": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.4,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.02,
+        "cobalt": 0.49,
+        "coral": 0.0,
+        "amber": 0.01,
+        "ivory": 0.01,
+        "cyan": 0.45,
+        "moss": 0.0
+      }
+    },
+    "x17_y14": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.52,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.02,
+        "cobalt": 0.58,
+        "coral": 0.0,
+        "amber": 0.01,
+        "ivory": 0.01,
+        "cyan": 0.37,
+        "moss": 0.0
+      }
+    },
+    "x18_y14": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.43,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.02,
+        "cobalt": 0.5,
+        "coral": 0.0,
+        "amber": 0.01,
+        "ivory": 0.01,
+        "cyan": 0.45,
+        "moss": 0.0
+      }
+    },
+    "x19_y14": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.41,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.03,
+        "cobalt": 0.48,
+        "coral": 0.0,
+        "cyan": 0.46,
+        "ivory": 0.01,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x20_y14": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.39,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.08,
+        "cobalt": 0.42,
+        "coral": 0.0,
+        "amber": 0.01,
+        "ivory": 0.0,
+        "cyan": 0.47,
+        "moss": 0.0
+      }
+    },
+    "x21_y14": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.44,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.09,
+        "cobalt": 0.51,
+        "coral": 0.0,
+        "cyan": 0.37,
+        "ivory": 0.0,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x22_y14": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.39,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.19,
+        "cobalt": 0.45999999999999996,
+        "coral": 0.01,
+        "cyan": 0.3,
+        "ivory": 0.01,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x23_y14": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.69,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.72,
+        "cobalt": 0.14,
+        "coral": 0.01,
+        "cyan": 0.09,
+        "ivory": 0.01,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x0_y15": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.59,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.64,
+        "cobalt": 0.3,
+        "coral": 0.0,
+        "amber": 0.0,
+        "ivory": 0.01,
+        "cyan": 0.02,
+        "moss": 0.0
+      }
+    },
+    "x1_y15": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.54,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.61,
+        "cobalt": 0.32,
+        "coral": 0.0,
+        "cyan": 0.03,
+        "ivory": 0.01,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x2_y15": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.74,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.16,
+        "cobalt": 0.77,
+        "coral": 0.0,
+        "amber": 0.0,
+        "ivory": 0.01,
+        "cyan": 0.03,
+        "moss": 0.0
+      }
+    },
+    "x3_y15": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.69,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.15,
+        "cobalt": 0.74,
+        "coral": 0.0,
+        "cyan": 0.07,
+        "ivory": 0.01,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x4_y15": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.78,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.07,
+        "cobalt": 0.81,
+        "coral": 0.0,
+        "cyan": 0.09,
+        "ivory": 0.01,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x5_y15": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.82,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.01,
+        "cobalt": 0.85,
+        "coral": 0.0,
+        "amber": 0.0,
+        "ivory": 0.0,
+        "cyan": 0.13,
+        "moss": 0.0
+      }
+    },
+    "x6_y15": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.74,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.01,
+        "cobalt": 0.78,
+        "coral": 0.0,
+        "amber": 0.0,
+        "ivory": 0.02,
+        "cyan": 0.18,
+        "moss": 0.0
+      }
+    },
+    "x7_y15": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.72,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.01,
+        "cobalt": 0.76,
+        "coral": 0.0,
+        "cyan": 0.2,
+        "ivory": 0.01,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x8_y15": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.73,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.03,
+        "cobalt": 0.76,
+        "coral": 0.0,
+        "amber": 0.01,
+        "ivory": 0.01,
+        "cyan": 0.17,
+        "moss": 0.0
+      }
+    },
+    "x9_y15": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.62,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.04,
+        "cobalt": 0.67,
+        "coral": 0.0,
+        "amber": 0.01,
+        "ivory": 0.01,
+        "cyan": 0.24,
+        "moss": 0.0
+      }
+    },
+    "x10_y15": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.72,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.05,
+        "cobalt": 0.76,
+        "coral": 0.0,
+        "cyan": 0.12,
+        "ivory": 0.01,
+        "amber": 0.04,
+        "moss": 0.0
+      }
+    },
+    "x11_y15": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.72,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.04,
+        "cobalt": 0.76,
+        "coral": 0.0,
+        "cyan": 0.12,
+        "ivory": 0.01,
+        "amber": 0.05,
+        "moss": 0.0
+      }
+    },
+    "x12_y15": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.43,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.04,
+        "cobalt": 0.5,
+        "coral": 0.0,
+        "cyan": 0.22,
+        "ivory": 0.01,
+        "amber": 0.21,
+        "moss": 0.0
+      }
+    },
+    "x13_y15": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.36,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.06,
+        "cobalt": 0.44,
+        "coral": 0.0,
+        "cyan": 0.25,
+        "ivory": 0.01,
+        "amber": 0.21,
+        "moss": 0.0
+      }
+    },
+    "x14_y15": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.48,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.04,
+        "cobalt": 0.55,
+        "coral": 0.0,
+        "cyan": 0.34,
+        "ivory": 0.01,
+        "amber": 0.04,
+        "moss": 0.0
+      }
+    },
+    "x15_y15": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.38,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.06,
+        "cobalt": 0.42,
+        "coral": 0.0,
+        "cyan": 0.46,
+        "ivory": 0.01,
+        "amber": 0.03,
+        "moss": 0.0
+      }
+    },
+    "x16_y15": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.41,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.03,
+        "cobalt": 0.45,
+        "coral": 0.0,
+        "cyan": 0.49,
+        "ivory": 0.01,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x17_y15": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.41,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.02,
+        "cobalt": 0.49,
+        "coral": 0.0,
+        "cyan": 0.46,
+        "ivory": 0.01,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x18_y15": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.44,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.01,
+        "cobalt": 0.43,
+        "coral": 0.0,
+        "cyan": 0.51,
+        "ivory": 0.03,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x19_y15": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.48,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.03,
+        "cobalt": 0.39,
+        "coral": 0.0,
+        "cyan": 0.55,
+        "ivory": 0.01,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x20_y15": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.43,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.07,
+        "cobalt": 0.4,
+        "coral": 0.0,
+        "amber": 0.01,
+        "ivory": 0.0,
+        "cyan": 0.5,
+        "moss": 0.0
+      }
+    },
+    "x21_y15": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.4,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.08,
+        "cobalt": 0.42,
+        "coral": 0.0,
+        "amber": 0.01,
+        "ivory": 0.0,
+        "cyan": 0.48,
+        "moss": 0.0
+      }
+    },
+    "x22_y15": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.31,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.17,
+        "cobalt": 0.38,
+        "coral": 0.01,
+        "cyan": 0.4,
+        "ivory": 0.01,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x23_y15": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.67,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.72,
+        "cobalt": 0.14,
+        "coral": 0.01,
+        "amber": 0.0,
+        "ivory": 0.01,
+        "cyan": 0.1,
+        "moss": 0.0
+      }
+    },
+    "x0_y16": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.67,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.71,
+        "cobalt": 0.22,
+        "coral": 0.0,
+        "cyan": 0.02,
+        "ivory": 0.01,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x1_y16": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.52,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.59,
+        "cobalt": 0.33,
+        "coral": 0.0,
+        "cyan": 0.04,
+        "ivory": 0.01,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x2_y16": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.66,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.18,
+        "cobalt": 0.7,
+        "coral": 0.0,
+        "amber": 0.0,
+        "ivory": 0.01,
+        "cyan": 0.08,
+        "moss": 0.0
+      }
+    },
+    "x3_y16": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.69,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.15,
+        "cobalt": 0.74,
+        "coral": 0.0,
+        "cyan": 0.07,
+        "ivory": 0.01,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x4_y16": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.72,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.08,
+        "cobalt": 0.77,
+        "coral": 0.0,
+        "cyan": 0.13,
+        "ivory": 0.0,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x5_y16": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.75,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.03,
+        "cobalt": 0.79,
+        "coral": 0.0,
+        "cyan": 0.16,
+        "ivory": 0.0,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x6_y16": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.7,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.03,
+        "cobalt": 0.73,
+        "coral": 0.0,
+        "amber": 0.0,
+        "ivory": 0.01,
+        "cyan": 0.21,
+        "moss": 0.0
+      }
+    },
+    "x7_y16": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.67,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.05,
+        "cobalt": 0.71,
+        "coral": 0.0,
+        "amber": 0.01,
+        "ivory": 0.01,
+        "cyan": 0.2,
+        "moss": 0.0
+      }
+    },
+    "x8_y16": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.65,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.03,
+        "cobalt": 0.69,
+        "coral": 0.0,
+        "cyan": 0.23,
+        "ivory": 0.01,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x9_y16": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.55,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.06,
+        "cobalt": 0.62,
+        "coral": 0.0,
+        "amber": 0.01,
+        "ivory": 0.01,
+        "cyan": 0.27,
+        "moss": 0.0
+      }
+    },
+    "x10_y16": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.71,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.04,
+        "cobalt": 0.75,
+        "coral": 0.0,
+        "cyan": 0.14,
+        "ivory": 0.01,
+        "amber": 0.04,
+        "moss": 0.0
+      }
+    },
+    "x11_y16": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.69,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.04,
+        "cobalt": 0.73,
+        "coral": 0.0,
+        "cyan": 0.15,
+        "ivory": 0.01,
+        "amber": 0.05,
+        "moss": 0.0
+      }
+    },
+    "x12_y16": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.43,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.04,
+        "cobalt": 0.49,
+        "coral": 0.0,
+        "cyan": 0.22,
+        "ivory": 0.01,
+        "amber": 0.22,
+        "moss": 0.0
+      }
+    },
+    "x13_y16": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.33,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.07,
+        "cobalt": 0.42,
+        "coral": 0.0,
+        "cyan": 0.29,
+        "ivory": 0.01,
+        "amber": 0.18,
+        "moss": 0.0
+      }
+    },
+    "x14_y16": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.38,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.06,
+        "cobalt": 0.42,
+        "coral": 0.0,
+        "amber": 0.03,
+        "ivory": 0.01,
+        "cyan": 0.46,
+        "moss": 0.0
+      }
+    },
+    "x15_y16": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.43,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.04,
+        "cobalt": 0.41,
+        "coral": 0.0,
+        "cyan": 0.5,
+        "ivory": 0.01,
+        "amber": 0.02,
+        "moss": 0.0
+      }
+    },
+    "x16_y16": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.44,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.11,
+        "cobalt": 0.33,
+        "coral": 0.0,
+        "amber": 0.02,
+        "ivory": 0.0,
+        "cyan": 0.51,
+        "moss": 0.0
+      }
+    },
+    "x17_y16": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.45,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.05,
+        "cobalt": 0.39,
+        "coral": 0.0,
+        "amber": 0.01,
+        "ivory": 0.01,
+        "cyan": 0.52,
+        "moss": 0.0
+      }
+    },
+    "x18_y16": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.49,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.07,
+        "cobalt": 0.34,
+        "coral": 0.0,
+        "cyan": 0.55,
+        "ivory": 0.01,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x19_y16": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.43,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.09,
+        "cobalt": 0.37,
+        "coral": 0.0,
+        "amber": 0.01,
+        "ivory": 0.0,
+        "cyan": 0.51,
+        "moss": 0.0
+      }
+    },
+    "x20_y16": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.41,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.12,
+        "cobalt": 0.36,
+        "coral": 0.0,
+        "amber": 0.01,
+        "ivory": 0.0,
+        "cyan": 0.49,
+        "moss": 0.0
+      }
+    },
+    "x21_y16": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.41,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.1,
+        "cobalt": 0.38,
+        "coral": 0.0,
+        "amber": 0.01,
+        "ivory": 0.0,
+        "cyan": 0.49,
+        "moss": 0.0
+      }
+    },
+    "x22_y16": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.24,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.29,
+        "cobalt": 0.33,
+        "coral": 0.01,
+        "amber": 0.01,
+        "ivory": 0.01,
+        "cyan": 0.32,
+        "moss": 0.0
+      }
+    },
+    "x23_y16": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.65,
+      "probabilities": {
+        "midnight": 0.05,
+        "void": 0.7,
+        "cobalt": 0.15,
+        "coral": 0.01,
+        "cyan": 0.08,
+        "ivory": 0.01,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x0_y17": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.7,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.74,
+        "cobalt": 0.19,
+        "coral": 0.0,
+        "cyan": 0.03,
+        "ivory": 0.01,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x1_y17": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.6,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.65,
+        "cobalt": 0.26,
+        "coral": 0.0,
+        "amber": 0.0,
+        "ivory": 0.01,
+        "cyan": 0.05,
+        "moss": 0.0
+      }
+    },
+    "x2_y17": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.57,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.25,
+        "cobalt": 0.63,
+        "coral": 0.0,
+        "amber": 0.0,
+        "ivory": 0.01,
+        "cyan": 0.08,
+        "moss": 0.0
+      }
+    },
+    "x3_y17": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.58,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.22,
+        "cobalt": 0.64,
+        "coral": 0.0,
+        "amber": 0.0,
+        "ivory": 0.01,
+        "cyan": 0.09,
+        "moss": 0.0
+      }
+    },
+    "x4_y17": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.59,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.16,
+        "cobalt": 0.64,
+        "coral": 0.0,
+        "cyan": 0.15,
+        "ivory": 0.01,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x5_y17": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.65,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.08,
+        "cobalt": 0.7,
+        "coral": 0.0,
+        "amber": 0.01,
+        "ivory": 0.0,
+        "cyan": 0.18,
+        "moss": 0.0
+      }
+    },
+    "x6_y17": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.55,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.11,
+        "cobalt": 0.62,
+        "coral": 0.0,
+        "amber": 0.02,
+        "ivory": 0.0,
+        "cyan": 0.22,
+        "moss": 0.0
+      }
+    },
+    "x7_y17": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.56,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.08,
+        "cobalt": 0.62,
+        "coral": 0.0,
+        "cyan": 0.24,
+        "ivory": 0.01,
+        "amber": 0.02,
+        "moss": 0.0
+      }
+    },
+    "x8_y17": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.58,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.07,
+        "cobalt": 0.64,
+        "coral": 0.0,
+        "amber": 0.03,
+        "ivory": 0.0,
+        "cyan": 0.23,
+        "moss": 0.0
+      }
+    },
+    "x9_y17": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.49,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.11,
+        "cobalt": 0.56,
+        "coral": 0.0,
+        "cyan": 0.24,
+        "ivory": 0.01,
+        "amber": 0.05,
+        "moss": 0.0
+      }
+    },
+    "x10_y17": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.42,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.1,
+        "cobalt": 0.49,
+        "coral": 0.0,
+        "amber": 0.24,
+        "ivory": 0.01,
+        "cyan": 0.12,
+        "moss": 0.0
+      }
+    },
+    "x11_y17": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.35,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.1,
+        "cobalt": 0.43,
+        "coral": 0.0,
+        "cyan": 0.11,
+        "ivory": 0.01,
+        "amber": 0.32,
+        "moss": 0.0
+      }
+    },
+    "x12_y17": {
+      "type": "choice",
+      "choice": "amber",
+      "confidence": 0.69,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.05,
+        "cobalt": 0.14,
+        "coral": 0.0,
+        "cyan": 0.06,
+        "ivory": 0.01,
+        "amber": 0.72,
+        "moss": 0.0
+      }
+    },
+    "x13_y17": {
+      "type": "choice",
+      "choice": "amber",
+      "confidence": 0.55,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.1,
+        "cobalt": 0.17,
+        "coral": 0.0,
+        "cyan": 0.09,
+        "ivory": 0.01,
+        "amber": 0.6,
+        "moss": 0.0
+      }
+    },
+    "x14_y17": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.36,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.11,
+        "cobalt": 0.43,
+        "coral": 0.0,
+        "cyan": 0.27,
+        "ivory": 0.01,
+        "amber": 0.15,
+        "moss": 0.0
+      }
+    },
+    "x15_y17": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.32,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.14,
+        "cobalt": 0.4,
+        "coral": 0.0,
+        "amber": 0.1,
+        "ivory": 0.01,
+        "cyan": 0.32,
+        "moss": 0.0
+      }
+    },
+    "x16_y17": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.29,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.14,
+        "cobalt": 0.37,
+        "coral": 0.0,
+        "amber": 0.12,
+        "ivory": 0.01,
+        "cyan": 0.33,
+        "moss": 0.0
+      }
+    },
+    "x17_y17": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.23,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.28,
+        "cobalt": 0.3,
+        "coral": 0.0,
+        "amber": 0.03,
+        "ivory": 0.01,
+        "cyan": 0.34,
+        "moss": 0.0
+      }
+    },
+    "x18_y17": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.37,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.16,
+        "cobalt": 0.32,
+        "coral": 0.0,
+        "amber": 0.03,
+        "ivory": 0.01,
+        "cyan": 0.45,
+        "moss": 0.0
+      }
+    },
+    "x19_y17": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.32,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.14,
+        "cobalt": 0.41000000000000003,
+        "coral": 0.0,
+        "cyan": 0.42,
+        "ivory": 0.0,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x20_y17": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.33,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.17,
+        "cobalt": 0.42,
+        "coral": 0.0,
+        "amber": 0.02,
+        "ivory": 0.0,
+        "cyan": 0.36,
+        "moss": 0.0
+      }
+    },
+    "x21_y17": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.31,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.18,
+        "cobalt": 0.38,
+        "coral": 0.01,
+        "amber": 0.01,
+        "ivory": 0.01,
+        "cyan": 0.39,
+        "moss": 0.0
+      }
+    },
+    "x22_y17": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.29,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.38,
+        "cobalt": 0.31,
+        "coral": 0.02,
+        "cyan": 0.24,
+        "ivory": 0.01,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x23_y17": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.74,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.77,
+        "cobalt": 0.11,
+        "coral": 0.01,
+        "cyan": 0.06,
+        "ivory": 0.01,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x0_y18": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.72,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.76,
+        "cobalt": 0.18000000000000002,
+        "coral": 0.0,
+        "cyan": 0.03,
+        "ivory": 0.01,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x1_y18": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.58,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.63,
+        "cobalt": 0.27,
+        "coral": 0.01,
+        "cyan": 0.05,
+        "ivory": 0.02,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x2_y18": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.45,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.31,
+        "cobalt": 0.51,
+        "coral": 0.01,
+        "cyan": 0.1,
+        "ivory": 0.02,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x3_y18": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.49,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.29,
+        "cobalt": 0.55,
+        "coral": 0.0,
+        "amber": 0.01,
+        "ivory": 0.02,
+        "cyan": 0.09,
+        "moss": 0.0
+      }
+    },
+    "x4_y18": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.43,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.3,
+        "cobalt": 0.5,
+        "coral": 0.01,
+        "amber": 0.01,
+        "ivory": 0.01,
+        "cyan": 0.14,
+        "moss": 0.0
+      }
+    },
+    "x5_y18": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.44,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.24,
+        "cobalt": 0.51,
+        "coral": 0.0,
+        "cyan": 0.17,
+        "ivory": 0.01,
+        "amber": 0.03,
+        "moss": 0.0
+      }
+    },
+    "x6_y18": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.39,
+      "probabilities": {
+        "midnight": 0.06,
+        "void": 0.29,
+        "cobalt": 0.46,
+        "coral": 0.0,
+        "cyan": 0.16,
+        "ivory": 0.01,
+        "amber": 0.02,
+        "moss": 0.0
+      }
+    },
+    "x7_y18": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.35,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.22,
+        "cobalt": 0.44,
+        "coral": 0.0,
+        "amber": 0.08,
+        "ivory": 0.01,
+        "cyan": 0.21,
+        "moss": 0.0
+      }
+    },
+    "x8_y18": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.35,
+      "probabilities": {
+        "midnight": 0.06,
+        "void": 0.23,
+        "cobalt": 0.44,
+        "coral": 0.0,
+        "amber": 0.08,
+        "ivory": 0.01,
+        "cyan": 0.18,
+        "moss": 0.0
+      }
+    },
+    "x9_y18": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.35,
+      "probabilities": {
+        "midnight": 0.05,
+        "void": 0.19,
+        "cobalt": 0.44,
+        "coral": 0.0,
+        "amber": 0.1,
+        "ivory": 0.01,
+        "cyan": 0.21,
+        "moss": 0.0
+      }
+    },
+    "x10_y18": {
+      "type": "choice",
+      "choice": "amber",
+      "confidence": 0.33,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.21,
+        "cobalt": 0.24,
+        "coral": 0.0,
+        "cyan": 0.07,
+        "ivory": 0.01,
+        "amber": 0.43,
+        "moss": 0.0
+      }
+    },
+    "x11_y18": {
+      "type": "choice",
+      "choice": "amber",
+      "confidence": 0.42,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.14,
+        "cobalt": 0.26,
+        "coral": 0.0,
+        "amber": 0.49,
+        "ivory": 0.01,
+        "cyan": 0.06,
+        "moss": 0.0
+      }
+    },
+    "x12_y18": {
+      "type": "choice",
+      "choice": "amber",
+      "confidence": 0.83,
+      "probabilities": {
+        "midnight": 0.01,
+        "void": 0.04,
+        "cobalt": 0.05,
+        "coral": 0.0,
+        "cyan": 0.03,
+        "ivory": 0.01,
+        "amber": 0.86,
+        "moss": 0.0
+      }
+    },
+    "x13_y18": {
+      "type": "choice",
+      "choice": "amber",
+      "confidence": 0.76,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.09,
+        "cobalt": 0.06,
+        "coral": 0.0,
+        "amber": 0.78,
+        "ivory": 0.01,
+        "cyan": 0.04,
+        "moss": 0.0
+      }
+    },
+    "x14_y18": {
+      "type": "choice",
+      "choice": "amber",
+      "confidence": 0.18,
+      "probabilities": {
+        "midnight": 0.05,
+        "void": 0.24,
+        "cobalt": 0.25,
+        "coral": 0.0,
+        "cyan": 0.16,
+        "ivory": 0.01,
+        "amber": 0.29000000000000004,
+        "moss": 0.0
+      }
+    },
+    "x15_y18": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.17,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.27,
+        "cobalt": 0.28,
+        "coral": 0.0,
+        "cyan": 0.2,
+        "ivory": 0.01,
+        "amber": 0.2,
+        "moss": 0.0
+      }
+    },
+    "x16_y18": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.19,
+      "probabilities": {
+        "midnight": 0.05,
+        "void": 0.29,
+        "cobalt": 0.28,
+        "coral": 0.0,
+        "cyan": 0.21,
+        "ivory": 0.01,
+        "amber": 0.16,
+        "moss": 0.0
+      }
+    },
+    "x17_y18": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.21,
+      "probabilities": {
+        "midnight": 0.05,
+        "void": 0.27,
+        "cobalt": 0.31,
+        "coral": 0.0,
+        "cyan": 0.31,
+        "ivory": 0.01,
+        "amber": 0.05,
+        "moss": 0.0
+      }
+    },
+    "x18_y18": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.29,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.37,
+        "cobalt": 0.28,
+        "coral": 0.0,
+        "amber": 0.05,
+        "ivory": 0.01,
+        "cyan": 0.25,
+        "moss": 0.0
+      }
+    },
+    "x19_y18": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.22,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.29,
+        "cobalt": 0.32,
+        "coral": 0.0,
+        "cyan": 0.3,
+        "ivory": 0.01,
+        "amber": 0.04,
+        "moss": 0.0
+      }
+    },
+    "x20_y18": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.24,
+      "probabilities": {
+        "midnight": 0.05,
+        "void": 0.33,
+        "cobalt": 0.32,
+        "coral": 0.01,
+        "amber": 0.04,
+        "ivory": 0.01,
+        "cyan": 0.24,
+        "moss": 0.0
+      }
+    },
+    "x21_y18": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.25,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.26,
+        "cobalt": 0.33999999999999997,
+        "coral": 0.01,
+        "cyan": 0.31,
+        "ivory": 0.01,
+        "amber": 0.03,
+        "moss": 0.0
+      }
+    },
+    "x22_y18": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.41,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.48,
+        "cobalt": 0.22,
+        "coral": 0.03,
+        "amber": 0.02,
+        "ivory": 0.02,
+        "cyan": 0.2,
+        "moss": 0.0
+      }
+    },
+    "x23_y18": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.79,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.8099999999999999,
+        "cobalt": 0.060000000000000005,
+        "coral": 0.01,
+        "cyan": 0.05,
+        "ivory": 0.02,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x0_y19": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.89,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.91,
+        "cobalt": 0.04,
+        "coral": 0.0,
+        "cyan": 0.01,
+        "ivory": 0.01,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x1_y19": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.81,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.82,
+        "cobalt": 0.09,
+        "coral": 0.01,
+        "amber": 0.0,
+        "ivory": 0.03,
+        "cyan": 0.02,
+        "moss": 0.0
+      }
+    },
+    "x2_y19": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.4,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.48,
+        "cobalt": 0.35,
+        "coral": 0.01,
+        "cyan": 0.07,
+        "ivory": 0.05,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x3_y19": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.35,
+      "probabilities": {
+        "midnight": 0.05,
+        "void": 0.36,
+        "cobalt": 0.44,
+        "coral": 0.01,
+        "cyan": 0.08,
+        "ivory": 0.05,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x4_y19": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.32,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.37,
+        "cobalt": 0.41,
+        "coral": 0.01,
+        "amber": 0.03,
+        "ivory": 0.02,
+        "cyan": 0.13,
+        "moss": 0.0
+      }
+    },
+    "x5_y19": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.25,
+      "probabilities": {
+        "midnight": 0.05,
+        "void": 0.3,
+        "cobalt": 0.35,
+        "coral": 0.0,
+        "cyan": 0.12,
+        "ivory": 0.02,
+        "amber": 0.16,
+        "moss": 0.0
+      }
+    },
+    "x6_y19": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.23,
+      "probabilities": {
+        "midnight": 0.05,
+        "void": 0.27,
+        "cobalt": 0.33,
+        "coral": 0.0,
+        "amber": 0.16,
+        "ivory": 0.01,
+        "cyan": 0.17,
+        "moss": 0.0
+      }
+    },
+    "x7_y19": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.25,
+      "probabilities": {
+        "midnight": 0.05,
+        "void": 0.24,
+        "cobalt": 0.35000000000000003,
+        "coral": 0.0,
+        "amber": 0.17,
+        "ivory": 0.01,
+        "cyan": 0.18,
+        "moss": 0.0
+      }
+    },
+    "x8_y19": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.23,
+      "probabilities": {
+        "midnight": 0.06,
+        "void": 0.21,
+        "cobalt": 0.34,
+        "coral": 0.0,
+        "amber": 0.21,
+        "ivory": 0.01,
+        "cyan": 0.17,
+        "moss": 0.0
+      }
+    },
+    "x9_y19": {
+      "type": "choice",
+      "choice": "cobalt",
+      "confidence": 0.19,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.24,
+        "cobalt": 0.3,
+        "coral": 0.0,
+        "cyan": 0.15,
+        "ivory": 0.02,
+        "amber": 0.25,
+        "moss": 0.0
+      }
+    },
+    "x10_y19": {
+      "type": "choice",
+      "choice": "amber",
+      "confidence": 0.3,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.23,
+        "cobalt": 0.25,
+        "coral": 0.0,
+        "amber": 0.38,
+        "ivory": 0.02,
+        "cyan": 0.08,
+        "moss": 0.0
+      }
+    },
+    "x11_y19": {
+      "type": "choice",
+      "choice": "amber",
+      "confidence": 0.5,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.17,
+        "cobalt": 0.16,
+        "coral": 0.0,
+        "cyan": 0.04,
+        "ivory": 0.02,
+        "amber": 0.58,
+        "moss": 0.0
+      }
+    },
+    "x12_y19": {
+      "type": "choice",
+      "choice": "amber",
+      "confidence": 0.61,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.19,
+        "cobalt": 0.07,
+        "coral": 0.0,
+        "cyan": 0.05,
+        "ivory": 0.01,
+        "amber": 0.65,
+        "moss": 0.0
+      }
+    },
+    "x13_y19": {
+      "type": "choice",
+      "choice": "amber",
+      "confidence": 0.55,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.24,
+        "cobalt": 0.06,
+        "coral": 0.0,
+        "amber": 0.62,
+        "ivory": 0.01,
+        "cyan": 0.03,
+        "moss": 0.0
+      }
+    },
+    "x14_y19": {
+      "type": "choice",
+      "choice": "amber",
+      "confidence": 0.21,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.24,
+        "cobalt": 0.24,
+        "coral": 0.0,
+        "cyan": 0.15,
+        "ivory": 0.01,
+        "amber": 0.32,
+        "moss": 0.0
+      }
+    },
+    "x15_y19": {
+      "type": "choice",
+      "choice": "amber",
+      "confidence": 0.16,
+      "probabilities": {
+        "midnight": 0.05,
+        "void": 0.22,
+        "cobalt": 0.24,
+        "coral": 0.0,
+        "amber": 0.28,
+        "ivory": 0.01,
+        "cyan": 0.2,
+        "moss": 0.0
+      }
+    },
+    "x16_y19": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.18,
+      "probabilities": {
+        "midnight": 0.05,
+        "void": 0.28,
+        "cobalt": 0.21,
+        "coral": 0.0,
+        "cyan": 0.21,
+        "ivory": 0.01,
+        "amber": 0.24,
+        "moss": 0.0
+      }
+    },
+    "x17_y19": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.16,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.27,
+        "cobalt": 0.26,
+        "coral": 0.0,
+        "amber": 0.19,
+        "ivory": 0.01,
+        "cyan": 0.23,
+        "moss": 0.0
+      }
+    },
+    "x18_y19": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.19,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.29,
+        "cobalt": 0.25,
+        "coral": 0.0,
+        "amber": 0.12,
+        "ivory": 0.01,
+        "cyan": 0.29,
+        "moss": 0.0
+      }
+    },
+    "x19_y19": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.4,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.47,
+        "cobalt": 0.22,
+        "coral": 0.01,
+        "cyan": 0.19,
+        "ivory": 0.01,
+        "amber": 0.06,
+        "moss": 0.0
+      }
+    },
+    "x20_y19": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.38,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.46,
+        "cobalt": 0.22,
+        "coral": 0.01,
+        "amber": 0.08,
+        "ivory": 0.02,
+        "cyan": 0.17,
+        "moss": 0.0
+      }
+    },
+    "x21_y19": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.33,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.42,
+        "cobalt": 0.25,
+        "coral": 0.01,
+        "cyan": 0.21,
+        "ivory": 0.02,
+        "amber": 0.05,
+        "moss": 0.0
+      }
+    },
+    "x22_y19": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.51,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.57,
+        "cobalt": 0.18,
+        "coral": 0.03,
+        "amber": 0.02,
+        "ivory": 0.03,
+        "cyan": 0.15,
+        "moss": 0.0
+      }
+    },
+    "x23_y19": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.89,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.9,
+        "cobalt": 0.02,
+        "coral": 0.01,
+        "amber": 0.01,
+        "ivory": 0.01,
+        "cyan": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x0_y20": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.92,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.93,
+        "cobalt": 0.02,
+        "coral": 0.0,
+        "amber": 0.0,
+        "ivory": 0.01,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x1_y20": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.83,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.85,
+        "cobalt": 0.08,
+        "coral": 0.0,
+        "amber": 0.0,
+        "ivory": 0.02,
+        "cyan": 0.02,
+        "moss": 0.0
+      }
+    },
+    "x2_y20": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.59,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.63,
+        "cobalt": 0.21,
+        "coral": 0.01,
+        "amber": 0.01,
+        "ivory": 0.06,
+        "cyan": 0.05,
+        "moss": 0.0
+      }
+    },
+    "x3_y20": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.53,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.58,
+        "cobalt": 0.26,
+        "coral": 0.01,
+        "cyan": 0.05,
+        "ivory": 0.05,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x4_y20": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.48,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.54,
+        "cobalt": 0.28,
+        "coral": 0.01,
+        "cyan": 0.1,
+        "ivory": 0.03,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x5_y20": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.33,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.42,
+        "cobalt": 0.28,
+        "coral": 0.0,
+        "cyan": 0.14,
+        "ivory": 0.02,
+        "amber": 0.11,
+        "moss": 0.0
+      }
+    },
+    "x6_y20": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.35,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.44,
+        "cobalt": 0.26,
+        "coral": 0.0,
+        "cyan": 0.13,
+        "ivory": 0.01,
+        "amber": 0.12,
+        "moss": 0.0
+      }
+    },
+    "x7_y20": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.33,
+      "probabilities": {
+        "midnight": 0.05,
+        "void": 0.42,
+        "cobalt": 0.25,
+        "coral": 0.0,
+        "cyan": 0.14,
+        "ivory": 0.01,
+        "amber": 0.13,
+        "moss": 0.0
+      }
+    },
+    "x8_y20": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.29,
+      "probabilities": {
+        "midnight": 0.05,
+        "void": 0.37,
+        "cobalt": 0.28,
+        "coral": 0.0,
+        "amber": 0.14,
+        "ivory": 0.01,
+        "cyan": 0.14,
+        "moss": 0.0
+      }
+    },
+    "x9_y20": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.34,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.42,
+        "cobalt": 0.21,
+        "coral": 0.0,
+        "amber": 0.18,
+        "ivory": 0.02,
+        "cyan": 0.13,
+        "moss": 0.0
+      }
+    },
+    "x10_y20": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.31,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.4,
+        "cobalt": 0.18,
+        "coral": 0.0,
+        "amber": 0.28,
+        "ivory": 0.02,
+        "cyan": 0.08,
+        "moss": 0.0
+      }
+    },
+    "x11_y20": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.23,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.34,
+        "cobalt": 0.19,
+        "coral": 0.0,
+        "amber": 0.33,
+        "ivory": 0.02,
+        "cyan": 0.08,
+        "moss": 0.0
+      }
+    },
+    "x12_y20": {
+      "type": "choice",
+      "choice": "amber",
+      "confidence": 0.44,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.31,
+        "cobalt": 0.08,
+        "coral": 0.0,
+        "amber": 0.52,
+        "ivory": 0.02,
+        "cyan": 0.04,
+        "moss": 0.0
+      }
+    },
+    "x13_y20": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.35,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.44,
+        "cobalt": 0.08,
+        "coral": 0.0,
+        "amber": 0.37,
+        "ivory": 0.02,
+        "cyan": 0.06,
+        "moss": 0.0
+      }
+    },
+    "x14_y20": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.28,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.38,
+        "cobalt": 0.21,
+        "coral": 0.0,
+        "amber": 0.19,
+        "ivory": 0.01,
+        "cyan": 0.17,
+        "moss": 0.0
+      }
+    },
+    "x15_y20": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.29,
+      "probabilities": {
+        "midnight": 0.05,
+        "void": 0.38,
+        "cobalt": 0.21,
+        "coral": 0.0,
+        "amber": 0.16,
+        "ivory": 0.01,
+        "cyan": 0.19,
+        "moss": 0.0
+      }
+    },
+    "x16_y20": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.33,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.42,
+        "cobalt": 0.2,
+        "coral": 0.0,
+        "cyan": 0.17,
+        "ivory": 0.01,
+        "amber": 0.16,
+        "moss": 0.0
+      }
+    },
+    "x17_y20": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.37,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.44,
+        "cobalt": 0.18,
+        "coral": 0.0,
+        "cyan": 0.19,
+        "ivory": 0.02,
+        "amber": 0.13,
+        "moss": 0.0
+      }
+    },
+    "x18_y20": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.28,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.38,
+        "cobalt": 0.24,
+        "coral": 0.0,
+        "amber": 0.1,
+        "ivory": 0.01,
+        "cyan": 0.24,
+        "moss": 0.0
+      }
+    },
+    "x19_y20": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.37,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.45,
+        "cobalt": 0.21,
+        "coral": 0.01,
+        "amber": 0.06,
+        "ivory": 0.01,
+        "cyan": 0.22,
+        "moss": 0.0
+      }
+    },
+    "x20_y20": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.65,
+      "probabilities": {
+        "midnight": 0.05,
+        "void": 0.6799999999999999,
+        "cobalt": 0.11,
+        "coral": 0.01,
+        "cyan": 0.1,
+        "ivory": 0.03,
+        "amber": 0.02,
+        "moss": 0.0
+      }
+    },
+    "x21_y20": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.51,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.58,
+        "cobalt": 0.19,
+        "coral": 0.01,
+        "cyan": 0.13,
+        "ivory": 0.02,
+        "amber": 0.04,
+        "moss": 0.0
+      }
+    },
+    "x22_y20": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.74,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.78,
+        "cobalt": 0.06,
+        "coral": 0.02,
+        "cyan": 0.07,
+        "ivory": 0.03,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x23_y20": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.93,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.95,
+        "cobalt": 0.01,
+        "coral": 0.0,
+        "amber": 0.0,
+        "ivory": 0.01,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x0_y21": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.94,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.95,
+        "cobalt": 0.01,
+        "coral": 0.0,
+        "amber": 0.0,
+        "ivory": 0.01,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x1_y21": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.9,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.92,
+        "cobalt": 0.03,
+        "coral": 0.0,
+        "amber": 0.0,
+        "ivory": 0.01,
+        "cyan": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x2_y21": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.72,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.76,
+        "cobalt": 0.12,
+        "coral": 0.01,
+        "amber": 0.0,
+        "ivory": 0.04,
+        "cyan": 0.03,
+        "moss": 0.0
+      }
+    },
+    "x3_y21": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.74,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.78,
+        "cobalt": 0.1,
+        "coral": 0.01,
+        "cyan": 0.03,
+        "ivory": 0.04,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x4_y21": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.59,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.65,
+        "cobalt": 0.2,
+        "coral": 0.01,
+        "amber": 0.01,
+        "ivory": 0.03,
+        "cyan": 0.07,
+        "moss": 0.0
+      }
+    },
+    "x5_y21": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.57,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.63,
+        "cobalt": 0.19,
+        "coral": 0.0,
+        "cyan": 0.09,
+        "ivory": 0.02,
+        "amber": 0.04,
+        "moss": 0.0
+      }
+    },
+    "x6_y21": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.58,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.62,
+        "cobalt": 0.16,
+        "coral": 0.0,
+        "cyan": 0.09,
+        "ivory": 0.02,
+        "amber": 0.07,
+        "moss": 0.0
+      }
+    },
+    "x7_y21": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.51,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.58,
+        "cobalt": 0.17,
+        "coral": 0.0,
+        "cyan": 0.13,
+        "ivory": 0.02,
+        "amber": 0.07,
+        "moss": 0.0
+      }
+    },
+    "x8_y21": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.58,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.64,
+        "cobalt": 0.16,
+        "coral": 0.0,
+        "cyan": 0.1,
+        "ivory": 0.02,
+        "amber": 0.05,
+        "moss": 0.0
+      }
+    },
+    "x9_y21": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.51,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.58,
+        "cobalt": 0.18000000000000002,
+        "coral": 0.0,
+        "amber": 0.08,
+        "ivory": 0.02,
+        "cyan": 0.11,
+        "moss": 0.0
+      }
+    },
+    "x10_y21": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.48,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.55,
+        "cobalt": 0.15,
+        "coral": 0.0,
+        "amber": 0.17,
+        "ivory": 0.03,
+        "cyan": 0.07,
+        "moss": 0.0
+      }
+    },
+    "x11_y21": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.51,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.57,
+        "cobalt": 0.13,
+        "coral": 0.0,
+        "cyan": 0.07,
+        "ivory": 0.03,
+        "amber": 0.16,
+        "moss": 0.0
+      }
+    },
+    "x12_y21": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.46,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.53,
+        "cobalt": 0.06,
+        "coral": 0.0,
+        "cyan": 0.05,
+        "ivory": 0.02,
+        "amber": 0.32,
+        "moss": 0.0
+      }
+    },
+    "x13_y21": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.5,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.56,
+        "cobalt": 0.06,
+        "coral": 0.0,
+        "cyan": 0.04,
+        "ivory": 0.02,
+        "amber": 0.28,
+        "moss": 0.0
+      }
+    },
+    "x14_y21": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.5,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.56,
+        "cobalt": 0.16,
+        "coral": 0.0,
+        "amber": 0.09,
+        "ivory": 0.01,
+        "cyan": 0.13,
+        "moss": 0.0
+      }
+    },
+    "x15_y21": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.55,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.61,
+        "cobalt": 0.14,
+        "coral": 0.0,
+        "amber": 0.09,
+        "ivory": 0.02,
+        "cyan": 0.11,
+        "moss": 0.0
+      }
+    },
+    "x16_y21": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.51,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.58,
+        "cobalt": 0.12,
+        "coral": 0.0,
+        "amber": 0.1,
+        "ivory": 0.02,
+        "cyan": 0.14,
+        "moss": 0.0
+      }
+    },
+    "x17_y21": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.55,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.61,
+        "cobalt": 0.13,
+        "coral": 0.0,
+        "amber": 0.05,
+        "ivory": 0.02,
+        "cyan": 0.16,
+        "moss": 0.0
+      }
+    },
+    "x18_y21": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.59,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.65,
+        "cobalt": 0.12,
+        "coral": 0.0,
+        "amber": 0.05,
+        "ivory": 0.01,
+        "cyan": 0.14,
+        "moss": 0.0
+      }
+    },
+    "x19_y21": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.66,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.7,
+        "cobalt": 0.11,
+        "coral": 0.01,
+        "cyan": 0.1,
+        "ivory": 0.02,
+        "amber": 0.03,
+        "moss": 0.0
+      }
+    },
+    "x20_y21": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.69,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.73,
+        "cobalt": 0.09,
+        "coral": 0.01,
+        "amber": 0.02,
+        "ivory": 0.02,
+        "cyan": 0.1,
+        "moss": 0.0
+      }
+    },
+    "x21_y21": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.84,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.85,
+        "cobalt": 0.05,
+        "coral": 0.01,
+        "cyan": 0.03,
+        "ivory": 0.02,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x22_y21": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.86,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.88,
+        "cobalt": 0.02,
+        "coral": 0.01,
+        "amber": 0.01,
+        "ivory": 0.02,
+        "cyan": 0.02,
+        "moss": 0.0
+      }
+    },
+    "x23_y21": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.92,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.9400000000000001,
+        "cobalt": 0.0,
+        "coral": 0.0,
+        "amber": 0.0,
+        "ivory": 0.01,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x0_y22": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.94,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.95,
+        "cobalt": 0.01,
+        "coral": 0.0,
+        "cyan": 0.0,
+        "ivory": 0.01,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x1_y22": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.95,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.95,
+        "cobalt": 0.01,
+        "coral": 0.0,
+        "amber": 0.0,
+        "ivory": 0.01,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x2_y22": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.83,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.85,
+        "cobalt": 0.06,
+        "coral": 0.01,
+        "cyan": 0.02,
+        "ivory": 0.04,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x3_y22": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.75,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.77,
+        "cobalt": 0.11,
+        "coral": 0.01,
+        "amber": 0.0,
+        "ivory": 0.04,
+        "cyan": 0.03,
+        "moss": 0.0
+      }
+    },
+    "x4_y22": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.79,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.8099999999999999,
+        "cobalt": 0.09,
+        "coral": 0.0,
+        "amber": 0.01,
+        "ivory": 0.02,
+        "cyan": 0.04,
+        "moss": 0.0
+      }
+    },
+    "x5_y22": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.59,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.64,
+        "cobalt": 0.2,
+        "coral": 0.0,
+        "amber": 0.02,
+        "ivory": 0.02,
+        "cyan": 0.09,
+        "moss": 0.0
+      }
+    },
+    "x6_y22": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.56,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.62,
+        "cobalt": 0.19,
+        "coral": 0.0,
+        "cyan": 0.13,
+        "ivory": 0.01,
+        "amber": 0.02,
+        "moss": 0.0
+      }
+    },
+    "x7_y22": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.62,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.67,
+        "cobalt": 0.16,
+        "coral": 0.0,
+        "cyan": 0.1,
+        "ivory": 0.01,
+        "amber": 0.02,
+        "moss": 0.0
+      }
+    },
+    "x8_y22": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.58,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.64,
+        "cobalt": 0.15,
+        "coral": 0.0,
+        "amber": 0.05,
+        "ivory": 0.02,
+        "cyan": 0.12,
+        "moss": 0.0
+      }
+    },
+    "x9_y22": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.57,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.63,
+        "cobalt": 0.14,
+        "coral": 0.0,
+        "cyan": 0.11,
+        "ivory": 0.02,
+        "amber": 0.06,
+        "moss": 0.0
+      }
+    },
+    "x10_y22": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.68,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.73,
+        "cobalt": 0.1,
+        "coral": 0.0,
+        "cyan": 0.06,
+        "ivory": 0.02,
+        "amber": 0.06,
+        "moss": 0.0
+      }
+    },
+    "x11_y22": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.54,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.61,
+        "cobalt": 0.15,
+        "coral": 0.0,
+        "amber": 0.1,
+        "ivory": 0.02,
+        "cyan": 0.09,
+        "moss": 0.0
+      }
+    },
+    "x12_y22": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.5,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.56,
+        "cobalt": 0.1,
+        "coral": 0.0,
+        "cyan": 0.08,
+        "ivory": 0.02,
+        "amber": 0.21,
+        "moss": 0.0
+      }
+    },
+    "x13_y22": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.63,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.68,
+        "cobalt": 0.08,
+        "coral": 0.0,
+        "cyan": 0.07,
+        "ivory": 0.02,
+        "amber": 0.13,
+        "moss": 0.0
+      }
+    },
+    "x14_y22": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.61,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.65,
+        "cobalt": 0.12,
+        "coral": 0.0,
+        "amber": 0.06,
+        "ivory": 0.01,
+        "cyan": 0.12,
+        "moss": 0.0
+      }
+    },
+    "x15_y22": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.53,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.6,
+        "cobalt": 0.13,
+        "coral": 0.0,
+        "cyan": 0.16,
+        "ivory": 0.02,
+        "amber": 0.06,
+        "moss": 0.0
+      }
+    },
+    "x16_y22": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.59,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.64,
+        "cobalt": 0.13,
+        "coral": 0.0,
+        "amber": 0.04,
+        "ivory": 0.01,
+        "cyan": 0.15,
+        "moss": 0.0
+      }
+    },
+    "x17_y22": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.68,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.73,
+        "cobalt": 0.09,
+        "coral": 0.0,
+        "amber": 0.03,
+        "ivory": 0.01,
+        "cyan": 0.11,
+        "moss": 0.0
+      }
+    },
+    "x18_y22": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.66,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.71,
+        "cobalt": 0.09,
+        "coral": 0.0,
+        "amber": 0.02,
+        "ivory": 0.01,
+        "cyan": 0.14,
+        "moss": 0.0
+      }
+    },
+    "x19_y22": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.71,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.75,
+        "cobalt": 0.08,
+        "coral": 0.0,
+        "cyan": 0.12,
+        "ivory": 0.01,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x20_y22": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.86,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.87,
+        "cobalt": 0.03,
+        "coral": 0.0,
+        "amber": 0.01,
+        "ivory": 0.02,
+        "cyan": 0.04,
+        "moss": 0.0
+      }
+    },
+    "x21_y22": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.86,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.88,
+        "cobalt": 0.04,
+        "coral": 0.01,
+        "amber": 0.01,
+        "ivory": 0.01,
+        "cyan": 0.03,
+        "moss": 0.0
+      }
+    },
+    "x22_y22": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.94,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.96,
+        "cobalt": 0.0,
+        "coral": 0.0,
+        "amber": 0.0,
+        "ivory": 0.0,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x23_y22": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.93,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.95,
+        "cobalt": 0.0,
+        "coral": 0.0,
+        "amber": 0.0,
+        "ivory": 0.01,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x0_y23": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.95,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.96,
+        "cobalt": 0.0,
+        "coral": 0.0,
+        "cyan": 0.0,
+        "ivory": 0.01,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x1_y23": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.94,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.95,
+        "cobalt": 0.01,
+        "coral": 0.0,
+        "amber": 0.0,
+        "ivory": 0.01,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x2_y23": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.9,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.92,
+        "cobalt": 0.02,
+        "coral": 0.0,
+        "cyan": 0.01,
+        "ivory": 0.02,
+        "amber": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x3_y23": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.88,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.89,
+        "cobalt": 0.04,
+        "coral": 0.0,
+        "amber": 0.0,
+        "ivory": 0.02,
+        "cyan": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x4_y23": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.8,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.82,
+        "cobalt": 0.08,
+        "coral": 0.0,
+        "amber": 0.01,
+        "ivory": 0.02,
+        "cyan": 0.04,
+        "moss": 0.0
+      }
+    },
+    "x5_y23": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.68,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.73,
+        "cobalt": 0.12,
+        "coral": 0.0,
+        "cyan": 0.08,
+        "ivory": 0.02,
+        "amber": 0.02,
+        "moss": 0.0
+      }
+    },
+    "x6_y23": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.69,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.73,
+        "cobalt": 0.12,
+        "coral": 0.0,
+        "cyan": 0.07,
+        "ivory": 0.01,
+        "amber": 0.04,
+        "moss": 0.0
+      }
+    },
+    "x7_y23": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.6,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.65,
+        "cobalt": 0.15,
+        "coral": 0.0,
+        "amber": 0.04,
+        "ivory": 0.02,
+        "cyan": 0.11,
+        "moss": 0.0
+      }
+    },
+    "x8_y23": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.74,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.77,
+        "cobalt": 0.08,
+        "coral": 0.0,
+        "cyan": 0.06,
+        "ivory": 0.02,
+        "amber": 0.04,
+        "moss": 0.0
+      }
+    },
+    "x9_y23": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.68,
+      "probabilities": {
+        "midnight": 0.05,
+        "void": 0.72,
+        "cobalt": 0.1,
+        "coral": 0.0,
+        "cyan": 0.06,
+        "ivory": 0.02,
+        "amber": 0.05,
+        "moss": 0.0
+      }
+    },
+    "x10_y23": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.7,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.73,
+        "cobalt": 0.09,
+        "coral": 0.0,
+        "cyan": 0.06,
+        "ivory": 0.02,
+        "amber": 0.07,
+        "moss": 0.0
+      }
+    },
+    "x11_y23": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.71,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.75,
+        "cobalt": 0.08,
+        "coral": 0.0,
+        "cyan": 0.07,
+        "ivory": 0.02,
+        "amber": 0.06,
+        "moss": 0.0
+      }
+    },
+    "x12_y23": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.58,
+      "probabilities": {
+        "midnight": 0.02,
+        "void": 0.63,
+        "cobalt": 0.08,
+        "coral": 0.0,
+        "cyan": 0.08,
+        "ivory": 0.02,
+        "amber": 0.17,
+        "moss": 0.0
+      }
+    },
+    "x13_y23": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.6,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.65,
+        "cobalt": 0.07,
+        "coral": 0.0,
+        "amber": 0.18,
+        "ivory": 0.02,
+        "cyan": 0.05,
+        "moss": 0.0
+      }
+    },
+    "x14_y23": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.68,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.72,
+        "cobalt": 0.08,
+        "coral": 0.0,
+        "cyan": 0.08,
+        "ivory": 0.02,
+        "amber": 0.07,
+        "moss": 0.0
+      }
+    },
+    "x15_y23": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.75,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.79,
+        "cobalt": 0.06,
+        "coral": 0.0,
+        "cyan": 0.07,
+        "ivory": 0.01,
+        "amber": 0.04,
+        "moss": 0.0
+      }
+    },
+    "x16_y23": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.66,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.71,
+        "cobalt": 0.08,
+        "coral": 0.0,
+        "amber": 0.07,
+        "ivory": 0.02,
+        "cyan": 0.09,
+        "moss": 0.0
+      }
+    },
+    "x17_y23": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.83,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.86,
+        "cobalt": 0.04,
+        "coral": 0.0,
+        "amber": 0.02,
+        "ivory": 0.01,
+        "cyan": 0.04,
+        "moss": 0.0
+      }
+    },
+    "x18_y23": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.85,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.86,
+        "cobalt": 0.04,
+        "coral": 0.0,
+        "cyan": 0.04,
+        "ivory": 0.01,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x19_y23": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.81,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.84,
+        "cobalt": 0.05,
+        "coral": 0.0,
+        "amber": 0.01,
+        "ivory": 0.01,
+        "cyan": 0.05,
+        "moss": 0.0
+      }
+    },
+    "x20_y23": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.9,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.92,
+        "cobalt": 0.01,
+        "coral": 0.0,
+        "amber": 0.01,
+        "ivory": 0.01,
+        "cyan": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x21_y23": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.91,
+      "probabilities": {
+        "midnight": 0.03,
+        "void": 0.93,
+        "cobalt": 0.01,
+        "coral": 0.0,
+        "cyan": 0.01,
+        "ivory": 0.01,
+        "amber": 0.01,
+        "moss": 0.0
+      }
+    },
+    "x22_y23": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.93,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.95,
+        "cobalt": 0.0,
+        "coral": 0.0,
+        "amber": 0.0,
+        "ivory": 0.01,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    },
+    "x23_y23": {
+      "type": "choice",
+      "choice": "void",
+      "confidence": 0.94,
+      "probabilities": {
+        "midnight": 0.04,
+        "void": 0.96,
+        "cobalt": 0.0,
+        "coral": 0.0,
+        "amber": 0.0,
+        "ivory": 0.0,
+        "cyan": 0.0,
+        "moss": 0.0
+      }
+    }
+  },
+  "usage": {
+    "input_tokens": 55742,
+    "output_tokens": 47190
+  }
+}

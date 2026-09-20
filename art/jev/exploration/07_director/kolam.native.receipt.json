@@ -1,0 +1,24 @@
+{
+  "command": [
+    "/Users/chrishafley/projects/ascii-renderer/target/release/ascii-renderer",
+    "4269",
+    "kolam",
+    "moss"
+  ],
+  "environment": {
+    "ASCII_P_CURL": "1.2",
+    "ASCII_P_RINGS": "7",
+    "ASCII_P_PETALS": "36",
+    "ASCII_P_FLORETS": "1",
+    "ASCII_P_SPREAD": "1",
+    "ASCII_P_PERSIST": "1",
+    "ASCII_P_EMBERS": "1.5",
+    "ASCII_P_GLOW": "1.6",
+    "ASCII_GRID_DUMP": "1",
+    "ASCII_GRID_W": "160",
+    "ASCII_GRID_H": "68",
+    "ASCII_T": "5.0"
+  },
+  "binary_sha256": "19aefb33fc3dbe046b2b3568170256ce4b10c6e1b5bff4740b436aa761109726",
+  "stderr": ""
+}
