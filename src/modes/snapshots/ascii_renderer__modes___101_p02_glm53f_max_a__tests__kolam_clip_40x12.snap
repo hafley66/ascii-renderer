@@ -1,0 +1,15 @@
+---
+source: src/modes/_101_p02_glm53f_max_a.rs
+assertion_line: 452
+expression: "text(&frame(40, 12, 42, 0.0, &knobs()))"
+---
+                                        
+                                        
+                   ╱╲                   
+               ─╱ │ ∙╲│╲─               
+              ╱──       ──              
+             ──  ──╱╲─  ∙──             
+             ─    ─╲╱──  ──             
+              ╲╲∙∙      ╱╱              
+               ─╲╲╲  ╱│╱╱               
+                   │╱
