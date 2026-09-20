@@ -1,0 +1,27 @@
+{
+  "command": [
+    "/Users/chrishafley/projects/ascii-renderer/target/release/ascii-renderer",
+    "193",
+    "qwen-cathedral",
+    "deep"
+  ],
+  "environment": {
+    "ASCII_P_NAVES": "9",
+    "ASCII_P_TOWERS": "2",
+    "ASCII_P_ROSE": "12",
+    "ASCII_P_CANDLES": "18",
+    "ASCII_P_RAY": "1",
+    "ASCII_P_SMOKE": "24",
+    "ASCII_P_DEPTH": "5",
+    "ASCII_P_MOSAIC": "1",
+    "ASCII_P_GLOW": "0.9",
+    "ASCII_P_ARCH": "1",
+    "ASCII_P_BANNERS": "4",
+    "ASCII_GRID_DUMP": "1",
+    "ASCII_GRID_W": "160",
+    "ASCII_GRID_H": "68",
+    "ASCII_T": "5.0"
+  },
+  "binary_sha256": "19aefb33fc3dbe046b2b3568170256ce4b10c6e1b5bff4740b436aa761109726",
+  "stderr": ""
+}

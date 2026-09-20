@@ -1,0 +1,27 @@
+{
+  "command": [
+    "/Users/chrishafley/projects/ascii-renderer/target/release/ascii-renderer",
+    "193",
+    "cosmograph",
+    "deep"
+  ],
+  "environment": {
+    "ASCII_P_RINGS": "10",
+    "ASCII_P_PLANETS": "4",
+    "ASCII_P_MOONS": "0",
+    "ASCII_P_ZODIAC": "1",
+    "ASCII_P_SPIRAL": "1",
+    "ASCII_P_AURORA": "3",
+    "ASCII_P_STARS": "0.5",
+    "ASCII_P_TRAIL": "40",
+    "ASCII_P_MOTES": "35",
+    "ASCII_P_GLOW": "1.5",
+    "ASCII_P_TILT": "0.2",
+    "ASCII_GRID_DUMP": "1",
+    "ASCII_GRID_W": "160",
+    "ASCII_GRID_H": "68",
+    "ASCII_T": "5.0"
+  },
+  "binary_sha256": "19aefb33fc3dbe046b2b3568170256ce4b10c6e1b5bff4740b436aa761109726",
+  "stderr": ""
+}

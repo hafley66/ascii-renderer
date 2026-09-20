@@ -1,0 +1,334 @@
+{
+  "pictures": [
+    {
+      "name": "01_forest_mean",
+      "title": "01 FOREST MEAN",
+      "note": "Jev distributions / mean / bilinear field / seed 42 / 32x16 model samples",
+      "width": 144,
+      "height": 64,
+      "grid_sha256": "b9b8af87d9297ec58abc14439dd9b1f32499026e32afc900fae067522fd4dfe7"
+    },
+    {
+      "name": "02_forest_sample",
+      "title": "02 FOREST SAMPLE",
+      "note": "Jev distributions / sample / bilinear field / seed 42 / 32x16 model samples",
+      "width": 144,
+      "height": 64,
+      "grid_sha256": "2ca300839879563a24af2f1908ec9c353ae1deca0b2f90518fbbd347b2e76511"
+    },
+    {
+      "name": "03_forest_contour",
+      "title": "03 FOREST CONTOUR",
+      "note": "Jev distributions / contour / bilinear field / seed 42 / 32x16 model samples",
+      "width": 144,
+      "height": 64,
+      "grid_sha256": "2d0173cabff605004b2e6978a46a38b262ff71fa7dd53fce3280fa40d448d46f"
+    },
+    {
+      "name": "04_jellyfish_contours",
+      "title": "CATHEDRAL JELLYFISH / CONTOURS",
+      "note": "Jev silhouette probabilities / 24x24 model samples / interpolated to 144x72",
+      "width": 144,
+      "height": 72,
+      "grid_sha256": "446c7bc0cce9e4a0d72a91707c86a694175bc138d7143ef7a08ddfe67e1a1459"
+    },
+    {
+      "name": "04_jellyfish_fog",
+      "title": "CATHEDRAL JELLYFISH / FOG",
+      "note": "Jev silhouette probabilities / 24x24 model samples / interpolated to 144x72",
+      "width": 144,
+      "height": 72,
+      "grid_sha256": "fe7d118cb68ea2f2f626af8d8cdd36a3140d497ff260e804a1cba0eec5a230bb"
+    },
+    {
+      "name": "05_moth_contour",
+      "title": "05 MOTH CONTOUR",
+      "note": "Jev distributions / contour / bilinear field / seed 42 / 24x24 model samples",
+      "width": 144,
+      "height": 64,
+      "grid_sha256": "768639cf132f7fbb5eaacc49ce8d23831d9b286ef92b0c5dcae58fbe4a45fece"
+    },
+    {
+      "name": "05_moth_mean",
+      "title": "05 MOTH MEAN",
+      "note": "Jev distributions / mean / bilinear field / seed 42 / 24x24 model samples",
+      "width": 144,
+      "height": 64,
+      "grid_sha256": "f66fdb07f0b111bd69a08ae7a54e8661cfdc51bb25c2d2dadbd86ce56efcae2b"
+    },
+    {
+      "name": "05_moth_sample",
+      "title": "05 MOTH SAMPLE",
+      "note": "Jev distributions / sample / bilinear field / seed 42 / 24x24 model samples",
+      "width": 144,
+      "height": 64,
+      "grid_sha256": "a962fa41a17d452fbfaed78b44d369f7760229813bb622ec47648a86a1c7d018"
+    },
+    {
+      "name": "06_drowned_contour",
+      "title": "06 DROWNED CONTOUR",
+      "note": "Jev distributions / contour / bilinear field / seed 42 / 20x16 model samples",
+      "width": 144,
+      "height": 64,
+      "grid_sha256": "96ab4ad8e79771106af30c9514e3d67a59311846bea84caab45bf5fac2259e69"
+    },
+    {
+      "name": "06_drowned_mean",
+      "title": "06 DROWNED MEAN",
+      "note": "Jev distributions / mean / bilinear field / seed 42 / 20x16 model samples",
+      "width": 144,
+      "height": 64,
+      "grid_sha256": "4288f0278f565e377e25b8fc6cd7891815ffd07f50dcdc3195fba4963aa889ba"
+    },
+    {
+      "name": "06_drowned_sample",
+      "title": "06 DROWNED SAMPLE",
+      "note": "Jev distributions / sample / bilinear field / seed 42 / 20x16 model samples",
+      "width": 144,
+      "height": 64,
+      "grid_sha256": "b122f66f0fc66862a40f7d03314ef9836f254998afee0affa57d6034203f6b58"
+    },
+    {
+      "name": "07_cathedral_native",
+      "title": "A DROWNED MONASTERY REMEMBERING THAT IT WAS ONCE A FOREST",
+      "note": "Native qwen-cathedral / Jev selected parameters / seed 4269 / t=5",
+      "width": 160,
+      "height": 68,
+      "grid_sha256": "c46d9837defa99f7a1b70366629d14c175a1ac79ca9963ebb72e798aae9ce604"
+    },
+    {
+      "name": "07_cathedral_vortex",
+      "title": "CATHEDRAL / VORTEX / ABYSS",
+      "note": "Jev selected native controls, transformation and palette / saved native grid / offline composition",
+      "width": 160,
+      "height": 68,
+      "grid_sha256": "84a1646ecd68c59b8612907ac4e8c55055f6a3858e6a8b505ca41fdc1cbb15ce"
+    },
+    {
+      "name": "08_cosmos_native",
+      "title": "AN IMPOSSIBLE ASTRONOMICAL INSTRUMENT GROWN INSIDE AN AMMONITE",
+      "note": "Native cosmograph / Jev selected parameters / seed 4269 / t=5",
+      "width": 160,
+      "height": 68,
+      "grid_sha256": "0d7a067fb962b8ce348e368d4ceb764578c80b507d253ce2f3b75a5442723c4b"
+    },
+    {
+      "name": "08_cosmos_vortex",
+      "title": "COSMOS / VORTEX / ABYSS",
+      "note": "Jev selected native controls, transformation and palette / saved native grid / offline composition",
+      "width": 160,
+      "height": 68,
+      "grid_sha256": "fa910fcfefa009994b04989152b9c6b0772b9eca74e42b9a4f1d793f1434f518"
+    },
+    {
+      "name": "09_kolam_native",
+      "title": "AN ALIEN MOTH BECOMES A TAMIL KOLAM RITUAL DIAGRAM",
+      "note": "Native kolam / Jev selected parameters / seed 4269 / t=5",
+      "width": 160,
+      "height": 68,
+      "grid_sha256": "9dcab9d290cdfdbb2ad7f6b0f4a5d33bce0cf90a73db3d497d784c805b76c42c"
+    },
+    {
+      "name": "09_kolam_vortex",
+      "title": "KOLAM / VORTEX / ABYSS",
+      "note": "Jev selected native controls, transformation and palette / saved native grid / offline composition",
+      "width": 160,
+      "height": 68,
+      "grid_sha256": "4006dcfadd311d4a06c13aac3448194a7f01d3c0aae63ce5b900f324033358ab"
+    },
+    {
+      "name": "10_monastery_growth",
+      "title": "THE MONASTERY REMEMBERS / 35%",
+      "note": "Jev material probabilities + Jev-directed native cathedral / procedural roots and rising reflected water",
+      "width": 160,
+      "height": 68,
+      "grid_sha256": "dd0017c964b08b1134f787dc498d556a77a5dc58fc3f8d5efabc6567f5a43ddc"
+    },
+    {
+      "name": "11_monastery_growth",
+      "title": "THE MONASTERY REMEMBERS / 70%",
+      "note": "Jev material probabilities + Jev-directed native cathedral / procedural roots and rising reflected water",
+      "width": 160,
+      "height": 68,
+      "grid_sha256": "47d8801b24a1ecd045dc26f77a6c55f01e2b6d160ccf2fc314e082fbae7176a7"
+    },
+    {
+      "name": "12_monastery_growth",
+      "title": "THE MONASTERY REMEMBERS / 100%",
+      "note": "Jev material probabilities + Jev-directed native cathedral / procedural roots and rising reflected water",
+      "width": 160,
+      "height": 68,
+      "grid_sha256": "093ba283fd7c6ad9fc065993c6b99f2be1fb3790e5078efc9ba4f8e3f5656dd3"
+    },
+    {
+      "name": "13_moth_p0",
+      "title": "THE MOTH THAT EATS STARS",
+      "note": "Jev scores + saved spatial probabilities / procedural geometry / phase 0 / offline",
+      "width": 192,
+      "height": 88,
+      "grid_sha256": "604e635145b6d4f820339db2576d3dbc6eb2227c34d6da2b2d3af5884f91bb3f"
+    },
+    {
+      "name": "13_moth_v2_etch",
+      "title": "THE MOTH THAT EATS STARS / ETCHING",
+      "note": "Jev scores + saved spatial probabilities / procedural geometry / phase 0 / offline",
+      "width": 192,
+      "height": 88,
+      "grid_sha256": "a049fbbff88db342b3b9b7a609d0226bfc171337aadb8066bda38d8e1bc7965c"
+    },
+    {
+      "name": "13_moth_v2_p0",
+      "title": "THE MOTH THAT EATS STARS",
+      "note": "Jev scores + saved spatial probabilities / procedural geometry / phase 0 / offline",
+      "width": 192,
+      "height": 88,
+      "grid_sha256": "e15b2b41e13763255a9cd75f4026d6e3448b6e40c66a46f9e0a92b34a5330fd8"
+    },
+    {
+      "name": "14_medusa_p0",
+      "title": "ABYSSAL OBSERVATORY",
+      "note": "Jev scores + saved spatial probabilities / procedural geometry / phase 0 / offline",
+      "width": 192,
+      "height": 88,
+      "grid_sha256": "8636847fedde27160e2a90967035e4b35589d5515ca5e846b2fe8b9581a0cd0b"
+    },
+    {
+      "name": "14_medusa_v2_etch",
+      "title": "ABYSSAL OBSERVATORY / ETCHING",
+      "note": "Jev scores + saved spatial probabilities / procedural geometry / phase 0 / offline",
+      "width": 192,
+      "height": 88,
+      "grid_sha256": "9932757406c3ac43cd5c190759a272527eb3c87dde5031292a3f5dbf1fe55bf3"
+    },
+    {
+      "name": "14_medusa_v2_p0",
+      "title": "ABYSSAL OBSERVATORY",
+      "note": "Jev scores + saved spatial probabilities / procedural geometry / phase 0 / offline",
+      "width": 192,
+      "height": 88,
+      "grid_sha256": "cdacb2969ab41344522962ab318d7f02fc562507f031dc7bd02c291bee0a3e2b"
+    },
+    {
+      "name": "15_engine_p0",
+      "title": "THE UNCERTAINTY ENGINE",
+      "note": "Jev scores + saved spatial probabilities / procedural geometry / phase 0 / offline",
+      "width": 192,
+      "height": 88,
+      "grid_sha256": "c44fd9ae33d40ec882c4552af8557193fe5849d56e1e8a0aec73343b91cf3f6a"
+    },
+    {
+      "name": "15_engine_v2_p0",
+      "title": "THE UNCERTAINTY ENGINE",
+      "note": "Jev scores + saved spatial probabilities / procedural geometry / phase 0 / offline",
+      "width": 192,
+      "height": 88,
+      "grid_sha256": "2285ca8315c9f23f1e360bae925cced53c80ec33dbedb8f3cf6b906dda68f18d"
+    },
+    {
+      "name": "16_cathedral_sample_71",
+      "title": "CATHEDRAL / DRAW 71 / VORTEX / ABYSS",
+      "note": "Sampled Jev control distributions / temperature 2 / seed 71 / saved native renderer output",
+      "width": 160,
+      "height": 68,
+      "grid_sha256": "879da0794595e9683f843de87d398c970d1bbc060eafa9363d5ddd6785e9ebdd"
+    },
+    {
+      "name": "17_cathedral_sample_193",
+      "title": "CATHEDRAL / DRAW 193 / VORTEX / ABYSS",
+      "note": "Sampled Jev control distributions / temperature 5 / seed 193 / saved native renderer output",
+      "width": 160,
+      "height": 68,
+      "grid_sha256": "2532239d1cf9611492a29f9b14cabf6e38c0fab680cc7d58326ad5fa90f139b4"
+    },
+    {
+      "name": "18_cosmos_sample_71",
+      "title": "COSMOS / DRAW 71 / VORTEX / EMBER",
+      "note": "Sampled Jev control distributions / temperature 2 / seed 71 / saved native renderer output",
+      "width": 160,
+      "height": 68,
+      "grid_sha256": "90c920abae4bd224106c4f95876cfc133f6ee336612b2bd781f5bfba4475ccdb"
+    },
+    {
+      "name": "19_cosmos_sample_193",
+      "title": "COSMOS / DRAW 193 / VORTEX / ABYSS",
+      "note": "Sampled Jev control distributions / temperature 5 / seed 193 / saved native renderer output",
+      "width": 160,
+      "height": 68,
+      "grid_sha256": "0fc5c4e3a91373813ab6a3437926034bf8a00ec65e0f7b7fe11ae4b70b4e8969"
+    },
+    {
+      "name": "20_kolam_sample_71",
+      "title": "KOLAM / DRAW 71 / MIRROR / ABYSS",
+      "note": "Sampled Jev control distributions / temperature 2 / seed 71 / saved native renderer output",
+      "width": 160,
+      "height": 68,
+      "grid_sha256": "ea55ccce63e41be51c70f6fe5f43f395a78c66820f0df8346c8b39b84707e6d4"
+    },
+    {
+      "name": "21_kolam_sample_193",
+      "title": "KOLAM / DRAW 193 / VORTEX / LICHEN",
+      "note": "Sampled Jev control distributions / temperature 5 / seed 193 / saved native renderer output",
+      "width": 160,
+      "height": 68,
+      "grid_sha256": "7a29e96c88c42f81720315b918abab3e23c026a54552246e0246736baeae11e0"
+    }
+  ],
+  "api_receipts": [
+    {
+      "job": "04_jellyfish",
+      "seconds": 0.774,
+      "question_count": 576,
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 26324,
+        "output_tokens": 11620
+      }
+    },
+    {
+      "job": "05_moth",
+      "seconds": 0.997,
+      "question_count": 576,
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 55742,
+        "output_tokens": 47190
+      }
+    },
+    {
+      "job": "06_drowned",
+      "seconds": 1.058,
+      "question_count": 320,
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 53210,
+        "output_tokens": 19483
+      }
+    },
+    {
+      "job": "07_director",
+      "seconds": 0.342,
+      "question_count": 36,
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 4110,
+        "output_tokens": 1418
+      }
+    },
+    {
+      "job": "13_organisms",
+      "seconds": 0.379,
+      "question_count": 18,
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1641,
+        "output_tokens": 313
+      }
+    }
+  ],
+  "usage": {
+    "input_tokens": 141027,
+    "output_tokens": 80024
+  },
+  "still_count": 34,
+  "motion_frame_count": 12
+}

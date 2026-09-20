@@ -1,0 +1,366 @@
+{
+  "seed": 193,
+  "temperature": 5.0,
+  "answers": {
+    "cathedral_NAVES": {
+      "type": "choice",
+      "choice": "high",
+      "confidence": 0.98,
+      "probabilities": {
+        "high": 0.99,
+        "low": 0.0,
+        "medium": 0.01
+      }
+    },
+    "cathedral_TOWERS": {
+      "type": "choice",
+      "choice": "medium",
+      "confidence": 0.82,
+      "probabilities": {
+        "low": 0.05,
+        "high": 0.88,
+        "medium": 0.07
+      }
+    },
+    "cathedral_ROSE": {
+      "type": "choice",
+      "choice": "medium",
+      "confidence": 0.89,
+      "probabilities": {
+        "high": 0.92,
+        "low": 0.01,
+        "medium": 0.07
+      }
+    },
+    "cathedral_CANDLES": {
+      "type": "choice",
+      "choice": "medium",
+      "confidence": 0.64,
+      "probabilities": {
+        "low": 0.1,
+        "high": 0.76,
+        "medium": 0.14
+      }
+    },
+    "cathedral_RAY": {
+      "type": "choice",
+      "choice": "high",
+      "confidence": 0.96,
+      "probabilities": {
+        "high": 0.98,
+        "low": 0.0,
+        "medium": 0.02
+      }
+    },
+    "cathedral_SMOKE": {
+      "type": "choice",
+      "choice": "high",
+      "confidence": 0.41,
+      "probabilities": {
+        "low": 0.05,
+        "high": 0.61,
+        "medium": 0.34
+      }
+    },
+    "cathedral_DEPTH": {
+      "type": "choice",
+      "choice": "high",
+      "confidence": 0.98,
+      "probabilities": {
+        "high": 0.99,
+        "low": 0.0,
+        "medium": 0.01
+      }
+    },
+    "cathedral_MOSAIC": {
+      "type": "choice",
+      "choice": "high",
+      "confidence": 0.78,
+      "probabilities": {
+        "low": 0.02,
+        "high": 0.86,
+        "medium": 0.12
+      }
+    },
+    "cathedral_GLOW": {
+      "type": "choice",
+      "choice": "medium",
+      "confidence": 0.88,
+      "probabilities": {
+        "low": 0.01,
+        "high": 0.92,
+        "medium": 0.07
+      }
+    },
+    "cathedral_ARCH": {
+      "type": "choice",
+      "choice": "high",
+      "confidence": 0.98,
+      "probabilities": {
+        "high": 0.99,
+        "low": 0.0,
+        "medium": 0.01
+      }
+    },
+    "cathedral_BANNERS": {
+      "type": "choice",
+      "choice": "medium",
+      "confidence": 0.83,
+      "probabilities": {
+        "low": 0.04,
+        "high": 0.89,
+        "medium": 0.07
+      }
+    },
+    "cathedral_transform": {
+      "type": "choice",
+      "choice": "vortex",
+      "confidence": 0.82,
+      "probabilities": {
+        "kaleidoscope": 0.06,
+        "mirror": 0.06,
+        "vortex": 0.88
+      }
+    },
+    "cathedral_palette": {
+      "type": "choice",
+      "choice": "abyss",
+      "confidence": 0.99,
+      "probabilities": {
+        "abyss": 0.99,
+        "lichen": 0.01,
+        "ember": 0.0
+      }
+    },
+    "cosmos_RINGS": {
+      "type": "choice",
+      "choice": "high",
+      "confidence": 0.84,
+      "probabilities": {
+        "high": 0.89,
+        "low": 0.01,
+        "medium": 0.1
+      }
+    },
+    "cosmos_PLANETS": {
+      "type": "choice",
+      "choice": "medium",
+      "confidence": 0.91,
+      "probabilities": {
+        "low": 0.01,
+        "high": 0.94,
+        "medium": 0.05
+      }
+    },
+    "cosmos_MOONS": {
+      "type": "choice",
+      "choice": "low",
+      "confidence": 0.57,
+      "probabilities": {
+        "high": 0.71,
+        "low": 0.2,
+        "medium": 0.09
+      }
+    },
+    "cosmos_ZODIAC": {
+      "type": "choice",
+      "choice": "high",
+      "confidence": 0.98,
+      "probabilities": {
+        "high": 0.99,
+        "low": 0.0,
+        "medium": 0.01
+      }
+    },
+    "cosmos_SPIRAL": {
+      "type": "choice",
+      "choice": "high",
+      "confidence": 0.97,
+      "probabilities": {
+        "low": 0.0,
+        "high": 0.98,
+        "medium": 0.02
+      }
+    },
+    "cosmos_AURORA": {
+      "type": "choice",
+      "choice": "high",
+      "confidence": 0.97,
+      "probabilities": {
+        "high": 0.98,
+        "low": 0.0,
+        "medium": 0.02
+      }
+    },
+    "cosmos_STARS": {
+      "type": "choice",
+      "choice": "medium",
+      "confidence": 0.68,
+      "probabilities": {
+        "low": 0.08,
+        "high": 0.78,
+        "medium": 0.14
+      }
+    },
+    "cosmos_TRAIL": {
+      "type": "choice",
+      "choice": "high",
+      "confidence": 0.94,
+      "probabilities": {
+        "high": 0.95,
+        "low": 0.01,
+        "medium": 0.04
+      }
+    },
+    "cosmos_MOTES": {
+      "type": "choice",
+      "choice": "medium",
+      "confidence": 0.92,
+      "probabilities": {
+        "low": 0.01,
+        "high": 0.94,
+        "medium": 0.05
+      }
+    },
+    "cosmos_GLOW": {
+      "type": "choice",
+      "choice": "high",
+      "confidence": 0.96,
+      "probabilities": {
+        "high": 0.98,
+        "low": 0.0,
+        "medium": 0.02
+      }
+    },
+    "cosmos_TILT": {
+      "type": "choice",
+      "choice": "low",
+      "confidence": 0.85,
+      "probabilities": {
+        "low": 0.01,
+        "high": 0.9,
+        "medium": 0.09
+      }
+    },
+    "cosmos_transform": {
+      "type": "choice",
+      "choice": "vortex",
+      "confidence": 0.93,
+      "probabilities": {
+        "kaleidoscope": 0.04,
+        "mirror": 0.0,
+        "vortex": 0.96
+      }
+    },
+    "cosmos_palette": {
+      "type": "choice",
+      "choice": "abyss",
+      "confidence": 0.94,
+      "probabilities": {
+        "abyss": 0.97,
+        "lichen": 0.01,
+        "ember": 0.02
+      }
+    },
+    "kolam_CURL": {
+      "type": "choice",
+      "choice": "medium",
+      "confidence": 0.97,
+      "probabilities": {
+        "low": 0.0,
+        "high": 0.98,
+        "medium": 0.02
+      }
+    },
+    "kolam_RINGS": {
+      "type": "choice",
+      "choice": "high",
+      "confidence": 0.96,
+      "probabilities": {
+        "low": 0.0,
+        "high": 0.98,
+        "medium": 0.02
+      }
+    },
+    "kolam_PETALS": {
+      "type": "choice",
+      "choice": "medium",
+      "confidence": 0.97,
+      "probabilities": {
+        "low": 0.0,
+        "high": 0.98,
+        "medium": 0.02
+      }
+    },
+    "kolam_FLORETS": {
+      "type": "choice",
+      "choice": "high",
+      "confidence": 0.97,
+      "probabilities": {
+        "low": 0.0,
+        "high": 0.98,
+        "medium": 0.02
+      }
+    },
+    "kolam_SPREAD": {
+      "type": "choice",
+      "choice": "high",
+      "confidence": 0.97,
+      "probabilities": {
+        "low": 0.0,
+        "high": 0.98,
+        "medium": 0.02
+      }
+    },
+    "kolam_PERSIST": {
+      "type": "choice",
+      "choice": "high",
+      "confidence": 0.99,
+      "probabilities": {
+        "low": 0.0,
+        "high": 0.99,
+        "medium": 0.01
+      }
+    },
+    "kolam_EMBERS": {
+      "type": "choice",
+      "choice": "high",
+      "confidence": 0.95,
+      "probabilities": {
+        "low": 0.01,
+        "high": 0.97,
+        "medium": 0.02
+      }
+    },
+    "kolam_GLOW": {
+      "type": "choice",
+      "choice": "high",
+      "confidence": 0.94,
+      "probabilities": {
+        "low": 0.0,
+        "high": 0.96,
+        "medium": 0.04
+      }
+    },
+    "kolam_transform": {
+      "type": "choice",
+      "choice": "vortex",
+      "confidence": 0.13,
+      "probabilities": {
+        "kaleidoscope": 0.33,
+        "mirror": 0.25,
+        "vortex": 0.42
+      }
+    },
+    "kolam_palette": {
+      "type": "choice",
+      "choice": "lichen",
+      "confidence": 0.32,
+      "probabilities": {
+        "abyss": 0.55,
+        "lichen": 0.08,
+        "ember": 0.37
+      }
+    }
+  }
+}

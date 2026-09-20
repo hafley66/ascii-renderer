@@ -1,0 +1,35 @@
+{
+  "status": "failed",
+  "scope": "native headless real demo/PTY and terminal-cell assertions; GUI painting untested",
+  "cases": [
+    {
+      "case": "workflow",
+      "status": "passed"
+    },
+    {
+      "case": "seed-search",
+      "status": "passed"
+    },
+    {
+      "case": "bad-400x200",
+      "status": "passed"
+    },
+    {
+      "case": "max-400x200",
+      "status": "passed"
+    },
+    {
+      "case": "backpressure",
+      "status": "failed"
+    }
+  ],
+  "failure": "backpressure: assertion sum(terminal_wait_us) > 500000 failed; input_applied_ms=1004.3928330014751; applied_while_output_blocked=false",
+  "unexecuted": [
+    "GUI/iTerm painting suite",
+    "function-trace variant",
+    "pin-inputs case (not part of the executed headless case list)"
+  ],
+  "artifacts": "perf/results/e2e-1789948566809",
+  "limits_changed": false,
+  "rerun": false
+}

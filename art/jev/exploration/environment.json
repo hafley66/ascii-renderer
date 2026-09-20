@@ -1,0 +1,13 @@
+{
+  "python": "3.14.6",
+  "pillow": "12.3.0",
+  "platform": "macOS-14.6.1-arm64-arm-64bit-Mach-O",
+  "font": "/System/Library/Fonts/Menlo.ttc",
+  "font_sha256": "dc256e0b39c2a6fec947129d421fef41b8b429f58f9b6e5d1b148c87f775c1f6",
+  "cell_pixels": [
+    8,
+    14
+  ],
+  "font_pixels": 13,
+  "network_endpoint": "https://api.typesafe.ai/v1/systemone"
+}

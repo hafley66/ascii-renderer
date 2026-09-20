@@ -1,0 +1,8 @@
+{
+  "status": "passed",
+  "pictures": 46,
+  "terminal_cells_checked": 604800,
+  "api_questions_validated": 1526,
+  "distinct_motion_frames": 12,
+  "scope": "offline API/Grid/plain/PNG validation and pyte ANSI replay; GUI painting untested"
+}
