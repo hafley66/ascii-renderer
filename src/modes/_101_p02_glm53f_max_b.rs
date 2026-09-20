@@ -15,7 +15,7 @@ pub(super) static MODE: Shamsa = Shamsa;
 
 const NAME: &str = "shamsa";
 const KNOBS: usize = 10;
-const HELP: &str = "shamsa: Safavid dome girih strapwork, muqarnas tiers, sweeping lantern [FOLD] [DEPTH] [SPIN] [FLOW] [LANTERN] [VINE] [STRAP] [BLOOM] [HUE] [ASPECT]";
+const HELP: &str = "shamsa: Iran, Safavid dome girih strapwork, muqarnas tiers, sweeping lantern [FOLD] [DEPTH] [SPIN] [FLOW] [LANTERN] [VINE] [STRAP] [BLOOM] [HUE] [ASPECT]";
 
 const PARAMS: &[Param] = &[
     param!("FOLD", "girih star order", 5.0, 14.0, 10.0, 1.0),
@@ -24,7 +24,7 @@ const PARAMS: &[Param] = &[
     param!("FLOW", "lantern sweep rad/s", 0.0, 1.5, 0.35, 0.05),
     param!("LANTERN", "lantern height on the dome", 0.0, 1.0, 0.3, 0.01),
     param!("VINE", "arabesque growth budget", 0.0, 1.0, 0.55, 0.01),
-    param!("STRAP", "strap width", 0.02, 0.3, 0.09, 0.005),
+    param!("STRAP", "strap width", 0.02, 0.3, 0.16, 0.005),
     param!("BLOOM", "glow around bright knots", 0.0, 1.0, 0.45, 0.01),
     param!("HUE", "palette rotation degrees", 0.0, 360.0, 210.0, 1.0),
     param!("ASPECT", "cols per row", 1.0, 4.0, 2.1, 0.05),
@@ -39,7 +39,7 @@ const L_GLOW: u64 = 0x26;
 const PARALLEL_MIN_CELLS: usize = 20_480;
 
 /// Dome surface ramp, dark plaster to lit tile.
-const VAULT_RAMP: [char; 12] = [' ', '.', ',', ':', ';', '!', 'i', 'l', '+', 'o', 'O', '#'];
+const VAULT_RAMP: [char; 12] = [' ', '.', ',', ':', ';', '!', 'i', 'l', '+', 'x', 'A', '@'];
 
 /// Splitmix64 over (seed, layer, index, slot); no rng stream is consumed.
 #[inline]
@@ -90,9 +90,8 @@ fn n_of_u(u: f32, depth: f32) -> f32 {
 /// Inverse projection: dome polar angle from screen row fraction.
 #[inline]
 fn u_of_r(n: f32, depth: f32) -> f32 {
-    mix(n, (n.clamp(0.0, 1.0) * PI * 0.5).asin() * (2.0 / PI), depth)
+    mix(n, n.clamp(0.0, 1.0).asin() * (2.0 / PI), depth)
 }
-
 /// d(screen fraction)/d(dome angle), drives tier foreshortening.
 #[inline]
 fn dndu(u: f32, depth: f32) -> f32 {
@@ -129,6 +128,7 @@ struct Look {
     light_az: f32,
     light_u: f32,
     tier_n: f32,
+    rb: f32,
     jit_a: [f32; 10],
     jit_b: [f32; 10],
     nodes: Vec<NodeGlow>,
@@ -162,14 +162,15 @@ impl Look {
         let depth = p[1];
         let spin_now = p[2] * time;
         let light_az = -2.35 + p[3] * time + (unit(hash(seed, L_FIELD, 0, 1)) - 0.5) * 1.2;
-        let n_a = 0.60 + (unit(hash(seed, L_STRAP, 0, 4)) - 0.5) * 0.02;
-        let n_b = 0.90 + (unit(hash(seed, L_STRAP, 0, 5)) - 0.5) * 0.02;
+        let n_a = 0.64 + (unit(hash(seed, L_STRAP, 0, 4)) - 0.5) * 0.07;
+        let n_b = 0.86 + (unit(hash(seed, L_STRAP, 0, 5)) - 0.5) * 0.05;
         let u_a = u_of_r(n_a, depth);
         let u_b = u_of_r(n_b, depth);
-        let u_in = u_of_r((n_a + 0.23).min(0.99), depth);
-        let u_out = u_of_r((n_b - 0.16).max(0.2), depth);
-        let fold = (p[0].round() as i32).clamp(5, 14);
+        let u_in = u_of_r((n_a + 0.19).min(0.99), depth);
+        let u_out = u_of_r((n_b - 0.13).max(0.2), depth);
+        let fold = ((p[0].round() as i32) + (hash(seed, L_STRAP, 0, 11) % 3) as i32 - 1).clamp(5, 14);
         let tier_n = (5 + (hash(seed, L_VAULT, 0, 6) % 3) as i32) as f32;
+        let rb = smoothstep((radius - 11.0) / 7.0);
         let mut jit_a = [0.0f32; 10];
         let mut jit_b = [0.0f32; 10];
         for i in 0..10 {
@@ -179,6 +180,8 @@ impl Look {
         let hue = 206.0 + (unit(hash(seed, L_VAULT, 0, 7)) - 0.5) * 26.0 + (p[8] - 210.0);
         let col = |dh: f64, s: f64, l: f64| hsl_to_rgb(((hue as f64 + dh).rem_euclid(360.0)) as f64, s, l);
         let wedge_a = TAU / 10.0;
+        let size_a = 0.16 * (1.0 + (unit(hash(seed, L_STRAP, 0, 12)) - 0.5) * 0.36);
+        let size_b = 0.115 * (1.0 + (unit(hash(seed, L_STRAP, 0, 13)) - 0.5) * 0.36) * rb.max(0.2);
         let mut nodes = Vec::with_capacity(21);
         nodes.push(NodeGlow {
             x: cx,
@@ -198,7 +201,7 @@ impl Look {
         for i in 0..10 {
             let th = (i as f32 + 0.5) * wedge_a + jit_b[i] + spin_now;
             let dl = u_b - (0.18 + 0.72 * p[4]);
-            let b = (0.3 + 0.6 * (-dl * dl * 5.0).exp()).min(1.0);
+            let b = ((0.3 + 0.6 * (-dl * dl * 5.0).exp()).min(1.0)) * rb;
             nodes.push(NodeGlow {
                 x: cx + th.cos() * n_b * radius * aspect,
                 y: cy + th.sin() * n_b * radius,
@@ -226,10 +229,11 @@ impl Look {
             n_b,
             u_in,
             u_out,
-            size_c: 0.36,
-            size_a: 0.17,
-            size_b: 0.12,
+            size_c: 0.40,
+            size_a,
+            size_b,
             tier_n,
+            rb,
             jit_a,
             jit_b,
             nodes,
@@ -238,8 +242,8 @@ impl Look {
             dome_hi: col(-6.0, 0.58, 0.30),
             seam: col(16.0, 0.45, 0.05),
             niche: col(-24.0, 0.55, 0.20),
-            strap_dim: col(-160.0, 0.40, 0.26),
-            strap_lit: col(-168.0, 0.78, 0.58),
+            strap_dim: col(-160.0, 0.40, 0.30),
+            strap_lit: col(-168.0, 0.78, 0.62),
             strap_hot: col(-172.0, 0.85, 0.78),
             vine_a: col(-48.0, 0.55, 0.34),
             boss: col(-170.0, 0.70, 0.82),
@@ -542,16 +546,15 @@ fn paint_vault(grid: &mut Grid, field: &[Sample], w: usize, h: usize, look: &Loo
                 continue;
             }
             let tier_jit = match s.tier_cell {
-                0 => -0.08,
-                1 => 0.0,
-                2 => 0.05,
-                _ => 0.1,
+                0 => -0.10,
+                1 => -0.02,
+                2 => 0.06,
+                _ => 0.12,
             };
-            let mut g = s.light * 0.85 + 0.16 + tier_jit;
-            g += if s.owner > 0 && s.rho < 1.0 { 0.05 } else { 0.0 };
+            let mut g = s.light * 0.4 + 0.13 + tier_jit;
             g *= 1.0 - 0.35 * smoothstep((s.u - 0.78) / 0.22);
             let shade = g.clamp(0.0, 1.0);
-            let ch = ramp(&VAULT_RAMP, shade * 1.15);
+            let mut ch = ramp(&VAULT_RAMP, shade * 0.9);
             let mut fg = lerp_color(look.dome_lo, look.dome_hi, shade);
             if s.u < 1.0 {
                 let tpos = s.u * look.tier_n;
@@ -559,8 +562,8 @@ fn paint_vault(grid: &mut Grid, field: &[Sample], w: usize, h: usize, look: &Loo
                 let edge_d = frac.min(1.0 - frac) * look.radius * dndu(s.u, look.depth);
                 if edge_d < 0.9 {
                     fg = look.seam;
-                } else if s.foam < 0.8 {
-                    fg = lerp_color(fg, look.niche, 0.6);
+                } else if s.foam < 0.8 && shade > 0.22 {
+                    fg = lerp_color(fg, look.niche, 0.7);
                 } else if s.strap > 3.0 * look.strap * look.radius {
                     fg = lerp_color(fg, look.niche, 0.35);
                 }
@@ -592,7 +595,7 @@ fn paint_straps(grid: &mut Grid, field: &[Sample], w: usize, h: usize, look: &Lo
                 continue;
             }
             let edge = s.strap / sw;
-            let lit = (s.light * 1.15).clamp(0.0, 1.0);
+            let lit = (s.light * 1.35).clamp(0.0, 1.0);
             let a = s.sdir.rem_euclid(PI);
             let dir_ch = if a < PI / 8.0 || a >= 7.0 * PI / 8.0 {
                 '-'
@@ -605,7 +608,7 @@ fn paint_straps(grid: &mut Grid, field: &[Sample], w: usize, h: usize, look: &Lo
             };
             let ch = if s.over == 1 && lit > 0.6 && edge < 0.5 {
                 '+'
-            } else if edge < 0.4 {
+            } else if edge < 0.5 {
                 if lit > 0.55 {
                     '#'
                 } else {
@@ -657,6 +660,29 @@ fn paint_boss(grid: &mut Grid, w: usize, h: usize, look: &Look) {
                 ('o', lerp_color(look.strap_dim, look.strap_lit, rd / boss_r))
             };
             grid[y][x] = Cell::new(ch, fg);
+        }
+    }
+    for (ni, node) in look.nodes.iter().enumerate().skip(1) {
+        let er2 = if ni > 10 { 0.35 * look.rb } else { 0.35 };
+        if er2 < 0.05 {
+            continue;
+        }
+        let ey0 = (node.y - 1.2).max(0.0) as usize;
+        let ey1 = ((node.y + 1.2) as usize + 1).min(h);
+        let ex0 = ((node.x - 1.2 * look.aspect).max(0.0)) as usize;
+        let ex1 = ((node.x + 1.2 * look.aspect) as usize + 1).min(w);
+        for y in ey0..ey1 {
+            let dy = y as f32 + 0.5 - node.y;
+            for x in ex0..ex1 {
+                let dx = (x as f32 + 0.5 - node.x) / look.aspect;
+                if dx * dx + dy * dy > er2 {
+                    continue;
+                }
+                let lit = if node.b > 0.55 { 1.0 } else { 0.35 };
+                let c = lerp_color(look.strap_dim, look.strap_hot, lit);
+                let ch = if ni > 10 { 'o' } else { 'O' };
+                grid[y][x] = Cell::new(ch, c);
+            }
         }
     }
 }
@@ -728,14 +754,24 @@ impl Mode for Shamsa {
 
 #[cfg(test)]
 mod tests {
+
+    #[test]
+    fn strap_knob_changes_straps() {
+        let mut thin = knobs();
+        thin[6] = 0.04;
+        let mut thick = knobs();
+        thick[6] = 0.28;
+        assert_ne!(
+            text(&frame(90, 30, 42, 0.0, &thin)),
+            text(&frame(90, 30, 42, 0.0, &thick))
+        );
+    }
     use super::*;
     use crate::render::grid_to_plain;
     use rand::{rngs::StdRng, SeedableRng};
-
     fn knobs() -> Vec<f32> {
         PARAMS.iter().map(|p| p.default).collect()
     }
-
     fn frame(w: usize, h: usize, seed: u64, time: f32, values: &[f32]) -> Grid {
         let mut grid = vec![vec![Cell::blank(); w]; h];
         let palette = crate::color::make_palette(seed);
@@ -802,3 +838,4 @@ mod tests {
         }
     }
 }
+
