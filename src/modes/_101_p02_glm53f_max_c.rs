@@ -318,6 +318,7 @@ fn draw(frame: &mut ModeFrame<'_>, p: &[f32; KNOBS]) {
         measure_layer(NAME, "straps", || paint_straps(frame.grid, mask, w, h, &look, &field));
         measure_layer(NAME, "knots", || paint_knots(frame.grid, mask, w, h, &look, &field));
         measure_layer(NAME, "portal", || paint_portal(frame.grid, w, h, &look));
+        measure_layer(NAME, "crown", || paint_crown(frame.grid, w, h, &look));
     });
 }
 
@@ -464,14 +465,18 @@ fn paint_night(grid: &mut Grid, w: usize, h: usize, look: &Look) {
                 && wy < look.arch.y_apex + 1.25
                 && wx.abs() < jamb + 1.85;
             let g = hash(look.seed, L_NIGHT, gx as u64, gy as u64);
+            let pilaster = wx.abs() > jamb + 0.62 && wx.abs() < jamb + 1.15;
             if in_band_x || in_band_top {
                 *cell = Cell::with_bg(' ', look.stone, look.band);
             } else if look.arch.contains(wx, wy) {
-                *cell = Cell::with_bg(' ', look.void, look.void);
+                let bg = if wy < 1.6 { darken(look.void, 4) } else { look.void };
+                *cell = Cell::with_bg(' ', bg, bg);
             } else if wy < 1.1 {
                 let fg = lerp_color(look.wall, look.stone, 0.25);
                 let ch = if (gx + gy) % 3 == 0 && unit(g) < 0.30 { '.' } else { ' ' };
                 *cell = Cell::with_bg(ch, fg, lerp_color(look.wall, look.stone, 0.12));
+            } else if pilaster {
+                *cell = Cell::with_bg(' ', darken(look.stone, 20), darken(look.wall, 5));
             } else {
                 let ch = if unit(g) < 0.045 { STONE[(g >> 8) as usize % STONE.len()] } else { ' ' };
                 *cell = Cell::with_bg(ch, darken(look.stone, 25), look.wall);
@@ -616,7 +621,9 @@ fn paint_knots(grid: &mut Grid, mask: &[u8], w: usize, h: usize, look: &Look, fi
         }
         let (gx, gy) = ((idx % w) as i32, (idx / w) as i32);
         let ch = if bits.count_ones() >= 3 { GLYPH_NODE } else { strap_glyph(bits) };
-        put(grid, gx, gy, Cell::with_bg(ch, look.knot, look.void));
+        let glow = strap_glow(look, look.wx(gx as f32), look.wy(gy as f32));
+        let fg = lerp_color(look.knot, lighten(look.knot, 60), glow);
+        put(grid, gx, gy, Cell::with_bg(ch, fg, look.void));
     }
     for tile in &field.tiles {
         if !tile.live {
@@ -625,7 +632,7 @@ fn paint_knots(grid: &mut Grid, mask: &[u8], w: usize, h: usize, look: &Look, fi
         let (cx, cy) = (look.gx(tile.cx).round() as i32, look.gy(tile.cy).round() as i32);
         match tile.variant {
             0 => put(grid, cx, cy, Cell::with_bg(GLYPH_HEART, lighten(look.bright, 20), look.void)),
-            2 => put(grid, cx, cy, Cell::with_bg(GLYPH_EYE, darken(look.strap[1], 5), look.void)),
+            2 => put(grid, cx, cy, Cell::with_bg(GLYPH_EYE, look.strap[1], look.void)),
             _ => {}
         }
     }
@@ -668,6 +675,59 @@ fn paint_portal(grid: &mut Grid, w: usize, h: usize, look: &Look) {
     }
 }
 
+/// Muqarnas fan filling the lunette: rings concentric on the apex, seeded
+/// radial sectors, alternating tier and void cells for negative space.
+fn paint_crown(grid: &mut Grid, w: usize, h: usize, look: &Look) {
+    let apex = look.arch.y_apex;
+    let ring_w = ((apex - look.arch.y_spring) / 3.5).max(0.7);
+    let sectors = 10 + 2 * (unit(hash(look.seed, L_PORTAL, 3, 7)) * 4.0).round() as i32;
+    let half = std::f32::consts::FRAC_PI_2;
+    let sector_w = std::f32::consts::PI / sectors as f32;
+    let tier = ['\u{00B7}', ':', '%', '#'];
+    let gx0 = look.gx(-look.arch.jamb - 1.0).floor().max(0.0) as usize;
+    let gx1 = (look.gx(look.arch.jamb + 1.0).ceil() as usize + 1).min(w);
+    let gy0 = look.gy(apex + 0.5).max(0.0) as usize;
+    let rows = grid.len().min(h);
+    for gy in gy0..rows {
+        for gx in gx0..gx1 {
+            let wx = look.wx_col[gx];
+            let wy = look.wy(gy as f32);
+            let lower = match look.prof[gx] {
+                p if p.is_finite() => p + 0.05,
+                _ => look.arch.y_spring + 0.15,
+            };
+            if wy <= lower || wy > apex + 0.5 {
+                continue;
+            }
+            let impost_zone =
+                wx.abs() > look.arch.jamb - 0.55 && (wy - look.arch.y_spring).abs() < 0.4;
+            let r = (wx * wx + (wy - apex) * (wy - apex)).sqrt();
+            let ring = (r / ring_w) as i32;
+            if ring == 0 || impost_zone {
+                continue;
+            }
+            let ang = wx.atan2(apex - wy).clamp(-half, half);
+            let u = (ang + half) / sector_w;
+            let s = (u.floor() as i32).clamp(0, sectors - 1);
+            if (ring + s).rem_euclid(2) == 1 {
+                continue;
+            }
+            let fg = match ring {
+                1 => darken(look.stone, 18),
+                2 => darken(look.stone, 10),
+                3 => look.stone,
+                _ => lighten(look.stone, 5),
+            };
+            let ch = if u - u.floor() < 0.22 && ring >= 2 {
+                if wx > 0.0 { GLYPH_D1 } else { GLYPH_D2 }
+            } else {
+                tier[(ring as usize).min(3)]
+            };
+            grid[gy][gx] = Cell::with_bg(ch, fg, look.wall);
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -703,6 +763,16 @@ mod tests {
     #[test]
     fn isfahan_seed42() {
         insta::assert_snapshot!("isfahan_80x24", text(&frame(80, 24, 42, 0.0, &knobs())));
+    }
+
+    #[test]
+    fn isfahan_seed42_large() {
+        insta::assert_snapshot!("isfahan_120x40", text(&frame(120, 40, 42, 0.0, &knobs())));
+    }
+
+    #[test]
+    fn isfahan_seed42_clip() {
+        insta::assert_snapshot!("isfahan_clip_40x12", text(&frame(40, 12, 42, 0.0, &knobs())));
     }
 
     #[test]

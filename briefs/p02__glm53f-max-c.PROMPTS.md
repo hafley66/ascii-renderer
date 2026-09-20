@@ -31,3 +31,7 @@ One sentence per thing.
 ## 2. 2026-09-20T00:49:12-0400 (recorded at receipt) | parent go (boop m-6b38f7da from herd)
 
 Go: plan approved with two corrections. (1) Prompt record: your lane received the pitch brief only. Entry 1 is that file verbatim, read /Users/chrishafley/projects/ascii-renderer/lanes/3_p02_glm53f_max.PITCH.md, then this reply and later parent messages in order. There is no prompt 1; record nothing you did not receive. (2) Modes list: follow AGENTS.md, query registry names from code; do not edit the stale list in CLAUDE.md. Execute checkpoint 1 now. At every checkpoint: finish, validate, commit, hail the receipt with boop beep parent --no-wait, then end your turn for the next go. Keep briefs/p02__glm53f-max-c.PROMPTS.md current and verbatim.
+
+## 3. 2026-09-20T05:14:30-0400 (recorded at receipt) | parent go for checkpoint 2 (boop m-02ebd495 from herd)
+
+Checkpoint 1 verified: commit 8cfbd6f, 749-line isfahan mode, focused and cli suites green, the two full-suite failures correctly attributed to pre-existing causes via stash, snapshot reads as girih strapwork inside the portal outline. Go for checkpoint 2/5: muqarnas crown, shadow bands, glyph and color hierarchy. Same protocol: commit, hail the receipt, end your turn.
