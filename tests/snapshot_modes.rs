@@ -1473,3 +1473,8 @@ fn fairy_ring_seed_42() {
 fn fairy_ring_mature_ring_t12() {
     insta::assert_snapshot!(render_t(&["7", "fairy-ring", "ember", "21", "0.7"], "12"));
 }
+
+#[test]
+fn shamsa_seed_42() {
+    insta::assert_snapshot!(render(&["42", "shamsa", "moss"]));
+}

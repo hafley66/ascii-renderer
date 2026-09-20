@@ -1,7 +1,7 @@
 ---
-source: src/modes/_101_p02_glm53f_max_b.rs
-assertion_line: 951
-expression: "text(&frame(80, 24, 42, 0.0, &knobs()))"
+source: tests/snapshot_modes.rs
+assertion_line: 1479
+expression: "render(&[\"42\", \"shamsa\", \"moss\"])"
 ---
                                                                                 
                               ,,,===---------==                                 

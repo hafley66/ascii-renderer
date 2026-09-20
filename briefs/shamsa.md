@@ -75,3 +75,15 @@ fn draw(frame: &mut ModeFrame<'_>, p: &[f32; 10])
 17. Palette: vines lerp vine_a (dim verdigris-gold, hue+off) to vine_b
     (lit) by the pulse; glyphs ( ) ' , are vine-exclusive so presence is
     testable.
+
+## Checkpoint 4: snapshots and refinement
+
+18. Refinements: wall speckle blocks tightened from 7x3 to 5x2 with a single
+    glyph pick (calmer negative space); straps fade below u=0.96 so the dome
+    edge reads as one continuous silhouette instead of strap fragments.
+19. Snapshot set (all visually inspected before acceptance): canonical t0,
+    t6, t14 (lantern sweeps right then down-left), 160x50 (ring B eyes,
+    denser interlace, tier seams), 30x12 clip, VINE 0 and 1 variants,
+    LANTERN 0.40/0.45 nearby pair (crown block shifts, continuity held).
+20. Integration entry appended at the end of tests/snapshot_modes.rs; the
+    CLI render with theme moss matches the module canonical byte for byte.

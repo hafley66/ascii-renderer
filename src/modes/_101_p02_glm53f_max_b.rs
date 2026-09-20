@@ -543,16 +543,10 @@ fn paint_vault(grid: &mut Grid, field: &[Sample], w: usize, h: usize, look: &Loo
         for (x, cell) in row.iter_mut().enumerate().take(w) {
             let s = &field[y * w + x];
             if s.u > 2.0 {
-                let gx = (x / 7) as u64;
-                let gy = (y / 3) as u64;
+                let gx = (x / 5) as u64;
+                let gy = (y / 2) as u64;
                 let pick = hash(look.seed, L_VAULT, gx, gy) % 53;
-                let ch = if pick == 0 {
-                    '\''
-                } else if pick == 1 {
-                    '`'
-                } else {
-                    ' '
-                };
+                let ch = if pick == 0 { '`' } else { ' ' };
                 *cell = Cell::new(ch, look.wall);
                 continue;
             }
@@ -599,7 +593,7 @@ fn paint_straps(grid: &mut Grid, field: &[Sample], w: usize, h: usize, look: &Lo
     let paint = |(y, row): (usize, &mut Vec<Cell>)| {
         for (x, cell) in row.iter_mut().enumerate().take(w) {
             let s = &field[y * w + x];
-            if s.strap >= sw || s.u > 2.0 {
+            if s.strap >= sw || s.u > 0.96 {
                 continue;
             }
             if s.over == 2 && s.strap < sw * 0.6 {
@@ -995,5 +989,45 @@ mod tests {
             assert!(avg < 6.0, "avg frame {:.3} ms", avg);
         }
     }
-}
 
+    #[test]
+    fn shamsa_t6() {
+        insta::assert_snapshot!("shamsa_80x24_t6", text(&frame(80, 24, 42, 6.0, &knobs())));
+    }
+
+    #[test]
+    fn shamsa_t14() {
+        insta::assert_snapshot!("shamsa_80x24_t14", text(&frame(80, 24, 42, 14.0, &knobs())));
+    }
+
+    #[test]
+    fn shamsa_160x50() {
+        insta::assert_snapshot!("shamsa_160x50", text(&frame(160, 50, 42, 0.0, &knobs())));
+    }
+
+    #[test]
+    fn shamsa_30x12_clip() {
+        insta::assert_snapshot!("shamsa_30x12", text(&frame(30, 12, 42, 0.0, &knobs())));
+    }
+
+    #[test]
+    fn shamsa_vine_variants() {
+        let mut bare = knobs();
+        bare[5] = 0.0;
+        let mut lush = knobs();
+        lush[5] = 1.0;
+        insta::assert_snapshot!("shamsa_80x24_vine0", text(&frame(80, 24, 42, 0.0, &bare)));
+        insta::assert_snapshot!("shamsa_80x24_vine1", text(&frame(80, 24, 42, 0.0, &lush)));
+    }
+
+    #[test]
+    fn shamsa_lantern_nearby_pair() {
+        let mut a = knobs();
+        a[4] = 0.40;
+        let mut b = knobs();
+        b[4] = 0.45;
+        insta::assert_snapshot!("shamsa_80x24_lantern40", text(&frame(80, 24, 42, 0.0, &a)));
+        insta::assert_snapshot!("shamsa_80x24_lantern45", text(&frame(80, 24, 42, 0.0, &b)));
+    }
+
+}
