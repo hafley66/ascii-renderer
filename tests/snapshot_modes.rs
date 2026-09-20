@@ -1488,3 +1488,13 @@ fn shamsa_seed_42() {
 fn isfahan_seed_42() {
     insta::assert_snapshot!(render(&["42", "isfahan", "mitla"]));
 }
+
+#[test]
+fn moongate_seed_42() {
+    insta::assert_snapshot!(render(&["42", "moongate", "ember"]));
+}
+
+#[test]
+fn moongate_lantern_t9() {
+    insta::assert_snapshot!(render_t(&["42", "moongate", "ember"], "9"));
+}

@@ -44,6 +44,7 @@ mod _100_p01_omp_flash41_max;
 mod _101_p02_glm53f_max_a;
 mod _101_p02_glm53f_max_b;
 mod _101_p02_glm53f_max_c;
+mod _101_p02_glm53f_max_d;
 
 #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn register_all(registry: &mut crate::registry::ModeRegistry) {
@@ -91,4 +92,5 @@ pub(crate) fn register_all(registry: &mut crate::registry::ModeRegistry) {
     registry.add(&_101_p02_glm53f_max_a::MODE);
     registry.add(&_101_p02_glm53f_max_b::MODE);
     registry.add(&_101_p02_glm53f_max_c::MODE);
+    registry.add(&_101_p02_glm53f_max_d::MODE);
 }
