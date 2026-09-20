@@ -1,0 +1,211 @@
+{
+  "model": "jev-latest",
+  "state": {
+    "scenes": {
+      "moth": "A star-eating cosmic moth. Vast bilateral wings carry concentric eyes, luminous veins, turquoise nebulae and copper dust. Its abdomen is a segmented golden needle and its antennae are branching electrical arcs. Black negative space surrounds the specimen.",
+      "medusa": "An abyssal jellyfish carrying the ruins of an observatory inside its translucent bell. Ribbed cyan shell, a luminous amber heart, dozens of impossibly long fine filaments, smaller satellite organisms and drifting plankton. A specimen suspended in black water.",
+      "engine": "The uncertainty engine. A turbulent map of imaginary magnetic fields, two luminous whirlpools, woven cyan and copper streamlines, tiny stars caught along the currents, and an empty gravitational wound at the center."
+    },
+    "task": "Provide art-direction values for procedural ASCII organisms and flow fields. Geometry is created by the renderer; your scored intensities control it."
+  },
+  "questions": {
+    "moth_complexity": {
+      "type": "score",
+      "instructions": "Choose the artistic intensity of complexity for the moth described in state.scenes.moth.",
+      "criteria": [
+        "minimal",
+        "simple",
+        "moderate",
+        "intricate",
+        "extremely intricate"
+      ]
+    },
+    "moth_symmetry": {
+      "type": "score",
+      "instructions": "Choose the artistic intensity of symmetry for the moth described in state.scenes.moth.",
+      "criteria": [
+        "fully asymmetric",
+        "mostly asymmetric",
+        "mixed",
+        "mostly symmetric",
+        "exactly symmetric"
+      ]
+    },
+    "moth_luminescence": {
+      "type": "score",
+      "instructions": "Choose the artistic intensity of luminescence for the moth described in state.scenes.moth.",
+      "criteria": [
+        "nearly dark",
+        "dim",
+        "moderate",
+        "bright",
+        "radiant"
+      ]
+    },
+    "moth_turbulence": {
+      "type": "score",
+      "instructions": "Choose the artistic intensity of turbulence for the moth described in state.scenes.moth.",
+      "criteria": [
+        "still",
+        "gentle",
+        "moderate",
+        "wild",
+        "violent"
+      ]
+    },
+    "moth_ornament": {
+      "type": "score",
+      "instructions": "Choose the artistic intensity of ornament for the moth described in state.scenes.moth.",
+      "criteria": [
+        "bare",
+        "sparse",
+        "moderate",
+        "rich",
+        "profuse"
+      ]
+    },
+    "moth_warmth": {
+      "type": "score",
+      "instructions": "Choose the artistic intensity of warmth for the moth described in state.scenes.moth.",
+      "criteria": [
+        "icy cyan",
+        "cool teal",
+        "balanced",
+        "warm copper",
+        "golden amber"
+      ]
+    },
+    "medusa_complexity": {
+      "type": "score",
+      "instructions": "Choose the artistic intensity of complexity for the medusa described in state.scenes.medusa.",
+      "criteria": [
+        "minimal",
+        "simple",
+        "moderate",
+        "intricate",
+        "extremely intricate"
+      ]
+    },
+    "medusa_symmetry": {
+      "type": "score",
+      "instructions": "Choose the artistic intensity of symmetry for the medusa described in state.scenes.medusa.",
+      "criteria": [
+        "fully asymmetric",
+        "mostly asymmetric",
+        "mixed",
+        "mostly symmetric",
+        "exactly symmetric"
+      ]
+    },
+    "medusa_luminescence": {
+      "type": "score",
+      "instructions": "Choose the artistic intensity of luminescence for the medusa described in state.scenes.medusa.",
+      "criteria": [
+        "nearly dark",
+        "dim",
+        "moderate",
+        "bright",
+        "radiant"
+      ]
+    },
+    "medusa_turbulence": {
+      "type": "score",
+      "instructions": "Choose the artistic intensity of turbulence for the medusa described in state.scenes.medusa.",
+      "criteria": [
+        "still",
+        "gentle",
+        "moderate",
+        "wild",
+        "violent"
+      ]
+    },
+    "medusa_ornament": {
+      "type": "score",
+      "instructions": "Choose the artistic intensity of ornament for the medusa described in state.scenes.medusa.",
+      "criteria": [
+        "bare",
+        "sparse",
+        "moderate",
+        "rich",
+        "profuse"
+      ]
+    },
+    "medusa_warmth": {
+      "type": "score",
+      "instructions": "Choose the artistic intensity of warmth for the medusa described in state.scenes.medusa.",
+      "criteria": [
+        "icy cyan",
+        "cool teal",
+        "balanced",
+        "warm copper",
+        "golden amber"
+      ]
+    },
+    "engine_complexity": {
+      "type": "score",
+      "instructions": "Choose the artistic intensity of complexity for the engine described in state.scenes.engine.",
+      "criteria": [
+        "minimal",
+        "simple",
+        "moderate",
+        "intricate",
+        "extremely intricate"
+      ]
+    },
+    "engine_symmetry": {
+      "type": "score",
+      "instructions": "Choose the artistic intensity of symmetry for the engine described in state.scenes.engine.",
+      "criteria": [
+        "fully asymmetric",
+        "mostly asymmetric",
+        "mixed",
+        "mostly symmetric",
+        "exactly symmetric"
+      ]
+    },
+    "engine_luminescence": {
+      "type": "score",
+      "instructions": "Choose the artistic intensity of luminescence for the engine described in state.scenes.engine.",
+      "criteria": [
+        "nearly dark",
+        "dim",
+        "moderate",
+        "bright",
+        "radiant"
+      ]
+    },
+    "engine_turbulence": {
+      "type": "score",
+      "instructions": "Choose the artistic intensity of turbulence for the engine described in state.scenes.engine.",
+      "criteria": [
+        "still",
+        "gentle",
+        "moderate",
+        "wild",
+        "violent"
+      ]
+    },
+    "engine_ornament": {
+      "type": "score",
+      "instructions": "Choose the artistic intensity of ornament for the engine described in state.scenes.engine.",
+      "criteria": [
+        "bare",
+        "sparse",
+        "moderate",
+        "rich",
+        "profuse"
+      ]
+    },
+    "engine_warmth": {
+      "type": "score",
+      "instructions": "Choose the artistic intensity of warmth for the engine described in state.scenes.engine.",
+      "criteria": [
+        "icy cyan",
+        "cool teal",
+        "balanced",
+        "warm copper",
+        "golden amber"
+      ]
+    }
+  }
+}

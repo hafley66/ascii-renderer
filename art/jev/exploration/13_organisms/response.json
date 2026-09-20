@@ -1,0 +1,351 @@
+{
+  "model": "jev-1.13.0",
+  "answers": {
+    "moth_complexity": {
+      "type": "score",
+      "score": 3.78,
+      "confidence": 0.81,
+      "legend": {
+        "0": "minimal",
+        "1": "simple",
+        "2": "moderate",
+        "3": "intricate",
+        "4": "extremely intricate"
+      },
+      "probabilities": {
+        "0": 0.0,
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.22,
+        "4": 0.78
+      }
+    },
+    "moth_symmetry": {
+      "type": "score",
+      "score": 3.57,
+      "confidence": 0.64,
+      "legend": {
+        "0": "fully asymmetric",
+        "1": "mostly asymmetric",
+        "2": "mixed",
+        "3": "mostly symmetric",
+        "4": "exactly symmetric"
+      },
+      "probabilities": {
+        "0": 0.0,
+        "1": 0.0,
+        "2": 0.01,
+        "3": 0.4,
+        "4": 0.59
+      }
+    },
+    "moth_luminescence": {
+      "type": "score",
+      "score": 3.55,
+      "confidence": 0.63,
+      "legend": {
+        "0": "nearly dark",
+        "1": "dim",
+        "2": "moderate",
+        "3": "bright",
+        "4": "radiant"
+      },
+      "probabilities": {
+        "0": 0.0,
+        "1": 0.0,
+        "2": 0.01,
+        "3": 0.42,
+        "4": 0.57
+      }
+    },
+    "moth_turbulence": {
+      "type": "score",
+      "score": 0.76,
+      "confidence": 0.37,
+      "legend": {
+        "0": "still",
+        "1": "gentle",
+        "2": "moderate",
+        "3": "wild",
+        "4": "violent"
+      },
+      "probabilities": {
+        "0": 0.5,
+        "1": 0.3,
+        "2": 0.12,
+        "3": 0.07,
+        "4": 0.01
+      }
+    },
+    "moth_ornament": {
+      "type": "score",
+      "score": 3.79,
+      "confidence": 0.82,
+      "legend": {
+        "0": "bare",
+        "1": "sparse",
+        "2": "moderate",
+        "3": "rich",
+        "4": "profuse"
+      },
+      "probabilities": {
+        "0": 0.0,
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.2,
+        "4": 0.8
+      }
+    },
+    "moth_warmth": {
+      "type": "score",
+      "score": 2.77,
+      "confidence": 0.59,
+      "legend": {
+        "0": "icy cyan",
+        "1": "cool teal",
+        "2": "balanced",
+        "3": "warm copper",
+        "4": "golden amber"
+      },
+      "probabilities": {
+        "0": 0.0,
+        "1": 0.05,
+        "2": 0.27,
+        "3": 0.55,
+        "4": 0.13
+      }
+    },
+    "medusa_complexity": {
+      "type": "score",
+      "score": 3.8,
+      "confidence": 0.84,
+      "legend": {
+        "0": "minimal",
+        "1": "simple",
+        "2": "moderate",
+        "3": "intricate",
+        "4": "extremely intricate"
+      },
+      "probabilities": {
+        "0": 0.0,
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.19,
+        "4": 0.81
+      }
+    },
+    "medusa_symmetry": {
+      "type": "score",
+      "score": 2.32,
+      "confidence": 0.41,
+      "legend": {
+        "0": "fully asymmetric",
+        "1": "mostly asymmetric",
+        "2": "mixed",
+        "3": "mostly symmetric",
+        "4": "exactly symmetric"
+      },
+      "probabilities": {
+        "0": 0.01,
+        "1": 0.19,
+        "2": 0.27,
+        "3": 0.52,
+        "4": 0.01
+      }
+    },
+    "medusa_luminescence": {
+      "type": "score",
+      "score": 2.92,
+      "confidence": 0.75,
+      "legend": {
+        "0": "nearly dark",
+        "1": "dim",
+        "2": "moderate",
+        "3": "bright",
+        "4": "radiant"
+      },
+      "probabilities": {
+        "0": 0.0,
+        "1": 0.01,
+        "2": 0.17,
+        "3": 0.71,
+        "4": 0.11
+      }
+    },
+    "medusa_turbulence": {
+      "type": "score",
+      "score": 0.87,
+      "confidence": 0.66,
+      "legend": {
+        "0": "still",
+        "1": "gentle",
+        "2": "moderate",
+        "3": "wild",
+        "4": "violent"
+      },
+      "probabilities": {
+        "0": 0.27,
+        "1": 0.6,
+        "2": 0.11,
+        "3": 0.02,
+        "4": 0.0
+      }
+    },
+    "medusa_ornament": {
+      "type": "score",
+      "score": 3.44,
+      "confidence": 0.58,
+      "legend": {
+        "0": "bare",
+        "1": "sparse",
+        "2": "moderate",
+        "3": "rich",
+        "4": "profuse"
+      },
+      "probabilities": {
+        "0": 0.0,
+        "1": 0.0,
+        "2": 0.02,
+        "3": 0.51,
+        "4": 0.47
+      }
+    },
+    "medusa_warmth": {
+      "type": "score",
+      "score": 2.58,
+      "confidence": 0.0,
+      "legend": {
+        "0": "icy cyan",
+        "1": "cool teal",
+        "2": "balanced",
+        "3": "warm copper",
+        "4": "golden amber"
+      },
+      "probabilities": {
+        "0": 0.15,
+        "1": 0.13,
+        "2": 0.21,
+        "3": 0.04,
+        "4": 0.47
+      }
+    },
+    "engine_complexity": {
+      "type": "score",
+      "score": 3.33,
+      "confidence": 0.7,
+      "legend": {
+        "0": "minimal",
+        "1": "simple",
+        "2": "moderate",
+        "3": "intricate",
+        "4": "extremely intricate"
+      },
+      "probabilities": {
+        "0": 0.0,
+        "1": 0.0,
+        "2": 0.01,
+        "3": 0.64,
+        "4": 0.35
+      }
+    },
+    "engine_symmetry": {
+      "type": "score",
+      "score": 2.43,
+      "confidence": 0.42,
+      "legend": {
+        "0": "fully asymmetric",
+        "1": "mostly asymmetric",
+        "2": "mixed",
+        "3": "mostly symmetric",
+        "4": "exactly symmetric"
+      },
+      "probabilities": {
+        "0": 0.04,
+        "1": 0.16,
+        "2": 0.19,
+        "3": 0.55,
+        "4": 0.06
+      }
+    },
+    "engine_luminescence": {
+      "type": "score",
+      "score": 3.08,
+      "confidence": 0.75,
+      "legend": {
+        "0": "nearly dark",
+        "1": "dim",
+        "2": "moderate",
+        "3": "bright",
+        "4": "radiant"
+      },
+      "probabilities": {
+        "0": 0.0,
+        "1": 0.01,
+        "2": 0.08,
+        "3": 0.72,
+        "4": 0.19
+      }
+    },
+    "engine_turbulence": {
+      "type": "score",
+      "score": 3.08,
+      "confidence": 0.88,
+      "legend": {
+        "0": "still",
+        "1": "gentle",
+        "2": "moderate",
+        "3": "wild",
+        "4": "violent"
+      },
+      "probabilities": {
+        "0": 0.0,
+        "1": 0.0,
+        "2": 0.03,
+        "3": 0.86,
+        "4": 0.11
+      }
+    },
+    "engine_ornament": {
+      "type": "score",
+      "score": 2.81,
+      "confidence": 0.69,
+      "legend": {
+        "0": "bare",
+        "1": "sparse",
+        "2": "moderate",
+        "3": "rich",
+        "4": "profuse"
+      },
+      "probabilities": {
+        "0": 0.0,
+        "1": 0.04,
+        "2": 0.19,
+        "3": 0.68,
+        "4": 0.09
+      }
+    },
+    "engine_warmth": {
+      "type": "score",
+      "score": 1.91,
+      "confidence": 0.53,
+      "legend": {
+        "0": "icy cyan",
+        "1": "cool teal",
+        "2": "balanced",
+        "3": "warm copper",
+        "4": "golden amber"
+      },
+      "probabilities": {
+        "0": 0.08,
+        "1": 0.17,
+        "2": 0.52,
+        "3": 0.23,
+        "4": 0.0
+      }
+    }
+  },
+  "usage": {
+    "input_tokens": 1641,
+    "output_tokens": 313
+  }
+}

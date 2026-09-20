@@ -1,0 +1,51 @@
+{
+  "scenes": {
+    "moth": "A star-eating cosmic moth. Vast bilateral wings carry concentric eyes, luminous veins, turquoise nebulae and copper dust. Its abdomen is a segmented golden needle and its antennae are branching electrical arcs. Black negative space surrounds the specimen.",
+    "medusa": "An abyssal jellyfish carrying the ruins of an observatory inside its translucent bell. Ribbed cyan shell, a luminous amber heart, dozens of impossibly long fine filaments, smaller satellite organisms and drifting plankton. A specimen suspended in black water.",
+    "engine": "The uncertainty engine. A turbulent map of imaginary magnetic fields, two luminous whirlpools, woven cyan and copper streamlines, tiny stars caught along the currents, and an empty gravitational wound at the center."
+  },
+  "controls": {
+    "complexity": [
+      "minimal",
+      "simple",
+      "moderate",
+      "intricate",
+      "extremely intricate"
+    ],
+    "symmetry": [
+      "fully asymmetric",
+      "mostly asymmetric",
+      "mixed",
+      "mostly symmetric",
+      "exactly symmetric"
+    ],
+    "luminescence": [
+      "nearly dark",
+      "dim",
+      "moderate",
+      "bright",
+      "radiant"
+    ],
+    "turbulence": [
+      "still",
+      "gentle",
+      "moderate",
+      "wild",
+      "violent"
+    ],
+    "ornament": [
+      "bare",
+      "sparse",
+      "moderate",
+      "rich",
+      "profuse"
+    ],
+    "warmth": [
+      "icy cyan",
+      "cool teal",
+      "balanced",
+      "warm copper",
+      "golden amber"
+    ]
+  }
+}

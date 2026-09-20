@@ -23,3 +23,9 @@ Every exact Jev state, question, rubric and composition prompt used below is ret
 - Images 10–12 combine the directed cathedral with probability-tinted procedural roots and reflected water at three growth stages. The geometry comes from local rendering code; Jev provides recorded decisions and probability fields.
 
 Every generated picture is retained as PNG, ANSI, plain text, serialized Grid and a metadata record. `scripts/22_jev_explore.py` handles API jobs and probability experiments. `scripts/23_jev_compositions.py` handles offline native compositions. No existing rendering mode has been edited.
+
+## Checkpoint 2
+
+`13_organisms` asks 18 Score questions for complexity, symmetry, luminescence, turbulence, ornament and warmth across three procedural concepts. The initial renderer consumes complexity and ornament to set vein, rib, filament and particle counts. Other scores are retained for subsequent variants. The moth uses palette probabilities from `05_moth`; the medusa uses occupancy probabilities from `04_jellyfish`; particle currents use material probabilities from `06_drowned`.
+
+Images `13_moth_p0`, `14_medusa_p0`, and `15_engine_p0` are the first organism renderings. Exact replay was verified for all three. The first moth has a quadrant-dependent glyph selection artifact, retained as part of the progression. Shapes in this branch are explicit procedural geometry, with recorded Jev values controlling selected attributes.
