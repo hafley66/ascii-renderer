@@ -330,3 +330,14 @@ Go: plan approved. Execute checkpoint 1 now. At every checkpoint: finish, valida
 ```text
 Checkpoint 1 verified: commit 25aa0ef, tests green, the knot lattice reads clean at 80x24 and clips at 40x12. Go for checkpoint 2/5 (coupling). Two notes: skip further CLAUDE.md modes-list edits, AGENTS.md supersedes the stale list, query registry names from code; and keep the receipt shape, commit, hail, then end your turn.
 ```
+
+---
+
+## Entry 5
+
+- channel: boop m-4582c8bc from herd (parent)
+- received: 2026-09-20T05:36Z (approx, on resume)
+
+```text
+Checkpoint 2 verified: commit 3cf34f9, 6 tests green, the restructured composition reads as an inner knot court inside a petal band with ink-weighted florets. Go for checkpoint 3/5 (motion: ember transport along ink, wheel rotation, petal breathing, full layer timers, time identity tests). Same protocol: commit, hail the receipt, end your turn.
+```

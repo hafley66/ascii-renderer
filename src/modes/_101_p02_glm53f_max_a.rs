@@ -27,6 +27,7 @@ const L_WARP: u64 = 0x51;
 const L_DOT: u64 = 0x52;
 const L_FLORA: u64 = 0x53;
 const L_ORN: u64 = 0x54;
+const L_EMBER: u64 = 0x55;
 const GOLDEN: f32 = 2.3999632;
 
 const PARAMS: &[Param] = &[
@@ -154,6 +155,10 @@ struct Look {
     floret: Color,
     floret_hot: Color,
     orn: Color,
+    time: f32,
+    embers: f32,
+    ember: Color,
+    ember_hot: Color,
 }
 
 impl Look {
@@ -239,6 +244,7 @@ impl Look {
         let petal_phase = unit(hash(seed, L_FLORA, 0, 6)) * TAU;
         let floret_phase = unit(hash(seed, L_FLORA, 1, 6)) * TAU;
         let lotus = shift_hue(palette[3], p[9] as f64);
+        let ember_c = shift_hue(palette[4], p[9] as f64);
         let tint = |c: Color| glow_mod(c, p[10]);
         Look {
             seed,
@@ -276,6 +282,10 @@ impl Look {
             floret: tint(lerp_color(palette[1], lotus, 0.55)),
             floret_hot: tint(lighten(lotus, 30)),
             orn: tint(darken(lerp_color(palette[4], palette[2], 0.35), 6)),
+            time,
+            embers: p[6],
+            ember: tint(ember_c),
+            ember_hot: tint(lighten(ember_c, 55)),
         }
     }
 }
@@ -454,7 +464,8 @@ fn grow_lotus(grid: &mut Grid, ink: &mut [f32], w: usize, h: usize, look: &Look)
         let ink_l = ink_at(ink, w, h, look, look.r_lo * (a0 + probe).cos(), look.r_lo * (a0 + probe).sin());
         let ink_r = ink_at(ink, w, h, look, look.r_lo * (a0 - probe).cos(), look.r_lo * (a0 - probe).sin());
         let bend = (ink_l - ink_r) * persist * 0.30;
-        let grow = 0.78 + 0.45 * ink_base.min(1.0);
+        let breathe = 0.9 + 0.1 * (look.time * 0.8 + unit(hash(look.seed, L_FLORA, i as u64, 8)) * TAU).sin();
+        let grow = (0.78 + 0.45 * ink_base.min(1.0)) * breathe;
         let steps = ((span * grow) * 2.2).ceil().max(5.0) as usize;
         let spine_col = if ink_base > 0.45 {
             look.petal_spine
@@ -541,6 +552,41 @@ fn paint_ornament(grid: &mut Grid, ink: &[f32], w: usize, h: usize, look: &Look)
     }
 }
 
+/// Ember light rides the ink: each ember follows one isoline target, snaps to
+/// the drawn curve, and glows brighter where the lotus reinforced the ink.
+fn paint_embers(grid: &mut Grid, ink: &[f32], w: usize, h: usize, look: &Look) {
+    let count = (look.embers * 24.0).round() as usize;
+    for e in 0..count {
+        let he = hash(look.seed, L_EMBER, e as u64, 7);
+        let dir = if he & 1 == 0 { 1.0 } else { -1.0 };
+        let speed = (0.20 + 0.45 * unit(he >> 8)) * dir;
+        let li = ((he >> 20) as usize) % look.n_lines.max(1);
+        let target = look.targets[li];
+        let a = unit(he >> 32) * TAU + speed * look.time + look.turn;
+        let row = ((target * a.sin() + look.cy - 0.5).round() as i64).clamp(0, h as i64 - 1) as usize;
+        let (lo, hi) = look.row_at[row];
+        let dots = &look.dots[lo as usize..hi as usize];
+        let f = field_at(look, target * a.cos(), target * a.sin(), dots);
+        let rho = (target - (f - target)).max(0.35);
+        if let Some((xi, yi)) = world_cell(look, rho, a, w, h) {
+            let v = ink[yi * w + xi];
+            if v < 0.08 {
+                continue;
+            }
+            let pulse = 0.5 + 0.5 * (look.time * 2.2 + unit(he >> 48) * TAU).sin();
+            let b = v.min(1.2) * 0.7 + pulse * 0.5;
+            let (ch, col) = if b > 1.0 {
+                ('*', look.ember_hot)
+            } else if b > 0.7 {
+                ('o', look.ember)
+            } else {
+                ('+', look.line_dim)
+            };
+            grid[yi][xi] = Cell::new(ch, col);
+        }
+    }
+}
+
 fn draw(frame: &mut ModeFrame<'_>, p: &[f32; KNOBS]) {
     let (w, h) = (frame.width, frame.height);
     if w < 2 || h < 2 {
@@ -568,6 +614,7 @@ fn draw(frame: &mut ModeFrame<'_>, p: &[f32; KNOBS]) {
             measure_layer(NAME, "knots", || paint_knots(frame.grid, ink, phi, w, h, &look));
             measure_layer(NAME, "lotus", || grow_lotus(frame.grid, ink, w, h, &look));
             measure_layer(NAME, "ornament", || paint_ornament(frame.grid, ink, w, h, &look));
+            measure_layer(NAME, "embers", || paint_embers(frame.grid, ink, w, h, &look));
         });
     });
 }
@@ -603,7 +650,16 @@ mod tests {
     fn text(grid: &Grid) -> String {
         grid_to_plain(grid).join("\n")
     }
+    #[test]
+    fn kolam_80x24_t6() {
+        insta::assert_snapshot!("kolam_80x24_t6", text(&frame(80, 24, 42, 6.0, &knobs())));
+    }
 
+    #[test]
+    fn time_moves_the_mandala() {
+        let k = knobs();
+        assert_ne!(text(&frame(90, 30, 42, 0.0, &k)), text(&frame(90, 30, 42, 4.0, &k)));
+    }
     #[test]
     fn kolam_80x24() {
         insta::assert_snapshot!("kolam_80x24", text(&frame(80, 24, 42, 0.0, &knobs())));
