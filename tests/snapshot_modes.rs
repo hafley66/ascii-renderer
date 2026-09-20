@@ -1483,3 +1483,8 @@ fn kolam_seed_42() {
 fn shamsa_seed_42() {
     insta::assert_snapshot!(render(&["42", "shamsa", "moss"]));
 }
+
+#[test]
+fn isfahan_seed_42() {
+    insta::assert_snapshot!(render(&["42", "isfahan", "mitla"]));
+}
