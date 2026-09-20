@@ -155,6 +155,8 @@ impl Look {
         let v0 = MARGIN;
         let v1 = (hf - MARGIN).max(v0 + 2.0);
         let span = (u1 - u0).min(v1 - v0);
+        let rim_dim = darken(palette[3], 10);
+        let rim_lit = lighten(palette[3], 25);
         Look {
             seed,
             w: wf,
@@ -175,15 +177,15 @@ impl Look {
             wall_fleck: darken(palette[1], 30),
             strap_dim: darken(palette[2], 30),
             strap_lit: lighten(palette[4], 10),
-            rim_dim: darken(palette[3], 10),
-            rim_lit: lighten(palette[3], 25),
+            rim_dim,
+            rim_lit,
             gate_bg: darken(palette[0], 45),
             gate_dust: darken(palette[1], 45),
             fret_color: lerp_color(palette[1], palette[3], 0.35),
-            petal_dim: darken(palette[3], 20),
-            petal_lit: lighten(palette[4], 15),
-            cloud_dim: darken(palette[2], 35),
-            cloud_lit: lighten(palette[2], 8),
+            petal_dim: lerp_color(rim_dim, rim_lit, 0.22),
+            petal_lit: lerp_color(rim_dim, rim_lit, 0.62),
+            cloud_dim: lerp_color(rim_dim, rim_lit, 0.14),
+            cloud_lit: lerp_color(rim_dim, rim_lit, 0.38),
         }
     }
 
@@ -920,6 +922,74 @@ mod tests {
     #[test]
     fn moongate_seed42_t9() {
         insta::assert_snapshot!("moongate_80x24_t9", text(&frame(80, 24, 42, 9.0, &knobs())));
+    }
+    #[test]
+    fn every_knob_step_deforms_the_frame() {
+        let ladders: [(usize, [f32; 5], f32); 7] = [
+            (0, [0.0, 0.2, 0.45, 0.7, 0.9], 0.0),
+            (1, [1.0, 3.0, 5.0, 7.0, 8.0], 0.0),
+            (2, [0.0, 0.25, 0.5, 0.75, 1.0], 0.0),
+            (3, [0.0, 0.25, 0.5, 0.75, 1.0], 0.0),
+            (4, [0.0, 0.5, 1.0, 1.5, 2.0], 3.0),
+            (5, [0.0, 0.25, 0.5, 0.75, 1.0], 0.0),
+            (6, [0.0, 0.5, 1.0, 1.5, 2.0], 4.0),
+        ];
+        for (k, ladder, t) in ladders {
+            let mut prev = String::new();
+            for (i, v) in ladder.iter().enumerate() {
+                let mut kk = knobs();
+                kk[k] = *v;
+                let cur = text(&frame(90, 30, 42, t, &kk));
+                if i > 0 {
+                    assert_ne!(prev, cur, "knob {} ladder step {}", k, i);
+                }
+                prev = cur;
+            }
+        }
+    }
+
+    #[test]
+    fn hierarchy_keeps_the_ring_brightest() {
+        let lum = |c: Color| match c {
+            Color::Rgb { r, g, b } => {
+                0.2126f32 * r as f32 + 0.7152 * g as f32 + 0.0722 * b as f32
+            }
+            _ => 0.5,
+        };
+        for seed in [42u64, 7, 1337] {
+            let arr: [f32; KNOBS] = knobs().try_into().unwrap();
+            let look = Look::new(seed, 80, 24, &crate::color::make_palette(seed), 0.0, &arr);
+            assert!(lum(look.rim_lit) >= lum(look.petal_lit), "seed {}", seed);
+            assert!(lum(look.petal_lit) >= lum(look.petal_dim), "seed {}", seed);
+            assert!(lum(look.petal_lit) >= lum(look.cloud_lit), "seed {}", seed);
+            assert!(lum(look.cloud_lit) >= lum(look.cloud_dim), "seed {}", seed);
+        }
+    }
+
+    #[test]
+    fn narrow_frames_clip_safely() {
+        for (w, h) in [(8usize, 30usize), (40usize, 8usize), (3usize, 3usize)] {
+            let g = frame(w, h, 42, 0.0, &knobs());
+            assert_eq!(g.len(), h, "{}x{}", w, h);
+            for row in &g {
+                assert_eq!(row.len(), w, "{}x{}", w, h);
+            }
+        }
+    }
+
+    #[test]
+    fn moongate_seed7() {
+        insta::assert_snapshot!("moongate_seed7_80x24", text(&frame(80, 24, 7, 0.0, &knobs())));
+    }
+
+    #[test]
+    fn moongate_seed1337() {
+        insta::assert_snapshot!("moongate_seed1337_80x24", text(&frame(80, 24, 1337, 0.0, &knobs())));
+    }
+
+    #[test]
+    fn moongate_wide_200x60() {
+        insta::assert_snapshot!("moongate_200x60_seed42", text(&frame(200, 60, 42, 0.0, &knobs())));
     }
 
     #[test]
