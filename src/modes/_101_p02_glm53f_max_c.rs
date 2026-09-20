@@ -492,11 +492,12 @@ fn paint_night(grid: &mut Grid, w: usize, h: usize, look: &Look) {
 
 /// Collapsed cells show their vertex scaffold, waiting for growth.
 fn paint_scaffold(grid: &mut Grid, look: &Look, field: &GirihField) {
-    let fg = darken(look.stone, 10);
     for tile in &field.tiles {
         if tile.live {
             continue;
         }
+        let pulse = 0.35 + 0.65 * lantern_wave(look, tile.cx, tile.cy);
+        let fg = lerp_color(darken(look.stone, 18), look.stone, pulse);
         match tile.variant {
             2 => {
                 let (hx, hy) = (tile.radius * 0.22, tile.radius * 0.20);
@@ -603,13 +604,18 @@ fn strap_glyph(bits: u8) -> char {
     }
 }
 
-/// Lantern phase: a luminance wave rides outward from the focus.
+/// Lantern wave in [0, 1]: one phase field riding outward from the focus;
+/// every layer samples the same field so motion reveals one system.
 #[inline]
-fn strap_glow(look: &Look, wx: f32, wy: f32) -> f32 {
+fn lantern_wave(look: &Look, wx: f32, wy: f32) -> f32 {
     let (lx, ly) = look.lantern;
     let d = ((wx - lx).powi(2) + (wy - ly).powi(2)).sqrt();
-    let wave = 0.5 + 0.5 * (TAU * (look.time * 0.18 - d * 0.16)).sin();
-    (0.18 + look.lumina * 0.65 * (0.4 + 0.6 * wave)).clamp(0.0, 1.0)
+    (0.5 + 0.5 * (TAU * (look.time * 0.18 - d * 0.16)).sin()).clamp(0.0, 1.0)
+}
+
+#[inline]
+fn strap_glow(look: &Look, wx: f32, wy: f32) -> f32 {
+    (0.18 + look.lumina * 0.65 * (0.4 + 0.6 * lantern_wave(look, wx, wy))).clamp(0.0, 1.0)
 }
 
 /// Recolor crossings as knots and stamp the focal glyphs.
@@ -620,9 +626,9 @@ fn paint_knots(grid: &mut Grid, mask: &[u8], w: usize, h: usize, look: &Look, fi
             continue;
         }
         let (gx, gy) = ((idx % w) as i32, (idx / w) as i32);
-        let ch = if bits.count_ones() >= 3 { GLYPH_NODE } else { strap_glyph(bits) };
-        let glow = strap_glow(look, look.wx(gx as f32), look.wy(gy as f32));
-        let fg = lerp_color(look.knot, lighten(look.knot, 60), glow);
+        let wave = lantern_wave(look, look.wx(gx as f32), look.wy(gy as f32));
+        let ch = if bits.count_ones() >= 3 || wave > 0.82 { GLYPH_NODE } else { strap_glyph(bits) };
+        let fg = lerp_color(look.knot, lighten(look.knot, 60), strap_glow(look, look.wx(gx as f32), look.wy(gy as f32)));
         put(grid, gx, gy, Cell::with_bg(ch, fg, look.void));
     }
     for tile in &field.tiles {
@@ -631,7 +637,11 @@ fn paint_knots(grid: &mut Grid, mask: &[u8], w: usize, h: usize, look: &Look, fi
         }
         let (cx, cy) = (look.gx(tile.cx).round() as i32, look.gy(tile.cy).round() as i32);
         match tile.variant {
-            0 => put(grid, cx, cy, Cell::with_bg(GLYPH_HEART, lighten(look.bright, 20), look.void)),
+            0 => {
+                let flick = lantern_wave(look, tile.cx, tile.cy);
+                let ch = if flick > 0.30 { GLYPH_HEART } else { GLYPH_EYE };
+                put(grid, cx, cy, Cell::with_bg(ch, lighten(look.bright, 20), look.void));
+            }
             2 => put(grid, cx, cy, Cell::with_bg(GLYPH_EYE, look.strap[1], look.void)),
             _ => {}
         }
@@ -712,12 +722,14 @@ fn paint_crown(grid: &mut Grid, w: usize, h: usize, look: &Look) {
             if (ring + s).rem_euclid(2) == 1 {
                 continue;
             }
-            let fg = match ring {
+            let base = match ring {
                 1 => darken(look.stone, 18),
                 2 => darken(look.stone, 10),
                 3 => look.stone,
                 _ => lighten(look.stone, 5),
             };
+            let breathe = 0.5 + 0.5 * (TAU * (look.time * 0.12 - ring as f32 * 0.4)).sin();
+            let fg = lerp_color(base, lighten(base, 30), breathe);
             let ch = if u - u.floor() < 0.22 && ring >= 2 {
                 if wx > 0.0 { GLYPH_D1 } else { GLYPH_D2 }
             } else {
@@ -773,6 +785,33 @@ mod tests {
     #[test]
     fn isfahan_seed42_clip() {
         insta::assert_snapshot!("isfahan_clip_40x12", text(&frame(40, 12, 42, 0.0, &knobs())));
+    }
+
+    #[test]
+    fn isfahan_seed42_t4() {
+        insta::assert_snapshot!("isfahan_80x24_t4", text(&frame(80, 24, 42, 4.0, &knobs())));
+    }
+
+    #[test]
+    fn isfahan_seed42_t9() {
+        insta::assert_snapshot!("isfahan_80x24_t9", text(&frame(80, 24, 42, 9.0, &knobs())));
+    }
+
+    #[test]
+    fn time_moves_and_nearby_lumina_keeps_the_drawing() {
+        let k = knobs();
+        assert_ne!(text(&frame(90, 30, 42, 0.0, &k)), text(&frame(90, 30, 42, 4.0, &k)));
+        let mut lo = knobs();
+        let mut hi = knobs();
+        lo[2] = 0.50;
+        hi[2] = 0.55;
+        assert_eq!(text(&frame(90, 30, 42, 0.0, &lo)), text(&frame(90, 30, 42, 0.0, &hi)));
+        let a = frame(90, 30, 42, 0.0, &lo);
+        let b = frame(90, 30, 42, 0.0, &hi);
+        assert!(a
+            .iter()
+            .zip(b.iter())
+            .any(|(ra, rb)| ra.iter().zip(rb.iter()).any(|(ca, cb)| ca.fg != cb.fg)));
     }
 
     #[test]

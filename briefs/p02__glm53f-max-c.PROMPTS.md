@@ -35,3 +35,7 @@ Go: plan approved with two corrections. (1) Prompt record: your lane received th
 ## 3. 2026-09-20T05:14:30-0400 (recorded at receipt) | parent go for checkpoint 2 (boop m-02ebd495 from herd)
 
 Checkpoint 1 verified: commit 8cfbd6f, 749-line isfahan mode, focused and cli suites green, the two full-suite failures correctly attributed to pre-existing causes via stash, snapshot reads as girih strapwork inside the portal outline. Go for checkpoint 2/5: muqarnas crown, shadow bands, glyph and color hierarchy. Same protocol: commit, hail the receipt, end your turn.
+
+## 4. 2026-09-20T05:41:10-0400 (recorded at receipt) | parent go for checkpoint 3 (boop m-08895793 from herd)
+
+Checkpoint 2 verified: commit dac1186, module and CLI green, the pre-existing failures attributed correctly, and the crown tiers read as concentric rings with radial seams. Go for checkpoint 3/5 (subdivision-wave animation and live knobs). Same protocol: commit, hail the receipt, end your turn.
