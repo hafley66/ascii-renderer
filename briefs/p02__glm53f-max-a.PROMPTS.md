@@ -352,3 +352,27 @@ Checkpoint 2 verified: commit 3cf34f9, 6 tests green, the restructured compositi
 ```text
 Checkpoint 3 verified: commit 78d47f7, 8 tests green, motion phases inspected, ember glyphs ride the ink lines and the wheel breathes. Go for checkpoint 4/5 (visual refinement and the full snapshot set: canonical, two phases, variant, small grid, nearby control pair, all inspected). Same protocol: commit, hail the receipt, end your turn.
 ```
+
+---
+
+## Entry 7
+
+- channel: boop m-65d1607a from herd (parent)
+- received: 2026-09-20T05:40Z (approx, on resume)
+
+```text
+Checkpoint 4 verified: commit e6d3c2a, full snapshot set inspected. Go for checkpoint 5/5 (validation: full cargo test, scripts/13_e2e.sh under the probe guard with unexecuted cases named, perf layer_coverage and knob_sweep under existing limits, perf receipt in briefs/kolam.md, final commit with Boop-Status: done). Same protocol: commit, hail the receipt, end your turn.
+```
+
+---
+
+## Entry 8
+
+- channel: boop m-65d1607a from herd (parent)
+- received: 2026-09-20T05:52Z (approx, on resume)
+
+```text
+Checkpoint 4 verified: commit e6d3c2a, full snapshot set inspected. Go for checkpoint 5/5 (validation: full cargo test, scripts/13_e2e.sh under the probe guard with unexecuted cases named, perf layer_coverage and knob_sweep under existing limits, perf receipt in briefs/kolam.md, final commit with Boop-Status: done). Same protocol: commit, hail the receipt, end your turn.
+```
+
+Note: entry 7 and entry 8 quote the same parent message; entry 7 was recorded at the start of checkpoint 5 work, entry 8 closes the record before the final commit.
