@@ -25,13 +25,16 @@ const DOT_CUT: f32 = 2.9;
 
 const L_WARP: u64 = 0x51;
 const L_DOT: u64 = 0x52;
+const L_FLORA: u64 = 0x53;
+const L_ORN: u64 = 0x54;
+const GOLDEN: f32 = 2.3999632;
 
 const PARAMS: &[Param] = &[
     param!("CURL", "knot weave amplitude", 0.0, 1.2, 0.5, 0.02),
     param!("RINGS", "pulli dot rings", 2.0, 7.0, 4.0, 1.0),
-    param!("PETALS", "lotus petals", 6.0, 36.0, 18.0, 1.0),
+    param!("PETALS", "lotus petals", 4.0, 36.0, 12.0, 1.0),
     param!("FLORETS", "phyllotaxis fill of the court", 0.0, 1.0, 0.6, 0.02),
-    param!("SPREAD", "mandala radius", 0.4, 1.0, 0.78, 0.02),
+    param!("SPREAD", "mandala radius", 0.4, 1.0, 0.92, 0.02),
     param!("PERSIST", "ink reinforcement feedback", 0.0, 1.0, 0.55, 0.02),
     param!("EMBERS", "light riding the ink", 0.0, 1.5, 0.6, 0.05),
     param!("SPIN", "wheel rotation rad/s", -0.3, 0.3, 0.05, 0.01),
@@ -139,6 +142,18 @@ struct Look {
     dot: Color,
     dot_hot: Color,
     dot_glyph: char,
+    petals: usize,
+    florets: usize,
+    petal_phase: f32,
+    floret_phase: f32,
+    r_lo: f32,
+    r_hi: f32,
+    persist: f32,
+    petal_edge: Color,
+    petal_spine: Color,
+    floret: Color,
+    floret_hot: Color,
+    orn: Color,
 }
 
 impl Look {
@@ -148,10 +163,11 @@ impl Look {
         let cx = w as f32 * 0.5;
         let cy = h as f32 * 0.5;
         let mut n_rings = p[1].round().clamp(1.0, MAX_RINGS as f32) as usize;
-        while n_rings > 1 && radius / (n_rings as f32 + 0.6) < 1.7 {
+        let court = radius * 0.62;
+        while n_rings > 1 && court / (n_rings as f32 + 0.6) < 1.45 {
             n_rings -= 1;
         }
-        let pitch = radius / (n_rings as f32 + 0.6);
+        let pitch = court / (n_rings as f32 + 0.6);
         let curl = p[0];
         let turn = p[7] * time;
         let wobble = 0.10 * curl;
@@ -175,8 +191,7 @@ impl Look {
         for i in 1..n_rings {
             targets[i] = (ring_r[i - 1] + ring_r[i]) * 0.5;
         }
-        targets[n_rings] = radius * 0.97;
-        let n_lines = n_rings + 1;
+        let n_lines = n_rings;
         // Pulli dots: arc spacing near 2.9 world units, staggered per ring.
         let mut dots = Vec::new();
         for k in 0..n_rings {
@@ -216,6 +231,14 @@ impl Look {
             row_at.push((lo as u32, hi as u32));
         }
         let bias = shift_hue(palette[2], p[9] as f64);
+        let petals = p[2].round().clamp(4.0, 36.0) as usize;
+        let florets = (40.0 + 320.0 * p[3].clamp(0.0, 1.0)) as usize;
+        let r_lo = radius * 0.66;
+        let r_hi = radius * 0.98;
+        let persist = p[5];
+        let petal_phase = unit(hash(seed, L_FLORA, 0, 6)) * TAU;
+        let floret_phase = unit(hash(seed, L_FLORA, 1, 6)) * TAU;
+        let lotus = shift_hue(palette[3], p[9] as f64);
         let tint = |c: Color| glow_mod(c, p[10]);
         Look {
             seed,
@@ -241,6 +264,18 @@ impl Look {
             dot: tint(lerp_color(palette[1], palette[2], 0.45)),
             dot_hot: tint(lighten(palette[4], 14)),
             dot_glyph: if pitch > 2.2 { '∙' } else { '·' },
+            petals,
+            florets,
+            petal_phase,
+            floret_phase,
+            r_lo,
+            r_hi,
+            persist,
+            petal_edge: tint(lerp_color(lotus, bias, 0.25)),
+            petal_spine: tint(lighten(lotus, 22)),
+            floret: tint(lerp_color(palette[1], lotus, 0.55)),
+            floret_hot: tint(lighten(lotus, 30)),
+            orn: tint(darken(lerp_color(palette[4], palette[2], 0.35), 6)),
         }
     }
 }
@@ -381,6 +416,131 @@ fn paint_knots(grid: &mut Grid, ink: &mut [f32], phi: &[f32], w: usize, h: usize
     }
 }
 
+/// World (rho, angle) to cell coordinates, with bounds.
+#[inline]
+fn world_cell(look: &Look, rho: f32, a: f32, w: usize, h: usize) -> Option<(usize, usize)> {
+    let x = rho * a.cos() * look.aspect + look.cx - 0.5;
+    let y = rho * a.sin() + look.cy - 0.5;
+    if x < 0.0 || y < 0.0 {
+        return None;
+    }
+    let (xi, yi) = (x as usize, y as usize);
+    if xi >= w || yi >= h {
+        return None;
+    }
+    Some((xi, yi))
+}
+
+/// Nearest-cell sample of the shared ink field at a world point.
+#[inline]
+fn ink_at(ink: &[f32], w: usize, h: usize, look: &Look, wx: f32, wy: f32) -> f32 {
+    match world_cell(look, (wx * wx + wy * wy).sqrt(), wy.atan2(wx), w, h) {
+        Some((xi, yi)) => ink[yi * w + xi],
+        None => 0.0,
+    }
+}
+
+/// The lotus: rim petals lean toward ink-rich arcs and grow longer on them,
+/// and a phyllotaxis court fills the inner disc; both deposit reinforcement.
+fn grow_lotus(grid: &mut Grid, ink: &mut [f32], w: usize, h: usize, look: &Look) {
+    let persist = look.persist;
+    let span = look.r_hi - look.r_lo;
+    let slot = TAU * (look.r_lo + look.r_hi) * 0.5 / look.petals as f32;
+    let w_max = slot * 0.36;
+    for i in 0..look.petals {
+        let a0 = look.petal_phase + i as f32 * TAU / look.petals as f32 + look.turn;
+        let ink_base = ink_at(ink, w, h, look, look.r_lo * a0.cos(), look.r_lo * a0.sin());
+        let probe = 0.30f32;
+        let ink_l = ink_at(ink, w, h, look, look.r_lo * (a0 + probe).cos(), look.r_lo * (a0 + probe).sin());
+        let ink_r = ink_at(ink, w, h, look, look.r_lo * (a0 - probe).cos(), look.r_lo * (a0 - probe).sin());
+        let bend = (ink_l - ink_r) * persist * 0.30;
+        let grow = 0.78 + 0.45 * ink_base.min(1.0);
+        let steps = ((span * grow) * 2.2).ceil().max(5.0) as usize;
+        let spine_col = if ink_base > 0.45 {
+            look.petal_spine
+        } else {
+            look.petal_edge
+        };
+        for s in 0..=steps {
+            let t = s as f32 / steps as f32;
+            let rho = look.r_lo + span * grow * t;
+            let a = a0 + bend * (t * PI).sin();
+            let halfw = w_max * (PI * t).sin().powf(0.75);
+            let d_off = (halfw / rho.max(0.6)).min(0.6);
+            if s == steps {
+                if let Some((xi, yi)) = world_cell(look, rho, a, w, h) {
+                    grid[yi][xi] = Cell::new('∧', spine_col);
+                    ink[yi * w + xi] += 0.4 * persist * (0.5 + ink_base.min(1.0));
+                }
+                continue;
+            }
+            for side in [-1.0f32, 1.0] {
+                if let Some((xi, yi)) = world_cell(look, rho, a + d_off * side, w, h) {
+                    grid[yi][xi] = Cell::new('⌒', look.petal_edge);
+                    ink[yi * w + xi] += 0.3 * persist;
+                }
+            }
+            if s % 3 == 0 {
+                if let Some((xi, yi)) = world_cell(look, rho, a, w, h) {
+                    grid[yi][xi] = Cell::new('~', spine_col);
+                    ink[yi * w + xi] += 0.5 * persist * (0.5 + ink_base.min(1.0));
+                }
+            }
+        }
+    }
+    // Phyllotaxis court: golden-angle florets stipple in, denser on ink.
+    let court_r = look.r_lo * 0.92;
+    for i in 0..look.florets {
+        let rho = court_r * ((i + 1) as f32 / look.florets as f32).sqrt();
+        let a = look.floret_phase + (i + 1) as f32 * GOLDEN + look.turn;
+        if let Some((xi, yi)) = world_cell(look, rho, a, w, h) {
+            if grid[yi][xi].ch == ' ' {
+                let v = ink[yi * w + xi];
+                let draw_p = 0.15 + 0.55 * v.min(1.0);
+                if unit(hash(look.seed, L_FLORA, i as u64, 9)) < draw_p {
+                    let (ch, col) = if v > 0.5 {
+                        ('●', look.floret_hot)
+                    } else if v > 0.18 {
+                        ('∙', look.floret)
+                    } else {
+                        ('·', look.floret)
+                    };
+                    grid[yi][xi] = Cell::new(ch, col);
+                    ink[yi * w + xi] += 0.28 * persist * (0.5 + v.min(1.0));
+                }
+            }
+        }
+    }
+}
+
+/// Seed ornament dots the blank cells beside soft strokes: it samples the
+/// richest neighbor ink and fires in a mid band, avoiding reinforced cores.
+fn paint_ornament(grid: &mut Grid, ink: &[f32], w: usize, h: usize, look: &Look) {
+    let rows = grid.len().min(h);
+    for y in (0..rows).step_by(2) {
+        let row = &mut grid[y];
+        let south = (y + 1).min(h - 1);
+        for x in (0..w).step_by(2) {
+            if row[x].ch != ' ' {
+                continue;
+            }
+            let east = (x + 1).min(w - 1);
+            let west = x.saturating_sub(1);
+            let v = ink[y * w + east]
+                .max(ink[y * w + west])
+                .max(ink[south * w + x])
+                .max(ink[y.saturating_sub(1) * w + x]);
+            if v < 0.2 {
+                continue;
+            }
+            let z = (v - 0.38) / 0.16;
+            if unit(hash(look.seed, L_ORN, x as u64, y as u64)) < (-z * z).exp() {
+                row[x] = Cell::new('◇', look.orn);
+            }
+        }
+    }
+}
+
 fn draw(frame: &mut ModeFrame<'_>, p: &[f32; KNOBS]) {
     let (w, h) = (frame.width, frame.height);
     if w < 2 || h < 2 {
@@ -406,6 +566,8 @@ fn draw(frame: &mut ModeFrame<'_>, p: &[f32; KNOBS]) {
                 *v = 0.0;
             }
             measure_layer(NAME, "knots", || paint_knots(frame.grid, ink, phi, w, h, &look));
+            measure_layer(NAME, "lotus", || grow_lotus(frame.grid, ink, w, h, &look));
+            measure_layer(NAME, "ornament", || paint_ornament(frame.grid, ink, w, h, &look));
         });
     });
 }
@@ -450,6 +612,24 @@ mod tests {
     #[test]
     fn kolam_clip_40x12() {
         insta::assert_snapshot!("kolam_clip_40x12", text(&frame(40, 12, 42, 0.0, &knobs())));
+    }
+
+    #[test]
+    fn kolam_lotus_variant() {
+        let mut k = knobs();
+        k[2] = 30.0;
+        k[3] = 0.9;
+        k[5] = 0.9;
+        insta::assert_snapshot!("kolam_lotus_variant", text(&frame(80, 24, 42, 0.0, &k)));
+    }
+
+    #[test]
+    fn petals_change_the_rim() {
+        let k = knobs();
+        let a = text(&frame(90, 30, 42, 0.0, &k));
+        let mut wide = k.clone();
+        wide[2] = 6.0;
+        assert_ne!(a, text(&frame(90, 30, 42, 0.0, &wide)));
     }
 
     #[test]

@@ -319,3 +319,14 @@ quoted in full in the transcript log of record kept by the harness.
 ```text
 Go: plan approved. Execute checkpoint 1 now. At every checkpoint: finish, validate, commit, hail me the receipt with boop beep parent --no-wait, then end your turn for the next go. Keep briefs/p02__glm53f-max-a.PROMPTS.md current and verbatim.
 ```
+
+---
+
+## Entry 4
+
+- channel: boop m-9bd2589f from herd (parent)
+- received: 2026-09-20T05:33Z (approx, on resume)
+
+```text
+Checkpoint 1 verified: commit 25aa0ef, tests green, the knot lattice reads clean at 80x24 and clips at 40x12. Go for checkpoint 2/5 (coupling). Two notes: skip further CLAUDE.md modes-list edits, AGENTS.md supersedes the stale list, query registry names from code; and keep the receipt shape, commit, hail, then end your turn.
+```
