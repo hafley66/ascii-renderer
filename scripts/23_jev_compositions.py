@@ -31,14 +31,14 @@ def read_grid(text):
     return cells
 
 
-def capture(name, scene, answers):
-    cache = OUT/'07_director'/f'{name}.native.grid'
+def capture(name, scene, answers, variant='', seed=4269):
+    cache = OUT/'07_director'/f'{name}{variant}.native.grid'
     settings = {}
     for key, values in scene['params'].items():
         choice = answers[f'{name}_{key}']['choice']
         settings['ASCII_P_'+key] = str(values[['low','medium','high'].index(choice)])
     settings.update(ASCII_GRID_DUMP='1', ASCII_GRID_W=str(W), ASCII_GRID_H=str(H), ASCII_T='5.0')
-    command = [str(lab.ROOT/'target/release/ascii-renderer'), '4269', scene['mode'], scene['theme']]
+    command = [str(lab.ROOT/'target/release/ascii-renderer'), str(seed), scene['mode'], scene['theme']]
     if not cache.exists():
         env = {k:v for k,v in os.environ.items() if not k.startswith('ASCII_')}
         result = subprocess.run(command, env=env|settings, text=True, capture_output=True, timeout=15, check=True)

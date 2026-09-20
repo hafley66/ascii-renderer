@@ -78,7 +78,8 @@ def moth(phase=0):
     for y in range(H):
         v=(y-H*.48)/(H*.45)
         for x in range(W):
-            u=(x-W/2)/(W*.45);a=abs(u)
+            u=(x-W/2)/(W*.45)
+            a=abs(u)/(1-.12*k['turbulence']*(.5+.5*math.sin(phase)))
             # Two oblique wing lobes on each side, sharing a narrow thorax.
             dx=a-.43;dy=v+.22
             X=dx*.90-dy*.43;Y=dx*.43+dy*.90
@@ -96,11 +97,15 @@ def moth(phase=0):
                 power=(.07+.55*filigree+edge*1.2+eyes*1.8+iris)*(.45+.55*min(1,veins*5))
                 if veins<.035:power+=.5
                 i=y*W+x
-                mean=[sum(p[i]*color[c] for p,color in zip(planes,palette)) for c in range(3)]
+                mirror=y*W+(W-1-x)
+                mean=[sum(((1-k['symmetry']*.5)*p[i]+k['symmetry']*.5*p[mirror])*color[c]
+                          for p,color in zip(planes,palette)) for c in range(3)]
                 warm=min(1,eyes+edge*.2)
                 color=[mean[c]*(1-warm)+[245,183,94][c]*warm for c in range(3)]
                 color=[min(255,v*1.5+30) for v in color]
-                ink.dot(x,y,power*2,color,'/' if u*v<0 else '\\' if veins<.08 else None)
+                color=[v*(1-.2*k['warmth'])+[245,174,85][c]*.2*k['warmth'] for c,v in enumerate(color)]
+                ink.dot(x,y,power*(1+1.5*k['luminescence']),color,
+                        ('/' if u*v<0 else '\\') if veins<.08 else None)
             body=(u/.038)**2+((v-.14)/.55)**2
             if body<1:
                 ink.dot(x,y,1.5*(1-body)+.3,(245,182+35*math.sin(v*65),95),'=')
@@ -146,15 +151,16 @@ def medusa(phase=0):
     for n in range(filaments):
         start=(n/(filaments-1)*2-1)*.73
         length=rng.uniform(.55,1.25)*(1-.2*abs(start))
-        frequency=rng.uniform(5,12)
+        frequency=rng.uniform(5,8+8*k['turbulence'])
         for j in range(240):
             t=j/239
-            u=start*(1-.34*t)+math.sin(t*frequency+phase+n*.71)*(.015+.055*t)+.13*t*t*math.sin(n*.21+phase)
+            u=start*(1-.34*t)+math.sin(t*frequency+phase+n*.71)*(.015+.055*t)+.13*(1-.5*k['symmetry'])*t*t*math.sin(n*.21+phase)
             v=-.2+t*length+.06*math.cos(n*.63)
             ix=max(0,min(23,int((u+1)*12)));iy=max(0,min(23,int((v+1)*12)))
             model=occupancy[iy*24+ix]
-            color=(80+100*(n%7==0),170+65*model,225-70*(n%7==0))
-            ink.point(u,v,(.19+.25*model)*(1-.55*t),color)
+            warm=n%max(2,round(10-7*k['warmth']))==0
+            color=(80+155*warm,170+65*model,225-100*warm)
+            ink.point(u,v,(.19+.25*model)*(1-.55*t)*(.7+k['luminescence']),color)
             if n%8==0 and j%24<3:ink.point(u,v,.8,(245,212,145),'o')
     ink.stars(87,220)
     return ink
@@ -167,7 +173,7 @@ def engine(phase=0):
     count=round(1400+1600*k['complexity'])
     for particle in range(count):
         u,v=rng.uniform(-1.1,1.1),rng.uniform(-1.1,1.1)
-        warm=particle%4==0
+        warm=particle%max(2,round(7-5*k['warmth']))==0
         color=(242,161,77) if warm else (58,184,213)
         for step in range(150):
             x=int(W/2+u*W*.45);y=int(H/2+v*H*.45)
@@ -175,9 +181,9 @@ def engine(phase=0):
             idx=y*W+x
             root,water,glass,spore=[p[idx] for p in planes]
             # Jev material probabilities shift stream direction and turbulence.
-            du=.18*math.sin(v*8+root*4+phase)
-            dv=.15*math.sin(u*7+water*3-phase)
-            for cx,cy,spin in [(-.36,-.12,1),(.36,.16,-1)]:
+            du=(.06+.18*k['turbulence'])*math.sin(v*8+root*4+phase)
+            dv=(.05+.15*k['turbulence'])*math.sin(u*7+water*3-phase)
+            for cx,cy,spin in [(-.36,-.12,1),(.36,.12+.10*(1-k['symmetry']),-1)]:
                 dx,dy=u-cx,v-cy;r2=dx*dx+dy*dy+.055
                 du+=-dy/r2*spin*.16;dv+=dx/r2*spin*.16
             du+=.08*(planes[2][idx+1]-planes[2][idx-1])*W
@@ -185,8 +191,8 @@ def engine(phase=0):
             norm=math.hypot(du,dv)+1e-9
             u+=du/norm*.008;v+=dv/norm*.008
             if math.hypot(u,v)<.10:break
-            ink.point(u,v,.025*(.3+glass+spore+step/150),color)
-    ink.stars(391,100)
+            ink.point(u,v,.065*(.3+glass+spore+step/150)*(.5+k['luminescence']),color)
+    ink.stars(391,round(50+150*k['ornament']))
     return ink
 
 
@@ -199,7 +205,7 @@ if __name__=='__main__':
     fn={'moth':moth,'medusa':medusa,'engine':engine}[args.scene]
     ink=fn(args.phase)
     number={'moth':13,'medusa':14,'engine':15}[args.scene]
-    suffix='etch' if args.etch else f'p{args.phase:g}'
+    suffix='v2_etch' if args.etch else f'v2_p{args.phase:g}'
     title={'moth':'THE MOTH THAT EATS STARS','medusa':'ABYSSAL OBSERVATORY','engine':'THE UNCERTAINTY ENGINE'}[args.scene]
     lab.save_art(f'{number}_{args.scene}_{suffix}',title+(' / ETCHING' if args.etch else ''),
                  ink.cells(1.8 if args.scene!='engine' else 1.1,args.etch),
