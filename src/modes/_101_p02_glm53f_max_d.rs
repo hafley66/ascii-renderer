@@ -769,6 +769,8 @@ fn paint_blooms(
             let fk = unit(hash(look.seed, L_BLOOM, (x as u64) << 8 | y as u64, 3));
             let fcol = lerp_color(look.petal_dim, look.petal_lit, 0.45 + 0.55 * fk);
             grid[y][x] = Cell::new('*', fcol);
+            let breath = (look.time * look.glow * 0.9 + fk * TAU + ords[idx] * TAU).sin();
+            let open = (breath + 1.0) * 0.5;
             for d in 0..4u64 {
                 let (dx, dy) = match d {
                     0 => (-1i64, -1i64),
@@ -777,6 +779,9 @@ fn paint_blooms(
                     _ => (1, 1),
                 };
                 let (nx, ny) = (x as i64 + dx, y as i64 + dy);
+                if open < d as f32 * 0.22 {
+                    continue;
+                }
                 if nx < 1 || ny < 1 || nx as usize >= w - 1 || ny as usize >= rows - 1 {
                     continue;
                 }
@@ -817,6 +822,7 @@ fn paint_clouds(grid: &mut Grid, w: usize, h: usize, look: &Look) {
         let speed = 0.9 + 0.7 * unit(hsh >> 18);
         let scale = 0.55 + 0.3 * unit(hsh >> 27);
         let phase = unit(hsh >> 33) * TAU;
+        let flow = phase + look.time * look.drift * 0.6;
         let xc = (base_x + look.time * look.drift * speed) % span - look.gate_r;
         let ccx = gcx + xc * ASPECT;
         let ccy = gcy + base_y;
@@ -827,7 +833,7 @@ fn paint_clouds(grid: &mut Grid, w: usize, h: usize, look: &Look) {
             let xoff = if row == 1 { -1.5 } else { 0.0 };
             for s in -half..=half {
                 let gx = ccx + xoff + s as f32;
-                let gy = ccy + yoff + (s as f32 * 0.7 + phase).sin() * 0.4;
+                let gy = ccy + yoff + (s as f32 * 0.7 + flow).sin() * 0.4;
                 let ix = gx.round() as i64;
                 let iy = gy.round() as i64;
                 if ix < 0 || iy < 0 || ix as usize >= w || iy as usize >= rows {
@@ -851,7 +857,8 @@ fn paint_clouds(grid: &mut Grid, w: usize, h: usize, look: &Look) {
             }
         }
         let hx = (ccx - 2.0 * scale * 2.5).round() as i64;
-        let hy = ccy.round() as i64;
+        let hy = (ccy + (look.time * look.glow * 0.7 + c as f32 * 2.1).sin() * 0.8).round()
+            as i64;
         if hx >= 0
             && hy >= 0
             && (hx as usize) < w
@@ -908,6 +915,11 @@ mod tests {
     #[test]
     fn moongate_seed42_t4() {
         insta::assert_snapshot!("moongate_80x24_t4", text(&frame(80, 24, 42, 4.0, &knobs())));
+    }
+
+    #[test]
+    fn moongate_seed42_t9() {
+        insta::assert_snapshot!("moongate_80x24_t9", text(&frame(80, 24, 42, 9.0, &knobs())));
     }
 
     #[test]

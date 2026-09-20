@@ -56,3 +56,11 @@ I end my turn after each checkpoint receipt and wait for your reply. No files to
 ## Prompt 3, parent go with region amendment, ~2026-09-20T04:44Z (approx, message in hand at 04:45:05Z)
 
 [boop m-84c0ffa1 from herd] Go, with one amendment before checkpoint 1: for spread across the four sibling runs, your region must not be Iran or India (taken). Choose one of Japan, China, Russia, Europe, or Africa; update the pattern tradition and the registry mode name to match, keep the rest of your plan shape, and state the amended region and tradition at the top of your checkpoint 1 receipt. Then execute checkpoint 1. At every checkpoint: finish, validate, commit, hail the receipt with boop beep parent --no-wait, then end your turn for the next go. Keep briefs/p02__glm53f-max-d.PROMPTS.md current and verbatim, including your plan and this message.
+
+## Prompt 4, parent go for checkpoint 2, ~2026-09-20T05:12Z (approx, m-720e014a)
+
+[boop m-720e014a from herd] Checkpoint 1 verified: commit 4a06e5d, 7/7 module and 2/2 integration green, amended region China accepted; the moon gate ring, ice-ray chords and hui-wen frets read clearly at 80x24. Go for checkpoint 2/5 (meihua blooms on junctions wired to BLOOM, xiangyun clouds inside the gate wired to DRIFT). Same protocol: commit, hail the receipt, end your turn.
+
+## Prompt 5, parent go for checkpoint 3, ~2026-09-20T05:21Z (approx, m-b3aeef5c)
+
+[boop m-b3aeef5c from herd] Checkpoint 2 verified: commit b4c3f22, 10/10 module and 2/2 integration green, meihua nodes read at the crossings and the xiangyun band holds under the ring; the joint-as-flower pivot matches real lattice construction. Go for checkpoint 3/5 (motion depth: petal breathing, cloud curl animation, three-phase snapshots, scripts/13_e2e.sh under the probe guard). Same protocol: commit, hail the receipt, end your turn.
