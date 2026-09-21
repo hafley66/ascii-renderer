@@ -21,3 +21,4 @@
 {"v": 1, "recorded_at": "2026-09-21T02:20:06.941886+00:00", "event": "image", "file": "image.png", "size": [320, 320], "sha256": "8c524893565b0f2b06fb756be9b4428bca1c3839f0af83da27dd38f7bff50248", "logical_size": [20, 20], "questions": 400}
 {"v": 1, "recorded_at": "2026-09-21T02:21:19.232428+00:00", "event": "image", "file": "image.png", "size": [320, 320], "sha256": "8c524893565b0f2b06fb756be9b4428bca1c3839f0af83da27dd38f7bff50248", "logical_size": [20, 20], "questions": 400}
 {"v": 1, "recorded_at": "2026-09-21T02:21:19.234043+00:00", "event": "validation", "offline_replay_identical": true, "network_disabled": true, "answers_validated": 400, "credentials_absent": true}
+{"v": 1, "recorded_at": "2026-09-21T02:32:24.202194+00:00", "event": "image", "file": "image.png", "size": [320, 320], "sha256": "8c524893565b0f2b06fb756be9b4428bca1c3839f0af83da27dd38f7bff50248", "logical_size": [20, 20], "questions": 400}

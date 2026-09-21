@@ -33,3 +33,9 @@ python3 scripts/27_jev_pixels.py call --folder art/jev/NEW-200-RUN
 `--scale 1` saves an actual 200×200 PNG. The state explicitly describes the input fields, history encoding, and output contract. Every 20 completed rows, `image.png` is refreshed with only those completed rows; the image record in `io.jsonl` marks whether it is complete. Full completion replaces that preview with the entire image. Requests that exceed the API token limit are recorded and split into smaller batches with the same completed-row history. Rate-limit retries are bounded and recorded. Completed pixel answers are reused when resuming.
 
 The 200×200 run exceeded the context limit at row 158 even with one question. Its log records a switch to lossless run-length history (`history_encoding` event with value `runs`), then a return to 200 questions per request. A row such as `0:100 5:100` decodes to 100 black pixels followed by 100 cyan pixels. The complete earlier pixel history is retained. The caller honors this encoding event on resume; this run's change was explicit, rather than an automatic retry policy.
+
+## Integer-indexed RGBA face
+
+`face-integer-rgba/` uses the image prompt `a face`, a 100×100 canvas, and fixed integer pixel indices `index = y*100+x`. Every question embeds its integer index, x/y coordinates, `type: rgba`, and channel name. Four Noul probabilities become `round(255*p)` RGBA values per pixel. This is the application's RGBA contract; the API's actual answer type remains Noul. There is no palette, composition prescription, prior-row context, or local image correction.
+
+`image.png` preserves all four channels. The `ansi` record in `io.jsonl` contains truecolor background escapes with alpha composited over black, one space per cell. ANSI itself has no alpha channel. Replay uses `python3 scripts/29_jev_rgba.py --offline`.
