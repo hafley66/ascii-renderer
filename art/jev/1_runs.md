@@ -39,3 +39,9 @@ The 200×200 run exceeded the context limit at row 158 even with one question. I
 `face-integer-rgba/` uses the image prompt `a face`, a 100×100 canvas, and fixed integer pixel indices `index = y*100+x`. Every question embeds its integer index, x/y coordinates, `type: rgba`, and channel name. Four Noul probabilities become `round(255*p)` RGBA values per pixel. This is the application's RGBA contract; the API's actual answer type remains Noul. There is no palette, composition prescription, prior-row context, or local image correction.
 
 `image.png` preserves all four channels. The `ansi` record in `io.jsonl` contains truecolor background escapes with alpha composited over black, one space per cell. ANSI itself has no alpha channel. Replay uses `python3 scripts/29_jev_rgba.py --offline`.
+
+### Explicit channel choices
+
+`face-integer-rgba-choices/` repeats the same 100×100 face request with four Choice answers per fixed integer pixel index. Each channel selects one of 16 explicit byte values: `0, 17, 34, …, 255`. The selected value is written directly into the RGBA PNG; returned probabilities do not determine pixel values. This provides 16 levels per channel. Requests contain 100 channel questions each. Input describes the index, coordinates, RGBA type and channel; the image description remains `a face`.
+
+Replay: `python3 scripts/29_jev_rgba.py --choices --offline`. The ANSI string in the log composites alpha over black.
