@@ -1,9 +1,0 @@
-{
-  "seconds": 0.71,
-  "question_count": 256,
-  "model": "jev-1.13.0",
-  "usage": {
-    "input_tokens": 32057,
-    "output_tokens": 27315
-  }
-}
