@@ -31,18 +31,19 @@ def choice(instructions, options):
 
 
 class Run:
-    def __init__(self, number, offline=False):
+    def __init__(self, number, offline=False, *, folder=None, prompt=USER, plan=None, batch_size=48):
         self.number = number
-        self.folder = ROOT / f'{number:02}_{NAMES[number]}'
+        self.folder = folder if folder is not None else ROOT / f'{number:02}_{NAMES[number]}'
+        self.batch_size = batch_size
         self.folder.mkdir(parents=True, exist_ok=True)
         self.offline = offline
         self.records = ([json.loads(s) for s in (self.folder/'io.jsonl').read_text().splitlines()]
                         if (self.folder/'io.jsonl').exists() else [])
         if not self.records:
-            pixels.append(self.folder, 'prompt', role='user', content=USER)
-            pixels.append(self.folder, 'plan', experiment=NAMES[number], scene=SCENE,
+            pixels.append(self.folder, 'prompt', role='user', content=prompt)
+            pixels.append(self.folder, 'plan', **(plan if plan is not None else dict(experiment=NAMES[number], scene=SCENE,
                           palette=PALETTE, renderer='28_jev_experiments.py',
-                          note='All choices returned by Jev. Fixed display mappings are documented per request.')
+                          note='All choices returned by Jev. Fixed display mappings are documented per request.')))
         reqs = {r['id']:r['body'] for r in self.records if r['event']=='request'}
         resolved = {r['request_id'] for r in self.records if r['event'] in ('response','network_error')}
         assert set(reqs)<=resolved, 'Unresolved paid request; inspect before resuming'
@@ -53,8 +54,8 @@ class Run:
     def ask(self, state, questions):
         out = {}
         items = list(questions.items())
-        for start in range(0,len(items),48):
-            payload = dict(model='jev-latest',state=state,questions=dict(items[start:start+48]))
+        for start in range(0,len(items),self.batch_size):
+            payload = dict(model='jev-latest',state=state,questions=dict(items[start:start+self.batch_size]))
             cache_key = json.dumps(payload,sort_keys=True)
             if cache_key in self.cache:
                 out.update(self.cache[cache_key]); continue
