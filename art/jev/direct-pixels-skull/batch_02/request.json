@@ -1,0 +1,538 @@
+{
+  "model": "jev-latest",
+  "state": {
+    "task": "Render a complete original 24 by 24 pixel-art image. Choose the final color of every requested pixel. All pixels belong to the same coherent image.",
+    "image": "A simple recognizable white human skull icon on a black background. Front view. A rounded cranium, two large hollow black eye sockets, a small black triangular nasal hole, white cheekbones, and a narrow jaw with separated teeth. Centered, symmetric, generous black margin. Flat two-color pixel art. No text or other objects.",
+    "canvas": {
+      "width": 24,
+      "height": 24,
+      "coordinates": "Integer coordinates, origin top-left. x=0 left, x=23 right, y=0 top, y=23 bottom. Square pixels."
+    },
+    "palette_rgb": {
+      "black": [
+        0,
+        0,
+        0
+      ],
+      "white": [
+        235,
+        237,
+        226
+      ]
+    }
+  },
+  "questions": {
+    "x8_y21": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=8, row y=21 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x9_y21": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=9, row y=21 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x10_y21": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=10, row y=21 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x11_y21": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=11, row y=21 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x12_y21": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=12, row y=21 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x13_y21": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=13, row y=21 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x14_y21": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=14, row y=21 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x15_y21": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=15, row y=21 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x16_y21": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=16, row y=21 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x17_y21": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=17, row y=21 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x18_y21": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=18, row y=21 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x19_y21": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=19, row y=21 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x20_y21": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=20, row y=21 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x21_y21": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=21, row y=21 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x22_y21": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=22, row y=21 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x23_y21": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=23, row y=21 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x0_y22": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=0, row y=22 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x1_y22": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=1, row y=22 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x2_y22": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=2, row y=22 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x3_y22": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=3, row y=22 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x4_y22": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=4, row y=22 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x5_y22": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=5, row y=22 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x6_y22": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=6, row y=22 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x7_y22": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=7, row y=22 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x8_y22": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=8, row y=22 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x9_y22": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=9, row y=22 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x10_y22": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=10, row y=22 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x11_y22": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=11, row y=22 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x12_y22": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=12, row y=22 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x13_y22": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=13, row y=22 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x14_y22": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=14, row y=22 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x15_y22": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=15, row y=22 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x16_y22": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=16, row y=22 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x17_y22": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=17, row y=22 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x18_y22": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=18, row y=22 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x19_y22": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=19, row y=22 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x20_y22": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=20, row y=22 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x21_y22": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=21, row y=22 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x22_y22": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=22, row y=22 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x23_y22": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=23, row y=22 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x0_y23": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=0, row y=23 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x1_y23": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=1, row y=23 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x2_y23": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=2, row y=23 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x3_y23": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=3, row y=23 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x4_y23": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=4, row y=23 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x5_y23": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=5, row y=23 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x6_y23": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=6, row y=23 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x7_y23": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=7, row y=23 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x8_y23": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=8, row y=23 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x9_y23": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=9, row y=23 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x10_y23": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=10, row y=23 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x11_y23": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=11, row y=23 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x12_y23": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=12, row y=23 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x13_y23": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=13, row y=23 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x14_y23": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=14, row y=23 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x15_y23": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=15, row y=23 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x16_y23": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=16, row y=23 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x17_y23": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=17, row y=23 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x18_y23": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=18, row y=23 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x19_y23": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=19, row y=23 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x20_y23": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=20, row y=23 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x21_y23": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=21, row y=23 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x22_y23": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=22, row y=23 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    },
+    "x23_y23": {
+      "type": "choice",
+      "instructions": "In the finished skull picture, is pixel at column x=23, row y=23 black or white?",
+      "criteria": {
+        "black": "The surrounding background, an eye socket, the nasal hole, or a gap between teeth.",
+        "white": "Solid skull bone."
+      }
+    }
+  }
+}

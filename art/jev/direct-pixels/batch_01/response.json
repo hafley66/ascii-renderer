@@ -1,0 +1,4617 @@
+{
+  "model": "jev-1.13.0",
+  "answers": {
+    "x0_y8": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.89,
+      "probabilities": {
+        "white": 0.0,
+        "black": 0.91,
+        "pale_cyan": 0.0,
+        "midnight": 0.07,
+        "amber": 0.0,
+        "cyan": 0.01,
+        "blue": 0.0,
+        "deep_blue": 0.01,
+        "teal": 0.0,
+        "dark_amber": 0.0,
+        "pale_gold": 0.0
+      }
+    },
+    "x1_y8": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.65,
+      "probabilities": {
+        "white": 0.0,
+        "amber": 0.0,
+        "pale_cyan": 0.02,
+        "midnight": 0.03,
+        "black": 0.68,
+        "cyan": 0.2,
+        "blue": 0.01,
+        "dark_amber": 0.0,
+        "teal": 0.04,
+        "deep_blue": 0.01,
+        "pale_gold": 0.0
+      }
+    },
+    "x2_y8": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.63,
+      "probabilities": {
+        "white": 0.01,
+        "midnight": 0.04,
+        "pale_cyan": 0.02,
+        "black": 0.66,
+        "amber": 0.01,
+        "cyan": 0.2,
+        "blue": 0.0,
+        "deep_blue": 0.01,
+        "dark_amber": 0.01,
+        "teal": 0.04,
+        "pale_gold": 0.0
+      }
+    },
+    "x3_y8": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.53,
+      "probabilities": {
+        "white": 0.01,
+        "black": 0.5599999999999999,
+        "pale_cyan": 0.03,
+        "midnight": 0.03,
+        "amber": 0.02,
+        "cyan": 0.26,
+        "blue": 0.01,
+        "dark_amber": 0.02,
+        "deep_blue": 0.01,
+        "teal": 0.04,
+        "pale_gold": 0.01
+      }
+    },
+    "x4_y8": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.57,
+      "probabilities": {
+        "white": 0.01,
+        "midnight": 0.03,
+        "pale_cyan": 0.02,
+        "amber": 0.01,
+        "black": 0.62,
+        "cyan": 0.25,
+        "blue": 0.01,
+        "deep_blue": 0.01,
+        "dark_amber": 0.01,
+        "teal": 0.03,
+        "pale_gold": 0.0
+      }
+    },
+    "x5_y8": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.47,
+      "probabilities": {
+        "white": 0.01,
+        "black": 0.52,
+        "pale_cyan": 0.03,
+        "amber": 0.02,
+        "midnight": 0.03,
+        "cyan": 0.31,
+        "blue": 0.01,
+        "teal": 0.04,
+        "deep_blue": 0.01,
+        "dark_amber": 0.02,
+        "pale_gold": 0.0
+      }
+    },
+    "x6_y8": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.35,
+      "probabilities": {
+        "white": 0.01,
+        "black": 0.36,
+        "pale_cyan": 0.05,
+        "midnight": 0.03,
+        "amber": 0.03,
+        "cyan": 0.39999999999999997,
+        "blue": 0.01,
+        "deep_blue": 0.01,
+        "dark_amber": 0.03,
+        "teal": 0.06,
+        "pale_gold": 0.01
+      }
+    },
+    "x7_y8": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.32,
+      "probabilities": {
+        "white": 0.01,
+        "black": 0.36,
+        "pale_cyan": 0.04,
+        "amber": 0.05,
+        "midnight": 0.03,
+        "cyan": 0.39,
+        "blue": 0.01,
+        "deep_blue": 0.01,
+        "dark_amber": 0.04,
+        "teal": 0.05,
+        "pale_gold": 0.01
+      }
+    },
+    "x8_y8": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.27,
+      "probabilities": {
+        "white": 0.02,
+        "amber": 0.08,
+        "pale_cyan": 0.07,
+        "black": 0.3,
+        "midnight": 0.04,
+        "cyan": 0.33,
+        "blue": 0.01,
+        "deep_blue": 0.01,
+        "dark_amber": 0.08,
+        "teal": 0.04,
+        "pale_gold": 0.02
+      }
+    },
+    "x9_y8": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.32,
+      "probabilities": {
+        "white": 0.01,
+        "midnight": 0.02,
+        "pale_cyan": 0.06,
+        "black": 0.25,
+        "amber": 0.12,
+        "cyan": 0.37,
+        "blue": 0.01,
+        "teal": 0.04,
+        "deep_blue": 0.01,
+        "dark_amber": 0.09,
+        "pale_gold": 0.02
+      }
+    },
+    "x10_y8": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.36,
+      "probabilities": {
+        "white": 0.01,
+        "black": 0.22,
+        "pale_cyan": 0.07,
+        "amber": 0.1,
+        "midnight": 0.03,
+        "cyan": 0.41,
+        "blue": 0.01,
+        "deep_blue": 0.01,
+        "teal": 0.04,
+        "dark_amber": 0.08,
+        "pale_gold": 0.02
+      }
+    },
+    "x11_y8": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.36,
+      "probabilities": {
+        "white": 0.01,
+        "midnight": 0.02,
+        "pale_cyan": 0.08,
+        "amber": 0.14,
+        "black": 0.17,
+        "cyan": 0.41,
+        "blue": 0.01,
+        "teal": 0.04,
+        "deep_blue": 0.01,
+        "dark_amber": 0.08,
+        "pale_gold": 0.03
+      }
+    },
+    "x12_y8": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.34,
+      "probabilities": {
+        "white": 0.02,
+        "midnight": 0.02,
+        "pale_cyan": 0.09,
+        "amber": 0.16999999999999998,
+        "black": 0.11,
+        "cyan": 0.39,
+        "blue": 0.01,
+        "dark_amber": 0.11,
+        "teal": 0.03,
+        "deep_blue": 0.01,
+        "pale_gold": 0.04
+      }
+    },
+    "x13_y8": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.32,
+      "probabilities": {
+        "white": 0.02,
+        "black": 0.09,
+        "pale_cyan": 0.12,
+        "midnight": 0.01,
+        "amber": 0.19,
+        "cyan": 0.38,
+        "blue": 0.01,
+        "dark_amber": 0.09,
+        "teal": 0.04,
+        "deep_blue": 0.01,
+        "pale_gold": 0.04
+      }
+    },
+    "x14_y8": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.35,
+      "probabilities": {
+        "white": 0.02,
+        "midnight": 0.02,
+        "pale_cyan": 0.12,
+        "amber": 0.2,
+        "black": 0.06,
+        "cyan": 0.39999999999999997,
+        "blue": 0.01,
+        "deep_blue": 0.01,
+        "teal": 0.03,
+        "dark_amber": 0.09,
+        "pale_gold": 0.04
+      }
+    },
+    "x15_y8": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.25,
+      "probabilities": {
+        "white": 0.03,
+        "midnight": 0.01,
+        "pale_cyan": 0.17,
+        "amber": 0.24,
+        "black": 0.04,
+        "cyan": 0.33,
+        "blue": 0.01,
+        "teal": 0.02,
+        "deep_blue": 0.0,
+        "dark_amber": 0.08,
+        "pale_gold": 0.07
+      }
+    },
+    "x16_y8": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.25,
+      "probabilities": {
+        "white": 0.03,
+        "midnight": 0.01,
+        "pale_cyan": 0.16,
+        "amber": 0.26,
+        "black": 0.03,
+        "cyan": 0.31,
+        "blue": 0.01,
+        "dark_amber": 0.08,
+        "teal": 0.03,
+        "deep_blue": 0.0,
+        "pale_gold": 0.08
+      }
+    },
+    "x17_y8": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.27,
+      "probabilities": {
+        "white": 0.03,
+        "midnight": 0.01,
+        "pale_cyan": 0.16,
+        "amber": 0.24,
+        "black": 0.05,
+        "cyan": 0.34,
+        "blue": 0.01,
+        "teal": 0.02,
+        "deep_blue": 0.0,
+        "dark_amber": 0.08,
+        "pale_gold": 0.06
+      }
+    },
+    "x18_y8": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.39,
+      "probabilities": {
+        "white": 0.02,
+        "amber": 0.18,
+        "pale_cyan": 0.11,
+        "black": 0.11,
+        "midnight": 0.01,
+        "cyan": 0.45,
+        "blue": 0.01,
+        "dark_amber": 0.06,
+        "deep_blue": 0.0,
+        "teal": 0.02,
+        "pale_gold": 0.03
+      }
+    },
+    "x19_y8": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.38,
+      "probabilities": {
+        "white": 0.02,
+        "midnight": 0.02,
+        "pale_cyan": 0.08,
+        "amber": 0.16,
+        "black": 0.16,
+        "cyan": 0.43,
+        "blue": 0.01,
+        "dark_amber": 0.07,
+        "teal": 0.02,
+        "deep_blue": 0.0,
+        "pale_gold": 0.03
+      }
+    },
+    "x20_y8": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.44,
+      "probabilities": {
+        "white": 0.01,
+        "black": 0.23,
+        "pale_cyan": 0.06,
+        "midnight": 0.03,
+        "amber": 0.09,
+        "cyan": 0.48,
+        "blue": 0.01,
+        "teal": 0.03,
+        "deep_blue": 0.0,
+        "dark_amber": 0.04,
+        "pale_gold": 0.02
+      }
+    },
+    "x21_y8": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.42,
+      "probabilities": {
+        "white": 0.01,
+        "midnight": 0.03,
+        "pale_cyan": 0.07,
+        "black": 0.26,
+        "amber": 0.07,
+        "cyan": 0.47,
+        "blue": 0.01,
+        "deep_blue": 0.0,
+        "dark_amber": 0.04,
+        "teal": 0.03,
+        "pale_gold": 0.01
+      }
+    },
+    "x22_y8": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.44,
+      "probabilities": {
+        "white": 0.01,
+        "midnight": 0.03,
+        "pale_cyan": 0.05,
+        "amber": 0.04,
+        "black": 0.31,
+        "cyan": 0.48,
+        "blue": 0.01,
+        "dark_amber": 0.02,
+        "teal": 0.04,
+        "deep_blue": 0.0,
+        "pale_gold": 0.01
+      }
+    },
+    "x23_y8": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.37,
+      "probabilities": {
+        "white": 0.01,
+        "black": 0.39,
+        "pale_cyan": 0.04,
+        "amber": 0.04,
+        "midnight": 0.03,
+        "cyan": 0.42,
+        "blue": 0.01,
+        "deep_blue": 0.0,
+        "dark_amber": 0.02,
+        "teal": 0.03,
+        "pale_gold": 0.01
+      }
+    },
+    "x24_y8": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.36,
+      "probabilities": {
+        "white": 0.01,
+        "midnight": 0.04,
+        "pale_cyan": 0.03,
+        "amber": 0.03,
+        "black": 0.43,
+        "cyan": 0.4,
+        "blue": 0.01,
+        "dark_amber": 0.01,
+        "teal": 0.03,
+        "deep_blue": 0.0,
+        "pale_gold": 0.01
+      }
+    },
+    "x25_y8": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.46,
+      "probabilities": {
+        "white": 0.01,
+        "amber": 0.02,
+        "pale_cyan": 0.03,
+        "black": 0.52,
+        "midnight": 0.03,
+        "cyan": 0.35,
+        "blue": 0.01,
+        "deep_blue": 0.0,
+        "dark_amber": 0.01,
+        "teal": 0.02,
+        "pale_gold": 0.0
+      }
+    },
+    "x26_y8": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.44,
+      "probabilities": {
+        "white": 0.0,
+        "black": 0.5,
+        "pale_cyan": 0.02,
+        "midnight": 0.05,
+        "amber": 0.01,
+        "cyan": 0.38,
+        "blue": 0.01,
+        "deep_blue": 0.0,
+        "dark_amber": 0.01,
+        "teal": 0.02,
+        "pale_gold": 0.0
+      }
+    },
+    "x27_y8": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.53,
+      "probabilities": {
+        "white": 0.01,
+        "amber": 0.01,
+        "pale_cyan": 0.02,
+        "black": 0.57,
+        "midnight": 0.03,
+        "cyan": 0.32,
+        "blue": 0.01,
+        "teal": 0.02,
+        "deep_blue": 0.0,
+        "dark_amber": 0.01,
+        "pale_gold": 0.0
+      }
+    },
+    "x28_y8": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.61,
+      "probabilities": {
+        "white": 0.0,
+        "black": 0.65,
+        "pale_cyan": 0.01,
+        "amber": 0.01,
+        "midnight": 0.02,
+        "cyan": 0.28,
+        "blue": 0.0,
+        "deep_blue": 0.0,
+        "dark_amber": 0.0,
+        "teal": 0.02,
+        "pale_gold": 0.0
+      }
+    },
+    "x29_y8": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.7,
+      "probabilities": {
+        "white": 0.0,
+        "amber": 0.0,
+        "pale_cyan": 0.01,
+        "black": 0.73,
+        "midnight": 0.02,
+        "cyan": 0.22,
+        "blue": 0.0,
+        "deep_blue": 0.0,
+        "dark_amber": 0.0,
+        "teal": 0.02,
+        "pale_gold": 0.0
+      }
+    },
+    "x30_y8": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.81,
+      "probabilities": {
+        "white": 0.0,
+        "midnight": 0.03,
+        "pale_cyan": 0.01,
+        "black": 0.84,
+        "amber": 0.0,
+        "cyan": 0.11,
+        "blue": 0.0,
+        "dark_amber": 0.0,
+        "teal": 0.01,
+        "deep_blue": 0.0,
+        "pale_gold": 0.0
+      }
+    },
+    "x31_y8": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.93,
+      "probabilities": {
+        "white": 0.0,
+        "midnight": 0.02,
+        "pale_cyan": 0.0,
+        "amber": 0.0,
+        "black": 0.95,
+        "cyan": 0.02,
+        "blue": 0.0,
+        "deep_blue": 0.0,
+        "dark_amber": 0.0,
+        "teal": 0.01,
+        "pale_gold": 0.0
+      }
+    },
+    "x0_y9": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.92,
+      "probabilities": {
+        "white": 0.0,
+        "midnight": 0.05,
+        "pale_cyan": 0.0,
+        "amber": 0.0,
+        "black": 0.93,
+        "cyan": 0.01,
+        "blue": 0.0,
+        "dark_amber": 0.0,
+        "deep_blue": 0.01,
+        "teal": 0.0,
+        "pale_gold": 0.0
+      }
+    },
+    "x1_y9": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.68,
+      "probabilities": {
+        "white": 0.0,
+        "amber": 0.0,
+        "pale_cyan": 0.02,
+        "midnight": 0.05,
+        "black": 0.71,
+        "cyan": 0.17,
+        "blue": 0.01,
+        "dark_amber": 0.0,
+        "teal": 0.03,
+        "deep_blue": 0.01,
+        "pale_gold": 0.0
+      }
+    },
+    "x2_y9": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.63,
+      "probabilities": {
+        "white": 0.0,
+        "midnight": 0.03,
+        "pale_cyan": 0.02,
+        "amber": 0.01,
+        "black": 0.65,
+        "cyan": 0.23,
+        "blue": 0.01,
+        "dark_amber": 0.01,
+        "deep_blue": 0.01,
+        "teal": 0.03,
+        "pale_gold": 0.0
+      }
+    },
+    "x3_y9": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.49,
+      "probabilities": {
+        "white": 0.01,
+        "black": 0.53,
+        "pale_cyan": 0.03,
+        "midnight": 0.04,
+        "amber": 0.02,
+        "cyan": 0.27999999999999997,
+        "blue": 0.01,
+        "teal": 0.04,
+        "deep_blue": 0.01,
+        "dark_amber": 0.02,
+        "pale_gold": 0.01
+      }
+    },
+    "x4_y9": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.56,
+      "probabilities": {
+        "white": 0.01,
+        "midnight": 0.04,
+        "pale_cyan": 0.02,
+        "amber": 0.01,
+        "black": 0.6,
+        "cyan": 0.25,
+        "blue": 0.01,
+        "dark_amber": 0.02,
+        "teal": 0.03,
+        "deep_blue": 0.01,
+        "pale_gold": 0.0
+      }
+    },
+    "x5_y9": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.45,
+      "probabilities": {
+        "white": 0.01,
+        "midnight": 0.04,
+        "pale_cyan": 0.03,
+        "amber": 0.03,
+        "black": 0.5,
+        "cyan": 0.3,
+        "blue": 0.01,
+        "dark_amber": 0.02,
+        "deep_blue": 0.01,
+        "teal": 0.04,
+        "pale_gold": 0.01
+      }
+    },
+    "x6_y9": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.35,
+      "probabilities": {
+        "white": 0.01,
+        "black": 0.37,
+        "pale_cyan": 0.04,
+        "midnight": 0.03,
+        "amber": 0.03,
+        "cyan": 0.39999999999999997,
+        "blue": 0.01,
+        "deep_blue": 0.01,
+        "teal": 0.06,
+        "dark_amber": 0.03,
+        "pale_gold": 0.01
+      }
+    },
+    "x7_y9": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.32,
+      "probabilities": {
+        "white": 0.01,
+        "midnight": 0.03,
+        "pale_cyan": 0.04,
+        "amber": 0.05,
+        "black": 0.36,
+        "cyan": 0.38,
+        "blue": 0.01,
+        "deep_blue": 0.01,
+        "dark_amber": 0.05,
+        "teal": 0.05,
+        "pale_gold": 0.01
+      }
+    },
+    "x8_y9": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.31,
+      "probabilities": {
+        "white": 0.01,
+        "midnight": 0.03,
+        "pale_cyan": 0.05,
+        "amber": 0.09,
+        "black": 0.27,
+        "cyan": 0.37,
+        "blue": 0.01,
+        "dark_amber": 0.09,
+        "teal": 0.05,
+        "deep_blue": 0.01,
+        "pale_gold": 0.02
+      }
+    },
+    "x9_y9": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.31,
+      "probabilities": {
+        "white": 0.01,
+        "midnight": 0.03,
+        "pale_cyan": 0.06,
+        "amber": 0.1,
+        "black": 0.25,
+        "cyan": 0.38,
+        "blue": 0.01,
+        "dark_amber": 0.09,
+        "teal": 0.04,
+        "deep_blue": 0.01,
+        "pale_gold": 0.02
+      }
+    },
+    "x10_y9": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.36,
+      "probabilities": {
+        "white": 0.01,
+        "midnight": 0.03,
+        "pale_cyan": 0.06,
+        "black": 0.18,
+        "amber": 0.13,
+        "cyan": 0.42,
+        "blue": 0.01,
+        "deep_blue": 0.01,
+        "teal": 0.04,
+        "dark_amber": 0.09,
+        "pale_gold": 0.02
+      }
+    },
+    "x11_y9": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.31,
+      "probabilities": {
+        "white": 0.01,
+        "amber": 0.16,
+        "pale_cyan": 0.08,
+        "black": 0.18,
+        "midnight": 0.03,
+        "cyan": 0.36,
+        "blue": 0.01,
+        "teal": 0.04,
+        "deep_blue": 0.01,
+        "dark_amber": 0.09,
+        "pale_gold": 0.03
+      }
+    },
+    "x12_y9": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.28,
+      "probabilities": {
+        "white": 0.02,
+        "black": 0.12,
+        "pale_cyan": 0.09,
+        "midnight": 0.02,
+        "amber": 0.2,
+        "cyan": 0.33999999999999997,
+        "blue": 0.01,
+        "dark_amber": 0.12,
+        "deep_blue": 0.01,
+        "teal": 0.03,
+        "pale_gold": 0.04
+      }
+    },
+    "x13_y9": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.27,
+      "probabilities": {
+        "white": 0.02,
+        "black": 0.1,
+        "pale_cyan": 0.1,
+        "midnight": 0.02,
+        "amber": 0.21,
+        "cyan": 0.33,
+        "blue": 0.01,
+        "deep_blue": 0.01,
+        "teal": 0.03,
+        "dark_amber": 0.11,
+        "pale_gold": 0.06
+      }
+    },
+    "x14_y9": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.31,
+      "probabilities": {
+        "white": 0.02,
+        "midnight": 0.01,
+        "pale_cyan": 0.11,
+        "amber": 0.2,
+        "black": 0.09,
+        "cyan": 0.36,
+        "blue": 0.01,
+        "deep_blue": 0.01,
+        "dark_amber": 0.11,
+        "teal": 0.03,
+        "pale_gold": 0.05
+      }
+    },
+    "x15_y9": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.24,
+      "probabilities": {
+        "white": 0.03,
+        "midnight": 0.01,
+        "pale_cyan": 0.12,
+        "amber": 0.28,
+        "black": 0.05,
+        "cyan": 0.32,
+        "blue": 0.01,
+        "dark_amber": 0.08,
+        "teal": 0.02,
+        "deep_blue": 0.0,
+        "pale_gold": 0.08
+      }
+    },
+    "x16_y9": {
+      "type": "choice",
+      "choice": "amber",
+      "confidence": 0.25,
+      "probabilities": {
+        "white": 0.03,
+        "black": 0.03,
+        "pale_cyan": 0.14,
+        "midnight": 0.01,
+        "amber": 0.32,
+        "cyan": 0.28,
+        "blue": 0.01,
+        "dark_amber": 0.08,
+        "deep_blue": 0.0,
+        "teal": 0.02,
+        "pale_gold": 0.08
+      }
+    },
+    "x17_y9": {
+      "type": "choice",
+      "choice": "amber",
+      "confidence": 0.23,
+      "probabilities": {
+        "white": 0.03,
+        "amber": 0.29,
+        "pale_cyan": 0.1,
+        "black": 0.06,
+        "midnight": 0.01,
+        "cyan": 0.27,
+        "blue": 0.01,
+        "deep_blue": 0.01,
+        "dark_amber": 0.1,
+        "teal": 0.03,
+        "pale_gold": 0.09
+      }
+    },
+    "x18_y9": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.34,
+      "probabilities": {
+        "white": 0.02,
+        "black": 0.11,
+        "pale_cyan": 0.09,
+        "midnight": 0.01,
+        "amber": 0.21,
+        "cyan": 0.4,
+        "blue": 0.01,
+        "deep_blue": 0.0,
+        "dark_amber": 0.09,
+        "teal": 0.02,
+        "pale_gold": 0.04
+      }
+    },
+    "x19_y9": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.35,
+      "probabilities": {
+        "white": 0.02,
+        "black": 0.15,
+        "pale_cyan": 0.09,
+        "midnight": 0.02,
+        "amber": 0.16,
+        "cyan": 0.41,
+        "blue": 0.01,
+        "deep_blue": 0.0,
+        "dark_amber": 0.08,
+        "teal": 0.03,
+        "pale_gold": 0.03
+      }
+    },
+    "x20_y9": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.47,
+      "probabilities": {
+        "white": 0.01,
+        "midnight": 0.02,
+        "pale_cyan": 0.06,
+        "amber": 0.1,
+        "black": 0.18,
+        "cyan": 0.52,
+        "blue": 0.01,
+        "teal": 0.03,
+        "deep_blue": 0.0,
+        "dark_amber": 0.05,
+        "pale_gold": 0.02
+      }
+    },
+    "x21_y9": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.46,
+      "probabilities": {
+        "white": 0.01,
+        "black": 0.23,
+        "pale_cyan": 0.06,
+        "midnight": 0.02,
+        "amber": 0.07,
+        "cyan": 0.52,
+        "blue": 0.01,
+        "deep_blue": 0.0,
+        "dark_amber": 0.03,
+        "teal": 0.03,
+        "pale_gold": 0.02
+      }
+    },
+    "x22_y9": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.44,
+      "probabilities": {
+        "white": 0.01,
+        "amber": 0.05,
+        "pale_cyan": 0.04,
+        "black": 0.31,
+        "midnight": 0.02,
+        "cyan": 0.5,
+        "blue": 0.01,
+        "dark_amber": 0.02,
+        "deep_blue": 0.0,
+        "teal": 0.03,
+        "pale_gold": 0.01
+      }
+    },
+    "x23_y9": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.38,
+      "probabilities": {
+        "white": 0.01,
+        "amber": 0.04,
+        "pale_cyan": 0.06,
+        "black": 0.34,
+        "midnight": 0.03,
+        "cyan": 0.44,
+        "blue": 0.01,
+        "teal": 0.04,
+        "deep_blue": 0.0,
+        "dark_amber": 0.02,
+        "pale_gold": 0.01
+      }
+    },
+    "x24_y9": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.42,
+      "probabilities": {
+        "white": 0.01,
+        "midnight": 0.03,
+        "pale_cyan": 0.03,
+        "black": 0.36,
+        "amber": 0.03,
+        "cyan": 0.48,
+        "blue": 0.01,
+        "dark_amber": 0.01,
+        "teal": 0.03,
+        "deep_blue": 0.0,
+        "pale_gold": 0.01
+      }
+    },
+    "x25_y9": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.38,
+      "probabilities": {
+        "white": 0.01,
+        "black": 0.44,
+        "pale_cyan": 0.03,
+        "midnight": 0.04,
+        "amber": 0.02,
+        "cyan": 0.4,
+        "blue": 0.01,
+        "dark_amber": 0.01,
+        "teal": 0.04,
+        "deep_blue": 0.0,
+        "pale_gold": 0.0
+      }
+    },
+    "x26_y9": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.39,
+      "probabilities": {
+        "white": 0.0,
+        "midnight": 0.03,
+        "pale_cyan": 0.02,
+        "amber": 0.01,
+        "black": 0.46,
+        "cyan": 0.44,
+        "blue": 0.01,
+        "deep_blue": 0.0,
+        "teal": 0.02,
+        "dark_amber": 0.01,
+        "pale_gold": 0.0
+      }
+    },
+    "x27_y9": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.44,
+      "probabilities": {
+        "white": 0.01,
+        "midnight": 0.03,
+        "pale_cyan": 0.02,
+        "black": 0.5,
+        "amber": 0.01,
+        "cyan": 0.38,
+        "blue": 0.01,
+        "dark_amber": 0.01,
+        "deep_blue": 0.0,
+        "teal": 0.03,
+        "pale_gold": 0.0
+      }
+    },
+    "x28_y9": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.54,
+      "probabilities": {
+        "white": 0.0,
+        "amber": 0.01,
+        "pale_cyan": 0.01,
+        "midnight": 0.03,
+        "black": 0.59,
+        "cyan": 0.33,
+        "blue": 0.0,
+        "teal": 0.03,
+        "deep_blue": 0.0,
+        "dark_amber": 0.0,
+        "pale_gold": 0.0
+      }
+    },
+    "x29_y9": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.7,
+      "probabilities": {
+        "white": 0.0,
+        "amber": 0.0,
+        "pale_cyan": 0.01,
+        "midnight": 0.02,
+        "black": 0.73,
+        "cyan": 0.22,
+        "blue": 0.0,
+        "teal": 0.02,
+        "deep_blue": 0.0,
+        "dark_amber": 0.0,
+        "pale_gold": 0.0
+      }
+    },
+    "x30_y9": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.79,
+      "probabilities": {
+        "white": 0.0,
+        "black": 0.81,
+        "pale_cyan": 0.01,
+        "midnight": 0.02,
+        "amber": 0.0,
+        "cyan": 0.13,
+        "blue": 0.0,
+        "teal": 0.02,
+        "deep_blue": 0.0,
+        "dark_amber": 0.0,
+        "pale_gold": 0.0
+      }
+    },
+    "x31_y9": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.91,
+      "probabilities": {
+        "white": 0.0,
+        "midnight": 0.02,
+        "pale_cyan": 0.0,
+        "black": 0.93,
+        "amber": 0.0,
+        "cyan": 0.04,
+        "blue": 0.0,
+        "deep_blue": 0.0,
+        "dark_amber": 0.0,
+        "teal": 0.01,
+        "pale_gold": 0.0
+      }
+    },
+    "x0_y10": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.9,
+      "probabilities": {
+        "white": 0.0,
+        "midnight": 0.06999999999999999,
+        "pale_cyan": 0.0,
+        "amber": 0.0,
+        "black": 0.92,
+        "cyan": 0.0,
+        "blue": 0.0,
+        "deep_blue": 0.01,
+        "dark_amber": 0.0,
+        "teal": 0.0,
+        "pale_gold": 0.0
+      }
+    },
+    "x1_y10": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.74,
+      "probabilities": {
+        "white": 0.0,
+        "black": 0.77,
+        "pale_cyan": 0.01,
+        "midnight": 0.04,
+        "amber": 0.0,
+        "cyan": 0.14,
+        "blue": 0.0,
+        "dark_amber": 0.0,
+        "deep_blue": 0.01,
+        "teal": 0.03,
+        "pale_gold": 0.0
+      }
+    },
+    "x2_y10": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.71,
+      "probabilities": {
+        "white": 0.0,
+        "midnight": 0.04,
+        "pale_cyan": 0.01,
+        "black": 0.74,
+        "amber": 0.0,
+        "cyan": 0.17,
+        "blue": 0.0,
+        "deep_blue": 0.01,
+        "dark_amber": 0.0,
+        "teal": 0.03,
+        "pale_gold": 0.0
+      }
+    },
+    "x3_y10": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.63,
+      "probabilities": {
+        "white": 0.0,
+        "black": 0.67,
+        "pale_cyan": 0.02,
+        "amber": 0.01,
+        "midnight": 0.03,
+        "cyan": 0.21,
+        "blue": 0.01,
+        "dark_amber": 0.01,
+        "teal": 0.03,
+        "deep_blue": 0.01,
+        "pale_gold": 0.0
+      }
+    },
+    "x4_y10": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.59,
+      "probabilities": {
+        "white": 0.0,
+        "midnight": 0.04,
+        "pale_cyan": 0.02,
+        "black": 0.63,
+        "amber": 0.01,
+        "cyan": 0.24,
+        "blue": 0.01,
+        "dark_amber": 0.01,
+        "teal": 0.03,
+        "deep_blue": 0.01,
+        "pale_gold": 0.0
+      }
+    },
+    "x5_y10": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.54,
+      "probabilities": {
+        "white": 0.01,
+        "black": 0.57,
+        "pale_cyan": 0.02,
+        "midnight": 0.04,
+        "amber": 0.02,
+        "cyan": 0.26,
+        "blue": 0.01,
+        "deep_blue": 0.01,
+        "dark_amber": 0.02,
+        "teal": 0.04,
+        "pale_gold": 0.0
+      }
+    },
+    "x6_y10": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.37,
+      "probabilities": {
+        "white": 0.01,
+        "black": 0.42,
+        "pale_cyan": 0.03,
+        "amber": 0.03,
+        "midnight": 0.03,
+        "cyan": 0.39,
+        "blue": 0.01,
+        "deep_blue": 0.01,
+        "dark_amber": 0.02,
+        "teal": 0.04,
+        "pale_gold": 0.01
+      }
+    },
+    "x7_y10": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.32,
+      "probabilities": {
+        "white": 0.01,
+        "midnight": 0.03,
+        "pale_cyan": 0.04,
+        "black": 0.38,
+        "amber": 0.04,
+        "cyan": 0.38,
+        "blue": 0.01,
+        "teal": 0.05,
+        "deep_blue": 0.01,
+        "dark_amber": 0.04,
+        "pale_gold": 0.01
+      }
+    },
+    "x8_y10": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.36,
+      "probabilities": {
+        "white": 0.01,
+        "midnight": 0.03,
+        "pale_cyan": 0.04,
+        "black": 0.31,
+        "amber": 0.06,
+        "cyan": 0.42,
+        "blue": 0.01,
+        "deep_blue": 0.01,
+        "dark_amber": 0.05,
+        "teal": 0.05,
+        "pale_gold": 0.01
+      }
+    },
+    "x9_y10": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.3,
+      "probabilities": {
+        "white": 0.01,
+        "amber": 0.1,
+        "pale_cyan": 0.05,
+        "midnight": 0.04,
+        "black": 0.26,
+        "cyan": 0.35,
+        "blue": 0.01,
+        "deep_blue": 0.01,
+        "dark_amber": 0.1,
+        "teal": 0.05,
+        "pale_gold": 0.02
+      }
+    },
+    "x10_y10": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.31,
+      "probabilities": {
+        "white": 0.01,
+        "midnight": 0.03,
+        "pale_cyan": 0.06,
+        "black": 0.24,
+        "amber": 0.1,
+        "cyan": 0.37,
+        "blue": 0.01,
+        "deep_blue": 0.01,
+        "dark_amber": 0.1,
+        "teal": 0.05,
+        "pale_gold": 0.02
+      }
+    },
+    "x11_y10": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.29,
+      "probabilities": {
+        "white": 0.01,
+        "black": 0.16,
+        "pale_cyan": 0.07,
+        "midnight": 0.03,
+        "amber": 0.16,
+        "cyan": 0.35,
+        "blue": 0.01,
+        "deep_blue": 0.01,
+        "dark_amber": 0.13,
+        "teal": 0.04,
+        "pale_gold": 0.03
+      }
+    },
+    "x12_y10": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.33,
+      "probabilities": {
+        "white": 0.01,
+        "black": 0.12,
+        "pale_cyan": 0.09,
+        "amber": 0.18,
+        "midnight": 0.02,
+        "cyan": 0.39,
+        "blue": 0.01,
+        "dark_amber": 0.1,
+        "teal": 0.04,
+        "deep_blue": 0.01,
+        "pale_gold": 0.03
+      }
+    },
+    "x13_y10": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.3,
+      "probabilities": {
+        "white": 0.01,
+        "amber": 0.2,
+        "pale_cyan": 0.1,
+        "midnight": 0.02,
+        "black": 0.11,
+        "cyan": 0.35,
+        "blue": 0.01,
+        "deep_blue": 0.01,
+        "teal": 0.03,
+        "dark_amber": 0.11,
+        "pale_gold": 0.05
+      }
+    },
+    "x14_y10": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.26,
+      "probabilities": {
+        "white": 0.02,
+        "midnight": 0.02,
+        "pale_cyan": 0.11,
+        "amber": 0.24,
+        "black": 0.07,
+        "cyan": 0.32,
+        "blue": 0.01,
+        "teal": 0.03,
+        "dark_amber": 0.13,
+        "deep_blue": 0.01,
+        "pale_gold": 0.04
+      }
+    },
+    "x15_y10": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.27,
+      "probabilities": {
+        "white": 0.02,
+        "black": 0.04,
+        "pale_cyan": 0.1,
+        "amber": 0.3,
+        "midnight": 0.01,
+        "cyan": 0.33,
+        "blue": 0.01,
+        "deep_blue": 0.0,
+        "dark_amber": 0.09,
+        "teal": 0.03,
+        "pale_gold": 0.07
+      }
+    },
+    "x16_y10": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.25,
+      "probabilities": {
+        "white": 0.02,
+        "black": 0.03,
+        "pale_cyan": 0.12,
+        "midnight": 0.01,
+        "amber": 0.32,
+        "cyan": 0.32,
+        "blue": 0.01,
+        "dark_amber": 0.08,
+        "teal": 0.02,
+        "deep_blue": 0.0,
+        "pale_gold": 0.07
+      }
+    },
+    "x17_y10": {
+      "type": "choice",
+      "choice": "amber",
+      "confidence": 0.26,
+      "probabilities": {
+        "white": 0.02,
+        "midnight": 0.01,
+        "pale_cyan": 0.1,
+        "amber": 0.32,
+        "black": 0.06,
+        "cyan": 0.27,
+        "blue": 0.01,
+        "dark_amber": 0.11,
+        "deep_blue": 0.01,
+        "teal": 0.02,
+        "pale_gold": 0.07
+      }
+    },
+    "x18_y10": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.35,
+      "probabilities": {
+        "white": 0.02,
+        "black": 0.1,
+        "pale_cyan": 0.09,
+        "midnight": 0.01,
+        "amber": 0.22,
+        "cyan": 0.41,
+        "blue": 0.01,
+        "deep_blue": 0.0,
+        "dark_amber": 0.08,
+        "teal": 0.02,
+        "pale_gold": 0.04
+      }
+    },
+    "x19_y10": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.42,
+      "probabilities": {
+        "white": 0.01,
+        "black": 0.14,
+        "pale_cyan": 0.07,
+        "midnight": 0.02,
+        "amber": 0.14,
+        "cyan": 0.47,
+        "blue": 0.01,
+        "teal": 0.03,
+        "deep_blue": 0.01,
+        "dark_amber": 0.07,
+        "pale_gold": 0.03
+      }
+    },
+    "x20_y10": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.45,
+      "probabilities": {
+        "white": 0.01,
+        "amber": 0.1,
+        "pale_cyan": 0.05,
+        "black": 0.21,
+        "midnight": 0.04,
+        "cyan": 0.5,
+        "blue": 0.01,
+        "deep_blue": 0.0,
+        "dark_amber": 0.04,
+        "teal": 0.03,
+        "pale_gold": 0.01
+      }
+    },
+    "x21_y10": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.45,
+      "probabilities": {
+        "white": 0.01,
+        "midnight": 0.03,
+        "pale_cyan": 0.04,
+        "amber": 0.07,
+        "black": 0.26,
+        "cyan": 0.49,
+        "blue": 0.01,
+        "deep_blue": 0.0,
+        "dark_amber": 0.04,
+        "teal": 0.04,
+        "pale_gold": 0.01
+      }
+    },
+    "x22_y10": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.46,
+      "probabilities": {
+        "white": 0.01,
+        "midnight": 0.03,
+        "pale_cyan": 0.03,
+        "black": 0.33,
+        "amber": 0.03,
+        "cyan": 0.5,
+        "blue": 0.01,
+        "dark_amber": 0.02,
+        "teal": 0.03,
+        "deep_blue": 0.0,
+        "pale_gold": 0.01
+      }
+    },
+    "x23_y10": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.43,
+      "probabilities": {
+        "white": 0.01,
+        "midnight": 0.03,
+        "pale_cyan": 0.03,
+        "amber": 0.03,
+        "black": 0.35,
+        "cyan": 0.48,
+        "blue": 0.01,
+        "dark_amber": 0.02,
+        "teal": 0.03,
+        "deep_blue": 0.0,
+        "pale_gold": 0.01
+      }
+    },
+    "x24_y10": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.39,
+      "probabilities": {
+        "white": 0.01,
+        "amber": 0.02,
+        "pale_cyan": 0.03,
+        "black": 0.4,
+        "midnight": 0.04,
+        "cyan": 0.44,
+        "blue": 0.01,
+        "deep_blue": 0.0,
+        "dark_amber": 0.01,
+        "teal": 0.03,
+        "pale_gold": 0.01
+      }
+    },
+    "x25_y10": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.39,
+      "probabilities": {
+        "white": 0.0,
+        "black": 0.44,
+        "pale_cyan": 0.03,
+        "midnight": 0.05,
+        "amber": 0.02,
+        "cyan": 0.41,
+        "blue": 0.01,
+        "deep_blue": 0.0,
+        "dark_amber": 0.01,
+        "teal": 0.03,
+        "pale_gold": 0.0
+      }
+    },
+    "x26_y10": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.45,
+      "probabilities": {
+        "white": 0.0,
+        "midnight": 0.04,
+        "pale_cyan": 0.02,
+        "amber": 0.01,
+        "black": 0.51,
+        "cyan": 0.38,
+        "blue": 0.01,
+        "deep_blue": 0.0,
+        "dark_amber": 0.01,
+        "teal": 0.02,
+        "pale_gold": 0.0
+      }
+    },
+    "x27_y10": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.5,
+      "probabilities": {
+        "white": 0.0,
+        "midnight": 0.03,
+        "pale_cyan": 0.02,
+        "amber": 0.01,
+        "black": 0.56,
+        "cyan": 0.36,
+        "blue": 0.0,
+        "deep_blue": 0.0,
+        "dark_amber": 0.0,
+        "teal": 0.02,
+        "pale_gold": 0.0
+      }
+    },
+    "x28_y10": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.57,
+      "probabilities": {
+        "white": 0.0,
+        "black": 0.62,
+        "pale_cyan": 0.01,
+        "midnight": 0.03,
+        "amber": 0.0,
+        "cyan": 0.32,
+        "blue": 0.0,
+        "dark_amber": 0.0,
+        "teal": 0.02,
+        "deep_blue": 0.0,
+        "pale_gold": 0.0
+      }
+    },
+    "x29_y10": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.73,
+      "probabilities": {
+        "white": 0.0,
+        "midnight": 0.02,
+        "pale_cyan": 0.0,
+        "amber": 0.0,
+        "black": 0.77,
+        "cyan": 0.19,
+        "blue": 0.0,
+        "teal": 0.02,
+        "dark_amber": 0.0,
+        "deep_blue": 0.0,
+        "pale_gold": 0.0
+      }
+    },
+    "x30_y10": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.84,
+      "probabilities": {
+        "white": 0.0,
+        "black": 0.86,
+        "pale_cyan": 0.0,
+        "midnight": 0.02,
+        "amber": 0.0,
+        "cyan": 0.11,
+        "blue": 0.0,
+        "dark_amber": 0.0,
+        "deep_blue": 0.0,
+        "teal": 0.01,
+        "pale_gold": 0.0
+      }
+    },
+    "x31_y10": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.93,
+      "probabilities": {
+        "white": 0.0,
+        "black": 0.95,
+        "pale_cyan": 0.0,
+        "midnight": 0.03,
+        "amber": 0.0,
+        "cyan": 0.02,
+        "blue": 0.0,
+        "deep_blue": 0.0,
+        "dark_amber": 0.0,
+        "teal": 0.0,
+        "pale_gold": 0.0
+      }
+    },
+    "x0_y11": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.91,
+      "probabilities": {
+        "white": 0.0,
+        "black": 0.92,
+        "pale_cyan": 0.0,
+        "midnight": 0.060000000000000005,
+        "amber": 0.0,
+        "cyan": 0.01,
+        "blue": 0.0,
+        "dark_amber": 0.0,
+        "teal": 0.0,
+        "deep_blue": 0.01,
+        "pale_gold": 0.0
+      }
+    },
+    "x1_y11": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.71,
+      "probabilities": {
+        "white": 0.0,
+        "midnight": 0.04,
+        "pale_cyan": 0.01,
+        "amber": 0.0,
+        "black": 0.75,
+        "cyan": 0.16,
+        "blue": 0.0,
+        "dark_amber": 0.0,
+        "teal": 0.03,
+        "deep_blue": 0.01,
+        "pale_gold": 0.0
+      }
+    },
+    "x2_y11": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.7,
+      "probabilities": {
+        "white": 0.0,
+        "midnight": 0.03,
+        "pale_cyan": 0.01,
+        "black": 0.73,
+        "amber": 0.0,
+        "cyan": 0.18,
+        "blue": 0.0,
+        "dark_amber": 0.01,
+        "teal": 0.03,
+        "deep_blue": 0.01,
+        "pale_gold": 0.0
+      }
+    },
+    "x3_y11": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.57,
+      "probabilities": {
+        "white": 0.0,
+        "midnight": 0.03,
+        "pale_cyan": 0.02,
+        "black": 0.6,
+        "amber": 0.02,
+        "cyan": 0.24,
+        "blue": 0.01,
+        "deep_blue": 0.01,
+        "teal": 0.04,
+        "dark_amber": 0.02,
+        "pale_gold": 0.01
+      }
+    },
+    "x4_y11": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.56,
+      "probabilities": {
+        "white": 0.01,
+        "midnight": 0.03,
+        "pale_cyan": 0.02,
+        "black": 0.59,
+        "amber": 0.01,
+        "cyan": 0.26,
+        "blue": 0.01,
+        "deep_blue": 0.01,
+        "dark_amber": 0.02,
+        "teal": 0.04,
+        "pale_gold": 0.0
+      }
+    },
+    "x5_y11": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.43,
+      "probabilities": {
+        "white": 0.01,
+        "midnight": 0.03,
+        "pale_cyan": 0.03,
+        "black": 0.48,
+        "amber": 0.03,
+        "cyan": 0.34,
+        "blue": 0.01,
+        "deep_blue": 0.01,
+        "dark_amber": 0.02,
+        "teal": 0.04,
+        "pale_gold": 0.0
+      }
+    },
+    "x6_y11": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.35,
+      "probabilities": {
+        "white": 0.01,
+        "amber": 0.03,
+        "pale_cyan": 0.03,
+        "black": 0.38,
+        "midnight": 0.03,
+        "cyan": 0.39999999999999997,
+        "blue": 0.01,
+        "deep_blue": 0.01,
+        "dark_amber": 0.03,
+        "teal": 0.06,
+        "pale_gold": 0.01
+      }
+    },
+    "x7_y11": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.34,
+      "probabilities": {
+        "white": 0.01,
+        "black": 0.34,
+        "pale_cyan": 0.04,
+        "midnight": 0.03,
+        "amber": 0.05,
+        "cyan": 0.39,
+        "blue": 0.01,
+        "deep_blue": 0.01,
+        "dark_amber": 0.06,
+        "teal": 0.05,
+        "pale_gold": 0.01
+      }
+    },
+    "x8_y11": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.33,
+      "probabilities": {
+        "white": 0.01,
+        "midnight": 0.04,
+        "pale_cyan": 0.04,
+        "black": 0.3,
+        "amber": 0.07,
+        "cyan": 0.39,
+        "blue": 0.01,
+        "teal": 0.06,
+        "deep_blue": 0.01,
+        "dark_amber": 0.06,
+        "pale_gold": 0.01
+      }
+    },
+    "x9_y11": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.28,
+      "probabilities": {
+        "white": 0.01,
+        "midnight": 0.03,
+        "pale_cyan": 0.05,
+        "black": 0.24,
+        "amber": 0.14,
+        "cyan": 0.34,
+        "blue": 0.01,
+        "deep_blue": 0.01,
+        "dark_amber": 0.11,
+        "teal": 0.04,
+        "pale_gold": 0.02
+      }
+    },
+    "x10_y11": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.39,
+      "probabilities": {
+        "white": 0.01,
+        "midnight": 0.03,
+        "pale_cyan": 0.06,
+        "amber": 0.12,
+        "black": 0.16,
+        "cyan": 0.43,
+        "blue": 0.01,
+        "dark_amber": 0.1,
+        "teal": 0.05,
+        "deep_blue": 0.01,
+        "pale_gold": 0.02
+      }
+    },
+    "x11_y11": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.29,
+      "probabilities": {
+        "white": 0.02,
+        "black": 0.14,
+        "pale_cyan": 0.07,
+        "midnight": 0.02,
+        "amber": 0.2,
+        "cyan": 0.33999999999999997,
+        "blue": 0.01,
+        "deep_blue": 0.01,
+        "teal": 0.04,
+        "dark_amber": 0.12,
+        "pale_gold": 0.03
+      }
+    },
+    "x12_y11": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.26,
+      "probabilities": {
+        "white": 0.02,
+        "amber": 0.23,
+        "pale_cyan": 0.08,
+        "black": 0.11,
+        "midnight": 0.02,
+        "cyan": 0.31,
+        "blue": 0.01,
+        "dark_amber": 0.13,
+        "deep_blue": 0.01,
+        "teal": 0.04,
+        "pale_gold": 0.04
+      }
+    },
+    "x13_y11": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.25,
+      "probabilities": {
+        "white": 0.02,
+        "amber": 0.24,
+        "pale_cyan": 0.09,
+        "black": 0.09,
+        "midnight": 0.01,
+        "cyan": 0.31,
+        "blue": 0.01,
+        "dark_amber": 0.14,
+        "teal": 0.03,
+        "deep_blue": 0.01,
+        "pale_gold": 0.05
+      }
+    },
+    "x14_y11": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.25,
+      "probabilities": {
+        "white": 0.02,
+        "black": 0.09,
+        "pale_cyan": 0.1,
+        "midnight": 0.02,
+        "amber": 0.24,
+        "cyan": 0.31,
+        "blue": 0.01,
+        "deep_blue": 0.01,
+        "teal": 0.03,
+        "dark_amber": 0.12,
+        "pale_gold": 0.05
+      }
+    },
+    "x15_y11": {
+      "type": "choice",
+      "choice": "amber",
+      "confidence": 0.23,
+      "probabilities": {
+        "white": 0.02,
+        "black": 0.06,
+        "pale_cyan": 0.11,
+        "midnight": 0.01,
+        "amber": 0.29,
+        "cyan": 0.28,
+        "blue": 0.01,
+        "deep_blue": 0.01,
+        "teal": 0.03,
+        "dark_amber": 0.11,
+        "pale_gold": 0.07
+      }
+    },
+    "x16_y11": {
+      "type": "choice",
+      "choice": "amber",
+      "confidence": 0.28,
+      "probabilities": {
+        "white": 0.02,
+        "amber": 0.34,
+        "pale_cyan": 0.08,
+        "black": 0.03,
+        "midnight": 0.01,
+        "cyan": 0.28,
+        "blue": 0.01,
+        "dark_amber": 0.13,
+        "teal": 0.02,
+        "deep_blue": 0.0,
+        "pale_gold": 0.07
+      }
+    },
+    "x17_y11": {
+      "type": "choice",
+      "choice": "amber",
+      "confidence": 0.27,
+      "probabilities": {
+        "white": 0.02,
+        "amber": 0.34,
+        "pale_cyan": 0.09,
+        "black": 0.06,
+        "midnight": 0.01,
+        "cyan": 0.25,
+        "blue": 0.01,
+        "deep_blue": 0.01,
+        "teal": 0.02,
+        "dark_amber": 0.1,
+        "pale_gold": 0.09
+      }
+    },
+    "x18_y11": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.33,
+      "probabilities": {
+        "white": 0.01,
+        "midnight": 0.01,
+        "pale_cyan": 0.08,
+        "amber": 0.23,
+        "black": 0.09,
+        "cyan": 0.4,
+        "blue": 0.01,
+        "deep_blue": 0.0,
+        "teal": 0.03,
+        "dark_amber": 0.1,
+        "pale_gold": 0.04
+      }
+    },
+    "x19_y11": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.35,
+      "probabilities": {
+        "white": 0.01,
+        "black": 0.14,
+        "pale_cyan": 0.07,
+        "midnight": 0.02,
+        "amber": 0.19,
+        "cyan": 0.39999999999999997,
+        "blue": 0.01,
+        "deep_blue": 0.01,
+        "dark_amber": 0.1,
+        "teal": 0.03,
+        "pale_gold": 0.02
+      }
+    },
+    "x20_y11": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.39,
+      "probabilities": {
+        "white": 0.01,
+        "midnight": 0.02,
+        "pale_cyan": 0.05,
+        "amber": 0.15,
+        "black": 0.18,
+        "cyan": 0.44,
+        "blue": 0.01,
+        "dark_amber": 0.09,
+        "teal": 0.03,
+        "deep_blue": 0.0,
+        "pale_gold": 0.02
+      }
+    },
+    "x21_y11": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.47,
+      "probabilities": {
+        "white": 0.01,
+        "black": 0.21,
+        "pale_cyan": 0.04,
+        "midnight": 0.02,
+        "amber": 0.09,
+        "cyan": 0.52,
+        "blue": 0.01,
+        "deep_blue": 0.0,
+        "dark_amber": 0.05,
+        "teal": 0.04,
+        "pale_gold": 0.01
+      }
+    },
+    "x22_y11": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.53,
+      "probabilities": {
+        "white": 0.01,
+        "black": 0.25,
+        "pale_cyan": 0.03,
+        "midnight": 0.02,
+        "amber": 0.05,
+        "cyan": 0.5599999999999999,
+        "blue": 0.01,
+        "teal": 0.04,
+        "dark_amber": 0.02,
+        "deep_blue": 0.0,
+        "pale_gold": 0.01
+      }
+    },
+    "x23_y11": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.45,
+      "probabilities": {
+        "white": 0.01,
+        "black": 0.32,
+        "pale_cyan": 0.04,
+        "amber": 0.04,
+        "midnight": 0.02,
+        "cyan": 0.5,
+        "blue": 0.01,
+        "dark_amber": 0.02,
+        "deep_blue": 0.0,
+        "teal": 0.03,
+        "pale_gold": 0.01
+      }
+    },
+    "x24_y11": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.47,
+      "probabilities": {
+        "white": 0.0,
+        "amber": 0.02,
+        "pale_cyan": 0.02,
+        "black": 0.35,
+        "midnight": 0.02,
+        "cyan": 0.53,
+        "blue": 0.01,
+        "dark_amber": 0.01,
+        "deep_blue": 0.0,
+        "teal": 0.03,
+        "pale_gold": 0.01
+      }
+    },
+    "x25_y11": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.41,
+      "probabilities": {
+        "white": 0.0,
+        "midnight": 0.03,
+        "pale_cyan": 0.02,
+        "black": 0.41,
+        "amber": 0.02,
+        "cyan": 0.47000000000000003,
+        "blue": 0.01,
+        "dark_amber": 0.01,
+        "teal": 0.03,
+        "deep_blue": 0.0,
+        "pale_gold": 0.0
+      }
+    },
+    "x26_y11": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.41,
+      "probabilities": {
+        "white": 0.0,
+        "black": 0.44,
+        "pale_cyan": 0.01,
+        "midnight": 0.02,
+        "amber": 0.01,
+        "cyan": 0.48,
+        "blue": 0.0,
+        "dark_amber": 0.01,
+        "teal": 0.03,
+        "deep_blue": 0.0,
+        "pale_gold": 0.0
+      }
+    },
+    "x27_y11": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.43,
+      "probabilities": {
+        "white": 0.0,
+        "amber": 0.01,
+        "pale_cyan": 0.02,
+        "black": 0.49,
+        "midnight": 0.04,
+        "cyan": 0.39,
+        "blue": 0.01,
+        "teal": 0.03,
+        "dark_amber": 0.01,
+        "deep_blue": 0.0,
+        "pale_gold": 0.0
+      }
+    },
+    "x28_y11": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.51,
+      "probabilities": {
+        "white": 0.0,
+        "midnight": 0.02,
+        "pale_cyan": 0.01,
+        "black": 0.5700000000000001,
+        "amber": 0.01,
+        "cyan": 0.36,
+        "blue": 0.0,
+        "deep_blue": 0.0,
+        "dark_amber": 0.0,
+        "teal": 0.02,
+        "pale_gold": 0.0
+      }
+    },
+    "x29_y11": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.64,
+      "probabilities": {
+        "white": 0.0,
+        "black": 0.68,
+        "pale_cyan": 0.01,
+        "amber": 0.0,
+        "midnight": 0.02,
+        "cyan": 0.26,
+        "blue": 0.0,
+        "teal": 0.02,
+        "deep_blue": 0.0,
+        "dark_amber": 0.0,
+        "pale_gold": 0.0
+      }
+    },
+    "x30_y11": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.76,
+      "probabilities": {
+        "white": 0.0,
+        "midnight": 0.02,
+        "pale_cyan": 0.01,
+        "black": 0.79,
+        "amber": 0.0,
+        "cyan": 0.17,
+        "blue": 0.0,
+        "deep_blue": 0.0,
+        "dark_amber": 0.0,
+        "teal": 0.01,
+        "pale_gold": 0.0
+      }
+    },
+    "x31_y11": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.92,
+      "probabilities": {
+        "white": 0.0,
+        "black": 0.93,
+        "pale_cyan": 0.0,
+        "midnight": 0.02,
+        "amber": 0.0,
+        "cyan": 0.04,
+        "blue": 0.0,
+        "dark_amber": 0.0,
+        "teal": 0.01,
+        "deep_blue": 0.0,
+        "pale_gold": 0.0
+      }
+    },
+    "x0_y12": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.94,
+      "probabilities": {
+        "white": 0.0,
+        "midnight": 0.03,
+        "pale_cyan": 0.0,
+        "black": 0.95,
+        "amber": 0.0,
+        "cyan": 0.01,
+        "blue": 0.0,
+        "teal": 0.0,
+        "dark_amber": 0.0,
+        "deep_blue": 0.01,
+        "pale_gold": 0.0
+      }
+    },
+    "x1_y12": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.74,
+      "probabilities": {
+        "white": 0.0,
+        "midnight": 0.03,
+        "pale_cyan": 0.01,
+        "amber": 0.0,
+        "black": 0.77,
+        "cyan": 0.16,
+        "blue": 0.0,
+        "teal": 0.02,
+        "deep_blue": 0.01,
+        "dark_amber": 0.0,
+        "pale_gold": 0.0
+      }
+    },
+    "x2_y12": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.72,
+      "probabilities": {
+        "white": 0.0,
+        "black": 0.75,
+        "pale_cyan": 0.02,
+        "midnight": 0.03,
+        "amber": 0.0,
+        "cyan": 0.16,
+        "blue": 0.0,
+        "deep_blue": 0.01,
+        "dark_amber": 0.0,
+        "teal": 0.03,
+        "pale_gold": 0.0
+      }
+    },
+    "x3_y12": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.58,
+      "probabilities": {
+        "white": 0.0,
+        "amber": 0.02,
+        "pale_cyan": 0.02,
+        "midnight": 0.03,
+        "black": 0.61,
+        "cyan": 0.24,
+        "blue": 0.01,
+        "dark_amber": 0.01,
+        "teal": 0.05,
+        "deep_blue": 0.01,
+        "pale_gold": 0.0
+      }
+    },
+    "x4_y12": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.62,
+      "probabilities": {
+        "white": 0.0,
+        "black": 0.66,
+        "pale_cyan": 0.02,
+        "midnight": 0.03,
+        "amber": 0.01,
+        "cyan": 0.22,
+        "blue": 0.01,
+        "deep_blue": 0.01,
+        "dark_amber": 0.01,
+        "teal": 0.03,
+        "pale_gold": 0.0
+      }
+    },
+    "x5_y12": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.56,
+      "probabilities": {
+        "white": 0.01,
+        "amber": 0.02,
+        "pale_cyan": 0.02,
+        "black": 0.59,
+        "midnight": 0.03,
+        "cyan": 0.25,
+        "blue": 0.01,
+        "deep_blue": 0.01,
+        "dark_amber": 0.02,
+        "teal": 0.04,
+        "pale_gold": 0.0
+      }
+    },
+    "x6_y12": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.35,
+      "probabilities": {
+        "white": 0.01,
+        "black": 0.39999999999999997,
+        "pale_cyan": 0.03,
+        "amber": 0.03,
+        "midnight": 0.03,
+        "cyan": 0.38,
+        "blue": 0.01,
+        "deep_blue": 0.01,
+        "dark_amber": 0.02,
+        "teal": 0.07,
+        "pale_gold": 0.01
+      }
+    },
+    "x7_y12": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.35,
+      "probabilities": {
+        "white": 0.01,
+        "midnight": 0.03,
+        "pale_cyan": 0.04,
+        "black": 0.34,
+        "amber": 0.04,
+        "cyan": 0.39999999999999997,
+        "blue": 0.01,
+        "deep_blue": 0.01,
+        "dark_amber": 0.05,
+        "teal": 0.06,
+        "pale_gold": 0.01
+      }
+    },
+    "x8_y12": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.34,
+      "probabilities": {
+        "white": 0.01,
+        "midnight": 0.03,
+        "pale_cyan": 0.04,
+        "amber": 0.08,
+        "black": 0.28,
+        "cyan": 0.4,
+        "blue": 0.01,
+        "dark_amber": 0.08,
+        "teal": 0.05,
+        "deep_blue": 0.01,
+        "pale_gold": 0.01
+      }
+    },
+    "x9_y12": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.29,
+      "probabilities": {
+        "white": 0.01,
+        "black": 0.25,
+        "pale_cyan": 0.04,
+        "midnight": 0.03,
+        "amber": 0.13,
+        "cyan": 0.35,
+        "blue": 0.01,
+        "deep_blue": 0.01,
+        "dark_amber": 0.11,
+        "teal": 0.04,
+        "pale_gold": 0.02
+      }
+    },
+    "x10_y12": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.32,
+      "probabilities": {
+        "white": 0.01,
+        "amber": 0.11,
+        "pale_cyan": 0.06,
+        "midnight": 0.03,
+        "black": 0.21,
+        "cyan": 0.38,
+        "blue": 0.01,
+        "dark_amber": 0.11,
+        "teal": 0.05,
+        "deep_blue": 0.01,
+        "pale_gold": 0.02
+      }
+    },
+    "x11_y12": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.28,
+      "probabilities": {
+        "white": 0.01,
+        "black": 0.16,
+        "pale_cyan": 0.05,
+        "midnight": 0.02,
+        "amber": 0.2,
+        "cyan": 0.33999999999999997,
+        "blue": 0.01,
+        "deep_blue": 0.01,
+        "dark_amber": 0.13,
+        "teal": 0.04,
+        "pale_gold": 0.03
+      }
+    },
+    "x12_y12": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.28,
+      "probabilities": {
+        "white": 0.01,
+        "midnight": 0.02,
+        "pale_cyan": 0.09,
+        "black": 0.09,
+        "amber": 0.22,
+        "cyan": 0.33999999999999997,
+        "blue": 0.01,
+        "teal": 0.05,
+        "deep_blue": 0.01,
+        "dark_amber": 0.12,
+        "pale_gold": 0.04
+      }
+    },
+    "x13_y12": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.24,
+      "probabilities": {
+        "white": 0.01,
+        "black": 0.08,
+        "pale_cyan": 0.07,
+        "midnight": 0.01,
+        "amber": 0.28,
+        "cyan": 0.32,
+        "blue": 0.01,
+        "deep_blue": 0.01,
+        "teal": 0.03,
+        "dark_amber": 0.13,
+        "pale_gold": 0.05
+      }
+    },
+    "x14_y12": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.23,
+      "probabilities": {
+        "white": 0.01,
+        "amber": 0.28,
+        "pale_cyan": 0.08,
+        "black": 0.08,
+        "midnight": 0.01,
+        "cyan": 0.3,
+        "blue": 0.01,
+        "deep_blue": 0.01,
+        "dark_amber": 0.13,
+        "teal": 0.03,
+        "pale_gold": 0.06
+      }
+    },
+    "x15_y12": {
+      "type": "choice",
+      "choice": "amber",
+      "confidence": 0.23,
+      "probabilities": {
+        "white": 0.02,
+        "midnight": 0.01,
+        "pale_cyan": 0.11,
+        "black": 0.05,
+        "amber": 0.3,
+        "cyan": 0.26,
+        "blue": 0.01,
+        "teal": 0.03,
+        "deep_blue": 0.01,
+        "dark_amber": 0.12,
+        "pale_gold": 0.08
+      }
+    },
+    "x16_y12": {
+      "type": "choice",
+      "choice": "amber",
+      "confidence": 0.33,
+      "probabilities": {
+        "white": 0.02,
+        "midnight": 0.01,
+        "pale_cyan": 0.09,
+        "amber": 0.41000000000000003,
+        "black": 0.03,
+        "cyan": 0.21,
+        "blue": 0.01,
+        "dark_amber": 0.1,
+        "deep_blue": 0.0,
+        "teal": 0.02,
+        "pale_gold": 0.1
+      }
+    },
+    "x17_y12": {
+      "type": "choice",
+      "choice": "amber",
+      "confidence": 0.22,
+      "probabilities": {
+        "white": 0.02,
+        "midnight": 0.01,
+        "pale_cyan": 0.09,
+        "amber": 0.27999999999999997,
+        "black": 0.06,
+        "cyan": 0.26,
+        "blue": 0.01,
+        "deep_blue": 0.01,
+        "dark_amber": 0.17,
+        "teal": 0.02,
+        "pale_gold": 0.07
+      }
+    },
+    "x18_y12": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.31,
+      "probabilities": {
+        "white": 0.01,
+        "black": 0.08,
+        "pale_cyan": 0.08,
+        "amber": 0.26,
+        "midnight": 0.01,
+        "cyan": 0.37,
+        "blue": 0.01,
+        "dark_amber": 0.11,
+        "deep_blue": 0.01,
+        "teal": 0.03,
+        "pale_gold": 0.03
+      }
+    },
+    "x19_y12": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.34,
+      "probabilities": {
+        "white": 0.01,
+        "midnight": 0.02,
+        "pale_cyan": 0.06,
+        "amber": 0.18,
+        "black": 0.15,
+        "cyan": 0.4,
+        "blue": 0.01,
+        "teal": 0.03,
+        "deep_blue": 0.0,
+        "dark_amber": 0.11,
+        "pale_gold": 0.03
+      }
+    },
+    "x20_y12": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.42,
+      "probabilities": {
+        "white": 0.01,
+        "midnight": 0.02,
+        "pale_cyan": 0.05,
+        "black": 0.17,
+        "amber": 0.13,
+        "cyan": 0.49,
+        "blue": 0.01,
+        "dark_amber": 0.07,
+        "teal": 0.03,
+        "deep_blue": 0.0,
+        "pale_gold": 0.02
+      }
+    },
+    "x21_y12": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.45,
+      "probabilities": {
+        "white": 0.01,
+        "midnight": 0.02,
+        "pale_cyan": 0.05,
+        "amber": 0.1,
+        "black": 0.22,
+        "cyan": 0.5,
+        "blue": 0.01,
+        "deep_blue": 0.0,
+        "teal": 0.03,
+        "dark_amber": 0.05,
+        "pale_gold": 0.01
+      }
+    },
+    "x22_y12": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.5,
+      "probabilities": {
+        "white": 0.01,
+        "midnight": 0.02,
+        "pale_cyan": 0.03,
+        "amber": 0.04,
+        "black": 0.28,
+        "cyan": 0.55,
+        "blue": 0.01,
+        "dark_amber": 0.02,
+        "teal": 0.03,
+        "deep_blue": 0.0,
+        "pale_gold": 0.01
+      }
+    },
+    "x23_y12": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.43,
+      "probabilities": {
+        "white": 0.01,
+        "midnight": 0.03,
+        "pale_cyan": 0.03,
+        "amber": 0.04,
+        "black": 0.33,
+        "cyan": 0.48,
+        "blue": 0.01,
+        "deep_blue": 0.0,
+        "dark_amber": 0.02,
+        "teal": 0.04,
+        "pale_gold": 0.01
+      }
+    },
+    "x24_y12": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.47,
+      "probabilities": {
+        "white": 0.0,
+        "black": 0.35,
+        "pale_cyan": 0.03,
+        "midnight": 0.03,
+        "amber": 0.02,
+        "cyan": 0.52,
+        "blue": 0.01,
+        "deep_blue": 0.0,
+        "dark_amber": 0.01,
+        "teal": 0.03,
+        "pale_gold": 0.0
+      }
+    },
+    "x25_y12": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.41,
+      "probabilities": {
+        "white": 0.0,
+        "amber": 0.02,
+        "pale_cyan": 0.02,
+        "black": 0.41,
+        "midnight": 0.04,
+        "cyan": 0.46,
+        "blue": 0.01,
+        "deep_blue": 0.0,
+        "dark_amber": 0.01,
+        "teal": 0.03,
+        "pale_gold": 0.0
+      }
+    },
+    "x26_y12": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.4,
+      "probabilities": {
+        "white": 0.0,
+        "black": 0.46,
+        "pale_cyan": 0.02,
+        "midnight": 0.03,
+        "amber": 0.01,
+        "cyan": 0.44,
+        "blue": 0.0,
+        "deep_blue": 0.0,
+        "dark_amber": 0.01,
+        "teal": 0.03,
+        "pale_gold": 0.0
+      }
+    },
+    "x27_y12": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.44,
+      "probabilities": {
+        "white": 0.0,
+        "amber": 0.01,
+        "pale_cyan": 0.01,
+        "black": 0.5,
+        "midnight": 0.03,
+        "cyan": 0.41,
+        "blue": 0.0,
+        "deep_blue": 0.0,
+        "dark_amber": 0.01,
+        "teal": 0.03,
+        "pale_gold": 0.0
+      }
+    },
+    "x28_y12": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.52,
+      "probabilities": {
+        "white": 0.0,
+        "black": 0.58,
+        "pale_cyan": 0.01,
+        "amber": 0.0,
+        "midnight": 0.03,
+        "cyan": 0.36,
+        "blue": 0.0,
+        "dark_amber": 0.0,
+        "teal": 0.02,
+        "deep_blue": 0.0,
+        "pale_gold": 0.0
+      }
+    },
+    "x29_y12": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.69,
+      "probabilities": {
+        "white": 0.0,
+        "black": 0.73,
+        "pale_cyan": 0.0,
+        "amber": 0.0,
+        "midnight": 0.02,
+        "cyan": 0.23,
+        "blue": 0.0,
+        "teal": 0.02,
+        "deep_blue": 0.0,
+        "dark_amber": 0.0,
+        "pale_gold": 0.0
+      }
+    },
+    "x30_y12": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.79,
+      "probabilities": {
+        "white": 0.0,
+        "amber": 0.0,
+        "pale_cyan": 0.01,
+        "black": 0.81,
+        "midnight": 0.02,
+        "cyan": 0.14,
+        "blue": 0.0,
+        "deep_blue": 0.0,
+        "teal": 0.02,
+        "dark_amber": 0.0,
+        "pale_gold": 0.0
+      }
+    },
+    "x31_y12": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.93,
+      "probabilities": {
+        "white": 0.0,
+        "black": 0.93,
+        "pale_cyan": 0.0,
+        "midnight": 0.02,
+        "amber": 0.0,
+        "cyan": 0.03,
+        "blue": 0.0,
+        "teal": 0.01,
+        "deep_blue": 0.0,
+        "dark_amber": 0.0,
+        "pale_gold": 0.0
+      }
+    },
+    "x0_y13": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.93,
+      "probabilities": {
+        "white": 0.0,
+        "midnight": 0.04,
+        "pale_cyan": 0.0,
+        "amber": 0.0,
+        "black": 0.93,
+        "cyan": 0.01,
+        "blue": 0.0,
+        "dark_amber": 0.0,
+        "deep_blue": 0.01,
+        "teal": 0.0,
+        "pale_gold": 0.0
+      }
+    },
+    "x1_y13": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.76,
+      "probabilities": {
+        "white": 0.0,
+        "black": 0.8,
+        "pale_cyan": 0.01,
+        "midnight": 0.03,
+        "amber": 0.0,
+        "cyan": 0.12,
+        "blue": 0.0,
+        "deep_blue": 0.01,
+        "teal": 0.03,
+        "dark_amber": 0.0,
+        "pale_gold": 0.0
+      }
+    },
+    "x2_y13": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.72,
+      "probabilities": {
+        "white": 0.0,
+        "midnight": 0.03,
+        "pale_cyan": 0.01,
+        "black": 0.74,
+        "amber": 0.0,
+        "cyan": 0.17,
+        "blue": 0.01,
+        "teal": 0.03,
+        "deep_blue": 0.01,
+        "dark_amber": 0.0,
+        "pale_gold": 0.0
+      }
+    },
+    "x3_y13": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.58,
+      "probabilities": {
+        "white": 0.0,
+        "amber": 0.02,
+        "pale_cyan": 0.02,
+        "black": 0.61,
+        "midnight": 0.03,
+        "cyan": 0.25,
+        "blue": 0.01,
+        "deep_blue": 0.01,
+        "dark_amber": 0.02,
+        "teal": 0.03,
+        "pale_gold": 0.0
+      }
+    },
+    "x4_y13": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.58,
+      "probabilities": {
+        "white": 0.0,
+        "midnight": 0.03,
+        "pale_cyan": 0.02,
+        "black": 0.63,
+        "amber": 0.01,
+        "cyan": 0.24,
+        "blue": 0.01,
+        "dark_amber": 0.01,
+        "teal": 0.04,
+        "deep_blue": 0.01,
+        "pale_gold": 0.0
+      }
+    },
+    "x5_y13": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.49,
+      "probabilities": {
+        "white": 0.01,
+        "amber": 0.02,
+        "pale_cyan": 0.02,
+        "midnight": 0.03,
+        "black": 0.53,
+        "cyan": 0.31,
+        "blue": 0.01,
+        "deep_blue": 0.01,
+        "dark_amber": 0.02,
+        "teal": 0.04,
+        "pale_gold": 0.0
+      }
+    },
+    "x6_y13": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.34,
+      "probabilities": {
+        "white": 0.01,
+        "midnight": 0.03,
+        "pale_cyan": 0.03,
+        "amber": 0.04,
+        "black": 0.39,
+        "cyan": 0.37,
+        "blue": 0.01,
+        "dark_amber": 0.04,
+        "teal": 0.06,
+        "deep_blue": 0.01,
+        "pale_gold": 0.01
+      }
+    },
+    "x7_y13": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.32,
+      "probabilities": {
+        "white": 0.01,
+        "black": 0.38,
+        "pale_cyan": 0.03,
+        "midnight": 0.03,
+        "amber": 0.05,
+        "cyan": 0.38,
+        "blue": 0.01,
+        "teal": 0.04,
+        "deep_blue": 0.01,
+        "dark_amber": 0.05,
+        "pale_gold": 0.01
+      }
+    },
+    "x8_y13": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.37,
+      "probabilities": {
+        "white": 0.01,
+        "midnight": 0.03,
+        "pale_cyan": 0.04,
+        "black": 0.24,
+        "amber": 0.09,
+        "cyan": 0.42,
+        "blue": 0.01,
+        "deep_blue": 0.01,
+        "dark_amber": 0.08,
+        "teal": 0.05,
+        "pale_gold": 0.02
+      }
+    },
+    "x9_y13": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.3,
+      "probabilities": {
+        "white": 0.01,
+        "amber": 0.12,
+        "pale_cyan": 0.06,
+        "midnight": 0.02,
+        "black": 0.22,
+        "cyan": 0.37,
+        "blue": 0.01,
+        "teal": 0.05,
+        "deep_blue": 0.01,
+        "dark_amber": 0.11,
+        "pale_gold": 0.02
+      }
+    },
+    "x10_y13": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.35,
+      "probabilities": {
+        "white": 0.01,
+        "amber": 0.13,
+        "pale_cyan": 0.06,
+        "midnight": 0.03,
+        "black": 0.18,
+        "cyan": 0.39,
+        "blue": 0.01,
+        "dark_amber": 0.11,
+        "teal": 0.05,
+        "deep_blue": 0.01,
+        "pale_gold": 0.02
+      }
+    },
+    "x11_y13": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.25,
+      "probabilities": {
+        "white": 0.01,
+        "black": 0.15,
+        "pale_cyan": 0.07,
+        "amber": 0.2,
+        "midnight": 0.02,
+        "cyan": 0.32,
+        "blue": 0.01,
+        "deep_blue": 0.01,
+        "dark_amber": 0.13,
+        "teal": 0.04,
+        "pale_gold": 0.04
+      }
+    },
+    "x12_y13": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.27,
+      "probabilities": {
+        "white": 0.01,
+        "black": 0.12,
+        "pale_cyan": 0.07,
+        "midnight": 0.02,
+        "amber": 0.21,
+        "cyan": 0.34,
+        "blue": 0.01,
+        "deep_blue": 0.01,
+        "teal": 0.04,
+        "dark_amber": 0.13,
+        "pale_gold": 0.04
+      }
+    },
+    "x13_y13": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.22,
+      "probabilities": {
+        "white": 0.01,
+        "black": 0.08,
+        "pale_cyan": 0.07,
+        "midnight": 0.01,
+        "amber": 0.28,
+        "cyan": 0.3,
+        "blue": 0.01,
+        "teal": 0.04,
+        "deep_blue": 0.01,
+        "dark_amber": 0.15,
+        "pale_gold": 0.04
+      }
+    },
+    "x14_y13": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.22,
+      "probabilities": {
+        "white": 0.02,
+        "black": 0.09,
+        "pale_cyan": 0.09,
+        "midnight": 0.01,
+        "amber": 0.25,
+        "cyan": 0.27999999999999997,
+        "blue": 0.01,
+        "teal": 0.04,
+        "deep_blue": 0.01,
+        "dark_amber": 0.15,
+        "pale_gold": 0.05
+      }
+    },
+    "x15_y13": {
+      "type": "choice",
+      "choice": "amber",
+      "confidence": 0.24,
+      "probabilities": {
+        "white": 0.02,
+        "midnight": 0.01,
+        "pale_cyan": 0.1,
+        "amber": 0.3,
+        "black": 0.04,
+        "cyan": 0.29,
+        "blue": 0.01,
+        "teal": 0.03,
+        "deep_blue": 0.01,
+        "dark_amber": 0.12,
+        "pale_gold": 0.07
+      }
+    },
+    "x16_y13": {
+      "type": "choice",
+      "choice": "amber",
+      "confidence": 0.34,
+      "probabilities": {
+        "white": 0.02,
+        "amber": 0.39,
+        "pale_cyan": 0.07,
+        "black": 0.03,
+        "midnight": 0.01,
+        "cyan": 0.21,
+        "blue": 0.01,
+        "deep_blue": 0.0,
+        "dark_amber": 0.14,
+        "teal": 0.03,
+        "pale_gold": 0.09
+      }
+    },
+    "x17_y13": {
+      "type": "choice",
+      "choice": "amber",
+      "confidence": 0.28,
+      "probabilities": {
+        "white": 0.02,
+        "midnight": 0.01,
+        "pale_cyan": 0.09,
+        "black": 0.05,
+        "amber": 0.34,
+        "cyan": 0.26,
+        "blue": 0.01,
+        "dark_amber": 0.13,
+        "deep_blue": 0.0,
+        "teal": 0.02,
+        "pale_gold": 0.07
+      }
+    },
+    "x18_y13": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.33,
+      "probabilities": {
+        "white": 0.01,
+        "black": 0.12,
+        "pale_cyan": 0.06,
+        "midnight": 0.01,
+        "amber": 0.22,
+        "cyan": 0.39,
+        "blue": 0.01,
+        "deep_blue": 0.0,
+        "dark_amber": 0.12,
+        "teal": 0.03,
+        "pale_gold": 0.03
+      }
+    },
+    "x19_y13": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.39,
+      "probabilities": {
+        "white": 0.01,
+        "midnight": 0.01,
+        "pale_cyan": 0.06,
+        "black": 0.15,
+        "amber": 0.17,
+        "cyan": 0.45,
+        "blue": 0.01,
+        "teal": 0.03,
+        "deep_blue": 0.0,
+        "dark_amber": 0.08,
+        "pale_gold": 0.03
+      }
+    },
+    "x20_y13": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.41,
+      "probabilities": {
+        "white": 0.01,
+        "black": 0.18,
+        "pale_cyan": 0.05,
+        "amber": 0.14,
+        "midnight": 0.02,
+        "cyan": 0.45999999999999996,
+        "blue": 0.01,
+        "deep_blue": 0.0,
+        "teal": 0.04,
+        "dark_amber": 0.07,
+        "pale_gold": 0.02
+      }
+    },
+    "x21_y13": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.48,
+      "probabilities": {
+        "white": 0.01,
+        "black": 0.22,
+        "pale_cyan": 0.04,
+        "amber": 0.08,
+        "midnight": 0.02,
+        "cyan": 0.54,
+        "blue": 0.01,
+        "dark_amber": 0.04,
+        "deep_blue": 0.0,
+        "teal": 0.03,
+        "pale_gold": 0.01
+      }
+    },
+    "x22_y13": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.5,
+      "probabilities": {
+        "white": 0.01,
+        "midnight": 0.03,
+        "pale_cyan": 0.02,
+        "amber": 0.04,
+        "black": 0.3,
+        "cyan": 0.53,
+        "blue": 0.01,
+        "deep_blue": 0.0,
+        "dark_amber": 0.02,
+        "teal": 0.03,
+        "pale_gold": 0.01
+      }
+    },
+    "x23_y13": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.48,
+      "probabilities": {
+        "white": 0.0,
+        "black": 0.32,
+        "pale_cyan": 0.03,
+        "midnight": 0.02,
+        "amber": 0.03,
+        "cyan": 0.53,
+        "blue": 0.01,
+        "deep_blue": 0.0,
+        "dark_amber": 0.02,
+        "teal": 0.03,
+        "pale_gold": 0.01
+      }
+    },
+    "x24_y13": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.47,
+      "probabilities": {
+        "white": 0.0,
+        "midnight": 0.03,
+        "pale_cyan": 0.01,
+        "amber": 0.01,
+        "black": 0.38,
+        "cyan": 0.52,
+        "blue": 0.01,
+        "deep_blue": 0.0,
+        "dark_amber": 0.01,
+        "teal": 0.03,
+        "pale_gold": 0.0
+      }
+    },
+    "x25_y13": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.45,
+      "probabilities": {
+        "white": 0.0,
+        "midnight": 0.03,
+        "pale_cyan": 0.01,
+        "black": 0.39,
+        "amber": 0.02,
+        "cyan": 0.5,
+        "blue": 0.01,
+        "deep_blue": 0.0,
+        "dark_amber": 0.01,
+        "teal": 0.03,
+        "pale_gold": 0.0
+      }
+    },
+    "x26_y13": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.45,
+      "probabilities": {
+        "white": 0.0,
+        "midnight": 0.02,
+        "pale_cyan": 0.01,
+        "amber": 0.01,
+        "black": 0.41,
+        "cyan": 0.51,
+        "blue": 0.01,
+        "dark_amber": 0.0,
+        "deep_blue": 0.0,
+        "teal": 0.03,
+        "pale_gold": 0.0
+      }
+    },
+    "x27_y13": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.44,
+      "probabilities": {
+        "white": 0.0,
+        "midnight": 0.03,
+        "pale_cyan": 0.01,
+        "amber": 0.01,
+        "black": 0.5,
+        "cyan": 0.43,
+        "blue": 0.0,
+        "dark_amber": 0.0,
+        "deep_blue": 0.0,
+        "teal": 0.02,
+        "pale_gold": 0.0
+      }
+    },
+    "x28_y13": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.44,
+      "probabilities": {
+        "white": 0.0,
+        "black": 0.5,
+        "pale_cyan": 0.01,
+        "midnight": 0.02,
+        "amber": 0.0,
+        "cyan": 0.45,
+        "blue": 0.0,
+        "deep_blue": 0.0,
+        "teal": 0.02,
+        "dark_amber": 0.0,
+        "pale_gold": 0.0
+      }
+    },
+    "x29_y13": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.58,
+      "probabilities": {
+        "white": 0.0,
+        "midnight": 0.02,
+        "pale_cyan": 0.01,
+        "black": 0.63,
+        "amber": 0.0,
+        "cyan": 0.32,
+        "blue": 0.0,
+        "deep_blue": 0.0,
+        "dark_amber": 0.0,
+        "teal": 0.02,
+        "pale_gold": 0.0
+      }
+    },
+    "x30_y13": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.7,
+      "probabilities": {
+        "white": 0.0,
+        "black": 0.74,
+        "pale_cyan": 0.0,
+        "midnight": 0.02,
+        "amber": 0.0,
+        "cyan": 0.22,
+        "blue": 0.0,
+        "dark_amber": 0.0,
+        "teal": 0.02,
+        "deep_blue": 0.0,
+        "pale_gold": 0.0
+      }
+    },
+    "x31_y13": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.94,
+      "probabilities": {
+        "white": 0.0,
+        "black": 0.95,
+        "pale_cyan": 0.0,
+        "midnight": 0.01,
+        "amber": 0.0,
+        "cyan": 0.03,
+        "blue": 0.0,
+        "deep_blue": 0.0,
+        "teal": 0.01,
+        "dark_amber": 0.0,
+        "pale_gold": 0.0
+      }
+    },
+    "x0_y14": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.93,
+      "probabilities": {
+        "white": 0.0,
+        "amber": 0.0,
+        "pale_cyan": 0.0,
+        "midnight": 0.04,
+        "black": 0.94,
+        "cyan": 0.01,
+        "blue": 0.0,
+        "dark_amber": 0.0,
+        "teal": 0.0,
+        "deep_blue": 0.01,
+        "pale_gold": 0.0
+      }
+    },
+    "x1_y14": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.82,
+      "probabilities": {
+        "white": 0.0,
+        "midnight": 0.03,
+        "pale_cyan": 0.0,
+        "black": 0.85,
+        "amber": 0.0,
+        "cyan": 0.09,
+        "blue": 0.0,
+        "teal": 0.02,
+        "dark_amber": 0.0,
+        "deep_blue": 0.01,
+        "pale_gold": 0.0
+      }
+    },
+    "x2_y14": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.69,
+      "probabilities": {
+        "white": 0.0,
+        "black": 0.72,
+        "pale_cyan": 0.01,
+        "midnight": 0.03,
+        "amber": 0.0,
+        "cyan": 0.19,
+        "blue": 0.01,
+        "deep_blue": 0.01,
+        "dark_amber": 0.0,
+        "teal": 0.03,
+        "pale_gold": 0.0
+      }
+    },
+    "x3_y14": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.58,
+      "probabilities": {
+        "white": 0.0,
+        "midnight": 0.02,
+        "pale_cyan": 0.02,
+        "amber": 0.02,
+        "black": 0.61,
+        "cyan": 0.25,
+        "blue": 0.01,
+        "teal": 0.04,
+        "deep_blue": 0.01,
+        "dark_amber": 0.02,
+        "pale_gold": 0.0
+      }
+    },
+    "x4_y14": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.63,
+      "probabilities": {
+        "white": 0.0,
+        "black": 0.65,
+        "pale_cyan": 0.02,
+        "midnight": 0.04,
+        "amber": 0.01,
+        "cyan": 0.21,
+        "blue": 0.01,
+        "dark_amber": 0.02,
+        "teal": 0.03,
+        "deep_blue": 0.01,
+        "pale_gold": 0.0
+      }
+    },
+    "x5_y14": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.49,
+      "probabilities": {
+        "white": 0.01,
+        "midnight": 0.03,
+        "pale_cyan": 0.02,
+        "amber": 0.02,
+        "black": 0.53,
+        "cyan": 0.29,
+        "blue": 0.01,
+        "dark_amber": 0.03,
+        "teal": 0.05,
+        "deep_blue": 0.01,
+        "pale_gold": 0.0
+      }
+    },
+    "x6_y14": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.36,
+      "probabilities": {
+        "white": 0.01,
+        "amber": 0.03,
+        "pale_cyan": 0.03,
+        "black": 0.41,
+        "midnight": 0.03,
+        "cyan": 0.38,
+        "blue": 0.01,
+        "teal": 0.05,
+        "deep_blue": 0.01,
+        "dark_amber": 0.03,
+        "pale_gold": 0.01
+      }
+    },
+    "x7_y14": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.34,
+      "probabilities": {
+        "white": 0.01,
+        "black": 0.34,
+        "pale_cyan": 0.03,
+        "midnight": 0.03,
+        "amber": 0.05,
+        "cyan": 0.4,
+        "blue": 0.01,
+        "deep_blue": 0.01,
+        "dark_amber": 0.05,
+        "teal": 0.06,
+        "pale_gold": 0.01
+      }
+    },
+    "x8_y14": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.35,
+      "probabilities": {
+        "white": 0.01,
+        "black": 0.24,
+        "pale_cyan": 0.04,
+        "midnight": 0.04,
+        "amber": 0.09,
+        "cyan": 0.39999999999999997,
+        "blue": 0.01,
+        "deep_blue": 0.01,
+        "teal": 0.06,
+        "dark_amber": 0.08,
+        "pale_gold": 0.02
+      }
+    },
+    "x9_y14": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.35,
+      "probabilities": {
+        "white": 0.01,
+        "black": 0.24,
+        "pale_cyan": 0.04,
+        "midnight": 0.03,
+        "amber": 0.11,
+        "cyan": 0.4,
+        "blue": 0.01,
+        "deep_blue": 0.01,
+        "dark_amber": 0.09,
+        "teal": 0.04,
+        "pale_gold": 0.02
+      }
+    },
+    "x10_y14": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.36,
+      "probabilities": {
+        "white": 0.01,
+        "black": 0.19,
+        "pale_cyan": 0.05,
+        "midnight": 0.03,
+        "amber": 0.12,
+        "cyan": 0.41,
+        "blue": 0.01,
+        "deep_blue": 0.01,
+        "dark_amber": 0.1,
+        "teal": 0.05,
+        "pale_gold": 0.02
+      }
+    },
+    "x11_y14": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.26,
+      "probabilities": {
+        "white": 0.01,
+        "midnight": 0.02,
+        "pale_cyan": 0.06,
+        "amber": 0.19,
+        "black": 0.15,
+        "cyan": 0.33,
+        "blue": 0.01,
+        "teal": 0.04,
+        "deep_blue": 0.01,
+        "dark_amber": 0.14,
+        "pale_gold": 0.04
+      }
+    },
+    "x12_y14": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.27,
+      "probabilities": {
+        "white": 0.01,
+        "black": 0.11,
+        "pale_cyan": 0.08,
+        "amber": 0.19,
+        "midnight": 0.01,
+        "cyan": 0.34,
+        "blue": 0.01,
+        "deep_blue": 0.01,
+        "dark_amber": 0.15,
+        "teal": 0.04,
+        "pale_gold": 0.05
+      }
+    },
+    "x13_y14": {
+      "type": "choice",
+      "choice": "amber",
+      "confidence": 0.23,
+      "probabilities": {
+        "white": 0.01,
+        "black": 0.1,
+        "pale_cyan": 0.06,
+        "midnight": 0.01,
+        "amber": 0.31,
+        "cyan": 0.27,
+        "blue": 0.01,
+        "deep_blue": 0.01,
+        "teal": 0.03,
+        "dark_amber": 0.15,
+        "pale_gold": 0.04
+      }
+    },
+    "x14_y14": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.25,
+      "probabilities": {
+        "white": 0.02,
+        "midnight": 0.01,
+        "pale_cyan": 0.08,
+        "black": 0.07,
+        "amber": 0.25,
+        "cyan": 0.31,
+        "blue": 0.01,
+        "deep_blue": 0.01,
+        "teal": 0.05,
+        "dark_amber": 0.15,
+        "pale_gold": 0.04
+      }
+    },
+    "x15_y14": {
+      "type": "choice",
+      "choice": "amber",
+      "confidence": 0.28,
+      "probabilities": {
+        "white": 0.02,
+        "midnight": 0.01,
+        "pale_cyan": 0.1,
+        "black": 0.05,
+        "amber": 0.34,
+        "cyan": 0.25,
+        "blue": 0.01,
+        "deep_blue": 0.01,
+        "dark_amber": 0.12,
+        "teal": 0.03,
+        "pale_gold": 0.06
+      }
+    },
+    "x16_y14": {
+      "type": "choice",
+      "choice": "amber",
+      "confidence": 0.32,
+      "probabilities": {
+        "white": 0.02,
+        "amber": 0.37,
+        "pale_cyan": 0.08,
+        "black": 0.04,
+        "midnight": 0.01,
+        "cyan": 0.22,
+        "blue": 0.01,
+        "deep_blue": 0.01,
+        "teal": 0.03,
+        "dark_amber": 0.13,
+        "pale_gold": 0.08
+      }
+    },
+    "x17_y14": {
+      "type": "choice",
+      "choice": "amber",
+      "confidence": 0.27,
+      "probabilities": {
+        "white": 0.02,
+        "midnight": 0.01,
+        "pale_cyan": 0.06,
+        "black": 0.05,
+        "amber": 0.33,
+        "cyan": 0.28,
+        "blue": 0.01,
+        "deep_blue": 0.0,
+        "dark_amber": 0.15,
+        "teal": 0.03,
+        "pale_gold": 0.06
+      }
+    },
+    "x18_y14": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.3,
+      "probabilities": {
+        "white": 0.01,
+        "amber": 0.22,
+        "pale_cyan": 0.06,
+        "black": 0.11,
+        "midnight": 0.01,
+        "cyan": 0.37,
+        "blue": 0.01,
+        "deep_blue": 0.0,
+        "teal": 0.03,
+        "dark_amber": 0.15,
+        "pale_gold": 0.03
+      }
+    },
+    "x19_y14": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.34,
+      "probabilities": {
+        "white": 0.01,
+        "black": 0.14,
+        "pale_cyan": 0.05,
+        "midnight": 0.02,
+        "amber": 0.21,
+        "cyan": 0.39,
+        "blue": 0.01,
+        "deep_blue": 0.0,
+        "dark_amber": 0.11,
+        "teal": 0.03,
+        "pale_gold": 0.03
+      }
+    },
+    "x20_y14": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.4,
+      "probabilities": {
+        "white": 0.01,
+        "black": 0.19,
+        "pale_cyan": 0.04,
+        "midnight": 0.03,
+        "amber": 0.12,
+        "cyan": 0.45,
+        "blue": 0.01,
+        "deep_blue": 0.01,
+        "dark_amber": 0.09,
+        "teal": 0.03,
+        "pale_gold": 0.02
+      }
+    },
+    "x21_y14": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.47,
+      "probabilities": {
+        "white": 0.01,
+        "black": 0.26,
+        "pale_cyan": 0.03,
+        "midnight": 0.02,
+        "amber": 0.07,
+        "cyan": 0.51,
+        "blue": 0.01,
+        "teal": 0.04,
+        "deep_blue": 0.0,
+        "dark_amber": 0.04,
+        "pale_gold": 0.01
+      }
+    },
+    "x22_y14": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.56,
+      "probabilities": {
+        "white": 0.0,
+        "black": 0.27,
+        "pale_cyan": 0.02,
+        "amber": 0.03,
+        "midnight": 0.01,
+        "cyan": 0.6,
+        "blue": 0.01,
+        "deep_blue": 0.0,
+        "dark_amber": 0.02,
+        "teal": 0.03,
+        "pale_gold": 0.01
+      }
+    },
+    "x23_y14": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.49,
+      "probabilities": {
+        "white": 0.0,
+        "midnight": 0.03,
+        "pale_cyan": 0.02,
+        "black": 0.33,
+        "amber": 0.02,
+        "cyan": 0.54,
+        "blue": 0.01,
+        "teal": 0.04,
+        "deep_blue": 0.0,
+        "dark_amber": 0.01,
+        "pale_gold": 0.0
+      }
+    },
+    "x24_y14": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.5,
+      "probabilities": {
+        "white": 0.0,
+        "midnight": 0.02,
+        "pale_cyan": 0.01,
+        "amber": 0.01,
+        "black": 0.36,
+        "cyan": 0.55,
+        "blue": 0.01,
+        "deep_blue": 0.0,
+        "dark_amber": 0.01,
+        "teal": 0.03,
+        "pale_gold": 0.0
+      }
+    },
+    "x25_y14": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.47,
+      "probabilities": {
+        "white": 0.0,
+        "midnight": 0.02,
+        "pale_cyan": 0.01,
+        "amber": 0.01,
+        "black": 0.38,
+        "cyan": 0.52,
+        "blue": 0.01,
+        "dark_amber": 0.01,
+        "teal": 0.04,
+        "deep_blue": 0.0,
+        "pale_gold": 0.0
+      }
+    },
+    "x26_y14": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.44,
+      "probabilities": {
+        "white": 0.0,
+        "amber": 0.0,
+        "pale_cyan": 0.01,
+        "midnight": 0.03,
+        "black": 0.42,
+        "cyan": 0.5,
+        "blue": 0.0,
+        "deep_blue": 0.0,
+        "dark_amber": 0.0,
+        "teal": 0.04,
+        "pale_gold": 0.0
+      }
+    },
+    "x27_y14": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.41,
+      "probabilities": {
+        "white": 0.0,
+        "midnight": 0.03,
+        "pale_cyan": 0.01,
+        "amber": 0.0,
+        "black": 0.46,
+        "cyan": 0.47000000000000003,
+        "blue": 0.0,
+        "deep_blue": 0.0,
+        "teal": 0.03,
+        "dark_amber": 0.0,
+        "pale_gold": 0.0
+      }
+    },
+    "x28_y14": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.43,
+      "probabilities": {
+        "white": 0.0,
+        "midnight": 0.02,
+        "pale_cyan": 0.01,
+        "amber": 0.0,
+        "black": 0.49,
+        "cyan": 0.45,
+        "blue": 0.0,
+        "dark_amber": 0.0,
+        "teal": 0.03,
+        "deep_blue": 0.0,
+        "pale_gold": 0.0
+      }
+    },
+    "x29_y14": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.58,
+      "probabilities": {
+        "white": 0.0,
+        "midnight": 0.02,
+        "pale_cyan": 0.01,
+        "black": 0.63,
+        "amber": 0.0,
+        "cyan": 0.31,
+        "blue": 0.0,
+        "deep_blue": 0.0,
+        "dark_amber": 0.0,
+        "teal": 0.03,
+        "pale_gold": 0.0
+      }
+    },
+    "x30_y14": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.75,
+      "probabilities": {
+        "white": 0.0,
+        "black": 0.78,
+        "pale_cyan": 0.0,
+        "amber": 0.0,
+        "midnight": 0.01,
+        "cyan": 0.19,
+        "blue": 0.0,
+        "teal": 0.02,
+        "deep_blue": 0.0,
+        "dark_amber": 0.0,
+        "pale_gold": 0.0
+      }
+    },
+    "x31_y14": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.93,
+      "probabilities": {
+        "white": 0.0,
+        "amber": 0.0,
+        "pale_cyan": 0.0,
+        "black": 0.9400000000000001,
+        "midnight": 0.02,
+        "cyan": 0.03,
+        "blue": 0.0,
+        "deep_blue": 0.0,
+        "dark_amber": 0.0,
+        "teal": 0.0,
+        "pale_gold": 0.0
+      }
+    },
+    "x0_y15": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.93,
+      "probabilities": {
+        "white": 0.0,
+        "midnight": 0.04,
+        "pale_cyan": 0.0,
+        "black": 0.95,
+        "amber": 0.0,
+        "cyan": 0.0,
+        "blue": 0.0,
+        "deep_blue": 0.01,
+        "teal": 0.0,
+        "dark_amber": 0.0,
+        "pale_gold": 0.0
+      }
+    },
+    "x1_y15": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.81,
+      "probabilities": {
+        "white": 0.0,
+        "amber": 0.0,
+        "pale_cyan": 0.0,
+        "black": 0.83,
+        "midnight": 0.03,
+        "cyan": 0.11,
+        "blue": 0.0,
+        "deep_blue": 0.01,
+        "dark_amber": 0.0,
+        "teal": 0.02,
+        "pale_gold": 0.0
+      }
+    },
+    "x2_y15": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.75,
+      "probabilities": {
+        "white": 0.0,
+        "black": 0.78,
+        "pale_cyan": 0.01,
+        "midnight": 0.03,
+        "amber": 0.0,
+        "cyan": 0.14,
+        "blue": 0.0,
+        "deep_blue": 0.01,
+        "dark_amber": 0.0,
+        "teal": 0.03,
+        "pale_gold": 0.0
+      }
+    },
+    "x3_y15": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.64,
+      "probabilities": {
+        "white": 0.0,
+        "amber": 0.01,
+        "pale_cyan": 0.01,
+        "midnight": 0.03,
+        "black": 0.67,
+        "cyan": 0.21,
+        "blue": 0.01,
+        "dark_amber": 0.01,
+        "teal": 0.04,
+        "deep_blue": 0.01,
+        "pale_gold": 0.0
+      }
+    },
+    "x4_y15": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.66,
+      "probabilities": {
+        "white": 0.0,
+        "black": 0.6799999999999999,
+        "pale_cyan": 0.01,
+        "amber": 0.01,
+        "midnight": 0.03,
+        "cyan": 0.21,
+        "blue": 0.01,
+        "teal": 0.03,
+        "deep_blue": 0.01,
+        "dark_amber": 0.01,
+        "pale_gold": 0.0
+      }
+    },
+    "x5_y15": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.53,
+      "probabilities": {
+        "white": 0.0,
+        "black": 0.58,
+        "pale_cyan": 0.02,
+        "midnight": 0.03,
+        "amber": 0.02,
+        "cyan": 0.27,
+        "blue": 0.01,
+        "teal": 0.04,
+        "deep_blue": 0.01,
+        "dark_amber": 0.02,
+        "pale_gold": 0.0
+      }
+    },
+    "x6_y15": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.36,
+      "probabilities": {
+        "white": 0.01,
+        "black": 0.41,
+        "pale_cyan": 0.02,
+        "midnight": 0.03,
+        "amber": 0.03,
+        "cyan": 0.38,
+        "blue": 0.01,
+        "dark_amber": 0.03,
+        "teal": 0.06,
+        "deep_blue": 0.01,
+        "pale_gold": 0.01
+      }
+    },
+    "x7_y15": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.33,
+      "probabilities": {
+        "white": 0.01,
+        "amber": 0.05,
+        "pale_cyan": 0.03,
+        "black": 0.37,
+        "midnight": 0.02,
+        "cyan": 0.39,
+        "blue": 0.01,
+        "deep_blue": 0.01,
+        "dark_amber": 0.05,
+        "teal": 0.05,
+        "pale_gold": 0.01
+      }
+    },
+    "x8_y15": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.34,
+      "probabilities": {
+        "white": 0.01,
+        "black": 0.3,
+        "pale_cyan": 0.03,
+        "midnight": 0.03,
+        "amber": 0.08,
+        "cyan": 0.4,
+        "blue": 0.01,
+        "dark_amber": 0.06,
+        "deep_blue": 0.01,
+        "teal": 0.06,
+        "pale_gold": 0.01
+      }
+    },
+    "x9_y15": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.35,
+      "probabilities": {
+        "white": 0.01,
+        "black": 0.24,
+        "pale_cyan": 0.04,
+        "midnight": 0.02,
+        "amber": 0.1,
+        "cyan": 0.41,
+        "blue": 0.01,
+        "teal": 0.05,
+        "deep_blue": 0.01,
+        "dark_amber": 0.1,
+        "pale_gold": 0.01
+      }
+    },
+    "x10_y15": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.39,
+      "probabilities": {
+        "white": 0.01,
+        "midnight": 0.02,
+        "pale_cyan": 0.04,
+        "amber": 0.11,
+        "black": 0.18,
+        "cyan": 0.44,
+        "blue": 0.01,
+        "teal": 0.05,
+        "deep_blue": 0.01,
+        "dark_amber": 0.11,
+        "pale_gold": 0.02
+      }
+    },
+    "x11_y15": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.29,
+      "probabilities": {
+        "white": 0.01,
+        "black": 0.14,
+        "pale_cyan": 0.06,
+        "midnight": 0.03,
+        "amber": 0.18,
+        "cyan": 0.35,
+        "blue": 0.01,
+        "deep_blue": 0.01,
+        "dark_amber": 0.13,
+        "teal": 0.05,
+        "pale_gold": 0.03
+      }
+    },
+    "x12_y15": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.26,
+      "probabilities": {
+        "white": 0.01,
+        "midnight": 0.01,
+        "pale_cyan": 0.08,
+        "amber": 0.21,
+        "black": 0.11,
+        "cyan": 0.32,
+        "blue": 0.01,
+        "dark_amber": 0.15,
+        "teal": 0.05,
+        "deep_blue": 0.01,
+        "pale_gold": 0.04
+      }
+    },
+    "x13_y15": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.23,
+      "probabilities": {
+        "white": 0.02,
+        "midnight": 0.01,
+        "pale_cyan": 0.07,
+        "amber": 0.27,
+        "black": 0.09,
+        "cyan": 0.3,
+        "blue": 0.01,
+        "deep_blue": 0.01,
+        "teal": 0.04,
+        "dark_amber": 0.13,
+        "pale_gold": 0.05
+      }
+    },
+    "x14_y15": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.21,
+      "probabilities": {
+        "white": 0.02,
+        "midnight": 0.01,
+        "pale_cyan": 0.08,
+        "black": 0.07,
+        "amber": 0.27,
+        "cyan": 0.27,
+        "blue": 0.01,
+        "dark_amber": 0.18,
+        "teal": 0.04,
+        "deep_blue": 0.01,
+        "pale_gold": 0.04
+      }
+    },
+    "x15_y15": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.23,
+      "probabilities": {
+        "white": 0.02,
+        "black": 0.05,
+        "pale_cyan": 0.08,
+        "midnight": 0.01,
+        "amber": 0.27,
+        "cyan": 0.29,
+        "blue": 0.01,
+        "deep_blue": 0.01,
+        "dark_amber": 0.16,
+        "teal": 0.04,
+        "pale_gold": 0.06
+      }
+    },
+    "x16_y15": {
+      "type": "choice",
+      "choice": "amber",
+      "confidence": 0.34,
+      "probabilities": {
+        "white": 0.02,
+        "midnight": 0.01,
+        "pale_cyan": 0.07,
+        "black": 0.04,
+        "amber": 0.4,
+        "cyan": 0.25,
+        "blue": 0.01,
+        "teal": 0.03,
+        "deep_blue": 0.0,
+        "dark_amber": 0.11,
+        "pale_gold": 0.06
+      }
+    },
+    "x17_y15": {
+      "type": "choice",
+      "choice": "amber",
+      "confidence": 0.29,
+      "probabilities": {
+        "white": 0.02,
+        "amber": 0.35,
+        "pale_cyan": 0.06,
+        "black": 0.06,
+        "midnight": 0.01,
+        "cyan": 0.25,
+        "blue": 0.01,
+        "dark_amber": 0.15,
+        "teal": 0.03,
+        "deep_blue": 0.01,
+        "pale_gold": 0.05
+      }
+    },
+    "x18_y15": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.33,
+      "probabilities": {
+        "white": 0.02,
+        "black": 0.1,
+        "pale_cyan": 0.07,
+        "midnight": 0.01,
+        "amber": 0.23,
+        "cyan": 0.38,
+        "blue": 0.01,
+        "dark_amber": 0.11,
+        "teal": 0.03,
+        "deep_blue": 0.01,
+        "pale_gold": 0.03
+      }
+    },
+    "x19_y15": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.39,
+      "probabilities": {
+        "white": 0.01,
+        "black": 0.17,
+        "pale_cyan": 0.05,
+        "midnight": 0.01,
+        "amber": 0.16,
+        "cyan": 0.45,
+        "blue": 0.01,
+        "deep_blue": 0.0,
+        "dark_amber": 0.09,
+        "teal": 0.03,
+        "pale_gold": 0.02
+      }
+    },
+    "x20_y15": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.44,
+      "probabilities": {
+        "white": 0.01,
+        "black": 0.19,
+        "pale_cyan": 0.04,
+        "midnight": 0.02,
+        "amber": 0.12,
+        "cyan": 0.49,
+        "blue": 0.01,
+        "teal": 0.04,
+        "deep_blue": 0.0,
+        "dark_amber": 0.07,
+        "pale_gold": 0.01
+      }
+    },
+    "x21_y15": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.48,
+      "probabilities": {
+        "white": 0.01,
+        "amber": 0.06,
+        "pale_cyan": 0.03,
+        "black": 0.25,
+        "midnight": 0.02,
+        "cyan": 0.53,
+        "blue": 0.01,
+        "deep_blue": 0.0,
+        "dark_amber": 0.04,
+        "teal": 0.04,
+        "pale_gold": 0.01
+      }
+    },
+    "x22_y15": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.54,
+      "probabilities": {
+        "white": 0.0,
+        "midnight": 0.02,
+        "pale_cyan": 0.01,
+        "amber": 0.02,
+        "black": 0.29,
+        "cyan": 0.59,
+        "blue": 0.01,
+        "dark_amber": 0.02,
+        "deep_blue": 0.0,
+        "teal": 0.04,
+        "pale_gold": 0.0
+      }
+    },
+    "x23_y15": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.5,
+      "probabilities": {
+        "white": 0.0,
+        "black": 0.34,
+        "pale_cyan": 0.02,
+        "amber": 0.02,
+        "midnight": 0.02,
+        "cyan": 0.54,
+        "blue": 0.01,
+        "dark_amber": 0.01,
+        "deep_blue": 0.0,
+        "teal": 0.03,
+        "pale_gold": 0.0
+      }
+    },
+    "x24_y15": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.48,
+      "probabilities": {
+        "white": 0.0,
+        "midnight": 0.02,
+        "pale_cyan": 0.01,
+        "amber": 0.01,
+        "black": 0.39,
+        "cyan": 0.53,
+        "blue": 0.0,
+        "deep_blue": 0.0,
+        "dark_amber": 0.01,
+        "teal": 0.03,
+        "pale_gold": 0.0
+      }
+    },
+    "x25_y15": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.45,
+      "probabilities": {
+        "white": 0.0,
+        "black": 0.4,
+        "pale_cyan": 0.01,
+        "amber": 0.01,
+        "midnight": 0.02,
+        "cyan": 0.5,
+        "blue": 0.01,
+        "deep_blue": 0.0,
+        "dark_amber": 0.01,
+        "teal": 0.04,
+        "pale_gold": 0.0
+      }
+    },
+    "x26_y15": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.42,
+      "probabilities": {
+        "white": 0.0,
+        "black": 0.45,
+        "pale_cyan": 0.01,
+        "midnight": 0.02,
+        "amber": 0.0,
+        "cyan": 0.48,
+        "blue": 0.0,
+        "deep_blue": 0.0,
+        "teal": 0.04,
+        "dark_amber": 0.0,
+        "pale_gold": 0.0
+      }
+    },
+    "x27_y15": {
+      "type": "choice",
+      "choice": "cyan",
+      "confidence": 0.42,
+      "probabilities": {
+        "white": 0.0,
+        "midnight": 0.02,
+        "pale_cyan": 0.01,
+        "black": 0.46,
+        "amber": 0.0,
+        "cyan": 0.48,
+        "blue": 0.0,
+        "deep_blue": 0.0,
+        "teal": 0.03,
+        "dark_amber": 0.0,
+        "pale_gold": 0.0
+      }
+    },
+    "x28_y15": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.54,
+      "probabilities": {
+        "white": 0.0,
+        "midnight": 0.02,
+        "pale_cyan": 0.0,
+        "black": 0.59,
+        "amber": 0.0,
+        "cyan": 0.36,
+        "blue": 0.0,
+        "deep_blue": 0.0,
+        "dark_amber": 0.0,
+        "teal": 0.03,
+        "pale_gold": 0.0
+      }
+    },
+    "x29_y15": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.67,
+      "probabilities": {
+        "white": 0.0,
+        "amber": 0.0,
+        "pale_cyan": 0.0,
+        "black": 0.71,
+        "midnight": 0.01,
+        "cyan": 0.26,
+        "blue": 0.0,
+        "teal": 0.02,
+        "deep_blue": 0.0,
+        "dark_amber": 0.0,
+        "pale_gold": 0.0
+      }
+    },
+    "x30_y15": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.82,
+      "probabilities": {
+        "white": 0.0,
+        "midnight": 0.02,
+        "pale_cyan": 0.0,
+        "amber": 0.0,
+        "black": 0.84,
+        "cyan": 0.13,
+        "blue": 0.0,
+        "deep_blue": 0.0,
+        "dark_amber": 0.0,
+        "teal": 0.01,
+        "pale_gold": 0.0
+      }
+    },
+    "x31_y15": {
+      "type": "choice",
+      "choice": "black",
+      "confidence": 0.95,
+      "probabilities": {
+        "white": 0.0,
+        "amber": 0.0,
+        "pale_cyan": 0.0,
+        "black": 0.96,
+        "midnight": 0.02,
+        "cyan": 0.02,
+        "blue": 0.0,
+        "dark_amber": 0.0,
+        "teal": 0.0,
+        "deep_blue": 0.0,
+        "pale_gold": 0.0
+      }
+    }
+  },
+  "usage": {
+    "input_tokens": 31993,
+    "output_tokens": 27251
+  }
+}

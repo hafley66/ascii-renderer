@@ -1,0 +1,13 @@
+{
+  "status": "passed",
+  "exact_model_pixels": 576,
+  "png_matches_model": true,
+  "nearest_neighbor_preview_matches": true,
+  "terminal_halfblocks_match_model": true,
+  "usage": {
+    "input_tokens": 49890,
+    "output_tokens": 18537
+  },
+  "model": "jev-1.13.0",
+  "api_batches": 3
+}

@@ -1,0 +1,4423 @@
+{
+  "model": "jev-latest",
+  "state": {
+    "task": "Render a complete original 32 by 32 pixel-art image. Each question asks you to choose the actual final palette color of exactly one pixel. All pixels belong to the same image.",
+    "image": "A luminous alien jellyfish floating in a black ocean. A curved translucent cyan bell with a small warm amber glow inside, long thin curling cyan tentacles, and generous black negative space around the animal. One centered jellyfish seen from the front. Crisp pixel art with a recognizable silhouette. No text, frame, chart, or diagram.",
+    "canvas": {
+      "width": 32,
+      "height": 32,
+      "coordinates": "Integer pixel coordinates: x=0 is the left edge, x=31 is the right edge; y=0 is the top edge, y=31 is the bottom edge. Pixels are square."
+    },
+    "palette_rgb": {
+      "black": [
+        0,
+        0,
+        0
+      ],
+      "midnight": [
+        8,
+        16,
+        32
+      ],
+      "deep_blue": [
+        17,
+        42,
+        80
+      ],
+      "blue": [
+        27,
+        86,
+        145
+      ],
+      "teal": [
+        30,
+        125,
+        146
+      ],
+      "cyan": [
+        65,
+        190,
+        207
+      ],
+      "pale_cyan": [
+        139,
+        226,
+        232
+      ],
+      "white": [
+        231,
+        252,
+        244
+      ],
+      "dark_amber": [
+        121,
+        61,
+        23
+      ],
+      "amber": [
+        235,
+        155,
+        62
+      ],
+      "pale_gold": [
+        255,
+        220,
+        139
+      ]
+    }
+  },
+  "questions": {
+    "x0_y8": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=0, y=8) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x1_y8": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=1, y=8) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x2_y8": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=2, y=8) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x3_y8": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=3, y=8) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x4_y8": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=4, y=8) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x5_y8": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=5, y=8) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x6_y8": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=6, y=8) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x7_y8": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=7, y=8) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x8_y8": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=8, y=8) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x9_y8": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=9, y=8) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x10_y8": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=10, y=8) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x11_y8": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=11, y=8) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x12_y8": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=12, y=8) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x13_y8": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=13, y=8) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x14_y8": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=14, y=8) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x15_y8": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=15, y=8) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x16_y8": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=16, y=8) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x17_y8": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=17, y=8) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x18_y8": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=18, y=8) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x19_y8": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=19, y=8) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x20_y8": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=20, y=8) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x21_y8": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=21, y=8) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x22_y8": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=22, y=8) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x23_y8": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=23, y=8) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x24_y8": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=24, y=8) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x25_y8": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=25, y=8) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x26_y8": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=26, y=8) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x27_y8": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=27, y=8) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x28_y8": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=28, y=8) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x29_y8": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=29, y=8) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x30_y8": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=30, y=8) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x31_y8": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=31, y=8) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x0_y9": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=0, y=9) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x1_y9": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=1, y=9) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x2_y9": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=2, y=9) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x3_y9": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=3, y=9) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x4_y9": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=4, y=9) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x5_y9": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=5, y=9) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x6_y9": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=6, y=9) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x7_y9": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=7, y=9) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x8_y9": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=8, y=9) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x9_y9": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=9, y=9) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x10_y9": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=10, y=9) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x11_y9": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=11, y=9) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x12_y9": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=12, y=9) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x13_y9": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=13, y=9) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x14_y9": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=14, y=9) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x15_y9": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=15, y=9) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x16_y9": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=16, y=9) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x17_y9": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=17, y=9) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x18_y9": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=18, y=9) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x19_y9": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=19, y=9) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x20_y9": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=20, y=9) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x21_y9": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=21, y=9) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x22_y9": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=22, y=9) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x23_y9": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=23, y=9) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x24_y9": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=24, y=9) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x25_y9": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=25, y=9) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x26_y9": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=26, y=9) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x27_y9": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=27, y=9) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x28_y9": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=28, y=9) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x29_y9": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=29, y=9) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x30_y9": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=30, y=9) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x31_y9": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=31, y=9) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x0_y10": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=0, y=10) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x1_y10": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=1, y=10) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x2_y10": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=2, y=10) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x3_y10": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=3, y=10) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x4_y10": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=4, y=10) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x5_y10": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=5, y=10) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x6_y10": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=6, y=10) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x7_y10": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=7, y=10) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x8_y10": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=8, y=10) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x9_y10": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=9, y=10) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x10_y10": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=10, y=10) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x11_y10": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=11, y=10) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x12_y10": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=12, y=10) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x13_y10": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=13, y=10) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x14_y10": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=14, y=10) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x15_y10": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=15, y=10) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x16_y10": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=16, y=10) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x17_y10": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=17, y=10) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x18_y10": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=18, y=10) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x19_y10": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=19, y=10) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x20_y10": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=20, y=10) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x21_y10": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=21, y=10) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x22_y10": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=22, y=10) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x23_y10": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=23, y=10) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x24_y10": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=24, y=10) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x25_y10": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=25, y=10) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x26_y10": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=26, y=10) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x27_y10": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=27, y=10) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x28_y10": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=28, y=10) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x29_y10": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=29, y=10) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x30_y10": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=30, y=10) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x31_y10": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=31, y=10) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x0_y11": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=0, y=11) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x1_y11": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=1, y=11) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x2_y11": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=2, y=11) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x3_y11": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=3, y=11) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x4_y11": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=4, y=11) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x5_y11": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=5, y=11) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x6_y11": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=6, y=11) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x7_y11": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=7, y=11) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x8_y11": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=8, y=11) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x9_y11": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=9, y=11) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x10_y11": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=10, y=11) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x11_y11": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=11, y=11) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x12_y11": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=12, y=11) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x13_y11": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=13, y=11) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x14_y11": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=14, y=11) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x15_y11": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=15, y=11) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x16_y11": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=16, y=11) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x17_y11": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=17, y=11) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x18_y11": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=18, y=11) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x19_y11": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=19, y=11) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x20_y11": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=20, y=11) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x21_y11": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=21, y=11) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x22_y11": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=22, y=11) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x23_y11": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=23, y=11) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x24_y11": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=24, y=11) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x25_y11": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=25, y=11) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x26_y11": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=26, y=11) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x27_y11": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=27, y=11) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x28_y11": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=28, y=11) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x29_y11": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=29, y=11) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x30_y11": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=30, y=11) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x31_y11": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=31, y=11) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x0_y12": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=0, y=12) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x1_y12": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=1, y=12) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x2_y12": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=2, y=12) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x3_y12": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=3, y=12) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x4_y12": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=4, y=12) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x5_y12": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=5, y=12) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x6_y12": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=6, y=12) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x7_y12": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=7, y=12) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x8_y12": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=8, y=12) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x9_y12": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=9, y=12) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x10_y12": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=10, y=12) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x11_y12": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=11, y=12) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x12_y12": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=12, y=12) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x13_y12": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=13, y=12) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x14_y12": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=14, y=12) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x15_y12": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=15, y=12) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x16_y12": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=16, y=12) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x17_y12": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=17, y=12) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x18_y12": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=18, y=12) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x19_y12": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=19, y=12) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x20_y12": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=20, y=12) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x21_y12": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=21, y=12) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x22_y12": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=22, y=12) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x23_y12": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=23, y=12) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x24_y12": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=24, y=12) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x25_y12": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=25, y=12) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x26_y12": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=26, y=12) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x27_y12": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=27, y=12) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x28_y12": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=28, y=12) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x29_y12": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=29, y=12) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x30_y12": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=30, y=12) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x31_y12": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=31, y=12) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x0_y13": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=0, y=13) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x1_y13": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=1, y=13) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x2_y13": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=2, y=13) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x3_y13": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=3, y=13) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x4_y13": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=4, y=13) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x5_y13": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=5, y=13) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x6_y13": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=6, y=13) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x7_y13": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=7, y=13) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x8_y13": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=8, y=13) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x9_y13": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=9, y=13) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x10_y13": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=10, y=13) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x11_y13": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=11, y=13) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x12_y13": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=12, y=13) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x13_y13": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=13, y=13) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x14_y13": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=14, y=13) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x15_y13": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=15, y=13) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x16_y13": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=16, y=13) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x17_y13": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=17, y=13) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x18_y13": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=18, y=13) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x19_y13": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=19, y=13) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x20_y13": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=20, y=13) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x21_y13": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=21, y=13) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x22_y13": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=22, y=13) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x23_y13": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=23, y=13) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x24_y13": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=24, y=13) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x25_y13": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=25, y=13) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x26_y13": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=26, y=13) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x27_y13": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=27, y=13) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x28_y13": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=28, y=13) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x29_y13": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=29, y=13) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x30_y13": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=30, y=13) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x31_y13": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=31, y=13) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x0_y14": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=0, y=14) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x1_y14": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=1, y=14) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x2_y14": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=2, y=14) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x3_y14": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=3, y=14) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x4_y14": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=4, y=14) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x5_y14": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=5, y=14) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x6_y14": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=6, y=14) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x7_y14": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=7, y=14) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x8_y14": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=8, y=14) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x9_y14": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=9, y=14) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x10_y14": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=10, y=14) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x11_y14": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=11, y=14) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x12_y14": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=12, y=14) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x13_y14": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=13, y=14) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x14_y14": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=14, y=14) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x15_y14": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=15, y=14) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x16_y14": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=16, y=14) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x17_y14": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=17, y=14) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x18_y14": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=18, y=14) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x19_y14": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=19, y=14) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x20_y14": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=20, y=14) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x21_y14": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=21, y=14) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x22_y14": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=22, y=14) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x23_y14": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=23, y=14) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x24_y14": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=24, y=14) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x25_y14": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=25, y=14) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x26_y14": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=26, y=14) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x27_y14": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=27, y=14) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x28_y14": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=28, y=14) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x29_y14": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=29, y=14) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x30_y14": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=30, y=14) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x31_y14": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=31, y=14) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x0_y15": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=0, y=15) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x1_y15": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=1, y=15) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x2_y15": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=2, y=15) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x3_y15": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=3, y=15) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x4_y15": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=4, y=15) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x5_y15": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=5, y=15) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x6_y15": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=6, y=15) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x7_y15": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=7, y=15) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x8_y15": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=8, y=15) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x9_y15": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=9, y=15) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x10_y15": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=10, y=15) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x11_y15": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=11, y=15) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x12_y15": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=12, y=15) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x13_y15": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=13, y=15) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x14_y15": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=14, y=15) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x15_y15": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=15, y=15) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x16_y15": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=16, y=15) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x17_y15": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=17, y=15) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x18_y15": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=18, y=15) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x19_y15": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=19, y=15) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x20_y15": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=20, y=15) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x21_y15": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=21, y=15) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x22_y15": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=22, y=15) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x23_y15": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=23, y=15) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x24_y15": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=24, y=15) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x25_y15": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=25, y=15) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x26_y15": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=26, y=15) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x27_y15": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=27, y=15) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x28_y15": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=28, y=15) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x29_y15": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=29, y=15) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x30_y15": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=30, y=15) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    },
+    "x31_y15": {
+      "type": "choice",
+      "instructions": "What is the final color of pixel (x=31, y=15) in this 32 by 32 image? Choose exactly one palette entry.",
+      "criteria": {
+        "black": null,
+        "midnight": null,
+        "deep_blue": null,
+        "blue": null,
+        "teal": null,
+        "cyan": null,
+        "pale_cyan": null,
+        "white": null,
+        "dark_amber": null,
+        "amber": null,
+        "pale_gold": null
+      }
+    }
+  }
+}

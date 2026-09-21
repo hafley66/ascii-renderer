@@ -1,0 +1,4 @@
+{
+  "status": 400,
+  "detail": "{\"detail\":{\"error_type\":\"max_tokens_exceeded\"}}"
+}
