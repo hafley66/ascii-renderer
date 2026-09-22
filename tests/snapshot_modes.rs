@@ -1508,3 +1508,13 @@ fn wada_seed_42() {
 fn wada_dendrite_t7() {
     insta::assert_snapshot!(render_t(&["42", "wada", "nerv"], "7"));
 }
+
+#[test]
+fn wada_v2_seed_42() {
+    insta::assert_snapshot!(render(&["42", "wada-v2", "moss"]));
+}
+
+#[test]
+fn wada_v2_dots_t7() {
+    insta::assert_snapshot!(render_t(&["42", "wada-v2", "nerv"], "7"));
+}
