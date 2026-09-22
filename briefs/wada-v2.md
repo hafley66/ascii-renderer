@@ -24,9 +24,23 @@ Knobs: [order] [relax] [twist] [warp] [spin] [trap] [vein] [dot] [hue]
   the layer-timer gate failing on the slice/fma/gothic suite from a1ee1be.
 - In-module: wada_v2_80x24, wada_v2_80x24_t6, determinism, seed sensitivity,
   time sensitivity, knob sensitivity, frame_cost. Release frame_cost at
-  200x60: avg 5.14 to 5.16 ms over repeated runs, under the 6 ms budget.
+  200x60: avg 4.92 to 4.96 ms, down from 5.10 ms after the efficiency pass,
+  under the 6 ms budget.
 - Integration: snapshot_modes wada_v2_seed_42 and wada_v2_dots_t7.
 - Snapshots accepted after inspecting the braille output, never blindly.
+
+## Efficiency pass
+
+Requested as "more efficient without snapshot changes", so every edit is
+bit-identical: no floating point was restructured and no visual threshold
+moved. Two levers only. nearest_root stops once a squared distance under
+1e-4 proves the index the full argmin would return (roots are half a unit
+apart). And the per-cell labels (majority basin, average dwell) are now
+computed once in the solve pass and read by dots, veins and traps instead
+of being recomputed up to five times per cell: vein neighbor scans dropped
+5229 to 672 us and traps 3340 to 541 us at ORDER=12. All eight committed
+snapshots re-ran byte-identical afterward: 12 in-module plus 4 integration
+tests green with zero .snap.new files.
 
 ## Frame budget work
 
@@ -42,7 +56,7 @@ and re-reviewed after each.
 
 | mode | layers | calls/frame | attributed | nested | thin |
 | --- | ---: | ---: | ---: | --- | --- |
-| wada-v2 | 5 | 5.0 | 99.3% | no | no |
+| wada-v2 | 5 | 5.0 | 99.7% | no | no |
 
 1 modes reported: 0 thin under 85 percent, 0 nested over 100 percent, 0 with
 no timers at all
@@ -53,18 +67,18 @@ no timers at all
 
 | knob at max | frames | fps | avg ms | p50 ms | p99 ms | max ms | vs baseline |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| baseline | 7 | 3.2 | 311.55 | 310.30 | 328.60 | 346.47 | 1.00x |
-| ORDER=12 | 3 | 1.1 | 905.09 | 905.71 | 905.71 | 908.36 | 2.91x |
-| RELAX=1.3 | 6 | 2.8 | 356.53 | 355.39 | 365.65 | 369.69 | 1.14x |
-| ASPECT=4 | 7 | 3.0 | 330.72 | 329.35 | 339.20 | 343.21 | 1.06x |
-| WARP=1.5 | 7 | 3.1 | 324.23 | 317.30 | 344.00 | 345.68 | 1.04x |
-| GRAIN=1 | 7 | 3.2 | 312.95 | 307.24 | 330.69 | 352.85 | 1.00x |
-| VEIN=1.5 | 7 | 3.2 | 307.99 | 312.54 | 314.59 | 315.74 | 0.99x |
-| TWIST=0.9 | 7 | 3.2 | 307.88 | 311.41 | 321.25 | 321.27 | 0.99x |
-| HUE=90 | 7 | 3.3 | 299.90 | 296.93 | 306.82 | 330.45 | 0.96x |
-| CONTOUR=12 | 7 | 3.4 | 297.69 | 302.18 | 313.03 | 314.77 | 0.96x |
-| TRAP=1.5 | 7 | 3.4 | 294.30 | 294.47 | 303.63 | 343.64 | 0.94x |
-| SPIN=1 | 7 | 3.4 | 291.01 | 285.84 | 301.32 | 335.76 | 0.93x |
+| baseline | 8 | 3.7 | 270.79 | 262.60 | 284.33 | 287.39 | 1.00x |
+| ORDER=12 | 3 | 1.3 | 777.59 | 778.39 | 778.39 | 792.95 | 2.87x |
+| RELAX=1.3 | 7 | 3.1 | 321.05 | 318.07 | 337.67 | 338.72 | 1.19x |
+| ASPECT=4 | 7 | 3.4 | 296.58 | 295.90 | 302.44 | 322.99 | 1.10x |
+| WARP=1.5 | 8 | 3.6 | 276.04 | 271.54 | 299.78 | 302.24 | 1.02x |
+| HUE=90 | 8 | 3.7 | 273.01 | 270.10 | 283.20 | 293.42 | 1.01x |
+| TRAP=1.5 | 8 | 3.7 | 272.33 | 264.13 | 287.54 | 292.82 | 1.01x |
+| GRAIN=1 | 8 | 3.7 | 271.85 | 263.46 | 280.86 | 296.03 | 1.00x |
+| VEIN=1.5 | 8 | 3.8 | 265.51 | 261.33 | 278.84 | 285.04 | 0.98x |
+| TWIST=0.9 | 8 | 3.8 | 261.68 | 255.41 | 275.65 | 282.89 | 0.97x |
+| SPIN=1 | 8 | 3.8 | 260.15 | 256.85 | 273.55 | 279.80 | 0.96x |
+| CONTOUR=12 | 8 | 3.9 | 257.40 | 250.85 | 275.80 | 279.13 | 0.95x |
 
 worst: ORDER=12
 
@@ -72,16 +86,17 @@ worst: ORDER=12
 
 | layer | calls/frame | avg us | max us | share of frame |
 | --- | ---: | ---: | ---: | ---: |
-| basins | 1.0 | 789938.9 | 804161.9 | 97.6% |
-| dots | 1.0 | 8828.7 | 9536.4 | 1.1% |
-| veins | 1.0 | 5229.6 | 5905.3 | 0.6% |
-| traps | 1.0 | 3339.8 | 3612.1 | 0.4% |
-| grain | 1.0 | 1442.2 | 1615.5 | 0.2% |
+| basins | 1.0 | 806802.2 | 831120.2 | 98.8% |
+| dots | 1.0 | 6167.5 | 6747.6 | 0.8% |
+| grain | 1.0 | 1209.0 | 1214.9 | 0.1% |
+| veins | 1.0 | 672.4 | 736.0 | 0.1% |
+| traps | 1.0 | 540.8 | 637.0 | 0.1% |
 
-Baseline is 16M subcell solves (2000x1000 cells x 8 dots); the solve layer
-carries 97.6 percent at worst-knob as designed and every paint pass stays
-under 1.2 percent. The interactive budget is the in-module frame_cost gate
-(200x60, under 6 ms), which passes in release with headroom.
+Baseline is 16M subcell solves (2000x1000 cells x 8 dots); it improved from
+311.55 to 270.79 ms through the efficiency pass, and the solve layer carries
+98.8 percent at worst-knob with every paint pass under 0.8 percent. The
+interactive budget is the in-module frame_cost gate (200x60, under 6 ms),
+which measures 4.92 to 4.96 ms in release.
 
 ## Previews
 

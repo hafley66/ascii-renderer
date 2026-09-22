@@ -2,6 +2,6 @@
 
 | mode | layers | calls/frame | attributed | nested | thin |
 | --- | ---: | ---: | ---: | --- | --- |
-| wada-v2 | 5 | 5.0 | 99.3% | no | no |
+| wada-v2 | 5 | 5.0 | 99.7% | no | no |
 
 1 modes reported: 0 thin under 85 percent, 0 nested over 100 percent, 0 with no timers at all

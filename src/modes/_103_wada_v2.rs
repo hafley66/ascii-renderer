@@ -126,11 +126,14 @@ struct Sub {
     iters: u8,
 }
 
-/// One cell: eight braille-dot samples plus its cheapest trap dive.
+/// One cell: eight braille-dot samples, its cheapest trap dive, and the two
+/// per-cell labels every paint pass used to recompute.
 #[derive(Clone, Copy, Default)]
 struct CellField {
     subs: [Sub; 8],
     trap: f32,
+    maj: u8,
+    avg: u8,
 }
 
 /// The basin that owns most of the cell's dots; ties keep the low index.
@@ -412,6 +415,10 @@ fn solve_basins(field: &mut [CellField], w: usize, h: usize, look: &Look) {
                 };
             }
             cell.trap = trap2.sqrt();
+            let maj = majority(cell);
+            let avg = avg_iters(cell) as u8;
+            cell.maj = maj;
+            cell.avg = avg;
         }
     });
 }
@@ -428,6 +435,12 @@ fn nearest_root(z: (f32, f32), look: &Look) -> u8 {
             best = d2;
             bi = k;
         }
+        // A converged iterate sits far closer to its root than to the next
+        // root, so a tiny squared distance ends the scan with the same index
+        // the full argmin would return.
+        if best < 1.0e-4 {
+            break;
+        }
     }
     bi as u8
 }
@@ -439,8 +452,8 @@ fn paint_dots(grid: &mut Grid, field: &[CellField], w: usize, h: usize, look: &L
     grid_rows(grid, w, h, |(y, row)| {
         for (x, cell) in row.iter_mut().enumerate().take(w) {
             let f = &field[y * w + x];
-            let maj = majority(f);
-            let avg = avg_iters(f) as f32;
+            let maj = f.maj;
+            let avg = f.avg as f32;
             let dwell = (avg / MAXIT as f32).min(1.0);
             let calm = 1.0 - dwell;
             let jitter = (unit(hash(look.seed, L_DUST, (y * w + x) as u64, 2)) - 0.5)
@@ -490,8 +503,8 @@ fn paint_veins(grid: &mut Grid, field: &[CellField], w: usize, h: usize, look: &
     grid_rows(grid, w, h, |(y, row)| {
         for (x, cell) in row.iter_mut().enumerate().take(w) {
             let f = &field[y * w + x];
-            let maj = majority(f);
-            let avg = avg_iters(f) as u8;
+            let maj = f.maj;
+            let avg = f.avg;
             if avg > SEAM_MAXIT {
                 continue;
             }
@@ -504,9 +517,9 @@ fn paint_veins(grid: &mut Grid, field: &[CellField], w: usize, h: usize, look: &
                     continue;
                 }
                 let n = &field[ny as usize * w + nx as usize];
-                if majority(n) != maj {
+                if n.maj != maj {
                     ndiff += 1;
-                    if avg_iters(n) as u8 > SEAM_MAXIT {
+                    if n.avg > SEAM_MAXIT {
                         clean = false;
                     }
                 }
@@ -531,7 +544,7 @@ fn paint_traps(grid: &mut Grid, field: &[CellField], w: usize, h: usize, look: &
     grid_rows(grid, w, h, |(y, row)| {
         for (x, cell) in row.iter_mut().enumerate().take(w) {
             let f = &field[y * w + x];
-            if majority(f) == CHAOS || f.trap >= reach {
+            if f.maj == CHAOS || f.trap >= reach {
                 continue;
             }
             let g = hash(look.seed, L_TRAP, (y * w + x) as u64, 0);
