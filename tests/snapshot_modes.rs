@@ -1528,3 +1528,8 @@ fn cutup_seed_42() {
 fn cutup_negatives_t7() {
     insta::assert_snapshot!(render_t(&["42", "cutup", "nerv", "6", "3", "1.5", "10", "0.8"], "7"));
 }
+
+#[test]
+fn treatise() {
+    insta::assert_snapshot!(render(&["42", "treatise", "ink"]));
+}
