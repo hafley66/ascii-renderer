@@ -73,3 +73,21 @@ These are the decisions that shaped the final image, in order:
 10. Final state accepted after the marked contact sheet review: saturated
     basin fields, dendrite coasts with lit # veins, trap sparks, engraved
     dwell contours. Snapshots accepted by inspection after that review.
+
+## Entry 3
+
+- channel: user request (efficiency pass)
+- received: 2026-09-21, after the wada-v2 commits
+
+```text
+last thing, can u make both more efficient without snapshot changes?
+```
+
+Read as: optimize both modes while keeping every committed snapshot
+byte-identical. Executed with bit-identical edits only: the rayon threshold
+moved from 20,480 to 4,096 cells (thread scheduling cannot change output),
+and nearest_root gained an early break that provably returns the same index
+because roots are half a unit apart. No floating point was restructured and
+no visual threshold moved. Verified by re-running all eight snapshots: 12
+in-module plus 4 integration tests green, zero .snap.new files. frame_cost
+3.03 to 1.10 ms; sweep baseline 58.32 to 50.25 ms.

@@ -19,7 +19,7 @@ Knobs: [order] [relax] [twist] [warp] [spin] [trap] [vein] [contour] [hue]
 
 ## Validation
 
-- `cargo test`: 674 passed. Three failures are pre-existing at HEAD and none
+- `cargo test`: 680 passed. Three failures are pre-existing at HEAD and none
   is wada: `gridio::ansi_frame_tests::animation_encoder_collapses_adjacent_rgb_levels`
   and `morph::iterate_frame_tests::gem_bad_roll6_ansi_regression` (known
   baseline), plus `perf_sweep::every_registered_mode_that_renders_in_process_has_layer_timers`
@@ -31,6 +31,18 @@ Knobs: [order] [relax] [twist] [warp] [spin] [trap] [vein] [contour] [hue]
 - Integration: snapshot_modes wada_seed_42 and wada_dendrite_t7.
 - Snapshots accepted after inspecting the rendered PNGs in
   perf/previews/102_wada/, never blindly.
+
+## Efficiency pass
+
+Requested as "more efficient without snapshot changes", so every edit is
+bit-identical: no floating point was restructured and no visual threshold
+moved. Two levers only. The rayon threshold dropped from 20,480 to 4,096
+cells (per-cell work is independent, so thread scheduling cannot change a
+byte), which took the serial 200x60 frame from 3.03 ms to 1.10 ms average.
+And nearest_root stops once a squared distance under 1e-4 proves the index
+the full argmin would return, since roots are half a unit apart. All eight
+committed snapshots re-ran byte-identical afterward: 12 in-module plus 4
+integration tests green with zero .snap.new files.
 
 ## Layer coverage
 
@@ -49,18 +61,18 @@ no timers at all
 
 | knob at max | frames | fps | avg ms | p50 ms | p99 ms | max ms | vs baseline |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| baseline | 35 | 17.1 | 58.32 | 56.68 | 70.28 | 74.13 | 1.00x |
-| ORDER=12 | 15 | 7.0 | 143.18 | 141.93 | 164.45 | 165.54 | 2.45x |
-| RELAX=1.3 | 27 | 13.4 | 74.83 | 74.32 | 86.74 | 100.20 | 1.28x |
-| WARP=1.5 | 34 | 16.7 | 59.91 | 57.44 | 76.48 | 85.40 | 1.03x |
-| TRAP=1.5 | 34 | 16.8 | 59.39 | 58.56 | 74.30 | 77.60 | 1.02x |
-| SPIN=1 | 34 | 16.9 | 59.13 | 56.40 | 66.97 | 79.97 | 1.01x |
-| CONTOUR=12 | 34 | 16.9 | 59.04 | 58.08 | 70.18 | 76.18 | 1.01x |
-| ASPECT=4 | 34 | 17.0 | 58.90 | 58.62 | 65.35 | 70.08 | 1.01x |
-| GRAIN=1 | 35 | 17.1 | 58.43 | 56.74 | 71.32 | 72.50 | 1.00x |
-| HUE=90 | 35 | 17.2 | 58.24 | 57.22 | 73.76 | 75.50 | 1.00x |
-| VEIN=1.5 | 35 | 17.5 | 57.24 | 55.90 | 66.58 | 70.62 | 0.98x |
-| TWIST=0.9 | 36 | 18.0 | 55.68 | 54.01 | 74.70 | 78.39 | 0.95x |
+| baseline | 40 | 19.9 | 50.25 | 49.22 | 57.02 | 57.45 | 1.00x |
+| ORDER=12 | 17 | 8.2 | 121.46 | 118.62 | 132.64 | 146.68 | 2.42x |
+| RELAX=1.3 | 32 | 15.9 | 63.07 | 62.12 | 69.74 | 73.42 | 1.26x |
+| TRAP=1.5 | 38 | 18.9 | 52.88 | 51.60 | 59.02 | 71.78 | 1.05x |
+| GRAIN=1 | 39 | 19.1 | 52.31 | 51.23 | 61.74 | 63.23 | 1.04x |
+| HUE=90 | 39 | 19.1 | 52.24 | 51.19 | 57.51 | 59.11 | 1.04x |
+| SPIN=1 | 39 | 19.1 | 52.22 | 51.19 | 59.78 | 61.26 | 1.04x |
+| ASPECT=4 | 39 | 19.3 | 51.74 | 51.18 | 60.85 | 60.89 | 1.03x |
+| CONTOUR=12 | 39 | 19.4 | 51.64 | 50.19 | 59.17 | 84.66 | 1.03x |
+| TWIST=0.9 | 39 | 19.4 | 51.60 | 50.52 | 61.19 | 64.05 | 1.03x |
+| WARP=1.5 | 40 | 19.7 | 50.85 | 50.42 | 57.82 | 60.01 | 1.01x |
+| VEIN=1.5 | 40 | 20.0 | 50.12 | 50.26 | 56.57 | 57.57 | 1.00x |
 
 worst: ORDER=12
 
@@ -68,17 +80,17 @@ worst: ORDER=12
 
 | layer | calls/frame | avg us | max us | share of frame |
 | --- | ---: | ---: | ---: | ---: |
-| basins | 1.0 | 124280.1 | 137927.9 | 92.8% |
-| shade | 1.0 | 6083.4 | 6905.4 | 4.5% |
-| grain | 1.0 | 1294.9 | 1726.9 | 1.0% |
-| veins | 1.0 | 926.4 | 1314.8 | 0.7% |
-| traps | 1.0 | 398.9 | 706.6 | 0.3% |
+| basins | 1.0 | 109567.6 | 124123.6 | 92.5% |
+| shade | 1.0 | 5622.9 | 6832.5 | 4.7% |
+| grain | 1.0 | 1143.0 | 1547.7 | 1.0% |
+| veins | 1.0 | 770.8 | 1190.6 | 0.7% |
+| traps | 1.0 | 325.8 | 455.0 | 0.3% |
 
 The solve dominates as designed; paint passes together stay under 7 percent.
-ORDER=12 costs 2.45x baseline because z^12 needs eleven complex multiplies per
-iteration. Baseline 58 ms at 2000x1000 is 2 million cells; the in-module
-frame_cost gate (200x60, under 6 ms) is the interactive-size budget and
-passes in release.
+ORDER=12 costs 2.42x baseline because z^12 needs eleven complex multiplies
+per iteration. Baseline improved from 58.32 to 50.25 ms at 2000x1000 through
+the efficiency pass below. The in-module frame_cost gate (200x60, under 6 ms)
+now measures 1.10 ms average in release, down from 3.03 ms.
 
 ## Previews
 

@@ -57,3 +57,22 @@ Appreciation only; no change to direction.
    worst under 6 ms across repeated runs.
 7. Snapshots regenerated after each of steps 5 and 6 and accepted by
    inspection of the braille output, never blindly.
+
+## Entry 3
+
+- channel: user request (efficiency pass)
+- received: 2026-09-21, after the wada-v2 commits
+
+```text
+last thing, can u make both more efficient without snapshot changes?
+```
+
+Read as: optimize both modes while keeping every committed snapshot
+byte-identical. For wada-v2: nearest_root gained an early break that
+provably returns the same index (roots are half a unit apart), and the
+per-cell labels (majority basin, average dwell) moved into the solve pass
+so dots, veins and traps read them instead of recomputing up to five times
+per cell. No floating point was restructured and no visual threshold moved.
+Verified by re-running all eight snapshots: 12 in-module plus 4 integration
+tests green, zero .snap.new files. frame_cost 5.10 to 4.92 ms; sweep
+baseline 311.55 to 270.79 ms; vein scans 5229 to 672 us.

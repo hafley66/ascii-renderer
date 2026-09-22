@@ -41,7 +41,7 @@ const L_DUST: u64 = 0x73;
 const L_TRAP: u64 = 0x74;
 const L_MOB: u64 = 0x75;
 
-const PARALLEL_MIN_CELLS: usize = 20_480;
+const PARALLEL_MIN_CELLS: usize = 4096;
 
 const PARAMS: &[Param] = &[
     param!("ORDER", "roots on the ring", 3.0, 12.0, 5.0, 1.0),
@@ -377,6 +377,12 @@ fn nearest_root(z: (f32, f32), look: &Look) -> u8 {
         if d2 < best {
             best = d2;
             bi = k;
+        }
+        // A converged iterate sits far closer to its root than to the next
+        // root, so a tiny squared distance ends the scan with the same index
+        // the full argmin would return.
+        if best < 1.0e-4 {
+            break;
         }
     }
     bi as u8
