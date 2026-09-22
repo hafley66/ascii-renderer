@@ -1518,3 +1518,13 @@ fn wada_v2_seed_42() {
 fn wada_v2_dots_t7() {
     insta::assert_snapshot!(render_t(&["42", "wada-v2", "nerv"], "7"));
 }
+
+#[test]
+fn cutup_seed_42() {
+    insta::assert_snapshot!(render(&["42", "cutup", "ember"]));
+}
+
+#[test]
+fn cutup_negatives_t7() {
+    insta::assert_snapshot!(render_t(&["42", "cutup", "nerv", "6", "3", "1.5", "10", "0.8"], "7"));
+}
