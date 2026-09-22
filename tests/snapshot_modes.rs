@@ -1498,3 +1498,13 @@ fn moongate_seed_42() {
 fn moongate_lantern_t9() {
     insta::assert_snapshot!(render_t(&["42", "moongate", "ember"], "9"));
 }
+
+#[test]
+fn wada_seed_42() {
+    insta::assert_snapshot!(render(&["42", "wada", "moss"]));
+}
+
+#[test]
+fn wada_dendrite_t7() {
+    insta::assert_snapshot!(render_t(&["42", "wada", "nerv"], "7"));
+}
