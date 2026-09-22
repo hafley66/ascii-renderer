@@ -582,49 +582,51 @@ fn paint_collage(
     each_grid_row(grid, w, h, |(y, row)| {
         for frag in frags {
             let (ox, oy) = drift_off(frag, look.time);
-            let (dx, dy) = (frag.dx + ox, frag.dy + oy);
-            let ry = y as i32 - dy;
-            if ry < 0 || ry >= h as i32 {
-                continue;
-            }
-            let ly = ry as f32 + 0.5;
+            let (dx, dy) = (frag.dx as f32 + ox, frag.dy as f32 + oy);
+            let ly = y as f32 + 0.5 - dy;
             if ly < frag.y0 || ly >= frag.y1 {
                 continue;
             }
-            let x_lo = (frag.x0 + dx as f32 - 0.5).ceil().max(0.0) as usize;
-            let x_hi = (frag.x1 + dx as f32 - 0.5).ceil().clamp(0.0, w as f32) as usize;
-            let cx_lo = if frag.i == 0 { 0.0 } else { cut_x[ry as usize * look.vcuts + frag.i - 1] };
+            let ry = ly.floor();
+            if ry < 0.0 || ry >= h as f32 {
+                continue;
+            }
+            let ryi = ry as usize;
+            let x_lo = (frag.x0 + dx - 0.5).ceil().max(0.0) as usize;
+            let x_hi = (frag.x1 + dx - 0.5).ceil().clamp(0.0, w as f32) as usize;
+            let cx_lo = if frag.i == 0 { 0.0 } else { cut_x[ryi * look.vcuts + frag.i - 1] };
             let cx_hi = if frag.i == look.vcuts {
                 w as f32
             } else {
-                cut_x[ry as usize * look.vcuts + frag.i]
+                cut_x[ryi * look.vcuts + frag.i]
             };
             for x in x_lo..x_hi {
-                let rx = x as i32 - dx;
-                if rx < 0 || rx >= w as i32 {
-                    continue;
-                }
-                let lx = rx as f32 + 0.5;
+                let lx = x as f32 + 0.5 - dx;
                 if lx < cx_lo || lx >= cx_hi {
                     continue;
                 }
-                let cy_lo = if frag.j == 0 { 0.0 } else { cut_y[rx as usize * look.hcuts + frag.j - 1] };
+                let rx = lx.floor();
+                if rx < 0.0 || rx >= w as f32 {
+                    continue;
+                }
+                let rxi = rx as usize;
+                let cy_lo = if frag.j == 0 { 0.0 } else { cut_y[rxi * look.hcuts + frag.j - 1] };
                 let cy_hi = if frag.j == look.hcuts {
                     h as f32
                 } else {
-                    cut_y[rx as usize * look.hcuts + frag.j]
+                    cut_y[rxi * look.hcuts + frag.j]
                 };
                 if ly < cy_lo || ly >= cy_hi {
                     continue;
                 }
                 let edge = (lx - cx_lo).min(cx_hi - lx).min(ly - cy_lo).min(cy_hi - ly);
-                let mut px = rx;
+                let mut px = rxi as i32;
                 if frag.flip_x {
-                    px = frag.nx0 + frag.nx1 - 1 - rx;
+                    px = frag.nx0 + frag.nx1 - 1 - px;
                 }
-                let mut py = ry;
+                let mut py = ryi as i32;
                 if frag.flip_y {
-                    py = frag.ny0 + frag.ny1 - 1 - ry;
+                    py = frag.ny0 + frag.ny1 - 1 - py;
                 }
                 let px = px.clamp(0, w as i32 - 1) as usize;
                 let py = py.clamp(0, h as i32 - 1) as usize;
@@ -712,14 +714,14 @@ fn paint_grain(grid: &mut Grid, w: usize, h: usize, look: &Look) {
     });
 }
 
-/// Fragment drift: integer cell oscillation that rests at zero when time is zero.
+/// Fragment drift: sub-cell oscillation that rests at zero when time is zero.
 #[inline]
-fn drift_off(frag: &Frag, time: f32) -> (i32, i32) {
+fn drift_off(frag: &Frag, time: f32) -> (f32, f32) {
     if time == 0.0 || frag.osc_amp <= 0.0 {
-        return (0, 0);
+        return (0.0, 0.0);
     }
     let s = (time * frag.osc_w + frag.osc_ph).sin() - frag.osc_ph.sin();
-    ((s * frag.osc_amp).round() as i32, (s * frag.osc_amp * 0.45).round() as i32)
+    (s * frag.osc_amp, s * frag.osc_amp * 0.45)
 }
 
 #[inline]
@@ -796,6 +798,12 @@ mod tests {
     fn time_slides_the_impression() {
         let k = knobs();
         assert_ne!(text(&frame(90, 30, 42, 0.0, &k)), text(&frame(90, 30, 42, 5.0, &k)));
+    }
+
+    #[test]
+    fn motion_within_three_frames() {
+        let k = knobs();
+        assert_ne!(text(&frame(90, 30, 42, 0.0, &k)), text(&frame(90, 30, 42, 0.19, &k)));
     }
 
     #[test]

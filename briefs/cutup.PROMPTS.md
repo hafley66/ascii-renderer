@@ -53,3 +53,17 @@ misregistration as the second layer.
    and negative scraps all read. The integration variant at 9x6 tears and
    shift 14 read as noise at 80x24, so it moved to 6x3 tears, shift 10,
    flip 0.8: shatter with legible scraps and visible negatives.
+8. Real-terminal E2E (scripts/13_e2e.sh --headless --mode cutup --case all)
+   failed the workflow case on "art pixels did not change during animation".
+   Evidence: the suite compares terminal captures across 3 animation frames
+   (dt 0.06, so about 0.18 s), and the drift oscillation rounded to integer
+   cells needed about half a cell of travel before any cell moved, while the
+   overprint slide only touches sparse key cells. Root cause: integer-rounded
+   offsets, not slow rates.
+9. Fix: fragment drift became continuous sub-cell offsets with nearest-cell
+   sampling. The static frame is byte-identical (both t=0 snapshots passed
+   unchanged through the refactor), motion is visible within three frames, and
+   the E2E contract is now pinned in-module as motion_within_three_frames
+   (t=0.19 differs from t=0; pre-fix the largest possible drift in that window
+   was 0.33 cells, which rounds to zero everywhere). The t=6 and t=7
+   snapshots regenerated and were re-reviewed.
