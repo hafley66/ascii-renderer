@@ -48,6 +48,7 @@ mod _101_p02_glm53f_max_d;
 mod _102_wada;
 mod _103_wada_v2;
 mod _104_cutup;
+mod _105_suture;
 
 #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn register_all(registry: &mut crate::registry::ModeRegistry) {
@@ -99,4 +100,5 @@ pub(crate) fn register_all(registry: &mut crate::registry::ModeRegistry) {
     registry.add(&_102_wada::MODE);
     registry.add(&_103_wada_v2::MODE);
     registry.add(&_104_cutup::MODE);
+    registry.add(&_105_suture::MODE);
 }
