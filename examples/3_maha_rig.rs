@@ -18,18 +18,18 @@ const fn j(name: &'static str, parent: Option<usize>, x: f32, y: f32, z: f32, ra
 // Figure faces +z (toward camera), so the character's right side sits at -x (screen left).
 const RIG: &[Joint] = &[
     j("pelvis", None, 0.0, 5.2, 0.0, 0.0),
-    j("spine", Some(0), 0.0, 1.3, 0.0, 1.3),
-    j("chest", Some(1), 0.0, 1.6, 0.1, 1.6),
-    j("neck", Some(2), 0.0, 0.9, 0.1, 0.85),
-    j("head", Some(3), 0.0, 0.9, 0.4, 0.8),
+    j("spine", Some(0), 0.0, 1.3, 0.0, 1.0),
+    j("chest", Some(1), 0.0, 1.6, 0.1, 1.4),
+    j("neck", Some(2), 0.0, 1.0, 0.3, 0.8),
+    j("head", Some(3), 0.0, 0.6, 0.55, 0.76),
     j("crown", Some(4), 0.0, 0.55, -0.05, 0.68),
     j("r_shoulder", Some(2), -2.3, 0.45, 0.0, 0.95),
-    j("r_elbow", Some(6), 0.0, -2.1, 0.0, 0.82),
-    j("r_wrist", Some(7), 0.0, -2.0, 0.0, 0.6),
+    j("r_elbow", Some(6), 0.0, -2.1, 0.0, 0.62),
+    j("r_wrist", Some(7), 0.0, -2.0, 0.0, 0.5),
     j("r_fist", Some(8), 0.0, -0.6, 0.0, 0.55),
     j("l_shoulder", Some(2), 2.3, 0.45, 0.0, 0.95),
-    j("l_elbow", Some(10), 0.0, -2.1, 0.0, 0.82),
-    j("l_wrist", Some(11), 0.0, -2.0, 0.0, 0.6),
+    j("l_elbow", Some(10), 0.0, -2.1, 0.0, 0.62),
+    j("l_wrist", Some(11), 0.0, -2.0, 0.0, 0.5),
     j("l_fist", Some(12), 0.0, -0.6, 0.0, 0.55),
     j("r_hip", Some(0), -0.9, -0.3, 0.0, 1.0),
     j("r_knee", Some(14), 0.0, -2.3, 0.0, 0.8),
@@ -49,6 +49,7 @@ const PELVIS: usize = 0;
 const CHEST: usize = 2;
 const R_SHOULDER: usize = 6;
 const L_SHOULDER: usize = 10;
+const L_ELBOW: usize = 11;
 const R_ELBOW: usize = 7;
 const R_WRIST: usize = 8;
 
@@ -154,11 +155,19 @@ fn shapes(world: &[Mat4], pos: &[Vec3]) -> Vec<Shape> {
         })
         .collect();
     let at = |m: usize, x: f32, y: f32, z: f32| world[m].transform_point3(Vec3::new(x, y, z));
+    out.push(core(at(CHEST, 0.0, 0.5, -0.45), at(CHEST, 0.0, 1.5, -0.4), 0.95, 0.85));
     for side in [-1.0, 1.0] {
-        let shoulder = if side < 0.0 { R_SHOULDER } else { L_SHOULDER };
-        out.push(core(at(CHEST, side * 0.35, 0.85, -0.25), at(CHEST, side * 1.9, 0.5, -0.1), 0.75, 0.7));
-        out.push(core(at(shoulder, side * 0.15, 0.05, 0.0), at(shoulder, side * 0.25, -0.9, 0.05), 1.0, 0.85));
-        out.push(core(at(CHEST, side * 0.9, 0.2, 0.35), at(CHEST, side * 0.55, -1.6, 0.1), 1.1, 0.9));
+        let (shoulder, elbow) = if side < 0.0 { (R_SHOULDER, R_ELBOW) } else { (L_SHOULDER, L_ELBOW) };
+        // traps: from the skull base down to the shoulder cap, steep enough to swallow the neck
+        out.push(core(at(CHEST, side * 0.45, 1.55, -0.3), at(CHEST, side * 2.0, 0.6, -0.15), 0.7, 0.78));
+        out.push(core(at(shoulder, side * 0.15, 0.1, 0.0), at(shoulder, side * 0.25, -0.9, 0.05), 1.0, 0.85));
+        // pecs across the front, lats flaring from the armpit to a narrow waist
+        out.push(core(at(CHEST, side * 0.25, 0.3, 0.75), at(CHEST, side * 1.6, 0.35, 0.5), 0.95, 0.85));
+        out.push(core(at(CHEST, side * 1.85, -0.1, -0.1), at(CHEST, side * 0.8, -2.0, 0.0), 0.95, 0.7));
+        // biceps, triceps, forearm belly: bulges with a pinched elbow between
+        out.push(cone(at(shoulder, 0.0, -0.8, 0.25), at(shoulder, 0.0, -1.7, 0.2), 0.8, 0.62, Kind::Body));
+        out.push(cone(at(shoulder, 0.0, -0.6, -0.2), at(shoulder, 0.0, -1.8, -0.15), 0.74, 0.55, Kind::Body));
+        out.push(cone(at(elbow, 0.0, -0.35, 0.05), at(elbow, 0.0, -1.9, 0.0), 0.74, 0.48, Kind::Body));
     }
     out.push(cone(at(PELVIS, 0.0, 0.6, 0.0), at(PELVIS, 0.0, -3.1, 0.1), 1.6, 2.2, Kind::Skirt));
     out
@@ -215,7 +224,7 @@ fn smin(a: f32, b: f32, k: f32) -> f32 {
 }
 
 const CORE_BLEND: f32 = 0.9;
-const LIMB_BLEND: f32 = 0.15;
+const LIMB_BLEND: f32 = 0.3;
 
 fn scene_sdf(p: Vec3, caps: &[Shape]) -> f32 {
     let (mut body, mut limbs) = (f32::INFINITY, f32::INFINITY);
@@ -501,20 +510,29 @@ fn svg(key: &Key, yaw: f32, pw: usize, ph: usize) -> String {
 }
 
 // Closest approach of the ray to the body (negative on hit) and the hit depth.
-fn ray_field(cam: &Camera, dir: Vec3, caps: &[Shape]) -> (f32, f32) {
+fn nearest_shape(p: Vec3, caps: &[Shape]) -> usize {
+    caps.iter()
+        .enumerate()
+        .map(|(i, c)| (i, sd_shape(p, c)))
+        .fold((0, f32::INFINITY), |best, cur| if cur.1 < best.1 { cur } else { best })
+        .0
+}
+
+// (closest approach, negative on hit; hit depth; id of the muscle/bone owning the hit point)
+fn ray_field(cam: &Camera, dir: Vec3, caps: &[Shape]) -> (f32, f32, usize) {
     let (mut t, mut closest) = (0.0, f32::INFINITY);
     for _ in 0..90 {
         let d = scene_sdf(cam.eye + dir * t, caps);
         closest = closest.min(d);
         if d < 0.01 {
-            return (-0.05, t * dir.dot(cam.fwd));
+            return (-0.05, t * dir.dot(cam.fwd), nearest_shape(cam.eye + dir * t, caps));
         }
         t += d;
         if t > 60.0 {
             break;
         }
     }
-    (closest, f32::INFINITY)
+    (closest, f32::INFINITY, usize::MAX)
 }
 
 // Marching squares on the ray field for the silhouette; depth jumps between hit nodes for inner creases.
@@ -522,7 +540,7 @@ fn contour_svg(key: &Key, yaw: f32, pw: usize, ph: usize, step: f32) -> String {
     let s = posed(key);
     let cam = Camera::new(yaw, pw as f32 / ph as f32);
     let (gw, gh) = ((pw as f32 / step) as usize + 1, (ph as f32 / step) as usize + 1);
-    let mut field = vec![(0.0, 0.0); gw * gh];
+    let mut field = vec![(0.0, 0.0, 0); gw * gh];
     for gy in 0..gh {
         for gx in 0..gw {
             let x = gx as f32 * step / pw as f32 * 2.0 - 1.0;
@@ -563,19 +581,22 @@ fn contour_svg(key: &Key, yaw: f32, pw: usize, ph: usize, step: f32) -> String {
                 }
                 _ => {}
             }
-            let (d0, dr, dd) = (f(gx, gy).1, f(gx + 1, gy).1, f(gx, gy + 1).1);
+            // Crease where two hit nodes belong to different muscles or sit at a depth jump.
+            let edge = |a: (f32, f32, usize), b: (f32, f32, usize)| {
+                a.1.is_finite() && b.1.is_finite() && (a.2 != b.2 || (a.1 - b.1).abs() > 0.45)
+            };
             let (xf, yf) = (gx as f32, gy as f32);
-            if d0.is_finite() && dr.is_finite() && (d0 - dr).abs() > 0.9 {
+            if edge(f(gx, gy), f(gx + 1, gy)) {
                 seg(&mut crease, (xf + 0.5, yf - 0.5), (xf + 0.5, yf + 0.5));
             }
-            if d0.is_finite() && dd.is_finite() && (d0 - dd).abs() > 0.9 {
+            if edge(f(gx, gy), f(gx, gy + 1)) {
                 seg(&mut crease, (xf - 0.5, yf + 0.5), (xf + 0.5, yf + 0.5));
             }
         }
     }
     format!(
         "<svg xmlns='http://www.w3.org/2000/svg' width='{pw}' height='{ph}' style='background:#f4e4d6'>\
-<path d='{crease}' stroke='#8a3a28' stroke-width='1.2' stroke-linecap='round' fill='none'/>\
+<path d='{crease}' stroke='#8a3a28' stroke-width='1.0' stroke-linecap='round' fill='none'/>\
 <path d='{outline}' stroke='#3a140e' stroke-width='2.4' stroke-linecap='round' fill='none'/></svg>"
     )
 }
