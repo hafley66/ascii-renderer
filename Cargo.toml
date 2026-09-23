@@ -39,6 +39,7 @@ tracing-subscriber = { version = "0.3", features = ["json", "env-filter"] }
 unicode-width = "0.2.2"
 ratatui = { version = "0.30", default-features = false, features = ["crossterm", "termion"] }
 termwiz = { version = "=0.23.3", default-features = false }
+glam = "0.33.9"
 
 [target.'cfg(unix)'.dependencies]
 nix = { version = "0.31.3", features = ["fs", "signal", "process", "term", "poll"] }
