@@ -51,6 +51,7 @@ dependencies = [
  "console_engine",
  "crossterm 0.26.1",
  "flate2",
+ "glam",
  "hafley-observe",
  "insta",
  "nix 0.31.3",
@@ -619,6 +620,12 @@ dependencies = [
  "wasip2",
  "wasip3",
 ]
+
+[[package]]
+name = "glam"
+version = "0.33.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "35accb17301a4874ea893c685ca86bc1e25f92499382adc17eec9a91f7803cfb"
 
 [[package]]
 name = "hafley-observe"
