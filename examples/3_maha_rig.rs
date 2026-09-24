@@ -353,10 +353,13 @@ fn shapes(world: &[Mat4], pos: &[Vec3], t: Tweak) -> Vec<Shape> {
         }
     }
     for side in [-1.0, 1.0] {
-        // serratus: fingers down the ribs under the armpit, slanting forward-down
+        // ribcage barrel: full convex sides from the armpit down, so pec and lat are bridged by rib, not a pit
+        out.push(core(at(CHEST, side * 0.7, -0.15, -0.2), at(CHEST, side * 0.6, -1.5, -0.15), 0.78, 0.58).on(CHEST));
+        // serratus: fingers on the barrel surface under the armpit, slanting forward-down
         for k in 0..3 {
             let y = -0.45 - k as f32 * 0.35;
-            out.push(detail(at(CHEST, side * 1.02, y, 0.05), at(CHEST, side * 0.82, y - 0.25, 0.45), 0.15, 0.12).on(CHEST));
+            let out_x = 1.45 - k as f32 * 0.08;
+            out.push(detail(at(CHEST, side * out_x, y, 0.0), at(CHEST, side * (out_x - 0.25), y - 0.25, 0.5), 0.15, 0.12).on(CHEST));
         }
         // back: erector columns either side of the spine groove, scapula blade muscles, teres major to the armpit
         out.push(detail(at(CHEST, side * 0.27, -0.7, -0.78), at(CHEST, side * 0.25, -3.1, -0.6), 0.25, 0.3).on(CHEST));
