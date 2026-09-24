@@ -325,6 +325,10 @@ fn shapes(world: &[Mat4], pos: &[Vec3], t: Tweak) -> Vec<Shape> {
             let y = -0.45 - k as f32 * 0.35;
             out.push(detail(at(CHEST, side * 1.02, y, 0.05), at(CHEST, side * 0.82, y - 0.25, 0.45), 0.15, 0.12).on(CHEST));
         }
+        // back: erector columns either side of the spine groove, scapula blade muscles, teres major to the armpit
+        out.push(detail(at(CHEST, side * 0.27, -0.7, -0.78), at(CHEST, side * 0.25, -2.7, -0.62), 0.25, 0.3).on(CHEST));
+        out.push(detail(at(CHEST, side * 0.55, 0.15, -0.72), at(CHEST, side * 0.7, -0.55, -0.66), 0.32, 0.28).on(CHEST));
+        out.push(detail(at(CHEST, side * 0.85, -0.55, -0.55), at(CHEST, side * 1.15, -0.2, -0.25), 0.26, 0.22).on(CHEST));
         // external oblique: ribs to the hip crest, overhangs the sash
         out.push(detail(at(CHEST, side * 0.78, -1.3, 0.2), at(CHEST, side * 0.72, -2.55, 0.3), 0.3, 0.32).on(CHEST));
     }
