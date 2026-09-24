@@ -33,7 +33,8 @@ const controls = new OrbitControls(camera, document.getElementById('row'));
 const q = new URLSearchParams(location.search);
 const yaw0 = +(q.get('yaw') || 0) * Math.PI / 180, dist = +(q.get('dist') || 29), ty = +(q.get('ty') || 6.2);
 controls.target.set(0, ty, 0);
-camera.position.set(Math.sin(yaw0) * dist, ty + 3.6 * dist / 29, Math.cos(yaw0) * dist);
+const el = (q.has('el') ? +q.get('el') : 7) * Math.PI / 180;  // ?el=deg elevation (90 = straight down)
+camera.position.set(Math.sin(yaw0) * Math.cos(el) * dist, ty + Math.sin(el) * dist, Math.cos(yaw0) * Math.cos(el) * dist + (el > 1.5 ? 0.01 : 0));
 controls.update();
 const wireScene = new THREE.Scene(), contScene = new THREE.Scene();
 // Clay: lit sculpt read. Low warm key, cold rim from behind, dim fill.
