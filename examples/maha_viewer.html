@@ -76,20 +76,37 @@ function orient(k) {
 const inkMat = new THREE.LineBasicMaterial({color: 0x5a1a10});
 const INK_CREASE = +(q.get('crease') || 1.2);
 function seamSegments(idx, P, N, owner, crease) {
-  const out = [];
+  // Seam graph: nodes are cut mesh edges (edge midpoints) or triple-junction triangle centres.
+  const pos = new Map(), adj = new Map();
+  const node = (key, p) => { if (!pos.has(key)) { pos.set(key, p); adj.set(key, []); } return key; };
+  const link = (u, v) => { adj.get(u).push(v); adj.get(v).push(u); };
   const mid = (a, b) => new THREE.Vector3(
     (P[3*a] + P[3*b]) / 2 + (N[3*a] + N[3*b]) * 0.02,
     (P[3*a+1] + P[3*b+1]) / 2 + (N[3*a+1] + N[3*b+1]) * 0.02,
     (P[3*a+2] + P[3*b+2]) / 2 + (N[3*a+2] + N[3*b+2]) * 0.02);
   for (let t = 0; t < idx.length; t += 3) {
     const v = [idx[t], idx[t+1], idx[t+2]];
-    const cut = [[0, 1], [1, 2], [2, 0]].filter(([i, j]) => owner[v[i]] !== owner[v[j]] && crease[v[i]] + crease[v[j]] > 2 * INK_CREASE).map(([i, j]) => mid(v[i], v[j]));
-    if (cut.length === 2) out.push(cut[0], cut[1]);
+    const cut = [[0, 1], [1, 2], [2, 0]]
+      .filter(([i, j]) => owner[v[i]] !== owner[v[j]] && crease[v[i]] + crease[v[j]] > 2 * INK_CREASE)
+      .map(([i, j]) => { const [a, b] = [v[i], v[j]].sort((x, y) => x - y); return node(a + ':' + b, mid(a, b)); });
+    if (cut.length === 2) link(cut[0], cut[1]);
     if (cut.length === 3) {
-      const c = cut[0].clone().add(cut[1]).add(cut[2]).divideScalar(3);
-      for (const m of cut) out.push(m, c);
+      const c = node('t' + t, cut.map(k => pos.get(k)).reduce((s, q) => s.clone().add(q)).divideScalar(3));
+      for (const k of cut) link(k, c);
     }
   }
+  // Laplacian smoothing along the seams takes out the voxel staircase; ends and junctions stay put.
+  let cur = new Map(pos);
+  for (let it = 0; it < 6; it++) {
+    const next = new Map();
+    for (const [k, p] of cur) {
+      const n = adj.get(k);
+      next.set(k, n.length !== 2 ? p : p.clone().multiplyScalar(0.5).add(cur.get(n[0]).clone().add(cur.get(n[1])).multiplyScalar(0.25)));
+    }
+    cur = next;
+  }
+  const out = [];
+  for (const [k, n] of adj) for (const m of n) if (k < m) out.push(cur.get(k), cur.get(m));
   return out;
 }
 
