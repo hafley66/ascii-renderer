@@ -218,9 +218,19 @@ impl Shape {
 
 // Torso, neck, traps, delts melt together; limbs and head stay crisp so the arm gap and head read.
 const CORE_JOINTS: &[&str] = &["spine", "chest", "neck"];
+const TRAP_BUNDLES: usize = 4;
 
 // Bones as capsules, plus muscle masses parented to chest/shoulder/pelvis frames so they ride the pose.
-fn shapes(world: &[Mat4], pos: &[Vec3]) -> Vec<Shape> {
+// Blend-shape offsets for the traps; zero is the authored body.
+#[derive(Clone, Copy, Default)]
+struct Tweak {
+    trap_height: f32,
+    trap_mass: f32,
+    trap_reach: f32,
+    trap_slope: f32,
+}
+
+fn shapes(world: &[Mat4], pos: &[Vec3], t: Tweak) -> Vec<Shape> {
     let mut out: Vec<Shape> = RIG
         .iter()
         .enumerate()
@@ -236,7 +246,14 @@ fn shapes(world: &[Mat4], pos: &[Vec3]) -> Vec<Shape> {
     for side in [-1.0, 1.0] {
         let (shoulder, elbow) = if side < 0.0 { (R_SHOULDER, R_ELBOW) } else { (L_SHOULDER, L_ELBOW) };
         // traps slope from the neck into the delt; the delt flows down the arm, no cap
-        out.push(core(at(CHEST, side * 0.45, 0.95, -0.2), at(CHEST, side * 1.9, 0.3, -0.2), 0.58, 0.5).on(CHEST));
+        // trapezius as a fan of bundles: spine origins (skull base down to upper back) to clavicle/acromion
+        for k in 0..TRAP_BUNDLES {
+            let f = k as f32 / (TRAP_BUNDLES - 1) as f32;
+            let origin = at(CHEST, 0.0, 1.45 - 1.3 * f + t.trap_height * (1.0 - f), -0.35 - 0.3 * f);
+            let insert = at(CHEST, side * (1.0 + 0.9 * f + t.trap_reach), 0.55 - 0.15 * f - t.trap_slope, 0.05 - 0.3 * f);
+            let r = 0.36 - 0.1 * f + t.trap_mass;
+            out.push(core(origin, insert, r, r * 0.8).on(CHEST));
+        }
         out.push(cone(at(shoulder, side * 0.2, -0.15, 0.05), at(shoulder, side * 0.1, -1.2, 0.05), 0.72, 0.5, Kind::Body).on(shoulder));
         out.push(core(at(CHEST, side * 0.25, 0.3, 0.6), at(CHEST, side * 1.4, 0.35, 0.4), 0.8, 0.7).on(CHEST));
         out.push(core(at(CHEST, side * 1.3, -0.1, -0.15), at(CHEST, side * 0.7, -2.0, 0.0), 0.62, 0.45).on(CHEST));
@@ -520,9 +537,13 @@ struct Posed {
 }
 
 fn posed(key: &Frame) -> Posed {
+    posed_with(key, Tweak::default())
+}
+
+fn posed_with(key: &Frame, tweak: Tweak) -> Posed {
     let world = pose(key);
     let pos: Vec<Vec3> = world.iter().map(|m| m.transform_point3(Vec3::ZERO)).collect();
-    let caps = shapes(&world, &pos);
+    let caps = shapes(&world, &pos, tweak);
     Posed { world, pos, caps }
 }
 
@@ -755,7 +776,31 @@ const R_HIP: usize = 14;
 const L_HIP: usize = 18;
 
 // Up to 4 bones per vertex: each carrying bone scores exp(-(d - dmin) / falloff) from its nearest shape.
-fn skin_part(caps: &[Shape], voxel: f32, falloff: f32, drape: bool) -> String {
+// Blend shape as per-vertex deltas on the base topology: slide each vertex along the new field's gradient onto its zero set.
+fn morph_deltas(base: &Surface, caps: &[Shape]) -> String {
+    let e = 0.01;
+    let sdf = |p: Vec3| scene_sdf(p, caps);
+    let deltas: Vec<Vec3> = base
+        .pos
+        .iter()
+        .map(|&p0| {
+            let mut p = p0;
+            for _ in 0..6 {
+                let g = Vec3::new(
+                    sdf(p + Vec3::X * e) - sdf(p - Vec3::X * e),
+                    sdf(p + Vec3::Y * e) - sdf(p - Vec3::Y * e),
+                    sdf(p + Vec3::Z * e) - sdf(p - Vec3::Z * e),
+                )
+                .normalize_or(Vec3::Y);
+                p -= g * sdf(p);
+            }
+            p - p0
+        })
+        .collect();
+    floats(&deltas)
+}
+
+fn skin_part(caps: &[Shape], voxel: f32, falloff: f32, drape: bool, morphs: &[(&str, Vec<Shape>)]) -> String {
     let m = surface(caps, voxel);
     let (mut skin_i, mut skin_w) = (Vec::new(), Vec::new());
     for w in &m.pos {
@@ -779,13 +824,16 @@ fn skin_part(caps: &[Shape], voxel: f32, falloff: f32, drape: bool) -> String {
             skin_w.push(format!("{:.3}", wt / total));
         }
     }
+    let morph_json: Vec<String> =
+        morphs.iter().map(|(name, c)| format!("\"{name}\":[{}]", morph_deltas(&m, c))).collect();
     format!(
-        "{{\"pos\":[{}],\"nrm\":[{}],\"idx\":[{}],\"skinIndex\":[{}],\"skinWeight\":[{}]}}",
+        "{{\"pos\":[{}],\"nrm\":[{}],\"idx\":[{}],\"skinIndex\":[{}],\"skinWeight\":[{}],\"morphs\":{{{}}}}}",
         floats(&m.pos),
         floats(&m.nrm),
         ints(&m.idx),
         ints(&skin_i),
-        skin_w.join(",")
+        skin_w.join(","),
+        morph_json.join(",")
     )
 }
 
@@ -793,7 +841,16 @@ fn skin_part(caps: &[Shape], voxel: f32, falloff: f32, drape: bool) -> String {
 fn skin_json(voxel: f32) -> String {
     let rest = Frame::from_key(&KEYS[0]);
     let s = posed(&rest);
-    let body: Vec<Shape> = s.caps.iter().filter(|c| c.kind != Kind::Skirt).copied().collect();
+    let body_of = |caps: &[Shape]| caps.iter().filter(|c| c.kind != Kind::Skirt).copied().collect::<Vec<_>>();
+    let body = body_of(&s.caps);
+    let unit = [
+        ("trapHeight", Tweak { trap_height: 0.5, ..Tweak::default() }),
+        ("trapMass", Tweak { trap_mass: 0.2, ..Tweak::default() }),
+        ("trapReach", Tweak { trap_reach: 0.35, ..Tweak::default() }),
+        ("trapSlope", Tweak { trap_slope: 0.35, ..Tweak::default() }),
+    ];
+    let morphs: Vec<(&str, Vec<Shape>)> =
+        unit.iter().map(|(name, t)| (*name, body_of(&posed_with(&rest, *t).caps))).collect();
     let skirt: Vec<Shape> = s.caps.iter().filter(|c| c.kind == Kind::Skirt).copied().collect();
     let joints: Vec<String> = RIG
         .iter()
@@ -815,8 +872,8 @@ fn skin_json(voxel: f32) -> String {
     format!(
         "{{\"joints\":[{}],\"body\":{},\"skirt\":{},\"lines\":[{}]}}",
         joints.join(","),
-        skin_part(&body, voxel, SKIN_FALLOFF, false),
-        skin_part(&skirt, voxel, SKIRT_DRAPE, true),
+        skin_part(&body, voxel, SKIN_FALLOFF, false, &morphs),
+        skin_part(&skirt, voxel, SKIRT_DRAPE, true, &[]),
         line_json(&s, true)
     )
 }
