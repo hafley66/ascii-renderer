@@ -95,6 +95,10 @@ const SPEC = [
   ['randomness', 'armVar', 'arm swing variation', 0, 1, 0.01, 0],
   ['randomness', 'bodyDrift', 'body drift', 0, 1, 0.01, 0],
   ['randomness', 'headLook', 'head looks around', 0, 30, 0.25, 0],
+  ['domain pressure', 'buffet', 'pushed off line', 0, 2, 0.01, 0],
+  ['domain pressure', 'buffetRate', 'push change rate', 0.05, 1.5, 0.01, 0.3],
+  ['domain pressure', 'bracing', 'leans into push', 0, 3, 0.05, 0.8],
+  ['view', 'camYaw', 'camera angle', -180, 180, 1, 0],
   ['view', 'skirt', 'hakama opacity', 0, 1, 0.01, 0.35],
   ['view', 'outline', 'outline thickness', 0, 0.3, 0.005, 0.07],
   ['view', 'shards', 'outline shards', 0, 0.3, 0.005, 0],
@@ -151,6 +155,10 @@ const TIPS = {
   armVar: 'Arm swing size changes step to step.',
   bodyDrift: 'Slow wandering of lean, twist and tilt, like a body settling.',
   headLook: 'Head slowly turns and tips to look around, in degrees.',
+  buffet: 'Max sideways drift off his straight line, in rig units. Planted feet stay put; each new step lands where the push has carried him.',
+  buffetRate: 'How fast the push wanders, per walk cycle. Low = slow shove, high = gusty.',
+  bracing: 'Torso leans against the push, scaled by how hard it is shoving right now.',
+  camYaw: 'Orbits the camera around him: 0 = front, 90 = his left side, 180 = behind.',
   skirt: 'Hakama see-through amount. 0 hides it and shows the full legs.',
   outline: 'Thickness of the dark outline in the contour view.',
   shards: 'Random extra outline push per vertex: more jagged triangle shards.',
@@ -177,6 +185,7 @@ const PRESETS = {
   'slow giant roll': {speed: 0.35, strideRatio: 0.55, footOut: 0.45, weightShift: 0.6, hipDrop: 6, counterLean: 1, torsoTwist: 16},
   'predator': {speed: 0.55, lean: 7, liftRatio: 0.08, weightShift: 0.18, torsoTwist: 18, headStab: 1},
   'after the adaptation': {speed: 0.5, weightShift: 0.2, hipDrop: 2.5, torsoTwist: 15, bodyDrift: 0.4, headLook: 12},
+  'taking the domain': {speed: 0.5, armSwing: 18, pelvisTwist: 12, torsoTwist: 8, weightShift: 0.3, hipDrop: 4, headStab: 1, headLook: 0, bodyDrift: 0.15, stepJitter: 0.12, footJitter: 0.08, armVar: 0.3, buffet: 0.6, buffetRate: 0.3, bracing: 0.8},
   'restless': {stepJitter: 0.25, footJitter: 0.15, bodyDrift: 0.7, headLook: 20, armVar: 0.6},
 };
 
@@ -387,7 +396,8 @@ for (const l of RIG.lines) {
 
 let clock = 0;
 let playing = true, phase = 0, cycles = 0, showRest = false, follow = true;
-const ground = new THREE.GridHelper(120, 120, 0x8a3a28, 0x3a2420);
+const ground = new THREE.GridHelper(120, 40, 0x8a3a28, 0x3a2420);
+ground.material.transparent = true; ground.material.opacity = 0.45;
 ground.position.y = GROUND_ANKLE_Y - 0.45;
 ground.layers.enable(WIRE); ground.layers.enable(CONT); scene.add(ground);
 const bar = document.getElementById('bar');
@@ -412,9 +422,16 @@ resetBtn.onclick = () => setKnobs({}); bar.appendChild(resetBtn);
 const hash = (n, k) => { const x = Math.sin(n * 12.9898 + k * 78.233 + K.seed * 37.719) * 43758.5453; return x - Math.floor(x); };
 const wander = (t, k) => 0.6 * Math.sin(t * 1.3 + hash(k, 1) * 6.28) + 0.4 * Math.sin(t * 2.9 + hash(k, 2) * 6.28);
 const legCycle = side => (side === 'r' ? cycles : cycles + 0.5);
+// Domain pressure: a slow sideways push on his path, as a function of walk cycles.
+const pushX = c => K.buffet * (0.7 * wander(c * K.buffetRate * 4, 21) + 0.3 * wander(c * K.buffetRate * 12, 23));
+const pushRate = c => (pushX(c + 0.02) - pushX(c - 0.02)) / 0.04;
 function stepJitter(side) {
   const lc = legCycle(side), n = Math.floor(lc), u = lc - n;
-  const at_ = m => ({z: K.stepJitter * stride() * (hash(m, side === 'r' ? 3 : 4) - 0.5), x: K.footJitter * (hash(m, side === 'r' ? 5 : 6) - 0.5)});
+  const landed = m => (side === 'r' ? m : m - 0.5);
+  const at_ = m => ({
+    z: K.stepJitter * stride() * (hash(m, side === 'r' ? 3 : 4) - 0.5),
+    x: K.footJitter * (hash(m, side === 'r' ? 5 : 6) - 0.5) + pushX(landed(m)) * (side === 'r' ? -1 : 1),
+  });
   const j0 = at_(n);
   if (u < K.duty) return j0;
   const j1 = at_(n + 1), v = smooth((u - K.duty) / (1 - K.duty));
@@ -438,7 +455,7 @@ function walkRots(ph) {
   });
   return {
     pelvis: [0, roll, pelvisYaw],
-    spine: [K.lean + 3 * drift(1), -roll * K.counterLean + K.shoulderSway * w, upper * K.spineShare],
+    spine: [K.lean + 3 * drift(1), -roll * K.counterLean + K.shoulderSway * w + K.bracing * 6 * pushRate(cycles), upper * K.spineShare],
     chest: [0, 0, upper * (1 - K.spineShare)],
     neck: [
       -K.lean * 0.6 + 0.3 * K.headLook * wander(clock * 0.2, 5),
@@ -446,7 +463,7 @@ function walkRots(ph) {
       K.torsoTwist * s * K.headStab + K.headLook * wander(clock * 0.15, 4),
     ],
     ...arm('r', -s, -c), ...arm('l', s, c),
-    root: [-K.weightShift * w, K.bob * Math.cos(4 * Math.PI * (ph - K.duty / 2))],
+    root: [-K.weightShift * w + pushX(cycles), K.bob * Math.cos(4 * Math.PI * (ph - K.duty / 2))],
   };
 }
 
@@ -566,7 +583,18 @@ function refreshHull(geo, part) {
   p.needsUpdate = true;
 }
 
+let lastYaw = null;
+function applyCamYaw() {
+  if (K.camYaw === lastYaw) return;
+  lastYaw = K.camYaw;
+  const off = camera.position.clone().sub(controls.target);
+  const flat = Math.hypot(off.x, off.z);
+  off.x = Math.sin(K.camYaw * D) * flat; off.z = Math.cos(K.camYaw * D) * flat;
+  camera.position.copy(controls.target).add(off);
+}
+
 function applyView() {
+  applyCamYaw();
   refreshHull(bodyHull, RIG.body); refreshHull(skirtHull, RIG.skirt);
   for (const m of bodyMeshes) m.geometry.userData.morphNames.forEach((n, i) => { m.morphTargetInfluences[i] = K[n]; });
   skirtMats.forEach(m => { m.opacity = K.skirt; });
@@ -613,7 +641,7 @@ function frame(t) {
   const bodyZ = cycles * stride();
   const moved = bodyZ - (frame.z ?? bodyZ); frame.z = bodyZ;
   if (follow) { camera.position.z += moved; controls.target.z += moved; }
-  ground.position.z = Math.round(bodyZ);
+  ground.position.z = Math.round(bodyZ / 3) * 3;
   stepSweep(t);
   clock += Math.min(dt, 0.1);
   applyPose(walkRots(phase), phase, bodyZ);
