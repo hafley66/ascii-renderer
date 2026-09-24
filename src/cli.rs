@@ -612,7 +612,7 @@ fn run_render(args: Vec<String>) {
             rng: &mut rng,
             time: t_anim,
             args: &args,
-            param_values: None,
+            param_values: Some(&values),
         };
         crate::_0_profile::measure_render(mode, width, height, || {
             registered.render(&mut frame);
