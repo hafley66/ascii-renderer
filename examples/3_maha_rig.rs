@@ -20,8 +20,8 @@ const RIG: &[Joint] = &[
     j("pelvis", None, 0.0, 6.35, 0.0, 0.0),
     j("spine", Some(0), 0.0, 1.8, 0.0, 0.7),
     j("chest", Some(1), 0.0, 1.6, 0.1, 0.9),
-    j("neck", Some(2), 0.0, 0.6, 0.5, 0.5),
-    j("head", Some(3), 0.0, 0.4, 0.3, 0.4),
+    j("neck", Some(2), 0.0, 0.95, 0.2, 0.5),
+    j("head", Some(3), 0.0, 0.5, 0.12, 0.42),
     j("crown", Some(4), 0.0, 0.85, -0.3, 0.4),
     j("r_shoulder", Some(2), -1.25, 0.35, 0.0, 0.45),
     j("r_elbow", Some(6), 0.0, -2.4, 0.0, 0.4),
@@ -280,9 +280,9 @@ fn shapes(world: &[Mat4], pos: &[Vec3], t: Tweak) -> Vec<Shape> {
         for k in 0..TRAP_BUNDLES {
             let f = k as f32 / (TRAP_BUNDLES - 1) as f32;
             // upper bundle runs skull base to acromion at about 45 degrees; lower ones fan down the back
-            let origin = at(CHEST, side * 0.28 * (1.0 - f), 1.3 - 1.2 * f + t.trap_height * (1.0 - f), -0.3 - 0.35 * f);
+            let origin = at(CHEST, side * (0.3 - 0.1 * f), 1.75 - 1.6 * f + t.trap_height * (1.0 - f), -0.15 - 0.5 * f);
             let insert = at(CHEST, side * (1.2 - 0.2 * f + t.trap_reach), 0.5 - 0.1 * f - t.trap_slope, -0.05 - 0.3 * f);
-            let r = 0.34 - 0.1 * f + t.trap_mass;
+            let r = 0.58 - 0.18 * f + t.trap_mass;
             out.push(core(origin, insert, r, r * 0.8).on(CHEST));
         }
         out.push(
@@ -1081,17 +1081,25 @@ fn line_json(s: &Posed, with_bone: bool) -> String {
 
 fn mesh_json(key: &Frame, voxel: f32, cycle: bool) -> String {
     let s = posed(key);
-    let m = surface(&s.caps, voxel);
+    // Body and hakama surfaced apart so the legs exist under the (see-through) hakama.
+    let (body, skirt): (Vec<Shape>, Vec<Shape>) = s.caps.iter().copied().partition(|c| c.kind != Kind::Skirt);
+    let mut m = surface(&body, voxel);
+    let body_verts = m.pos.len();
+    let cloth = surface(&skirt, voxel);
+    m.idx.extend(cloth.idx.iter().map(|i| i + body_verts as u32));
+    m.pos.extend(&cloth.pos);
+    m.nrm.extend(&cloth.nrm);
     // owning shape per vertex: the viewer inks the seams where ownership changes
-    let owner: Vec<usize> = m.pos.iter().map(|w| nearest_shape(*w, &s.caps)).collect();
-    let kind: Vec<u8> = owner.iter().map(|&o| (s.caps[o].kind == Kind::Skirt) as u8).collect();
+    let owner: Vec<usize> =
+        m.pos.iter().enumerate().map(|(i, w)| if i < body_verts { nearest_shape(*w, &body) } else { usize::MAX >> 1 }).collect();
+    let kind: Vec<u8> = (0..m.pos.len()).map(|i| (i >= body_verts) as u8).collect();
     // crease: concavity of the field (negative Laplacian of the SDF ~ valley between two masses)
     let e = 0.08;
     let crease: Vec<String> = m
         .pos
         .iter()
         .map(|&w| {
-            let f = |d: Vec3| scene_sdf(w + d * e, &s.caps);
+            let f = |d: Vec3| scene_sdf(w + d * e, &body);
             let lap = f(Vec3::X) + f(-Vec3::X) + f(Vec3::Y) + f(-Vec3::Y) + f(Vec3::Z) + f(-Vec3::Z) - 6.0 * f(Vec3::ZERO);
             format!("{:.2}", (-lap / (e * e)).max(0.0))
         })
