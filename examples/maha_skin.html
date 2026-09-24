@@ -28,7 +28,8 @@ div#knobs label.sweeping{background:#4a2018;outline:1px solid #f0b848}
 </main>
 <aside id="side"><button id="fold">&raquo;</button>
 <p class="hint">hover a knob + press <b>S</b>: it sweeps left then right. click = keep that value. <b>S</b> again or mouse out = snap back.</p>
-<details open><summary>presets</summary><div id="presets"></div></details>
+<details open><summary>walk presets</summary><div id="presets"></div></details>
+<details open><summary>body presets</summary><div id="bodyPresets"></div></details>
 <div id="knobs"></div>
 </aside>
 <script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}</script>
@@ -165,28 +166,27 @@ const TIPS = {
 };
 const DEFAULTS = Object.fromEntries(SPEC.map(s => [s[1], s[6]]));
 
+// Walk presets touch only walk knobs; body presets only body knobs, so the two mix freely.
+const BODY_GROUPS = ['traps', 'shoulders', 'proportion'];
+const BODY_KEYS = SPEC.filter(s => BODY_GROUPS.includes(s[0])).map(s => s[1]);
+const VIEW_KEYS = SPEC.filter(s => s[0] === 'view').map(s => s[1]);
+const WALK_KEYS = SPEC.map(s => s[1]).filter(k => !BODY_KEYS.includes(k) && !VIEW_KEYS.includes(k));
 const PRESETS = {
-  'hafley: calm fire walk': {},
-  'unhurried god': {speed: 0.5, strideRatio: 0.67, torsoTwist: 16, armSwing: 8, armCross: 4, weightShift: 0.32, hipDrop: 5, lean: 2, wristLag: 14, headStab: 0.95},
-  'heavy stride': {speed: 0.8, strideRatio: 1.02, liftRatio: 0.16, pelvisTwist: 8, torsoTwist: 20, armSwing: 25, armCross: 10, weightShift: 0.25, hipDrop: 6, bob: 0.1, elbowSwing: 40},
-  'lumbering giant': {speed: 0.45, strideRatio: 0.63, footOut: 0.35, weightShift: 0.5, hipDrop: 8, counterLean: 0.9, torsoTwist: 10, armSwing: 6, lean: 6, elbowRest: 15, shoulderDrop: 0.35},
-  'stalking': {speed: 0.6, strideRatio: 0.7, liftRatio: 0.18, lean: 10, armSwing: 14, armCross: 12, weightShift: 0.18, headStab: 1, wristFlex: 18},
-  'rising from the ash': {speed: 0.32, strideRatio: 0.43, liftRatio: 0.06, duty: 0.7, lean: 12, weightShift: 0.6, hipDrop: 10, counterLean: 1.1, headStab: 0.2, armSwing: 4, elbowRest: 25, wristFlex: 22, wristLag: 20, bodyDrift: 0.6},
-  'embers underfoot': {speed: 0.55, weightShift: 0.14, hipDrop: 2, counterLean: 0.5},
-  'procession': {speed: 0.45, strideRatio: 0.6, torsoTwist: 8, armSwing: 5, weightShift: 0.1, headStab: 1},
+  'taking the domain': {speed: 0.5, armSwing: 18, pelvisTwist: 12, torsoTwist: 8, weightShift: 0.3, hipDrop: 4, headStab: 1, headLook: 0, bodyDrift: 0.15, stepJitter: 0.12, footJitter: 0.08, armVar: 0.3, buffet: 0.6, buffetRate: 0.3, bracing: 0.8},
   'drunk on cursed energy': {weightShift: 0.45, hipDrop: 7, counterLean: 1, torsoTwist: 18, stepJitter: 0.3, footJitter: 0.25, bodyDrift: 0.8, headLook: 10},
-  'sailor roll': {footOut: 0.4, weightShift: 0.5, hipDrop: 3, counterLean: 0.8, pelvisTwist: 6, armSpread: 16},
-  'pendulum': {weightShift: 0.35, hipDrop: 5, torsoTwist: 20, armSwing: 22, armCross: 10},
   'wading through fire': {speed: 0.4, lean: 8, liftRatio: 0.16, weightShift: 0.25, armSpread: 20, elbowRest: 18},
   'shoulder-led': {torsoTwist: 26, spineShare: 0.3, pelvisTwist: 1, weightShift: 0.12, armSwing: 18},
   'hip-led swagger': {pelvisTwist: 12, weightShift: 0.3, hipDrop: 4, torsoTwist: 8, armSwing: 16},
-  'weary': {speed: 0.38, lean: 10, headStab: 0.3, armSwing: 4, elbowRest: 3, weightShift: 0.2, hipDrop: 3, stepJitter: 0.15, bodyDrift: 0.4},
-  'march of the wheel': {speed: 0.9, strideRatio: 0.9, armSwing: 26, elbowSwing: 45, weightShift: 0.06, hipDrop: 0.5, headStab: 1},
-  'slow giant roll': {speed: 0.35, strideRatio: 0.55, footOut: 0.45, weightShift: 0.6, hipDrop: 6, counterLean: 1, torsoTwist: 16},
-  'predator': {speed: 0.55, lean: 7, liftRatio: 0.08, weightShift: 0.18, torsoTwist: 18, headStab: 1},
   'after the adaptation': {speed: 0.5, weightShift: 0.2, hipDrop: 2.5, torsoTwist: 15, bodyDrift: 0.4, headLook: 12},
-  'taking the domain': {speed: 0.5, armSwing: 18, pelvisTwist: 12, torsoTwist: 8, weightShift: 0.3, hipDrop: 4, headStab: 1, headLook: 0, bodyDrift: 0.15, stepJitter: 0.12, footJitter: 0.08, armVar: 0.3, buffet: 0.6, buffetRate: 0.3, bracing: 0.8},
-  'restless': {stepJitter: 0.25, footJitter: 0.15, bodyDrift: 0.7, headLook: 20, armVar: 0.6},
+};
+const BODY_PRESETS = {
+  'research athlete': {},
+  'decathlete': {shoulderWidth: 1.1, deltCap: 0.5, trapMass: 0.4, legLen: 1.05},
+  'olympic lifter': {shoulderWidth: 1.2, trapMass: 1.2, trapHeight: 0.8, deltMass: 0.8, deltCap: 0.8, legLen: 0.95, torsoLen: 0.95},
+  'long-armed giant': {armLen: 1.25, shoulderWidth: 1.2, deltCap: 0.6, legLen: 1.05},
+  'small-headed brute': {headSize: 0.75, trapHeight: 1.3, trapMass: 1.2, shoulderWidth: 1.3, deltCap: 1},
+  'titan': {shoulderWidth: 1.35, trapMass: 1.5, trapHeight: 1.2, deltCap: 1.5, deltMass: 1, armLen: 1.1, headSize: 0.85},
+  'anime mahoraga': {shoulderWidth: 1.5, deltCap: 1.2, deltMass: 1, trapMass: 1, trapHeight: 1, armLen: 1.15, headSize: 1.1},
 };
 
 // Knob state lives in the hash query (#?k=v&...): file:// refuses history writes, location.replace does not.
@@ -269,29 +269,33 @@ addEventListener('keydown', e => {
   input.parentElement.classList.add('sweeping');
 });
 
-function setKnobs(values) {
-  Object.assign(K, DEFAULTS, values);
+function setKnobs(values, keys = Object.keys(DEFAULTS)) {
+  for (const k of keys) K[k] = values[k] ?? DEFAULTS[k];
   for (const k in inputs) { inputs[k][0].value = K[k]; inputs[k][1].textContent = K[k]; }
   persist();
 }
 
-const presetBar = document.getElementById('presets');
-const saved = () => JSON.parse(localStorage.getItem('maha-presets') || '{}');
-function drawPresets() {
-  presetBar.replaceChildren();
-  for (const [name, values] of Object.entries({...PRESETS, ...saved()})) {
-    const b = Object.assign(document.createElement('button'), {textContent: name, className: 'preset'});
-    b.onclick = () => setKnobs(values);
-    presetBar.appendChild(b);
-  }
-  const save = Object.assign(document.createElement('button'), {textContent: '+ save current'});
-  save.onclick = () => {
-    const name = prompt('preset name');
-    if (name) { localStorage.setItem('maha-presets', JSON.stringify({...saved(), [name]: diff()})); drawPresets(); }
+const pick = keys => Object.fromEntries(Object.entries(diff()).filter(([k]) => keys.includes(k)));
+function drawPresetBar(el, builtIn, storeKey, keys) {
+  const saved = () => JSON.parse(localStorage.getItem(storeKey) || '{}');
+  const draw = () => {
+    el.replaceChildren();
+    for (const [name, values] of Object.entries({...builtIn, ...saved()})) {
+      const b = Object.assign(document.createElement('button'), {textContent: name, className: 'preset'});
+      b.onclick = () => setKnobs(values, keys);
+      el.appendChild(b);
+    }
+    const save = Object.assign(document.createElement('button'), {textContent: '+ save current'});
+    save.onclick = () => {
+      const name = prompt('preset name');
+      if (name) { localStorage.setItem(storeKey, JSON.stringify({...saved(), [name]: pick(keys)})); draw(); }
+    };
+    el.appendChild(save);
   };
-  presetBar.appendChild(save);
+  draw();
 }
-drawPresets();
+drawPresetBar(document.getElementById('presets'), PRESETS, 'maha-presets', WALK_KEYS);
+drawPresetBar(document.getElementById('bodyPresets'), BODY_PRESETS, 'maha-body-presets', BODY_KEYS);
 
 const camera = new THREE.PerspectiveCamera(32, W / H, 0.1, 200);
 camera.position.set(0, 9.8, 29);
