@@ -53,7 +53,7 @@ const SPEC = [
   ['legs', 'kneeLoad', 'knee give at landing', 0, 35, 0.5, 15],
   ['legs', 'kneeMid', 'knee at midstance', 0, 30, 0.5, 5],
   ['legs', 'autoHeight', 'hips ride legs', 0, 1, 0.05, 1],
-  ['legs', 'footOut', 'stance width', -0.6, 0.8, 0.01, -0.25],
+  ['legs', 'footOut', 'stance width', -0.6, 0.8, 0.01, -0.05],
   ['legs', 'footLevel', 'foot stays flat', 0, 1, 0.05, 1],
   ['legs', 'heelStrike', 'toe up at landing', 0, 30, 0.5, 12],
   ['legs', 'toeRoll', 'heel peel at push', 0, 50, 0.5, 30],
@@ -83,12 +83,12 @@ const SPEC = [
   ['shoulders', 'deltLength', 'delt length', -1, 2, 0.01, 0],
   ['shoulders', 'deltOut', 'delt bulge out', -1, 2, 0.01, 0],
   ['shoulders', 'deltCap', 'delt cap (ball)', -1, 2.5, 0.01, 0],
-  ['proportion', 'shoulderDrop', 'shoulder drop', -0.6, 0.8, 0.01, 0.25],
-  ['proportion', 'shoulderWidth', 'shoulder width', 0.85, 1.15, 0.005, 1],
-  ['proportion', 'armLen', 'arm length', 0.85, 1.2, 0.005, 1],
-  ['proportion', 'legLen', 'leg length', 0.85, 1.2, 0.005, 1],
+  ['proportion', 'shoulderDrop', 'shoulder drop', -0.6, 0.8, 0.01, 0],
+  ['proportion', 'shoulderWidth', 'shoulder width', 0.5, 1.9, 0.005, 1],
+  ['proportion', 'armLen', 'arm length', 0.7, 1.35, 0.005, 1],
+  ['proportion', 'legLen', 'leg length', 0.8, 1.2, 0.005, 1],
   ['proportion', 'torsoLen', 'torso length', 0.85, 1.2, 0.005, 1],
-  ['proportion', 'headSize', 'head size', 0.8, 1.25, 0.005, 1],
+  ['proportion', 'headSize', 'head size', 0.5, 1.8, 0.005, 1],
   ['randomness', 'seed', 'seed', 0, 99, 1, 7],
   ['randomness', 'stepJitter', 'step length jitter', 0, 0.5, 0.005, 0],
   ['randomness', 'footJitter', 'foot placement jitter', 0, 0.5, 0.005, 0],
@@ -471,7 +471,7 @@ function footPath(u) {
     swing: v, stance: 1, foot: -K.toeRoll * (1 - e) + K.heelStrike * e,
   };
 }
-const legPhase = (side, ph) => (side === 'r' ? ph : (ph + 0.5) % 1);
+const legPhase = (side, ph) => (((side === 'r' ? ph : ph + 0.5) % 1) + 1) % 1;
 
 // Stance knee profile (degrees): 5 at heel strike, rising to kneeLoad by 20% of stance, easing to kneeMid by 50%.
 function stanceKnee(s) {
@@ -608,7 +608,7 @@ function ascii() {
 let last = performance.now();
 function frame(t) {
   requestAnimationFrame(frame);
-  const dt = (t - last) / 1000; last = t;
+  const dt = Math.max(0, (t - last) / 1000); last = t;
   if (playing) { cycles += Math.min(dt, 0.1) * K.speed; phase = cycles % 1; } else { phase = K.phase; cycles = Math.floor(cycles) + phase; }
   const bodyZ = cycles * stride();
   const moved = bodyZ - (frame.z ?? bodyZ); frame.z = bodyZ;
