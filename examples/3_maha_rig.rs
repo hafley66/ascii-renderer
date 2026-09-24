@@ -20,8 +20,8 @@ const RIG: &[Joint] = &[
     j("pelvis", None, 0.0, 6.35, 0.0, 0.0),
     j("spine", Some(0), 0.0, 1.8, 0.0, 0.7),
     j("chest", Some(1), 0.0, 1.6, 0.1, 0.9),
-    j("neck", Some(2), 0.0, 0.95, 0.2, 0.5),
-    j("head", Some(3), 0.0, 0.5, 0.12, 0.42),
+    j("neck", Some(2), 0.0, 0.92, 0.32, 0.5),
+    j("head", Some(3), 0.0, 0.48, 0.2, 0.42),
     j("crown", Some(4), 0.0, 0.85, -0.3, 0.4),
     j("r_shoulder", Some(2), -1.25, 0.35, 0.0, 0.45),
     j("r_elbow", Some(6), 0.0, -2.4, 0.0, 0.4),
@@ -91,9 +91,10 @@ const fn tw(yaw: f32) -> Rot {
 
 // Walk toward camera: chest counter-twists against the pelvis, arms swing opposite the legs.
 const KEYS: &[Key] = &[
+    // Arms hang: the lats and delts hold them a little off the body, elbows soft and a touch forward.
     Key { name: "K0 stand", bob: 0.0, rots: &[
-        ("r_shoulder", r(0.0, 32.0)), ("l_shoulder", r(0.0, 32.0)),
-        ("r_elbow", r(10.0, 0.0)), ("l_elbow", r(10.0, 0.0)),
+        ("r_shoulder", r(4.0, 13.0)), ("l_shoulder", r(4.0, 13.0)),
+        ("r_elbow", r(14.0, 0.0)), ("l_elbow", r(14.0, 0.0)),
         ("r_hip", r(0.0, 3.0)), ("l_hip", r(0.0, 3.0)),
     ]},
     Key { name: "K1 R foot plants", bob: -0.25, rots: &[
@@ -125,6 +126,12 @@ const KEYS: &[Key] = &[
         ("r_hip", r(18.0, 3.0)), ("r_knee", r(-50.0, 0.0)),
     ]},
 ];
+// Skinning bind: A-pose (arms 32 deg) so the armpit does not web when the mesh is bound.
+const BIND: Key = Key { name: "bind", bob: 0.0, rots: &[
+    ("r_shoulder", r(0.0, 32.0)), ("l_shoulder", r(0.0, 32.0)),
+    ("r_elbow", r(10.0, 0.0)), ("l_elbow", r(10.0, 0.0)),
+    ("r_hip", r(0.0, 3.0)), ("l_hip", r(0.0, 3.0)),
+]};
 const CYCLE: [usize; 4] = [1, 2, 3, 4];
 const STEPS_PER_KEY: usize = 4;
 
@@ -1193,7 +1200,7 @@ fn skin_part(caps: &[Shape], voxel: f32, falloff: f32, drape: bool, morphs: &[(&
 
 // Bind pose: the body without the hakama (legs stay visible), and the hakama as its own draped mesh.
 fn skin_json(voxel: f32) -> String {
-    let rest = Frame::from_key(&KEYS[0]);
+    let rest = Frame::from_key(&BIND);
     let s = posed(&rest);
     let body_of = |caps: &[Shape]| caps.iter().filter(|c| c.kind != Kind::Skirt).copied().collect::<Vec<_>>();
     let body = body_of(&s.caps);
