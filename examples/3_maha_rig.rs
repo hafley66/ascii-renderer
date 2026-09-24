@@ -20,16 +20,16 @@ const RIG: &[Joint] = &[
     j("pelvis", None, 0.0, 5.8, 0.0, 0.0),
     j("spine", Some(0), 0.0, 1.3, 0.0, 0.95),
     j("chest", Some(1), 0.0, 1.6, 0.1, 1.25),
-    j("neck", Some(2), 0.0, 1.0, 0.2, 0.6),
-    j("head", Some(3), 0.0, 0.75, 0.45, 0.78),
-    j("crown", Some(4), 0.0, 0.6, -0.1, 0.72),
-    j("r_shoulder", Some(2), -2.1, 0.2, 0.0, 0.7),
-    j("r_elbow", Some(6), 0.0, -2.5, 0.0, 0.52),
-    j("r_wrist", Some(7), 0.0, -2.4, 0.0, 0.42),
+    j("neck", Some(2), 0.0, 1.0, 0.25, 0.6),
+    j("head", Some(3), 0.0, 0.7, 0.45, 0.74),
+    j("crown", Some(4), 0.0, 1.0, -0.2, 0.84),
+    j("r_shoulder", Some(2), -2.3, 0.2, 0.0, 0.7),
+    j("r_elbow", Some(6), 0.0, -2.35, 0.0, 0.55),
+    j("r_wrist", Some(7), 0.0, -2.2, 0.0, 0.44),
     j("r_fist", Some(8), 0.0, -0.8, 0.0, 0.48),
-    j("l_shoulder", Some(2), 2.1, 0.2, 0.0, 0.7),
-    j("l_elbow", Some(10), 0.0, -2.5, 0.0, 0.52),
-    j("l_wrist", Some(11), 0.0, -2.4, 0.0, 0.42),
+    j("l_shoulder", Some(2), 2.3, 0.2, 0.0, 0.7),
+    j("l_elbow", Some(10), 0.0, -2.35, 0.0, 0.55),
+    j("l_wrist", Some(11), 0.0, -2.2, 0.0, 0.44),
     j("l_fist", Some(12), 0.0, -0.8, 0.0, 0.48),
     j("r_hip", Some(0), -0.8, -0.3, 0.0, 0.85),
     j("r_knee", Some(14), 0.0, -2.6, 0.0, 0.62),
@@ -39,10 +39,19 @@ const RIG: &[Joint] = &[
     j("l_knee", Some(18), 0.0, -2.6, 0.0, 0.62),
     j("l_ankle", Some(19), 0.0, -2.5, 0.0, 0.45),
     j("l_toe", Some(20), 0.0, -0.3, 0.8, 0.32),
-    j("r_wing", Some(4), -0.55, 0.45, -0.2, 0.25),
-    j("r_wing_tip", Some(22), -0.5, 1.3, -1.1, 0.12),
-    j("l_wing", Some(4), 0.55, 0.45, -0.2, 0.25),
-    j("l_wing_tip", Some(24), 0.5, 1.3, -1.1, 0.12),
+    // Four brow wings: an upper pair sweeping up-out, a lower pair nearly level.
+    j("r_wing_hi", Some(4), -0.25, 0.4, 0.5, 0.16),
+    j("r_wing_hi_mid", Some(22), -1.1, 0.55, -0.45, 0.22),
+    j("r_wing_hi_tip", Some(23), -1.2, 0.75, -0.35, 0.07),
+    j("l_wing_hi", Some(4), 0.25, 0.4, 0.5, 0.16),
+    j("l_wing_hi_mid", Some(25), 1.1, 0.55, -0.45, 0.22),
+    j("l_wing_hi_tip", Some(26), 1.2, 0.75, -0.35, 0.07),
+    j("r_wing_lo", Some(4), -0.25, 0.1, 0.5, 0.15),
+    j("r_wing_lo_mid", Some(28), -1.2, 0.05, -0.4, 0.2),
+    j("r_wing_lo_tip", Some(29), -1.3, 0.15, -0.25, 0.07),
+    j("l_wing_lo", Some(4), 0.25, 0.1, 0.5, 0.15),
+    j("l_wing_lo_mid", Some(31), 1.2, 0.05, -0.4, 0.2),
+    j("l_wing_lo_tip", Some(32), 1.3, 0.15, -0.25, 0.07),
 ];
 const CROWN: usize = 5;
 const PELVIS: usize = 0;
@@ -156,15 +165,15 @@ fn shapes(world: &[Mat4], pos: &[Vec3]) -> Vec<Shape> {
         })
         .collect();
     let at = |m: usize, x: f32, y: f32, z: f32| world[m].transform_point3(Vec3::new(x, y, z));
-    out.push(cone(at(HEAD, 0.0, -0.1, 0.35), at(HEAD, 0.0, -0.6, 0.5), 0.6, 0.45, Kind::Body));
+    out.push(cone(at(HEAD, 0.0, -0.1, 0.2), at(HEAD, 0.0, -0.55, 0.35), 0.52, 0.4, Kind::Body));
     for side in [-1.0, 1.0] {
         let (shoulder, elbow) = if side < 0.0 { (R_SHOULDER, R_ELBOW) } else { (L_SHOULDER, L_ELBOW) };
         // traps slope from the neck into the delt; the delt flows down the arm, no cap
-        out.push(core(at(CHEST, side * 0.35, 1.4, -0.3), at(CHEST, side * 1.95, 0.3, -0.15), 0.55, 0.62));
-        out.push(core(at(shoulder, side * 0.1, -0.1, 0.0), at(shoulder, side * 0.15, -1.1, 0.05), 0.78, 0.6));
+        out.push(core(at(CHEST, side * 0.45, 0.95, -0.15), at(CHEST, side * 2.0, 0.3, -0.15), 0.7, 0.7));
+        out.push(core(at(shoulder, side * 0.4, -0.2, 0.05), at(shoulder, side * 0.3, -1.3, 0.1), 0.95, 0.68));
         out.push(core(at(CHEST, side * 0.25, 0.3, 0.6), at(CHEST, side * 1.4, 0.35, 0.4), 0.8, 0.7));
         out.push(core(at(CHEST, side * 1.6, -0.1, -0.1), at(CHEST, side * 0.75, -2.0, 0.0), 0.8, 0.6));
-        out.push(cone(at(shoulder, 0.0, -0.9, 0.2), at(shoulder, 0.0, -2.0, 0.18), 0.62, 0.5, Kind::Body));
+        out.push(cone(at(shoulder, 0.0, -0.9, 0.22), at(shoulder, 0.0, -1.9, 0.2), 0.72, 0.56, Kind::Body));
         out.push(cone(at(shoulder, 0.0, -0.7, -0.2), at(shoulder, 0.0, -2.1, -0.15), 0.6, 0.45, Kind::Body));
         out.push(cone(at(elbow, 0.0, -0.4, 0.05), at(elbow, 0.0, -2.2, 0.0), 0.6, 0.42, Kind::Body));
     }
