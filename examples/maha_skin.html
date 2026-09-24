@@ -66,6 +66,10 @@ const SPEC = [
   ['arms', 'elbowSwing', 'elbow fwd bend', 0, 80, 0.5, 32.5],
   ['arms', 'wristFlex', 'wrist curl', -30, 50, 0.5, 8],
   ['arms', 'wristLag', 'hand trails swing', 0, 40, 0.5, 10],
+  ['traps', 'trapHeight', 'trap height', -1, 2, 0.01, 0],
+  ['traps', 'trapMass', 'trap mass', -1.5, 2.5, 0.01, 0],
+  ['traps', 'trapReach', 'trap reach', -1.5, 1.5, 0.01, 0],
+  ['traps', 'trapSlope', 'trap slope', -1.5, 1.5, 0.01, 0],
   ['proportion', 'shoulderDrop', 'shoulder drop', -0.6, 0.8, 0.01, 0.25],
   ['proportion', 'shoulderWidth', 'shoulder width', 0.85, 1.15, 0.005, 1],
   ['proportion', 'armLen', 'arm length', 0.85, 1.2, 0.005, 1],
@@ -194,6 +198,10 @@ function partGeo(part, inflate) {
   g.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(part.nrm), 3));
   g.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(part.skinIndex, 4));
   g.setAttribute('skinWeight', new THREE.Float32BufferAttribute(part.skinWeight, 4));
+  const names = Object.keys(part.morphs ?? {});
+  g.morphAttributes.position = names.map(n => new THREE.BufferAttribute(new Float32Array(part.morphs[n]), 3));
+  g.morphTargetsRelative = true;
+  g.userData.morphNames = names;
   g.setIndex(orient(part)); return g;
 }
 
@@ -206,11 +214,13 @@ function skinned(g, material, layer) {
 }
 const body = partGeo(RIG.body, 0), bodyHull = partGeo(RIG.body, 0.07);
 const skirt = partGeo(RIG.skirt, 0), skirtHull = partGeo(RIG.skirt, 0.07);
-skinned(body, new THREE.MeshBasicMaterial({color: 0x140b0a, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1}), WIRE);
-skinned(body, new THREE.MeshBasicMaterial({color: 0xffc89a, wireframe: true}), WIRE);
-skinned(body, new THREE.MeshBasicMaterial({color: 0xffc89a, wireframe: true, transparent: true, opacity: 0.07, depthTest: false}), WIRE);
-skinned(body, new THREE.MeshBasicMaterial({color: 0xfbf1e8, side: THREE.DoubleSide}), CONT);
-skinned(bodyHull, new THREE.MeshBasicMaterial({color: 0x3a140e, side: THREE.BackSide}), CONT);
+const bodyMeshes = [
+  skinned(body, new THREE.MeshBasicMaterial({color: 0x140b0a, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1}), WIRE),
+  skinned(body, new THREE.MeshBasicMaterial({color: 0xffc89a, wireframe: true}), WIRE),
+  skinned(body, new THREE.MeshBasicMaterial({color: 0xffc89a, wireframe: true, transparent: true, opacity: 0.07, depthTest: false}), WIRE),
+  skinned(body, new THREE.MeshBasicMaterial({color: 0xfbf1e8, side: THREE.DoubleSide}), CONT),
+  skinned(bodyHull, new THREE.MeshBasicMaterial({color: 0x3a140e, side: THREE.BackSide}), CONT),
+];
 const skirtMats = [
   new THREE.MeshBasicMaterial({color: 0x7fb8a6, wireframe: true, transparent: true}),
   new THREE.MeshBasicMaterial({color: 0x44564f, side: THREE.DoubleSide, transparent: true, depthWrite: false}),
@@ -338,6 +348,7 @@ function applyPose(rots, ph, bodyZ) {
 }
 
 function applyView() {
+  for (const m of bodyMeshes) m.geometry.userData.morphNames.forEach((n, i) => { m.morphTargetInfluences[i] = K[n]; });
   skirtMats.forEach(m => { m.opacity = K.skirt; });
   skirtMeshes.forEach(m => { m.visible = K.skirt > 0.01; });
 }
