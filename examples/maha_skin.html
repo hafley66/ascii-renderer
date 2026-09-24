@@ -68,8 +68,9 @@ const SPEC = [
   ['torso', 'spineShare', 'twist in spine', 0, 1, 0.05, 0.6],
   ['torso', 'lean', 'forward lean', -10, 20, 0.5, 2],
   ['torso', 'headStab', 'head holds front', 0, 1, 0.05, 0.6],
-  ['torso', 'headLock', 'head stays level (chicken)', 0, 1, 0.01, 1],
-  ['torso', 'headSteady', 'head holds position', 0, 1, 0.01, 0.8],
+  ['torso', 'headLock', 'head level (spine IK)', 0, 1, 0.01, 1],
+  ['torso', 'headSteady', 'head holds line (spine IK)', 0, 1, 0.01, 0.6],
+  ['torso', 'neckShare', 'neck share of the fix', 0, 1, 0.01, 0.4],
   ['arms', 'armSwing', 'arm swing', 0, 60, 0.5, 9],
   ['arms', 'armBias', 'swing biased back', -20, 10, 0.5, -6],
   ['arms', 'armCross', 'arm cross in', 0, 30, 0.5, 3],
@@ -129,8 +130,9 @@ const TIPS = {
   pelvisTwist: 'Pelvis turns toward the forward leg, in degrees.',
   torsoTwist: 'Chest turns against the pelvis about the body axis, in degrees.',
   spineShare: 'How much of the torso twist happens low in the spine versus up in the chest.',
-  headLock: 'Head keeps a level, forward orientation in world space no matter what the body does. 1 = locked, only tiny looks.',
-  headSteady: 'Head cancels the body sway and bob so it glides on a smooth line (up to 0.35 units of give in the neck).',
+  headLock: 'IK goal: head level and facing forward. The fix is spread along spine, chest, neck and head, so the torso does most of it.',
+  headSteady: 'IK goal: head stays over his walking line. Spine and chest lean to pull it back over the path.',
+  neckShare: 'How much of the level-head fix the neck and head take. 0 = all spine and chest, 1 = all neck.',
   lean: 'Whole upper body tipping forward, in degrees.',
   headStab: 'Head turning against the chest so the face keeps pointing ahead. 1 = fully steady.',
   armSwing: 'Forward/back arm swing, opposite to the legs, in degrees.',
@@ -552,24 +554,37 @@ function solveLeg(side, ph, bodyZ) {
 
 const base = i => new THREE.Vector3().fromArray(RIG.joints[i].offset);
 
-// Chicken head: after the body is posed, counter-rotate the head to a level world orientation (plus the
-// small look-around), and slide it within the neck to cancel sway and bob. Height target is a slow average.
-let headHeight = null;
-const HEAD_GIVE = 0.35;
+// Head goal solved over the spine chain: CCD on spine and chest leans the head back over its line,
+// then the leftover world rotation error is split along spine, chest, neck, head so the head ends level.
+const CHAIN = ['spine', 'chest', 'neck', 'head'];
+const worldQ = b => b.getWorldQuaternion(new THREE.Quaternion());
+function rotateWorld(bone, delta) {
+  const parentQ = worldQ(bone.parent);
+  bone.quaternion.copy(parentQ.clone().invert().multiply(delta).multiply(parentQ).multiply(bone.quaternion));
+  bone.updateMatrixWorld(true);
+}
 function stabilizeHead() {
-  const neck = bones[at.neck], head = bones[at.head];
-  neck.updateMatrixWorld(true);
-  const neckQ = neck.getWorldQuaternion(new THREE.Quaternion());
+  const head = bones[at.head];
+  bones[0].updateMatrixWorld(true);
+  for (let iter = 0; iter < 3 && K.headSteady > 0; iter++) {
+    for (const name of ['chest', 'spine']) {
+      const joint = bones[at[name]].getWorldPosition(new THREE.Vector3());
+      const now = head.getWorldPosition(new THREE.Vector3());
+      const goal = new THREE.Vector3(pushX(cycles), now.y, now.z);
+      const from = now.sub(joint), to = goal.sub(joint);
+      const q = new THREE.Quaternion().setFromUnitVectors(from.normalize(), to.normalize());
+      rotateWorld(bones[at[name]], new THREE.Quaternion().slerp(q, K.headSteady * 0.5));
+    }
+  }
+  const share = [(1 - K.neckShare) * 0.5, (1 - K.neckShare) * 0.5, K.neckShare * 0.62, K.neckShare * 0.38];
   const look = qa(Y, K.headLook * wander(clock * 0.15, 4)).multiply(qa(X, 0.3 * K.headLook * wander(clock * 0.2, 5)));
-  const want = neckQ.clone().invert().multiply(look);
-  head.quaternion.slerp(want, K.headLock);
-  head.updateMatrixWorld(true);
-  const now = head.getWorldPosition(new THREE.Vector3());
-  headHeight = headHeight === null ? now.y : headHeight + (now.y - headHeight) * 0.02;
-  const target = new THREE.Vector3(pushX(cycles), headHeight, now.z);
-  const shift = target.sub(now).multiplyScalar(K.headSteady).clampLength(0, HEAD_GIVE);
-  const local = neck.worldToLocal(now.clone().add(shift)).sub(neck.worldToLocal(now.clone()));
-  head.position.add(local);
+  let left = 1;
+  CHAIN.forEach((name, i) => {
+    const err = look.clone().multiply(worldQ(head).invert());
+    const part = i === CHAIN.length - 1 ? 1 : share[i] / left;
+    rotateWorld(bones[at[name]], new THREE.Quaternion().slerp(err, part * K.headLock));
+    left -= share[i];
+  });
 }
 function applyPose(rots, ph, bodyZ) {
   RIG.joints.forEach((j, i) => {
