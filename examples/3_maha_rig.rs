@@ -867,6 +867,37 @@ fn feather(t: &mut Vec<Vec3>, base: Vec3, tip: Vec3, width: f32, n: Vec3) {
     t.extend([base, l, ridge, ridge, l, tip, base, ridge, r, ridge, tip, r]);
 }
 
+// March from `from` along `dir` to the blended surface; the hit point, lifted `lift` off it.
+fn onto_surface(caps: &[Shape], from: Vec3, dir: Vec3, lift: f32) -> Vec3 {
+    let mut t = 0.0;
+    for _ in 0..64 {
+        let d = scene_sdf(from + dir * t, caps);
+        if d < 0.005 {
+            break;
+        }
+        t += d;
+    }
+    from + dir * (t - lift)
+}
+
+fn sdf_normal(caps: &[Shape], p: Vec3) -> Vec3 {
+    let e = 0.02;
+    let f = |d: Vec3| scene_sdf(p + d * e, caps) - scene_sdf(p - d * e, caps);
+    Vec3::new(f(Vec3::X), f(Vec3::Y), f(Vec3::Z)).normalize_or(Vec3::Z)
+}
+
+// Flat closed loop of `sides` segments around c, lying in the plane with normal n.
+fn loop_in(t: &mut Vec<Vec3>, c: Vec3, n: Vec3, radius: f32, thick: f32, sides: usize, phase: f32) {
+    let (u, v) = frame_of(n);
+    let at = |k: usize| {
+        let th = phase + k as f32 / sides as f32 * std::f32::consts::TAU;
+        c + (u * th.cos() + v * th.sin()) * radius
+    };
+    for k in 0..sides {
+        tube(t, at(k), at(k + 1), thick, thick, 5);
+    }
+}
+
 fn props(s: &Posed) -> Vec<Prop> {
     let (world, pos) = (&s.world, &s.pos);
     let mut out = Vec::new();
@@ -926,6 +957,66 @@ fn props(s: &Posed) -> Vec<Prop> {
         tube(&mut t, c - dir * 0.04, c + dir * 0.04, r, r, 10);
     }
     out.push(Prop { kind: "ring", bone: HEAD, tris: t });
+    // Necklace across the clavicles: ring and hexagon links, a wide centre plate, dark tassels (refs #4, #10).
+    let chest = world[CHEST];
+    let toward = chest.transform_vector3(Vec3::Z).normalize();
+    let on_chest = |x: f32, y: f32| onto_surface(&s.caps, chest.transform_point3(Vec3::new(x, y, 3.0)), -toward, 0.06);
+    let mut t = Vec::new();
+    let link = |k: i32| on_chest(k as f32 * 0.3, 0.45 + 0.45 * (k as f32 * 0.3 / 1.2).powi(2));
+    for k in -4i32..4 {
+        tube(&mut t, link(k), link(k + 1), 0.02, 0.02, 4);
+    }
+    for k in -4i32..=4 {
+        let c = link(k);
+        let n = sdf_normal(&s.caps, c);
+        match k.abs() {
+            0 => {
+                loop_in(&mut t, c, n, 0.2, 0.045, 6, 0.0);
+                for dx in [-0.05, 0.05] {
+                    let top = c + chest.transform_vector3(Vec3::new(dx, -0.18, 0.0));
+                    tube(&mut t, top, top + chest.transform_vector3(Vec3::new(dx * 0.5, -0.3, 0.04)), 0.045, 0.02, 4);
+                }
+            }
+            k if k % 2 == 1 => loop_in(&mut t, c, n, 0.08, 0.03, 10, 0.0),
+            _ => {
+                loop_in(&mut t, c, n, 0.12, 0.035, 6, 0.0);
+                let top = c + chest.transform_vector3(Vec3::new(0.0, -0.12, 0.0));
+                tube(&mut t, top, top + chest.transform_vector3(Vec3::new(0.0, -0.28, 0.05)), 0.04, 0.025, 4);
+            }
+        }
+    }
+    out.push(Prop { kind: "ring", bone: CHEST, tris: t });
+    // Sash: light band knotted at the front of the waist, a long tail hanging to about the hem (refs #1, #2).
+    let pelvis = world[PELVIS];
+    let mut t = Vec::new();
+    let band = |th: f32, y: f32| {
+        let dir = pelvis.transform_vector3(Vec3::new(th.sin(), 0.0, th.cos())).normalize();
+        let axis = pelvis.transform_point3(Vec3::new(0.0, y, 0.0));
+        // start inside the arm gap so the probe cannot begin inside a hanging arm
+        onto_surface(&s.caps, axis + dir * 1.6, -dir, 0.05)
+    };
+    for k in 0..32 {
+        let (a, b) = (k as f32 / 32.0 * std::f32::consts::TAU, (k + 1) as f32 / 32.0 * std::f32::consts::TAU);
+        quad(&mut t, band(a, 0.55), band(b, 0.55), band(b, 0.15), band(a, 0.15));
+    }
+    let knot = band(0.15, 0.35);
+    ball(&mut t, knot + toward * 0.08, 0.22);
+    let (mut prev_l, mut prev_r) = (knot + pelvis.transform_vector3(Vec3::new(-0.12, 0.0, 0.1)), knot + pelvis.transform_vector3(Vec3::new(0.14, 0.0, 0.1)));
+    for k in 1..=8 {
+        let f = k as f32 / 8.0;
+        let c = knot + pelvis.transform_vector3(Vec3::new(0.12 * f, -3.0 * f, 0.1 + 0.25 * f * (1.0 - f)));
+        let w = 0.2 + 0.07 * f;
+        let (l, r) = (c + pelvis.transform_vector3(Vec3::new(-w, 0.0, 0.0)), c + pelvis.transform_vector3(Vec3::new(w, 0.0, 0.0)));
+        // the tail drapes over the hakama: never sink into it
+        let front = |p: Vec3| {
+            let q = onto_surface(&s.caps, p + toward * 1.5, -toward, 0.06);
+            if q.dot(toward) > p.dot(toward) { q } else { p }
+        };
+        let (l, r) = (front(l), front(r));
+        quad(&mut t, prev_l, prev_r, r, l);
+        (prev_l, prev_r) = (l, r);
+    }
+    out.push(Prop { kind: "cloth", bone: PELVIS, tris: t });
     // Black rings on both wrists and ankles (refs #1, #2, #9).
     for (bone, r) in [(8, 0.46), (12, 0.46), (16, 0.52), (20, 0.52)] {
         let m = world[bone];
