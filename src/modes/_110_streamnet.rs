@@ -15,8 +15,8 @@ pub(super) struct StreamNet;
 pub(super) static MODE: StreamNet = StreamNet;
 
 const NAME: &str = "streamnet";
-const KNOBS: usize = 15;
-const HELP: &str = "streamnet: equipotential and streamline net of a morphing complex potential with orbiting dipoles and flow comets [zoom] [degree] [density] [thick] [warp] [spin] [morph] [hue] [aspect] [depth] [ground] [halo] [poles] [strength] [tracers]";
+const KNOBS: usize = 17;
+const HELP: &str = "streamnet: equipotential/streamline net of a morphing complex potential; families, dipoles, bands, flow comets [zoom] [degree] [density] [thick] [warp] [spin] [morph] [hue] [aspect] [depth] [ground] [halo] [poles] [strength] [tracers] [form] [flowdir]";
 
 const PARAMS: &[Param] = &[
     param!("ZOOM", "plane scale", 0.8, 2.0, 1.0, 0.05),
@@ -33,13 +33,18 @@ const PARAMS: &[Param] = &[
     param!("HALO", "line underglow", 0.0, 0.9, 0.28, 0.05),
     param!("POLES", "dipole count", 0.0, 6.0, 3.0, 1.0),
     param!("STRENGTH", "dipole strength", 0.0, 1.0, 0.5, 0.05),
-    param!("TRACERS", "flow comets", 0.0, 600.0, 160.0, 10.0),
+    param!("TRACERS", "flow comets", 0.0, 500.0, 90.0, 10.0),
+    param!("FORM", "potential family", 0.0, 3.0, 1.0, 1.0, FORM_CHOICES),
+    param!("FLOWDIR", "comet drift to equipotentials", 0.0, 1.0, 0.0, 0.05),
 ];
 
 const L_TERM: u64 = 0x21;
 const L_WARP: u64 = 0x22;
 const L_POLE: u64 = 0x23;
 const L_TRAC: u64 = 0x31;
+const L_BAND: u64 = 0x32;
+const FORM_CHOICES: &[&str] = &["harmonic", "dipolar", "banded", "chaotic"];
+const NBAND: usize = 3;
 
 const MAXD: usize = 7;
 const MAXP: usize = 6;
@@ -140,11 +145,17 @@ struct Look {
     pi: [f32; MAXP],
     qr: [f32; MAXP],
     qi: [f32; MAXP],
+    nb: usize,
+    bar: [f32; NBAND],
+    bai: [f32; NBAND],
+    bbr: [f32; NBAND],
+    bbi: [f32; NBAND],
     rmin2: f32,
     bg: Color,
     wash: Color,
     tracers: usize,
     flow: f32,
+    flowa: f32,
     time: f32,
 }
 
@@ -176,7 +187,11 @@ impl Look {
             ci[k] = amp * a.sin();
         }
 
-        let np = (p[12].round() as i32).clamp(0, MAXP as i32) as usize;
+        let form = p[15].round() as i32;
+        let want_poles = form == 1 || form == 3;
+        let want_band = form == 2 || form == 3;
+
+        let np = if want_poles { (p[12].round() as i32).clamp(0, MAXP as i32) as usize } else { 0 };
         let mut pr = [0.0f32; MAXP];
         let mut pi = [0.0f32; MAXP];
         let mut qr = [0.0f32; MAXP];
@@ -192,6 +207,21 @@ impl Look {
             let ga = unit(hash(seed, L_POLE, kk, 4)) * TAU;
             qr[k] = mag * ga.cos();
             qi[k] = mag * ga.sin();
+        }
+
+        let nb = if want_band { NBAND } else { 0 };
+        let mut bar = [0.0f32; NBAND];
+        let mut bai = [0.0f32; NBAND];
+        let mut bbr = [0.0f32; NBAND];
+        let mut bbi = [0.0f32; NBAND];
+        for k in 0..nb {
+            let kk = k as u64;
+            let amp = 0.06 + p[13] * (0.10 + 0.16 * unit(hash(seed, L_BAND, kk, 0)));
+            let ph = unit(hash(seed, L_BAND, kk, 1)) * TAU + (k as f32 - 1.0) * 0.5 * p[6] * time;
+            bar[k] = amp * ph.cos();
+            bai[k] = amp * ph.sin();
+            bbr[k] = 1.2 + 1.4 * unit(hash(seed, L_BAND, kk, 2));
+            bbi[k] = (unit(hash(seed, L_BAND, kk, 3)) - 0.5) * 0.6;
         }
 
         Look {
@@ -217,11 +247,17 @@ impl Look {
             pi,
             qr,
             qi,
+            nb,
+            bar,
+            bai,
+            bbr,
+            bbi,
             rmin2: 0.0025,
             bg: darken(palette[0], 18),
             wash: hsl_to_rgb(((p[7] + 205.0) / 360.0).rem_euclid(1.0) as f64, 0.55, 0.13),
             tracers: (p[14].round() as usize).min(2000),
             flow: 0.55,
+            flowa: p[16],
             time,
         }
     }
@@ -254,6 +290,22 @@ where
     } else {
         buf.chunks_mut(w).enumerate().for_each(row);
     }
+}
+
+#[inline]
+fn csin(xr: f32, xi: f32) -> (f32, f32) {
+    let e = xi.exp();
+    let (ch, sh) = ((e + 1.0 / e) * 0.5, (e - 1.0 / e) * 0.5);
+    let (s, c) = xr.sin_cos();
+    (s * ch, c * sh)
+}
+
+#[inline]
+fn ccos(xr: f32, xi: f32) -> (f32, f32) {
+    let e = xi.exp();
+    let (ch, sh) = ((e + 1.0 / e) * 0.5, (e - 1.0 / e) * 0.5);
+    let (s, c) = xr.sin_cos();
+    (c * ch, -s * sh)
 }
 
 /// Evaluate the analytic potential and its derivative at one plane point.
@@ -293,6 +345,20 @@ fn potential(a: f32, b: f32, look: &Look) -> (f32, f32, f32, f32) {
         let dd = d2 * d2;
         dr -= (qr * cr2 - qi * ci2) / dd;
         di -= (qi * cr2 + qr * ci2) / dd;
+    }
+    if look.nb > 0 {
+        for k in 0..look.nb {
+            let xr = look.bbr[k] * a - look.bbi[k] * b;
+            let xi = look.bbr[k] * b + look.bbi[k] * a;
+            let (sxr, sxi) = csin(xr, xi);
+            let (cxr, cxi) = ccos(xr, xi);
+            wr += look.bar[k] * sxr - look.bai[k] * sxi;
+            wi += look.bar[k] * sxi + look.bai[k] * sxr;
+            let abr = look.bar[k] * look.bbr[k] - look.bai[k] * look.bbi[k];
+            let abi = look.bar[k] * look.bbi[k] + look.bai[k] * look.bbr[k];
+            dr += abr * cxr - abi * cxi;
+            di += abr * cxi + abi * cxr;
+        }
     }
     (wr, wi, dr, di)
 }
@@ -434,8 +500,10 @@ fn paint_flow(grid: &mut Grid, w: usize, h: usize, look: &Look) {
                 let (_phi, _psi, re, im) = potential(a, b, look);
                 let mag = (re * re + im * im).sqrt().max(1e-4);
                 path[i] = plane_to_cell(a, b, look);
-                a += re / mag * 0.05;
-                b += -im / mag * 0.05;
+                let fa = look.flowa;
+                let inv = 0.05 / mag;
+                a += (re * (1.0 - fa) + im * fa) * inv;
+                b += (-im * (1.0 - fa) + re * fa) * inv;
             }
             let (hx, hy) = path[head.min(NSTEP - 1)];
             stamp(grid, w, h, hx, hy, 'o', look.hue, 0.35, 0.85);
@@ -566,6 +634,22 @@ mod tests {
         let mut k = knobs();
         let a = text(&frame(90, 30, 42, 0.0, &k));
         k[2] = 7.0;
+        assert_ne!(a, text(&frame(90, 30, 42, 0.0, &k)));
+    }
+
+    #[test]
+    fn form_changes_the_net() {
+        let mut k = knobs();
+        let a = text(&frame(90, 30, 42, 0.0, &k));
+        k[15] = 2.0;
+        assert_ne!(a, text(&frame(90, 30, 42, 0.0, &k)));
+    }
+
+    #[test]
+    fn flowdir_moves_comets() {
+        let mut k = knobs();
+        let a = text(&frame(90, 30, 42, 0.0, &k));
+        k[16] = 1.0;
         assert_ne!(a, text(&frame(90, 30, 42, 0.0, &k)));
     }
 
