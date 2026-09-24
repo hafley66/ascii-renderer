@@ -8,7 +8,7 @@ button{background:#2a1a16;color:#f3d9c8;border:1px solid #6b2a1c;padding:4px 10p
 button.on{background:#6b2a1c}
 </style>
 <div id="bar"></div>
-<div id="row"><div id="wire"></div><div id="cont"></div><pre id="ascii"></pre></div>
+<div id="row"><div id="clay"></div><div id="wire"></div><div id="cont"></div><pre id="ascii"></pre></div>
 <p>drag: orbit / scroll: zoom / right-drag: pan</p>
 <script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}</script>
 <script type="module">
@@ -29,8 +29,21 @@ const mk = (id, bg) => {
 };
 const rWire = mk('wire', 0x140b0a), rCont = mk('cont', 0xe9a890);
 const controls = new OrbitControls(camera, document.getElementById('row'));
-controls.target.set(0, 6.2, 0); controls.update();
+controls.target.set(0, 6.2, 0);
+// ?yaw=deg orbits the camera around the figure (for scripted screenshots).
+const yaw0 = +(new URLSearchParams(location.search).get('yaw') || 0) * Math.PI / 180;
+camera.position.set(Math.sin(yaw0) * 29, 9.8, Math.cos(yaw0) * 29);
+controls.update();
 const wireScene = new THREE.Scene(), contScene = new THREE.Scene();
+// Clay: lit sculpt read. Low warm key, cold rim from behind, dim fill.
+const rClay = mk('clay', 0x0d0908), clayScene = new THREE.Scene();
+rClay.toneMapping = THREE.ACESFilmicToneMapping;
+clayScene.add(new THREE.HemisphereLight(0x40302a, 0x080404, 0.6));
+const key = new THREE.DirectionalLight(0xffd2a8, 2.6); key.position.set(-6, 4, 10); clayScene.add(key);
+const rim = new THREE.DirectionalLight(0x9fc4ff, 3.2); rim.position.set(7, 9, -12); clayScene.add(rim);
+const top = new THREE.DirectionalLight(0xffffff, 0.8); top.position.set(0, 20, 2); clayScene.add(top);
+const clayMat = new THREE.MeshStandardMaterial({color: 0xe8e0d4, roughness: 0.55, metalness: 0.0, side: THREE.DoubleSide});
+const clothMat = new THREE.MeshStandardMaterial({color: 0x2a2a30, roughness: 0.9, side: THREE.DoubleSide});
 const composer = new EffectComposer(rWire);
 composer.addPass(new RenderPass(wireScene, camera));
 composer.addPass(new UnrealBloomPass(new THREE.Vector2(W, H), 0.8, 0.4, 0.05));
@@ -64,7 +77,8 @@ const built = KEYS.map(k => {
     g.setIndex(ix); return g;
   };
   const all = geo(idx);
-  const wire = new THREE.Group(), cont = new THREE.Group();
+  const wire = new THREE.Group(), cont = new THREE.Group(), clay = new THREE.Group();
+  clay.add(new THREE.Mesh(geo(body), clayMat), new THREE.Mesh(geo(skirt), clothMat));
   wire.add(new THREE.Mesh(all, new THREE.MeshBasicMaterial({color: 0x140b0a, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1})));
   for (const [ix, color] of [[body, 0xffc89a], [skirt, 0x7fb8a6]]) {
     const wg = new THREE.WireframeGeometry(geo(ix));
@@ -81,9 +95,10 @@ const built = KEYS.map(k => {
     const g = new THREE.BufferGeometry().setFromPoints(l.pts.map(q => new THREE.Vector3(...q)));
     wire.add(new THREE.Line(g, new THREE.LineBasicMaterial({color: l.kind === 'wheel' ? 0xf0b848 : 0xdfe8f0})));
     cont.add(new THREE.Line(g, new THREE.LineBasicMaterial({color: l.kind === 'wheel' ? 0x8a5a10 : 0x3a140e})));
+    clay.add(new THREE.Line(g, new THREE.LineBasicMaterial({color: l.kind === 'wheel' ? 0xf0b848 : 0xdfe8f0})));
   }
-  wireScene.add(wire); contScene.add(cont);
-  return {wire, cont};
+  wireScene.add(wire); contScene.add(cont); clayScene.add(clay);
+  return {wire, cont, clay};
 });
 
 let cur = 0, playing = false, last = 0;
@@ -103,7 +118,7 @@ play.onclick = () => setPlaying(!playing);
 let step = 0;
 function show(i) {
   cur = i;
-  built.forEach((b, j) => { b.wire.visible = b.cont.visible = j === i; buttons[j]?.classList.toggle('on', j === i); });
+  built.forEach((b, j) => { b.wire.visible = b.cont.visible = b.clay.visible = j === i; buttons[j]?.classList.toggle('on', j === i); });
 }
 show(0);
 
@@ -141,6 +156,7 @@ function frame(t) {
   if (playing && t - last > +speed.value) { last = t; step = (step + 1) % cycle.length; show(cycle[step]); }
   controls.update();
   composer.render();
+  rClay.render(clayScene, camera);
   rCont.render(contScene, camera);
   ascii();
 }
