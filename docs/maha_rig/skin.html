@@ -16,6 +16,9 @@ button.preset{border-color:#8a5a10}
 div#knobs label{display:grid;grid-template-columns:112px 1fr 40px;align-items:center;gap:6px;font-size:12px;margin:2px 0}
 div#knobs input{width:100%}
 div.hidden{display:none}
+div#knobs label:hover{background:#2e1c17;cursor:help}
+div#tip{position:fixed;z-index:10;width:260px;padding:6px 8px;background:#2a1a16;border:1px solid #8a5a10;color:#f3d9c8;font-size:12px;line-height:1.35;white-space:pre-line;pointer-events:none}
+p.hint{font-size:11px;color:#a87a62;margin:4px 0 8px}
 div#knobs label.sweeping{background:#4a2018;outline:1px solid #f0b848}
 </style>
 <main>
@@ -24,6 +27,7 @@ div#knobs label.sweeping{background:#4a2018;outline:1px solid #f0b848}
 <p>drag: orbit / scroll: zoom / right-drag: pan</p>
 </main>
 <aside id="side"><button id="fold">&raquo;</button>
+<p class="hint">hover a knob + press <b>S</b>: it sweeps left then right. mouse out = snap back, click = keep.</p>
 <details open><summary>presets</summary><div id="presets"></div></details>
 <div id="knobs"></div>
 </aside>
@@ -85,6 +89,52 @@ const SPEC = [
   ['view', 'outline', 'outline thickness', 0, 0.3, 0.005, 0.07],
   ['view', 'shards', 'outline shards', 0, 0.3, 0.005, 0],
 ];
+const TIPS = {
+  speed: 'Walk cycles per second. One cycle = a left step and a right step.',
+  phase: 'Where in the cycle the pose sits while walk is paused. 0 = right foot lands.',
+  strideRatio: 'How far the body travels per cycle, as a multiple of leg length.',
+  duty: 'Share of the cycle each foot spends planted. Above 0.5 means both feet are down for a moment.',
+  liftRatio: 'Peak foot height during the swing, as a share of leg length.',
+  reach: 'How straight the planted leg gets. 1 = locked knee, lower = more bent, softer walk.',
+  autoHeight: '1 = hips rise and fall so both feet reach the ground. 0 = hips hold a fixed height.',
+  footOut: 'Sideways distance of each foot from the hip line. Wider = more planted, lumbering.',
+  footLevel: 'How much the ankle cancels hip and knee so the planted foot stays flat.',
+  toeLift: 'Toe raised while the foot swings forward, in degrees.',
+  toeRoll: 'Heel lifting off at the end of the stance, before push-off, in degrees.',
+  weightShift: 'Pelvis slides sideways over whichever foot is planted.',
+  hipDrop: 'Swing-side hip dips while the other leg carries the weight, in degrees.',
+  counterLean: 'Torso tilts against the hip drop to stay balanced. 1 = cancels it.',
+  bob: 'Extra up and down on top of the leg-driven rise and fall.',
+  pelvisTwist: 'Pelvis turns toward the forward leg, in degrees.',
+  torsoTwist: 'Chest turns against the pelvis about the body axis, in degrees.',
+  spineShare: 'How much of the torso twist happens low in the spine versus up in the chest.',
+  lean: 'Whole upper body tipping forward, in degrees.',
+  headStab: 'Head turning against the chest so the face keeps pointing ahead. 1 = fully steady.',
+  armSwing: 'Forward/back arm swing, opposite to the legs, in degrees.',
+  armCross: 'Forward-swinging arm moves in toward the midline; the back arm flares out.',
+  armSpread: 'Arms held out from the body at rest, in degrees.',
+  elbowRest: 'Elbow bend at rest, in degrees.',
+  elbowSwing: 'Extra elbow bend on the forward swing, in degrees.',
+  wristFlex: 'Hand curl at rest, in degrees.',
+  wristLag: 'Hand trailing behind the arm swing, in degrees.',
+  trapHeight: 'Traps rise up the neck toward the skull. 1 = +0.5 units at the spine end.',
+  trapMass: 'Thickness of every trap bundle. 1 = +0.2 radius.',
+  trapReach: 'How far out along the collarbone the traps attach. 1 = +0.35.',
+  trapSlope: 'Drops the shoulder-side attachment to steepen the slope. 1 = 0.35 lower.',
+  deltMass: 'Delt thickness, mostly at the top. 1 = +0.2 radius at the top.',
+  deltLength: 'How far the delt runs down the arm. 1 = +0.4.',
+  deltOut: 'Delt shifted outward from the shoulder joint. 1 = +0.2.',
+  deltCap: 'A ball on the shoulder tip that swells up and out. 1 = +0.14 radius, +0.2 up.',
+  shoulderDrop: 'Lowers both shoulder joints. The arms and delts follow.',
+  shoulderWidth: 'Multiplies how far the shoulder joints sit from center.',
+  armLen: 'Multiplies arm length (upper arm, forearm, hand).',
+  legLen: 'Multiplies leg length. The gait rescales with it.',
+  torsoLen: 'Multiplies the spine-to-chest distance.',
+  headSize: 'Scales the head, wings and wheel.',
+  skirt: 'Hakama see-through amount. 0 hides it and shows the full legs.',
+  outline: 'Thickness of the dark outline in the contour view.',
+  shards: 'Random extra outline push per vertex: more jagged triangle shards.',
+};
 const DEFAULTS = Object.fromEntries(SPEC.map(s => [s[1], s[6]]));
 
 const PRESETS = {
@@ -106,6 +156,15 @@ const persist = () => {
   clearTimeout(writeTimer);
   writeTimer = setTimeout(() => location.replace('#?' + new URLSearchParams(diff())), 150);
 };
+// Instant tooltip: one fixed box placed left of the hovered row (native title waits ~1s).
+const tip = Object.assign(document.createElement('div'), {id: 'tip', hidden: true});
+document.body.appendChild(tip);
+function showTip(row) {
+  const r = row.getBoundingClientRect();
+  tip.textContent = row.dataset.tip; tip.hidden = false;
+  tip.style.top = `${Math.min(r.top, innerHeight - tip.offsetHeight - 8)}px`;
+  tip.style.left = `${r.left - tip.offsetWidth - 10}px`;
+}
 const knobs = document.getElementById('knobs');
 const inputs = {};
 const openGroups = JSON.parse(localStorage.getItem('maha-open') || '["timing","weight","arms"]');
@@ -124,8 +183,9 @@ for (const [g, key, label, min, max, step] of SPEC) {
   const out = document.createElement('span'); out.textContent = K[key];
   input.oninput = () => { K[key] = +input.value; out.textContent = input.value; persist(); };
   inputs[key] = [input, out];
-  l.onmouseenter = () => { hovered = key; };
-  l.onmouseleave = () => { if (hovered === key) hovered = null; if (sweep?.key === key) stopSweep(true); };
+  l.dataset.tip = `${TIPS[key] ?? ''}\nrange ${min} to ${max}. hover + S to sweep.`;
+  l.onmouseenter = () => { hovered = key; showTip(l); };
+  l.onmouseleave = () => { tip.hidden = true; if (hovered === key) hovered = null; if (sweep?.key === key) stopSweep(true); };
   input.addEventListener('pointerdown', e => { if (sweep?.key === key) { e.preventDefault(); stopSweep(false); } });
   l.append(label, input, out); groupEl.appendChild(l);
 }
