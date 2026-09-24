@@ -25,20 +25,20 @@ const RIG: &[Joint] = &[
     j("crown", Some(4), 0.0, 0.85, -0.3, 0.4),
     j("r_shoulder", Some(2), -1.25, 0.35, 0.0, 0.45),
     j("r_elbow", Some(6), 0.0, -2.14, 0.0, 0.4),
-    j("r_wrist", Some(7), 0.0, -1.68, 0.0, 0.25),
-    j("r_fist", Some(8), 0.0, -0.7, 0.0, 0.3),
+    j("r_wrist", Some(7), 0.0, -1.68, 0.0, 0.3),
+    j("r_fist", Some(8), 0.0, -0.7, 0.0, 0.38),
     j("l_shoulder", Some(2), 1.25, 0.35, 0.0, 0.45),
     j("l_elbow", Some(10), 0.0, -2.14, 0.0, 0.4),
-    j("l_wrist", Some(11), 0.0, -1.68, 0.0, 0.25),
-    j("l_fist", Some(12), 0.0, -0.7, 0.0, 0.3),
+    j("l_wrist", Some(11), 0.0, -1.68, 0.0, 0.3),
+    j("l_fist", Some(12), 0.0, -0.7, 0.0, 0.38),
     j("r_hip", Some(0), -0.6, -0.3, 0.0, 0.7),
     j("r_knee", Some(14), 0.0, -2.82, 0.0, 0.62),
     j("r_ankle", Some(15), 0.0, -2.83, 0.0, 0.4),
-    j("r_toe", Some(16), 0.0, -0.3, 0.95, 0.32),
+    j("r_toe", Some(16), 0.0, -0.3, 1.05, 0.36),
     j("l_hip", Some(0), 0.6, -0.3, 0.0, 0.7),
     j("l_knee", Some(18), 0.0, -2.82, 0.0, 0.62),
     j("l_ankle", Some(19), 0.0, -2.83, 0.0, 0.4),
-    j("l_toe", Some(20), 0.0, -0.3, 0.95, 0.32),
+    j("l_toe", Some(20), 0.0, -0.3, 1.05, 0.36),
     // Four brow wings: an upper pair sweeping up-out, a lower pair nearly level.
     j("r_wing_hi", Some(4), -0.14, 0.2, 0.5, 0.11),
     j("r_wing_hi_mid", Some(22), -0.55, 0.5, -0.25, 0.1),
@@ -276,24 +276,28 @@ fn shapes(world: &[Mat4], pos: &[Vec3], t: Tweak) -> Vec<Shape> {
             cone(
                 at(shoulder, side * (0.12 + t.delt_out), -0.1, 0.03),
                 at(shoulder, side * (0.06 + t.delt_out * 0.5), -1.0 - t.delt_length, 0.03),
-                0.45 + t.delt_mass,
-                0.35 + t.delt_mass * 0.2,
+                0.55 + t.delt_mass,
+                0.4 + t.delt_mass * 0.2,
                 Kind::Body,
             )
             .on(shoulder),
         );
         // delt cap: a ball on the acromion that swells up and out, not along the arm
         let cap = at(shoulder, side * (0.18 + t.delt_out + t.delt_cap * 0.4), 0.0 + t.delt_cap * 0.5, 0.0);
-        out.push(cone(cap, cap + Vec3::Y * 0.01, 0.35 + t.delt_cap * 0.35, 0.35 + t.delt_cap * 0.35, Kind::Body).on(shoulder));
+        out.push(cone(cap, cap + Vec3::Y * 0.01, 0.48 + t.delt_cap * 0.35, 0.48 + t.delt_cap * 0.35, Kind::Body).on(shoulder));
         // pec shelf: a heavy slab from sternum to armpit, underside overhangs the ribs
         out.push(core(at(CHEST, side * 0.25, 0.25, 0.62), at(CHEST, side * 0.95, 0.4, 0.42), 0.55, 0.5).on(CHEST));
         // lats: flare wide under the armpit, pinch in to a narrow waist (refs: shoulders ~2x waist)
         out.push(core(at(CHEST, side * 1.0, -0.1, -0.3), at(CHEST, side * 0.55, -2.1, -0.1), 0.55, 0.28).on(CHEST));
-        out.push(cone(at(shoulder, 0.0, -0.8, 0.15), at(shoulder, 0.0, -1.7, 0.13), 0.43, 0.34, Kind::Body).on(shoulder));
-        out.push(cone(at(shoulder, 0.0, -0.6, -0.14), at(shoulder, 0.0, -1.9, -0.1), 0.36, 0.27, Kind::Body).on(shoulder));
-        out.push(cone(at(elbow, 0.0, -0.3, 0.03), at(elbow, 0.0, -1.6, 0.0), 0.34, 0.22, Kind::Body).on(elbow));
+        // biceps peak in front, triceps horseshoe behind
+        out.push(cone(at(shoulder, 0.0, -0.8, 0.18), at(shoulder, 0.0, -1.7, 0.15), 0.52, 0.4, Kind::Body).on(shoulder));
+        out.push(cone(at(shoulder, 0.0, -0.6, -0.16), at(shoulder, 0.0, -1.9, -0.12), 0.46, 0.32, Kind::Body).on(shoulder));
+        // forearm: brachioradialis bulge just under the elbow, tapering hard to the wrist
+        out.push(cone(at(elbow, side * 0.08, -0.35, 0.06), at(elbow, 0.0, -1.6, 0.0), 0.46, 0.26, Kind::Body).on(elbow));
+        // calf: gastrocnemius belly high on the back of the shin
+        let knee = if side < 0.0 { 15 } else { 19 };
+        out.push(cone(at(knee, 0.0, -0.45, -0.18), at(knee, 0.0, -1.9, -0.05), 0.62, 0.42, Kind::Body).on(knee));
     }
-    // hakama: cinched at the sash on the hip, flares to the knee
     // eight-pack: 4 rows x 2, shrinking toward the navel; linea alba and tendinous rows are the creases
     for row in 0..4 {
         let y = -0.55 - row as f32 * 0.42;
@@ -311,6 +315,7 @@ fn shapes(world: &[Mat4], pos: &[Vec3], t: Tweak) -> Vec<Shape> {
         // external oblique: ribs to the hip crest, overhangs the sash
         out.push(detail(at(CHEST, side * 0.78, -1.3, 0.2), at(CHEST, side * 0.72, -2.55, 0.3), 0.3, 0.32).on(CHEST));
     }
+    // hakama: cinched at the sash on the hip, flares to the knee
     out.push(cone(at(PELVIS, 0.0, 0.25, 0.0), at(PELVIS, 0.0, -3.4, 0.1), 1.25, 1.85, Kind::Skirt).on(PELVIS));
     out
 }
@@ -895,6 +900,31 @@ fn props(s: &Posed) -> Vec<Prop> {
     }
     quad(&mut t, spine_a + thick, spine_b + thick, spine_b - thick, spine_a - thick);
     out.push(Prop { kind: "blade", bone: R_ELBOW, tris: t });
+    // Black rings on both wrists and ankles (refs #1, #2, #9).
+    for (bone, r) in [(8, 0.46), (12, 0.46), (16, 0.52), (20, 0.52)] {
+        let m = world[bone];
+        let mut t = Vec::new();
+        let at = |k: usize| m.transform_point3(Vec3::new((k as f32 / 16.0 * std::f32::consts::TAU).cos() * r, 0.1, (k as f32 / 16.0 * std::f32::consts::TAU).sin() * r));
+        for k in 0..16 {
+            tube(&mut t, at(k), at(k + 1), 0.1, 0.1, 6);
+        }
+        out.push(Prop { kind: "ring", bone, tris: t });
+    }
+    // Bandage: overlapping wraps around the right forearm, wrist to just under the elbow (refs #2, #19).
+    let mut t = Vec::new();
+    for k in 0..9 {
+        let y = -0.45 - k as f32 * 0.16;
+        // hugs the forearm surface: bulge under the elbow tapering to the wrist
+        let r = 0.54 - k as f32 * 0.022;
+        let ring = |a: usize, dy: f32| {
+            let th = a as f32 / 12.0 * std::f32::consts::TAU;
+            fore.transform_point3(Vec3::new(th.cos() * r, y + dy + 0.03 * th.sin(), th.sin() * r))
+        };
+        for a in 0..12 {
+            quad(&mut t, ring(a, 0.1), ring(a + 1, 0.1), ring(a + 1, -0.1), ring(a, -0.1));
+        }
+    }
+    out.push(Prop { kind: "cloth", bone: R_ELBOW, tris: t });
     out
 }
 

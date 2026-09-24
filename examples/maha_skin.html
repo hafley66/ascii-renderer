@@ -409,7 +409,7 @@ for (const pr of RIG.props) {
   for (let i = 0; i < P.length; i += 3) bone.worldToLocal(v.set(P[i], P[i+1], P[i+2])).toArray(local, i);
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.BufferAttribute(local, 3));
-  const fill = new THREE.Mesh(g, new THREE.MeshBasicMaterial({color: pr.kind === 'wheel' ? 0xc89040 : 0xfbf1e8, side: THREE.DoubleSide}));
+  const fill = new THREE.Mesh(g, new THREE.MeshBasicMaterial({color: pr.kind === 'wheel' ? 0xc89040 : pr.kind === 'ring' ? 0x2a2224 : pr.kind === 'cloth' ? 0xb8ada0 : 0xfbf1e8, side: THREE.DoubleSide}));
   const ink = new THREE.LineSegments(new THREE.EdgesGeometry(g, 40), new THREE.LineBasicMaterial({color: 0x3a140e}));
   const wire = new THREE.LineSegments(new THREE.WireframeGeometry(g), new THREE.LineBasicMaterial({color: pr.kind === 'wheel' ? 0xf0b848 : 0xdfe8f0}));
   fill.layers.set(CONT); ink.layers.set(CONT); wire.layers.set(WIRE);
