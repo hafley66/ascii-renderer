@@ -1533,3 +1533,8 @@ fn cutup_negatives_t7() {
 fn treatise() {
     insta::assert_snapshot!(render(&["42", "treatise", "ink"]));
 }
+
+#[test]
+fn streamnet_seed_42() {
+    insta::assert_snapshot!(render(&["42", "streamnet", "deep"]));
+}
