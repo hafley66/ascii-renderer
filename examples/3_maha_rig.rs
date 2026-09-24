@@ -17,36 +17,37 @@ const fn j(name: &'static str, parent: Option<usize>, x: f32, y: f32, z: f32, ra
 // Units: feet on y=0, crown near y=10.8, 7.5 heads tall, shoulders 3 heads wide.
 // Figure faces +z (toward camera), so the character's right side sits at -x (screen left).
 const RIG: &[Joint] = &[
-    j("pelvis", None, 0.0, 5.2, 0.0, 0.0),
-    j("spine", Some(0), 0.0, 1.3, 0.0, 1.0),
-    j("chest", Some(1), 0.0, 1.6, 0.1, 1.4),
-    j("neck", Some(2), 0.0, 1.0, 0.3, 0.8),
-    j("head", Some(3), 0.0, 0.6, 0.55, 0.76),
-    j("crown", Some(4), 0.0, 0.55, -0.05, 0.68),
-    j("r_shoulder", Some(2), -2.3, 0.45, 0.0, 0.95),
-    j("r_elbow", Some(6), 0.0, -2.1, 0.0, 0.62),
-    j("r_wrist", Some(7), 0.0, -2.0, 0.0, 0.5),
-    j("r_fist", Some(8), 0.0, -0.6, 0.0, 0.55),
-    j("l_shoulder", Some(2), 2.3, 0.45, 0.0, 0.95),
-    j("l_elbow", Some(10), 0.0, -2.1, 0.0, 0.62),
-    j("l_wrist", Some(11), 0.0, -2.0, 0.0, 0.5),
-    j("l_fist", Some(12), 0.0, -0.6, 0.0, 0.55),
-    j("r_hip", Some(0), -0.9, -0.3, 0.0, 1.0),
-    j("r_knee", Some(14), 0.0, -2.3, 0.0, 0.8),
-    j("r_ankle", Some(15), 0.0, -2.2, 0.0, 0.55),
-    j("r_toe", Some(16), 0.0, -0.3, 0.75, 0.35),
-    j("l_hip", Some(0), 0.9, -0.3, 0.0, 1.0),
-    j("l_knee", Some(18), 0.0, -2.3, 0.0, 0.8),
-    j("l_ankle", Some(19), 0.0, -2.2, 0.0, 0.55),
-    j("l_toe", Some(20), 0.0, -0.3, 0.75, 0.35),
-    j("r_wing", Some(4), -0.45, 0.35, -0.2, 0.22),
-    j("r_wing_tip", Some(22), -0.35, 0.8, -0.9, 0.1),
-    j("l_wing", Some(4), 0.45, 0.35, -0.2, 0.22),
-    j("l_wing_tip", Some(24), 0.35, 0.8, -0.9, 0.1),
+    j("pelvis", None, 0.0, 5.8, 0.0, 0.0),
+    j("spine", Some(0), 0.0, 1.3, 0.0, 0.95),
+    j("chest", Some(1), 0.0, 1.6, 0.1, 1.25),
+    j("neck", Some(2), 0.0, 1.0, 0.2, 0.6),
+    j("head", Some(3), 0.0, 0.75, 0.45, 0.78),
+    j("crown", Some(4), 0.0, 0.6, -0.1, 0.72),
+    j("r_shoulder", Some(2), -2.1, 0.2, 0.0, 0.7),
+    j("r_elbow", Some(6), 0.0, -2.5, 0.0, 0.52),
+    j("r_wrist", Some(7), 0.0, -2.4, 0.0, 0.42),
+    j("r_fist", Some(8), 0.0, -0.8, 0.0, 0.48),
+    j("l_shoulder", Some(2), 2.1, 0.2, 0.0, 0.7),
+    j("l_elbow", Some(10), 0.0, -2.5, 0.0, 0.52),
+    j("l_wrist", Some(11), 0.0, -2.4, 0.0, 0.42),
+    j("l_fist", Some(12), 0.0, -0.8, 0.0, 0.48),
+    j("r_hip", Some(0), -0.8, -0.3, 0.0, 0.85),
+    j("r_knee", Some(14), 0.0, -2.6, 0.0, 0.62),
+    j("r_ankle", Some(15), 0.0, -2.5, 0.0, 0.45),
+    j("r_toe", Some(16), 0.0, -0.3, 0.8, 0.32),
+    j("l_hip", Some(0), 0.8, -0.3, 0.0, 0.85),
+    j("l_knee", Some(18), 0.0, -2.6, 0.0, 0.62),
+    j("l_ankle", Some(19), 0.0, -2.5, 0.0, 0.45),
+    j("l_toe", Some(20), 0.0, -0.3, 0.8, 0.32),
+    j("r_wing", Some(4), -0.55, 0.45, -0.2, 0.25),
+    j("r_wing_tip", Some(22), -0.5, 1.3, -1.1, 0.12),
+    j("l_wing", Some(4), 0.55, 0.45, -0.2, 0.25),
+    j("l_wing_tip", Some(24), 0.5, 1.3, -1.1, 0.12),
 ];
 const CROWN: usize = 5;
 const PELVIS: usize = 0;
 const CHEST: usize = 2;
+const HEAD: usize = 4;
 const R_SHOULDER: usize = 6;
 const L_SHOULDER: usize = 10;
 const L_ELBOW: usize = 11;
@@ -77,26 +78,26 @@ const fn tw(yaw: f32) -> Rot {
 
 const KEYS: &[Key] = &[
     Key { name: "K0 stand", bob: 0.0, rots: &[
-        ("r_shoulder", r(0.0, 10.0)), ("l_shoulder", r(0.0, 10.0)),
+        ("r_shoulder", r(0.0, 14.0)), ("l_shoulder", r(0.0, 14.0)),
         ("r_elbow", r(10.0, 0.0)), ("l_elbow", r(10.0, 0.0)),
         ("r_hip", r(0.0, 3.0)), ("l_hip", r(0.0, 3.0)),
     ]},
     Key { name: "K1 R foot plants", bob: -0.2, rots: &[
         ("pelvis", tw(4.0)), ("chest", tw(-5.0)),
-        ("r_shoulder", r(-14.0, 10.0)), ("l_shoulder", r(16.0, 9.0)),
+        ("r_shoulder", r(-14.0, 14.0)), ("l_shoulder", r(16.0, 13.0)),
         ("r_elbow", r(6.0, 0.0)), ("l_elbow", r(22.0, 0.0)),
         ("r_hip", r(22.0, 3.0)), ("r_knee", r(-4.0, 0.0)),
         ("l_hip", r(-16.0, 3.0)), ("l_knee", r(-22.0, 0.0)),
     ]},
     Key { name: "K2 passing", bob: 0.15, rots: &[
-        ("r_shoulder", r(0.0, 10.0)), ("l_shoulder", r(3.0, 10.0)),
+        ("r_shoulder", r(0.0, 14.0)), ("l_shoulder", r(3.0, 14.0)),
         ("r_elbow", r(10.0, 0.0)), ("l_elbow", r(14.0, 0.0)),
         ("r_hip", r(-3.0, 3.0)), ("r_knee", r(-3.0, 0.0)),
         ("l_hip", r(16.0, 3.0)), ("l_knee", r(-45.0, 0.0)),
     ]},
     Key { name: "K3 L foot plants", bob: -0.2, rots: &[
         ("pelvis", tw(-4.0)), ("chest", tw(5.0)),
-        ("l_shoulder", r(-14.0, 10.0)), ("r_shoulder", r(16.0, 9.0)),
+        ("l_shoulder", r(-14.0, 14.0)), ("r_shoulder", r(16.0, 13.0)),
         ("l_elbow", r(6.0, 0.0)), ("r_elbow", r(22.0, 0.0)),
         ("l_hip", r(22.0, 3.0)), ("l_knee", r(-4.0, 0.0)),
         ("r_hip", r(-16.0, 3.0)), ("r_knee", r(-22.0, 0.0)),
@@ -155,21 +156,19 @@ fn shapes(world: &[Mat4], pos: &[Vec3]) -> Vec<Shape> {
         })
         .collect();
     let at = |m: usize, x: f32, y: f32, z: f32| world[m].transform_point3(Vec3::new(x, y, z));
-    out.push(core(at(CHEST, 0.0, 0.5, -0.45), at(CHEST, 0.0, 1.5, -0.4), 0.95, 0.85));
+    out.push(cone(at(HEAD, 0.0, -0.1, 0.35), at(HEAD, 0.0, -0.6, 0.5), 0.6, 0.45, Kind::Body));
     for side in [-1.0, 1.0] {
         let (shoulder, elbow) = if side < 0.0 { (R_SHOULDER, R_ELBOW) } else { (L_SHOULDER, L_ELBOW) };
-        // traps: from the skull base down to the shoulder cap, steep enough to swallow the neck
-        out.push(core(at(CHEST, side * 0.45, 1.55, -0.3), at(CHEST, side * 2.0, 0.6, -0.15), 0.7, 0.78));
-        out.push(core(at(shoulder, side * 0.15, 0.1, 0.0), at(shoulder, side * 0.25, -0.9, 0.05), 1.0, 0.85));
-        // pecs across the front, lats flaring from the armpit to a narrow waist
-        out.push(core(at(CHEST, side * 0.25, 0.3, 0.75), at(CHEST, side * 1.6, 0.35, 0.5), 0.95, 0.85));
-        out.push(core(at(CHEST, side * 1.85, -0.1, -0.1), at(CHEST, side * 0.8, -2.0, 0.0), 0.95, 0.7));
-        // biceps, triceps, forearm belly: bulges with a pinched elbow between
-        out.push(cone(at(shoulder, 0.0, -0.8, 0.25), at(shoulder, 0.0, -1.7, 0.2), 0.8, 0.62, Kind::Body));
-        out.push(cone(at(shoulder, 0.0, -0.6, -0.2), at(shoulder, 0.0, -1.8, -0.15), 0.74, 0.55, Kind::Body));
-        out.push(cone(at(elbow, 0.0, -0.35, 0.05), at(elbow, 0.0, -1.9, 0.0), 0.74, 0.48, Kind::Body));
+        // traps slope from the neck into the delt; the delt flows down the arm, no cap
+        out.push(core(at(CHEST, side * 0.35, 1.4, -0.3), at(CHEST, side * 1.95, 0.3, -0.15), 0.55, 0.62));
+        out.push(core(at(shoulder, side * 0.1, -0.1, 0.0), at(shoulder, side * 0.15, -1.1, 0.05), 0.78, 0.6));
+        out.push(core(at(CHEST, side * 0.25, 0.3, 0.6), at(CHEST, side * 1.4, 0.35, 0.4), 0.8, 0.7));
+        out.push(core(at(CHEST, side * 1.6, -0.1, -0.1), at(CHEST, side * 0.75, -2.0, 0.0), 0.8, 0.6));
+        out.push(cone(at(shoulder, 0.0, -0.9, 0.2), at(shoulder, 0.0, -2.0, 0.18), 0.62, 0.5, Kind::Body));
+        out.push(cone(at(shoulder, 0.0, -0.7, -0.2), at(shoulder, 0.0, -2.1, -0.15), 0.6, 0.45, Kind::Body));
+        out.push(cone(at(elbow, 0.0, -0.4, 0.05), at(elbow, 0.0, -2.2, 0.0), 0.6, 0.42, Kind::Body));
     }
-    out.push(cone(at(PELVIS, 0.0, 0.6, 0.0), at(PELVIS, 0.0, -3.1, 0.1), 1.6, 2.2, Kind::Skirt));
+    out.push(cone(at(PELVIS, 0.0, 0.6, 0.0), at(PELVIS, 0.0, -3.3, 0.1), 1.45, 2.05, Kind::Skirt));
     out
 }
 
@@ -223,7 +222,7 @@ fn smin(a: f32, b: f32, k: f32) -> f32 {
     a.min(b) - h * h * k * 0.25
 }
 
-const CORE_BLEND: f32 = 0.9;
+const CORE_BLEND: f32 = 0.6;
 const LIMB_BLEND: f32 = 0.3;
 
 fn scene_sdf(p: Vec3, caps: &[Shape]) -> f32 {
@@ -248,8 +247,8 @@ impl Camera {
     // Neck-level eye, straight down the walk line, tilted slightly down at the belly.
     fn new(yaw_deg: f32, aspect: f32) -> Self {
         let yaw = yaw_deg.to_radians();
-        let eye = Vec3::new(yaw.sin() * 26.0, 9.2, yaw.cos() * 26.0);
-        let target = Vec3::new(0.0, 5.8, 0.0);
+        let eye = Vec3::new(yaw.sin() * 29.0, 9.8, yaw.cos() * 29.0);
+        let target = Vec3::new(0.0, 6.2, 0.0);
         let fwd = (target - eye).normalize();
         let right = fwd.cross(Vec3::Y).normalize();
         let up = right.cross(fwd);
@@ -535,7 +534,7 @@ fn ray_field(cam: &Camera, dir: Vec3, caps: &[Shape]) -> (f32, f32, usize) {
     (closest, f32::INFINITY, usize::MAX)
 }
 
-// Marching squares on the ray field for the silhouette; depth jumps between hit nodes for inner creases.
+// Marching squares on the ray field: the silhouette outline only.
 fn contour_svg(key: &Key, yaw: f32, pw: usize, ph: usize, step: f32) -> String {
     let s = posed(key);
     let cam = Camera::new(yaw, pw as f32 / ph as f32);
@@ -549,7 +548,7 @@ fn contour_svg(key: &Key, yaw: f32, pw: usize, ph: usize, step: f32) -> String {
         }
     }
     let f = |x: usize, y: usize| field[y * gw + x];
-    let (mut outline, mut crease) = (String::new(), String::new());
+    let mut outline = String::new();
     let seg = |out: &mut String, (x0, y0): (f32, f32), (x1, y1): (f32, f32)| {
         *out += &format!("M{:.1} {:.1}L{:.1} {:.1}", x0 * step, y0 * step, x1 * step, y1 * step);
     };
@@ -581,22 +580,10 @@ fn contour_svg(key: &Key, yaw: f32, pw: usize, ph: usize, step: f32) -> String {
                 }
                 _ => {}
             }
-            // Crease where two hit nodes belong to different muscles or sit at a depth jump.
-            let edge = |a: (f32, f32, usize), b: (f32, f32, usize)| {
-                a.1.is_finite() && b.1.is_finite() && (a.2 != b.2 || (a.1 - b.1).abs() > 0.45)
-            };
-            let (xf, yf) = (gx as f32, gy as f32);
-            if edge(f(gx, gy), f(gx + 1, gy)) {
-                seg(&mut crease, (xf + 0.5, yf - 0.5), (xf + 0.5, yf + 0.5));
-            }
-            if edge(f(gx, gy), f(gx, gy + 1)) {
-                seg(&mut crease, (xf - 0.5, yf + 0.5), (xf + 0.5, yf + 0.5));
-            }
         }
     }
     format!(
         "<svg xmlns='http://www.w3.org/2000/svg' width='{pw}' height='{ph}' style='background:#f4e4d6'>\
-<path d='{crease}' stroke='#8a3a28' stroke-width='1.0' stroke-linecap='round' fill='none'/>\
 <path d='{outline}' stroke='#3a140e' stroke-width='2.4' stroke-linecap='round' fill='none'/></svg>"
     )
 }
