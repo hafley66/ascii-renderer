@@ -85,6 +85,12 @@ const SPEC = [
   ['proportion', 'legLen', 'leg length', 0.85, 1.2, 0.005, 1],
   ['proportion', 'torsoLen', 'torso length', 0.85, 1.2, 0.005, 1],
   ['proportion', 'headSize', 'head size', 0.8, 1.25, 0.005, 1],
+  ['randomness', 'seed', 'seed', 0, 99, 1, 7],
+  ['randomness', 'stepJitter', 'step length jitter', 0, 0.5, 0.005, 0],
+  ['randomness', 'footJitter', 'foot placement jitter', 0, 0.5, 0.005, 0],
+  ['randomness', 'armVar', 'arm swing variation', 0, 1, 0.01, 0],
+  ['randomness', 'bodyDrift', 'body drift', 0, 1, 0.01, 0],
+  ['randomness', 'headLook', 'head looks around', 0, 30, 0.25, 0],
   ['view', 'skirt', 'hakama opacity', 0, 1, 0.01, 0.35],
   ['view', 'outline', 'outline thickness', 0, 0.3, 0.005, 0.07],
   ['view', 'shards', 'outline shards', 0, 0.3, 0.005, 0],
@@ -131,6 +137,12 @@ const TIPS = {
   legLen: 'Multiplies leg length. The gait rescales with it.',
   torsoLen: 'Multiplies the spine-to-chest distance.',
   headSize: 'Scales the head, wings and wheel.',
+  seed: 'Picks which random variation you get. Same seed = same walk every time.',
+  stepJitter: 'Each step lands a little longer or shorter, as a share of stride.',
+  footJitter: 'Each foot lands a little in or out from its line.',
+  armVar: 'Arm swing size changes step to step.',
+  bodyDrift: 'Slow wandering of lean, twist and tilt, like a body settling.',
+  headLook: 'Head slowly turns and tips to look around, in degrees.',
   skirt: 'Hakama see-through amount. 0 hides it and shows the full legs.',
   outline: 'Thickness of the dark outline in the contour view.',
   shards: 'Random extra outline push per vertex: more jagged triangle shards.',
@@ -143,7 +155,21 @@ const PRESETS = {
   'heavy stride': {speed: 0.8, strideRatio: 1.02, liftRatio: 0.16, reach: 0.93, pelvisTwist: 8, torsoTwist: 20, armSwing: 25, armCross: 10, weightShift: 0.25, hipDrop: 6, bob: 0.1, elbowSwing: 40},
   'lumbering giant': {speed: 0.45, strideRatio: 0.63, footOut: 0.35, reach: 0.94, weightShift: 0.5, hipDrop: 8, counterLean: 0.9, torsoTwist: 10, armSwing: 6, lean: 6, elbowRest: 15, shoulderDrop: 0.35},
   'stalking': {speed: 0.6, strideRatio: 0.7, liftRatio: 0.18, reach: 0.88, lean: 10, armSwing: 14, armCross: 12, weightShift: 0.18, headStab: 1, wristFlex: 18},
-  'rising from the ash': {speed: 0.32, strideRatio: 0.43, liftRatio: 0.06, reach: 0.9, duty: 0.7, lean: 12, weightShift: 0.6, hipDrop: 10, counterLean: 1.1, headStab: 0.2, armSwing: 4, elbowRest: 25, wristFlex: 22, wristLag: 20},
+  'rising from the ash': {speed: 0.32, strideRatio: 0.43, liftRatio: 0.06, reach: 0.9, duty: 0.7, lean: 12, weightShift: 0.6, hipDrop: 10, counterLean: 1.1, headStab: 0.2, armSwing: 4, elbowRest: 25, wristFlex: 22, wristLag: 20, bodyDrift: 0.6},
+  'embers underfoot': {speed: 0.55, weightShift: 0.14, hipDrop: 2, counterLean: 0.5},
+  'procession': {speed: 0.45, strideRatio: 0.6, torsoTwist: 8, armSwing: 5, weightShift: 0.1, headStab: 1},
+  'drunk on cursed energy': {weightShift: 0.45, hipDrop: 7, counterLean: 1, torsoTwist: 18, stepJitter: 0.3, footJitter: 0.25, bodyDrift: 0.8, headLook: 10},
+  'sailor roll': {footOut: 0.4, weightShift: 0.5, hipDrop: 3, counterLean: 0.8, pelvisTwist: 6, armSpread: 16},
+  'pendulum': {weightShift: 0.35, hipDrop: 5, torsoTwist: 20, armSwing: 22, armCross: 10},
+  'wading through fire': {speed: 0.4, lean: 8, liftRatio: 0.16, reach: 0.9, weightShift: 0.25, armSpread: 20, elbowRest: 18},
+  'shoulder-led': {torsoTwist: 26, spineShare: 0.3, pelvisTwist: 1, weightShift: 0.12, armSwing: 18},
+  'hip-led swagger': {pelvisTwist: 12, weightShift: 0.3, hipDrop: 4, torsoTwist: 8, armSwing: 16},
+  'weary': {speed: 0.38, lean: 10, headStab: 0.3, armSwing: 4, elbowRest: 3, weightShift: 0.2, hipDrop: 3, stepJitter: 0.15, bodyDrift: 0.4},
+  'march of the wheel': {speed: 0.9, strideRatio: 0.9, armSwing: 26, elbowSwing: 45, weightShift: 0.06, hipDrop: 0.5, headStab: 1},
+  'slow giant roll': {speed: 0.35, strideRatio: 0.55, footOut: 0.45, weightShift: 0.6, hipDrop: 6, counterLean: 1, torsoTwist: 16},
+  'predator': {speed: 0.55, reach: 0.88, lean: 7, liftRatio: 0.08, weightShift: 0.18, torsoTwist: 18, headStab: 1},
+  'after the adaptation': {speed: 0.5, weightShift: 0.2, hipDrop: 2.5, torsoTwist: 15, bodyDrift: 0.4, headLook: 12},
+  'restless': {stepJitter: 0.25, footJitter: 0.15, bodyDrift: 0.7, headLook: 20, armVar: 0.6},
 };
 
 // Knob state lives in the hash query (#?k=v&...): file:// refuses history writes, location.replace does not.
@@ -350,6 +376,7 @@ for (const l of RIG.lines) {
   line.layers.enable(WIRE); line.layers.enable(CONT); bone.add(line);
 }
 
+let clock = 0;
 let playing = true, phase = 0, cycles = 0, showRest = false, follow = true;
 const ground = new THREE.GridHelper(120, 120, 0x8a3a28, 0x3a2420);
 ground.position.y = GROUND_ANKLE_Y - 0.45;
@@ -372,24 +399,39 @@ for (const [label, id] of [['wire view', 'wire'], ['contour view', 'cont'], ['as
 const resetBtn = Object.assign(document.createElement('button'), {textContent: 'reset knobs'});
 resetBtn.onclick = () => setKnobs({}); bar.appendChild(resetBtn);
 
+// Seeded randomness: hash per step index (constant while a foot is planted), smooth wander over time.
+const hash = (n, k) => { const x = Math.sin(n * 12.9898 + k * 78.233 + K.seed * 37.719) * 43758.5453; return x - Math.floor(x); };
+const wander = (t, k) => 0.6 * Math.sin(t * 1.3 + hash(k, 1) * 6.28) + 0.4 * Math.sin(t * 2.9 + hash(k, 2) * 6.28);
+const legCycle = side => (side === 'r' ? cycles : cycles + 0.5);
+function stepJitter(side) {
+  const lc = legCycle(side), n = Math.floor(lc), u = lc - n;
+  const at_ = m => ({z: K.stepJitter * stride() * (hash(m, side === 'r' ? 3 : 4) - 0.5), x: K.footJitter * (hash(m, side === 'r' ? 5 : 6) - 0.5)});
+  const j0 = at_(n);
+  if (u < K.duty) return j0;
+  const j1 = at_(n + 1), v = smooth((u - K.duty) / (1 - K.duty));
+  return {z: j0.z + (j1.z - j0.z) * v, x: j0.x + (j1.x - j0.x) * v};
+}
+
 // Upper body rides a = 2pi*phase + pi/2, so s = sin(a) = 1 when the right foot lands (phase 0).
 // Weight centres over the stance foot; the swing-side hip drops and the torso leans against it.
 function walkRots(ph) {
   const a = ph * 2 * Math.PI + Math.PI / 2, s = Math.sin(a), c = Math.cos(a);
   const w = Math.cos(2 * Math.PI * (ph - K.duty / 2));
+  const drift = k => K.bodyDrift * wander(clock * 0.3, k);
   const pelvisYaw = K.pelvisTwist * s;
-  const upper = -K.torsoTwist * s - pelvisYaw;
-  const roll = -K.hipDrop * w;
+  const upper = -K.torsoTwist * s - pelvisYaw + 4 * drift(2);
+  const roll = -K.hipDrop * w + 2 * drift(3);
+  const swingSize = side => K.armSwing * (1 + K.armVar * (hash(Math.floor(legCycle(side)), 11) - 0.5));
   const arm = (side, f, df) => ({
-    [`${side}_shoulder`]: [K.armSwing * f, K.armSpread - K.armCross * f, 0],
+    [`${side}_shoulder`]: [swingSize(side) * f, K.armSpread - K.armCross * f, 0],
     [`${side}_elbow`]: [K.elbowRest + K.elbowSwing * Math.max(0, f), 0, 0],
     [`${side}_wrist`]: [K.wristFlex - K.wristLag * df, 0, 0],
   });
   return {
     pelvis: [0, roll, pelvisYaw],
-    spine: [K.lean, -roll * K.counterLean, upper * K.spineShare],
+    spine: [K.lean + 3 * drift(1), -roll * K.counterLean, upper * K.spineShare],
     chest: [0, 0, upper * (1 - K.spineShare)],
-    neck: [-K.lean * 0.6, 0, K.torsoTwist * s * K.headStab],
+    neck: [-K.lean * 0.6 + 0.3 * K.headLook * wander(clock * 0.2, 5), 0, K.torsoTwist * s * K.headStab + K.headLook * wander(clock * 0.15, 4)],
     ...arm('r', -s, -c), ...arm('l', s, c),
     root: [-K.weightShift * w, K.bob * Math.cos(4 * Math.PI * (ph - K.duty / 2))],
   };
@@ -423,7 +465,8 @@ function solveLeg(side, ph, bodyZ) {
   const f = footPath(legPhase(side, ph));
   const sgn = side === 'r' ? -1 : 1;
   const hipIdx = at[`${side}_hip`];
-  const target = new THREE.Vector3(sgn * (0.8 + K.footOut), GROUND_ANKLE_Y + f.lift, bodyZ + f.z);
+  const j = stepJitter(side);
+  const target = new THREE.Vector3(sgn * (0.8 + K.footOut + j.x), GROUND_ANKLE_Y + f.lift, bodyZ + f.z + j.z);
   const rel = target.applyMatrix4(pelvisInv).sub(base(hipIdx));
   const lt = THIGH * K.legLen, ls = SHIN * K.legLen;
   const dy = -rel.y, dz = rel.z;
@@ -494,7 +537,9 @@ const px = new Uint8Array(COLS * ROWS * 4);
 const pre = document.getElementById('ascii');
 function ascii() {
   camera.layers.set(CONT);
+  ground.visible = false;
   rCont.setRenderTarget(rt); rCont.render(scene, camera); rCont.setRenderTarget(null);
+  ground.visible = true;
   rCont.readRenderTargetPixels(rt, 0, 0, COLS, ROWS, px);
   const idx = (x, y) => ((ROWS - 1 - y) * COLS + x) * 4;
   const ink = (x, y) => { const i = idx(x, y); return px[i] + px[i+1] + px[i+2] < 200; };
@@ -528,6 +573,7 @@ function frame(t) {
   if (follow) { camera.position.z += moved; controls.target.z += moved; }
   ground.position.z = Math.round(bodyZ);
   stepSweep(t);
+  clock += Math.min(dt, 0.1);
   applyPose(walkRots(phase), phase, bodyZ);
   applyView();
   controls.update();
