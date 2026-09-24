@@ -87,7 +87,7 @@ const fn tw(yaw: f32) -> Rot {
 
 const KEYS: &[Key] = &[
     Key { name: "K0 stand", bob: 0.0, rots: &[
-        ("r_shoulder", r(0.0, 14.0)), ("l_shoulder", r(0.0, 14.0)),
+        ("r_shoulder", r(0.0, 16.0)), ("l_shoulder", r(0.0, 16.0)),
         ("r_elbow", r(10.0, 0.0)), ("l_elbow", r(10.0, 0.0)),
         ("r_hip", r(0.0, 3.0)), ("l_hip", r(0.0, 3.0)),
     ]},
@@ -99,7 +99,7 @@ const KEYS: &[Key] = &[
         ("l_hip", r(-16.0, 3.0)), ("l_knee", r(-22.0, 0.0)),
     ]},
     Key { name: "K2 passing", bob: 0.15, rots: &[
-        ("r_shoulder", r(0.0, 14.0)), ("l_shoulder", r(3.0, 14.0)),
+        ("r_shoulder", r(0.0, 16.0)), ("l_shoulder", r(3.0, 14.0)),
         ("r_elbow", r(10.0, 0.0)), ("l_elbow", r(14.0, 0.0)),
         ("r_hip", r(-3.0, 3.0)), ("r_knee", r(-3.0, 0.0)),
         ("l_hip", r(16.0, 3.0)), ("l_knee", r(-45.0, 0.0)),
@@ -169,10 +169,10 @@ fn shapes(world: &[Mat4], pos: &[Vec3]) -> Vec<Shape> {
     for side in [-1.0, 1.0] {
         let (shoulder, elbow) = if side < 0.0 { (R_SHOULDER, R_ELBOW) } else { (L_SHOULDER, L_ELBOW) };
         // traps slope from the neck into the delt; the delt flows down the arm, no cap
-        out.push(core(at(CHEST, side * 0.45, 0.95, -0.15), at(CHEST, side * 2.0, 0.3, -0.15), 0.7, 0.7));
-        out.push(core(at(shoulder, side * 0.4, -0.2, 0.05), at(shoulder, side * 0.3, -1.3, 0.1), 0.95, 0.68));
+        out.push(core(at(CHEST, side * 0.45, 0.95, -0.2), at(CHEST, side * 1.9, 0.3, -0.2), 0.58, 0.5));
+        out.push(cone(at(shoulder, side * 0.2, -0.15, 0.05), at(shoulder, side * 0.1, -1.2, 0.05), 0.72, 0.5, Kind::Body));
         out.push(core(at(CHEST, side * 0.25, 0.3, 0.6), at(CHEST, side * 1.4, 0.35, 0.4), 0.8, 0.7));
-        out.push(core(at(CHEST, side * 1.6, -0.1, -0.1), at(CHEST, side * 0.75, -2.0, 0.0), 0.8, 0.6));
+        out.push(core(at(CHEST, side * 1.3, -0.1, -0.15), at(CHEST, side * 0.7, -2.0, 0.0), 0.62, 0.45));
         out.push(cone(at(shoulder, 0.0, -0.9, 0.22), at(shoulder, 0.0, -1.9, 0.2), 0.72, 0.56, Kind::Body));
         out.push(cone(at(shoulder, 0.0, -0.7, -0.2), at(shoulder, 0.0, -2.1, -0.15), 0.6, 0.45, Kind::Body));
         out.push(cone(at(elbow, 0.0, -0.4, 0.05), at(elbow, 0.0, -2.2, 0.0), 0.6, 0.42, Kind::Body));
@@ -231,7 +231,7 @@ fn smin(a: f32, b: f32, k: f32) -> f32 {
     a.min(b) - h * h * k * 0.25
 }
 
-const CORE_BLEND: f32 = 0.6;
+const CORE_BLEND: f32 = 0.4;
 const LIMB_BLEND: f32 = 0.3;
 
 fn scene_sdf(p: Vec3, caps: &[Shape]) -> f32 {
@@ -240,7 +240,7 @@ fn scene_sdf(p: Vec3, caps: &[Shape]) -> f32 {
         let d = sd_shape(p, c);
         if c.core { body = smin(body, d, CORE_BLEND) } else { limbs = smin(limbs, d, LIMB_BLEND) }
     }
-    smin(body, limbs, 0.35)
+    smin(body, limbs, 0.2)
 }
 
 struct Camera {
