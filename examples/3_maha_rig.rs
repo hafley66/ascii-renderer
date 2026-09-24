@@ -214,16 +214,18 @@ struct Shape {
     core: bool,
     // detail muscle: kept out of the soft core blend, joined with a tight crease instead
     detail: bool,
+    // muscle belly: extra radius at mid-length, parabolic (0 = straight-sided capsule)
+    bulge: f32,
     // joint whose world matrix carries this shape rigidly (skinning bone)
     bone: usize,
 }
 
 fn cone(a: Vec3, b: Vec3, r1: f32, r2: f32, kind: Kind) -> Shape {
-    Shape { a, b, r1, r2, kind, core: false, detail: false, bone: 0 }
+    Shape { a, b, r1, r2, kind, core: false, detail: false, bulge: 0.0, bone: 0 }
 }
 
 fn core(a: Vec3, b: Vec3, r1: f32, r2: f32) -> Shape {
-    Shape { a, b, r1, r2, kind: Kind::Body, core: true, detail: false, bone: 0 }
+    Shape { a, b, r1, r2, kind: Kind::Body, core: true, detail: false, bulge: 0.0, bone: 0 }
 }
 
 // A surface muscle with a crease at its border (abs, serratus, obliques).
@@ -232,6 +234,11 @@ fn detail(a: Vec3, b: Vec3, r1: f32, r2: f32) -> Shape {
 }
 
 impl Shape {
+    // Parabolic belly: extra radius at mid-length, as a fraction of the larger end radius.
+    fn belly(self, fraction: f32) -> Shape {
+        Shape { bulge: fraction * self.r1.max(self.r2), ..self }
+    }
+
     fn on(self, bone: usize) -> Shape {
         Shape { bone, ..self }
     }
@@ -294,7 +301,8 @@ fn shapes(world: &[Mat4], pos: &[Vec3], t: Tweak) -> Vec<Shape> {
             let origin = at(CHEST, side * (0.3 - 0.1 * f), 2.05 - 1.9 * f + t.trap_height * (1.0 - f), -0.15 - 0.5 * f);
             let insert = at(CHEST, side * (1.85 - 0.3 * f + t.trap_reach), 0.4 - 0.1 * f - t.trap_slope, -0.1 - 0.3 * f);
             let r = 0.58 - 0.18 * f + t.trap_mass;
-            out.push(core(origin, insert, r, r * 0.8).on(CHEST));
+            // swells in the middle of the slope (a belly), not a straight-sided capsule
+            out.push(core(origin, insert, r, r * 0.8).belly(0.2).on(CHEST));
         }
         out.push(
             cone(
@@ -304,6 +312,7 @@ fn shapes(world: &[Mat4], pos: &[Vec3], t: Tweak) -> Vec<Shape> {
                 0.37 + t.delt_mass * 0.2,
                 Kind::Body,
             )
+            .belly(0.12)
             .on(shoulder),
         );
         // delt cap: a ball on the acromion that swells up and out, not along the arm
@@ -402,8 +411,23 @@ fn sd_capped_cone(p: Vec3, s: &Shape) -> f32 {
     sign * (cax * cax + cay * cay * baba).min(cbx * cbx + cby * cby * baba).sqrt()
 }
 
+// Round cone whose radius swells by `bulge` at mid-length (a muscle belly). Not an exact distance,
+// so it is scaled down to stay conservative for the marcher.
+fn sd_belly(p: Vec3, s: &Shape) -> f32 {
+    let (pa, ba) = (p - s.a, s.b - s.a);
+    let t = (pa.dot(ba) / ba.length_squared().max(1e-6)).clamp(0.0, 1.0);
+    let r = s.r1 + (s.r2 - s.r1) * t + s.bulge * 4.0 * t * (1.0 - t);
+    ((pa - ba * t).length() - r) * 0.85
+}
+
 fn sd_shape(p: Vec3, s: &Shape) -> f32 {
-    if s.kind == Kind::Skirt { sd_capped_cone(p, s) } else { sd_round_cone(p, s) }
+    if s.kind == Kind::Skirt {
+        sd_capped_cone(p, s)
+    } else if s.bulge > 0.0 {
+        sd_belly(p, s)
+    } else {
+        sd_round_cone(p, s)
+    }
 }
 
 fn smin(a: f32, b: f32, k: f32) -> f32 {
