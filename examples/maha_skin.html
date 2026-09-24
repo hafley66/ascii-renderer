@@ -36,16 +36,16 @@ import {UnrealBloomPass} from 'three/addons/postprocessing/UnrealBloomPass.js';
 
 const RIG = __RIG__;
 const W = 480, H = 600, COLS = 80, ROWS = 60, WIRE = 1, CONT = 2;
-const GROUND_ANKLE_Y = 0.4, THIGH = 2.6, SHIN = 2.5;
 
 // Knobs: [group, key, label, min, max, step, default]. Angles in degrees, lengths in rig units, scales as factors.
 const SPEC = [
   ['timing', 'speed', 'cycles / sec', 0, 2, 0.01, 0.72],
   ['timing', 'phase', 'phase (paused)', 0, 1, 0.001, 0],
-  ['legs', 'stride', 'stride / cycle', 0, 8, 0.05, 4],
+  ['legs', 'strideRatio', 'stride / leg length', 0, 1.6, 0.01, 0.78],
   ['legs', 'duty', 'stance share', 0.5, 0.8, 0.01, 0.62],
-  ['legs', 'stepHeight', 'foot lift', 0, 1.5, 0.01, 0.55],
-  ['legs', 'crouch', 'hip lowered', 0, 1.2, 0.01, 0.12],
+  ['legs', 'liftRatio', 'foot lift / leg', 0, 0.3, 0.005, 0.11],
+  ['legs', 'reach', 'leg extension', 0.8, 1, 0.005, 0.97],
+  ['legs', 'autoHeight', 'hips ride legs', 0, 1, 0.05, 1],
   ['legs', 'footOut', 'stance width', -0.4, 0.8, 0.01, 0.1],
   ['legs', 'footLevel', 'foot stays flat', 0, 1, 0.05, 1],
   ['legs', 'toeLift', 'toe up in swing', 0, 40, 0.5, 12],
@@ -82,11 +82,11 @@ const DEFAULTS = Object.fromEntries(SPEC.map(s => [s[1], s[6]]));
 
 const PRESETS = {
   'hafley: calm fire walk': {},
-  'unhurried god': {speed: 0.5, stride: 3.4, torsoTwist: 16, armSwing: 8, armCross: 4, weightShift: 0.32, hipDrop: 5, lean: 2, wristLag: 14, headStab: 0.95},
-  'heavy stride': {speed: 0.8, stride: 5.2, stepHeight: 0.8, crouch: 0.5, pelvisTwist: 8, torsoTwist: 20, armSwing: 25, armCross: 10, weightShift: 0.25, hipDrop: 6, bob: 0.1, elbowSwing: 40},
-  'lumbering giant': {speed: 0.45, stride: 3.2, footOut: 0.35, crouch: 0.45, weightShift: 0.5, hipDrop: 8, counterLean: 0.9, torsoTwist: 10, armSwing: 6, lean: 6, elbowRest: 15, shoulderDrop: 0.35},
-  'stalking': {speed: 0.6, stride: 3.6, stepHeight: 0.9, crouch: 0.8, lean: 10, armSwing: 14, armCross: 12, weightShift: 0.18, headStab: 1, wristFlex: 18},
-  'rising from the ash': {speed: 0.32, stride: 2.2, stepHeight: 0.3, crouch: 0.7, duty: 0.7, lean: 12, weightShift: 0.6, hipDrop: 10, counterLean: 1.1, headStab: 0.2, armSwing: 4, elbowRest: 25, wristFlex: 22, wristLag: 20},
+  'unhurried god': {speed: 0.5, strideRatio: 0.67, torsoTwist: 16, armSwing: 8, armCross: 4, weightShift: 0.32, hipDrop: 5, lean: 2, wristLag: 14, headStab: 0.95},
+  'heavy stride': {speed: 0.8, strideRatio: 1.02, liftRatio: 0.16, reach: 0.93, pelvisTwist: 8, torsoTwist: 20, armSwing: 25, armCross: 10, weightShift: 0.25, hipDrop: 6, bob: 0.1, elbowSwing: 40},
+  'lumbering giant': {speed: 0.45, strideRatio: 0.63, footOut: 0.35, reach: 0.94, weightShift: 0.5, hipDrop: 8, counterLean: 0.9, torsoTwist: 10, armSwing: 6, lean: 6, elbowRest: 15, shoulderDrop: 0.35},
+  'stalking': {speed: 0.6, strideRatio: 0.7, liftRatio: 0.18, reach: 0.88, lean: 10, armSwing: 14, armCross: 12, weightShift: 0.18, headStab: 1, wristFlex: 18},
+  'rising from the ash': {speed: 0.32, strideRatio: 0.43, liftRatio: 0.06, reach: 0.9, duty: 0.7, lean: 12, weightShift: 0.6, hipDrop: 10, counterLean: 1.1, headStab: 0.2, armSwing: 4, elbowRest: 25, wristFlex: 22, wristLag: 20},
 };
 
 // Knob state lives in the hash query (#?k=v&...): file:// refuses history writes, location.replace does not.
@@ -177,6 +177,12 @@ const bones = RIG.joints.map(j => {
 });
 RIG.joints.forEach((j, i) => { if (j.parent >= 0) bones[j.parent].add(bones[i]); });
 const at = Object.fromEntries(RIG.joints.map((j, i) => [j.name, i]));
+// Leg measurements come from the rig itself, so proportion sliders keep the gait consistent.
+const THIGH = -RIG.joints[at.r_knee].offset[1], SHIN = -RIG.joints[at.r_ankle].offset[1];
+const HIP_Y = RIG.joints[at.pelvis].offset[1] + RIG.joints[at.r_hip].offset[1];
+const GROUND_ANKLE_Y = HIP_Y - THIGH - SHIN;
+const legLength = () => (THIGH + SHIN) * K.legLen;
+const stride = () => K.strideRatio * legLength();
 const skeleton = new THREE.Skeleton(bones);
 
 // Surface nets winding is not guaranteed; flip triangles whose face normal disagrees with the SDF gradient.
@@ -283,7 +289,7 @@ function walkRots(ph) {
     chest: [0, 0, upper * (1 - K.spineShare)],
     neck: [-K.lean * 0.6, 0, K.torsoTwist * s * K.headStab],
     ...arm('r', -s, -c), ...arm('l', s, c),
-    root: [-K.weightShift * w, K.bob * Math.cos(4 * Math.PI * (ph - K.duty / 2)) - K.crouch],
+    root: [-K.weightShift * w, K.bob * Math.cos(4 * Math.PI * (ph - K.duty / 2))],
   };
 }
 
@@ -291,17 +297,28 @@ function walkRots(ph) {
 // Swing: lifts on an arc and lands a full stride ahead. Returns target ankle z relative to the body, lift, swing progress.
 const smooth = v => v * v * (3 - 2 * v);
 function footPath(u) {
-  const sd = K.stride * K.duty;
-  if (u < K.duty) return {z: sd / 2 - K.stride * u, lift: 0, swing: 0, stance: u / K.duty};
+  const st = stride(), sd = st * K.duty;
+  if (u < K.duty) return {z: sd / 2 - st * u, lift: 0, swing: 0, stance: u / K.duty};
   const v = (u - K.duty) / (1 - K.duty);
-  return {z: -sd / 2 + sd * smooth(v), lift: K.stepHeight * Math.sin(Math.PI * v), swing: v, stance: 1};
+  return {z: -sd / 2 + sd * smooth(v), lift: K.liftRatio * legLength() * Math.sin(Math.PI * v), swing: v, stance: 1};
+}
+const legPhase = (side, ph) => (side === 'r' ? ph : (ph + 0.5) % 1);
+
+// Hip height that lets both legs reach their feet at the chosen extension (planted leg vaults the body).
+function ridingHipY(ph) {
+  const reach = legLength() * K.reach;
+  let hip = Infinity;
+  for (const side of ['r', 'l']) {
+    const f = footPath(legPhase(side, ph));
+    hip = Math.min(hip, GROUND_ANKLE_Y + f.lift + Math.sqrt(Math.max(0, reach * reach - f.z * f.z)));
+  }
+  return hip;
 }
 
 const pelvisInv = new THREE.Matrix4();
 // Two-bone IK in the pelvis frame: law of cosines for the knee, knee always bends forward.
 function solveLeg(side, ph, bodyZ) {
-  const u = side === 'r' ? ph : (ph + 0.5) % 1;
-  const f = footPath(u);
+  const f = footPath(legPhase(side, ph));
   const sgn = side === 'r' ? -1 : 1;
   const hipIdx = at[`${side}_hip`];
   const target = new THREE.Vector3(sgn * (0.8 + K.footOut), GROUND_ANKLE_Y + f.lift, bodyZ + f.z);
@@ -330,7 +347,8 @@ function applyPose(rots, ph, bodyZ) {
   });
   if (showRest) return;
   bones[0].position.x += rots.root[0];
-  bones[0].position.y += rots.root[1] + (K.legLen - 1) * (THIGH + SHIN);
+  const fixedHip = GROUND_ANKLE_Y + legLength() * K.reach;
+  bones[0].position.y += rots.root[1] + (fixedHip + (ridingHipY(ph) - fixedHip) * K.autoHeight) - HIP_Y;
   bones[0].position.z += bodyZ;
   bones[at.chest].position.y *= K.torsoLen;
   bones[at.head].scale.setScalar(K.headSize);
@@ -388,7 +406,7 @@ function frame(t) {
   requestAnimationFrame(frame);
   const dt = (t - last) / 1000; last = t;
   if (playing) { cycles += Math.min(dt, 0.1) * K.speed; phase = cycles % 1; } else { phase = K.phase; cycles = Math.floor(cycles) + phase; }
-  const bodyZ = cycles * K.stride;
+  const bodyZ = cycles * stride();
   const moved = bodyZ - (frame.z ?? bodyZ); frame.z = bodyZ;
   if (follow) { camera.position.z += moved; controls.target.z += moved; }
   ground.position.z = Math.round(bodyZ);
