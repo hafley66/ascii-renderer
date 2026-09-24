@@ -36,16 +36,20 @@ import {UnrealBloomPass} from 'three/addons/postprocessing/UnrealBloomPass.js';
 
 const RIG = __RIG__;
 const W = 480, H = 600, COLS = 80, ROWS = 60, WIRE = 1, CONT = 2;
+const GROUND_ANKLE_Y = 0.4, THIGH = 2.6, SHIN = 2.5;
 
 // Knobs: [group, key, label, min, max, step, default]. Angles in degrees, lengths in rig units, scales as factors.
 const SPEC = [
   ['timing', 'speed', 'cycles / sec', 0, 2, 0.01, 0.72],
   ['timing', 'phase', 'phase (paused)', 0, 1, 0.001, 0],
-  ['legs', 'legSwing', 'leg swing', 0, 45, 0.5, 25.5],
-  ['legs', 'kneeBend', 'knee lift', 0, 90, 1, 34],
-  ['legs', 'plantKnee', 'plant knee', 0, 20, 0.5, 7],
-  ['legs', 'hipSpread', 'hip spread', -5, 15, 0.5, 3.5],
-  ['legs', 'footLevel', 'foot stays flat', 0, 1, 0.05, 0.8],
+  ['legs', 'stride', 'stride / cycle', 0, 8, 0.05, 4],
+  ['legs', 'duty', 'stance share', 0.5, 0.8, 0.01, 0.62],
+  ['legs', 'stepHeight', 'foot lift', 0, 1.5, 0.01, 0.55],
+  ['legs', 'crouch', 'hip lowered', 0, 1.2, 0.01, 0.12],
+  ['legs', 'footOut', 'stance width', -0.4, 0.8, 0.01, 0.1],
+  ['legs', 'footLevel', 'foot stays flat', 0, 1, 0.05, 1],
+  ['legs', 'toeLift', 'toe up in swing', 0, 40, 0.5, 12],
+  ['legs', 'toeRoll', 'heel peel at push', 0, 40, 0.5, 14],
   ['weight', 'weightShift', 'weight shift', 0, 0.8, 0.01, 0.22],
   ['weight', 'hipDrop', 'hip drop', 0, 15, 0.25, 4],
   ['weight', 'counterLean', 'torso counter-lean', 0, 1.5, 0.05, 0.6],
@@ -74,11 +78,11 @@ const DEFAULTS = Object.fromEntries(SPEC.map(s => [s[1], s[6]]));
 
 const PRESETS = {
   'hafley: calm fire walk': {},
-  'unhurried god': {speed: 0.5, legSwing: 20, kneeBend: 30, torsoTwist: 16, armSwing: 8, armCross: 4, weightShift: 0.32, hipDrop: 5, lean: 2, wristLag: 14, headStab: 0.95},
-  'heavy stride': {speed: 0.8, legSwing: 30, kneeBend: 45, pelvisTwist: 8, torsoTwist: 20, armSwing: 25, armCross: 10, weightShift: 0.25, hipDrop: 6, bob: 0.1, elbowSwing: 40},
-  'lumbering giant': {speed: 0.45, legSwing: 20, kneeBend: 28, weightShift: 0.5, hipDrop: 8, counterLean: 0.9, torsoTwist: 10, armSwing: 6, lean: 6, elbowRest: 15, shoulderDrop: 0.35},
-  'stalking': {speed: 0.6, legSwing: 22, kneeBend: 55, plantKnee: 14, lean: 10, armSwing: 14, armCross: 12, weightShift: 0.18, headStab: 1, wristFlex: 18},
-  'rising from the ash': {speed: 0.32, legSwing: 14, kneeBend: 24, plantKnee: 12, lean: 12, weightShift: 0.6, hipDrop: 10, counterLean: 1.1, headStab: 0.2, armSwing: 4, elbowRest: 25, wristFlex: 22, wristLag: 20},
+  'unhurried god': {speed: 0.5, stride: 3.4, torsoTwist: 16, armSwing: 8, armCross: 4, weightShift: 0.32, hipDrop: 5, lean: 2, wristLag: 14, headStab: 0.95},
+  'heavy stride': {speed: 0.8, stride: 5.2, stepHeight: 0.8, crouch: 0.5, pelvisTwist: 8, torsoTwist: 20, armSwing: 25, armCross: 10, weightShift: 0.25, hipDrop: 6, bob: 0.1, elbowSwing: 40},
+  'lumbering giant': {speed: 0.45, stride: 3.2, footOut: 0.35, crouch: 0.45, weightShift: 0.5, hipDrop: 8, counterLean: 0.9, torsoTwist: 10, armSwing: 6, lean: 6, elbowRest: 15, shoulderDrop: 0.35},
+  'stalking': {speed: 0.6, stride: 3.6, stepHeight: 0.9, crouch: 0.8, lean: 10, armSwing: 14, armCross: 12, weightShift: 0.18, headStab: 1, wristFlex: 18},
+  'rising from the ash': {speed: 0.32, stride: 2.2, stepHeight: 0.3, crouch: 0.7, duty: 0.7, lean: 12, weightShift: 0.6, hipDrop: 10, counterLean: 1.1, headStab: 0.2, armSwing: 4, elbowRest: 25, wristFlex: 22, wristLag: 20},
 };
 
 // Knob state lives in the hash query (#?k=v&...): file:// refuses history writes, location.replace does not.
@@ -228,7 +232,10 @@ for (const l of RIG.lines) {
   line.layers.enable(WIRE); line.layers.enable(CONT); bone.add(line);
 }
 
-let playing = true, phase = 0, showRest = false;
+let playing = true, phase = 0, cycles = 0, showRest = false, follow = true;
+const ground = new THREE.GridHelper(120, 120, 0x8a3a28, 0x3a2420);
+ground.position.y = GROUND_ANKLE_Y - 0.45;
+ground.layers.enable(WIRE); ground.layers.enable(CONT); scene.add(ground);
 const bar = document.getElementById('bar');
 const toggle = (label, on, fn) => {
   const b = Object.assign(document.createElement('button'), {textContent: label});
@@ -239,6 +246,7 @@ const toggle = (label, on, fn) => {
 toggle('walk', true, () => (playing = !playing));
 toggle('bind pose', false, () => (showRest = !showRest));
 toggle('bones', false, () => (bonesView.visible = !bonesView.visible));
+toggle('camera follows', true, () => (follow = !follow));
 for (const [label, id] of [['wire view', 'wire'], ['contour view', 'cont'], ['ascii view', 'asciiBox']]) {
   const el = document.getElementById(id);
   toggle(label, true, () => !el.classList.toggle('hidden'));
@@ -246,16 +254,14 @@ for (const [label, id] of [['wire view', 'wire'], ['contour view', 'cont'], ['as
 const resetBtn = Object.assign(document.createElement('button'), {textContent: 'reset knobs'});
 resetBtn.onclick = () => setKnobs({}); bar.appendChild(resetBtn);
 
-// Walk: s = sin(phase), right leg forward at s = 1, right foot in stance while cos < 0.
-// Weight rides over the stance foot; the swing-side hip drops and the torso leans against it.
+// Upper body rides a = 2pi*phase + pi/2, so s = sin(a) = 1 when the right foot lands (phase 0).
+// Weight centres over the stance foot; the swing-side hip drops and the torso leans against it.
 function walkRots(ph) {
-  const a = ph * 2 * Math.PI, s = Math.sin(a), c = Math.cos(a);
+  const a = ph * 2 * Math.PI + Math.PI / 2, s = Math.sin(a), c = Math.cos(a);
+  const w = Math.cos(2 * Math.PI * (ph - K.duty / 2));
   const pelvisYaw = K.pelvisTwist * s;
   const upper = -K.torsoTwist * s - pelvisYaw;
-  const roll = K.hipDrop * c;
-  const hipR = K.legSwing * s, hipL = -K.legSwing * s;
-  const kneeR = -(K.plantKnee + K.kneeBend * Math.max(0, c) ** 2);
-  const kneeL = -(K.plantKnee + K.kneeBend * Math.max(0, -c) ** 2);
+  const roll = -K.hipDrop * w;
   const arm = (side, f, df) => ({
     [`${side}_shoulder`]: [K.armSwing * f, K.armSpread - K.armCross * f, 0],
     [`${side}_elbow`]: [K.elbowRest + K.elbowSwing * Math.max(0, f), 0, 0],
@@ -266,19 +272,47 @@ function walkRots(ph) {
     spine: [K.lean, -roll * K.counterLean, upper * K.spineShare],
     chest: [0, 0, upper * (1 - K.spineShare)],
     neck: [-K.lean * 0.6, 0, K.torsoTwist * s * K.headStab],
-    r_hip: [hipR, K.hipSpread - roll, 0],
-    l_hip: [hipL, K.hipSpread + roll, 0],
-    r_knee: [kneeR, 0, 0],
-    l_knee: [kneeL, 0, 0],
-    r_ankle: [-(hipR + kneeR) * K.footLevel, 0, 0],
-    l_ankle: [-(hipL + kneeL) * K.footLevel, 0, 0],
     ...arm('r', -s, -c), ...arm('l', s, c),
-    root: [K.weightShift * c, K.bob * Math.cos(2 * a)],
+    root: [-K.weightShift * w, K.bob * Math.cos(4 * Math.PI * (ph - K.duty / 2)) - K.crouch],
+  };
+}
+
+// Foot path per leg, u = leg phase. Stance [0, duty): pinned in world while the body passes over it.
+// Swing: lifts on an arc and lands a full stride ahead. Returns target ankle z relative to the body, lift, swing progress.
+const smooth = v => v * v * (3 - 2 * v);
+function footPath(u) {
+  const sd = K.stride * K.duty;
+  if (u < K.duty) return {z: sd / 2 - K.stride * u, lift: 0, swing: 0, stance: u / K.duty};
+  const v = (u - K.duty) / (1 - K.duty);
+  return {z: -sd / 2 + sd * smooth(v), lift: K.stepHeight * Math.sin(Math.PI * v), swing: v, stance: 1};
+}
+
+const pelvisInv = new THREE.Matrix4();
+// Two-bone IK in the pelvis frame: law of cosines for the knee, knee always bends forward.
+function solveLeg(side, ph, bodyZ) {
+  const u = side === 'r' ? ph : (ph + 0.5) % 1;
+  const f = footPath(u);
+  const sgn = side === 'r' ? -1 : 1;
+  const hipIdx = at[`${side}_hip`];
+  const target = new THREE.Vector3(sgn * (0.8 + K.footOut), GROUND_ANKLE_Y + f.lift, bodyZ + f.z);
+  const rel = target.applyMatrix4(pelvisInv).sub(base(hipIdx));
+  const lt = THIGH * K.legLen, ls = SHIN * K.legLen;
+  const dy = -rel.y, dz = rel.z;
+  const d = Math.min(Math.hypot(dy, dz), (lt + ls) * 0.999);
+  const knee = Math.PI - Math.acos((lt * lt + ls * ls - d * d) / (2 * lt * ls));
+  const hip = Math.atan2(dz, dy) + Math.acos((lt * lt + d * d - ls * ls) / (2 * lt * d));
+  const spread = Math.atan2(rel.x * sgn, dy);
+  const hipDeg = hip / D, kneeDeg = -knee / D;
+  const heel = f.swing > 0 ? K.toeLift * Math.sin(Math.PI * f.swing) : -K.toeRoll * Math.max(0, (f.stance - 0.7) / 0.3);
+  return {
+    [`${side}_hip`]: [hipDeg, spread / D, 0],
+    [`${side}_knee`]: [kneeDeg, 0, 0],
+    [`${side}_ankle`]: [-(hipDeg + kneeDeg) * K.footLevel + heel, 0, 0],
   };
 }
 
 const base = i => new THREE.Vector3().fromArray(RIG.joints[i].offset);
-function applyPose(rots) {
+function applyPose(rots, ph, bodyZ) {
   RIG.joints.forEach((j, i) => {
     bones[i].quaternion.copy(localRot(j.name, showRest ? j.rest : (rots[j.name] ?? [0, 0, 0])));
     bones[i].position.copy(base(i));
@@ -286,7 +320,8 @@ function applyPose(rots) {
   });
   if (showRest) return;
   bones[0].position.x += rots.root[0];
-  bones[0].position.y += rots.root[1] + (K.legLen - 1) * 5.4;
+  bones[0].position.y += rots.root[1] + (K.legLen - 1) * (THIGH + SHIN);
+  bones[0].position.z += bodyZ;
   bones[at.chest].position.y *= K.torsoLen;
   bones[at.head].scale.setScalar(K.headSize);
   for (const side of ['r', 'l']) {
@@ -294,6 +329,11 @@ function applyPose(rots) {
     sh.position.x *= K.shoulderWidth; sh.position.y -= K.shoulderDrop;
     sh.scale.y = K.armLen;
     bones[at[`${side}_hip`]].scale.y = K.legLen;
+  }
+  bones[0].updateMatrixWorld(true);
+  pelvisInv.copy(bones[0].matrixWorld).invert();
+  for (const side of ['r', 'l']) {
+    for (const [name, r] of Object.entries(solveLeg(side, ph, bodyZ))) bones[at[name]].quaternion.copy(localRot(name, r));
   }
 }
 
@@ -336,8 +376,12 @@ let last = performance.now();
 function frame(t) {
   requestAnimationFrame(frame);
   const dt = (t - last) / 1000; last = t;
-  phase = playing ? (phase + dt * K.speed) % 1 : K.phase;
-  applyPose(walkRots(phase));
+  if (playing) { cycles += Math.min(dt, 0.1) * K.speed; phase = cycles % 1; } else { phase = K.phase; cycles = Math.floor(cycles) + phase; }
+  const bodyZ = cycles * K.stride;
+  const moved = bodyZ - (frame.z ?? bodyZ); frame.z = bodyZ;
+  if (follow) { camera.position.z += moved; controls.target.z += moved; }
+  ground.position.z = Math.round(bodyZ);
+  applyPose(walkRots(phase), phase, bodyZ);
   applyView();
   controls.update();
   camera.layers.set(WIRE); composer.render();
