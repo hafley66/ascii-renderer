@@ -1,0 +1,141 @@
+<!doctype html><meta charset="utf-8"><title>maha viewer</title>
+<style>
+body{background:#1b1210;color:#f3d9c8;font-family:sans-serif;margin:12px}
+#row{display:flex;gap:12px;align-items:flex-start;cursor:grab;user-select:none}
+canvas{display:block}
+pre{margin:0;width:480px;height:600px;background:#2a1a16;font:10px/10px Menlo,monospace;overflow:hidden;color:#ffd7b0}
+button{background:#2a1a16;color:#f3d9c8;border:1px solid #6b2a1c;padding:4px 10px;margin:0 4px 8px 0;cursor:pointer}
+button.on{background:#6b2a1c}
+</style>
+<div id="bar"></div>
+<div id="row"><div id="wire"></div><div id="cont"></div><pre id="ascii"></pre></div>
+<p>drag: orbit / scroll: zoom / right-drag: pan</p>
+<script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {EffectComposer} from 'three/addons/postprocessing/EffectComposer.js';
+import {RenderPass} from 'three/addons/postprocessing/RenderPass.js';
+import {UnrealBloomPass} from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+const KEYS = __KEYS__;
+const W = 480, H = 600, COLS = 80, ROWS = 60;
+const camera = new THREE.PerspectiveCamera(32, W / H, 0.1, 200);
+camera.position.set(0, 9.8, 29);
+const mk = (id, bg) => {
+  const r = new THREE.WebGLRenderer({antialias: true});
+  r.setPixelRatio(devicePixelRatio); r.setSize(W, H); r.setClearColor(bg);
+  document.getElementById(id).appendChild(r.domElement); return r;
+};
+const rWire = mk('wire', 0x140b0a), rCont = mk('cont', 0xe9a890);
+const controls = new OrbitControls(camera, document.getElementById('row'));
+controls.target.set(0, 6.2, 0); controls.update();
+const wireScene = new THREE.Scene(), contScene = new THREE.Scene();
+const composer = new EffectComposer(rWire);
+composer.addPass(new RenderPass(wireScene, camera));
+composer.addPass(new UnrealBloomPass(new THREE.Vector2(W, H), 0.8, 0.4, 0.05));
+
+// Surface nets winding is not guaranteed; flip triangles whose face normal disagrees with the SDF gradient.
+function orient(k) {
+  const idx = k.idx.slice(), P = k.pos, N = k.nrm;
+  const v = i => new THREE.Vector3(P[3*i], P[3*i+1], P[3*i+2]);
+  let votes = 0;
+  for (let t = 0; t < idx.length; t += 3) {
+    const [a, b, c] = [idx[t], idx[t+1], idx[t+2]];
+    const f = v(b).sub(v(a)).cross(v(c).sub(v(a)));
+    votes += Math.sign(f.x*N[3*a] + f.y*N[3*a+1] + f.z*N[3*a+2]);
+  }
+  if (votes < 0) for (let t = 0; t < idx.length; t += 3) [idx[t+1], idx[t+2]] = [idx[t+2], idx[t+1]];
+  return idx;
+}
+
+const built = KEYS.map(k => {
+  const idx = orient(k);
+  const pos = new Float32Array(k.pos), nrm = new Float32Array(k.nrm);
+  const body = [], skirt = [];
+  for (let i = 0; i < idx.length; i += 3) {
+    const [a, b, c] = [idx[i], idx[i+1], idx[i+2]];
+    (k.kind[a] && k.kind[b] && k.kind[c] ? skirt : body).push(a, b, c);
+  }
+  const geo = ix => {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    g.setAttribute('normal', new THREE.BufferAttribute(nrm, 3));
+    g.setIndex(ix); return g;
+  };
+  const all = geo(idx);
+  const wire = new THREE.Group(), cont = new THREE.Group();
+  wire.add(new THREE.Mesh(all, new THREE.MeshBasicMaterial({color: 0x140b0a, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1})));
+  for (const [ix, color] of [[body, 0xffc89a], [skirt, 0x7fb8a6]]) {
+    const wg = new THREE.WireframeGeometry(geo(ix));
+    wire.add(new THREE.LineSegments(wg, new THREE.LineBasicMaterial({color})));
+    wire.add(new THREE.LineSegments(wg, new THREE.LineBasicMaterial({color, transparent: true, opacity: 0.07, depthTest: false})));
+  }
+  cont.add(new THREE.Mesh(all, new THREE.MeshBasicMaterial({color: 0xfbf1e8, side: THREE.DoubleSide})));
+  const hull = new Float32Array(pos);
+  for (let i = 0; i < hull.length; i++) hull[i] += nrm[i] * 0.07;
+  const hg = new THREE.BufferGeometry();
+  hg.setAttribute('position', new THREE.BufferAttribute(hull, 3)); hg.setIndex(idx);
+  cont.add(new THREE.Mesh(hg, new THREE.MeshBasicMaterial({color: 0x3a140e, side: THREE.BackSide})));
+  for (const l of k.lines) {
+    const g = new THREE.BufferGeometry().setFromPoints(l.pts.map(q => new THREE.Vector3(...q)));
+    wire.add(new THREE.Line(g, new THREE.LineBasicMaterial({color: l.kind === 'wheel' ? 0xf0b848 : 0xdfe8f0})));
+    cont.add(new THREE.Line(g, new THREE.LineBasicMaterial({color: l.kind === 'wheel' ? 0x8a5a10 : 0x3a140e})));
+  }
+  wireScene.add(wire); contScene.add(cont);
+  return {wire, cont};
+});
+
+let cur = 0, playing = false, last = 0;
+const bar = document.getElementById('bar');
+const buttons = KEYS.map((k, i) => {
+  const b = document.createElement('button'); b.textContent = k.name; b.onclick = () => { playing = false; show(i); };
+  bar.appendChild(b); return b;
+});
+const play = document.createElement('button'); play.textContent = 'play'; bar.appendChild(play);
+play.onclick = () => { playing = !playing; play.classList.toggle('on', playing); };
+function show(i) {
+  cur = i;
+  built.forEach((b, j) => { b.wire.visible = b.cont.visible = j === i; buttons[j].classList.toggle('on', j === i); });
+}
+show(0);
+
+// ASCII: render the contour view tiny, one pixel per cell; edge cells get a glyph from the mask gradient.
+const rt = new THREE.WebGLRenderTarget(COLS, ROWS);
+const px = new Uint8Array(COLS * ROWS * 4);
+const pre = document.getElementById('ascii');
+function ascii() {
+  rCont.setRenderTarget(rt); rCont.render(contScene, camera); rCont.setRenderTarget(null);
+  rCont.readRenderTargetPixels(rt, 0, 0, COLS, ROWS, px);
+  const at = (x, y) => ((ROWS - 1 - y) * COLS + x) * 4;
+  const ink = (x, y) => { const i = at(x, y); return px[i] + px[i+1] + px[i+2] < 200; };
+  const inside = (x, y) => {
+    if (x < 0 || y < 0 || x >= COLS || y >= ROWS) return 0;
+    const i = at(x, y); return px[i+1] > 200 || ink(x, y) ? 1 : 0;
+  };
+  let out = '';
+  for (let y = 0; y < ROWS; y++) {
+    for (let x = 0; x < COLS; x++) {
+      if (!inside(x, y)) { out += ' '; continue; }
+      const gx = inside(x+1, y-1) + 2*inside(x+1, y) + inside(x+1, y+1) - inside(x-1, y-1) - 2*inside(x-1, y) - inside(x-1, y+1);
+      const gy = inside(x-1, y+1) + 2*inside(x, y+1) + inside(x+1, y+1) - inside(x-1, y-1) - 2*inside(x, y-1) - inside(x+1, y-1);
+      if (gx || gy) {
+        const ax = Math.abs(gx), ay = Math.abs(gy);
+        out += ax > 2*ay ? '|' : ay > 2*ax ? '-' : gx*gy > 0 ? '/' : '\\';
+      } else out += ink(x, y) ? ':' : ' ';
+    }
+    out += '\n';
+  }
+  pre.textContent = out;
+}
+
+function frame(t) {
+  requestAnimationFrame(frame);
+  if (playing && t - last > 350) { last = t; show((cur + 1) % KEYS.length); }
+  controls.update();
+  composer.render();
+  rCont.render(contScene, camera);
+  ascii();
+}
+requestAnimationFrame(frame);
+</script>

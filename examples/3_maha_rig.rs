@@ -1,5 +1,5 @@
 //! Mahoraga rig preview: linked joint matrices, smooth-blended round cones, wire + contour SVG + ASCII.
-//! cargo run --example 3_maha_rig -- [html|all|key 0-3] [yaw_deg] [width] [height]
+//! cargo run --release --example 3_maha_rig -- [viewer [voxel]|html|all|key 0-3] [yaw_deg] [width] [height]
 
 use glam::{Mat4, Quat, Vec3};
 
@@ -40,18 +40,18 @@ const RIG: &[Joint] = &[
     j("l_ankle", Some(19), 0.0, -2.5, 0.0, 0.45),
     j("l_toe", Some(20), 0.0, -0.3, 0.8, 0.32),
     // Four brow wings: an upper pair sweeping up-out, a lower pair nearly level.
-    j("r_wing_hi", Some(4), -0.25, 0.4, 0.5, 0.16),
-    j("r_wing_hi_mid", Some(22), -1.1, 0.55, -0.45, 0.22),
-    j("r_wing_hi_tip", Some(23), -1.2, 0.75, -0.35, 0.07),
-    j("l_wing_hi", Some(4), 0.25, 0.4, 0.5, 0.16),
-    j("l_wing_hi_mid", Some(25), 1.1, 0.55, -0.45, 0.22),
-    j("l_wing_hi_tip", Some(26), 1.2, 0.75, -0.35, 0.07),
-    j("r_wing_lo", Some(4), -0.25, 0.1, 0.5, 0.15),
-    j("r_wing_lo_mid", Some(28), -1.2, 0.05, -0.4, 0.2),
-    j("r_wing_lo_tip", Some(29), -1.3, 0.15, -0.25, 0.07),
-    j("l_wing_lo", Some(4), 0.25, 0.1, 0.5, 0.15),
-    j("l_wing_lo_mid", Some(31), 1.2, 0.05, -0.4, 0.2),
-    j("l_wing_lo_tip", Some(32), 1.3, 0.15, -0.25, 0.07),
+    j("r_wing_hi", Some(4), -0.3, 0.45, 0.4, 0.26),
+    j("r_wing_hi_mid", Some(22), -0.7, 0.7, -0.9, 0.3),
+    j("r_wing_hi_tip", Some(23), -0.6, 0.9, -1.1, 0.1),
+    j("l_wing_hi", Some(4), 0.3, 0.45, 0.4, 0.26),
+    j("l_wing_hi_mid", Some(25), 0.7, 0.7, -0.9, 0.3),
+    j("l_wing_hi_tip", Some(26), 0.6, 0.9, -1.1, 0.1),
+    j("r_wing_lo", Some(4), -0.3, 0.15, 0.4, 0.24),
+    j("r_wing_lo_mid", Some(28), -0.85, 0.1, -0.9, 0.28),
+    j("r_wing_lo_tip", Some(29), -0.8, 0.1, -1.2, 0.1),
+    j("l_wing_lo", Some(4), 0.3, 0.15, 0.4, 0.24),
+    j("l_wing_lo_mid", Some(31), 0.85, 0.1, -0.9, 0.28),
+    j("l_wing_lo_tip", Some(32), 0.8, 0.1, -1.2, 0.1),
 ];
 const CROWN: usize = 5;
 const PELVIS: usize = 0;
@@ -616,12 +616,72 @@ pre{{background:#2a1a16;padding:8px;font-size:11px;line-height:1.05;margin:0}}</
     )
 }
 
+// Blended surface as a triangle mesh (naive surface nets), plus wheel/blade polylines, as JSON per key.
+fn mesh_json(key: &Key, voxel: f32) -> String {
+    use fast_surface_nets::ndshape::{RuntimeShape, Shape as _};
+    use fast_surface_nets::{surface_nets, SurfaceNetsBuffer};
+    let s = posed(key);
+    let origin = Vec3::new(-6.0, -1.0, -4.0);
+    let dims = ((Vec3::new(12.0, 15.0, 8.0) / voxel).ceil()).as_uvec3().to_array();
+    let grid = RuntimeShape::<u32, 3>::new(dims);
+    let sdf: Vec<f32> = (0..grid.usize() as u32)
+        .map(|i| {
+            let [x, y, z] = grid.delinearize(i);
+            scene_sdf(origin + Vec3::new(x as f32, y as f32, z as f32) * voxel, &s.caps)
+        })
+        .collect();
+    let mut buf = SurfaceNetsBuffer::default();
+    surface_nets(&sdf, &grid, [0; 3], [dims[0] - 1, dims[1] - 1, dims[2] - 1], &mut buf);
+    let mut pos = String::new();
+    let mut kind = String::new();
+    let mut nrm = String::new();
+    for n in &buf.normals {
+        let n = Vec3::from_array(*n).normalize_or(Vec3::Y);
+        nrm += &format!("{:.3},{:.3},{:.3},", n.x, n.y, n.z);
+    }
+    for p in &buf.positions {
+        let w = origin + Vec3::from_array(*p) * voxel;
+        pos += &format!("{:.3},{:.3},{:.3},", w.x, w.y, w.z);
+        let skirt = s.caps[nearest_shape(w, &s.caps)].kind == Kind::Skirt;
+        kind += if skirt { "1," } else { "0," };
+    }
+    let idx: Vec<String> = buf.indices.iter().map(u32::to_string).collect();
+    let mut lines = Vec::new();
+    for w in wires(&s.world, &s.pos, &s.caps, Vec3::Z) {
+        let tag = match w.kind {
+            Kind::Wheel => "wheel",
+            Kind::Blade => "blade",
+            _ => continue,
+        };
+        let pts: Vec<String> = w.pts.iter().map(|p| format!("[{:.3},{:.3},{:.3}]", p.x, p.y, p.z)).collect();
+        lines.push(format!("{{\"kind\":\"{tag}\",\"pts\":[{}]}}", pts.join(",")));
+    }
+    format!(
+        "{{\"name\":\"{}\",\"pos\":[{}],\"nrm\":[{}],\"kind\":[{}],\"idx\":[{}],\"lines\":[{}]}}",
+        key.name,
+        pos.trim_end_matches(','),
+        nrm.trim_end_matches(','),
+        kind.trim_end_matches(','),
+        idx.join(","),
+        lines.join(",")
+    )
+}
+
 fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
     let which = args.first().map(String::as_str).unwrap_or("html");
     let yaw: f32 = args.get(1).and_then(|s| s.parse().ok()).unwrap_or(0.0);
     let w: usize = args.get(2).and_then(|s| s.parse().ok()).unwrap_or(64);
     let h: usize = args.get(3).and_then(|s| s.parse().ok()).unwrap_or(50);
+    if which == "viewer" {
+        let voxel: f32 = args.get(1).and_then(|s| s.parse().ok()).unwrap_or(0.2);
+        let keys: Vec<String> = KEYS.iter().map(|k| mesh_json(k, voxel)).collect();
+        let page = include_str!("maha_viewer.html").replace("__KEYS__", &format!("[{}]", keys.join(",")));
+        let path = "docs/maha_rig/viewer.html";
+        std::fs::write(path, page).expect("write viewer");
+        println!("{path}");
+        return;
+    }
     if which == "html" {
         let path = "docs/maha_rig/rig.html";
         std::fs::write(path, html(yaw, w, h)).expect("write html");
