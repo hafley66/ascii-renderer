@@ -1,16 +1,19 @@
 <!doctype html><meta charset="utf-8"><title>maha skinned walk</title>
 <style>
 body{background:#1b1210;color:#f3d9c8;font-family:sans-serif;margin:12px}
-#row{display:flex;gap:12px;align-items:flex-start;cursor:grab;user-select:none}
+div#row{display:flex;gap:12px;align-items:flex-start;cursor:grab;user-select:none}
 canvas{display:block}
 pre{margin:0;width:480px;height:600px;background:#2a1a16;font:10px/10px Menlo,monospace;overflow:hidden;color:#ffd7b0}
-button{background:#2a1a16;color:#f3d9c8;border:1px solid #6b2a1c;padding:4px 10px;margin:0 6px 8px 0;cursor:pointer}
+button{background:#2a1a16;color:#f3d9c8;border:1px solid #6b2a1c;padding:4px 10px;margin:0 6px 6px 0;cursor:pointer}
 button.on{background:#6b2a1c}
-div#knobs{display:grid;grid-template-columns:repeat(4,minmax(220px,1fr));gap:4px 18px;margin:10px 0;font-size:12px}
-div#knobs label{display:grid;grid-template-columns:110px 1fr 44px;align-items:center;gap:6px}
+button.preset{border-color:#8a5a10}
+h3{margin:8px 0 2px;font-size:12px;color:#c9906f;font-weight:normal;grid-column:1/-1}
+div#knobs{display:grid;grid-template-columns:repeat(4,minmax(220px,1fr));gap:3px 18px;margin:6px 0 10px;font-size:12px}
+div#knobs label{display:grid;grid-template-columns:120px 1fr 44px;align-items:center;gap:6px}
 div#knobs input{width:100%}
 </style>
 <div id="bar"></div>
+<div id="presets"></div>
 <div id="knobs"></div>
 <div id="row"><div id="wire"></div><div id="cont"></div><pre id="ascii"></pre></div>
 <p>drag: orbit / scroll: zoom / right-drag: pan</p>
@@ -25,44 +28,65 @@ import {UnrealBloomPass} from 'three/addons/postprocessing/UnrealBloomPass.js';
 const RIG = __RIG__;
 const W = 480, H = 600, COLS = 80, ROWS = 60, WIRE = 1, CONT = 2;
 
-// Knobs: [key, label, min, max, step, default]. Angles in degrees.
+// Knobs: [group, key, label, min, max, step, default]. Angles in degrees, lengths in rig units, scales as factors.
 const SPEC = [
-  ['speed', 'cycles / sec', 0, 2, 0.01, 0.72],
-  ['phase', 'phase (paused)', 0, 1, 0.001, 0],
-  ['legSwing', 'leg swing', 0, 45, 0.5, 25.5],
-  ['kneeBend', 'knee lift', 0, 90, 1, 34],
-  ['plantKnee', 'plant knee', 0, 20, 0.5, 7],
-  ['hipSpread', 'hip spread', -5, 15, 0.5, 3.5],
-  ['pelvisTwist', 'pelvis twist', 0, 25, 0.5, 2.5],
-  ['torsoTwist', 'torso twist', 0, 40, 0.5, 13],
-  ['spineShare', 'twist in spine', 0, 1, 0.05, 0.7],
-  ['lean', 'forward lean', -10, 20, 0.5, 0.5],
-  ['headStab', 'head holds front', 0, 1, 0.05, 0.8],
-  ['armSwing', 'arm swing', 0, 60, 0.5, 11],
-  ['armCross', 'arm cross in', 0, 30, 0.5, 5.5],
-  ['armSpread', 'arm spread', 0, 40, 0.5, 9.5],
-  ['elbowRest', 'elbow rest', 0, 60, 0.5, 5.5],
-  ['elbowSwing', 'elbow fwd bend', 0, 80, 0.5, 32.5],
-  ['bob', 'bob', 0, 0.8, 0.01, 0],
-  ['shoulderDrop', 'shoulder drop', -0.6, 0.8, 0.01, 0.25],
-  ['shoulderIn', 'shoulder in', -0.4, 0.6, 0.01, 0],
+  ['timing', 'speed', 'cycles / sec', 0, 2, 0.01, 0.72],
+  ['timing', 'phase', 'phase (paused)', 0, 1, 0.001, 0],
+  ['legs', 'legSwing', 'leg swing', 0, 45, 0.5, 25.5],
+  ['legs', 'kneeBend', 'knee lift', 0, 90, 1, 34],
+  ['legs', 'plantKnee', 'plant knee', 0, 20, 0.5, 7],
+  ['legs', 'hipSpread', 'hip spread', -5, 15, 0.5, 3.5],
+  ['legs', 'footLevel', 'foot stays flat', 0, 1, 0.05, 0.8],
+  ['weight', 'weightShift', 'weight shift', 0, 0.8, 0.01, 0.22],
+  ['weight', 'hipDrop', 'hip drop', 0, 15, 0.25, 4],
+  ['weight', 'counterLean', 'torso counter-lean', 0, 1.5, 0.05, 0.6],
+  ['weight', 'bob', 'vertical bob', 0, 0.8, 0.01, 0],
+  ['torso', 'pelvisTwist', 'pelvis twist', 0, 25, 0.5, 2.5],
+  ['torso', 'torsoTwist', 'torso twist', 0, 40, 0.5, 13],
+  ['torso', 'spineShare', 'twist in spine', 0, 1, 0.05, 0.7],
+  ['torso', 'lean', 'forward lean', -10, 20, 0.5, 0.5],
+  ['torso', 'headStab', 'head holds front', 0, 1, 0.05, 0.8],
+  ['arms', 'armSwing', 'arm swing', 0, 60, 0.5, 11],
+  ['arms', 'armCross', 'arm cross in', 0, 30, 0.5, 5.5],
+  ['arms', 'armSpread', 'arm spread', 0, 40, 0.5, 9.5],
+  ['arms', 'elbowRest', 'elbow rest', 0, 60, 0.5, 5.5],
+  ['arms', 'elbowSwing', 'elbow fwd bend', 0, 80, 0.5, 32.5],
+  ['arms', 'wristFlex', 'wrist curl', -30, 50, 0.5, 8],
+  ['arms', 'wristLag', 'hand trails swing', 0, 40, 0.5, 10],
+  ['proportion', 'shoulderDrop', 'shoulder drop', -0.6, 0.8, 0.01, 0.25],
+  ['proportion', 'shoulderWidth', 'shoulder width', 0.85, 1.15, 0.005, 1],
+  ['proportion', 'armLen', 'arm length', 0.85, 1.2, 0.005, 1],
+  ['proportion', 'legLen', 'leg length', 0.85, 1.2, 0.005, 1],
+  ['proportion', 'torsoLen', 'torso length', 0.85, 1.2, 0.005, 1],
+  ['proportion', 'headSize', 'head size', 0.8, 1.25, 0.005, 1],
+  ['view', 'skirt', 'hakama opacity', 0, 1, 0.01, 0.35],
 ];
+const DEFAULTS = Object.fromEntries(SPEC.map(s => [s[1], s[6]]));
+
+const PRESETS = {
+  'hafley: calm fire walk': {},
+  'unhurried god': {speed: 0.5, legSwing: 20, kneeBend: 30, torsoTwist: 16, armSwing: 8, armCross: 4, weightShift: 0.32, hipDrop: 5, lean: 2, wristLag: 14, headStab: 0.95},
+  'heavy stride': {speed: 0.8, legSwing: 30, kneeBend: 45, pelvisTwist: 8, torsoTwist: 20, armSwing: 25, armCross: 10, weightShift: 0.25, hipDrop: 6, bob: 0.1, elbowSwing: 40},
+  'lumbering giant': {speed: 0.45, legSwing: 20, kneeBend: 28, weightShift: 0.5, hipDrop: 8, counterLean: 0.9, torsoTwist: 10, armSwing: 6, lean: 6, elbowRest: 15, shoulderDrop: 0.35},
+  'stalking': {speed: 0.6, legSwing: 22, kneeBend: 55, plantKnee: 14, lean: 10, armSwing: 14, armCross: 12, weightShift: 0.18, headStab: 1, wristFlex: 18},
+  'rising from the ash': {speed: 0.32, legSwing: 14, kneeBend: 24, plantKnee: 12, lean: 12, weightShift: 0.6, hipDrop: 10, counterLean: 1.1, headStab: 0.2, armSwing: 4, elbowRest: 25, wristFlex: 22, wristLag: 20},
+};
+
 // Knob state lives in the hash query (#?k=v&...): file:// refuses history writes, location.replace does not.
-const K = {};
+const K = {...DEFAULTS};
 const hashParams = () => new URLSearchParams(location.hash.replace(/^#[^?]*\??/, ''));
-const saved = hashParams();
+for (const [k, v] of hashParams()) if (k in K) K[k] = +v;
 let writeTimer = 0;
+const diff = () => Object.fromEntries(Object.entries(K).filter(([k, v]) => v !== DEFAULTS[k]));
 const persist = () => {
   clearTimeout(writeTimer);
-  writeTimer = setTimeout(() => {
-    const q = new URLSearchParams(SPEC.filter(([k, , , , , d]) => K[k] !== d).map(([k]) => [k, K[k]]));
-    location.replace('#?' + q);
-  }, 150);
+  writeTimer = setTimeout(() => location.replace('#?' + new URLSearchParams(diff())), 150);
 };
 const knobs = document.getElementById('knobs');
 const inputs = {};
-for (const [key, label, min, max, step, def] of SPEC) {
-  K[key] = saved.has(key) ? +saved.get(key) : def;
+let group = '';
+for (const [g, key, label, min, max, step] of SPEC) {
+  if (g !== group) { group = g; knobs.appendChild(Object.assign(document.createElement('h3'), {textContent: g})); }
   const l = document.createElement('label');
   const input = Object.assign(document.createElement('input'), {type: 'range', min, max, step, value: K[key]});
   const out = document.createElement('span'); out.textContent = K[key];
@@ -70,10 +94,29 @@ for (const [key, label, min, max, step, def] of SPEC) {
   inputs[key] = [input, out];
   l.append(label, input, out); knobs.appendChild(l);
 }
-function resetKnobs() {
-  for (const [key, , , , , def] of SPEC) { K[key] = def; inputs[key][0].value = def; inputs[key][1].textContent = def; }
+function setKnobs(values) {
+  Object.assign(K, DEFAULTS, values);
+  for (const k in inputs) { inputs[k][0].value = K[k]; inputs[k][1].textContent = K[k]; }
   persist();
 }
+
+const presetBar = document.getElementById('presets');
+const saved = () => JSON.parse(localStorage.getItem('maha-presets') || '{}');
+function drawPresets() {
+  presetBar.replaceChildren();
+  for (const [name, values] of Object.entries({...PRESETS, ...saved()})) {
+    const b = Object.assign(document.createElement('button'), {textContent: name, className: 'preset'});
+    b.onclick = () => setKnobs(values);
+    presetBar.appendChild(b);
+  }
+  const save = Object.assign(document.createElement('button'), {textContent: '+ save current'});
+  save.onclick = () => {
+    const name = prompt('preset name');
+    if (name) { localStorage.setItem('maha-presets', JSON.stringify({...saved(), [name]: diff()})); drawPresets(); }
+  };
+  presetBar.appendChild(save);
+}
+drawPresets();
 
 const camera = new THREE.PerspectiveCamera(32, W / H, 0.1, 200);
 camera.position.set(0, 9.8, 29);
@@ -103,12 +146,12 @@ const bones = RIG.joints.map(j => {
   b.position.fromArray(j.offset); b.quaternion.copy(localRot(j.name, j.rest)); return b;
 });
 RIG.joints.forEach((j, i) => { if (j.parent >= 0) bones[j.parent].add(bones[i]); });
-const byName = Object.fromEntries(RIG.joints.map((j, i) => [j.name, i]));
+const at = Object.fromEntries(RIG.joints.map((j, i) => [j.name, i]));
 const skeleton = new THREE.Skeleton(bones);
 
 // Surface nets winding is not guaranteed; flip triangles whose face normal disagrees with the SDF gradient.
-function orient(idx, P, N) {
-  idx = idx.slice();
+function orient(part) {
+  const idx = part.idx.slice(), P = part.pos, N = part.nrm;
   const v = i => new THREE.Vector3(P[3*i], P[3*i+1], P[3*i+2]);
   let votes = 0;
   for (let t = 0; t < idx.length; t += 3) {
@@ -119,21 +162,14 @@ function orient(idx, P, N) {
   if (votes < 0) for (let t = 0; t < idx.length; t += 3) [idx[t+1], idx[t+2]] = [idx[t+2], idx[t+1]];
   return idx;
 }
-const idx = orient(RIG.idx, RIG.pos, RIG.nrm);
-function skinnedGeo(pos) {
+function partGeo(part, inflate) {
   const g = new THREE.BufferGeometry();
-  g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(pos), 3));
-  g.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(RIG.nrm), 3));
-  g.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(RIG.skinIndex, 4));
-  g.setAttribute('skinWeight', new THREE.Float32BufferAttribute(RIG.skinWeight, 4));
-  const col = new Float32Array(RIG.kind.length * 3);
-  RIG.kind.forEach((k, i) => col.set(k ? [0.5, 0.72, 0.65] : [1.0, 0.78, 0.6], 3 * i));
-  g.setAttribute('color', new THREE.BufferAttribute(col, 3));
-  g.setIndex(idx); return g;
+  g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(part.pos.map((p, i) => p + part.nrm[i] * inflate)), 3));
+  g.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(part.nrm), 3));
+  g.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(part.skinIndex, 4));
+  g.setAttribute('skinWeight', new THREE.Float32BufferAttribute(part.skinWeight, 4));
+  g.setIndex(orient(part)); return g;
 }
-const geo = skinnedGeo(RIG.pos);
-const hullPos = RIG.pos.map((p, i) => p + RIG.nrm[i] * 0.07);
-const hullGeo = skinnedGeo(hullPos);
 
 let first = null;
 function skinned(g, material, layer) {
@@ -142,11 +178,23 @@ function skinned(g, material, layer) {
   if (!first) { first = m; m.add(bones[0]); m.bind(skeleton); } else m.bind(skeleton, first.bindMatrix);
   m.layers.set(layer); scene.add(m); return m;
 }
-skinned(geo, new THREE.MeshBasicMaterial({color: 0x140b0a, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1}), WIRE);
-skinned(geo, new THREE.MeshBasicMaterial({vertexColors: true, wireframe: true}), WIRE);
-skinned(geo, new THREE.MeshBasicMaterial({vertexColors: true, wireframe: true, transparent: true, opacity: 0.07, depthTest: false}), WIRE);
-skinned(geo, new THREE.MeshBasicMaterial({color: 0xfbf1e8, side: THREE.DoubleSide}), CONT);
-skinned(hullGeo, new THREE.MeshBasicMaterial({color: 0x3a140e, side: THREE.BackSide}), CONT);
+const body = partGeo(RIG.body, 0), bodyHull = partGeo(RIG.body, 0.07);
+const skirt = partGeo(RIG.skirt, 0), skirtHull = partGeo(RIG.skirt, 0.07);
+skinned(body, new THREE.MeshBasicMaterial({color: 0x140b0a, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1}), WIRE);
+skinned(body, new THREE.MeshBasicMaterial({color: 0xffc89a, wireframe: true}), WIRE);
+skinned(body, new THREE.MeshBasicMaterial({color: 0xffc89a, wireframe: true, transparent: true, opacity: 0.07, depthTest: false}), WIRE);
+skinned(body, new THREE.MeshBasicMaterial({color: 0xfbf1e8, side: THREE.DoubleSide}), CONT);
+skinned(bodyHull, new THREE.MeshBasicMaterial({color: 0x3a140e, side: THREE.BackSide}), CONT);
+const skirtMats = [
+  new THREE.MeshBasicMaterial({color: 0x7fb8a6, wireframe: true, transparent: true}),
+  new THREE.MeshBasicMaterial({color: 0x44564f, side: THREE.DoubleSide, transparent: true, depthWrite: false}),
+  new THREE.MeshBasicMaterial({color: 0x3a140e, side: THREE.BackSide, transparent: true, depthWrite: false}),
+];
+const skirtMeshes = [skinned(skirt, skirtMats[0], WIRE), skinned(skirt, skirtMats[1], CONT), skinned(skirtHull, skirtMats[2], CONT)];
+
+const bonesView = new THREE.SkeletonHelper(first);
+bonesView.layers.enable(WIRE); bonesView.layers.enable(CONT); bonesView.visible = false;
+scene.add(bonesView);
 
 // Wheel and blade ride their bones: convert bind-pose world points into bone-local space.
 scene.updateMatrixWorld(true);
@@ -158,55 +206,74 @@ for (const l of RIG.lines) {
   line.layers.enable(WIRE); line.layers.enable(CONT); bone.add(line);
 }
 
-let playing = true, phase = 0;
+let playing = true, phase = 0, showRest = false;
 const bar = document.getElementById('bar');
-const play = document.createElement('button'); play.textContent = 'walk'; play.classList.add('on'); bar.appendChild(play);
-play.onclick = () => { playing = !playing; play.classList.toggle('on', playing); };
-const restBtn = document.createElement('button'); restBtn.textContent = 'bind pose'; bar.appendChild(restBtn);
-let showRest = false;
-const resetBtn = document.createElement('button'); resetBtn.textContent = 'reset knobs'; bar.appendChild(resetBtn);
-resetBtn.onclick = resetKnobs;
-restBtn.onclick = () => { showRest = !showRest; restBtn.classList.toggle('on', showRest); };
+const toggle = (label, on, fn) => {
+  const b = Object.assign(document.createElement('button'), {textContent: label});
+  b.classList.toggle('on', on);
+  b.onclick = () => b.classList.toggle('on', fn());
+  bar.appendChild(b);
+};
+toggle('walk', true, () => (playing = !playing));
+toggle('bind pose', false, () => (showRest = !showRest));
+toggle('bones', false, () => (bonesView.visible = !bonesView.visible));
+const resetBtn = Object.assign(document.createElement('button'), {textContent: 'reset knobs'});
+resetBtn.onclick = () => setKnobs({}); bar.appendChild(resetBtn);
 
-// Procedural walk. s = sin(phase): right leg forward at s = 1. Arms swing against their legs and
-// cross toward the midline on the forward swing; chest counter-twists the pelvis about the body axis.
+// Walk: s = sin(phase), right leg forward at s = 1, right foot in stance while cos < 0.
+// Weight rides over the stance foot; the swing-side hip drops and the torso leans against it.
 function walkRots(ph) {
   const a = ph * 2 * Math.PI, s = Math.sin(a), c = Math.cos(a);
   const pelvisYaw = K.pelvisTwist * s;
   const upper = -K.torsoTwist * s - pelvisYaw;
-  const arm = side => {
-    const f = side === 'r' ? -s : s;
-    return {
-      [`${side}_shoulder`]: [K.armSwing * f, K.armSpread - K.armCross * f, 0],
-      [`${side}_elbow`]: [K.elbowRest + K.elbowSwing * Math.max(0, f), 0, 0],
-    };
-  };
+  const roll = K.hipDrop * c;
+  const hipR = K.legSwing * s, hipL = -K.legSwing * s;
+  const kneeR = -(K.plantKnee + K.kneeBend * Math.max(0, c) ** 2);
+  const kneeL = -(K.plantKnee + K.kneeBend * Math.max(0, -c) ** 2);
+  const arm = (side, f, df) => ({
+    [`${side}_shoulder`]: [K.armSwing * f, K.armSpread - K.armCross * f, 0],
+    [`${side}_elbow`]: [K.elbowRest + K.elbowSwing * Math.max(0, f), 0, 0],
+    [`${side}_wrist`]: [K.wristFlex - K.wristLag * df, 0, 0],
+  });
   return {
-    pelvis: [0, 0, pelvisYaw],
-    spine: [K.lean, 0, upper * K.spineShare],
+    pelvis: [0, roll, pelvisYaw],
+    spine: [K.lean, -roll * K.counterLean, upper * K.spineShare],
     chest: [0, 0, upper * (1 - K.spineShare)],
     neck: [-K.lean * 0.6, 0, K.torsoTwist * s * K.headStab],
-    r_hip: [K.legSwing * s, K.hipSpread, 0],
-    l_hip: [-K.legSwing * s, K.hipSpread, 0],
-    r_knee: [-(K.plantKnee + K.kneeBend * Math.max(0, c) ** 2), 0, 0],
-    l_knee: [-(K.plantKnee + K.kneeBend * Math.max(0, -c) ** 2), 0, 0],
-    ...arm('r'), ...arm('l'),
-    bob: K.bob * Math.cos(2 * a),
+    r_hip: [hipR, K.hipSpread - roll, 0],
+    l_hip: [hipL, K.hipSpread + roll, 0],
+    r_knee: [kneeR, 0, 0],
+    l_knee: [kneeL, 0, 0],
+    r_ankle: [-(hipR + kneeR) * K.footLevel, 0, 0],
+    l_ankle: [-(hipL + kneeL) * K.footLevel, 0, 0],
+    ...arm('r', -s, -c), ...arm('l', s, c),
+    root: [K.weightShift * c, K.bob * Math.cos(2 * a)],
   };
 }
 
+const base = i => new THREE.Vector3().fromArray(RIG.joints[i].offset);
 function applyPose(rots) {
   RIG.joints.forEach((j, i) => {
-    const r = showRest ? j.rest : (rots[j.name] ?? [0, 0, 0]);
-    bones[i].quaternion.copy(localRot(j.name, r));
+    bones[i].quaternion.copy(localRot(j.name, showRest ? j.rest : (rots[j.name] ?? [0, 0, 0])));
+    bones[i].position.copy(base(i));
+    bones[i].scale.set(1, 1, 1);
   });
-  bones[0].position.fromArray(RIG.joints[0].offset);
+  if (showRest) return;
+  bones[0].position.x += rots.root[0];
+  bones[0].position.y += rots.root[1] + (K.legLen - 1) * 5.4;
+  bones[at.chest].position.y *= K.torsoLen;
+  bones[at.head].scale.setScalar(K.headSize);
   for (const side of ['r', 'l']) {
-    const i = byName[`${side}_shoulder`], b = bones[i];
-    b.position.fromArray(RIG.joints[i].offset);
-    if (!showRest) { b.position.y -= K.shoulderDrop; b.position.x *= 1 - K.shoulderIn / Math.abs(b.position.x); }
+    const sh = bones[at[`${side}_shoulder`]];
+    sh.position.x *= K.shoulderWidth; sh.position.y -= K.shoulderDrop;
+    sh.scale.y = K.armLen;
+    bones[at[`${side}_hip`]].scale.y = K.legLen;
   }
-  if (!showRest) bones[0].position.y += rots.bob;
+}
+
+function applyView() {
+  skirtMats.forEach(m => { m.opacity = K.skirt; });
+  skirtMeshes.forEach(m => { m.visible = K.skirt > 0.01; });
 }
 
 // ASCII: render the contour layer tiny, one pixel per cell; edge cells get a glyph from the mask gradient.
@@ -217,11 +284,11 @@ function ascii() {
   camera.layers.set(CONT);
   rCont.setRenderTarget(rt); rCont.render(scene, camera); rCont.setRenderTarget(null);
   rCont.readRenderTargetPixels(rt, 0, 0, COLS, ROWS, px);
-  const at = (x, y) => ((ROWS - 1 - y) * COLS + x) * 4;
-  const ink = (x, y) => { const i = at(x, y); return px[i] + px[i+1] + px[i+2] < 200; };
+  const idx = (x, y) => ((ROWS - 1 - y) * COLS + x) * 4;
+  const ink = (x, y) => { const i = idx(x, y); return px[i] + px[i+1] + px[i+2] < 200; };
   const inside = (x, y) => {
     if (x < 0 || y < 0 || x >= COLS || y >= ROWS) return 0;
-    const i = at(x, y); return px[i+1] > 200 || ink(x, y) ? 1 : 0;
+    const i = idx(x, y); return px[i+1] > 200 || ink(x, y) ? 1 : 0;
   };
   let out = '';
   for (let y = 0; y < ROWS; y++) {
@@ -245,6 +312,7 @@ function frame(t) {
   const dt = (t - last) / 1000; last = t;
   phase = playing ? (phase + dt * K.speed) % 1 : K.phase;
   applyPose(walkRots(phase));
+  applyView();
   controls.update();
   camera.layers.set(WIRE); composer.render();
   camera.layers.set(CONT); rCont.render(scene, camera);
