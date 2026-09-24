@@ -1,5 +1,5 @@
 //! Mahoraga rig preview: linked joint matrices, smooth-blended round cones, wire + contour SVG + ASCII.
-//! cargo run --release --example 3_maha_rig -- [viewer [voxel]|html|all|key 0-3] [yaw_deg] [width] [height]
+//! cargo run --release --example 3_maha_rig -- [skin [voxel]|viewer [voxel]|html|all|key 0-4] [yaw] [w] [h]
 
 use glam::{Mat4, Quat, Vec3};
 
@@ -197,14 +197,22 @@ struct Shape {
     r2: f32,
     kind: Kind,
     core: bool,
+    // joint whose world matrix carries this shape rigidly (skinning bone)
+    bone: usize,
 }
 
 fn cone(a: Vec3, b: Vec3, r1: f32, r2: f32, kind: Kind) -> Shape {
-    Shape { a, b, r1, r2, kind, core: false }
+    Shape { a, b, r1, r2, kind, core: false, bone: 0 }
 }
 
 fn core(a: Vec3, b: Vec3, r1: f32, r2: f32) -> Shape {
-    Shape { a, b, r1, r2, kind: Kind::Body, core: true }
+    Shape { a, b, r1, r2, kind: Kind::Body, core: true, bone: 0 }
+}
+
+impl Shape {
+    fn on(self, bone: usize) -> Shape {
+        Shape { bone, ..self }
+    }
 }
 
 // Torso, neck, traps, delts melt together; limbs and head stay crisp so the arm gap and head read.
@@ -216,23 +224,26 @@ fn shapes(world: &[Mat4], pos: &[Vec3]) -> Vec<Shape> {
         .iter()
         .enumerate()
         .filter_map(|(i, jt)| {
-            jt.parent.map(|p| Shape { core: CORE_JOINTS.contains(&jt.name), ..cone(pos[p], pos[i], jt.radius, jt.radius, Kind::Body) })
+            jt.parent.map(|p| {
+                let core = CORE_JOINTS.contains(&jt.name);
+                Shape { core, bone: p, ..cone(pos[p], pos[i], jt.radius, jt.radius, Kind::Body) }
+            })
         })
         .collect();
     let at = |m: usize, x: f32, y: f32, z: f32| world[m].transform_point3(Vec3::new(x, y, z));
-    out.push(cone(at(HEAD, 0.0, -0.1, 0.2), at(HEAD, 0.0, -0.55, 0.35), 0.52, 0.4, Kind::Body));
+    out.push(cone(at(HEAD, 0.0, -0.1, 0.2), at(HEAD, 0.0, -0.55, 0.35), 0.52, 0.4, Kind::Body).on(HEAD));
     for side in [-1.0, 1.0] {
         let (shoulder, elbow) = if side < 0.0 { (R_SHOULDER, R_ELBOW) } else { (L_SHOULDER, L_ELBOW) };
         // traps slope from the neck into the delt; the delt flows down the arm, no cap
-        out.push(core(at(CHEST, side * 0.45, 0.95, -0.2), at(CHEST, side * 1.9, 0.3, -0.2), 0.58, 0.5));
-        out.push(cone(at(shoulder, side * 0.2, -0.15, 0.05), at(shoulder, side * 0.1, -1.2, 0.05), 0.72, 0.5, Kind::Body));
-        out.push(core(at(CHEST, side * 0.25, 0.3, 0.6), at(CHEST, side * 1.4, 0.35, 0.4), 0.8, 0.7));
-        out.push(core(at(CHEST, side * 1.3, -0.1, -0.15), at(CHEST, side * 0.7, -2.0, 0.0), 0.62, 0.45));
-        out.push(cone(at(shoulder, 0.0, -0.9, 0.22), at(shoulder, 0.0, -1.9, 0.2), 0.72, 0.56, Kind::Body));
-        out.push(cone(at(shoulder, 0.0, -0.7, -0.2), at(shoulder, 0.0, -2.1, -0.15), 0.6, 0.45, Kind::Body));
-        out.push(cone(at(elbow, 0.0, -0.4, 0.05), at(elbow, 0.0, -2.2, 0.0), 0.6, 0.42, Kind::Body));
+        out.push(core(at(CHEST, side * 0.45, 0.95, -0.2), at(CHEST, side * 1.9, 0.3, -0.2), 0.58, 0.5).on(CHEST));
+        out.push(cone(at(shoulder, side * 0.2, -0.15, 0.05), at(shoulder, side * 0.1, -1.2, 0.05), 0.72, 0.5, Kind::Body).on(shoulder));
+        out.push(core(at(CHEST, side * 0.25, 0.3, 0.6), at(CHEST, side * 1.4, 0.35, 0.4), 0.8, 0.7).on(CHEST));
+        out.push(core(at(CHEST, side * 1.3, -0.1, -0.15), at(CHEST, side * 0.7, -2.0, 0.0), 0.62, 0.45).on(CHEST));
+        out.push(cone(at(shoulder, 0.0, -0.9, 0.22), at(shoulder, 0.0, -1.9, 0.2), 0.72, 0.56, Kind::Body).on(shoulder));
+        out.push(cone(at(shoulder, 0.0, -0.7, -0.2), at(shoulder, 0.0, -2.1, -0.15), 0.6, 0.45, Kind::Body).on(shoulder));
+        out.push(cone(at(elbow, 0.0, -0.4, 0.05), at(elbow, 0.0, -2.2, 0.0), 0.6, 0.42, Kind::Body).on(elbow));
     }
-    out.push(cone(at(PELVIS, 0.0, 0.6, 0.0), at(PELVIS, 0.0, -3.3, 0.1), 1.45, 2.05, Kind::Skirt));
+    out.push(cone(at(PELVIS, 0.0, 0.6, 0.0), at(PELVIS, 0.0, -3.3, 0.1), 1.45, 2.05, Kind::Skirt).on(PELVIS));
     out
 }
 
@@ -670,11 +681,16 @@ pre{{background:#2a1a16;padding:8px;font-size:11px;line-height:1.05;margin:0}}</
     )
 }
 
-// Blended surface as a triangle mesh (naive surface nets), plus wheel/blade polylines, as JSON per key.
-fn mesh_json(key: &Frame, voxel: f32, cycle: bool) -> String {
+struct Surface {
+    pos: Vec<Vec3>,
+    nrm: Vec<Vec3>,
+    idx: Vec<u32>,
+}
+
+// Blended surface as a triangle mesh (naive surface nets) in world units.
+fn surface(s: &Posed, voxel: f32) -> Surface {
     use fast_surface_nets::ndshape::{RuntimeShape, Shape as _};
     use fast_surface_nets::{surface_nets, SurfaceNetsBuffer};
-    let s = posed(key);
     let origin = Vec3::new(-6.0, -1.0, -4.0);
     let dims = ((Vec3::new(12.0, 15.0, 8.0) / voxel).ceil()).as_uvec3().to_array();
     let grid = RuntimeShape::<u32, 3>::new(dims);
@@ -686,38 +702,103 @@ fn mesh_json(key: &Frame, voxel: f32, cycle: bool) -> String {
         .collect();
     let mut buf = SurfaceNetsBuffer::default();
     surface_nets(&sdf, &grid, [0; 3], [dims[0] - 1, dims[1] - 1, dims[2] - 1], &mut buf);
-    let mut pos = String::new();
-    let mut kind = String::new();
-    let mut nrm = String::new();
-    for n in &buf.normals {
-        let n = Vec3::from_array(*n).normalize_or(Vec3::Y);
-        nrm += &format!("{:.3},{:.3},{:.3},", n.x, n.y, n.z);
+    Surface {
+        pos: buf.positions.iter().map(|p| origin + Vec3::from_array(*p) * voxel).collect(),
+        nrm: buf.normals.iter().map(|n| Vec3::from_array(*n).normalize_or(Vec3::Y)).collect(),
+        idx: buf.indices,
     }
-    for p in &buf.positions {
-        let w = origin + Vec3::from_array(*p) * voxel;
-        pos += &format!("{:.3},{:.3},{:.3},", w.x, w.y, w.z);
-        let skirt = s.caps[nearest_shape(w, &s.caps)].kind == Kind::Skirt;
-        kind += if skirt { "1," } else { "0," };
-    }
-    let idx: Vec<String> = buf.indices.iter().map(u32::to_string).collect();
+}
+
+fn floats(vs: &[Vec3]) -> String {
+    let v: Vec<String> = vs.iter().map(|p| format!("{:.3},{:.3},{:.3}", p.x, p.y, p.z)).collect();
+    v.join(",")
+}
+
+fn ints<T: ToString>(vs: &[T]) -> String {
+    vs.iter().map(T::to_string).collect::<Vec<_>>().join(",")
+}
+
+fn line_json(s: &Posed, with_bone: bool) -> String {
     let mut lines = Vec::new();
     for w in wires(&s.world, &s.pos, &s.caps, Vec3::Z) {
-        let tag = match w.kind {
-            Kind::Wheel => "wheel",
-            Kind::Blade => "blade",
+        let (tag, bone) = match w.kind {
+            Kind::Wheel => ("wheel", CROWN),
+            Kind::Blade => ("blade", R_ELBOW),
             _ => continue,
         };
         let pts: Vec<String> = w.pts.iter().map(|p| format!("[{:.3},{:.3},{:.3}]", p.x, p.y, p.z)).collect();
-        lines.push(format!("{{\"kind\":\"{tag}\",\"pts\":[{}]}}", pts.join(",")));
+        let bone = if with_bone { format!(",\"bone\":{bone}") } else { String::new() };
+        lines.push(format!("{{\"kind\":\"{tag}\"{bone},\"pts\":[{}]}}", pts.join(",")));
     }
+    lines.join(",")
+}
+
+fn mesh_json(key: &Frame, voxel: f32, cycle: bool) -> String {
+    let s = posed(key);
+    let m = surface(&s, voxel);
+    let kind: Vec<u8> = m.pos.iter().map(|w| (s.caps[nearest_shape(*w, &s.caps)].kind == Kind::Skirt) as u8).collect();
     format!(
         "{{\"name\":\"{}\",\"cycle\":{cycle},\"pos\":[{}],\"nrm\":[{}],\"kind\":[{}],\"idx\":[{}],\"lines\":[{}]}}",
         key.name,
-        pos.trim_end_matches(','),
-        nrm.trim_end_matches(','),
-        kind.trim_end_matches(','),
-        idx.join(","),
-        lines.join(",")
+        floats(&m.pos),
+        floats(&m.nrm),
+        ints(&kind),
+        ints(&m.idx),
+        line_json(&s, false)
+    )
+}
+
+const SKIN_FALLOFF: f32 = 0.15;
+
+// Bind-pose mesh plus up to 4 bone weights per vertex: each shape's distance scores its carrying bone.
+fn skin_json(voxel: f32) -> String {
+    let rest = Frame::from_key(&KEYS[0]);
+    let s = posed(&rest);
+    let m = surface(&s, voxel);
+    let (mut skin_i, mut skin_w, mut kind) = (Vec::new(), Vec::new(), Vec::new());
+    for w in &m.pos {
+        let mut best = vec![f32::INFINITY; RIG.len()];
+        for c in &s.caps {
+            best[c.bone] = best[c.bone].min(sd_shape(*w, c));
+        }
+        let dmin = best.iter().cloned().fold(f32::INFINITY, f32::min);
+        let mut ranked: Vec<(usize, f32)> =
+            best.iter().enumerate().map(|(b, d)| (b, (-(d - dmin) / SKIN_FALLOFF).exp())).collect();
+        ranked.sort_by(|a, b| b.1.total_cmp(&a.1));
+        let total: f32 = ranked[..4].iter().map(|r| r.1).sum();
+        for (b, wt) in &ranked[..4] {
+            skin_i.push(*b as u32);
+            skin_w.push(format!("{:.3}", wt / total));
+        }
+        kind.push((s.caps[nearest_shape(*w, &s.caps)].kind == Kind::Skirt) as u8);
+    }
+    let joints: Vec<String> = RIG
+        .iter()
+        .zip(&rest.rots)
+        .map(|(j, r)| {
+            format!(
+                "{{\"name\":\"{}\",\"parent\":{},\"offset\":[{},{},{}],\"rest\":[{},{},{}]}}",
+                j.name,
+                j.parent.map_or(-1, |p| p as i32),
+                j.offset.x,
+                j.offset.y,
+                j.offset.z,
+                r.pitch,
+                r.spread,
+                r.yaw
+            )
+        })
+        .collect();
+    format!(
+        "{{\"joints\":[{}],\"pos\":[{}],\"nrm\":[{}],\"idx\":[{}],\"skinIndex\":[{}],\"skinWeight\":[{}],\"kind\":[{}],\"lines\":[{}]}}",
+        joints.join(","),
+        floats(&m.pos),
+        floats(&m.nrm),
+        ints(&m.idx),
+        ints(&skin_i),
+        skin_w.join(","),
+        ints(&kind),
+        line_json(&s, true)
     )
 }
 
@@ -727,6 +808,14 @@ fn main() {
     let yaw: f32 = args.get(1).and_then(|s| s.parse().ok()).unwrap_or(0.0);
     let w: usize = args.get(2).and_then(|s| s.parse().ok()).unwrap_or(64);
     let h: usize = args.get(3).and_then(|s| s.parse().ok()).unwrap_or(50);
+    if which == "skin" {
+        let voxel: f32 = args.get(1).and_then(|s| s.parse().ok()).unwrap_or(0.2);
+        let page = include_str!("maha_skin.html").replace("__RIG__", &skin_json(voxel));
+        let path = "docs/maha_rig/skin.html";
+        std::fs::write(path, page).expect("write skin viewer");
+        println!("{path}");
+        return;
+    }
     if which == "viewer" {
         let voxel: f32 = args.get(1).and_then(|s| s.parse().ok()).unwrap_or(0.2);
         let mut keys: Vec<String> = keyframes().iter().map(|k| mesh_json(k, voxel, false)).collect();
