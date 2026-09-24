@@ -1,6 +1,6 @@
-//! Streamnet: the two harmonic families of a seeded complex potential, drawn as
-//! one orthogonal net. Equipotentials and streamlines cross at right angles; the
-//! term phases precess so the whole web slowly morphs.
+//! Streamnet: the orthogonal equipotential and streamline families of a seeded
+//! analytic complex potential, `w(z) = sum c_k z^k + sum q_p / (z - p_p)`, drawn
+//! as a two-colour line net with dipoles that orbit and flow comets riding it.
 use crate::_0_profile::measure_layer;
 use crate::color::{darken, hsl_to_rgb, lerp_color};
 use crate::opts::param_f32;
@@ -15,28 +15,36 @@ pub(super) struct StreamNet;
 pub(super) static MODE: StreamNet = StreamNet;
 
 const NAME: &str = "streamnet";
-const KNOBS: usize = 12;
-const HELP: &str = "streamnet: equipotentials and streamlines of a morphing complex potential [zoom] [degree] [density] [thick] [warp] [spin] [morph] [hue] [aspect] [depth] [ground] [halo]";
+const KNOBS: usize = 15;
+const HELP: &str = "streamnet: equipotential and streamline net of a morphing complex potential with orbiting dipoles and flow comets [zoom] [degree] [density] [thick] [warp] [spin] [morph] [hue] [aspect] [depth] [ground] [halo] [poles] [strength] [tracers]";
 
 const PARAMS: &[Param] = &[
     param!("ZOOM", "plane scale", 0.8, 2.0, 1.0, 0.05),
     param!("DEGREE", "polynomial degree", 2.0, 6.0, 3.0, 1.0),
     param!("DENSITY", "lines per unit", 1.5, 8.0, 3.5, 0.5),
-    param!("THICK", "line weight", 0.05, 0.45, 0.16, 0.01),
-    param!("WARP", "coordinate warp", 0.0, 0.6, 0.12, 0.02),
-    param!("SPIN", "rotation rad/s", -0.5, 0.5, 0.06, 0.01),
-    param!("MORPH", "phase drift rate", 0.0, 1.2, 0.45, 0.05),
-    param!("HUE", "base hue", 0.0, 360.0, 198.0, 1.0),
+    param!("THICK", "line weight", 0.05, 0.45, 0.15, 0.01),
+    param!("WARP", "coordinate warp", 0.0, 0.6, 0.1, 0.02),
+    param!("SPIN", "rotation rad/s", -0.5, 0.5, 0.05, 0.01),
+    param!("MORPH", "phase drift rate", 0.0, 1.2, 0.5, 0.05),
+    param!("HUE", "base hue", 0.0, 360.0, 200.0, 1.0),
     param!("ASPECT", "cols per row", 0.8, 3.0, 2.0, 0.05),
-    param!("DEPTH", "speed response", 0.0, 1.3, 0.7, 0.05),
-    param!("GROUND", "field wash", 0.0, 1.0, 0.35, 0.05),
-    param!("HALO", "line underglow", 0.0, 0.9, 0.3, 0.05),
+    param!("DEPTH", "speed response", 0.0, 1.3, 0.8, 0.05),
+    param!("GROUND", "field wash", 0.0, 1.0, 0.32, 0.05),
+    param!("HALO", "line underglow", 0.0, 0.9, 0.28, 0.05),
+    param!("POLES", "dipole count", 0.0, 6.0, 3.0, 1.0),
+    param!("STRENGTH", "dipole strength", 0.0, 1.0, 0.5, 0.05),
+    param!("TRACERS", "flow comets", 0.0, 600.0, 160.0, 10.0),
 ];
 
 const L_TERM: u64 = 0x21;
 const L_WARP: u64 = 0x22;
+const L_POLE: u64 = 0x23;
+const L_TRAC: u64 = 0x31;
 
 const MAXD: usize = 7;
+const MAXP: usize = 6;
+const NSTEP: usize = 56;
+const TAIL: usize = 8;
 const PARALLEL_MIN_CELLS: usize = 20_480;
 
 impl Mode for StreamNet {
@@ -108,7 +116,7 @@ fn noise(seed: u64, layer: u64, u: f32, v: f32) -> f32 {
     (a + (b - a) * fv) * 2.0 - 1.0
 }
 
-/// One frame's resolved coefficients, geometry, and palette.
+/// One frame's resolved coefficients, dipoles, geometry, and palette.
 struct Look {
     seed: u64,
     cx: f32,
@@ -127,8 +135,17 @@ struct Look {
     rot_s: f32,
     cr: [f32; MAXD],
     ci: [f32; MAXD],
+    np: usize,
+    pr: [f32; MAXP],
+    pi: [f32; MAXP],
+    qr: [f32; MAXP],
+    qi: [f32; MAXP],
+    rmin2: f32,
     bg: Color,
     wash: Color,
+    tracers: usize,
+    flow: f32,
+    time: f32,
 }
 
 impl Look {
@@ -141,18 +158,42 @@ impl Look {
         let radius = (half_w * half_w + half_h * half_h).sqrt().max(1.0);
         let inv = 1.0 / (radius * zoom);
         let theta = p[5] * time;
+
         let mut cr = [0.0f32; MAXD];
         let mut ci = [0.0f32; MAXD];
-        cr[1] = 0.9;
+        // Linear term gets a seeded phase and weight so seeds differ strongly.
+        let a1 = 0.82 + 0.3 * unit(hash(seed, L_TERM, 1, 2));
+        let p1 = unit(hash(seed, L_TERM, 1, 3)) * TAU;
+        cr[1] = a1 * p1.cos();
+        ci[1] = a1 * p1.sin();
         let mid = (degree as f32 + 1.0) * 0.5;
         for k in 2..=degree {
-            let amp = (0.40 + 0.50 * unit(hash(seed, L_TERM, k as u64, 0))) / 1.6f32.powi(k as i32);
+            let amp = (0.4 + 0.5 * unit(hash(seed, L_TERM, k as u64, 0))) / 1.6f32.powi(k as i32);
             let ph = unit(hash(seed, L_TERM, k as u64, 1)) * TAU;
             let om = (k as f32 - mid) * 0.6;
             let a = ph + om * p[6] * time;
             cr[k] = amp * a.cos();
             ci[k] = amp * a.sin();
         }
+
+        let np = (p[12].round() as i32).clamp(0, MAXP as i32) as usize;
+        let mut pr = [0.0f32; MAXP];
+        let mut pi = [0.0f32; MAXP];
+        let mut qr = [0.0f32; MAXP];
+        let mut qi = [0.0f32; MAXP];
+        for k in 0..np {
+            let kk = k as u64;
+            let br = 0.2 + 0.55 * unit(hash(seed, L_POLE, kk, 0));
+            let ba = unit(hash(seed, L_POLE, kk, 1)) * TAU;
+            let oa = unit(hash(seed, L_POLE, kk, 2)) * TAU + time * (0.4 + 0.5 * p[6]);
+            pr[k] = br * ba.cos() + 0.06 * oa.cos();
+            pi[k] = br * ba.sin() + 0.06 * oa.sin();
+            let mag = p[13] * 0.035 * (0.6 + 0.8 * unit(hash(seed, L_POLE, kk, 3)));
+            let ga = unit(hash(seed, L_POLE, kk, 4)) * TAU;
+            qr[k] = mag * ga.cos();
+            qi[k] = mag * ga.sin();
+        }
+
         Look {
             seed,
             cx: w as f32 * 0.5,
@@ -171,8 +212,17 @@ impl Look {
             rot_s: theta.sin(),
             cr,
             ci,
+            np,
+            pr,
+            pi,
+            qr,
+            qi,
+            rmin2: 0.0025,
             bg: darken(palette[0], 18),
-            wash: hsl_to_rgb(((p[7] + 205.0) / 360.0).rem_euclid(1.0) as f64, 0.55, 0.14),
+            wash: hsl_to_rgb(((p[7] + 205.0) / 360.0).rem_euclid(1.0) as f64, 0.55, 0.13),
+            tracers: (p[14].round() as usize).min(2000),
+            flow: 0.55,
+            time,
         }
     }
 }
@@ -188,6 +238,7 @@ struct Sample {
 
 thread_local! {
     static SCRATCH: RefCell<Vec<Sample>> = const { RefCell::new(Vec::new()) };
+    static PATH: RefCell<Vec<(f32, f32)>> = const { RefCell::new(Vec::new()) };
 }
 
 #[inline(always)]
@@ -205,6 +256,68 @@ where
     }
 }
 
+/// Evaluate the analytic potential and its derivative at one plane point.
+#[inline]
+fn potential(a: f32, b: f32, look: &Look) -> (f32, f32, f32, f32) {
+    let mut ar = 0.0f32;
+    let mut ai = 0.0f32;
+    let mut gr = 0.0f32;
+    let mut gi = 0.0f32;
+    for k in (1..=look.degree).rev() {
+        let ck = k as f32;
+        let nk = look.cr[k];
+        let mk = look.ci[k];
+        let nr = ar * a - ai * b + nk;
+        let ni = ar * b + ai * a + mk;
+        let gnr = gr * a - gi * b + ck * nk;
+        let gni = gr * b + gi * a + ck * mk;
+        ar = nr;
+        ai = ni;
+        gr = gnr;
+        gi = gni;
+    }
+    let mut wr = ar * a - ai * b;
+    let mut wi = ar * b + ai * a;
+    let mut dr = gr;
+    let mut di = gi;
+    for k in 0..look.np {
+        let rx = a - look.pr[k];
+        let ry = b - look.pi[k];
+        let d2 = (rx * rx + ry * ry).max(look.rmin2);
+        let qr = look.qr[k];
+        let qi = look.qi[k];
+        wr += (qr * rx + qi * ry) / d2;
+        wi += (qi * rx - qr * ry) / d2;
+        let cr2 = rx * rx - ry * ry;
+        let ci2 = -2.0 * rx * ry;
+        let dd = d2 * d2;
+        dr -= (qr * cr2 - qi * ci2) / dd;
+        di -= (qi * cr2 + qr * ci2) / dd;
+    }
+    (wr, wi, dr, di)
+}
+
+/// Map a cell centre to the (rotated) plane point, with an optional warp.
+#[inline]
+fn cell_to_plane(x: f32, y: f32, look: &Look, warped: bool) -> (f32, f32) {
+    let dx = (x - look.cx) * look.inv / look.aspect;
+    let dy = (y - look.cy) * look.inv;
+    let mut a = dx * look.rot_c - dy * look.rot_s;
+    let mut b = dx * look.rot_s + dy * look.rot_c;
+    if warped && look.warp > 0.0 {
+        a += noise(look.seed, L_WARP, dx * 2.6, dy * 2.6) * look.warp * 0.14;
+        b += noise(look.seed, L_WARP, dx * 2.6 + 40.0, dy * 2.6 - 17.0) * look.warp * 0.14;
+    }
+    (a, b)
+}
+
+#[inline]
+fn plane_to_cell(a: f32, b: f32, look: &Look) -> (f32, f32) {
+    let dx = a * look.rot_c + b * look.rot_s;
+    let dy = -a * look.rot_s + b * look.rot_c;
+    (dx * look.aspect / look.inv + look.cx, dy / look.inv + look.cy)
+}
+
 fn draw(frame: &mut ModeFrame<'_>, p: &[f32; KNOBS]) {
     let (w, h) = (frame.width, frame.height);
     if w == 0 || h == 0 {
@@ -220,45 +333,19 @@ fn draw(frame: &mut ModeFrame<'_>, p: &[f32; KNOBS]) {
         measure_layer(NAME, "field", || eval_field(field, w, h, &look));
         measure_layer(NAME, "wash", || paint_wash(frame.grid, field, w, h, &look));
         measure_layer(NAME, "ink", || paint_ink(frame.grid, field, w, h, &look));
+        if look.tracers > 0 {
+            measure_layer(NAME, "flow", || paint_flow(frame.grid, w, h, &look));
+        }
     });
 }
 
-/// Evaluate the analytic potential and its derivative by Horner per cell.
+/// Fill the per-cell potential samples over the whole grid.
 fn eval_field(field: &mut [Sample], w: usize, h: usize, look: &Look) {
-    let degree = look.degree;
     each_row(field, w, h, |(y, row)| {
-        let dy = (y as f32 + 0.5 - look.cy) * look.inv;
         for (x, cell) in row.iter_mut().enumerate() {
-            let dx = (x as f32 + 0.5 - look.cx) * look.inv / look.aspect;
-            let mut zx = dx * look.rot_c - dy * look.rot_s;
-            let mut zy = dx * look.rot_s + dy * look.rot_c;
-            if look.warp > 0.0 {
-                zx += noise(look.seed, L_WARP, dx * 2.6, dy * 2.6) * look.warp * 0.14;
-                zy += noise(look.seed, L_WARP, dx * 2.6 + 40.0, dy * 2.6 - 17.0) * look.warp * 0.14;
-            }
-            let mut ar = 0.0f32;
-            let mut ai = 0.0f32;
-            let mut gr = 0.0f32;
-            let mut gi = 0.0f32;
-            for k in (1..=degree).rev() {
-                let ck = k as f32;
-                let nk = look.cr[k];
-                let mk = look.ci[k];
-                let nr = ar * zx - ai * zy + nk;
-                let ni = ar * zy + ai * zx + mk;
-                let gnr = gr * zx - gi * zy + ck * nk;
-                let gni = gr * zy + gi * zx + ck * mk;
-                ar = nr;
-                ai = ni;
-                gr = gnr;
-                gi = gni;
-            }
-            *cell = Sample {
-                phi: ar * zx - ai * zy,
-                psi: ar * zy + ai * zx,
-                re: gr,
-                im: gi,
-            };
+            let (a, b) = cell_to_plane(x as f32 + 0.5, y as f32 + 0.5, look, true);
+            let (phi, psi, re, im) = potential(a, b, look);
+            *cell = Sample { phi, psi, re, im };
         }
     });
 }
@@ -281,7 +368,7 @@ fn paint_wash(grid: &mut Grid, field: &[Sample], w: usize, h: usize, look: &Look
     }
 }
 
-/// Draw both families as thin lines, oriented by the local complex velocity.
+/// Draw both families as thin lines, oriented and lit by the local velocity.
 fn paint_ink(grid: &mut Grid, field: &[Sample], w: usize, h: usize, look: &Look) {
     let paint = |(y, row): (usize, &mut Vec<Cell>)| {
         let base = y * w;
@@ -289,7 +376,6 @@ fn paint_ink(grid: &mut Grid, field: &[Sample], w: usize, h: usize, look: &Look)
             let s = field[base + x];
             let spd = (s.re * s.re + s.im * s.im).sqrt();
             let vel = spd / (1.0 + spd);
-            let glow = 0.55 + look.depth * vel;
             let fx = s.phi * look.dens;
             let fy = s.psi * look.dens;
             let dr = (fx - fx.round()).abs();
@@ -300,39 +386,22 @@ fn paint_ink(grid: &mut Grid, field: &[Sample], w: usize, h: usize, look: &Look)
             let equip = rphi >= rpsi;
             let line = if equip { rphi } else { rpsi };
             if line > 0.04 {
-                let slope = if equip {
-                    let den = s.im * look.aspect;
-                    if den.abs() < 1e-3 {
-                        1e3
-                    } else {
-                        s.re / den
-                    }
-                } else {
-                    let den = s.re * look.aspect;
-                    if den.abs() < 1e-3 {
-                        1e3
-                    } else {
-                        -s.im / den
-                    }
-                };
-                let glyph = if rphi > 0.55 && rpsi > 0.55 {
-                    '+'
-                } else {
-                    glyph_for(slope)
-                };
-                let hue = if equip { look.hue + 36.0 } else { look.hue };
-                let light = (0.42 + 0.5 * smooth(line) * glow).min(0.9);
-                cell.fg = hsl_to_rgb((hue / 360.0).rem_euclid(1.0) as f64, 0.72, light as f64);
+                let slope = orient(equip, s.re, s.im, look.aspect);
+                let node = rphi > 0.55 && rpsi > 0.55;
+                let glyph = if node { '*' } else { glyph_for(slope) };
+                let hue = look.hue + if equip { 90.0 } else { 0.0 } + 28.0 * (vel - 0.5);
+                let light = (0.4 + 0.5 * smooth(line) * (0.55 + look.depth * vel)).min(0.92);
+                cell.fg = hsl_to_rgb((hue / 360.0).rem_euclid(1.0) as f64, 0.7, light as f64);
                 cell.ch = glyph;
             } else {
                 let halo_th = th * 3.0;
                 let halo = (1.0 - dr.min(dc) / halo_th).max(0.0);
                 if halo > 0.02 && look.halo > 0.0 {
-                    let hue = if equip { look.hue + 36.0 } else { look.hue };
+                    let hue = look.hue + if equip { 90.0 } else { 0.0 };
                     cell.fg = hsl_to_rgb(
                         (hue / 360.0).rem_euclid(1.0) as f64,
                         0.5,
-                        (look.halo * halo * 0.28 * glow) as f64,
+                        (look.halo * halo * 0.26) as f64,
                     );
                     cell.ch = if halo > 0.5 { '.' } else { ' ' };
                 }
@@ -343,6 +412,75 @@ fn paint_ink(grid: &mut Grid, field: &[Sample], w: usize, h: usize, look: &Look)
         grid.par_iter_mut().enumerate().for_each(paint);
     } else {
         grid.iter_mut().enumerate().for_each(paint);
+    }
+}
+
+/// Advect flow comets along the streamlines and stamp them as bright beads.
+fn paint_flow(grid: &mut Grid, w: usize, h: usize, look: &Look) {
+    PATH.with(|slot| {
+        let mut path = slot.borrow_mut();
+        if path.len() < NSTEP {
+            path.resize(NSTEP, (0.0f32, 0.0f32));
+        }
+        let t = look.seed;
+        for j in 0..look.tracers {
+            let sx = unit(hash(t, L_TRAC, j as u64, 0)) * w as f32;
+            let sy = unit(hash(t, L_TRAC, j as u64, 1)) * h as f32;
+            let (mut a, mut b) = cell_to_plane(sx, sy, look, false);
+            let ph = unit(hash(t, L_TRAC, j as u64, 2)) + look.time * look.flow;
+            let r = ph - ph.floor();
+            let head = TAIL + (r * (NSTEP - 1 - TAIL) as f32) as usize;
+            for i in 0..NSTEP {
+                let (_phi, _psi, re, im) = potential(a, b, look);
+                let mag = (re * re + im * im).sqrt().max(1e-4);
+                path[i] = plane_to_cell(a, b, look);
+                a += re / mag * 0.05;
+                b += -im / mag * 0.05;
+            }
+            let (hx, hy) = path[head.min(NSTEP - 1)];
+            stamp(grid, w, h, hx, hy, 'o', look.hue, 0.35, 0.85);
+            for k in 1..=TAIL {
+                if head >= k {
+                    let (cx, cy) = path[head - k];
+                    let l = 0.66 - 0.1 * k as f32;
+                    stamp(grid, w, h, cx, cy, if k < 3 { '+' } else { '.' }, look.hue, 0.4, l as f64);
+                }
+            }
+        }
+    });
+}
+
+#[inline]
+fn stamp(grid: &mut Grid, w: usize, h: usize, fx: f32, fy: f32, ch: char, hue: f32, s: f64, l: f64) {
+    let x = fx.round();
+    let y = fy.round();
+    if x < 0.0 || y < 0.0 {
+        return;
+    }
+    let (x, y) = (x as usize, y as usize);
+    if x >= w || y >= h {
+        return;
+    }
+    grid[y][x].ch = ch;
+    grid[y][x].fg = hsl_to_rgb((hue / 360.0).rem_euclid(1.0) as f64, s, l);
+}
+
+#[inline]
+fn orient(equip: bool, re: f32, im: f32, aspect: f32) -> f32 {
+    if equip {
+        let den = im * aspect;
+        if den.abs() < 1e-3 {
+            1e3
+        } else {
+            re / den
+        }
+    } else {
+        let den = re * aspect;
+        if den.abs() < 1e-3 {
+            1e3
+        } else {
+            -im / den
+        }
     }
 }
 
@@ -413,6 +551,14 @@ mod tests {
     fn time_morphs_the_net() {
         let k = knobs();
         assert_ne!(text(&frame(90, 30, 42, 0.0, &k)), text(&frame(90, 30, 42, 5.0, &k)));
+    }
+
+    #[test]
+    fn poles_change_the_net() {
+        let mut k = knobs();
+        let a = text(&frame(90, 30, 42, 0.0, &k));
+        k[12] = 0.0;
+        assert_ne!(a, text(&frame(90, 30, 42, 0.0, &k)));
     }
 
     #[test]
