@@ -22,7 +22,7 @@ const RIG: &[Joint] = &[
     j("chest", Some(1), 0.0, 1.6, 0.1, 0.9),
     j("neck", Some(2), 0.0, 1.3, 0.32, 0.5),
     j("head", Some(3), 0.0, 0.62, 0.2, 0.42),
-    j("crown", Some(4), 0.0, 0.85, -0.3, 0.4),
+    j("crown", Some(4), 0.0, 1.05, -0.25, 0.14),
     j("r_shoulder", Some(2), -1.95, 0.25, -0.05, 0.45),
     j("r_elbow", Some(6), 0.0, -2.4, 0.0, 0.4),
     j("r_wrist", Some(7), 0.0, -2.0, 0.0, 0.3),
@@ -262,7 +262,9 @@ fn shapes(world: &[Mat4], pos: &[Vec3], t: Tweak) -> Vec<Shape> {
         .filter_map(|(i, jt)| {
             jt.parent.map(|p| {
                 let core = CORE_JOINTS.contains(&jt.name);
-                Shape { core, bone: p, ..cone(pos[p], pos[i], jt.radius, jt.radius, Kind::Body) }
+                // the skull tapers to a cone at the crown (refs #1, #5); other bones are straight capsules
+                let r1 = if jt.name == "crown" { RIG[p].radius } else { jt.radius };
+                Shape { core, bone: p, ..cone(pos[p], pos[i], r1, jt.radius, Kind::Body) }
             })
         })
         .collect();
@@ -282,7 +284,7 @@ fn shapes(world: &[Mat4], pos: &[Vec3], t: Tweak) -> Vec<Shape> {
         out.push(detail(at(HEAD, a.0, a.1, a.2), at(HEAD, b.0, b.1, b.2), r, r * 0.88).on(HEAD));
     }
     // cranial ridge: a keel from brow up over the long skull
-    out.push(cone(at(HEAD, 0.0, 0.25, 0.42), at(CROWN, 0.0, 0.35, -0.1), 0.2, 0.3, Kind::Body).on(HEAD));
+    out.push(cone(at(HEAD, 0.0, 0.25, 0.42), at(CROWN, 0.0, 0.0, 0.05), 0.2, 0.12, Kind::Body).on(HEAD));
     for side in [-1.0, 1.0] {
         let (shoulder, elbow) = if side < 0.0 { (R_SHOULDER, R_ELBOW) } else { (L_SHOULDER, L_ELBOW) };
         // trapezius as a fan of bundles: spine origins (skull base down to upper back) to clavicle/acromion
