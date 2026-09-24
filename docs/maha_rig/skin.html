@@ -44,31 +44,35 @@ const W = 480, H = 600, COLS = 80, ROWS = 60, WIRE = 1, CONT = 2;
 
 // Knobs: [group, key, label, min, max, step, default]. Angles in degrees, lengths in rig units, scales as factors.
 const SPEC = [
-  ['timing', 'speed', 'cycles / sec', 0, 2, 0.01, 0.72],
+  ['timing', 'speed', 'cycles / sec', 0, 2, 0.01, 0.55],
   ['timing', 'phase', 'phase (paused)', 0, 1, 0.001, 0],
-  ['legs', 'strideRatio', 'stride / leg length', 0, 1.6, 0.01, 0.78],
-  ['legs', 'duty', 'stance share', 0.5, 0.8, 0.01, 0.62],
-  ['legs', 'liftRatio', 'foot lift / leg', 0, 0.3, 0.005, 0.11],
-  ['legs', 'reach', 'leg extension', 0.8, 1, 0.005, 0.97],
+  ['legs', 'strideRatio', 'stride / leg length', 0, 1.6, 0.01, 1.15],
+  ['legs', 'duty', 'stance share', 0.5, 0.8, 0.01, 0.64],
+  ['legs', 'liftRatio', 'foot lift / leg', 0, 0.3, 0.005, 0.09],
+  ['legs', 'liftSkew', 'lift peaks early', 0.3, 1, 0.01, 0.6],
+  ['legs', 'kneeLoad', 'knee give at landing', 0, 35, 0.5, 15],
+  ['legs', 'kneeMid', 'knee at midstance', 0, 30, 0.5, 5],
   ['legs', 'autoHeight', 'hips ride legs', 0, 1, 0.05, 1],
-  ['legs', 'footOut', 'stance width', -0.4, 0.8, 0.01, 0.1],
+  ['legs', 'footOut', 'stance width', -0.6, 0.8, 0.01, -0.25],
   ['legs', 'footLevel', 'foot stays flat', 0, 1, 0.05, 1],
-  ['legs', 'toeLift', 'toe up in swing', 0, 40, 0.5, 12],
-  ['legs', 'toeRoll', 'heel peel at push', 0, 40, 0.5, 14],
-  ['weight', 'weightShift', 'weight shift', 0, 0.8, 0.01, 0.08],
-  ['weight', 'hipDrop', 'hip drop', 0, 15, 0.25, 1.25],
-  ['weight', 'counterLean', 'torso counter-lean', 0, 1.5, 0.05, 0.3],
+  ['legs', 'heelStrike', 'toe up at landing', 0, 30, 0.5, 12],
+  ['legs', 'toeRoll', 'heel peel at push', 0, 50, 0.5, 30],
+  ['weight', 'weightShift', 'weight shift', 0, 0.8, 0.01, 0.18],
+  ['weight', 'hipDrop', 'hip drop', 0, 15, 0.25, 2.25],
+  ['weight', 'counterLean', 'torso counter-lean', 0, 2, 0.05, 1.3],
+  ['weight', 'shoulderSway', 'shoulders lean over foot', 0, 6, 0.1, 1.5],
   ['weight', 'bob', 'vertical bob', 0, 0.8, 0.01, 0],
-  ['torso', 'pelvisTwist', 'pelvis twist', 0, 25, 0.5, 2.5],
-  ['torso', 'torsoTwist', 'torso twist', 0, 40, 0.5, 13],
-  ['torso', 'spineShare', 'twist in spine', 0, 1, 0.05, 0.7],
-  ['torso', 'lean', 'forward lean', -10, 20, 0.5, 0.5],
-  ['torso', 'headStab', 'head holds front', 0, 1, 0.05, 0.8],
-  ['arms', 'armSwing', 'arm swing', 0, 60, 0.5, 11],
-  ['arms', 'armCross', 'arm cross in', 0, 30, 0.5, 5.5],
-  ['arms', 'armSpread', 'arm spread', 0, 40, 0.5, 9.5],
-  ['arms', 'elbowRest', 'elbow rest', 0, 60, 0.5, 5.5],
-  ['arms', 'elbowSwing', 'elbow fwd bend', 0, 80, 0.5, 32.5],
+  ['torso', 'pelvisTwist', 'pelvis twist', 0, 25, 0.5, 3],
+  ['torso', 'torsoTwist', 'torso twist', 0, 40, 0.5, 6],
+  ['torso', 'spineShare', 'twist in spine', 0, 1, 0.05, 0.6],
+  ['torso', 'lean', 'forward lean', -10, 20, 0.5, 2],
+  ['torso', 'headStab', 'head holds front', 0, 1, 0.05, 0.6],
+  ['arms', 'armSwing', 'arm swing', 0, 60, 0.5, 9],
+  ['arms', 'armBias', 'swing biased back', -20, 10, 0.5, -6],
+  ['arms', 'armCross', 'arm cross in', 0, 30, 0.5, 3],
+  ['arms', 'armSpread', 'arm spread', 0, 40, 0.5, 13],
+  ['arms', 'elbowRest', 'elbow rest', 0, 60, 0.5, 12],
+  ['arms', 'elbowSwing', 'elbow fwd bend', 0, 80, 0.5, 20],
   ['arms', 'wristFlex', 'wrist curl', -30, 50, 0.5, 8],
   ['arms', 'wristLag', 'hand trails swing', 0, 40, 0.5, 10],
   ['traps', 'trapHeight', 'trap height', -1, 2, 0.01, 0],
@@ -101,12 +105,16 @@ const TIPS = {
   strideRatio: 'How far the body travels per cycle, as a multiple of leg length.',
   duty: 'Share of the cycle each foot spends planted. Above 0.5 means both feet are down for a moment.',
   liftRatio: 'Peak foot height during the swing, as a share of leg length.',
-  reach: 'How straight the planted leg gets. 1 = locked knee, lower = more bent, softer walk.',
+  kneeLoad: 'Knee bend as the foot takes the weight, peaking about 13% into the cycle. Textbook 15-20.',
+  kneeMid: 'Knee bend once the body is over the foot. Textbook about 5.',
+  liftSkew: 'Shape of the foot lift. Lower = peak earlier in the swing, like a real knee flick.',
+  shoulderSway: 'Upper body leans over the planted foot, in degrees. Shoulders carry the sway, not the hips.',
+  armBias: 'Shifts the arm swing backward (negative), as real arms swing more back than forward.',
   autoHeight: '1 = hips rise and fall so both feet reach the ground. 0 = hips hold a fixed height.',
   footOut: 'Sideways distance of each foot from the hip line. Wider = more planted, lumbering.',
   footLevel: 'How much the ankle cancels hip and knee so the planted foot stays flat.',
-  toeLift: 'Toe raised while the foot swings forward, in degrees.',
-  toeRoll: 'Heel lifting off at the end of the stance, before push-off, in degrees.',
+  heelStrike: 'Toe raised as the heel lands, rolling flat by about 15% of the stance.',
+  toeRoll: 'Heel peel at push-off, pivoting on the ball of the foot, in degrees. Drives the toe-off knee bend.',
   weightShift: 'Pelvis slides sideways over whichever foot is planted.',
   hipDrop: 'Swing-side hip dips while the other leg carries the weight, in degrees.',
   counterLean: 'Torso tilts against the hip drop to stay balanced. 1 = cancels it.',
@@ -152,22 +160,22 @@ const DEFAULTS = Object.fromEntries(SPEC.map(s => [s[1], s[6]]));
 const PRESETS = {
   'hafley: calm fire walk': {},
   'unhurried god': {speed: 0.5, strideRatio: 0.67, torsoTwist: 16, armSwing: 8, armCross: 4, weightShift: 0.32, hipDrop: 5, lean: 2, wristLag: 14, headStab: 0.95},
-  'heavy stride': {speed: 0.8, strideRatio: 1.02, liftRatio: 0.16, reach: 0.93, pelvisTwist: 8, torsoTwist: 20, armSwing: 25, armCross: 10, weightShift: 0.25, hipDrop: 6, bob: 0.1, elbowSwing: 40},
-  'lumbering giant': {speed: 0.45, strideRatio: 0.63, footOut: 0.35, reach: 0.94, weightShift: 0.5, hipDrop: 8, counterLean: 0.9, torsoTwist: 10, armSwing: 6, lean: 6, elbowRest: 15, shoulderDrop: 0.35},
-  'stalking': {speed: 0.6, strideRatio: 0.7, liftRatio: 0.18, reach: 0.88, lean: 10, armSwing: 14, armCross: 12, weightShift: 0.18, headStab: 1, wristFlex: 18},
-  'rising from the ash': {speed: 0.32, strideRatio: 0.43, liftRatio: 0.06, reach: 0.9, duty: 0.7, lean: 12, weightShift: 0.6, hipDrop: 10, counterLean: 1.1, headStab: 0.2, armSwing: 4, elbowRest: 25, wristFlex: 22, wristLag: 20, bodyDrift: 0.6},
+  'heavy stride': {speed: 0.8, strideRatio: 1.02, liftRatio: 0.16, pelvisTwist: 8, torsoTwist: 20, armSwing: 25, armCross: 10, weightShift: 0.25, hipDrop: 6, bob: 0.1, elbowSwing: 40},
+  'lumbering giant': {speed: 0.45, strideRatio: 0.63, footOut: 0.35, weightShift: 0.5, hipDrop: 8, counterLean: 0.9, torsoTwist: 10, armSwing: 6, lean: 6, elbowRest: 15, shoulderDrop: 0.35},
+  'stalking': {speed: 0.6, strideRatio: 0.7, liftRatio: 0.18, lean: 10, armSwing: 14, armCross: 12, weightShift: 0.18, headStab: 1, wristFlex: 18},
+  'rising from the ash': {speed: 0.32, strideRatio: 0.43, liftRatio: 0.06, duty: 0.7, lean: 12, weightShift: 0.6, hipDrop: 10, counterLean: 1.1, headStab: 0.2, armSwing: 4, elbowRest: 25, wristFlex: 22, wristLag: 20, bodyDrift: 0.6},
   'embers underfoot': {speed: 0.55, weightShift: 0.14, hipDrop: 2, counterLean: 0.5},
   'procession': {speed: 0.45, strideRatio: 0.6, torsoTwist: 8, armSwing: 5, weightShift: 0.1, headStab: 1},
   'drunk on cursed energy': {weightShift: 0.45, hipDrop: 7, counterLean: 1, torsoTwist: 18, stepJitter: 0.3, footJitter: 0.25, bodyDrift: 0.8, headLook: 10},
   'sailor roll': {footOut: 0.4, weightShift: 0.5, hipDrop: 3, counterLean: 0.8, pelvisTwist: 6, armSpread: 16},
   'pendulum': {weightShift: 0.35, hipDrop: 5, torsoTwist: 20, armSwing: 22, armCross: 10},
-  'wading through fire': {speed: 0.4, lean: 8, liftRatio: 0.16, reach: 0.9, weightShift: 0.25, armSpread: 20, elbowRest: 18},
+  'wading through fire': {speed: 0.4, lean: 8, liftRatio: 0.16, weightShift: 0.25, armSpread: 20, elbowRest: 18},
   'shoulder-led': {torsoTwist: 26, spineShare: 0.3, pelvisTwist: 1, weightShift: 0.12, armSwing: 18},
   'hip-led swagger': {pelvisTwist: 12, weightShift: 0.3, hipDrop: 4, torsoTwist: 8, armSwing: 16},
   'weary': {speed: 0.38, lean: 10, headStab: 0.3, armSwing: 4, elbowRest: 3, weightShift: 0.2, hipDrop: 3, stepJitter: 0.15, bodyDrift: 0.4},
   'march of the wheel': {speed: 0.9, strideRatio: 0.9, armSwing: 26, elbowSwing: 45, weightShift: 0.06, hipDrop: 0.5, headStab: 1},
   'slow giant roll': {speed: 0.35, strideRatio: 0.55, footOut: 0.45, weightShift: 0.6, hipDrop: 6, counterLean: 1, torsoTwist: 16},
-  'predator': {speed: 0.55, reach: 0.88, lean: 7, liftRatio: 0.08, weightShift: 0.18, torsoTwist: 18, headStab: 1},
+  'predator': {speed: 0.55, lean: 7, liftRatio: 0.08, weightShift: 0.18, torsoTwist: 18, headStab: 1},
   'after the adaptation': {speed: 0.5, weightShift: 0.2, hipDrop: 2.5, torsoTwist: 15, bodyDrift: 0.4, headLook: 12},
   'restless': {stepJitter: 0.25, footJitter: 0.15, bodyDrift: 0.7, headLook: 20, armVar: 0.6},
 };
@@ -308,6 +316,7 @@ const at = Object.fromEntries(RIG.joints.map((j, i) => [j.name, i]));
 // Leg measurements come from the rig itself, so proportion sliders keep the gait consistent.
 const THIGH = -RIG.joints[at.r_knee].offset[1], SHIN = -RIG.joints[at.r_ankle].offset[1];
 const HIP_Y = RIG.joints[at.pelvis].offset[1] + RIG.joints[at.r_hip].offset[1];
+const HIP_X = Math.abs(RIG.joints[at.r_hip].offset[0]);
 const GROUND_ANKLE_Y = HIP_Y - THIGH - SHIN;
 const legLength = () => (THIGH + SHIN) * K.legLen;
 const stride = () => K.strideRatio * legLength();
@@ -420,43 +429,77 @@ function walkRots(ph) {
   const drift = k => K.bodyDrift * wander(clock * 0.3, k);
   const pelvisYaw = K.pelvisTwist * s;
   const upper = -K.torsoTwist * s - pelvisYaw + 4 * drift(2);
-  const roll = -K.hipDrop * w + 2 * drift(3);
+  const roll = -K.hipDrop * Math.cos(2 * Math.PI * (ph - (K.duty - 0.45))) + 2 * drift(3);
   const swingSize = side => K.armSwing * (1 + K.armVar * (hash(Math.floor(legCycle(side)), 11) - 0.5));
   const arm = (side, f, df) => ({
-    [`${side}_shoulder`]: [swingSize(side) * f, K.armSpread - K.armCross * f, 0],
+    [`${side}_shoulder`]: [K.armBias + swingSize(side) * f, K.armSpread - K.armCross * f, 0],
     [`${side}_elbow`]: [K.elbowRest + K.elbowSwing * Math.max(0, f), 0, 0],
     [`${side}_wrist`]: [K.wristFlex - K.wristLag * df, 0, 0],
   });
   return {
     pelvis: [0, roll, pelvisYaw],
-    spine: [K.lean + 3 * drift(1), -roll * K.counterLean, upper * K.spineShare],
+    spine: [K.lean + 3 * drift(1), -roll * K.counterLean + K.shoulderSway * w, upper * K.spineShare],
     chest: [0, 0, upper * (1 - K.spineShare)],
-    neck: [-K.lean * 0.6 + 0.3 * K.headLook * wander(clock * 0.2, 5), 0, K.torsoTwist * s * K.headStab + K.headLook * wander(clock * 0.15, 4)],
+    neck: [
+      -K.lean * 0.6 + 0.3 * K.headLook * wander(clock * 0.2, 5),
+      -(roll * (1 - K.counterLean) + K.shoulderSway * w) * K.headStab,
+      K.torsoTwist * s * K.headStab + K.headLook * wander(clock * 0.15, 4),
+    ],
     ...arm('r', -s, -c), ...arm('l', s, c),
     root: [-K.weightShift * w, K.bob * Math.cos(4 * Math.PI * (ph - K.duty / 2))],
   };
 }
 
-// Foot path per leg, u = leg phase. Stance [0, duty): pinned in world while the body passes over it.
-// Swing: lifts on an arc and lands a full stride ahead. Returns target ankle z relative to the body, lift, swing progress.
+// Foot path per leg, u = leg phase. Stance [0, duty): pinned while the body passes over, then the heel peels
+// by pivoting on the ball of the foot. Swing: lift peaks early, the foot lands a full stride ahead toe-up.
 const smooth = v => v * v * (3 - 2 * v);
+const BALL = 0.8;
 function footPath(u) {
-  const st = stride(), sd = st * K.duty;
-  if (u < K.duty) return {z: sd / 2 - st * u, lift: 0, swing: 0, stance: u / K.duty};
+  const st = stride(), sd = st * K.duty, peelMax = K.toeRoll * D;
+  if (u < K.duty) {
+    const s = u / K.duty;
+    const peel = peelMax * Math.max(0, (s - 0.55) / 0.45) ** 2;
+    const strike = s < 0.15 ? K.heelStrike * (1 - s / 0.15) : 0;
+    return {z: sd / 2 - st * u + BALL * (1 - Math.cos(peel)), lift: BALL * Math.sin(peel), swing: 0, stance: s, foot: strike - peel / D};
+  }
   const v = (u - K.duty) / (1 - K.duty);
-  return {z: -sd / 2 + sd * smooth(v), lift: K.liftRatio * legLength() * Math.sin(Math.PI * v), swing: v, stance: 1};
+  const z0 = -sd / 2 + BALL * (1 - Math.cos(peelMax)), y0 = BALL * Math.sin(peelMax);
+  const e = smooth(v);
+  return {
+    z: z0 + (sd / 2 - z0) * e,
+    lift: y0 * (1 - v) + K.liftRatio * legLength() * Math.sin(Math.PI * v ** K.liftSkew),
+    swing: v, stance: 1, foot: -K.toeRoll * (1 - e) + K.heelStrike * e,
+  };
 }
 const legPhase = (side, ph) => (side === 'r' ? ph : (ph + 0.5) % 1);
 
-// Hip height that lets both legs reach their feet at the chosen extension (planted leg vaults the body).
+// Stance knee profile (degrees): 5 at heel strike, rising to kneeLoad by 20% of stance, easing to kneeMid by 50%.
+function stanceKnee(s) {
+  if (s < 0.2) return 5 + (K.kneeLoad - 5) * Math.sin((Math.PI / 2) * (s / 0.2));
+  if (s < 0.5) return K.kneeLoad + (K.kneeMid - K.kneeLoad) * (1 - Math.cos((Math.PI * (s - 0.2)) / 0.3)) / 2;
+  return K.kneeMid;
+}
+const reachAt = kneeDeg => {
+  const lt = THIGH * K.legLen, ls = SHIN * K.legLen;
+  return Math.sqrt(lt * lt + ls * ls + 2 * lt * ls * Math.cos(kneeDeg * D));
+};
+
+// Hip height from the planted legs at their knee profile, plus the swing leg in its last quarter so the body
+// drops into the next heel strike. The swing leg early in swing never holds the body down.
 function ridingHipY(ph) {
-  const reach = legLength() * K.reach;
   let hip = Infinity;
   for (const side of ['r', 'l']) {
     const f = footPath(legPhase(side, ph));
-    hip = Math.min(hip, GROUND_ANKLE_Y + f.lift + Math.sqrt(Math.max(0, reach * reach - f.z * f.z)));
+    if (f.swing > 0 && f.swing < 0.75) continue;
+    const r = reachAt(f.swing > 0 ? 5 : stanceKnee(f.stance));
+    hip = Math.min(hip, GROUND_ANKLE_Y + f.lift + Math.sqrt(Math.max(0, r * r - f.z * f.z)));
   }
   return hip;
+}
+function lowestHipY() {
+  let lo = Infinity;
+  for (let i = 0; i < 32; i++) lo = Math.min(lo, ridingHipY(i / 32));
+  return lo;
 }
 
 const pelvisInv = new THREE.Matrix4();
@@ -466,7 +509,7 @@ function solveLeg(side, ph, bodyZ) {
   const sgn = side === 'r' ? -1 : 1;
   const hipIdx = at[`${side}_hip`];
   const j = stepJitter(side);
-  const target = new THREE.Vector3(sgn * (0.8 + K.footOut + j.x), GROUND_ANKLE_Y + f.lift, bodyZ + f.z + j.z);
+  const target = new THREE.Vector3(sgn * (HIP_X + K.footOut + j.x), GROUND_ANKLE_Y + f.lift, bodyZ + f.z + j.z);
   const rel = target.applyMatrix4(pelvisInv).sub(base(hipIdx));
   const lt = THIGH * K.legLen, ls = SHIN * K.legLen;
   const dy = -rel.y, dz = rel.z;
@@ -475,11 +518,10 @@ function solveLeg(side, ph, bodyZ) {
   const hip = Math.atan2(dz, dy) + Math.acos((lt * lt + d * d - ls * ls) / (2 * lt * d));
   const spread = Math.atan2(rel.x * sgn, dy);
   const hipDeg = hip / D, kneeDeg = -knee / D;
-  const heel = f.swing > 0 ? K.toeLift * Math.sin(Math.PI * f.swing) : -K.toeRoll * Math.max(0, (f.stance - 0.7) / 0.3);
   return {
     [`${side}_hip`]: [hipDeg, spread / D, 0],
     [`${side}_knee`]: [kneeDeg, 0, 0],
-    [`${side}_ankle`]: [-(hipDeg + kneeDeg) * K.footLevel + heel, 0, 0],
+    [`${side}_ankle`]: [-(hipDeg + kneeDeg) * K.footLevel + f.foot, 0, 0],
   };
 }
 
@@ -492,8 +534,8 @@ function applyPose(rots, ph, bodyZ) {
   });
   if (showRest) return;
   bones[0].position.x += rots.root[0];
-  const fixedHip = GROUND_ANKLE_Y + legLength() * K.reach;
-  bones[0].position.y += rots.root[1] + (fixedHip + (ridingHipY(ph) - fixedHip) * K.autoHeight) - HIP_Y;
+  const low = lowestHipY();
+  bones[0].position.y += rots.root[1] + (low + (ridingHipY(ph) - low) * K.autoHeight) - HIP_Y;
   bones[0].position.z += bodyZ;
   bones[at.chest].position.y *= K.torsoLen;
   bones[at.head].scale.setScalar(K.headSize);
