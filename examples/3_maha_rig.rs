@@ -87,7 +87,7 @@ const fn tw(yaw: f32) -> Rot {
 // Walk toward camera: chest counter-twists against the pelvis, arms swing opposite the legs.
 const KEYS: &[Key] = &[
     Key { name: "K0 stand", bob: 0.0, rots: &[
-        ("r_shoulder", r(0.0, 16.0)), ("l_shoulder", r(0.0, 16.0)),
+        ("r_shoulder", r(0.0, 32.0)), ("l_shoulder", r(0.0, 32.0)),
         ("r_elbow", r(10.0, 0.0)), ("l_elbow", r(10.0, 0.0)),
         ("r_hip", r(0.0, 3.0)), ("l_hip", r(0.0, 3.0)),
     ]},
@@ -272,7 +272,7 @@ fn shapes(world: &[Mat4], pos: &[Vec3], t: Tweak) -> Vec<Shape> {
         let cap = at(shoulder, side * (0.18 + t.delt_out + t.delt_cap * 0.4), 0.0 + t.delt_cap * 0.5, 0.0);
         out.push(cone(cap, cap + Vec3::Y * 0.01, 0.35 + t.delt_cap * 0.35, 0.35 + t.delt_cap * 0.35, Kind::Body).on(shoulder));
         out.push(core(at(CHEST, side * 0.2, 0.3, 0.55), at(CHEST, side * 0.85, 0.35, 0.4), 0.5, 0.45).on(CHEST));
-        out.push(core(at(CHEST, side * 0.9, -0.1, -0.15), at(CHEST, side * 0.55, -2.0, 0.0), 0.45, 0.35).on(CHEST));
+        out.push(core(at(CHEST, side * 0.72, -0.25, -0.3), at(CHEST, side * 0.5, -2.0, -0.05), 0.42, 0.33).on(CHEST));
         out.push(cone(at(shoulder, 0.0, -0.8, 0.15), at(shoulder, 0.0, -1.7, 0.13), 0.43, 0.34, Kind::Body).on(shoulder));
         out.push(cone(at(shoulder, 0.0, -0.6, -0.14), at(shoulder, 0.0, -1.9, -0.1), 0.36, 0.27, Kind::Body).on(shoulder));
         out.push(cone(at(elbow, 0.0, -0.3, 0.03), at(elbow, 0.0, -1.6, 0.0), 0.34, 0.22, Kind::Body).on(elbow));
