@@ -228,6 +228,9 @@ struct Tweak {
     trap_mass: f32,
     trap_reach: f32,
     trap_slope: f32,
+    delt_mass: f32,
+    delt_length: f32,
+    delt_out: f32,
 }
 
 fn shapes(world: &[Mat4], pos: &[Vec3], t: Tweak) -> Vec<Shape> {
@@ -254,7 +257,16 @@ fn shapes(world: &[Mat4], pos: &[Vec3], t: Tweak) -> Vec<Shape> {
             let r = 0.36 - 0.1 * f + t.trap_mass;
             out.push(core(origin, insert, r, r * 0.8).on(CHEST));
         }
-        out.push(cone(at(shoulder, side * 0.2, -0.15, 0.05), at(shoulder, side * 0.1, -1.2, 0.05), 0.72, 0.5, Kind::Body).on(shoulder));
+        out.push(
+            cone(
+                at(shoulder, side * (0.2 + t.delt_out), -0.15, 0.05),
+                at(shoulder, side * (0.1 + t.delt_out * 0.5), -1.2 - t.delt_length, 0.05),
+                0.72 + t.delt_mass,
+                0.5 + t.delt_mass * 0.6,
+                Kind::Body,
+            )
+            .on(shoulder),
+        );
         out.push(core(at(CHEST, side * 0.25, 0.3, 0.6), at(CHEST, side * 1.4, 0.35, 0.4), 0.8, 0.7).on(CHEST));
         out.push(core(at(CHEST, side * 1.3, -0.1, -0.15), at(CHEST, side * 0.7, -2.0, 0.0), 0.62, 0.45).on(CHEST));
         out.push(cone(at(shoulder, 0.0, -0.9, 0.22), at(shoulder, 0.0, -1.9, 0.2), 0.72, 0.56, Kind::Body).on(shoulder));
@@ -848,6 +860,9 @@ fn skin_json(voxel: f32) -> String {
         ("trapMass", Tweak { trap_mass: 0.2, ..Tweak::default() }),
         ("trapReach", Tweak { trap_reach: 0.35, ..Tweak::default() }),
         ("trapSlope", Tweak { trap_slope: 0.35, ..Tweak::default() }),
+        ("deltMass", Tweak { delt_mass: 0.2, ..Tweak::default() }),
+        ("deltLength", Tweak { delt_length: 0.4, ..Tweak::default() }),
+        ("deltOut", Tweak { delt_out: 0.2, ..Tweak::default() }),
     ];
     let morphs: Vec<(&str, Vec<Shape>)> =
         unit.iter().map(|(name, t)| (*name, body_of(&posed_with(&rest, *t).caps))).collect();
