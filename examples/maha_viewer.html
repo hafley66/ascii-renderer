@@ -63,6 +63,29 @@ function orient(k) {
   return idx;
 }
 
+// Ink seams: where neighbouring vertices belong to different muscles, join the edge midpoints
+// (anime line art draws the borders between muscles, not shading). Only in valleys: ?crease= sets
+// how deep the fillet must be, so colinear bone capsules along a limb get no ring cut. Nudged out along the normal.
+const inkMat = new THREE.LineBasicMaterial({color: 0x5a1a10});
+const INK_CREASE = +(q.get('crease') || 1.2);
+function seamSegments(idx, P, N, owner, crease) {
+  const out = [];
+  const mid = (a, b) => new THREE.Vector3(
+    (P[3*a] + P[3*b]) / 2 + (N[3*a] + N[3*b]) * 0.02,
+    (P[3*a+1] + P[3*b+1]) / 2 + (N[3*a+1] + N[3*b+1]) * 0.02,
+    (P[3*a+2] + P[3*b+2]) / 2 + (N[3*a+2] + N[3*b+2]) * 0.02);
+  for (let t = 0; t < idx.length; t += 3) {
+    const v = [idx[t], idx[t+1], idx[t+2]];
+    const cut = [[0, 1], [1, 2], [2, 0]].filter(([i, j]) => owner[v[i]] !== owner[v[j]] && crease[v[i]] + crease[v[j]] > 2 * INK_CREASE).map(([i, j]) => mid(v[i], v[j]));
+    if (cut.length === 2) out.push(cut[0], cut[1]);
+    if (cut.length === 3) {
+      const c = cut[0].clone().add(cut[1]).add(cut[2]).divideScalar(3);
+      for (const m of cut) out.push(m, c);
+    }
+  }
+  return out;
+}
+
 const built = KEYS.map(k => {
   const idx = orient(k);
   const pos = new Float32Array(k.pos), nrm = new Float32Array(k.nrm);
@@ -80,6 +103,9 @@ const built = KEYS.map(k => {
   const all = geo(idx);
   const wire = new THREE.Group(), cont = new THREE.Group(), clay = new THREE.Group();
   clay.add(new THREE.Mesh(geo(body), clayMat), new THREE.Mesh(geo(skirt), clothMat));
+  const seams = new THREE.BufferGeometry().setFromPoints(seamSegments(idx, pos, nrm, k.owner, k.crease));
+  clay.add(new THREE.LineSegments(seams, inkMat));
+  cont.add(new THREE.LineSegments(seams, inkMat));
   wire.add(new THREE.Mesh(all, new THREE.MeshBasicMaterial({color: 0x140b0a, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1})));
   for (const [ix, color] of [[body, 0xffc89a], [skirt, 0x7fb8a6]]) {
     const wg = new THREE.WireframeGeometry(geo(ix));

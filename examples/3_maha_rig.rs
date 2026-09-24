@@ -814,13 +814,28 @@ fn line_json(s: &Posed, with_bone: bool) -> String {
 fn mesh_json(key: &Frame, voxel: f32, cycle: bool) -> String {
     let s = posed(key);
     let m = surface(&s.caps, voxel);
-    let kind: Vec<u8> = m.pos.iter().map(|w| (s.caps[nearest_shape(*w, &s.caps)].kind == Kind::Skirt) as u8).collect();
+    // owning shape per vertex: the viewer inks the seams where ownership changes
+    let owner: Vec<usize> = m.pos.iter().map(|w| nearest_shape(*w, &s.caps)).collect();
+    let kind: Vec<u8> = owner.iter().map(|&o| (s.caps[o].kind == Kind::Skirt) as u8).collect();
+    // crease: concavity of the field (negative Laplacian of the SDF ~ valley between two masses)
+    let e = 0.08;
+    let crease: Vec<String> = m
+        .pos
+        .iter()
+        .map(|&w| {
+            let f = |d: Vec3| scene_sdf(w + d * e, &s.caps);
+            let lap = f(Vec3::X) + f(-Vec3::X) + f(Vec3::Y) + f(-Vec3::Y) + f(Vec3::Z) + f(-Vec3::Z) - 6.0 * f(Vec3::ZERO);
+            format!("{:.2}", (-lap / (e * e)).max(0.0))
+        })
+        .collect();
     format!(
-        "{{\"name\":\"{}\",\"cycle\":{cycle},\"pos\":[{}],\"nrm\":[{}],\"kind\":[{}],\"idx\":[{}],\"lines\":[{}]}}",
+        "{{\"name\":\"{}\",\"cycle\":{cycle},\"pos\":[{}],\"nrm\":[{}],\"kind\":[{}],\"owner\":[{}],\"crease\":[{}],\"idx\":[{}],\"lines\":[{}]}}",
         key.name,
         floats(&m.pos),
         floats(&m.nrm),
         ints(&kind),
+        ints(&owner),
+        crease.join(","),
         ints(&m.idx),
         line_json(&s, false)
     )
