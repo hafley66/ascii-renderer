@@ -16,6 +16,7 @@ button.preset{border-color:#8a5a10}
 div#knobs label{display:grid;grid-template-columns:112px 1fr 40px;align-items:center;gap:6px;font-size:12px;margin:2px 0}
 div#knobs input{width:100%}
 div.hidden{display:none}
+div#knobs label.sweeping{background:#4a2018;outline:1px solid #f0b848}
 </style>
 <main>
 <div id="bar"></div>
@@ -70,6 +71,9 @@ const SPEC = [
   ['traps', 'trapMass', 'trap mass', -1.5, 2.5, 0.01, 0],
   ['traps', 'trapReach', 'trap reach', -1.5, 1.5, 0.01, 0],
   ['traps', 'trapSlope', 'trap slope', -1.5, 1.5, 0.01, 0],
+  ['shoulders', 'deltMass', 'delt mass', -1.5, 2.5, 0.01, 0],
+  ['shoulders', 'deltLength', 'delt length', -1, 2, 0.01, 0],
+  ['shoulders', 'deltOut', 'delt bulge out', -1, 2, 0.01, 0],
   ['proportion', 'shoulderDrop', 'shoulder drop', -0.6, 0.8, 0.01, 0.25],
   ['proportion', 'shoulderWidth', 'shoulder width', 0.85, 1.15, 0.005, 1],
   ['proportion', 'armLen', 'arm length', 0.85, 1.2, 0.005, 1],
@@ -77,6 +81,8 @@ const SPEC = [
   ['proportion', 'torsoLen', 'torso length', 0.85, 1.2, 0.005, 1],
   ['proportion', 'headSize', 'head size', 0.8, 1.25, 0.005, 1],
   ['view', 'skirt', 'hakama opacity', 0, 1, 0.01, 0.35],
+  ['view', 'outline', 'outline thickness', 0, 0.3, 0.005, 0.07],
+  ['view', 'shards', 'outline shards', 0, 0.3, 0.005, 0],
 ];
 const DEFAULTS = Object.fromEntries(SPEC.map(s => [s[1], s[6]]));
 
@@ -117,6 +123,9 @@ for (const [g, key, label, min, max, step] of SPEC) {
   const out = document.createElement('span'); out.textContent = K[key];
   input.oninput = () => { K[key] = +input.value; out.textContent = input.value; persist(); };
   inputs[key] = [input, out];
+  l.onmouseenter = () => { hovered = key; };
+  l.onmouseleave = () => { if (hovered === key) hovered = null; if (sweep?.key === key) stopSweep(true); };
+  input.addEventListener('pointerdown', e => { if (sweep?.key === key) { e.preventDefault(); stopSweep(false); } });
   l.append(label, input, out); groupEl.appendChild(l);
 }
 const side = document.getElementById('side');
@@ -124,6 +133,38 @@ document.getElementById('fold').onclick = () => {
   side.classList.toggle('closed');
   document.getElementById('fold').innerHTML = side.classList.contains('closed') ? '&laquo;' : '&raquo;';
 };
+// Audition: hover a knob, press S. It glides left, then right, around its range.
+// Hover out snaps back to where it was; click pins the value it is on.
+let hovered = null, sweep = null;
+const SWEEP_PERIOD = 3;
+function showKnob(key) { inputs[key][0].value = K[key]; inputs[key][1].textContent = (+K[key]).toFixed(3).replace(/\.?0+$/, ''); }
+function stopSweep(restore) {
+  if (!sweep) return;
+  const {key, v0} = sweep;
+  inputs[key][0].parentElement.classList.remove('sweeping');
+  if (restore) K[key] = v0; else persist();
+  showKnob(key); sweep = null;
+}
+function stepSweep(now) {
+  if (!sweep) return;
+  const [input] = inputs[sweep.key];
+  const lo = +input.min, hi = +input.max, mid = (lo + hi) / 2, half = (hi - lo) / 2;
+  const t = (now - sweep.t0) / 1000;
+  K[sweep.key] = mid + half * Math.sin(sweep.theta0 - (2 * Math.PI / SWEEP_PERIOD) * t);
+  showKnob(sweep.key);
+}
+addEventListener('keydown', e => {
+  if (e.key === 'Escape') return stopSweep(true);
+  if (e.key.toLowerCase() !== 's' || e.repeat) return;
+  if (sweep) return stopSweep(true);
+  if (!hovered) return;
+  const [input] = inputs[hovered];
+  const lo = +input.min, hi = +input.max, v0 = K[hovered];
+  const theta0 = Math.asin(Math.max(-1, Math.min(1, (v0 - (lo + hi) / 2) / ((hi - lo) / 2))));
+  sweep = {key: hovered, v0, theta0, t0: performance.now()};
+  input.parentElement.classList.add('sweeping');
+});
+
 function setKnobs(values) {
   Object.assign(K, DEFAULTS, values);
   for (const k in inputs) { inputs[k][0].value = K[k]; inputs[k][1].textContent = K[k]; }
@@ -365,7 +406,22 @@ function applyPose(rots, ph, bodyZ) {
   }
 }
 
+// Outline hull rebuilt on knob change: inflate along normals, plus optional per-vertex jitter for shards.
+const hullKey = {};
+function refreshHull(geo, part) {
+  const tag = `${K.outline}:${K.shards}`;
+  if (hullKey[geo.uuid] === tag) return;
+  hullKey[geo.uuid] = tag;
+  const p = geo.attributes.position;
+  for (let i = 0; i < p.count; i++) {
+    const push = K.outline + K.shards * Math.abs((Math.sin(i * 12.9898 + 78.233) * 43758.5453) % 1);
+    p.setXYZ(i, part.pos[3*i] + part.nrm[3*i] * push, part.pos[3*i+1] + part.nrm[3*i+1] * push, part.pos[3*i+2] + part.nrm[3*i+2] * push);
+  }
+  p.needsUpdate = true;
+}
+
 function applyView() {
+  refreshHull(bodyHull, RIG.body); refreshHull(skirtHull, RIG.skirt);
   for (const m of bodyMeshes) m.geometry.userData.morphNames.forEach((n, i) => { m.morphTargetInfluences[i] = K[n]; });
   skirtMats.forEach(m => { m.opacity = K.skirt; });
   skirtMeshes.forEach(m => { m.visible = K.skirt > 0.01; });
@@ -410,6 +466,7 @@ function frame(t) {
   const moved = bodyZ - (frame.z ?? bodyZ); frame.z = bodyZ;
   if (follow) { camera.position.z += moved; controls.target.z += moved; }
   ground.position.z = Math.round(bodyZ);
+  stepSweep(t);
   applyPose(walkRots(phase), phase, bodyZ);
   applyView();
   controls.update();
