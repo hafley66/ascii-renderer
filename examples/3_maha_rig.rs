@@ -190,6 +190,7 @@ fn pose(key: &Frame) -> Vec<Mat4> {
     world
 }
 
+#[derive(Clone, Copy)]
 struct Shape {
     a: Vec3,
     b: Vec3,
@@ -386,7 +387,7 @@ fn occluded(cam: &Camera, p: Vec3, caps: &[Shape]) -> bool {
     march(cam.eye, to / len, caps, len).is_some_and(|t| t < len - 0.3)
 }
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq, Debug)]
 enum Kind {
     Body,
     Skirt,
@@ -688,7 +689,7 @@ struct Surface {
 }
 
 // Blended surface as a triangle mesh (naive surface nets) in world units.
-fn surface(s: &Posed, voxel: f32) -> Surface {
+fn surface(caps: &[Shape], voxel: f32) -> Surface {
     use fast_surface_nets::ndshape::{RuntimeShape, Shape as _};
     use fast_surface_nets::{surface_nets, SurfaceNetsBuffer};
     let origin = Vec3::new(-6.0, -1.0, -4.0);
@@ -697,7 +698,7 @@ fn surface(s: &Posed, voxel: f32) -> Surface {
     let sdf: Vec<f32> = (0..grid.usize() as u32)
         .map(|i| {
             let [x, y, z] = grid.delinearize(i);
-            scene_sdf(origin + Vec3::new(x as f32, y as f32, z as f32) * voxel, &s.caps)
+            scene_sdf(origin + Vec3::new(x as f32, y as f32, z as f32) * voxel, caps)
         })
         .collect();
     let mut buf = SurfaceNetsBuffer::default();
@@ -735,7 +736,7 @@ fn line_json(s: &Posed, with_bone: bool) -> String {
 
 fn mesh_json(key: &Frame, voxel: f32, cycle: bool) -> String {
     let s = posed(key);
-    let m = surface(&s, voxel);
+    let m = surface(&s.caps, voxel);
     let kind: Vec<u8> = m.pos.iter().map(|w| (s.caps[nearest_shape(*w, &s.caps)].kind == Kind::Skirt) as u8).collect();
     format!(
         "{{\"name\":\"{}\",\"cycle\":{cycle},\"pos\":[{}],\"nrm\":[{}],\"kind\":[{}],\"idx\":[{}],\"lines\":[{}]}}",
@@ -749,29 +750,51 @@ fn mesh_json(key: &Frame, voxel: f32, cycle: bool) -> String {
 }
 
 const SKIN_FALLOFF: f32 = 0.15;
+const SKIRT_DRAPE: f32 = 0.6;
+const R_HIP: usize = 14;
+const L_HIP: usize = 18;
 
-// Bind-pose mesh plus up to 4 bone weights per vertex: each shape's distance scores its carrying bone.
-fn skin_json(voxel: f32) -> String {
-    let rest = Frame::from_key(&KEYS[0]);
-    let s = posed(&rest);
-    let m = surface(&s, voxel);
-    let (mut skin_i, mut skin_w, mut kind) = (Vec::new(), Vec::new(), Vec::new());
+// Up to 4 bones per vertex: each carrying bone scores exp(-(d - dmin) / falloff) from its nearest shape.
+fn skin_part(caps: &[Shape], voxel: f32, falloff: f32, drape: bool) -> String {
+    let m = surface(caps, voxel);
+    let (mut skin_i, mut skin_w) = (Vec::new(), Vec::new());
     for w in &m.pos {
         let mut best = vec![f32::INFINITY; RIG.len()];
-        for c in &s.caps {
+        for c in caps {
             best[c.bone] = best[c.bone].min(sd_shape(*w, c));
+        }
+        // The hakama rides the pelvis but lets the thighs pull it along.
+        if drape {
+            let waist = (w.y - 4.0).max(0.0) * 0.8;
+            best[R_HIP] = (w.x + 0.8).abs() + waist;
+            best[L_HIP] = (w.x - 0.8).abs() + waist;
         }
         let dmin = best.iter().cloned().fold(f32::INFINITY, f32::min);
         let mut ranked: Vec<(usize, f32)> =
-            best.iter().enumerate().map(|(b, d)| (b, (-(d - dmin) / SKIN_FALLOFF).exp())).collect();
+            best.iter().enumerate().map(|(b, d)| (b, (-(d - dmin) / falloff).exp())).collect();
         ranked.sort_by(|a, b| b.1.total_cmp(&a.1));
         let total: f32 = ranked[..4].iter().map(|r| r.1).sum();
         for (b, wt) in &ranked[..4] {
             skin_i.push(*b as u32);
             skin_w.push(format!("{:.3}", wt / total));
         }
-        kind.push((s.caps[nearest_shape(*w, &s.caps)].kind == Kind::Skirt) as u8);
     }
+    format!(
+        "{{\"pos\":[{}],\"nrm\":[{}],\"idx\":[{}],\"skinIndex\":[{}],\"skinWeight\":[{}]}}",
+        floats(&m.pos),
+        floats(&m.nrm),
+        ints(&m.idx),
+        ints(&skin_i),
+        skin_w.join(",")
+    )
+}
+
+// Bind pose: the body without the hakama (legs stay visible), and the hakama as its own draped mesh.
+fn skin_json(voxel: f32) -> String {
+    let rest = Frame::from_key(&KEYS[0]);
+    let s = posed(&rest);
+    let body: Vec<Shape> = s.caps.iter().filter(|c| c.kind != Kind::Skirt).copied().collect();
+    let skirt: Vec<Shape> = s.caps.iter().filter(|c| c.kind == Kind::Skirt).copied().collect();
     let joints: Vec<String> = RIG
         .iter()
         .zip(&rest.rots)
@@ -790,14 +813,10 @@ fn skin_json(voxel: f32) -> String {
         })
         .collect();
     format!(
-        "{{\"joints\":[{}],\"pos\":[{}],\"nrm\":[{}],\"idx\":[{}],\"skinIndex\":[{}],\"skinWeight\":[{}],\"kind\":[{}],\"lines\":[{}]}}",
+        "{{\"joints\":[{}],\"body\":{},\"skirt\":{},\"lines\":[{}]}}",
         joints.join(","),
-        floats(&m.pos),
-        floats(&m.nrm),
-        ints(&m.idx),
-        ints(&skin_i),
-        skin_w.join(","),
-        ints(&kind),
+        skin_part(&body, voxel, SKIN_FALLOFF, false),
+        skin_part(&skirt, voxel, SKIRT_DRAPE, true),
         line_json(&s, true)
     )
 }
