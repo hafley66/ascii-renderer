@@ -18,11 +18,11 @@ const fn j(name: &'static str, parent: Option<usize>, x: f32, y: f32, z: f32, ra
 // Figure faces +z (toward camera), so the character's right side sits at -x (screen left).
 const RIG: &[Joint] = &[
     j("pelvis", None, 0.0, 6.35, 0.0, 0.0),
-    j("spine", Some(0), 0.0, 1.3, 0.0, 0.8),
-    j("chest", Some(1), 0.0, 1.6, 0.1, 1.15),
-    j("neck", Some(2), 0.0, 1.0, 0.25, 0.42),
-    j("head", Some(3), 0.0, 0.5, 0.32, 0.52),
-    j("crown", Some(4), 0.0, 0.7, -0.14, 0.59),
+    j("spine", Some(0), 0.0, 1.3, 0.0, 0.7),
+    j("chest", Some(1), 0.0, 1.6, 0.1, 0.9),
+    j("neck", Some(2), 0.0, 0.75, 0.45, 0.5),
+    j("head", Some(3), 0.0, 0.45, 0.3, 0.48),
+    j("crown", Some(4), 0.0, 0.8, -0.2, 0.5),
     j("r_shoulder", Some(2), -1.25, 0.35, 0.0, 0.45),
     j("r_elbow", Some(6), 0.0, -2.14, 0.0, 0.4),
     j("r_wrist", Some(7), 0.0, -1.68, 0.0, 0.25),
@@ -198,16 +198,23 @@ struct Shape {
     r2: f32,
     kind: Kind,
     core: bool,
+    // detail muscle: kept out of the soft core blend, joined with a tight crease instead
+    detail: bool,
     // joint whose world matrix carries this shape rigidly (skinning bone)
     bone: usize,
 }
 
 fn cone(a: Vec3, b: Vec3, r1: f32, r2: f32, kind: Kind) -> Shape {
-    Shape { a, b, r1, r2, kind, core: false, bone: 0 }
+    Shape { a, b, r1, r2, kind, core: false, detail: false, bone: 0 }
 }
 
 fn core(a: Vec3, b: Vec3, r1: f32, r2: f32) -> Shape {
-    Shape { a, b, r1, r2, kind: Kind::Body, core: true, bone: 0 }
+    Shape { a, b, r1, r2, kind: Kind::Body, core: true, detail: false, bone: 0 }
+}
+
+// A surface muscle with a crease at its border (abs, serratus, obliques).
+fn detail(a: Vec3, b: Vec3, r1: f32, r2: f32) -> Shape {
+    Shape { detail: true, ..core(a, b, r1, r2) }
 }
 
 impl Shape {
@@ -246,14 +253,20 @@ fn shapes(world: &[Mat4], pos: &[Vec3], t: Tweak) -> Vec<Shape> {
         })
         .collect();
     let at = |m: usize, x: f32, y: f32, z: f32| world[m].transform_point3(Vec3::new(x, y, z));
-    out.push(cone(at(HEAD, 0.0, -0.07, 0.14), at(HEAD, 0.0, -0.39, 0.25), 0.36, 0.28, Kind::Body).on(HEAD));
+    // heavy jaw: wide at the hinge, square chin jutting forward under the grin
+    for side in [-1.0, 1.0] {
+        out.push(cone(at(HEAD, side * 0.3, -0.05, 0.0), at(HEAD, side * 0.2, -0.42, 0.38), 0.24, 0.2, Kind::Body).on(HEAD));
+    }
+    out.push(cone(at(HEAD, -0.12, -0.42, 0.4), at(HEAD, 0.12, -0.42, 0.4), 0.22, 0.22, Kind::Body).on(HEAD));
+    // cranial ridge: a keel from brow up over the long skull
+    out.push(cone(at(HEAD, 0.0, 0.25, 0.42), at(CROWN, 0.0, 0.35, -0.1), 0.2, 0.3, Kind::Body).on(HEAD));
     for side in [-1.0, 1.0] {
         let (shoulder, elbow) = if side < 0.0 { (R_SHOULDER, R_ELBOW) } else { (L_SHOULDER, L_ELBOW) };
         // trapezius as a fan of bundles: spine origins (skull base down to upper back) to clavicle/acromion
         for k in 0..TRAP_BUNDLES {
             let f = k as f32 / (TRAP_BUNDLES - 1) as f32;
             // upper bundle runs skull base to acromion at about 45 degrees; lower ones fan down the back
-            let origin = at(CHEST, side * 0.28 * (1.0 - f), 1.55 - 1.4 * f + t.trap_height * (1.0 - f), -0.3 - 0.35 * f);
+            let origin = at(CHEST, side * 0.28 * (1.0 - f), 1.3 - 1.2 * f + t.trap_height * (1.0 - f), -0.3 - 0.35 * f);
             let insert = at(CHEST, side * (1.2 - 0.2 * f + t.trap_reach), 0.5 - 0.1 * f - t.trap_slope, -0.05 - 0.3 * f);
             let r = 0.34 - 0.1 * f + t.trap_mass;
             out.push(core(origin, insert, r, r * 0.8).on(CHEST));
@@ -280,6 +293,23 @@ fn shapes(world: &[Mat4], pos: &[Vec3], t: Tweak) -> Vec<Shape> {
         out.push(cone(at(elbow, 0.0, -0.3, 0.03), at(elbow, 0.0, -1.6, 0.0), 0.34, 0.22, Kind::Body).on(elbow));
     }
     // hakama: cinched at the sash on the hip, flares to the knee
+    // eight-pack: 4 rows x 2, shrinking toward the navel; linea alba and tendinous rows are the creases
+    for row in 0..4 {
+        let y = -0.55 - row as f32 * 0.42;
+        let (z, r) = (0.72 - row as f32 * 0.07, 0.24 - row as f32 * 0.012);
+        for side in [-1.0, 1.0] {
+            out.push(detail(at(CHEST, side * 0.21, y + 0.08, z), at(CHEST, side * 0.24, y - 0.08, z), r, r).on(CHEST));
+        }
+    }
+    for side in [-1.0, 1.0] {
+        // serratus: fingers down the ribs under the armpit, slanting forward-down
+        for k in 0..3 {
+            let y = -0.45 - k as f32 * 0.35;
+            out.push(detail(at(CHEST, side * 1.02, y, 0.05), at(CHEST, side * 0.82, y - 0.25, 0.45), 0.15, 0.12).on(CHEST));
+        }
+        // external oblique: ribs to the hip crest, overhangs the sash
+        out.push(detail(at(CHEST, side * 0.78, -1.3, 0.2), at(CHEST, side * 0.72, -2.55, 0.3), 0.3, 0.32).on(CHEST));
+    }
     out.push(cone(at(PELVIS, 0.0, 0.25, 0.0), at(PELVIS, 0.0, -3.4, 0.1), 1.25, 1.85, Kind::Skirt).on(PELVIS));
     out
 }
@@ -336,14 +366,21 @@ fn smin(a: f32, b: f32, k: f32) -> f32 {
 
 const CORE_BLEND: f32 = 0.4;
 const LIMB_BLEND: f32 = 0.3;
+const DETAIL_BLEND: f32 = 0.08;
 
 fn scene_sdf(p: Vec3, caps: &[Shape]) -> f32 {
-    let (mut body, mut limbs) = (f32::INFINITY, f32::INFINITY);
+    let (mut body, mut limbs, mut detail) = (f32::INFINITY, f32::INFINITY, f32::INFINITY);
     for c in caps {
         let d = sd_shape(p, c);
-        if c.core { body = smin(body, d, CORE_BLEND) } else { limbs = smin(limbs, d, LIMB_BLEND) }
+        if c.detail {
+            detail = detail.min(d)
+        } else if c.core {
+            body = smin(body, d, CORE_BLEND)
+        } else {
+            limbs = smin(limbs, d, LIMB_BLEND)
+        }
     }
-    smin(body, limbs, 0.2)
+    smin(smin(body, detail, DETAIL_BLEND), limbs, 0.2)
 }
 
 struct Camera {
