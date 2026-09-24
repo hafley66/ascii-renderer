@@ -27,33 +27,52 @@ const W = 480, H = 600, COLS = 80, ROWS = 60, WIRE = 1, CONT = 2;
 
 // Knobs: [key, label, min, max, step, default]. Angles in degrees.
 const SPEC = [
-  ['speed', 'cycles / sec', 0, 2, 0.01, 0.7],
+  ['speed', 'cycles / sec', 0, 2, 0.01, 0.72],
   ['phase', 'phase (paused)', 0, 1, 0.001, 0],
-  ['legSwing', 'leg swing', 0, 45, 0.5, 24],
-  ['kneeBend', 'knee lift', 0, 90, 1, 50],
-  ['plantKnee', 'plant knee', 0, 20, 0.5, 4],
-  ['hipSpread', 'hip spread', -5, 15, 0.5, 3],
-  ['pelvisTwist', 'pelvis twist', 0, 25, 0.5, 8],
-  ['torsoTwist', 'torso twist', 0, 40, 0.5, 15],
-  ['spineShare', 'twist in spine', 0, 1, 0.05, 0.4],
-  ['lean', 'forward lean', -10, 20, 0.5, 4],
-  ['headStab', 'head holds front', 0, 1, 0.05, 0.7],
-  ['armSwing', 'arm swing', 0, 60, 0.5, 30],
-  ['armCross', 'arm cross in', 0, 30, 0.5, 12],
-  ['armSpread', 'arm spread', 0, 40, 0.5, 16],
-  ['elbowRest', 'elbow rest', 0, 60, 0.5, 10],
-  ['elbowSwing', 'elbow fwd bend', 0, 80, 0.5, 30],
-  ['bob', 'bob', 0, 0.8, 0.01, 0.22],
+  ['legSwing', 'leg swing', 0, 45, 0.5, 25.5],
+  ['kneeBend', 'knee lift', 0, 90, 1, 34],
+  ['plantKnee', 'plant knee', 0, 20, 0.5, 7],
+  ['hipSpread', 'hip spread', -5, 15, 0.5, 3.5],
+  ['pelvisTwist', 'pelvis twist', 0, 25, 0.5, 2.5],
+  ['torsoTwist', 'torso twist', 0, 40, 0.5, 13],
+  ['spineShare', 'twist in spine', 0, 1, 0.05, 0.7],
+  ['lean', 'forward lean', -10, 20, 0.5, 0.5],
+  ['headStab', 'head holds front', 0, 1, 0.05, 0.8],
+  ['armSwing', 'arm swing', 0, 60, 0.5, 11],
+  ['armCross', 'arm cross in', 0, 30, 0.5, 5.5],
+  ['armSpread', 'arm spread', 0, 40, 0.5, 9.5],
+  ['elbowRest', 'elbow rest', 0, 60, 0.5, 5.5],
+  ['elbowSwing', 'elbow fwd bend', 0, 80, 0.5, 32.5],
+  ['bob', 'bob', 0, 0.8, 0.01, 0],
+  ['shoulderDrop', 'shoulder drop', -0.6, 0.8, 0.01, 0.25],
+  ['shoulderIn', 'shoulder in', -0.4, 0.6, 0.01, 0],
 ];
+// Knob state lives in the hash query (#?k=v&...): file:// refuses history writes, location.replace does not.
 const K = {};
+const hashParams = () => new URLSearchParams(location.hash.replace(/^#[^?]*\??/, ''));
+const saved = hashParams();
+let writeTimer = 0;
+const persist = () => {
+  clearTimeout(writeTimer);
+  writeTimer = setTimeout(() => {
+    const q = new URLSearchParams(SPEC.filter(([k, , , , , d]) => K[k] !== d).map(([k]) => [k, K[k]]));
+    location.replace('#?' + q);
+  }, 150);
+};
 const knobs = document.getElementById('knobs');
+const inputs = {};
 for (const [key, label, min, max, step, def] of SPEC) {
-  K[key] = def;
+  K[key] = saved.has(key) ? +saved.get(key) : def;
   const l = document.createElement('label');
-  const input = Object.assign(document.createElement('input'), {type: 'range', min, max, step, value: def});
-  const out = document.createElement('span'); out.textContent = def;
-  input.oninput = () => { K[key] = +input.value; out.textContent = input.value; };
+  const input = Object.assign(document.createElement('input'), {type: 'range', min, max, step, value: K[key]});
+  const out = document.createElement('span'); out.textContent = K[key];
+  input.oninput = () => { K[key] = +input.value; out.textContent = input.value; persist(); };
+  inputs[key] = [input, out];
   l.append(label, input, out); knobs.appendChild(l);
+}
+function resetKnobs() {
+  for (const [key, , , , , def] of SPEC) { K[key] = def; inputs[key][0].value = def; inputs[key][1].textContent = def; }
+  persist();
 }
 
 const camera = new THREE.PerspectiveCamera(32, W / H, 0.1, 200);
@@ -145,6 +164,8 @@ const play = document.createElement('button'); play.textContent = 'walk'; play.c
 play.onclick = () => { playing = !playing; play.classList.toggle('on', playing); };
 const restBtn = document.createElement('button'); restBtn.textContent = 'bind pose'; bar.appendChild(restBtn);
 let showRest = false;
+const resetBtn = document.createElement('button'); resetBtn.textContent = 'reset knobs'; bar.appendChild(resetBtn);
+resetBtn.onclick = resetKnobs;
 restBtn.onclick = () => { showRest = !showRest; restBtn.classList.toggle('on', showRest); };
 
 // Procedural walk. s = sin(phase): right leg forward at s = 1. Arms swing against their legs and
@@ -180,6 +201,11 @@ function applyPose(rots) {
     bones[i].quaternion.copy(localRot(j.name, r));
   });
   bones[0].position.fromArray(RIG.joints[0].offset);
+  for (const side of ['r', 'l']) {
+    const i = byName[`${side}_shoulder`], b = bones[i];
+    b.position.fromArray(RIG.joints[i].offset);
+    if (!showRest) { b.position.y -= K.shoulderDrop; b.position.x *= 1 - K.shoulderIn / Math.abs(b.position.x); }
+  }
   if (!showRest) bones[0].position.y += rots.bob;
 }
 
