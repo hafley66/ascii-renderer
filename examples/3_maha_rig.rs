@@ -1,5 +1,5 @@
 //! Mahoraga rig preview: linked joint matrices, smooth-blended round cones, wire + contour SVG + ASCII.
-//! cargo run --release --example 3_maha_rig -- [skin [voxel]|viewer [voxel]|html|all|key 0-4] [yaw] [w] [h]
+//! cargo run --release --example 3_maha_rig -- [skin [voxel]|viewer [voxel]|html|probe|all|key 0-4] [yaw] [w] [h]
 
 use glam::{Mat4, Quat, Vec3};
 
@@ -18,7 +18,7 @@ const fn j(name: &'static str, parent: Option<usize>, x: f32, y: f32, z: f32, ra
 // Figure faces +z (toward camera), so the character's right side sits at -x (screen left).
 const RIG: &[Joint] = &[
     j("pelvis", None, 0.0, 6.35, 0.0, 0.0),
-    j("spine", Some(0), 0.0, 1.3, 0.0, 0.95),
+    j("spine", Some(0), 0.0, 1.3, 0.0, 0.8),
     j("chest", Some(1), 0.0, 1.6, 0.1, 1.15),
     j("neck", Some(2), 0.0, 1.0, 0.25, 0.42),
     j("head", Some(3), 0.0, 0.5, 0.32, 0.52),
@@ -271,13 +271,16 @@ fn shapes(world: &[Mat4], pos: &[Vec3], t: Tweak) -> Vec<Shape> {
         // delt cap: a ball on the acromion that swells up and out, not along the arm
         let cap = at(shoulder, side * (0.18 + t.delt_out + t.delt_cap * 0.4), 0.0 + t.delt_cap * 0.5, 0.0);
         out.push(cone(cap, cap + Vec3::Y * 0.01, 0.35 + t.delt_cap * 0.35, 0.35 + t.delt_cap * 0.35, Kind::Body).on(shoulder));
-        out.push(core(at(CHEST, side * 0.2, 0.3, 0.55), at(CHEST, side * 0.85, 0.35, 0.4), 0.5, 0.45).on(CHEST));
-        out.push(core(at(CHEST, side * 0.72, -0.25, -0.3), at(CHEST, side * 0.5, -2.0, -0.05), 0.42, 0.33).on(CHEST));
+        // pec shelf: a heavy slab from sternum to armpit, underside overhangs the ribs
+        out.push(core(at(CHEST, side * 0.25, 0.25, 0.62), at(CHEST, side * 0.95, 0.4, 0.42), 0.55, 0.5).on(CHEST));
+        // lats: flare wide under the armpit, pinch in to a narrow waist (refs: shoulders ~2x waist)
+        out.push(core(at(CHEST, side * 1.0, -0.1, -0.3), at(CHEST, side * 0.55, -2.1, -0.1), 0.55, 0.28).on(CHEST));
         out.push(cone(at(shoulder, 0.0, -0.8, 0.15), at(shoulder, 0.0, -1.7, 0.13), 0.43, 0.34, Kind::Body).on(shoulder));
         out.push(cone(at(shoulder, 0.0, -0.6, -0.14), at(shoulder, 0.0, -1.9, -0.1), 0.36, 0.27, Kind::Body).on(shoulder));
         out.push(cone(at(elbow, 0.0, -0.3, 0.03), at(elbow, 0.0, -1.6, 0.0), 0.34, 0.22, Kind::Body).on(elbow));
     }
-    out.push(cone(at(PELVIS, 0.0, 0.6, 0.0), at(PELVIS, 0.0, -3.5, 0.1), 1.3, 1.8, Kind::Skirt).on(PELVIS));
+    // hakama: cinched at the sash on the hip, flares to the knee
+    out.push(cone(at(PELVIS, 0.0, 0.25, 0.0), at(PELVIS, 0.0, -3.4, 0.1), 1.25, 1.85, Kind::Skirt).on(PELVIS));
     out
 }
 
@@ -920,6 +923,19 @@ fn main() {
         let path = "docs/maha_rig/viewer.html";
         std::fs::write(path, page).expect("write viewer");
         println!("{path}");
+        return;
+    }
+    if which == "probe" {
+        // half-width of the body (arms excluded) at each height, front view
+        let rest = Frame::from_key(&KEYS[0]);
+        let s = posed(&rest);
+        let trunk: Vec<Shape> = s.caps.iter().filter(|c| ![6, 7, 8, 10, 11, 12].contains(&c.bone) && c.kind != Kind::Skirt).copied().collect();
+        for i in 0..30 {
+            let y = 11.0 - i as f32 * 0.25;
+            let mut x = 0.0;
+            for k in 0..200 { let xx = k as f32 * 0.02; if (0..40).any(|z| scene_sdf(Vec3::new(xx, y, -2.0 + z as f32 * 0.1), &trunk) < 0.0) { x = xx; } }
+            println!("{y:5.2} {x:4.2} {}", "#".repeat((x * 20.0) as usize));
+        }
         return;
     }
     if which == "html" {
