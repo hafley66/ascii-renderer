@@ -27,7 +27,7 @@ div#knobs label.sweeping{background:#4a2018;outline:1px solid #f0b848}
 <p>drag: orbit / scroll: zoom / right-drag: pan</p>
 </main>
 <aside id="side"><button id="fold">&raquo;</button>
-<p class="hint">hover a knob + press <b>S</b>: it sweeps left then right. mouse out = snap back, click = keep.</p>
+<p class="hint">hover a knob + press <b>S</b>: it sweeps left then right. click = keep that value. <b>S</b> again or mouse out = snap back.</p>
 <details open><summary>presets</summary><div id="presets"></div></details>
 <div id="knobs"></div>
 </aside>
@@ -186,7 +186,7 @@ for (const [g, key, label, min, max, step] of SPEC) {
   l.dataset.tip = `${TIPS[key] ?? ''}\nrange ${min} to ${max}. hover + S to sweep.`;
   l.onmouseenter = () => { hovered = key; showTip(l); };
   l.onmouseleave = () => { tip.hidden = true; if (hovered === key) hovered = null; if (sweep?.key === key) stopSweep(true); };
-  input.addEventListener('pointerdown', e => { if (sweep?.key === key) { e.preventDefault(); stopSweep(false); } });
+  l.addEventListener('pointerdown', e => { if (sweep?.key === key) { e.preventDefault(); stopSweep(false); } });
   l.append(label, input, out); groupEl.appendChild(l);
 }
 const side = document.getElementById('side');
