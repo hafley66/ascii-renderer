@@ -1105,7 +1105,7 @@ fn mesh_json(key: &Frame, voxel: f32, cycle: bool) -> String {
         })
         .collect();
     format!(
-        "{{\"name\":\"{}\",\"cycle\":{cycle},\"pos\":[{}],\"nrm\":[{}],\"kind\":[{}],\"owner\":[{}],\"crease\":[{}],\"idx\":[{}],\"lines\":[{}],\"props\":[{}]}}",
+        "{{\"name\":\"{}\",\"cycle\":{cycle},\"pos\":[{}],\"nrm\":[{}],\"kind\":[{}],\"owner\":[{}],\"crease\":[{}],\"idx\":[{}],\"lines\":[{}],\"props\":[{}],\"bones\":[{}]}}",
         key.name,
         floats(&m.pos),
         floats(&m.nrm),
@@ -1114,7 +1114,13 @@ fn mesh_json(key: &Frame, voxel: f32, cycle: bool) -> String {
         crease.join(","),
         ints(&m.idx),
         line_json(&s, false),
-        props_json(&s)
+        props_json(&s),
+        // joint -> parent segments, for the viewer's ?bones overlay
+        RIG.iter()
+            .enumerate()
+            .filter_map(|(i, j)| j.parent.map(|p| floats(&[s.pos[p], s.pos[i]])))
+            .collect::<Vec<_>>()
+            .join(",")
     )
 }
 
