@@ -23,11 +23,11 @@ const RIG: &[Joint] = &[
     j("neck", Some(2), 0.0, 0.92, 0.32, 0.5),
     j("head", Some(3), 0.0, 0.48, 0.2, 0.42),
     j("crown", Some(4), 0.0, 0.85, -0.3, 0.4),
-    j("r_shoulder", Some(2), -1.6, 0.3, -0.05, 0.45),
+    j("r_shoulder", Some(2), -1.95, 0.25, -0.05, 0.45),
     j("r_elbow", Some(6), 0.0, -2.4, 0.0, 0.4),
     j("r_wrist", Some(7), 0.0, -2.0, 0.0, 0.3),
     j("r_fist", Some(8), 0.0, -0.7, 0.0, 0.38),
-    j("l_shoulder", Some(2), 1.6, 0.3, -0.05, 0.45),
+    j("l_shoulder", Some(2), 1.95, 0.25, -0.05, 0.45),
     j("l_elbow", Some(10), 0.0, -2.4, 0.0, 0.4),
     j("l_wrist", Some(11), 0.0, -2.0, 0.0, 0.3),
     j("l_fist", Some(12), 0.0, -0.7, 0.0, 0.38),
@@ -91,9 +91,9 @@ const fn tw(yaw: f32) -> Rot {
 
 // Walk toward camera: chest counter-twists against the pelvis, arms swing opposite the legs.
 const KEYS: &[Key] = &[
-    // Arms hang: the lats and delts hold them a little off the body, elbows soft and a touch forward.
+    // Arms hang straight down from shoulders broad enough to clear the lats; elbows soft and a touch forward.
     Key { name: "K0 stand", bob: 0.0, rots: &[
-        ("r_shoulder", r(4.0, 13.0)), ("l_shoulder", r(4.0, 13.0)),
+        ("r_shoulder", r(4.0, 3.0)), ("l_shoulder", r(4.0, 3.0)),
         ("r_elbow", r(14.0, 0.0)), ("l_elbow", r(14.0, 0.0)),
         // wrists go slack: hands drop in toward the thigh and curl slightly forward
         ("r_wrist", r(10.0, -14.0)), ("l_wrist", r(10.0, -14.0)),
@@ -290,7 +290,7 @@ fn shapes(world: &[Mat4], pos: &[Vec3], t: Tweak) -> Vec<Shape> {
             let f = k as f32 / (TRAP_BUNDLES - 1) as f32;
             // upper bundle runs skull base to acromion at about 45 degrees; lower ones fan down the back
             let origin = at(CHEST, side * (0.3 - 0.1 * f), 1.75 - 1.6 * f + t.trap_height * (1.0 - f), -0.15 - 0.5 * f);
-            let insert = at(CHEST, side * (1.55 - 0.25 * f + t.trap_reach), 0.45 - 0.1 * f - t.trap_slope, -0.1 - 0.3 * f);
+            let insert = at(CHEST, side * (1.85 - 0.3 * f + t.trap_reach), 0.4 - 0.1 * f - t.trap_slope, -0.1 - 0.3 * f);
             let r = 0.58 - 0.18 * f + t.trap_mass;
             out.push(core(origin, insert, r, r * 0.8).on(CHEST));
         }
@@ -308,11 +308,11 @@ fn shapes(world: &[Mat4], pos: &[Vec3], t: Tweak) -> Vec<Shape> {
         let cap = at(shoulder, side * (0.18 + t.delt_out + t.delt_cap * 0.4), 0.0 + t.delt_cap * 0.5, 0.0);
         out.push(cone(cap, cap + Vec3::Y * 0.01, 0.48 + t.delt_cap * 0.35, 0.48 + t.delt_cap * 0.35, Kind::Body).on(shoulder));
         // pec shelf: a heavy slab from sternum to armpit, underside overhangs the ribs
-        out.push(core(at(CHEST, side * 0.25, 0.25, 0.62), at(CHEST, side * 1.2, 0.35, 0.35), 0.55, 0.5).on(CHEST));
+        out.push(core(at(CHEST, side * 0.25, 0.25, 0.62), at(CHEST, side * 1.45, 0.3, 0.3), 0.55, 0.5).on(CHEST));
         // lats: wings flaring out and back behind him at ~45 deg (seen from above), from the armpit
         // down to a narrow waist (refs: shoulders ~2x waist)
-        out.push(core(at(CHEST, side * 1.3, -0.15, -0.7), at(CHEST, side * 0.55, -2.4, -0.2), 0.6, 0.28).on(CHEST));
-        out.push(core(at(CHEST, side * 1.5, -0.35, -0.55), at(CHEST, side * 0.85, -1.7, -0.45), 0.45, 0.35).on(CHEST));
+        out.push(core(at(CHEST, side * 1.35, -0.1, -0.7), at(CHEST, side * 0.6, -1.7, -0.25), 0.6, 0.3).on(CHEST));
+        out.push(core(at(CHEST, side * 1.45, -0.3, -0.55), at(CHEST, side * 0.9, -1.3, -0.45), 0.42, 0.34).on(CHEST));
         // biceps peak in front, triceps horseshoe behind
         out.push(cone(at(shoulder, 0.0, -0.8, 0.18), at(shoulder, 0.0, -1.7, 0.15), 0.52, 0.4, Kind::Body).on(shoulder));
         out.push(cone(at(shoulder, 0.0, -0.6, -0.16), at(shoulder, 0.0, -1.9, -0.12), 0.46, 0.32, Kind::Body).on(shoulder));
@@ -349,8 +349,8 @@ fn shapes(world: &[Mat4], pos: &[Vec3], t: Tweak) -> Vec<Shape> {
         }
         // back: erector columns either side of the spine groove, scapula blade muscles, teres major to the armpit
         out.push(detail(at(CHEST, side * 0.27, -0.7, -0.78), at(CHEST, side * 0.25, -3.1, -0.6), 0.25, 0.3).on(CHEST));
-        out.push(detail(at(CHEST, side * 0.6, 0.15, -0.8), at(CHEST, side * 0.8, -0.55, -0.8), 0.34, 0.3).on(CHEST));
-        out.push(detail(at(CHEST, side * 0.95, -0.55, -0.85), at(CHEST, side * 1.45, -0.2, -0.45), 0.28, 0.24).on(CHEST));
+        out.push(detail(at(CHEST, side * 0.7, 0.15, -0.8), at(CHEST, side * 0.95, -0.5, -0.8), 0.36, 0.3).on(CHEST));
+        out.push(detail(at(CHEST, side * 1.0, -0.5, -0.85), at(CHEST, side * 1.65, -0.15, -0.45), 0.28, 0.24).on(CHEST));
         // external oblique: ribs to the hip crest, overhangs the sash
         out.push(detail(at(CHEST, side * 0.78, -1.4, 0.2), at(CHEST, side * 0.72, -3.0, 0.3), 0.3, 0.34).on(CHEST));
     }
