@@ -20,9 +20,9 @@ const RIG: &[Joint] = &[
     j("pelvis", None, 0.0, 6.35, 0.0, 0.0),
     j("spine", Some(0), 0.0, 1.3, 0.0, 0.7),
     j("chest", Some(1), 0.0, 1.6, 0.1, 0.9),
-    j("neck", Some(2), 0.0, 0.75, 0.45, 0.5),
-    j("head", Some(3), 0.0, 0.45, 0.3, 0.48),
-    j("crown", Some(4), 0.0, 0.8, -0.2, 0.5),
+    j("neck", Some(2), 0.0, 0.6, 0.5, 0.5),
+    j("head", Some(3), 0.0, 0.4, 0.3, 0.4),
+    j("crown", Some(4), 0.0, 0.85, -0.3, 0.4),
     j("r_shoulder", Some(2), -1.25, 0.35, 0.0, 0.45),
     j("r_elbow", Some(6), 0.0, -2.14, 0.0, 0.4),
     j("r_wrist", Some(7), 0.0, -1.68, 0.0, 0.25),
@@ -40,18 +40,18 @@ const RIG: &[Joint] = &[
     j("l_ankle", Some(19), 0.0, -2.83, 0.0, 0.4),
     j("l_toe", Some(20), 0.0, -0.3, 0.95, 0.32),
     // Four brow wings: an upper pair sweeping up-out, a lower pair nearly level.
-    j("r_wing_hi", Some(4), -0.21, 0.32, 0.28, 0.18),
-    j("r_wing_hi_mid", Some(22), -0.49, 0.49, -0.63, 0.21),
-    j("r_wing_hi_tip", Some(23), -0.42, 0.63, -0.77, 0.07),
-    j("l_wing_hi", Some(4), 0.21, 0.32, 0.28, 0.18),
-    j("l_wing_hi_mid", Some(25), 0.49, 0.49, -0.63, 0.21),
-    j("l_wing_hi_tip", Some(26), 0.42, 0.63, -0.77, 0.07),
-    j("r_wing_lo", Some(4), -0.21, 0.1, 0.28, 0.17),
-    j("r_wing_lo_mid", Some(28), -0.6, 0.07, -0.63, 0.2),
-    j("r_wing_lo_tip", Some(29), -0.56, 0.07, -0.84, 0.07),
-    j("l_wing_lo", Some(4), 0.21, 0.1, 0.28, 0.17),
-    j("l_wing_lo_mid", Some(31), 0.6, 0.07, -0.63, 0.2),
-    j("l_wing_lo_tip", Some(32), 0.56, 0.07, -0.84, 0.07),
+    j("r_wing_hi", Some(4), -0.14, 0.2, 0.5, 0.11),
+    j("r_wing_hi_mid", Some(22), -0.55, 0.5, -0.25, 0.1),
+    j("r_wing_hi_tip", Some(23), -0.7, 0.55, -0.3, 0.06),
+    j("l_wing_hi", Some(4), 0.14, 0.2, 0.5, 0.11),
+    j("l_wing_hi_mid", Some(25), 0.55, 0.5, -0.25, 0.1),
+    j("l_wing_hi_tip", Some(26), 0.7, 0.55, -0.3, 0.06),
+    j("r_wing_lo", Some(4), -0.16, 0.08, 0.48, 0.11),
+    j("r_wing_lo_mid", Some(28), -0.7, 0.12, -0.3, 0.1),
+    j("r_wing_lo_tip", Some(29), -0.85, 0.05, -0.35, 0.06),
+    j("l_wing_lo", Some(4), 0.16, 0.08, 0.48, 0.11),
+    j("l_wing_lo_mid", Some(31), 0.7, 0.12, -0.3, 0.1),
+    j("l_wing_lo_tip", Some(32), 0.85, 0.05, -0.35, 0.06),
 ];
 const CROWN: usize = 5;
 const PELVIS: usize = 0;
@@ -253,11 +253,12 @@ fn shapes(world: &[Mat4], pos: &[Vec3], t: Tweak) -> Vec<Shape> {
         })
         .collect();
     let at = |m: usize, x: f32, y: f32, z: f32| world[m].transform_point3(Vec3::new(x, y, z));
-    // heavy jaw: wide at the hinge, square chin jutting forward under the grin
+    // long narrow face (goat-skull read): brow down to a square grin, jaw no wider than the face
+    out.push(cone(at(HEAD, 0.0, 0.35, 0.3), at(HEAD, 0.0, -0.2, 0.45), 0.3, 0.27, Kind::Body).on(HEAD));
     for side in [-1.0, 1.0] {
-        out.push(cone(at(HEAD, side * 0.3, -0.05, 0.0), at(HEAD, side * 0.2, -0.42, 0.38), 0.24, 0.2, Kind::Body).on(HEAD));
+        out.push(cone(at(HEAD, side * 0.2, 0.0, 0.1), at(HEAD, side * 0.13, -0.45, 0.42), 0.17, 0.16, Kind::Body).on(HEAD));
     }
-    out.push(cone(at(HEAD, -0.12, -0.42, 0.4), at(HEAD, 0.12, -0.42, 0.4), 0.22, 0.22, Kind::Body).on(HEAD));
+    out.push(cone(at(HEAD, -0.1, -0.47, 0.45), at(HEAD, 0.1, -0.47, 0.45), 0.16, 0.16, Kind::Body).on(HEAD));
     // cranial ridge: a keel from brow up over the long skull
     out.push(cone(at(HEAD, 0.0, 0.25, 0.42), at(CROWN, 0.0, 0.35, -0.1), 0.2, 0.3, Kind::Body).on(HEAD));
     for side in [-1.0, 1.0] {
