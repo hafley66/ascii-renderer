@@ -298,15 +298,15 @@ fn shapes(world: &[Mat4], pos: &[Vec3], t: Tweak) -> Vec<Shape> {
             cone(
                 at(shoulder, side * (0.04 + t.delt_out), -0.1, 0.03),
                 at(shoulder, side * (0.06 + t.delt_out * 0.5), -1.0 - t.delt_length, 0.03),
-                0.55 + t.delt_mass,
-                0.4 + t.delt_mass * 0.2,
+                0.5 + t.delt_mass,
+                0.37 + t.delt_mass * 0.2,
                 Kind::Body,
             )
             .on(shoulder),
         );
         // delt cap: a ball on the acromion that swells up and out, not along the arm
         let cap = at(shoulder, side * (0.06 + t.delt_out + t.delt_cap * 0.4), 0.0 + t.delt_cap * 0.5, 0.0);
-        out.push(cone(cap, cap + Vec3::Y * 0.01, 0.38 + t.delt_cap * 0.35, 0.38 + t.delt_cap * 0.35, Kind::Body).on(shoulder));
+        out.push(cone(cap, cap + Vec3::Y * 0.01, 0.35 + t.delt_cap * 0.35, 0.35 + t.delt_cap * 0.35, Kind::Body).on(shoulder));
         // pec shelf: a heavy slab from sternum to armpit, underside overhangs the ribs
         out.push(core(at(CHEST, side * 0.25, 0.25, 0.62), at(CHEST, side * 1.45, 0.3, 0.3), 0.55, 0.5).on(CHEST));
         // lats: wings flaring out and back behind him at ~45 deg (seen from above), from the armpit
