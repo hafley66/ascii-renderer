@@ -1,22 +1,31 @@
 <!doctype html><meta charset="utf-8"><title>maha skinned walk</title>
 <style>
-body{background:#1b1210;color:#f3d9c8;font-family:sans-serif;margin:12px}
+body{background:#1b1210;color:#f3d9c8;font-family:sans-serif;margin:0;display:flex;height:100vh;overflow:hidden}
+main{flex:1;overflow:auto;padding:12px}
+aside{width:310px;flex:none;overflow-y:auto;padding:10px;border-left:1px solid #3a2420;background:#1f1411}
+aside.closed{width:26px;overflow:hidden;padding:10px 4px}
+aside.closed>*:not(#fold){display:none}
+details{border-top:1px solid #3a2420;padding:4px 0}
+summary{cursor:pointer;color:#c9906f;font-size:12px;padding:2px 0}
 div#row{display:flex;gap:12px;align-items:flex-start;cursor:grab;user-select:none}
 canvas{display:block}
 pre{margin:0;width:480px;height:600px;background:#2a1a16;font:10px/10px Menlo,monospace;overflow:hidden;color:#ffd7b0}
 button{background:#2a1a16;color:#f3d9c8;border:1px solid #6b2a1c;padding:4px 10px;margin:0 6px 6px 0;cursor:pointer}
 button.on{background:#6b2a1c}
 button.preset{border-color:#8a5a10}
-h3{margin:8px 0 2px;font-size:12px;color:#c9906f;font-weight:normal;grid-column:1/-1}
-div#knobs{display:grid;grid-template-columns:repeat(4,minmax(220px,1fr));gap:3px 18px;margin:6px 0 10px;font-size:12px}
-div#knobs label{display:grid;grid-template-columns:120px 1fr 44px;align-items:center;gap:6px}
+div#knobs label{display:grid;grid-template-columns:112px 1fr 40px;align-items:center;gap:6px;font-size:12px;margin:2px 0}
 div#knobs input{width:100%}
+div.hidden{display:none}
 </style>
+<main>
 <div id="bar"></div>
-<div id="presets"></div>
-<div id="knobs"></div>
-<div id="row"><div id="wire"></div><div id="cont"></div><pre id="ascii"></pre></div>
+<div id="row"><div id="wire"></div><div id="cont"></div><div id="asciiBox"><pre id="ascii"></pre></div></div>
 <p>drag: orbit / scroll: zoom / right-drag: pan</p>
+</main>
+<aside id="side"><button id="fold">&raquo;</button>
+<details open><summary>presets</summary><div id="presets"></div></details>
+<div id="knobs"></div>
+</aside>
 <script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}</script>
 <script type="module">
 import * as THREE from 'three';
@@ -84,16 +93,29 @@ const persist = () => {
 };
 const knobs = document.getElementById('knobs');
 const inputs = {};
-let group = '';
+const openGroups = JSON.parse(localStorage.getItem('maha-open') || '["timing","weight","arms"]');
+const groups = {};
 for (const [g, key, label, min, max, step] of SPEC) {
-  if (g !== group) { group = g; knobs.appendChild(Object.assign(document.createElement('h3'), {textContent: g})); }
+  if (!groups[g]) {
+    const d = document.createElement('details');
+    d.open = openGroups.includes(g);
+    d.ontoggle = () => localStorage.setItem('maha-open', JSON.stringify(Object.keys(groups).filter(n => groups[n].open)));
+    d.appendChild(Object.assign(document.createElement('summary'), {textContent: g}));
+    knobs.appendChild(d); groups[g] = d;
+  }
+  const groupEl = groups[g];
   const l = document.createElement('label');
   const input = Object.assign(document.createElement('input'), {type: 'range', min, max, step, value: K[key]});
   const out = document.createElement('span'); out.textContent = K[key];
   input.oninput = () => { K[key] = +input.value; out.textContent = input.value; persist(); };
   inputs[key] = [input, out];
-  l.append(label, input, out); knobs.appendChild(l);
+  l.append(label, input, out); groupEl.appendChild(l);
 }
+const side = document.getElementById('side');
+document.getElementById('fold').onclick = () => {
+  side.classList.toggle('closed');
+  document.getElementById('fold').innerHTML = side.classList.contains('closed') ? '&laquo;' : '&raquo;';
+};
 function setKnobs(values) {
   Object.assign(K, DEFAULTS, values);
   for (const k in inputs) { inputs[k][0].value = K[k]; inputs[k][1].textContent = K[k]; }
@@ -217,6 +239,10 @@ const toggle = (label, on, fn) => {
 toggle('walk', true, () => (playing = !playing));
 toggle('bind pose', false, () => (showRest = !showRest));
 toggle('bones', false, () => (bonesView.visible = !bonesView.visible));
+for (const [label, id] of [['wire view', 'wire'], ['contour view', 'cont'], ['ascii view', 'asciiBox']]) {
+  const el = document.getElementById(id);
+  toggle(label, true, () => !el.classList.toggle('hidden'));
+}
 const resetBtn = Object.assign(document.createElement('button'), {textContent: 'reset knobs'});
 resetBtn.onclick = () => setKnobs({}); bar.appendChild(resetBtn);
 
