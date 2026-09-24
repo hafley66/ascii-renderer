@@ -33,12 +33,12 @@ const RIG: &[Joint] = &[
     j("l_fist", Some(12), 0.0, -0.7, 0.0, 0.38),
     j("r_hip", Some(0), -0.6, -0.3, 0.0, 0.7),
     j("r_knee", Some(14), 0.0, -2.82, 0.0, 0.62),
-    j("r_ankle", Some(15), 0.0, -2.83, 0.0, 0.4),
-    j("r_toe", Some(16), 0.0, -0.3, 1.05, 0.36),
+    j("r_ankle", Some(15), 0.0, -2.83, 0.0, 0.34),
+    j("r_toe", Some(16), 0.0, -0.3, 1.05, 0.22),
     j("l_hip", Some(0), 0.6, -0.3, 0.0, 0.7),
     j("l_knee", Some(18), 0.0, -2.82, 0.0, 0.62),
-    j("l_ankle", Some(19), 0.0, -2.83, 0.0, 0.4),
-    j("l_toe", Some(20), 0.0, -0.3, 1.05, 0.36),
+    j("l_ankle", Some(19), 0.0, -2.83, 0.0, 0.34),
+    j("l_toe", Some(20), 0.0, -0.3, 1.05, 0.22),
     // Four brow wings: an upper pair sweeping up-out, a lower pair nearly level.
     j("r_wing_hi", Some(4), -0.14, 0.2, 0.5, 0.11),
     j("r_wing_hi_mid", Some(22), -0.55, 0.5, -0.25, 0.1),
@@ -308,6 +308,17 @@ fn shapes(world: &[Mat4], pos: &[Vec3], t: Tweak) -> Vec<Shape> {
         // forearm: brachioradialis bulge just under the elbow, tapering hard to the wrist
         out.push(cone(at(elbow, side * 0.08, -0.35, 0.06), at(elbow, 0.0, -1.6, 0.0), 0.46, 0.26, Kind::Body).on(elbow));
         // calf: gastrocnemius belly high on the back of the shin
+        // foot: broad forefoot and five splayed gripping toes, big toe on the inside (refs #1, #2, #8)
+        let ankle = if side < 0.0 { 16 } else { 20 };
+        out.push(cone(at(ankle, side * 0.2, -0.3, 0.75), at(ankle, -side * 0.22, -0.3, 0.8), 0.24, 0.26, Kind::Body).on(ankle));
+        for k in 0..5 {
+            let f = k as f32 / 4.0;
+            let x = side * (0.3 - 0.58 * f);
+            let splay = side * (0.12 - 0.24 * f);
+            let r = if k == 4 { 0.16 } else { 0.12 - 0.01 * (3 - k) as f32 };
+            let len = if k == 4 { 0.42 } else { 0.28 + 0.04 * k as f32 };
+            out.push(detail(at(ankle, x, -0.36, 1.0), at(ankle, x + splay, -0.44, 1.15 + len), r, r * 0.85).on(ankle));
+        }
         let knee = if side < 0.0 { 15 } else { 19 };
         out.push(cone(at(knee, 0.0, -0.45, -0.18), at(knee, 0.0, -1.9, -0.05), 0.62, 0.42, Kind::Body).on(knee));
     }
@@ -1018,7 +1029,7 @@ fn props(s: &Posed) -> Vec<Prop> {
     }
     out.push(Prop { kind: "cloth", bone: PELVIS, tris: t });
     // Black rings on both wrists and ankles (refs #1, #2, #9).
-    for (bone, r) in [(8, 0.46), (12, 0.46), (16, 0.52), (20, 0.52)] {
+    for (bone, r) in [(8, 0.46), (12, 0.46), (16, 0.42), (20, 0.42)] {
         let m = world[bone];
         let mut t = Vec::new();
         let at = |k: usize| m.transform_point3(Vec3::new((k as f32 / 16.0 * std::f32::consts::TAU).cos() * r, 0.1, (k as f32 / 16.0 * std::f32::consts::TAU).sin() * r));
