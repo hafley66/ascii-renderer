@@ -20,7 +20,7 @@ const RIG: &[Joint] = &[
     j("pelvis", None, 0.0, 6.35, 0.0, 0.0),
     j("spine", Some(0), 0.0, 1.8, 0.0, 0.7),
     j("chest", Some(1), 0.0, 1.6, 0.1, 0.9),
-    j("neck", Some(2), 0.0, 0.92, 0.32, 0.5),
+    j("neck", Some(2), 0.0, 1.3, 0.32, 0.5),
     j("head", Some(3), 0.0, 0.62, 0.2, 0.42),
     j("crown", Some(4), 0.0, 0.85, -0.3, 0.4),
     j("r_shoulder", Some(2), -1.95, 0.25, -0.05, 0.45),
@@ -289,7 +289,7 @@ fn shapes(world: &[Mat4], pos: &[Vec3], t: Tweak) -> Vec<Shape> {
         for k in 0..TRAP_BUNDLES {
             let f = k as f32 / (TRAP_BUNDLES - 1) as f32;
             // upper bundle runs skull base to acromion at about 45 degrees; lower ones fan down the back
-            let origin = at(CHEST, side * (0.3 - 0.1 * f), 1.85 - 1.7 * f + t.trap_height * (1.0 - f), -0.15 - 0.5 * f);
+            let origin = at(CHEST, side * (0.3 - 0.1 * f), 2.05 - 1.9 * f + t.trap_height * (1.0 - f), -0.15 - 0.5 * f);
             let insert = at(CHEST, side * (1.85 - 0.3 * f + t.trap_reach), 0.4 - 0.1 * f - t.trap_slope, -0.1 - 0.3 * f);
             let r = 0.58 - 0.18 * f + t.trap_mass;
             out.push(core(origin, insert, r, r * 0.8).on(CHEST));
