@@ -797,6 +797,115 @@ fn ints<T: ToString>(vs: &[T]) -> String {
     vs.iter().map(T::to_string).collect::<Vec<_>>().join(",")
 }
 
+// Rigid solid props that are too thin for the voxel field: triangle soups carried by one bone each.
+struct Prop {
+    kind: &'static str,
+    bone: usize,
+    tris: Vec<Vec3>,
+}
+
+fn quad(t: &mut Vec<Vec3>, a: Vec3, b: Vec3, c: Vec3, d: Vec3) {
+    t.extend([a, b, c, a, c, d]);
+}
+
+fn frame_of(axis: Vec3) -> (Vec3, Vec3) {
+    let u = axis.any_orthonormal_vector();
+    (u, axis.cross(u).normalize())
+}
+
+fn tube(t: &mut Vec<Vec3>, a: Vec3, b: Vec3, r1: f32, r2: f32, sides: usize) {
+    let (u, v) = frame_of((b - a).normalize_or(Vec3::Y));
+    let ring = |c: Vec3, r: f32, k: usize| {
+        let th = k as f32 / sides as f32 * std::f32::consts::TAU;
+        c + (u * th.cos() + v * th.sin()) * r
+    };
+    for k in 0..sides {
+        quad(t, ring(a, r1, k), ring(a, r1, k + 1), ring(b, r2, k + 1), ring(b, r2, k));
+    }
+}
+
+fn ball(t: &mut Vec<Vec3>, c: Vec3, r: f32) {
+    let (rows, cols) = (6, 10);
+    let at = |i: usize, k: usize| {
+        let (ph, th) = (i as f32 / rows as f32 * std::f32::consts::PI, k as f32 / cols as f32 * std::f32::consts::TAU);
+        c + Vec3::new(ph.sin() * th.cos(), ph.cos(), ph.sin() * th.sin()) * r
+    };
+    for i in 0..rows {
+        for k in 0..cols {
+            quad(t, at(i, k), at(i + 1, k), at(i + 1, k + 1), at(i, k + 1));
+        }
+    }
+}
+
+// A flight feather: flat pointed leaf from base to tip in the plane with normal n, with a shallow ridge.
+fn feather(t: &mut Vec<Vec3>, base: Vec3, tip: Vec3, width: f32, n: Vec3) {
+    let along = tip - base;
+    let side = along.cross(n).normalize_or(Vec3::X) * width * 0.5;
+    let (l, r, ridge) = (base + along * 0.35 + side, base + along * 0.35 - side, base + along * 0.35 + n * width * 0.12);
+    t.extend([base, l, ridge, ridge, l, tip, base, ridge, r, ridge, tip, r]);
+}
+
+fn props(s: &Posed) -> Vec<Prop> {
+    let (world, pos) = (&s.world, &s.pos);
+    let mut out = Vec::new();
+    // Wings: overlapping flat feathers swept back along the eye-socket tube, on the upper edge of the
+    // upper pair and the lower edge of the lower pair, longest at the tip (refs #4, #5).
+    for (root, mid, tip, droop) in [(22, 23, 24, -1.0), (25, 26, 27, -1.0), (28, 29, 30, 1.0), (31, 32, 33, 1.0)] {
+        let (a, m, b) = (pos[root], pos[mid], pos[tip]);
+        let along = (b - a).normalize();
+        let back = Vec3::new(0.0, -droop, -0.3);
+        let trail = (back - along * along.dot(back)).normalize();
+        let n = along.cross(trail).normalize();
+        let mut t = Vec::new();
+        for k in 0..12 {
+            let f = k as f32 / 11.0;
+            let base = if f < 0.5 { a.lerp(m, 0.35 + f * 1.3) } else { m.lerp(b, (f - 0.5) * 2.0) };
+            let dir = (along * (0.75 + 0.25 * f) + trail * (0.5 - 0.25 * f)).normalize();
+            feather(&mut t, base, base + dir * (0.3 + 0.3 * f), 0.28 + 0.06 * f, n);
+        }
+        out.push(Prop { kind: "wing", bone: mid, tris: t });
+    }
+    // Dharma wheel: level halo floating over the crown, 8 spokes whose ends carry beads outside the rim.
+    let crown = world[CROWN] * Mat4::from_translation(Vec3::new(0.0, 0.45, 0.0));
+    let hub = crown.transform_point3(Vec3::ZERO);
+    let (radius, mut t) = (0.85, Vec::new());
+    let rim = |turn: f32, r: f32| {
+        let th = turn * std::f32::consts::TAU;
+        hub + Vec3::new(th.cos(), 0.0, th.sin()) * r
+    };
+    for k in 0..24 {
+        tube(&mut t, rim(k as f32 / 24.0, radius), rim((k + 1) as f32 / 24.0, radius), 0.05, 0.05, 6);
+    }
+    ball(&mut t, hub, 0.14);
+    for k in 0..8 {
+        tube(&mut t, hub, rim(k as f32 / 8.0, radius * 1.18), 0.035, 0.035, 5);
+        ball(&mut t, rim(k as f32 / 8.0, radius * 1.3), 0.13);
+    }
+    out.push(Prop { kind: "wheel", bone: CROWN, tris: t });
+    // Sword of Extermination: thin flat single-edged blade out of the right fist along the forearm.
+    let fore = world[R_ELBOW];
+    let e = |x: f32, y: f32, z: f32| fore.transform_point3(Vec3::new(x, y, z));
+    let mut t = Vec::new();
+    let (spine_a, spine_b, edge_a, edge_b, point) =
+        (e(-0.1, -1.9, -0.06), e(-0.1, -4.9, -0.03), e(-0.1, -1.9, 0.12), e(-0.1, -4.6, 0.1), e(-0.1, -5.4, 0.0));
+    let thick = (fore.transform_vector3(Vec3::X)).normalize() * 0.025;
+    for s in [1.0, -1.0] {
+        quad(&mut t, spine_a + thick * s, spine_b + thick * s, edge_b, edge_a);
+        t.extend([spine_b + thick * s, point, edge_b]);
+    }
+    quad(&mut t, spine_a + thick, spine_b + thick, spine_b - thick, spine_a - thick);
+    out.push(Prop { kind: "blade", bone: R_ELBOW, tris: t });
+    out
+}
+
+fn props_json(s: &Posed) -> String {
+    let v: Vec<String> = props(s)
+        .iter()
+        .map(|p| format!("{{\"kind\":\"{}\",\"bone\":{},\"tri\":[{}]}}", p.kind, p.bone, floats(&p.tris)))
+        .collect();
+    v.join(",")
+}
+
 fn line_json(s: &Posed, with_bone: bool) -> String {
     let mut lines = Vec::new();
     for w in wires(&s.world, &s.pos, &s.caps, Vec3::Z) {
@@ -830,7 +939,7 @@ fn mesh_json(key: &Frame, voxel: f32, cycle: bool) -> String {
         })
         .collect();
     format!(
-        "{{\"name\":\"{}\",\"cycle\":{cycle},\"pos\":[{}],\"nrm\":[{}],\"kind\":[{}],\"owner\":[{}],\"crease\":[{}],\"idx\":[{}],\"lines\":[{}]}}",
+        "{{\"name\":\"{}\",\"cycle\":{cycle},\"pos\":[{}],\"nrm\":[{}],\"kind\":[{}],\"owner\":[{}],\"crease\":[{}],\"idx\":[{}],\"lines\":[{}],\"props\":[{}]}}",
         key.name,
         floats(&m.pos),
         floats(&m.nrm),
@@ -838,7 +947,8 @@ fn mesh_json(key: &Frame, voxel: f32, cycle: bool) -> String {
         ints(&owner),
         crease.join(","),
         ints(&m.idx),
-        line_json(&s, false)
+        line_json(&s, false),
+        props_json(&s)
     )
 }
 
@@ -946,11 +1056,12 @@ fn skin_json(voxel: f32) -> String {
         })
         .collect();
     format!(
-        "{{\"joints\":[{}],\"body\":{},\"skirt\":{},\"lines\":[{}]}}",
+        "{{\"joints\":[{}],\"body\":{},\"skirt\":{},\"lines\":[{}],\"props\":[{}]}}",
         joints.join(","),
         skin_part(&body, voxel, SKIN_FALLOFF, false, &morphs),
         skin_part(&skirt, voxel, SKIRT_DRAPE, true, &[]),
-        line_json(&s, true)
+        line_json(&s, true),
+        props_json(&s)
     )
 }
 

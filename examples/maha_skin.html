@@ -403,6 +403,18 @@ for (const l of RIG.lines) {
     new THREE.LineBasicMaterial({color: l.kind === 'wheel' ? 0xf0b848 : 0xdfe8f0}));
   line.layers.enable(WIRE); line.layers.enable(CONT); bone.add(line);
 }
+// Solid props (wing feathers, wheel, blade) ride their bones the same way.
+for (const pr of RIG.props) {
+  const bone = bones[pr.bone], P = pr.tri, local = new Float32Array(P.length), v = new THREE.Vector3();
+  for (let i = 0; i < P.length; i += 3) bone.worldToLocal(v.set(P[i], P[i+1], P[i+2])).toArray(local, i);
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(local, 3));
+  const fill = new THREE.Mesh(g, new THREE.MeshBasicMaterial({color: pr.kind === 'wheel' ? 0xc89040 : 0xfbf1e8, side: THREE.DoubleSide}));
+  const ink = new THREE.LineSegments(new THREE.EdgesGeometry(g, 40), new THREE.LineBasicMaterial({color: 0x3a140e}));
+  const wire = new THREE.LineSegments(new THREE.WireframeGeometry(g), new THREE.LineBasicMaterial({color: pr.kind === 'wheel' ? 0xf0b848 : 0xdfe8f0}));
+  fill.layers.set(CONT); ink.layers.set(CONT); wire.layers.set(WIRE);
+  bone.add(fill, ink, wire);
+}
 
 let clock = 0;
 let playing = true, phase = 0, cycles = 0, showRest = false, follow = true;
