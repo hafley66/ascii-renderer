@@ -48,6 +48,8 @@ const propMat = {
   wing: new THREE.MeshStandardMaterial({color: 0xe8e0d4, roughness: 0.6, side: THREE.DoubleSide, flatShading: true}),
   wheel: new THREE.MeshStandardMaterial({color: 0xb8893a, roughness: 0.35, metalness: 0.8, flatShading: true}),
   blade: new THREE.MeshStandardMaterial({color: 0x9aa0a8, roughness: 0.25, metalness: 0.9, side: THREE.DoubleSide, flatShading: true}),
+  ring: new THREE.MeshStandardMaterial({color: 0x1e1a1c, roughness: 0.4, metalness: 0.3}),
+  cloth: new THREE.MeshStandardMaterial({color: 0x8a8078, roughness: 0.95, side: THREE.DoubleSide, flatShading: true}),
 };
 const clothMat = new THREE.MeshStandardMaterial({color: 0x2a2a30, roughness: 0.9, side: THREE.DoubleSide});
 const composer = new EffectComposer(rWire);
@@ -133,7 +135,7 @@ const built = KEYS.map(k => {
     g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(pr.tri), 3));
     g.computeVertexNormals();
     clay.add(new THREE.Mesh(g, propMat[pr.kind]));
-    cont.add(new THREE.Mesh(g, new THREE.MeshBasicMaterial({color: pr.kind === 'wheel' ? 0xc89040 : 0xfbf1e8, side: THREE.DoubleSide})));
+    cont.add(new THREE.Mesh(g, new THREE.MeshBasicMaterial({color: pr.kind === 'wheel' ? 0xc89040 : pr.kind === 'ring' ? 0x2a2224 : pr.kind === 'cloth' ? 0xb8ada0 : 0xfbf1e8, side: THREE.DoubleSide})));
     cont.add(new THREE.LineSegments(new THREE.EdgesGeometry(g, 40), inkMat));
     wire.add(new THREE.LineSegments(new THREE.WireframeGeometry(g), new THREE.LineBasicMaterial({color: pr.kind === 'wheel' ? 0xf0b848 : 0xdfe8f0})));
   }
