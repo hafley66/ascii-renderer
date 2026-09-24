@@ -88,15 +88,22 @@ const built = KEYS.map(k => {
 
 let cur = 0, playing = false, last = 0;
 const bar = document.getElementById('bar');
+const cycle = KEYS.map((k, i) => k.cycle ? i : -1).filter(i => i >= 0);
 const buttons = KEYS.map((k, i) => {
-  const b = document.createElement('button'); b.textContent = k.name; b.onclick = () => { playing = false; show(i); };
+  if (k.cycle) return null;
+  const b = document.createElement('button'); b.textContent = k.name;
+  b.onclick = () => { setPlaying(false); show(i); };
   bar.appendChild(b); return b;
 });
-const play = document.createElement('button'); play.textContent = 'play'; bar.appendChild(play);
-play.onclick = () => { playing = !playing; play.classList.toggle('on', playing); };
+const play = document.createElement('button'); play.textContent = 'walk'; bar.appendChild(play);
+const speed = document.createElement('input'); speed.type = 'range'; speed.min = 30; speed.max = 300; speed.value = 90;
+bar.append(' frame ms ', speed);
+function setPlaying(on) { playing = on; play.classList.toggle('on', on); }
+play.onclick = () => setPlaying(!playing);
+let step = 0;
 function show(i) {
   cur = i;
-  built.forEach((b, j) => { b.wire.visible = b.cont.visible = j === i; buttons[j].classList.toggle('on', j === i); });
+  built.forEach((b, j) => { b.wire.visible = b.cont.visible = j === i; buttons[j]?.classList.toggle('on', j === i); });
 }
 show(0);
 
@@ -131,7 +138,7 @@ function ascii() {
 
 function frame(t) {
   requestAnimationFrame(frame);
-  if (playing && t - last > 350) { last = t; show((cur + 1) % KEYS.length); }
+  if (playing && t - last > +speed.value) { last = t; step = (step + 1) % cycle.length; show(cycle[step]); }
   controls.update();
   composer.render();
   rCont.render(contScene, camera);

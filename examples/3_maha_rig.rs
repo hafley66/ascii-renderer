@@ -61,7 +61,6 @@ const R_SHOULDER: usize = 6;
 const L_SHOULDER: usize = 10;
 const L_ELBOW: usize = 11;
 const R_ELBOW: usize = 7;
-const R_WRIST: usize = 8;
 
 // Degrees. pitch > 0 swings the child chain toward camera, spread > 0 away from the body.
 #[derive(Clone, Copy, Default)]
@@ -85,33 +84,90 @@ const fn tw(yaw: f32) -> Rot {
     Rot { pitch: 0.0, spread: 0.0, yaw }
 }
 
+// Walk toward camera: chest counter-twists against the pelvis, arms swing opposite the legs.
 const KEYS: &[Key] = &[
     Key { name: "K0 stand", bob: 0.0, rots: &[
         ("r_shoulder", r(0.0, 16.0)), ("l_shoulder", r(0.0, 16.0)),
         ("r_elbow", r(10.0, 0.0)), ("l_elbow", r(10.0, 0.0)),
         ("r_hip", r(0.0, 3.0)), ("l_hip", r(0.0, 3.0)),
     ]},
-    Key { name: "K1 R foot plants", bob: -0.2, rots: &[
-        ("pelvis", tw(4.0)), ("chest", tw(-5.0)),
-        ("r_shoulder", r(-14.0, 14.0)), ("l_shoulder", r(16.0, 13.0)),
-        ("r_elbow", r(6.0, 0.0)), ("l_elbow", r(22.0, 0.0)),
-        ("r_hip", r(22.0, 3.0)), ("r_knee", r(-4.0, 0.0)),
-        ("l_hip", r(-16.0, 3.0)), ("l_knee", r(-22.0, 0.0)),
+    Key { name: "K1 R foot plants", bob: -0.25, rots: &[
+        ("pelvis", tw(8.0)), ("spine", tw(-8.0)), ("chest", tw(-10.0)),
+        ("r_shoulder", r(-30.0, 15.0)), ("l_shoulder", r(32.0, 13.0)),
+        ("r_elbow", r(6.0, 0.0)), ("l_elbow", r(35.0, 0.0)),
+        ("r_hip", r(24.0, 3.0)), ("r_knee", r(-4.0, 0.0)),
+        ("l_hip", r(-18.0, 3.0)), ("l_knee", r(-24.0, 0.0)),
     ]},
-    Key { name: "K2 passing", bob: 0.15, rots: &[
-        ("r_shoulder", r(0.0, 16.0)), ("l_shoulder", r(3.0, 14.0)),
-        ("r_elbow", r(10.0, 0.0)), ("l_elbow", r(14.0, 0.0)),
-        ("r_hip", r(-3.0, 3.0)), ("r_knee", r(-3.0, 0.0)),
-        ("l_hip", r(16.0, 3.0)), ("l_knee", r(-45.0, 0.0)),
+    Key { name: "K2 passing", bob: 0.2, rots: &[
+        ("pelvis", tw(-2.0)), ("chest", tw(3.0)),
+        ("r_shoulder", r(-4.0, 16.0)), ("l_shoulder", r(6.0, 15.0)),
+        ("r_elbow", r(12.0, 0.0)), ("l_elbow", r(18.0, 0.0)),
+        ("r_hip", r(-4.0, 3.0)), ("r_knee", r(-4.0, 0.0)),
+        ("l_hip", r(18.0, 3.0)), ("l_knee", r(-50.0, 0.0)),
     ]},
-    Key { name: "K3 L foot plants", bob: -0.2, rots: &[
-        ("pelvis", tw(-4.0)), ("chest", tw(5.0)),
-        ("l_shoulder", r(-14.0, 14.0)), ("r_shoulder", r(16.0, 13.0)),
-        ("l_elbow", r(6.0, 0.0)), ("r_elbow", r(22.0, 0.0)),
-        ("l_hip", r(22.0, 3.0)), ("l_knee", r(-4.0, 0.0)),
-        ("r_hip", r(-16.0, 3.0)), ("r_knee", r(-22.0, 0.0)),
+    Key { name: "K3 L foot plants", bob: -0.25, rots: &[
+        ("pelvis", tw(-8.0)), ("spine", tw(8.0)), ("chest", tw(10.0)),
+        ("l_shoulder", r(-30.0, 15.0)), ("r_shoulder", r(32.0, 13.0)),
+        ("l_elbow", r(6.0, 0.0)), ("r_elbow", r(35.0, 0.0)),
+        ("l_hip", r(24.0, 3.0)), ("l_knee", r(-4.0, 0.0)),
+        ("r_hip", r(-18.0, 3.0)), ("r_knee", r(-24.0, 0.0)),
+    ]},
+    Key { name: "K4 passing", bob: 0.2, rots: &[
+        ("pelvis", tw(2.0)), ("chest", tw(-3.0)),
+        ("l_shoulder", r(-4.0, 16.0)), ("r_shoulder", r(6.0, 15.0)),
+        ("l_elbow", r(12.0, 0.0)), ("r_elbow", r(18.0, 0.0)),
+        ("l_hip", r(-4.0, 3.0)), ("l_knee", r(-4.0, 0.0)),
+        ("r_hip", r(18.0, 3.0)), ("r_knee", r(-50.0, 0.0)),
     ]},
 ];
+const CYCLE: [usize; 4] = [1, 2, 3, 4];
+const STEPS_PER_KEY: usize = 4;
+
+// A resolved pose: one rotation per rig joint, blendable.
+struct Frame {
+    name: String,
+    bob: f32,
+    rots: Vec<Rot>,
+}
+
+impl Frame {
+    fn from_key(k: &Key) -> Frame {
+        let rots = RIG
+            .iter()
+            .map(|j| k.rots.iter().find(|(n, _)| *n == j.name).map(|(_, r)| *r).unwrap_or_default())
+            .collect();
+        Frame { name: k.name.to_string(), bob: k.bob, rots }
+    }
+
+    fn blend(a: &Frame, b: &Frame, t: f32, name: String) -> Frame {
+        let e = 0.5 - 0.5 * (t * std::f32::consts::PI).cos();
+        let mix = |x: f32, y: f32| x + (y - x) * e;
+        let rots = a
+            .rots
+            .iter()
+            .zip(&b.rots)
+            .map(|(p, q)| Rot { pitch: mix(p.pitch, q.pitch), spread: mix(p.spread, q.spread), yaw: mix(p.yaw, q.yaw) })
+            .collect();
+        Frame { name, bob: mix(a.bob, b.bob), rots }
+    }
+}
+
+fn keyframes() -> Vec<Frame> {
+    KEYS.iter().map(Frame::from_key).collect()
+}
+
+fn walk_cycle() -> Vec<Frame> {
+    let keys = keyframes();
+    let mut out = Vec::new();
+    for (i, &k) in CYCLE.iter().enumerate() {
+        let next = CYCLE[(i + 1) % CYCLE.len()];
+        for s in 0..STEPS_PER_KEY {
+            let t = s as f32 / STEPS_PER_KEY as f32;
+            out.push(Frame::blend(&keys[k], &keys[next], t, format!("walk {}", out.len())));
+        }
+    }
+    out
+}
 
 fn local_rotation(name: &str, rot: Rot) -> Quat {
     let side = if name.starts_with("r_") { -1.0 } else { 1.0 };
@@ -121,10 +177,9 @@ fn local_rotation(name: &str, rot: Rot) -> Quat {
 }
 
 // Forward kinematics: world = parent_world * T(offset) * R(local).
-fn pose(key: &Key) -> Vec<Mat4> {
+fn pose(key: &Frame) -> Vec<Mat4> {
     let mut world: Vec<Mat4> = Vec::with_capacity(RIG.len());
-    for joint in RIG {
-        let rot = key.rots.iter().find(|(n, _)| *n == joint.name).map(|(_, r)| *r).unwrap_or_default();
+    for (joint, &rot) in RIG.iter().zip(&key.rots) {
         let mut offset = joint.offset;
         if joint.parent.is_none() {
             offset.y += key.bob;
@@ -376,12 +431,11 @@ fn wires(world: &[Mat4], pos: &[Vec3], caps: &[Shape], toward_cam: Vec3) -> Vec<
         out.push(Wire { pts: vec![hub, rim[k]], kind: Kind::Wheel });
         out.push(Wire { pts: vec![rim[k]], kind: Kind::Joint });
     }
-    // Sword of Extermination: blade continues the right forearm past the knee.
-    let fore = (pos[R_WRIST] - pos[R_ELBOW]).normalize();
-    let side = fore.cross(toward_cam).normalize_or(Vec3::X) * 0.12;
-    let base = pos[R_WRIST] - side * 4.0;
-    let tip = base + fore * 4.2;
-    out.push(Wire { pts: vec![base - side, tip, base + side, base - side], kind: Kind::Blade });
+    // Sword of Extermination: flat blade riding the outer edge of the right forearm, running past the fist.
+    let fore = world[R_ELBOW];
+    let edge = |y: f32, z: f32| fore.transform_point3(Vec3::new(-0.62, y, z));
+    let blade = vec![edge(-0.5, 0.12), edge(-2.4, 0.2), edge(-6.3, 0.0), edge(-2.4, -0.2), edge(-0.5, -0.12), edge(-0.5, 0.12)];
+    out.push(Wire { pts: blade, kind: Kind::Blade });
     for (i, p) in pos.iter().enumerate() {
         out.push(Wire { pts: vec![*p + toward_cam * RIG[i].radius.max(0.2)], kind: Kind::Joint });
     }
@@ -453,14 +507,14 @@ struct Posed {
     caps: Vec<Shape>,
 }
 
-fn posed(key: &Key) -> Posed {
+fn posed(key: &Frame) -> Posed {
     let world = pose(key);
     let pos: Vec<Vec3> = world.iter().map(|m| m.transform_point3(Vec3::ZERO)).collect();
     let caps = shapes(&world, &pos);
     Posed { world, pos, caps }
 }
 
-fn render(key: &Key, yaw: f32, w: usize, h: usize) -> Vec<String> {
+fn render(key: &Frame, yaw: f32, w: usize, h: usize) -> Vec<String> {
     let s = posed(key);
     // Terminal cells are about twice as tall as wide.
     let cam = Camera::new(yaw, w as f32 * 0.5 / h as f32);
@@ -474,7 +528,7 @@ fn render(key: &Key, yaw: f32, w: usize, h: usize) -> Vec<String> {
     out
 }
 
-fn svg(key: &Key, yaw: f32, pw: usize, ph: usize) -> String {
+fn svg(key: &Frame, yaw: f32, pw: usize, ph: usize) -> String {
     let s = posed(key);
     let cam = Camera::new(yaw, pw as f32 / ph as f32);
     let kinds = [
@@ -544,7 +598,7 @@ fn ray_field(cam: &Camera, dir: Vec3, caps: &[Shape]) -> (f32, f32, usize) {
 }
 
 // Marching squares on the ray field: the silhouette outline only.
-fn contour_svg(key: &Key, yaw: f32, pw: usize, ph: usize, step: f32) -> String {
+fn contour_svg(key: &Frame, yaw: f32, pw: usize, ph: usize, step: f32) -> String {
     let s = posed(key);
     let cam = Camera::new(yaw, pw as f32 / ph as f32);
     let (gw, gh) = ((pw as f32 / step) as usize + 1, (ph as f32 / step) as usize + 1);
@@ -599,7 +653,7 @@ fn contour_svg(key: &Key, yaw: f32, pw: usize, ph: usize, step: f32) -> String {
 
 fn html(yaw: f32, w: usize, h: usize) -> String {
     let mut body = String::new();
-    for key in KEYS {
+    for key in &keyframes() {
         let ascii = render(key, yaw, w, h).join("\n").replace('&', "&amp;").replace('<', "&lt;");
         body += &format!(
             "<section><h2>{} yaw {yaw}</h2><div class='pair'>{}{}<pre>{ascii}</pre></div></section>",
@@ -617,7 +671,7 @@ pre{{background:#2a1a16;padding:8px;font-size:11px;line-height:1.05;margin:0}}</
 }
 
 // Blended surface as a triangle mesh (naive surface nets), plus wheel/blade polylines, as JSON per key.
-fn mesh_json(key: &Key, voxel: f32) -> String {
+fn mesh_json(key: &Frame, voxel: f32, cycle: bool) -> String {
     use fast_surface_nets::ndshape::{RuntimeShape, Shape as _};
     use fast_surface_nets::{surface_nets, SurfaceNetsBuffer};
     let s = posed(key);
@@ -657,7 +711,7 @@ fn mesh_json(key: &Key, voxel: f32) -> String {
         lines.push(format!("{{\"kind\":\"{tag}\",\"pts\":[{}]}}", pts.join(",")));
     }
     format!(
-        "{{\"name\":\"{}\",\"pos\":[{}],\"nrm\":[{}],\"kind\":[{}],\"idx\":[{}],\"lines\":[{}]}}",
+        "{{\"name\":\"{}\",\"cycle\":{cycle},\"pos\":[{}],\"nrm\":[{}],\"kind\":[{}],\"idx\":[{}],\"lines\":[{}]}}",
         key.name,
         pos.trim_end_matches(','),
         nrm.trim_end_matches(','),
@@ -675,7 +729,8 @@ fn main() {
     let h: usize = args.get(3).and_then(|s| s.parse().ok()).unwrap_or(50);
     if which == "viewer" {
         let voxel: f32 = args.get(1).and_then(|s| s.parse().ok()).unwrap_or(0.2);
-        let keys: Vec<String> = KEYS.iter().map(|k| mesh_json(k, voxel)).collect();
+        let mut keys: Vec<String> = keyframes().iter().map(|k| mesh_json(k, voxel, false)).collect();
+        keys.extend(walk_cycle().iter().map(|k| mesh_json(k, voxel, true)));
         let page = include_str!("maha_viewer.html").replace("__KEYS__", &format!("[{}]", keys.join(",")));
         let path = "docs/maha_rig/viewer.html";
         std::fs::write(path, page).expect("write viewer");
@@ -688,9 +743,10 @@ fn main() {
         println!("{path}");
         return;
     }
-    let keys: Vec<&Key> = match which.parse::<usize>() {
-        Ok(i) => vec![&KEYS[i.min(KEYS.len() - 1)]],
-        Err(_) => KEYS.iter().collect(),
+    let all = keyframes();
+    let keys: Vec<&Frame> = match which.parse::<usize>() {
+        Ok(i) => vec![&all[i.min(all.len() - 1)]],
+        Err(_) => all.iter().collect(),
     };
     let frames: Vec<Vec<String>> = keys.iter().map(|k| render(k, yaw, w, h)).collect();
     for row in 0..=h {
