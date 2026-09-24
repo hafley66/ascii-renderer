@@ -252,9 +252,10 @@ fn shapes(world: &[Mat4], pos: &[Vec3], t: Tweak) -> Vec<Shape> {
         // trapezius as a fan of bundles: spine origins (skull base down to upper back) to clavicle/acromion
         for k in 0..TRAP_BUNDLES {
             let f = k as f32 / (TRAP_BUNDLES - 1) as f32;
-            let origin = at(CHEST, 0.0, 1.45 - 1.3 * f + t.trap_height * (1.0 - f), -0.35 - 0.3 * f);
-            let insert = at(CHEST, side * (0.45 + 0.7 * f + t.trap_reach), 0.55 - 0.15 * f - t.trap_slope, 0.05 - 0.3 * f);
-            let r = 0.3 - 0.08 * f + t.trap_mass;
+            // upper bundle runs skull base to acromion at about 45 degrees; lower ones fan down the back
+            let origin = at(CHEST, side * 0.28 * (1.0 - f), 1.55 - 1.4 * f + t.trap_height * (1.0 - f), -0.3 - 0.35 * f);
+            let insert = at(CHEST, side * (1.2 - 0.2 * f + t.trap_reach), 0.5 - 0.1 * f - t.trap_slope, -0.05 - 0.3 * f);
+            let r = 0.34 - 0.1 * f + t.trap_mass;
             out.push(core(origin, insert, r, r * 0.8).on(CHEST));
         }
         out.push(
