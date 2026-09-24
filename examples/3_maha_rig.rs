@@ -17,41 +17,41 @@ const fn j(name: &'static str, parent: Option<usize>, x: f32, y: f32, z: f32, ra
 // Units: feet on y=0, crown near y=10.8, 7.5 heads tall, shoulders 3 heads wide.
 // Figure faces +z (toward camera), so the character's right side sits at -x (screen left).
 const RIG: &[Joint] = &[
-    j("pelvis", None, 0.0, 5.8, 0.0, 0.0),
+    j("pelvis", None, 0.0, 6.35, 0.0, 0.0),
     j("spine", Some(0), 0.0, 1.3, 0.0, 0.95),
-    j("chest", Some(1), 0.0, 1.6, 0.1, 1.25),
-    j("neck", Some(2), 0.0, 1.0, 0.25, 0.6),
-    j("head", Some(3), 0.0, 0.7, 0.45, 0.74),
-    j("crown", Some(4), 0.0, 1.0, -0.2, 0.84),
-    j("r_shoulder", Some(2), -2.3, 0.2, 0.0, 0.7),
-    j("r_elbow", Some(6), 0.0, -2.35, 0.0, 0.55),
-    j("r_wrist", Some(7), 0.0, -2.2, 0.0, 0.44),
-    j("r_fist", Some(8), 0.0, -0.8, 0.0, 0.48),
-    j("l_shoulder", Some(2), 2.3, 0.2, 0.0, 0.7),
-    j("l_elbow", Some(10), 0.0, -2.35, 0.0, 0.55),
-    j("l_wrist", Some(11), 0.0, -2.2, 0.0, 0.44),
-    j("l_fist", Some(12), 0.0, -0.8, 0.0, 0.48),
-    j("r_hip", Some(0), -0.8, -0.3, 0.0, 0.85),
-    j("r_knee", Some(14), 0.0, -2.6, 0.0, 0.62),
-    j("r_ankle", Some(15), 0.0, -2.5, 0.0, 0.45),
-    j("r_toe", Some(16), 0.0, -0.3, 0.8, 0.32),
-    j("l_hip", Some(0), 0.8, -0.3, 0.0, 0.85),
-    j("l_knee", Some(18), 0.0, -2.6, 0.0, 0.62),
-    j("l_ankle", Some(19), 0.0, -2.5, 0.0, 0.45),
-    j("l_toe", Some(20), 0.0, -0.3, 0.8, 0.32),
+    j("chest", Some(1), 0.0, 1.6, 0.1, 1.15),
+    j("neck", Some(2), 0.0, 1.0, 0.25, 0.42),
+    j("head", Some(3), 0.0, 0.5, 0.32, 0.52),
+    j("crown", Some(4), 0.0, 0.7, -0.14, 0.59),
+    j("r_shoulder", Some(2), -1.25, 0.35, 0.0, 0.45),
+    j("r_elbow", Some(6), 0.0, -2.14, 0.0, 0.4),
+    j("r_wrist", Some(7), 0.0, -1.68, 0.0, 0.25),
+    j("r_fist", Some(8), 0.0, -0.7, 0.0, 0.3),
+    j("l_shoulder", Some(2), 1.25, 0.35, 0.0, 0.45),
+    j("l_elbow", Some(10), 0.0, -2.14, 0.0, 0.4),
+    j("l_wrist", Some(11), 0.0, -1.68, 0.0, 0.25),
+    j("l_fist", Some(12), 0.0, -0.7, 0.0, 0.3),
+    j("r_hip", Some(0), -0.6, -0.3, 0.0, 0.7),
+    j("r_knee", Some(14), 0.0, -2.82, 0.0, 0.62),
+    j("r_ankle", Some(15), 0.0, -2.83, 0.0, 0.4),
+    j("r_toe", Some(16), 0.0, -0.3, 0.95, 0.32),
+    j("l_hip", Some(0), 0.6, -0.3, 0.0, 0.7),
+    j("l_knee", Some(18), 0.0, -2.82, 0.0, 0.62),
+    j("l_ankle", Some(19), 0.0, -2.83, 0.0, 0.4),
+    j("l_toe", Some(20), 0.0, -0.3, 0.95, 0.32),
     // Four brow wings: an upper pair sweeping up-out, a lower pair nearly level.
-    j("r_wing_hi", Some(4), -0.3, 0.45, 0.4, 0.26),
-    j("r_wing_hi_mid", Some(22), -0.7, 0.7, -0.9, 0.3),
-    j("r_wing_hi_tip", Some(23), -0.6, 0.9, -1.1, 0.1),
-    j("l_wing_hi", Some(4), 0.3, 0.45, 0.4, 0.26),
-    j("l_wing_hi_mid", Some(25), 0.7, 0.7, -0.9, 0.3),
-    j("l_wing_hi_tip", Some(26), 0.6, 0.9, -1.1, 0.1),
-    j("r_wing_lo", Some(4), -0.3, 0.15, 0.4, 0.24),
-    j("r_wing_lo_mid", Some(28), -0.85, 0.1, -0.9, 0.28),
-    j("r_wing_lo_tip", Some(29), -0.8, 0.1, -1.2, 0.1),
-    j("l_wing_lo", Some(4), 0.3, 0.15, 0.4, 0.24),
-    j("l_wing_lo_mid", Some(31), 0.85, 0.1, -0.9, 0.28),
-    j("l_wing_lo_tip", Some(32), 0.8, 0.1, -1.2, 0.1),
+    j("r_wing_hi", Some(4), -0.21, 0.32, 0.28, 0.18),
+    j("r_wing_hi_mid", Some(22), -0.49, 0.49, -0.63, 0.21),
+    j("r_wing_hi_tip", Some(23), -0.42, 0.63, -0.77, 0.07),
+    j("l_wing_hi", Some(4), 0.21, 0.32, 0.28, 0.18),
+    j("l_wing_hi_mid", Some(25), 0.49, 0.49, -0.63, 0.21),
+    j("l_wing_hi_tip", Some(26), 0.42, 0.63, -0.77, 0.07),
+    j("r_wing_lo", Some(4), -0.21, 0.1, 0.28, 0.17),
+    j("r_wing_lo_mid", Some(28), -0.6, 0.07, -0.63, 0.2),
+    j("r_wing_lo_tip", Some(29), -0.56, 0.07, -0.84, 0.07),
+    j("l_wing_lo", Some(4), 0.21, 0.1, 0.28, 0.17),
+    j("l_wing_lo_mid", Some(31), 0.6, 0.07, -0.63, 0.2),
+    j("l_wing_lo_tip", Some(32), 0.56, 0.07, -0.84, 0.07),
 ];
 const CROWN: usize = 5;
 const PELVIS: usize = 0;
@@ -246,38 +246,37 @@ fn shapes(world: &[Mat4], pos: &[Vec3], t: Tweak) -> Vec<Shape> {
         })
         .collect();
     let at = |m: usize, x: f32, y: f32, z: f32| world[m].transform_point3(Vec3::new(x, y, z));
-    out.push(cone(at(HEAD, 0.0, -0.1, 0.2), at(HEAD, 0.0, -0.55, 0.35), 0.52, 0.4, Kind::Body).on(HEAD));
+    out.push(cone(at(HEAD, 0.0, -0.07, 0.14), at(HEAD, 0.0, -0.39, 0.25), 0.36, 0.28, Kind::Body).on(HEAD));
     for side in [-1.0, 1.0] {
         let (shoulder, elbow) = if side < 0.0 { (R_SHOULDER, R_ELBOW) } else { (L_SHOULDER, L_ELBOW) };
-        // traps slope from the neck into the delt; the delt flows down the arm, no cap
         // trapezius as a fan of bundles: spine origins (skull base down to upper back) to clavicle/acromion
         for k in 0..TRAP_BUNDLES {
             let f = k as f32 / (TRAP_BUNDLES - 1) as f32;
             let origin = at(CHEST, 0.0, 1.45 - 1.3 * f + t.trap_height * (1.0 - f), -0.35 - 0.3 * f);
-            let insert = at(CHEST, side * (1.0 + 0.9 * f + t.trap_reach), 0.55 - 0.15 * f - t.trap_slope, 0.05 - 0.3 * f);
-            let r = 0.36 - 0.1 * f + t.trap_mass;
+            let insert = at(CHEST, side * (0.45 + 0.7 * f + t.trap_reach), 0.55 - 0.15 * f - t.trap_slope, 0.05 - 0.3 * f);
+            let r = 0.3 - 0.08 * f + t.trap_mass;
             out.push(core(origin, insert, r, r * 0.8).on(CHEST));
         }
         out.push(
             cone(
-                at(shoulder, side * (0.2 + t.delt_out), -0.15, 0.05),
-                at(shoulder, side * (0.1 + t.delt_out * 0.5), -1.2 - t.delt_length, 0.05),
-                0.72 + t.delt_mass,
-                0.5 + t.delt_mass * 0.2,
+                at(shoulder, side * (0.12 + t.delt_out), -0.1, 0.03),
+                at(shoulder, side * (0.06 + t.delt_out * 0.5), -1.0 - t.delt_length, 0.03),
+                0.45 + t.delt_mass,
+                0.35 + t.delt_mass * 0.2,
                 Kind::Body,
             )
             .on(shoulder),
         );
         // delt cap: a ball on the acromion that swells up and out, not along the arm
-        let cap = at(shoulder, side * (0.3 + t.delt_out + t.delt_cap * 0.4), 0.0 + t.delt_cap * 0.5, 0.0);
-        out.push(cone(cap, cap + Vec3::Y * 0.01, 0.55 + t.delt_cap * 0.35, 0.55 + t.delt_cap * 0.35, Kind::Body).on(shoulder));
-        out.push(core(at(CHEST, side * 0.25, 0.3, 0.6), at(CHEST, side * 1.4, 0.35, 0.4), 0.8, 0.7).on(CHEST));
-        out.push(core(at(CHEST, side * 1.3, -0.1, -0.15), at(CHEST, side * 0.7, -2.0, 0.0), 0.62, 0.45).on(CHEST));
-        out.push(cone(at(shoulder, 0.0, -0.9, 0.22), at(shoulder, 0.0, -1.9, 0.2), 0.72, 0.56, Kind::Body).on(shoulder));
-        out.push(cone(at(shoulder, 0.0, -0.7, -0.2), at(shoulder, 0.0, -2.1, -0.15), 0.6, 0.45, Kind::Body).on(shoulder));
-        out.push(cone(at(elbow, 0.0, -0.4, 0.05), at(elbow, 0.0, -2.2, 0.0), 0.6, 0.42, Kind::Body).on(elbow));
+        let cap = at(shoulder, side * (0.18 + t.delt_out + t.delt_cap * 0.4), 0.0 + t.delt_cap * 0.5, 0.0);
+        out.push(cone(cap, cap + Vec3::Y * 0.01, 0.35 + t.delt_cap * 0.35, 0.35 + t.delt_cap * 0.35, Kind::Body).on(shoulder));
+        out.push(core(at(CHEST, side * 0.2, 0.3, 0.55), at(CHEST, side * 0.85, 0.35, 0.4), 0.5, 0.45).on(CHEST));
+        out.push(core(at(CHEST, side * 0.9, -0.1, -0.15), at(CHEST, side * 0.55, -2.0, 0.0), 0.45, 0.35).on(CHEST));
+        out.push(cone(at(shoulder, 0.0, -0.8, 0.15), at(shoulder, 0.0, -1.7, 0.13), 0.43, 0.34, Kind::Body).on(shoulder));
+        out.push(cone(at(shoulder, 0.0, -0.6, -0.14), at(shoulder, 0.0, -1.9, -0.1), 0.36, 0.27, Kind::Body).on(shoulder));
+        out.push(cone(at(elbow, 0.0, -0.3, 0.03), at(elbow, 0.0, -1.6, 0.0), 0.34, 0.22, Kind::Body).on(elbow));
     }
-    out.push(cone(at(PELVIS, 0.0, 0.6, 0.0), at(PELVIS, 0.0, -3.3, 0.1), 1.45, 2.05, Kind::Skirt).on(PELVIS));
+    out.push(cone(at(PELVIS, 0.0, 0.6, 0.0), at(PELVIS, 0.0, -3.5, 0.1), 1.3, 1.8, Kind::Skirt).on(PELVIS));
     out
 }
 
@@ -467,10 +466,10 @@ fn wires(world: &[Mat4], pos: &[Vec3], caps: &[Shape], toward_cam: Vec3) -> Vec<
         mesh_tube(&mut out, &rings, axis, sides, c.kind);
     }
     // Wheel: tilted ring of 8 spokes with knob beads, parented to the crown.
-    let crown = world[CROWN] * Mat4::from_rotation_translation(Quat::from_rotation_x(-0.25), Vec3::new(0.0, 0.35, 0.0));
+    let crown = world[CROWN] * Mat4::from_rotation_translation(Quat::from_rotation_x(-0.25), Vec3::new(0.0, 0.25, 0.0));
     let hub = crown.transform_point3(Vec3::ZERO);
     let (wx, wz) = (crown.transform_vector3(Vec3::X), crown.transform_vector3(Vec3::Z));
-    let rim = polygon(hub, wx, wz, 1.15, 16, 0.0);
+    let rim = polygon(hub, wx, wz, 0.8, 16, 0.0);
     out.push(Wire { pts: rim.clone(), kind: Kind::Wheel });
     for k in (0..16).step_by(2) {
         out.push(Wire { pts: vec![hub, rim[k]], kind: Kind::Wheel });
@@ -478,8 +477,8 @@ fn wires(world: &[Mat4], pos: &[Vec3], caps: &[Shape], toward_cam: Vec3) -> Vec<
     }
     // Sword of Extermination: flat blade riding the outer edge of the right forearm, running past the fist.
     let fore = world[R_ELBOW];
-    let edge = |y: f32, z: f32| fore.transform_point3(Vec3::new(-0.62, y, z));
-    let blade = vec![edge(-0.5, 0.12), edge(-2.4, 0.2), edge(-6.3, 0.0), edge(-2.4, -0.2), edge(-0.5, -0.12), edge(-0.5, 0.12)];
+    let edge = |y: f32, z: f32| fore.transform_point3(Vec3::new(-0.35, y, z));
+    let blade = vec![edge(-0.5, 0.12), edge(-2.4, 0.2), edge(-5.3, 0.0), edge(-2.4, -0.2), edge(-0.5, -0.12), edge(-0.5, 0.12)];
     out.push(Wire { pts: blade, kind: Kind::Blade });
     for (i, p) in pos.iter().enumerate() {
         out.push(Wire { pts: vec![*p + toward_cam * RIG[i].radius.max(0.2)], kind: Kind::Joint });
@@ -827,8 +826,8 @@ fn skin_part(caps: &[Shape], voxel: f32, falloff: f32, drape: bool, morphs: &[(&
         // The hakama rides the pelvis but lets the thighs pull it along.
         if drape {
             let waist = (w.y - 4.0).max(0.0) * 0.8;
-            best[R_HIP] = (w.x + 0.8).abs() + waist;
-            best[L_HIP] = (w.x - 0.8).abs() + waist;
+            best[R_HIP] = (w.x + 0.6).abs() + waist;
+            best[L_HIP] = (w.x - 0.6).abs() + waist;
         }
         let dmin = best.iter().cloned().fold(f32::INFINITY, f32::min);
         let mut ranked: Vec<(usize, f32)> =
