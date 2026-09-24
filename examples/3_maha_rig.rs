@@ -14,22 +14,22 @@ const fn j(name: &'static str, parent: Option<usize>, x: f32, y: f32, z: f32, ra
     Joint { name, parent, offset: Vec3::new(x, y, z), radius }
 }
 
-// Units: feet on y=0, crown near y=10.8, 7.5 heads tall, shoulders 3 heads wide.
+// Units: feet on y=0, crown near y=11.3, ~9 heads tall (refs), shoulders ~2x the waist.
 // Figure faces +z (toward camera), so the character's right side sits at -x (screen left).
 const RIG: &[Joint] = &[
     j("pelvis", None, 0.0, 6.35, 0.0, 0.0),
-    j("spine", Some(0), 0.0, 1.3, 0.0, 0.7),
+    j("spine", Some(0), 0.0, 1.8, 0.0, 0.7),
     j("chest", Some(1), 0.0, 1.6, 0.1, 0.9),
     j("neck", Some(2), 0.0, 0.6, 0.5, 0.5),
     j("head", Some(3), 0.0, 0.4, 0.3, 0.4),
     j("crown", Some(4), 0.0, 0.85, -0.3, 0.4),
     j("r_shoulder", Some(2), -1.25, 0.35, 0.0, 0.45),
-    j("r_elbow", Some(6), 0.0, -2.14, 0.0, 0.4),
-    j("r_wrist", Some(7), 0.0, -1.68, 0.0, 0.3),
+    j("r_elbow", Some(6), 0.0, -2.4, 0.0, 0.4),
+    j("r_wrist", Some(7), 0.0, -2.0, 0.0, 0.3),
     j("r_fist", Some(8), 0.0, -0.7, 0.0, 0.38),
     j("l_shoulder", Some(2), 1.25, 0.35, 0.0, 0.45),
-    j("l_elbow", Some(10), 0.0, -2.14, 0.0, 0.4),
-    j("l_wrist", Some(11), 0.0, -1.68, 0.0, 0.3),
+    j("l_elbow", Some(10), 0.0, -2.4, 0.0, 0.4),
+    j("l_wrist", Some(11), 0.0, -2.0, 0.0, 0.3),
     j("l_fist", Some(12), 0.0, -0.7, 0.0, 0.38),
     j("r_hip", Some(0), -0.6, -0.3, 0.0, 0.7),
     j("r_knee", Some(14), 0.0, -2.82, 0.0, 0.62),
@@ -301,7 +301,7 @@ fn shapes(world: &[Mat4], pos: &[Vec3], t: Tweak) -> Vec<Shape> {
         // pec shelf: a heavy slab from sternum to armpit, underside overhangs the ribs
         out.push(core(at(CHEST, side * 0.25, 0.25, 0.62), at(CHEST, side * 0.95, 0.4, 0.42), 0.55, 0.5).on(CHEST));
         // lats: flare wide under the armpit, pinch in to a narrow waist (refs: shoulders ~2x waist)
-        out.push(core(at(CHEST, side * 1.0, -0.1, -0.3), at(CHEST, side * 0.55, -2.1, -0.1), 0.55, 0.28).on(CHEST));
+        out.push(core(at(CHEST, side * 1.0, -0.1, -0.3), at(CHEST, side * 0.55, -2.4, -0.1), 0.55, 0.28).on(CHEST));
         // biceps peak in front, triceps horseshoe behind
         out.push(cone(at(shoulder, 0.0, -0.8, 0.18), at(shoulder, 0.0, -1.7, 0.15), 0.52, 0.4, Kind::Body).on(shoulder));
         out.push(cone(at(shoulder, 0.0, -0.6, -0.16), at(shoulder, 0.0, -1.9, -0.12), 0.46, 0.32, Kind::Body).on(shoulder));
@@ -313,7 +313,7 @@ fn shapes(world: &[Mat4], pos: &[Vec3], t: Tweak) -> Vec<Shape> {
     }
     // eight-pack: 4 rows x 2, shrinking toward the navel; linea alba and tendinous rows are the creases
     for row in 0..4 {
-        let y = -0.55 - row as f32 * 0.42;
+        let y = -0.6 - row as f32 * 0.5;
         let (z, r) = (0.72 - row as f32 * 0.07, 0.24 - row as f32 * 0.012);
         for side in [-1.0, 1.0] {
             out.push(detail(at(CHEST, side * 0.21, y + 0.08, z), at(CHEST, side * 0.24, y - 0.08, z), r, r).on(CHEST));
@@ -326,14 +326,14 @@ fn shapes(world: &[Mat4], pos: &[Vec3], t: Tweak) -> Vec<Shape> {
             out.push(detail(at(CHEST, side * 1.02, y, 0.05), at(CHEST, side * 0.82, y - 0.25, 0.45), 0.15, 0.12).on(CHEST));
         }
         // back: erector columns either side of the spine groove, scapula blade muscles, teres major to the armpit
-        out.push(detail(at(CHEST, side * 0.27, -0.7, -0.78), at(CHEST, side * 0.25, -2.7, -0.62), 0.25, 0.3).on(CHEST));
+        out.push(detail(at(CHEST, side * 0.27, -0.7, -0.78), at(CHEST, side * 0.25, -3.1, -0.6), 0.25, 0.3).on(CHEST));
         out.push(detail(at(CHEST, side * 0.55, 0.15, -0.72), at(CHEST, side * 0.7, -0.55, -0.66), 0.32, 0.28).on(CHEST));
         out.push(detail(at(CHEST, side * 0.85, -0.55, -0.55), at(CHEST, side * 1.15, -0.2, -0.25), 0.26, 0.22).on(CHEST));
         // external oblique: ribs to the hip crest, overhangs the sash
-        out.push(detail(at(CHEST, side * 0.78, -1.3, 0.2), at(CHEST, side * 0.72, -2.55, 0.3), 0.3, 0.32).on(CHEST));
+        out.push(detail(at(CHEST, side * 0.78, -1.4, 0.2), at(CHEST, side * 0.72, -3.0, 0.3), 0.3, 0.34).on(CHEST));
     }
     // hakama: cinched at the sash on the hip, flares to the knee
-    out.push(cone(at(PELVIS, 0.0, 0.25, 0.0), at(PELVIS, 0.0, -3.4, 0.1), 1.25, 1.85, Kind::Skirt).on(PELVIS));
+    out.push(cone(at(PELVIS, 0.0, 0.25, 0.0), at(PELVIS, 0.0, -3.3, 0.1), 1.25, 1.8, Kind::Skirt).on(PELVIS));
     out
 }
 
