@@ -54,6 +54,11 @@ const RIG: &[Joint] = &[
     j("l_wing_lo_tip", Some(32), 0.85, 0.05, -0.35, 0.06),
 ];
 const CROWN: usize = 5;
+// Head-tail spine in the head frame: up off the skull, out behind, drooping past the left shoulder.
+const TAIL: [(f32, f32, f32); 8] = [
+    (0.0, 0.55, -0.3), (0.05, 0.95, -0.95), (0.12, 1.0, -1.75), (0.22, 0.6, -2.5),
+    (0.32, -0.05, -2.95), (0.42, -0.75, -3.05), (0.5, -1.3, -2.85), (0.52, -1.55, -2.5),
+];
 const PELVIS: usize = 0;
 const CHEST: usize = 2;
 const HEAD: usize = 4;
@@ -259,6 +264,14 @@ fn shapes(world: &[Mat4], pos: &[Vec3], t: Tweak) -> Vec<Shape> {
         out.push(cone(at(HEAD, side * 0.2, 0.0, 0.1), at(HEAD, side * 0.13, -0.45, 0.42), 0.17, 0.16, Kind::Body).on(HEAD));
     }
     out.push(cone(at(HEAD, -0.1, -0.47, 0.45), at(HEAD, 0.1, -0.47, 0.45), 0.16, 0.16, Kind::Body).on(HEAD));
+    // head-tail: segmented, tapering, arcs up off the back of the skull then back and down past the
+    // left shoulder with a curl at the end (refs #2, #6); segments meet in creases so the bands ink
+    let tail = TAIL;
+    for k in 0..tail.len() - 1 {
+        let (a, b) = (tail[k], tail[k + 1]);
+        let r = 0.3 - 0.03 * k as f32;
+        out.push(detail(at(HEAD, a.0, a.1, a.2), at(HEAD, b.0, b.1, b.2), r, r * 0.88).on(HEAD));
+    }
     // cranial ridge: a keel from brow up over the long skull
     out.push(cone(at(HEAD, 0.0, 0.25, 0.42), at(CROWN, 0.0, 0.35, -0.1), 0.2, 0.3, Kind::Body).on(HEAD));
     for side in [-1.0, 1.0] {
@@ -900,6 +913,15 @@ fn props(s: &Posed) -> Vec<Prop> {
     }
     quad(&mut t, spine_a + thick, spine_b + thick, spine_b - thick, spine_a - thick);
     out.push(Prop { kind: "blade", bone: R_ELBOW, tris: t });
+    // Dark bands between the tail segments (refs #2, #6).
+    let mut t = Vec::new();
+    for k in 1..TAIL.len() - 1 {
+        let h = |i: usize| world[HEAD].transform_point3(Vec3::from(TAIL[i]));
+        let (c, dir) = (h(k), (h(k + 1) - h(k - 1)).normalize());
+        let r = 0.3 - 0.03 * k as f32 + 0.03;
+        tube(&mut t, c - dir * 0.04, c + dir * 0.04, r, r, 10);
+    }
+    out.push(Prop { kind: "ring", bone: HEAD, tris: t });
     // Black rings on both wrists and ankles (refs #1, #2, #9).
     for (bone, r) in [(8, 0.46), (12, 0.46), (16, 0.52), (20, 0.52)] {
         let m = world[bone];
