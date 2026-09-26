@@ -29,3 +29,11 @@ terms so each cell does one add, one `sqrt` and one background lerp.
 
 Output is byte-identical: the 60-frame FNV checksum over plain chars is unchanged
 (`8d5c5f6243a32cc0` @200x60, `6c3bfcb2f295310d` @400x120).
+
+Session comparison (base `f08be93` vs HEAD, alternating in one session,
+`--test-threads=1`, min of 3 runs):
+
+| size | base ms/frame | HEAD ms/frame | speedup |
+|------|---------------|---------------|---------|
+| 200x60 | 0.109 | 0.082 | 1.33x |
+| 400x120 | 0.339 | 0.233 | 1.46x |

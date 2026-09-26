@@ -41,3 +41,11 @@ Changes:
 
 Output is byte-identical: the 60-frame FNV checksum over plain chars is unchanged
 (`0aceff13967a8c62` @200x60, `a525fe18792ee160` @400x120).
+
+Session comparison (base `f08be93` vs HEAD, alternating in one session,
+`--test-threads=1`, min of 3 runs):
+
+| size | base ms/frame | HEAD ms/frame | speedup |
+|------|---------------|---------------|---------|
+| 200x60 | 0.663 | 0.523 | 1.27x |
+| 400x120 | 1.765 | 1.326 | 1.33x |
