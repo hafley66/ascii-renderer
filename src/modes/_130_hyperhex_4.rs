@@ -524,6 +524,9 @@ fn draw(frame: &mut ModeFrame<'_>, k: &Knobs) {
     let fill_gain = (0.5 * mood_t.wc + 1.0 * mood_t.wh + 0.35 * mood_t.wf + 0.9 * mood_t.wr)
         .clamp(0.0, 1.0) as f32;
 
+    // A bloom flash between the two heartbeat pulses: every cell core ignites.
+    let bloom = (gauss(mood_t.u, 0.50, 0.06) * (0.4 + 0.6 * mood_t.wh)) as f32;
+
     // Contagion front from two opposite origins; they interfere when they meet.
     let wound_on = k.wound > 0.05 && mood_t.u > 0.40 && mood_t.u < 0.66;
     let wphase = ((mood_t.u - 0.40) / 0.26).clamp(0.0, 1.0);
@@ -646,7 +649,7 @@ fn draw(frame: &mut ModeFrame<'_>, k: &Knobs) {
                     let bin = (((ang + PI) / TAU) * BINS as f64) as usize % BINS;
                     let dens = density[bin] / dmax;
                     let base = lerp_color(pal[0], cold, d * d * 0.32);
-                    let corona = smoothstep(0.55, 0.98, d) * dens * hz;
+                    let corona = (smoothstep(0.55, 0.98, d) * dens * hz + bloom * 0.35).clamp(0.0, 1.0);
                     let bg = lerp_color(base, warm, corona * 0.7);
                     let dust = unit(seed, 10, (y * w + x) as u64) > 0.992;
                     let ch = if dust { '.' } else { ' ' };
@@ -739,7 +742,8 @@ fn draw(frame: &mut ModeFrame<'_>, k: &Knobs) {
                         (ws, col)
                     } else {
                         let inten = shape * fill;
-                        let bright = 0.55 + 0.45 * (tile.band * std::f32::consts::TAU).sin();
+                        let bright = (0.55 + 0.45 * (tile.band * std::f32::consts::TAU).sin())
+                            * (1.0 + 0.9 * bloom);
                         (
                             core,
                             lerp_color(pal[0], tile.col, (0.30 + 0.70 * inten) * (0.6 + 0.4 * bright)),
