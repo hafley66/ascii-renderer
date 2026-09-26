@@ -11,19 +11,21 @@ renamed (struct, `NAME`, `HELP`, snapshots).
 
 Release bench: `CARGO_BUILD_JOBS=4 cargo test --release -- --ignored --nocapture modes::_131_hyperhex_5`
 (the `bench` module in `_131_hyperhex_5_bench.rs`): 60 frames at t = 0..60,
-min of 8 rounds, with per-layer attribution and an FNV checksum over the whole
-sweep (not just the snapshot times).
+min of 8 rounds, per-layer attribution, and an FNV checksum over the whole sweep.
 
-| size | baseline ms/frame | final ms/frame |
-|---|---|---|
-| 200x60 | 0.443 | 0.318 |
-| 400x120 | 1.419 | 1.055 |
+Session comparison: base `6313304` (separate worktree + target dir) and HEAD were
+benched alternately in one session, same ROUNDS, both sizes; min of 3 runs.
 
-Hottest layer, baseline -> final:
-- 200x60: ground 0.181 -> ground 0.164 (fill 0.054)
-- 400x120: ground 0.714 -> ground 0.655 (fill 0.184, edges 0.172)
+| size | base 6313304 ms/frame | HEAD ms/frame | speedup |
+|---|---|---|---|
+| 200x60 | 0.422 | 0.318 | 1.33x |
+| 400x120 | 1.352 | 1.059 | 1.28x |
 
-Both checksums byte-identical: `e83e9cf57d6452ea` (200x60) /
+Hottest layer, base -> HEAD:
+- 200x60: ground 0.171 -> ground 0.164
+- 400x120: ground 0.685 -> ground 0.658 (fill 0.387 -> 0.185)
+
+Checksums byte-identical in base and HEAD: `e83e9cf57d6452ea` (200x60) /
 `f313b03082f7440e` (400x120).
 
 Commits:
