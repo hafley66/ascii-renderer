@@ -13,7 +13,7 @@ pub(super) struct Hyperhex6;
 pub(super) static MODE: Hyperhex6 = Hyperhex6;
 
 const NAME: &str = "hyperhex-6";
-const HELP: &str = "hyperhex-6: hyperbolic {6,7} tiling in four acts [depth] [skew] [spin] [breath] [swell] [passage] [fill] [wound] [act] [ghost] [horizon]";
+const HELP: &str = "hyperhex-6: hyperbolic {6,7} tiling in four acts [depth] [skew] [spin] [breath] [swell] [passage] [fill] [wound] [act] [ghost] [horizon] [twist]";
 
 /// Below this screen edge length a cell is too small to read; skip its fill and arcs.
 const EDGE_MIN: f32 = 4.0;
@@ -34,6 +34,7 @@ const PARAMS: &[Param] = &[
     param!("ACT", "act period s", 8.0, 60.0, 40.0, 1.0),
     param!("GHOST", "ghost dual", 0.0, 1.0, 0.5, 0.01),
     param!("HORIZON", "star horizon", 0.0, 1.0, 0.6, 0.01),
+    param!("TWIST", "spiral shear", 0.0, 3.0, 1.1, 0.05),
 ];
 
 /// Deterministic per-cell value, independent of the frame RNG stream.
@@ -316,6 +317,7 @@ struct Knobs {
     act: f64,
     ghost: f64,
     horizon: f64,
+    twist: f64,
 }
 
 fn knob(frame: &ModeFrame<'_>, i: usize, default: f32, lo: f32, hi: f32) -> f32 {
@@ -341,6 +343,7 @@ fn knobs(frame: &ModeFrame<'_>) -> Knobs {
         act: knob(frame, 8, 40.0, 8.0, 60.0) as f64,
         ghost: knob(frame, 9, 0.5, 0.0, 1.0) as f64,
         horizon: knob(frame, 10, 0.6, 0.0, 1.0) as f64,
+        twist: knob(frame, 11, 1.1, 0.0, 3.0) as f64,
     }
 }
 
@@ -525,7 +528,7 @@ fn draw(frame: &mut ModeFrame<'_>, k: &Knobs) {
     // Act modulation: fracture pushes cells outward and guts the edges;
     // reassembly pulls them back. Heartbeat keeps the strong breathing.
     let drift = (mood_t.wf - 0.5 * mood_t.wr) * 0.30;
-    let twist = mood_t.wf * 1.1;
+    let twist = mood_t.wf * k.twist;
     let gap = mood_t.wf * 0.35;
     let fill_gain = (0.5 * mood_t.wc + 1.0 * mood_t.wh + 0.35 * mood_t.wf + 0.9 * mood_t.wr)
         .clamp(0.0, 1.0) as f32;
