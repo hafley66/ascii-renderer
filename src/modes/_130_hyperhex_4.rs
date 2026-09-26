@@ -9,11 +9,11 @@ use crate::registry::{AnimKind, Mode, ModeFrame, Param};
 use crate::types::{Cell, Grid};
 use crossterm::style::Color;
 
-pub(super) struct Hyperhex3;
-pub(super) static MODE: Hyperhex3 = Hyperhex3;
+pub(super) struct Hyperhex4;
+pub(super) static MODE: Hyperhex4 = Hyperhex4;
 
-const NAME: &str = "hyperhex-3";
-const HELP: &str = "hyperhex-3: hyperbolic {6,4} tiling in four acts [depth] [skew] [spin] [breath] [swell] [passage] [fill] [wound] [act] [ghost] [horizon]";
+const NAME: &str = "hyperhex-4";
+const HELP: &str = "hyperhex-4: hyperbolic {6,5} tiling in four acts [depth] [skew] [spin] [breath] [swell] [passage] [fill] [wound] [act] [ghost] [horizon]";
 
 /// Below this screen edge length a cell is too small to read; skip its fill and arcs.
 const EDGE_MIN: f32 = 4.0;
@@ -182,10 +182,10 @@ fn circle_through(p: C, q: C) -> Option<(C, f64)> {
     Some(((x, y), r2.sqrt()))
 }
 
-/// Fundamental hexagon of the {6,4} tiling: circumradius acosh(cos(pi/4)/sin(pi/6))
+/// Fundamental hexagon of the {6,5} tiling: circumradius acosh(cos(pi/5)/sin(pi/6))
 /// projected into the disk. `skew` rigidly rotates the seed tile, keeping it regular.
 fn fundamental(skew: f64) -> [C; 6] {
-    let big_r = ((PI / 4.0).cos() / (PI / 6.0).sin()).acosh();
+    let big_r = ((PI / 5.0).cos() / (PI / 6.0).sin()).acosh();
     let rho = (big_r / 2.0).tanh();
     let mut v = [(0.0, 0.0); 6];
     for (k, slot) in v.iter_mut().enumerate() {
@@ -512,10 +512,10 @@ fn draw(frame: &mut ModeFrame<'_>, k: &Knobs) {
     let gg = view(&mood_g, k, &shift, t - lag);
 
     // Depth story: warm at the centre, cold at the rim, wound in an off-palette hue.
-    let warm = hsl_to_rgb(18.0, 0.78, 0.60);
-    let cold = hsl_to_rgb(212.0, 0.72, 0.62);
-    let wound_col = hsl_to_rgb(((seed as f64) % 360.0 + 168.0) % 360.0, 0.90, 0.58);
-    let wound_hot = hsl_to_rgb(((seed as f64) % 360.0 + 168.0) % 360.0, 1.0, 0.72);
+    let warm = hsl_to_rgb(38.0, 0.88, 0.60);
+    let cold = hsl_to_rgb(286.0, 0.66, 0.62);
+    let wound_col = hsl_to_rgb(((seed as f64) % 360.0 + 132.0) % 360.0, 0.90, 0.58);
+    let wound_hot = hsl_to_rgb(((seed as f64) % 360.0 + 132.0) % 360.0, 1.0, 0.72);
 
     // Act modulation: fracture pushes cells outward and guts the edges;
     // reassembly pulls them back. Heartbeat keeps the strong breathing.
@@ -523,6 +523,9 @@ fn draw(frame: &mut ModeFrame<'_>, k: &Knobs) {
     let gap = mood_t.wf * 0.35;
     let fill_gain = (0.5 * mood_t.wc + 1.0 * mood_t.wh + 0.35 * mood_t.wf + 0.9 * mood_t.wr)
         .clamp(0.0, 1.0) as f32;
+
+    // A bloom flash between the two heartbeat pulses: every cell core ignites.
+    let bloom = (gauss(mood_t.u, 0.50, 0.06) * (0.4 + 0.6 * mood_t.wh)) as f32;
 
     // Contagion front from two opposite origins; they interfere when they meet.
     let wound_on = k.wound > 0.05 && mood_t.u > 0.40 && mood_t.u < 0.66;
@@ -646,7 +649,7 @@ fn draw(frame: &mut ModeFrame<'_>, k: &Knobs) {
                     let bin = (((ang + PI) / TAU) * BINS as f64) as usize % BINS;
                     let dens = density[bin] / dmax;
                     let base = lerp_color(pal[0], cold, d * d * 0.32);
-                    let corona = smoothstep(0.55, 0.98, d) * dens * hz;
+                    let corona = (smoothstep(0.55, 0.98, d) * dens * hz + bloom * 0.35).clamp(0.0, 1.0);
                     let bg = lerp_color(base, warm, corona * 0.7);
                     let dust = unit(seed, 10, (y * w + x) as u64) > 0.992;
                     let ch = if dust { '.' } else { ' ' };
@@ -739,7 +742,8 @@ fn draw(frame: &mut ModeFrame<'_>, k: &Knobs) {
                         (ws, col)
                     } else {
                         let inten = shape * fill;
-                        let bright = 0.55 + 0.45 * (tile.band * std::f32::consts::TAU).sin();
+                        let bright = (0.55 + 0.45 * (tile.band * std::f32::consts::TAU).sin())
+                            * (1.0 + 0.9 * bloom);
                         (
                             core,
                             lerp_color(pal[0], tile.col, (0.30 + 0.70 * inten) * (0.6 + 0.4 * bright)),
@@ -758,7 +762,7 @@ fn draw(frame: &mut ModeFrame<'_>, k: &Knobs) {
     });
 }
 
-impl Mode for Hyperhex3 {
+impl Mode for Hyperhex4 {
     fn name(&self) -> &'static str {
         NAME
     }
@@ -809,17 +813,17 @@ mod tests {
 
     #[test]
     fn snapshot_80x24() {
-        insta::assert_snapshot!("hyperhex_3_80x24", render_at(80, 24, 42, 0.0));
+        insta::assert_snapshot!("hyperhex_4_80x24", render_at(80, 24, 42, 0.0));
     }
 
     #[test]
     fn snapshot_t6() {
-        insta::assert_snapshot!("hyperhex_3_t6", render_at(80, 24, 42, 6.0));
+        insta::assert_snapshot!("hyperhex_4_t6", render_at(80, 24, 42, 6.0));
     }
 
     #[test]
     fn snapshot_wound() {
-        insta::assert_snapshot!("hyperhex_3_wound", render_at(80, 24, 42, 1.0));
+        insta::assert_snapshot!("hyperhex_4_wound", render_at(80, 24, 42, 1.0));
     }
 
     #[test]
@@ -866,7 +870,7 @@ mod tests {
         let avg_ms = start.elapsed().as_secs_f64() * 1000.0 / iters as f64;
         assert!(
             avg_ms < 6.0,
-            "hyperhex-3 average frame {avg_ms:.3} ms exceeds 6 ms"
+            "hyperhex-4 average frame {avg_ms:.3} ms exceeds 6 ms"
         );
     }
 }
