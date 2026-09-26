@@ -13,7 +13,7 @@ pub(super) struct Hyperhex6;
 pub(super) static MODE: Hyperhex6 = Hyperhex6;
 
 const NAME: &str = "hyperhex-6";
-const HELP: &str = "hyperhex-6: hyperbolic {6,6} tiling in four acts [depth] [skew] [spin] [breath] [swell] [passage] [fill] [wound] [act] [ghost] [horizon]";
+const HELP: &str = "hyperhex-6: hyperbolic {6,7} tiling in four acts [depth] [skew] [spin] [breath] [swell] [passage] [fill] [wound] [act] [ghost] [horizon]";
 
 /// Below this screen edge length a cell is too small to read; skip its fill and arcs.
 const EDGE_MIN: f32 = 4.0;
@@ -182,10 +182,10 @@ fn circle_through(p: C, q: C) -> Option<(C, f64)> {
     Some(((x, y), r2.sqrt()))
 }
 
-/// Fundamental hexagon of the {6,6} tiling: circumradius acosh(cos(pi/6)/sin(pi/6))
+/// Fundamental hexagon of the {6,7} tiling: circumradius acosh(cos(pi/7)/sin(pi/6))
 /// projected into the disk. `skew` rigidly rotates the seed tile, keeping it regular.
 fn fundamental(skew: f64) -> [C; 6] {
-    let big_r = ((PI / 6.0).cos() / (PI / 6.0).sin()).acosh();
+    let big_r = ((PI / 7.0).cos() / (PI / 6.0).sin()).acosh();
     let rho = (big_r / 2.0).tanh();
     let mut v = [(0.0, 0.0); 6];
     for (k, slot) in v.iter_mut().enumerate() {
@@ -353,6 +353,7 @@ struct Mood {
     amp: f64,
     aa: C,
     u: f64,
+    iu: f64,
 }
 
 fn act_weight(iu: f64, c: f64) -> f64 {
@@ -389,6 +390,7 @@ fn mood(t: f64, k: &Knobs) -> Mood {
         amp,
         aa,
         u,
+        iu,
     }
 }
 
@@ -406,6 +408,7 @@ struct DrawTile {
     cx: i32,
     cy: i32,
     edge: f32,
+    dep: f32,
     col: Color,
     band: f32,
     m: Iso,
@@ -514,14 +517,15 @@ fn draw(frame: &mut ModeFrame<'_>, k: &Knobs) {
     let gg = view(&mood_g, k, &shift, t - lag);
 
     // Depth story: warm at the centre, cold at the rim, wound in an off-palette hue.
-    let warm = hsl_to_rgb(178.0, 0.72, 0.60);
-    let cold = hsl_to_rgb(338.0, 0.74, 0.62);
-    let wound_col = hsl_to_rgb(((seed as f64) % 360.0 + 62.0) % 360.0, 0.92, 0.58);
-    let wound_hot = hsl_to_rgb(((seed as f64) % 360.0 + 62.0) % 360.0, 1.0, 0.72);
+    let warm = hsl_to_rgb(28.0, 0.90, 0.60);
+    let cold = hsl_to_rgb(258.0, 0.70, 0.62);
+    let wound_col = hsl_to_rgb(((seed as f64) % 360.0 + 190.0) % 360.0, 0.92, 0.58);
+    let wound_hot = hsl_to_rgb(((seed as f64) % 360.0 + 190.0) % 360.0, 1.0, 0.72);
 
     // Act modulation: fracture pushes cells outward and guts the edges;
     // reassembly pulls them back. Heartbeat keeps the strong breathing.
     let drift = (mood_t.wf - 0.5 * mood_t.wr) * 0.30;
+    let twist = mood_t.wf * 1.1;
     let gap = mood_t.wf * 0.35;
     let fill_gain = (0.5 * mood_t.wc + 1.0 * mood_t.wh + 0.35 * mood_t.wf + 0.9 * mood_t.wr)
         .clamp(0.0, 1.0) as f32;
@@ -531,6 +535,9 @@ fn draw(frame: &mut ModeFrame<'_>, k: &Knobs) {
 
     // An eclipse beat: the cell fills starve while the star field swells.
     let ecl = gauss(mood_t.u, 0.78, 0.05);
+
+    // Reassembly births: cells re-ignite centre-first as the act progresses.
+    let prog = ((mood_t.iu - 0.75) / 0.25).clamp(0.0, 1.0) as f32;
 
     // Contagion front from two opposite origins; they interfere when they meet.
     let wound_on = k.wound > 0.05 && mood_t.u > 0.40 && mood_t.u < 0.66;
@@ -552,7 +559,8 @@ fn draw(frame: &mut ModeFrame<'_>, k: &Knobs) {
             let base = compose(&g, &tile.m);
             let cen = apply(&base, (0.0, 0.0));
             let rr = cabs2(cen).sqrt();
-            let m2 = if drift.abs() > 1e-5 {
+            let dep = tile.depth as f64 / k.depth.max(1) as f64;
+            let m2 = if drift.abs() > 1e-5 || twist.abs() > 1e-5 {
                 let dir = if rr > 1e-9 { (cen.0 / rr, cen.1 / rr) } else { (0.0, 0.0) };
                 let mut mag = drift * (0.18 + 0.82 * rr);
                 if mag > 0.0 && rr + mag > 1.35 {
@@ -561,7 +569,8 @@ fn draw(frame: &mut ModeFrame<'_>, k: &Knobs) {
                 if mag < 0.0 && rr + mag < 0.02 {
                     mag = -(rr - 0.02);
                 }
-                compose(&trans_iso((dir.0 * mag, dir.1 * mag)), &base)
+                let moved = compose(&trans_iso((dir.0 * mag, dir.1 * mag)), &base);
+                compose(&rot_iso(twist * (0.3 + dep)), &moved)
             } else {
                 base
             };
@@ -604,6 +613,7 @@ fn draw(frame: &mut ModeFrame<'_>, k: &Knobs) {
                 cx: sx,
                 cy: sy,
                 edge,
+                dep,
                 col,
                 band,
                 m: tile.m,
@@ -734,6 +744,7 @@ fn draw(frame: &mut ModeFrame<'_>, k: &Knobs) {
             let fb = (tile.hops_b as f64 - front).abs() < 0.75;
             let wounded = wound_on && (fa || fb);
             let both = fa && fb;
+            let alive = (1.0 - tile.dep * (1.0 - prog)).max(0.0);
             for y in y0..=y1 {
                 for x in x0..=x1 {
                     if !point_in_poly(x as f32 + 0.5, y as f32 + 0.5, &tile.v) {
@@ -751,7 +762,7 @@ fn draw(frame: &mut ModeFrame<'_>, k: &Knobs) {
                             (ws, wound_col)
                         }
                     } else {
-                        let inten = shape * fill;
+                        let inten = shape * fill * alive;
                         let bright = (0.55 + 0.45 * (tile.band * std::f32::consts::TAU).sin())
                             * (1.0 + 0.9 * bloom);
                         (
@@ -759,7 +770,7 @@ fn draw(frame: &mut ModeFrame<'_>, k: &Knobs) {
                             lerp_color(pal[0], tile.col, (0.30 + 0.70 * inten) * (0.6 + 0.4 * bright)),
                         )
                     };
-                    let shown = if wounded { energy } else { shape * fill };
+                    let shown = if wounded { energy } else { shape * fill * alive };
                     if shown < 0.05 {
                         continue;
                     }
@@ -839,6 +850,11 @@ mod tests {
     #[test]
     fn snapshot_eclipse() {
         insta::assert_snapshot!("hyperhex_6_eclipse", render_at(80, 24, 42, 1.5));
+    }
+
+    #[test]
+    fn snapshot_reassembly() {
+        insta::assert_snapshot!("hyperhex_6_reassembly", render_at(80, 24, 42, 36.0));
     }
 
     #[test]
