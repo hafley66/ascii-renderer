@@ -57,6 +57,8 @@ mod _110_streamnet;
 mod _111_harmonograph;
 
 #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
+mod _118_semaphore;
+
 pub(crate) fn register_all(registry: &mut crate::registry::ModeRegistry) {
     registry.add(&_30_illuminarium::MODE);
     registry.add(&_31_qwen_cathedral::MODE);
@@ -113,4 +115,5 @@ pub(crate) fn register_all(registry: &mut crate::registry::ModeRegistry) {
     registry.add(&_109_pigment_fire::MODE);
     registry.add(&_110_streamnet::MODE);
     registry.add(&_111_harmonograph::MODE);
+    registry.add(&_118_semaphore::MODE);
 }
