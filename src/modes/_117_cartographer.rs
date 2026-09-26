@@ -9,6 +9,7 @@ pub(super) struct Cartographer;
 pub(super) static MODE: Cartographer = Cartographer;
 
 const NAME: &str = "cartographer";
+const CYCLE: f32 = 24.0;
 const HELP: &str = "cartographer: an absent island inks itself [pace] [rugged] [rivers] [hachures] [script] [patina]";
 const PARAMS: &[Param] = &[
     param!("PACE", "drawing pace", 0.5, 2.0, 1.0, 0.1),
@@ -93,6 +94,12 @@ fn unit(seed: u64) -> f32 {
     (hash(seed) >> 40) as f32 / (1u32 << 24) as f32
 }
 
+fn travel(a: (i32, i32), b: (i32, i32), t: f32) -> (i32, i32) {
+    let t = t.clamp(0.0, 1.0);
+    ((a.0 as f32 + (b.0 - a.0) as f32 * t).round() as i32,
+     (a.1 as f32 + (b.1 - a.1) as f32 * t).round() as i32)
+}
+
 fn coast_radius(angle: f32, seed: u64, rugged: f32, detail: usize) -> f32 {
     let turn = (angle / std::f32::consts::TAU).rem_euclid(1.0);
     let mut radius = 0.88;
@@ -173,7 +180,7 @@ fn river_path(island: &Island, seed: u64, river: usize) -> Vec<(i32, i32)> {
         for (dx, dy) in [(1,0),(-1,0),(0,1),(0,-1),(1,1),(1,-1),(-1,1),(-1,-1)] {
             let (nx, ny) = (x + dx, y + dy);
             let Some(next) = island.index(nx, ny) else { continue; };
-            let next_height = if island.land[next] { island.height[next] } else { -0.1 };
+            let next_height = if island.land[next] { island.height[next] } else { -100.0 };
             if next_height >= current_height { continue; }
             let drift = ((nx as f32 - island.cx) * angle.cos() / island.rx.max(1.0)
                 + (ny as f32 - island.cy) * angle.sin() / island.ry.max(1.0)) * 0.035;
@@ -194,11 +201,17 @@ fn river_path(island: &Island, seed: u64, river: usize) -> Vec<(i32, i32)> {
 fn script(seed: u64, word: usize) -> String {
     let stems = ['|', '/', '\\', 'v', '^', 'Y', 'T', 'r'];
     let marks = ['.', ':', '\'', '~', '-', '*', '`', ','];
+    let stem_set = std::array::from_fn::<char, 4, _>(|i| {
+        stems[(hash(seed ^ 0x731a ^ i as u64) as usize) % stems.len()]
+    });
+    let mark_set = std::array::from_fn::<char, 3, _>(|i| {
+        marks[(hash(seed ^ 0xf204 ^ i as u64) as usize) % marks.len()]
+    });
     let mut result = String::new();
     for i in 0..4 {
         let syllable = hash(seed ^ ((word as u64) << 16) ^ i as u64);
-        result.push(stems[(syllable as usize) % stems.len()]);
-        result.push(marks[((syllable >> 8) as usize) % marks.len()]);
+        result.push(stem_set[(syllable as usize) % stem_set.len()]);
+        result.push(mark_set[((syllable >> 8) as usize) % mark_set.len()]);
     }
     result
 }
@@ -207,9 +220,9 @@ fn draw(frame: &mut ModeFrame<'_>, knobs: Knobs) {
     let w = frame.width;
     let h = frame.height;
     if w == 0 || h == 0 { return; }
-    let cycle = (frame.time.max(0.0) * knobs.pace / 16.0).floor() as u64;
+    let cycle = (frame.time.max(0.0) * knobs.pace / CYCLE).floor() as u64;
     let seed = hash(frame.seed ^ cycle.wrapping_mul(0x56a9_f773));
-    let age = (frame.time.max(0.0) * knobs.pace).rem_euclid(16.0);
+    let age = (frame.time.max(0.0) * knobs.pace).rem_euclid(CYCLE);
     let sepia = Color::Rgb { r: 103, g: 70, b: 42 };
     let dark = Color::Rgb { r: 72, g: 49, b: 32 };
     let blue = Color::Rgb { r: 64, g: 91, b: 101 };
@@ -217,7 +230,7 @@ fn draw(frame: &mut ModeFrame<'_>, knobs: Knobs) {
         for y in 0..h.min(frame.grid.len()) {
             for x in 0..w.min(frame.grid[y].len()) {
                 let grain = hash(seed ^ (x as u64).wrapping_mul(811) ^ (y as u64).wrapping_mul(10007)) % 9;
-                let yellow = ((age - 10.0) / 3.5).clamp(0.0, 1.0) * 22.0 * knobs.patina;
+                let yellow = ((age - 18.0) / 4.0).clamp(0.0, 1.0) * 22.0 * knobs.patina;
                 let tint = 216u8.saturating_add(grain as u8);
                 frame.grid[y][x] = Cell::with_bg(' ', dark, Color::Rgb {
                     r: tint, g: tint.saturating_sub(11 + yellow as u8),
@@ -228,8 +241,8 @@ fn draw(frame: &mut ModeFrame<'_>, knobs: Knobs) {
     });
     let island = measure_layer(NAME, "terrain", || Island::new(w, h, seed, knobs.rugged));
     measure_layer(NAME, "wash", || {
-        for y in 2..h.saturating_sub(2) {
-            for x in 2..w.saturating_sub(2) {
+        for y in 2..h.saturating_sub(2).min(frame.grid.len()) {
+            for x in 2..w.saturating_sub(2).min(frame.grid[y].len()) {
                 let idx = y * w + x;
                 if island.land[idx] {
                     let cell = &mut frame.grid[y][x];
@@ -243,9 +256,11 @@ fn draw(frame: &mut ModeFrame<'_>, knobs: Knobs) {
         }
     });
     let coast_pen = measure_layer(NAME, "coast", || {
-        let detail = if age < 1.2 { 0 } else if age < 2.4 { 1 } else if age < 3.5 { 2 } else { 3 };
+        let detail = if age < 1.6 { 0 } else if age < 3.2 { 1 } else if age < 4.8 { 2 } else { 3 };
         let count = 192usize;
-        let shown = ((age / 4.5).clamp(0.0, 1.0) * count as f32).round() as usize;
+        let t = (age / 7.0).clamp(0.0, 1.0);
+        let eased = t * t * (3.0 - 2.0 * t);
+        let shown = (eased * count as f32).round() as usize;
         let mut previous = island.point(-std::f32::consts::FRAC_PI_2, seed, knobs.rugged, detail);
         for i in 1..=shown {
             let angle = -std::f32::consts::FRAC_PI_2 + std::f32::consts::TAU * i as f32 / count as f32;
@@ -256,30 +271,38 @@ fn draw(frame: &mut ModeFrame<'_>, knobs: Knobs) {
         previous
     });
     let river_pen = measure_layer(NAME, "rivers", || {
-        let progress = ((age - 4.35) / 2.65).clamp(0.0, 1.0);
+        let progress = ((age - 7.0) / 6.0).clamp(0.0, 1.0);
         let mut pen = coast_pen;
         for i in 0..knobs.rivers {
             let path = river_path(&island, seed, i);
             if path.is_empty() { continue; }
             let local = (progress * knobs.rivers as f32 - i as f32).clamp(0.0, 1.0);
-            let shown = (local * (path.len().saturating_sub(1)) as f32).round() as usize;
+            if local <= 0.0 { break; }
+            if local < 0.32 {
+                pen = travel(pen, path[0], local / 0.32);
+                break;
+            }
+            let shown = (((local - 0.32) / 0.68) * (path.len().saturating_sub(1)) as f32).round() as usize;
             for pair in path.windows(2).take(shown) {
                 stroke(frame.grid, pair[0], pair[1], if i == 0 { '=' } else { ':' }, blue);
             }
+            pen = path[shown];
             if shown > 0 {
-                pen = path[shown];
-                if shown + 1 == path.len() {
+                if shown + 1 == path.len()
+                    && island.index(path[shown].0, path[shown].1)
+                        .map_or(false, |idx| !island.land[idx]) {
                     let mouth = path[shown];
                     stroke(frame.grid, mouth, (mouth.0 + 2, mouth.1 - 1), '.', blue);
                     stroke(frame.grid, mouth, (mouth.0 + 2, mouth.1 + 1), '.', blue);
                 }
             }
+            if local < 1.0 { break; }
         }
         pen
     });
     let relief_pen = measure_layer(NAME, "hachures", || {
         let count = (28.0 * knobs.hachures) as usize;
-        let shown = (((age - 6.8) / 1.8).clamp(0.0, 1.0) * count as f32) as usize;
+        let shown = (((age - 13.0) / 2.0).clamp(0.0, 1.0) * count as f32) as usize;
         let mut pen = river_pen;
         for i in 0..shown {
             let x = (w as f32 * (0.27 + 0.35 * unit(seed ^ i as u64 * 33))) as i32;
@@ -294,7 +317,7 @@ fn draw(frame: &mut ModeFrame<'_>, knobs: Knobs) {
     });
     let script_pen = measure_layer(NAME, "script", || {
         let count = (3.0 * knobs.script).round() as usize;
-        let shown = (((age - 8.1) / 1.4).clamp(0.0, 1.0) * count as f32).round() as usize;
+        let shown = (((age - 15.0) / 2.0).clamp(0.0, 1.0) * count as f32).round() as usize;
         let anchors = [(0.37, 0.36), (0.48, 0.60), (0.30, 0.68), (0.53, 0.43), (0.39, 0.76), (0.50, 0.30)];
         let mut pen = relief_pen;
         for i in 0..shown.min(anchors.len()) {
@@ -328,7 +351,7 @@ fn draw(frame: &mut ModeFrame<'_>, knobs: Knobs) {
         write(frame.grid, rose - 1, ry + 3, " S ", dark);
         let sy = h as i32 - 4;
         write(frame.grid, 5, sy, "0====|====|  100 leagues", dark);
-        if age > 7.3 {
+        if age > 13.0 {
             let mx = (w as f32 * 0.83) as i32;
             let my = (h as f32 * 0.68) as i32;
             write(frame.grid, mx - 5, my - 1, " /\\_/\\ ", blue);
@@ -336,19 +359,19 @@ fn draw(frame: &mut ModeFrame<'_>, knobs: Knobs) {
             write(frame.grid, mx - 5, my + 1, " \\_v_/~", blue);
             write(frame.grid, mx - 4, my + 2, "~/  \\~", blue);
         }
-        if age > 9.2 {
+        if age > 17.0 {
             let x = (w as f32 * 0.68) as i32;
-            let y = (h as f32 * 0.79) as i32;
+            let y = (h as f32 * 0.82) as i32;
             write(frame.grid, x, y, "MERIDIAN IX", dark);
             stroke(frame.grid, (x, y), (x + 10, y), '-', Color::Rgb { r: 137, g: 61, b: 49 });
             write(frame.grid, x, y + 1, "MERIDIAN XI", dark);
         }
     });
     measure_layer(NAME, "finish", || {
-        if age >= 10.0 {
+        if age >= 18.0 {
             let cx = w as f32 * 0.18;
             let cy = h as f32 * 0.59;
-            let bloom = ((age - 10.0) / 3.4).clamp(0.0, 1.0);
+            let bloom = ((age - 18.0) / 4.0).clamp(0.0, 1.0);
             let rx = w as f32 * 0.14 * bloom;
             let ry = h as f32 * 0.23 * bloom;
             for i in 0..96 {
@@ -358,17 +381,67 @@ fn draw(frame: &mut ModeFrame<'_>, knobs: Knobs) {
                 if i % 7 != 0 { ink(frame.grid, x, y, '.', Color::Rgb { r: 139, g: 93, b: 54 }); }
             }
         }
-        if age >= 14.0 {
-            let edge = w.saturating_sub((((age - 14.0) / 2.0) * w as f32) as usize);
+        if age >= 22.0 {
+            let edge = w.saturating_sub((((age - 22.0) / 2.0) * w as f32) as usize);
             for y in 0..h.min(frame.grid.len()) {
                 for x in edge..w.min(frame.grid[y].len()) {
                     frame.grid[y][x] = Cell::with_bg(' ', dark, Color::Rgb { r: 229, g: 217, b: 188 });
                 }
             }
-        } else if age < 10.0 {
-            let pen = if age < 4.5 { coast_pen } else if age < 7.0 { river_pen }
-                else if age < 8.5 { relief_pen } else { script_pen };
+        } else if age < 17.0 {
+            let pen = if age < 7.0 { coast_pen } else if age < 13.0 { river_pen }
+                else if age < 15.0 { relief_pen } else { script_pen };
             ink(frame.grid, pen.0, pen.1, '@', Color::Rgb { r: 255, g: 245, b: 195 });
         }
     });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rand::SeedableRng;
+    use rand::rngs::StdRng;
+
+    fn render(seed: u64, time: f32, w: usize, h: usize) -> String {
+        let mut grid = vec![vec![Cell::blank(); w]; h];
+        let palette = crate::color::make_palette(seed);
+        let mut rng = StdRng::seed_from_u64(seed);
+        MODE.render(&mut ModeFrame {
+            grid: &mut grid, width: w, height: h, seed, palette: &palette,
+            rng: &mut rng, time, args: &[], param_values: None,
+        });
+        grid.iter().map(|row| row.iter().map(|cell| cell.ch).collect::<String>())
+            .collect::<Vec<_>>().join("\n")
+    }
+
+    #[test]
+    fn first_ink() {
+        insta::assert_snapshot!("cartographer_80x24_t0", render(42, 0.0, 80, 24));
+    }
+
+    #[test]
+    fn refined_coast() {
+        insta::assert_snapshot!("cartographer_80x24_t6", render(42, 6.0, 80, 24));
+    }
+
+    #[test]
+    fn deterministic_seed_and_time() {
+        let first = render(42, 6.0, 80, 24);
+        assert_eq!(first, render(42, 6.0, 80, 24));
+        assert_ne!(first, render(43, 6.0, 80, 24));
+        assert_ne!(first, render(42, 0.0, 80, 24));
+    }
+
+    #[cfg(not(debug_assertions))]
+    #[test]
+    fn release_frame_cost_under_six_ms() {
+        use std::time::Instant;
+        let _ = render(42, 13.0, 200, 60);
+        let started = Instant::now();
+        for i in 0..12 {
+            let _ = render(42, 13.0 + i as f32 * 0.1, 200, 60);
+        }
+        let average = started.elapsed().as_secs_f64() / 12.0;
+        assert!(average < 0.006, "average frame cost: {average:.6} s");
+    }
 }
