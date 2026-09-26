@@ -216,6 +216,16 @@ fn script(seed: u64, word: usize) -> String {
     result
 }
 
+fn hachure_anchor(island: &Island, seed: u64, index: usize, count: usize) -> (i32, i32) {
+    let row = index / 4;
+    let column = if row % 2 == 0 { index % 4 } else { 3 - index % 4 };
+    let rows = ((count + 3) / 4).max(2);
+    let jitter = unit(seed ^ (index as u64).wrapping_mul(0x731b)) - 0.5;
+    let x = island.w as f32 * (0.31 + column as f32 * 0.075) + jitter * 1.2;
+    let y = island.h as f32 * (0.28 + row as f32 * 0.43 / (rows - 1) as f32);
+    (x.round() as i32, y.round() as i32)
+}
+
 fn draw(frame: &mut ModeFrame<'_>, knobs: Knobs) {
     let w = frame.width;
     let h = frame.height;
@@ -301,31 +311,49 @@ fn draw(frame: &mut ModeFrame<'_>, knobs: Knobs) {
         pen
     });
     let relief_pen = measure_layer(NAME, "hachures", || {
-        let count = (28.0 * knobs.hachures) as usize;
-        let shown = (((age - 13.0) / 2.0).clamp(0.0, 1.0) * count as f32) as usize;
+        let count = ((w / 8).clamp(8, 28) as f32 * knobs.hachures) as usize;
+        let progress = ((age - 13.0) / 2.0).clamp(0.0, 1.0);
         let mut pen = river_pen;
+        if count == 0 { return pen; }
+        let first = hachure_anchor(&island, seed, 0, count);
+        if progress < 0.24 { return travel(pen, first, progress / 0.24); }
+        let active = ((progress - 0.24) / 0.76 * count as f32).min(count as f32);
+        let shown = active.floor() as usize;
         for i in 0..shown {
-            let x = (w as f32 * (0.27 + 0.35 * unit(seed ^ i as u64 * 33))) as i32;
-            let y = (h as f32 * (0.25 + 0.48 * unit(seed ^ i as u64 * 91))) as i32;
+            let (x, y) = hachure_anchor(&island, seed, i, count);
             let Some(idx) = island.index(x, y) else { continue; };
             if !island.land[idx] || island.height[idx] < 0.28 { continue; }
             let length = if h < 32 { 1 } else { 2 };
             stroke(frame.grid, (x, y), (x + 1, y + length), '/', sepia);
             pen = (x + 1, y + length);
         }
+        if shown < count {
+            let next = hachure_anchor(&island, seed, shown, count);
+            pen = travel(pen, next, active.fract());
+        }
         pen
     });
     let script_pen = measure_layer(NAME, "script", || {
         let count = (3.0 * knobs.script).round() as usize;
-        let shown = (((age - 15.0) / 2.0).clamp(0.0, 1.0) * count as f32).round() as usize;
+        let progress = ((age - 15.0) / 2.0).clamp(0.0, 1.0) * count as f32;
         let anchors = [(0.37, 0.36), (0.48, 0.60), (0.30, 0.68), (0.53, 0.43), (0.39, 0.76), (0.50, 0.30)];
         let mut pen = relief_pen;
-        for i in 0..shown.min(anchors.len()) {
+        for i in 0..count.min(anchors.len()) {
             let x = (w as f32 * anchors[i].0) as i32;
             let y = (h as f32 * anchors[i].1) as i32;
             let name = script(seed, i);
-            write(frame.grid, x, y, &name, dark);
-            pen = (x + name.len() as i32 - 1, y);
+            let local = (progress - i as f32).clamp(0.0, 1.0);
+            if local <= 0.0 { break; }
+            if local < 0.25 {
+                pen = travel(pen, (x, y), local / 0.25);
+                break;
+            }
+            let shown = (((local - 0.25) / 0.75) * name.len() as f32).ceil() as usize;
+            for (j, ch) in name.chars().take(shown).enumerate() {
+                ink(frame.grid, x + j as i32, y, ch, dark);
+            }
+            pen = (x + shown.saturating_sub(1) as i32, y);
+            if local < 1.0 { break; }
         }
         pen
     });
