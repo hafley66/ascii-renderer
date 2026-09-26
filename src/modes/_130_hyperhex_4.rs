@@ -13,7 +13,7 @@ pub(super) struct Hyperhex4;
 pub(super) static MODE: Hyperhex4 = Hyperhex4;
 
 const NAME: &str = "hyperhex-4";
-const HELP: &str = "hyperhex-4: hyperbolic {6,4} tiling in four acts [depth] [skew] [spin] [breath] [swell] [passage] [fill] [wound] [act] [ghost] [horizon]";
+const HELP: &str = "hyperhex-4: hyperbolic {6,5} tiling in four acts [depth] [skew] [spin] [breath] [swell] [passage] [fill] [wound] [act] [ghost] [horizon]";
 
 /// Below this screen edge length a cell is too small to read; skip its fill and arcs.
 const EDGE_MIN: f32 = 4.0;
@@ -182,10 +182,10 @@ fn circle_through(p: C, q: C) -> Option<(C, f64)> {
     Some(((x, y), r2.sqrt()))
 }
 
-/// Fundamental hexagon of the {6,4} tiling: circumradius acosh(cos(pi/4)/sin(pi/6))
+/// Fundamental hexagon of the {6,5} tiling: circumradius acosh(cos(pi/5)/sin(pi/6))
 /// projected into the disk. `skew` rigidly rotates the seed tile, keeping it regular.
 fn fundamental(skew: f64) -> [C; 6] {
-    let big_r = ((PI / 4.0).cos() / (PI / 6.0).sin()).acosh();
+    let big_r = ((PI / 5.0).cos() / (PI / 6.0).sin()).acosh();
     let rho = (big_r / 2.0).tanh();
     let mut v = [(0.0, 0.0); 6];
     for (k, slot) in v.iter_mut().enumerate() {
@@ -512,10 +512,10 @@ fn draw(frame: &mut ModeFrame<'_>, k: &Knobs) {
     let gg = view(&mood_g, k, &shift, t - lag);
 
     // Depth story: warm at the centre, cold at the rim, wound in an off-palette hue.
-    let warm = hsl_to_rgb(18.0, 0.78, 0.60);
-    let cold = hsl_to_rgb(212.0, 0.72, 0.62);
-    let wound_col = hsl_to_rgb(((seed as f64) % 360.0 + 168.0) % 360.0, 0.90, 0.58);
-    let wound_hot = hsl_to_rgb(((seed as f64) % 360.0 + 168.0) % 360.0, 1.0, 0.72);
+    let warm = hsl_to_rgb(38.0, 0.88, 0.60);
+    let cold = hsl_to_rgb(286.0, 0.66, 0.62);
+    let wound_col = hsl_to_rgb(((seed as f64) % 360.0 + 132.0) % 360.0, 0.90, 0.58);
+    let wound_hot = hsl_to_rgb(((seed as f64) % 360.0 + 132.0) % 360.0, 1.0, 0.72);
 
     // Act modulation: fracture pushes cells outward and guts the edges;
     // reassembly pulls them back. Heartbeat keeps the strong breathing.
