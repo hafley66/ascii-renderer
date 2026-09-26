@@ -10,7 +10,7 @@ use rand::SeedableRng;
 use rand::rngs::StdRng;
 
 const FRAMES: usize = 60;
-const ROUNDS: usize = 3;
+const ROUNDS: usize = 8;
 
 fn bench_size(w: usize, h: usize) -> (f64, Vec<LayerTotal>) {
     let args: Vec<String> = Vec::new();
