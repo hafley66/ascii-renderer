@@ -64,7 +64,7 @@ impl Mode for Semaphore {
         let heat = if speech.done { 0.28 } else { 0.38 + speech.turn as f32 * 0.12 };
         let clock = time * knobs.signal;
         let flash = [25.4, 45.1, 63.7]
-            .iter().any(|event| (clock - event).abs() < 0.12);
+            .iter().any(|event| (clock - *event).abs() < 0.12);
         let mut light = vec![0.0; w * h];
         measure_layer(NAME, "night", || night(frame.grid, w, h, horizon, colors));
         measure_layer(NAME, "beams", || beam_field(&mut light, w, h, horizon, boat_x, boat_y, time, &speech, knobs));
