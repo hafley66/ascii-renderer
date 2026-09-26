@@ -498,7 +498,9 @@ fn draw(frame: &mut ModeFrame<'_>, k: &Knobs) {
     });
 
     let mood_t = mood(t, k);
-    let lag = 1.0;
+    // The ghost dual trails the view; it trails further apart during fracture,
+    // so the two layers shear into a wider moire.
+    let lag = 0.6 + 1.6 * mood_t.wf;
     let mood_g = mood(t - lag, k);
 
     // Fixed asymmetric shift, then a Mobius translation on a heartbeat envelope,
