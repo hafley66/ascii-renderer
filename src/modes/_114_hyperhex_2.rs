@@ -270,6 +270,7 @@ struct DrawTile {
     cy: i32,
     edge: f32,
     col: Color,
+    band: f32,
 }
 
 /// Even-odd point-in-polygon on the straight screen frame of a tile.
@@ -387,6 +388,8 @@ fn draw(frame: &mut ModeFrame<'_>, k: &Knobs) {
             if tile.par == 1 {
                 col = lerp_color(col, pal[2], 0.4);
             }
+            let fade = (1.0 - dep * 0.55).clamp(0.25, 1.0);
+            col = lerp_color(pal[0], col, fade);
             let cen = apply(&m2, (0.0, 0.0));
             dt.push(DrawTile {
                 uv,
@@ -395,6 +398,7 @@ fn draw(frame: &mut ModeFrame<'_>, k: &Knobs) {
                 cy: (cy0 + s * 0.5 * cen.1 as f32).round() as i32,
                 edge,
                 col,
+                band,
             });
         }
     });
@@ -474,7 +478,8 @@ fn draw(frame: &mut ModeFrame<'_>, k: &Knobs) {
                     let col = if wounded {
                         pal[4]
                     } else {
-                        lerp_color(pal[0], tile.col, 0.35 + 0.65 * inten)
+                        let bright = 0.55 + 0.45 * (tile.band * std::f32::consts::TAU).sin();
+                        lerp_color(pal[0], tile.col, (0.35 + 0.65 * inten) * bright)
                     };
                     pp_put(grid, x, y, RAMP[gi] as char, col);
                 }
