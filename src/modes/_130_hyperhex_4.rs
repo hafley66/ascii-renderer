@@ -414,23 +414,6 @@ struct DrawTile {
     hops_b: u32,
 }
 
-/// Even-odd point-in-polygon on the straight screen frame of a tile.
-fn point_in_poly(px: f32, py: f32, v: &[(i32, i32); 6]) -> bool {
-    let mut inside = false;
-    let mut j = 5;
-    for i in 0..6 {
-        let xi = v[i].0 as f32;
-        let yi = v[i].1 as f32;
-        let xj = v[j].0 as f32;
-        let yj = v[j].1 as f32;
-        if (yi > py) != (yj > py) && px < (xj - xi) * (py - yi) / (yj - yi) + xi {
-            inside = !inside;
-        }
-        j = i;
-    }
-    inside
-}
-
 /// Draw the geodesic arc from `p` to `q`, skipping a fraction `gap` at each end
 /// so fracture acts leave visible openings between cells.
 fn draw_geodesic(grid: &mut Grid, p: C, q: C, cx0: f32, cy0: f32, s: f32, fg: Color, gap: f64) {
@@ -727,35 +710,79 @@ fn draw(frame: &mut ModeFrame<'_>, k: &Knobs) {
             let fb = (tile.hops_b as f64 - front).abs() < 0.75;
             let wounded = wound_on && (fa || fb);
             let both = fa && fb;
+            // The non-wounded colour term is constant per tile; hoist its sin out
+            // of the per-cell loop. Identical operations, so the floats are unchanged.
+            let band_bright = (0.55 + 0.45 * (tile.band * std::f32::consts::TAU).sin())
+                * (1.0 + 0.9 * bloom);
+            let col_scale = 0.6 + 0.4 * band_bright;
+            let v = &tile.v;
             for y in y0..=y1 {
-                for x in x0..=x1 {
-                    if !point_in_poly(x as f32 + 0.5, y as f32 + 0.5, &tile.v) {
-                        continue;
+                let py = y as f32 + 0.5;
+                // Row crossings, computed exactly as point_in_poly does. The even-odd
+                // spans replace a per-pixel polygon test with one test per row.
+                let mut xs = [0.0f32; 6];
+                let mut m = 0usize;
+                for i in 0..6 {
+                    let j = (i + 5) % 6;
+                    let xi = v[i].0 as f32;
+                    let yi = v[i].1 as f32;
+                    let xj = v[j].0 as f32;
+                    let yj = v[j].1 as f32;
+                    if (yi > py) != (yj > py) {
+                        xs[m] = (xj - xi) * (py - yi) / (yj - yi) + xi;
+                        m += 1;
                     }
-                    let dx = (x - tile.cx) as f32;
-                    let dy = (y - tile.cy) as f32;
-                    let shape = (1.0 - (dx * dx + dy * dy).sqrt() / rad).clamp(0.0, 1.0);
-                    let core = shape * shape;
-                    let (energy, col) = if wounded {
-                        let ws = (1.0 - shape) * k.wound as f32;
-                        let col = if both { wound_hot } else { wound_col };
-                        (ws, col)
-                    } else {
-                        let inten = shape * fill;
-                        let bright = (0.55 + 0.45 * (tile.band * std::f32::consts::TAU).sin())
-                            * (1.0 + 0.9 * bloom);
-                        (
-                            core,
-                            lerp_color(pal[0], tile.col, (0.30 + 0.70 * inten) * (0.6 + 0.4 * bright)),
-                        )
-                    };
-                    let shown = if wounded { energy } else { shape * fill };
-                    if shown < 0.05 {
-                        continue;
+                }
+                if m < 2 {
+                    continue;
+                }
+                for a in 1..m {
+                    let key = xs[a];
+                    let mut b = a;
+                    while b > 0 && xs[b - 1] > key {
+                        xs[b] = xs[b - 1];
+                        b -= 1;
                     }
-                    let gi = ((energy * (RAMP.len() as f32 - 1.0)).round() as usize)
-                        .min(RAMP.len() - 1);
-                    pp_put(grid, x, y, RAMP[gi] as char, col);
+                    xs[b] = key;
+                }
+                let dy = (y - tile.cy) as f32;
+                let dy2 = dy * dy;
+                let mut si = 0;
+                while si + 1 < m {
+                    let a = xs[si];
+                    let b = xs[si + 1];
+                    si += 2;
+                    let lo = (a.floor() as i32).max(x0);
+                    let hi = (b.ceil() as i32).min(x1);
+                    let mut x = lo;
+                    while x <= hi {
+                        let px = x as f32 + 0.5;
+                        // even-odd span is half-open [a, b), matching point_in_poly
+                        if px >= a && px < b {
+                            let dx = (x - tile.cx) as f32;
+                            let shape = (1.0 - (dx * dx + dy2).sqrt() / rad).clamp(0.0, 1.0);
+                            let (energy, col) = if wounded {
+                                let ws = (1.0 - shape) * k.wound as f32;
+                                let col = if both { wound_hot } else { wound_col };
+                                (ws, col)
+                            } else {
+                                let inten = shape * fill;
+                                (
+                                    shape * shape,
+                                    lerp_color(pal[0], tile.col, (0.30 + 0.70 * inten) * col_scale),
+                                )
+                            };
+                            let shown = if wounded { energy } else { shape * fill };
+                            if shown < 0.05 {
+                                x += 1;
+                                continue;
+                            }
+                            let gi = ((energy * (RAMP.len() as f32 - 1.0)).round() as usize)
+                                .min(RAMP.len() - 1);
+                            pp_put(grid, x, y, RAMP[gi] as char, col);
+                        }
+                        x += 1;
+                    }
                 }
             }
         }
@@ -874,3 +901,7 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+#[path = "_130_hyperhex_4_bench.rs"]
+mod bench;
