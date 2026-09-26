@@ -139,7 +139,7 @@ fn paint_events(grid: &mut Grid, p: &Plate) {
     if p.age > 0.62 {
         for x in 2..=p.right {
             let cut = (x as f32 * 0.095 + p.seed as f32 * 0.002).sin() * p.erosion;
-            let y = (p.bottom as f32 - p.span() * 0.62 + cut).round() as usize;
+            let y = (p.bottom as f32 - p.span() * 0.81 + cut).round() as usize;
             if p.era(x, y).is_some() { put(grid, x, y, '~', PAPER); }
         }
     }
@@ -153,7 +153,7 @@ fn paint_events(grid: &mut Grid, p: &Plate) {
     }
     if p.age > 0.78 {
         for x in 2..=p.right {
-            let y = (p.bottom as f32 - p.span() * 0.77
+            let y = (p.bottom as f32 - p.span() * 0.89
                 + (x as f32 * 0.115).sin() * p.fold * 0.5).round() as usize;
             if p.era(x, y).is_some() { put(grid, x, y, '=', IRIDIUM); }
         }
@@ -173,9 +173,14 @@ fn paint_fossils(grid: &mut Grid, p: &Plate) {
         if hash(p.seed ^ 0x5f17, era, (position * 100.0) as usize) > p.fossils { continue; }
         let x = 2 + (p.right.saturating_sub(4) as f32 * position).round() as usize;
         let target = (era as f32 + 0.5) / 6.0;
-        let y = (p.bottom as f32 - p.span() * target).round() as usize;
+        let Some(y) = (2..=p.bottom)
+            .filter(|&y| p.era(x, y) == Some(era))
+            .min_by(|&a, &b| {
+                let da = (p.warped_depth(x, a) / p.span() - target).abs();
+                let db = (p.warped_depth(x, b) / p.span() - target).abs();
+                da.total_cmp(&db)
+            }) else { continue; };
         if y > p.bottom || x + fossil.len() > p.right { continue; }
-        if p.era(x, y) != Some(era) { continue; }
         write(grid, x, y, fossil, PAPER);
     }
 }
@@ -199,7 +204,7 @@ fn paint_gutter(grid: &mut Grid, p: &Plate) {
     let elapsed = format!("T+{:04.1} Ga", p.age * 4.0);
     write(grid, x, p.bottom + 1, &elapsed, PAPER);
     if p.age > 0.78 {
-        write(grid, x, p.bottom + 2, "* IRIDIUM", IRIDIUM);
+        write(grid, x, p.bottom + 2, "* IRIDIUM", PAPER);
     }
 }
 
@@ -224,21 +229,82 @@ impl Mode for Strata {
             right: frame.width - gutter - 3,
             bottom: frame.height - 3,
             seed: frame.seed,
-            age: (frame.time * values[5]).rem_euclid(60.0) / 60.0,
+            age: (frame.time * values[5] + 45.0).rem_euclid(60.0) / 60.0,
             fold: values[0], fault: values[1], grain: values[2],
             erosion: values[3], fossils: values[4],
         };
         let grid = &mut *frame.grid;
         measure_layer(NAME, "plate", || paint_plate(grid, &p));
         measure_layer(NAME, "sediment", || {
-            if p.width * p.height >= 20_480 {
+            if p.width.saturating_mul(p.height) >= 20_480 {
                 grid.par_iter_mut().enumerate().for_each(|(y, row)| p.paint_row(row, y));
             } else {
                 for (y, row) in grid.iter_mut().enumerate() { p.paint_row(row, y); }
             }
         });
-        measure_layer(NAME, "events", || paint_events(grid, &p));
         measure_layer(NAME, "fossils", || paint_fossils(grid, &p));
+        measure_layer(NAME, "events", || paint_events(grid, &p));
         measure_layer(NAME, "gutter", || paint_gutter(grid, &p));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::time::Instant;
+
+    use rand::SeedableRng;
+    use rand::rngs::StdRng;
+
+    use super::*;
+
+    fn render(seed: u64, time: f32, width: usize, height: usize) -> String {
+        let mut grid = vec![vec![Cell::blank(); width]; height];
+        let palette = crate::color::make_palette(seed);
+        let mut rng = StdRng::seed_from_u64(seed);
+        let knobs = [1.0, 2.0, 0.55, 1.5, 0.7, 1.0];
+        MODE.render(&mut ModeFrame {
+            grid: &mut grid,
+            width,
+            height,
+            seed,
+            palette: &palette,
+            rng: &mut rng,
+            time,
+            args: &[],
+            param_values: Some(&knobs),
+        });
+        grid.iter()
+            .map(|row| row.iter().map(|cell| cell.ch).collect::<String>())
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
+
+    #[test]
+    fn first_core() {
+        insta::assert_snapshot!("strata_80x24_t0", render(42, 0.0, 80, 24));
+    }
+
+    #[test]
+    fn six_seconds() {
+        insta::assert_snapshot!("strata_80x24_t6", render(42, 6.0, 80, 24));
+    }
+
+    #[test]
+    fn time_and_seed_are_explicit() {
+        let first = render(42, 6.0, 80, 24);
+        assert_eq!(first, render(42, 6.0, 80, 24));
+        assert_ne!(first, render(43, 6.0, 80, 24));
+        assert_ne!(first, render(42, 0.0, 80, 24));
+    }
+
+    #[test]
+    #[cfg(not(debug_assertions))]
+    fn release_frame_cost_200x60() {
+        let started = Instant::now();
+        for i in 0..16 {
+            std::hint::black_box(render(42, i as f32 * 3.75, 200, 60));
+        }
+        let average_ms = started.elapsed().as_secs_f64() * 1000.0 / 16.0;
+        assert!(average_ms < 6.0, "average frame: {average_ms:.3} ms");
     }
 }
