@@ -56,6 +56,7 @@ mod _109_pigment_fire;
 mod _110_streamnet;
 mod _111_harmonograph;
 mod _112_moire;
+mod _113_hyperhex;
 
 #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn register_all(registry: &mut crate::registry::ModeRegistry) {
@@ -115,4 +116,5 @@ pub(crate) fn register_all(registry: &mut crate::registry::ModeRegistry) {
     registry.add(&_110_streamnet::MODE);
     registry.add(&_111_harmonograph::MODE);
     registry.add(&_112_moire::MODE);
+    registry.add(&_113_hyperhex::MODE);
 }
