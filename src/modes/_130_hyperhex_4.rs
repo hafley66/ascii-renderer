@@ -1,5 +1,7 @@
+use std::cell::RefCell;
 use std::collections::{HashMap, VecDeque};
 use std::f64::consts::{PI, TAU};
+use std::rc::Rc;
 
 use crate::_0_profile::measure_layer;
 use crate::color::{hsl_to_rgb, lerp_color};
@@ -304,6 +306,43 @@ fn build_tiling(
     tiles
 }
 
+/// The {p,q} reflection tree depends only on depth, skew and screen scale; each
+/// frame merely applies a conformal view to it. Cache it per thread and hand out
+/// an `Rc`, so animation frames skip the reflection BFS entirely.
+struct TilingKey {
+    depth: u32,
+    skew_bits: u64,
+    s_bits: u32,
+    tiles: Rc<Vec<Tile>>,
+}
+
+thread_local! {
+    static TILING_CACHE: RefCell<Option<TilingKey>> = const { RefCell::new(None) };
+}
+
+fn tiling(depth: u32, skew: f64, s: f32) -> Rc<Vec<Tile>> {
+    let skew_bits = skew.to_bits();
+    let s_bits = s.to_bits();
+    TILING_CACHE.with(|c| {
+        {
+            let cache = c.borrow();
+            if let Some(k) = cache.as_ref() {
+                if k.depth == depth && k.skew_bits == skew_bits && k.s_bits == s_bits {
+                    return Rc::clone(&k.tiles);
+                }
+            }
+        }
+        let tiles = Rc::new(build_tiling(depth, skew, 1.1, s));
+        *c.borrow_mut() = Some(TilingKey {
+            depth,
+            skew_bits,
+            s_bits,
+            tiles: Rc::clone(&tiles),
+        });
+        tiles
+    })
+}
+
 struct Knobs {
     depth: u32,
     skew: f64,
@@ -450,9 +489,13 @@ fn draw_geodesic(grid: &mut Grid, p: C, q: C, cx0: f32, cy0: f32, s: f32, fg: Co
     for i in lo..=hi {
         let f = i as f64 / n as f64;
         let a = tp + d * f;
+        let ca = a.cos();
+        let sa = a.sin();
+        let xw = (cc.0 + r * ca) as f32;
+        let yw = (cc.1 + r * sa) as f32;
         let cur = (
-            to_x((cc.0 + r * a.cos(), cc.1 + r * a.sin())),
-            to_y((cc.0 + r * a.cos(), cc.1 + r * a.sin())),
+            (cx0 + s * xw).round() as i32,
+            (cy0 + s * 0.5 * yw).round() as i32,
         );
         if let Some(pv) = prev {
             pp_line(grid, pv.0, pv.1, cur.0, cur.1, fg);
@@ -477,7 +520,7 @@ fn draw(frame: &mut ModeFrame<'_>, k: &Knobs) {
     let fund = fundamental(k.skew);
 
     let tiles = measure_layer(NAME, "topology", || {
-        build_tiling(k.depth, k.skew, 1.1, s)
+        tiling(k.depth, k.skew, s)
     });
 
     let mood_t = mood(t, k);
