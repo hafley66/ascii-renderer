@@ -20,7 +20,7 @@ const EDGE_MIN: f32 = 4.0;
 
 /// Only the largest cells get their geodesic outlines drawn, so the fill lattice
 /// stays legible instead of being erased by a thicket of small arcs.
-const ARC_MIN: f32 = 5.0;
+const ARC_MIN: f32 = 6.0;
 
 const PARAMS: &[Param] = &[
     param!("DEPTH", "reflection depth", 2.0, 12.0, 4.0, 1.0),
@@ -732,7 +732,7 @@ fn draw(frame: &mut ModeFrame<'_>, k: &Knobs) {
                     let dx = (x - tile.cx) as f32;
                     let dy = (y - tile.cy) as f32;
                     let shape = (1.0 - (dx * dx + dy * dy).sqrt() / rad).clamp(0.0, 1.0);
-                    let core = shape;
+                    let core = shape * shape;
                     let (energy, col) = if wounded {
                         let ws = (1.0 - shape) * k.wound as f32;
                         let col = if both { wound_hot } else { wound_col };
