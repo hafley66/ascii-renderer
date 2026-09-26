@@ -1,5 +1,7 @@
+use std::cell::RefCell;
 use std::collections::{HashMap, VecDeque};
 use std::f64::consts::{PI, TAU};
+use std::rc::Rc;
 
 use crate::_0_profile::measure_layer;
 use crate::color::lerp_color;
@@ -181,6 +183,7 @@ fn fundamental(skew: f64, seed: u64) -> [C; 6] {
     v
 }
 
+#[derive(Clone, Copy)]
 struct Tile {
     m: Iso,
     depth: u32,
@@ -229,6 +232,34 @@ fn build_tiling(
     tiles
 }
 
+thread_local! {
+    static TILING_CACHE: RefCell<Option<((u64, u32, u64, u32, u32), Rc<Vec<Tile>>)>> =
+        const { RefCell::new(None) };
+}
+
+/// The reflection walk depends only on (seed, depth, skew, min_edge, scale), none
+/// of which change between frames, so cache it per thread and reuse the `Rc`.
+fn tiling_cached(seed: u64, depth: u32, skew: f64, min_edge: f32, s: f32) -> Rc<Vec<Tile>> {
+    TILING_CACHE.with(|c| {
+        let mut c = c.borrow_mut();
+        let key = (
+            seed,
+            depth,
+            skew.to_bits(),
+            min_edge.to_bits(),
+            s.to_bits(),
+        );
+        if let Some((k, v)) = c.as_ref() {
+            if *k == key {
+                return v.clone();
+            }
+        }
+        let v = Rc::new(build_tiling(seed, depth, skew, min_edge, s));
+        *c = Some((key, v.clone()));
+        v
+    })
+}
+
 struct Knobs {
     depth: u32,
     skew: f64,
@@ -271,23 +302,6 @@ struct DrawTile {
     edge: f32,
     col: Color,
     band: f32,
-}
-
-/// Even-odd point-in-polygon on the straight screen frame of a tile.
-fn point_in_poly(px: f32, py: f32, v: &[(i32, i32); 6]) -> bool {
-    let mut inside = false;
-    let mut j = 5;
-    for i in 0..6 {
-        let xi = v[i].0 as f32;
-        let yi = v[i].1 as f32;
-        let xj = v[j].0 as f32;
-        let yj = v[j].1 as f32;
-        if (yi > py) != (yj > py) && px < (xj - xi) * (py - yi) / (yj - yi) + xi {
-            inside = !inside;
-        }
-        j = i;
-    }
-    inside
 }
 
 fn draw_geodesic(grid: &mut Grid, p: C, q: C, cx0: f32, cy0: f32, s: f32, fg: Color) {
@@ -340,7 +354,7 @@ fn draw(frame: &mut ModeFrame<'_>, k: &Knobs) {
     let fund = fundamental(k.skew, seed);
 
     let tiles = measure_layer(NAME, "topology", || {
-        build_tiling(seed, k.depth, k.skew, 1.1, s)
+        tiling_cached(seed, k.depth, k.skew, 1.1, s)
     });
 
     // Fixed asymmetric shift, then a Mobius translation on a heartbeat envelope,
@@ -361,7 +375,7 @@ fn draw(frame: &mut ModeFrame<'_>, k: &Knobs) {
     let g = compose(&rot_iso(k.spin * t as f64), &compose(&trans_iso(aa), &shift));
     let mut dt: Vec<DrawTile> = Vec::with_capacity(tiles.len());
     measure_layer(NAME, "frame", || {
-        for tile in &tiles {
+        for tile in tiles.iter() {
             let m2 = compose(&g, &tile.m);
             let mut uv = [(0.0, 0.0); 6];
             let mut v = [(0, 0); 6];
@@ -418,15 +432,28 @@ fn draw(frame: &mut ModeFrame<'_>, k: &Knobs) {
     };
 
     measure_layer(NAME, "ground", || {
-        for y in 0..h {
-            for x in 0..w {
+        let fg = lerp_color(pal[0], pal[1], 0.5);
+        let dx2: Vec<f32> = (0..w)
+            .map(|x| {
                 let dx = (x as f32 * 2.0 - w as f32) / w as f32;
+                dx * dx
+            })
+            .collect();
+        let dy2: Vec<f32> = (0..h)
+            .map(|y| {
                 let dy = (y as f32 - h as f32 * 0.5) / h as f32;
-                let d = (dx * dx + dy * dy).sqrt().min(1.0);
+                dy * dy
+            })
+            .collect();
+        for y in 0..h {
+            let row = y * w;
+            let dyv = dy2[y];
+            for x in 0..w {
+                let d = (dx2[x] + dyv).sqrt().min(1.0);
                 let bg = lerp_color(pal[0], pal[2], d * 0.30);
-                let dust = unit(seed, 10, (y * w + x) as u64) > 0.99;
+                let dust = unit(seed, 10, (row + x) as u64) > 0.99;
                 let ch = if dust { '.' } else { ' ' };
-                grid[y][x] = Cell::with_bg(ch, lerp_color(pal[0], pal[1], 0.5), bg);
+                grid[y][x] = Cell::with_bg(ch, fg, bg);
             }
         }
     });
@@ -460,8 +487,39 @@ fn draw(frame: &mut ModeFrame<'_>, k: &Knobs) {
             }
             let wounded = ti == wound_idx;
             for y in y0..=y1 {
+                let py = y as f32 + 0.5;
+                let mut xs = [0f32; 6];
+                let mut m = 0usize;
+                let mut j = 5;
+                for i in 0..6 {
+                    let xi = tile.v[i].0 as f32;
+                    let yi = tile.v[i].1 as f32;
+                    let xj = tile.v[j].0 as f32;
+                    let yj = tile.v[j].1 as f32;
+                    if (yi > py) != (yj > py) {
+                        xs[m] = (xj - xi) * (py - yi) / (yj - yi) + xi;
+                        m += 1;
+                    }
+                    j = i;
+                }
+                if m == 0 {
+                    continue;
+                }
+                xs[..m].sort_unstable_by(|a, b| a.partial_cmp(b).unwrap());
                 for x in x0..=x1 {
-                    if !point_in_poly(x as f32 + 0.5, y as f32 + 0.5, &tile.v) {
+                    let px = x as f32 + 0.5;
+                    let inside = if m == 2 {
+                        (xs[0] > px) != (xs[1] > px)
+                    } else {
+                        let mut odd = false;
+                        for &xc in &xs[..m] {
+                            if xc > px {
+                                odd = !odd;
+                            }
+                        }
+                        odd
+                    };
+                    if !inside {
                         continue;
                     }
                     let dx = (x - tile.cx) as f32;
@@ -481,7 +539,7 @@ fn draw(frame: &mut ModeFrame<'_>, k: &Knobs) {
                         let bright = 0.55 + 0.45 * (tile.band * std::f32::consts::TAU).sin();
                         lerp_color(pal[0], tile.col, (0.35 + 0.65 * inten) * bright)
                     };
-                    pp_put(grid, x, y, RAMP[gi] as char, col);
+                    grid[y as usize][x as usize] = Cell::new(RAMP[gi] as char, col);
                 }
             }
         }

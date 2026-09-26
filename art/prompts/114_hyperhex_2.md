@@ -13,3 +13,31 @@ Brief: `briefs/boop-start.md` (this worktree's assigned brief).
 7. > really stretch it and avoid boring.
 
 Forked from 113 hyperhex at f82eda5.
+
+## Perf
+
+Release bench, 60 frames t = 0..60, min of 8 rounds
+(`CARGO_BUILD_JOBS=4 cargo test --release -- --ignored --nocapture modes::_114_hyperhex_2`):
+
+| size | before ms/frame | after ms/frame |
+|------|-----------------|----------------|
+| 200x60 | 0.634 | 0.533 |
+| 400x120 | 1.687 | 1.324 |
+
+Hottest layer before: `edges` 0.351 ms @200x60 (55% of the frame), then `fill`
+0.155 and `ground` 0.067. After: `edges` unchanged (~0.37), `fill` 0.101,
+`ground` 0.044, `topology` ~0.
+
+Changes:
+- Cached the reflection-walk tiling in a per-thread `Rc<Vec<Tile>>` keyed by
+  `(seed, depth, skew, min_edge, scale)`; the cheap `topology` layer now builds
+  once per knob set instead of every frame.
+- Replaced the per-pixel `point_in_poly` fill scan with per-row even-odd
+  crossing spans. The parity must count crossings strictly greater than the
+  sample x; using a `px > xc[0]` span test is wrong when `px` lands exactly on a
+  crossing, so the two-crossing fast path is `(xs[0] > px) != (xs[1] > px)`.
+- Hoisted the constant ground foreground and precomputed the column/row radial
+  terms, as in hyperhex.
+
+Output is byte-identical: the 60-frame FNV checksum over plain chars is unchanged
+(`0aceff13967a8c62` @200x60, `a525fe18792ee160` @400x120).
