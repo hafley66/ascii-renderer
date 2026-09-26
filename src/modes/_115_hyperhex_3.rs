@@ -818,6 +818,11 @@ mod tests {
     }
 
     #[test]
+    fn snapshot_wound() {
+        insta::assert_snapshot!("hyperhex_3_wound", render_at(80, 24, 42, 1.0));
+    }
+
+    #[test]
     fn deterministic() {
         assert_eq!(render_at(80, 24, 42, 0.0), render_at(80, 24, 42, 0.0));
     }
