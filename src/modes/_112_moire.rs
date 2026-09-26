@@ -1,7 +1,7 @@
 use crate::_0_profile::measure_layer;
 use crate::color::lerp_color;
 use crate::opts::param_f32;
-use crate::pp::{pp_put, pp_vnoise};
+use crate::pp::pp_hash2;
 use crate::registry::{AnimKind, Mode, ModeFrame, Param};
 use crate::types::{Cell, Grid};
 
@@ -94,85 +94,95 @@ fn draw(frame: &mut ModeFrame<'_>, k: &Knobs) {
     let bx = cx + k.sep * ang.cos();
     let by = cy + k.sep * ang.sin();
 
-    let mut pa = vec![vec![0.0f32; w]; h];
-    let mut pb = vec![vec![0.0f32; w]; h];
-    let mut beat = vec![vec![0.0f32; w]; h];
+    let fg_ground = lerp_color(pal[0], pal[1], 0.55);
+    let warp_amp = if k.warp > 0.01 { k.warp } else { 0.0 };
 
+    // The warp noise is bilinear over a small integer lattice; hash that lattice
+    // once per frame instead of four hashes per screen cell.
+    let xn_max = ((w - 1) as f32 * 0.07).floor() as usize + 2;
+    let yn_max = ((h - 1) as f32 * 0.14).floor() as usize + 2;
+    let mut ntab = vec![0f32; xn_max * yn_max];
+    for j in 0..yn_max {
+        let base = j * xn_max;
+        for i in 0..xn_max {
+            ntab[base + i] = pp_hash2(i as i32, j as i32, seed);
+        }
+    }
+    let mut nx0 = vec![0usize; w];
+    let mut nsx = vec![0f32; w];
+    for x in 0..w {
+        let fx = x as f32 * 0.07;
+        let x0 = fx.floor() as usize;
+        let tx = fx - x0 as f32;
+        nx0[x] = x0;
+        nsx[x] = tx * tx * (3.0 - 2.0 * tx);
+    }
+    let mut ny0 = vec![0usize; h];
+    let mut nsy = vec![0f32; h];
+    for y in 0..h {
+        let fy = y as f32 * 0.14;
+        let y0 = fy.floor() as usize;
+        let ty = fy - y0 as f32;
+        ny0[y] = y0;
+        nsy[y] = ty * ty * (3.0 - 2.0 * ty);
+    }
+
+    // One fused pass: every layer writes its own cell independently, so the
+    // final cell state equals the sequential ground/rings/beat/nodes result.
     measure_layer(NAME, "field", || {
         for y in 0..h {
+            let vy = y as f32;
+            let dyc = vy - cy;
+            let dyb = vy - by;
+            let gdy = (vy - h as f32 * 0.5) / h as f32;
+            let row = y * w;
+            let j = ny0[y];
+            let sy = nsy[y];
+            let base0 = j * xn_max;
+            let base1 = (j + 1) * xn_max;
             for x in 0..w {
                 let vx = x as f32 * 2.0;
-                let vy = y as f32;
-                let warp = if k.warp > 0.01 {
-                    (pp_vnoise(x as f32 * 0.07, y as f32 * 0.14, seed) - 0.5) * k.warp
+                let warp = if warp_amp > 0.0 {
+                    let i = nx0[x];
+                    let sx = nsx[x];
+                    let n00 = ntab[base0 + i];
+                    let n10 = ntab[base0 + i + 1];
+                    let n01 = ntab[base1 + i];
+                    let n11 = ntab[base1 + i + 1];
+                    let a = n00 + (n10 - n00) * sx;
+                    let b = n01 + (n11 - n01) * sx;
+                    (a + (b - a) * sy - 0.5) * warp_amp
                 } else {
                     0.0
                 };
-                let ra = ((vx - cx).powi(2) + (vy - cy).powi(2)).sqrt() + warp;
-                let rb = ((vx - bx).powi(2) + (vy - by).powi(2)).sqrt() + warp;
+                let dxc = vx - cx;
+                let dxb = vx - bx;
+                let ra = (dxc * dxc + dyc * dyc).sqrt() + warp;
+                let rb = (dxb * dxb + dyb * dyb).sqrt() + warp;
                 let qa = ring(ra, k.sa);
                 let qb = ring(rb, k.sb);
-                pa[y][x] = qa;
-                pb[y][x] = qb;
-                beat[y][x] = (qa * qb).powf(k.contrast);
-            }
-        }
-    });
+                let m = (qa * qb).powf(k.contrast);
 
-    measure_layer(NAME, "ground", || {
-        for y in 0..h {
-            for x in 0..w {
-                let dx = (x as f32 * 2.0 - w as f32) / w as f32;
-                let dy = (y as f32 - h as f32 * 0.5) / h as f32;
-                let t = (dx * dx + dy * dy).sqrt().min(1.0);
+                let dx = (vx - w as f32) / w as f32;
+                let t = (dx * dx + gdy * gdy).sqrt().min(1.0);
                 let bg = lerp_color(pal[0], pal[2], t * 0.30);
-                let dust = unit(seed, 10, (y * w + x) as u64) > 0.985;
-                let ch = if dust { '.' } else { ' ' };
-                let fg = lerp_color(pal[0], pal[1], 0.55);
-                grid[y][x] = Cell::with_bg(ch, fg, bg);
-            }
-        }
-    });
+                let dust = unit(seed, 10, (row + x) as u64) > 0.985;
+                let ch0 = if dust { '.' } else { ' ' };
+                let cell = &mut grid[y][x];
+                *cell = Cell::with_bg(ch0, fg_ground, bg);
 
-    measure_layer(NAME, "rings", || {
-        for y in 0..h {
-            for x in 0..w {
-                let qa = pa[y][x];
-                let qb = pb[y][x];
                 if qa > 0.62 {
                     let ch = if qa > 0.9 { ':' } else { '.' };
-                    pp_put(grid, x as i32, y as i32, ch, lerp_color(pal[0], pal[2], qa));
+                    *cell = Cell::new(ch, lerp_color(pal[0], pal[2], qa));
                 } else if qb > 0.62 {
                     let ch = if qb > 0.9 { ':' } else { '.' };
-                    pp_put(grid, x as i32, y as i32, ch, lerp_color(pal[0], pal[1], qb));
+                    *cell = Cell::new(ch, lerp_color(pal[0], pal[1], qb));
                 }
-            }
-        }
-    });
-
-    measure_layer(NAME, "beat", || {
-        for y in 0..h {
-            for x in 0..w {
-                let m = beat[y][x];
                 if m > 0.30 {
-                    pp_put(
-                        grid,
-                        x as i32,
-                        y as i32,
-                        ramp(m),
-                        lerp_color(pal[1], pal[3], m),
-                    );
+                    *cell = Cell::new(ramp(m), lerp_color(pal[1], pal[3], m));
                 }
-            }
-        }
-    });
-
-    measure_layer(NAME, "nodes", || {
-        for y in 0..h {
-            for x in 0..w {
-                let m = beat[y][x];
                 if m > 0.86 {
-                    pp_put(grid, x as i32, y as i32, '@', pal[4]);
+                    *cell = Cell::new('@', pal[4]);
                 }
             }
         }
@@ -294,5 +304,118 @@ mod tests {
         }
         let avg_ms = start.elapsed().as_secs_f64() * 1000.0 / iters as f64;
         assert!(avg_ms < 6.0, "moire average frame {avg_ms:.3} ms exceeds 6 ms");
+    }
+}
+
+#[cfg(test)]
+mod bench {
+    //! Ignored release-mode bench. Run:
+    //! CARGO_BUILD_JOBS=4 cargo test --release -- --ignored --nocapture modes::_112_moire_
+    use super::*;
+    use crate::_0_profile::{LayerTotal, layer_capture_begin, layer_capture_end};
+    use crate::color::make_palette;
+    use crate::registry::ModeFrame;
+    use crate::types::{Cell, Grid};
+    use rand::SeedableRng;
+    use rand::rngs::StdRng;
+
+    const FRAMES: usize = 60;
+    const ROUNDS: usize = 8;
+
+    fn bench_size(w: usize, h: usize) -> (f64, Vec<LayerTotal>) {
+        let args: Vec<String> = Vec::new();
+        let palette = make_palette(42);
+        let mut rng = StdRng::seed_from_u64(42);
+        let mut grid: Grid = vec![vec![Cell::blank(); w]; h];
+
+        for i in 0..5 {
+            let mut frame = ModeFrame {
+                grid: &mut grid,
+                width: w,
+                height: h,
+                seed: 42,
+                palette: &palette,
+                rng: &mut rng,
+                time: i as f32,
+                args: &args,
+                param_values: None,
+            };
+            MODE.render(&mut frame);
+        }
+
+        let mut best = f64::INFINITY;
+        let mut best_layers = Vec::new();
+        for _ in 0..ROUNDS {
+            layer_capture_begin();
+            let start = std::time::Instant::now();
+            for i in 0..FRAMES {
+                let mut frame = ModeFrame {
+                    grid: &mut grid,
+                    width: w,
+                    height: h,
+                    seed: 42,
+                    palette: &palette,
+                    rng: &mut rng,
+                    time: i as f32,
+                    args: &args,
+                    param_values: None,
+                };
+                MODE.render(&mut frame);
+            }
+            let ms = start.elapsed().as_secs_f64() * 1000.0 / FRAMES as f64;
+            let layers = layer_capture_end();
+            if ms < best {
+                best = ms;
+                best_layers = layers;
+            }
+        }
+        (best, best_layers)
+    }
+
+    /// FNV-1a over the plain chars of every frame in t = 0..FRAMES.
+    fn checksum(w: usize, h: usize) -> u64 {
+        let args: Vec<String> = Vec::new();
+        let palette = make_palette(42);
+        let mut rng = StdRng::seed_from_u64(42);
+        let mut grid: Grid = vec![vec![Cell::blank(); w]; h];
+        let mut hsh: u64 = 0xcbf29ce484222325;
+        for i in 0..FRAMES {
+            let mut frame = ModeFrame {
+                grid: &mut grid,
+                width: w,
+                height: h,
+                seed: 42,
+                palette: &palette,
+                rng: &mut rng,
+                time: i as f32,
+                args: &args,
+                param_values: None,
+            };
+            MODE.render(&mut frame);
+            for row in &grid {
+                for c in row {
+                    hsh = (hsh ^ c.ch as u64).wrapping_mul(0x100000001b3);
+                }
+            }
+        }
+        hsh
+    }
+
+    #[test]
+    #[ignore]
+    fn bench() {
+        for &(w, h) in &[(200usize, 60usize), (400usize, 120usize)] {
+            println!("{NAME} {w}x{h} checksum: {:016x}", checksum(w, h));
+            let (ms, layers) = bench_size(w, h);
+            println!("{NAME} {w}x{h}: {ms:.3} ms/frame");
+            for l in &layers {
+                let per = l.total_ns as f64 / 1e6 / FRAMES as f64;
+                println!(
+                    "  layer {:<10} {per:.3} ms/frame ({} calls/frame)",
+                    l.layer,
+                    l.calls / FRAMES as u64
+                );
+            }
+        }
     }
 }
