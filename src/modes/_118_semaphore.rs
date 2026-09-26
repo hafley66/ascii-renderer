@@ -50,7 +50,7 @@ impl Mode for Semaphore {
             beam: values[0], sweep: values[1], storm: values[2],
             signal: values[3], boat: values[4], glow: values[5],
         };
-        let w = frame.width.min(frame.grid.first().map_or(0, Vec::len));
+        let w = frame.width.min(frame.grid.iter().map(Vec::len).min().unwrap_or(0));
         let h = frame.height.min(frame.grid.len());
         if w < 32 || h < 12 { return; }
         let time = frame.time.max(0.0);
@@ -73,7 +73,7 @@ impl Mode for Semaphore {
         measure_layer(NAME, "towers", || towers(frame.grid, w, horizon, &speech, colors, knobs.glow));
         measure_layer(NAME, "boat", || boat(frame.grid, &light, w, h, boat_x, boat_y, time, colors));
         measure_layer(NAME, "captions", || caption(frame.grid, w, h, &speech, DIALOGUES[story], colors));
-        if flash { measure_layer(NAME, "lightning", || negative(frame.grid, w, h)); }
+        if flash { measure_layer(NAME, "lightning", || lightning(frame.grid, w, h, horizon, frame.seed, colors)); }
     }
 }
 
@@ -105,14 +105,13 @@ fn speech_at(dialogue: [&str; 8], seconds: f32) -> Speech {
     let mut units = seconds / 0.105;
     for (turn, phrase) in dialogue.iter().enumerate() {
         let mut completed = 0;
-        for ch in phrase.chars() {
-            if ch == ' ' {
-                if units < 7.0 { return Speech { turn, completed, pulse: false, done: false }; }
-                units -= 7.0;
+        let chars = phrase.as_bytes();
+        for (index, ch) in chars.iter().enumerate() {
+            if *ch == b' ' {
                 completed += 1;
                 continue;
             }
-            let marks = morse(ch);
+            let marks = morse(*ch as char);
             for (i, mark) in marks.iter().enumerate() {
                 let duration = if *mark == b'-' { 3.0 } else { 1.0 };
                 if units < duration { return Speech { turn, completed, pulse: true, done: false }; }
@@ -122,9 +121,11 @@ fn speech_at(dialogue: [&str; 8], seconds: f32) -> Speech {
                     units -= 1.0;
                 }
             }
-            if units < 3.0 { return Speech { turn, completed, pulse: false, done: false }; }
-            units -= 3.0;
             completed += 1;
+            let pause = if chars.get(index + 1) == Some(&b' ') { 7.0 }
+                else if index + 1 < chars.len() { 3.0 } else { 0.0 };
+            if units < pause { return Speech { turn, completed, pulse: false, done: false }; }
+            units -= pause;
         }
         if units < 12.0 { return Speech { turn, completed, pulse: false, done: false }; }
         units -= 12.0;
@@ -142,7 +143,12 @@ struct Colors {
 
 impl Colors {
     fn new(palette: &[Color; 5]) -> Self {
-        Self { dark: rgb(3, 8, 18), stone: darken(palette[1], 70), lamp: palette[3], ink: palette[4] }
+        Self {
+            dark: rgb(3, 8, 18),
+            stone: lerp_color(darken(palette[1], 40), palette[4], 0.35),
+            lamp: palette[3],
+            ink: palette[4],
+        }
     }
 }
 
@@ -183,14 +189,14 @@ fn beam_field(light: &mut [f32], w: usize, h: usize, horizon: usize, boat_x: i32
         let target_y = if speech.turn >= 6 || speech.done {
             boat_y as f32
         } else {
-            h as f32 * (0.49 + 0.12 * (sway + side as f32 * 2.4).sin())
+            h as f32 * (0.60 + 0.13 * (sway + side as f32 * 2.4).sin())
         };
         let dx = target_x - source_x;
         let dy = (target_y - lamp_y as f32) * 2.0;
         let len = (dx * dx + dy * dy).sqrt().max(1.0);
-        let power = if speech.done { 1.0 }
+        let power = (if speech.done { 1.0 }
             else if speech.turn % 2 == side && speech.pulse { 1.0 }
-            else { 0.11 } * knobs.glow;
+            else { 0.11 }) * knobs.glow;
         for y in 0..h.saturating_sub(3) {
             for x in 0..w {
                 let px = x as f32 - source_x;
@@ -278,6 +284,17 @@ fn negative(grid: &mut Grid, w: usize, h: usize) {
     }
 }
 
+fn lightning(grid: &mut Grid, w: usize, h: usize, horizon: usize, seed: u64, colors: Colors) {
+    let mut x = (w as f32 * (0.46 + (seed % 11) as f32 * 0.008)) as i32;
+    for y in 1..horizon.saturating_sub(2) {
+        let step = match y % 4 { 0 => -2, 1 => 1, 2 => -1, _ => 2 };
+        x += step;
+        put(grid, x, y as i32, if step < 0 { '/' } else { '\\' }, colors.ink);
+        if y % 5 == 0 { put(grid, x + 1, y as i32, '_', colors.ink); }
+    }
+    negative(grid, w, h);
+}
+
 fn towers(grid: &mut Grid, w: usize, horizon: usize, speech: &Speech, colors: Colors, glow: f32) {
     for side in 0..2 {
         let x = if side == 0 { (w as f32 * 0.1) as i32 } else { (w as f32 * 0.9) as i32 };
@@ -306,12 +323,74 @@ fn towers(grid: &mut Grid, w: usize, horizon: usize, speech: &Speech, colors: Co
 fn caption(grid: &mut Grid, w: usize, h: usize, speech: &Speech, dialogue: [&str; 8], colors: Colors) {
     let y = h as i32 - 2;
     let side = if speech.turn % 2 == 0 { "WEST" } else { "EAST" };
-    let prefix = format!("{} > ", side);
+    let prefix = if speech.done { "BOTH > " } else if side == "WEST" { "WEST > " } else { "EAST > " };
     let text = dialogue[speech.turn].chars().take(speech.completed);
     let mut x = ((w.saturating_sub(46)) / 2) as i32;
-    for ch in prefix.chars().chain(text).chain(std::iter::once('_')) {
+    for ch in prefix.chars().chain(text).chain(std::iter::once(if speech.done { ' ' } else { '_' })) {
         put(grid, x, y, ch, colors.ink);
         x += 1;
         if x >= w as i32 - 2 { break; }
+    }
+    let left = "W E S T";
+    let right = "E A S T";
+    for (offset, ch) in left.chars().enumerate() {
+        put(grid, (w as f32 * 0.1) as i32 - 3 + offset as i32, 1, ch, colors.stone);
+    }
+    for (offset, ch) in right.chars().enumerate() {
+        put(grid, (w as f32 * 0.9) as i32 - 3 + offset as i32, 1, ch, colors.stone);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rand::SeedableRng;
+    use rand::rngs::StdRng;
+
+    fn rendered(seed: u64, time: f32, w: usize, h: usize) -> Grid {
+        let palette = crate::color::named_theme("deep").unwrap();
+        let mut grid = vec![vec![Cell::blank(); w]; h];
+        let mut rng = StdRng::seed_from_u64(seed);
+        MODE.render(&mut ModeFrame {
+            grid: &mut grid, width: w, height: h, seed, palette: &palette,
+            rng: &mut rng, time, args: &[], param_values: None,
+        });
+        grid
+    }
+
+    fn chars(grid: &Grid) -> String {
+        grid.iter()
+            .map(|row| row.iter().map(|cell| cell.ch).collect::<String>())
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
+
+    #[test]
+    fn opening_frame() {
+        insta::assert_snapshot!("semaphore_80x24_t0", chars(&rendered(42, 0.0, 80, 24)));
+    }
+
+    #[test]
+    fn sixth_second() {
+        insta::assert_snapshot!("semaphore_80x24_t6", chars(&rendered(42, 6.0, 80, 24)));
+    }
+
+    #[test]
+    fn frame_inputs_control_the_picture() {
+        let opening = rendered(42, 0.0, 80, 24);
+        assert_eq!(opening, rendered(42, 0.0, 80, 24));
+        assert_ne!(rendered(42, 6.0, 80, 24), rendered(43, 6.0, 80, 24));
+        assert_ne!(opening, rendered(42, 6.0, 80, 24));
+    }
+
+    #[cfg(not(debug_assertions))]
+    #[test]
+    fn release_frame_cost_under_six_ms() {
+        let start = std::time::Instant::now();
+        for i in 0..32 {
+            let _ = rendered(42, i as f32 * 0.25, 200, 60);
+        }
+        let mean_ms = start.elapsed().as_secs_f64() * 1000.0 / 32.0;
+        assert!(mean_ms < 6.0, "mean frame cost: {mean_ms:.3} ms");
     }
 }
