@@ -150,15 +150,27 @@ fn draw(frame: &mut ModeFrame<'_>, k: &Knobs) {
     });
 
     measure_layer(NAME, "ground", || {
-        for y in 0..h {
-            for x in 0..w {
+        let fg = lerp_color(pal[0], pal[1], 0.5);
+        let dx2: Vec<f32> = (0..w)
+            .map(|x| {
                 let dx = (x as f32 * 2.0 - w as f32) / w as f32;
+                dx * dx
+            })
+            .collect();
+        let dy2: Vec<f32> = (0..h)
+            .map(|y| {
                 let dy = (y as f32 - h as f32 * 0.5) / h as f32;
-                let d = (dx * dx + dy * dy).sqrt().min(1.0);
+                dy * dy
+            })
+            .collect();
+        for y in 0..h {
+            let row = y * w;
+            let dyv = dy2[y];
+            for x in 0..w {
+                let d = (dx2[x] + dyv).sqrt().min(1.0);
                 let bg = lerp_color(pal[0], pal[2], d * 0.32);
-                let dust = unit(seed, 10, (y * w + x) as u64) > 0.99;
+                let dust = unit(seed, 10, (row + x) as u64) > 0.99;
                 let ch = if dust { '.' } else { ' ' };
-                let fg = lerp_color(pal[0], pal[1], 0.5);
                 grid[y][x] = Cell::with_bg(ch, fg, bg);
             }
         }
