@@ -16,13 +16,13 @@ const NAME: &str = "hyperhex-2";
 const HELP: &str = "hyperhex-2: hyperbolic {6,4} tiling [depth] [skew] [spin] [breath] [swell] [passage] [fill] [wound]";
 
 const PARAMS: &[Param] = &[
-    param!("DEPTH", "reflection depth", 2.0, 12.0, 6.0, 1.0),
-    param!("SKEW", "asymmetry shift", 0.0, 1.0, 0.4, 0.01),
+    param!("DEPTH", "reflection depth", 2.0, 12.0, 7.0, 1.0),
+    param!("SKEW", "asymmetry shift", 0.0, 1.0, 0.55, 0.01),
     param!("SPIN", "spin rad/s", 0.0, 2.0, 0.35, 0.01),
     param!("BREATH", "breath rate", 0.0, 3.0, 0.5, 0.05),
     param!("SWELL", "swell amplitude", 0.0, 0.8, 0.45, 0.01),
     param!("PASSAGE", "passage speed", 0.0, 2.0, 0.4, 0.01),
-    param!("FILL", "interior fill", 0.0, 1.0, 0.7, 0.01),
+    param!("FILL", "interior fill", 0.0, 1.0, 0.75, 0.01),
     param!("WOUND", "wound strength", 0.0, 1.0, 0.7, 0.01),
 ];
 
@@ -175,7 +175,7 @@ fn fundamental(skew: f64, seed: u64) -> [C; 6] {
     let mut v = [(0.0, 0.0); 6];
     for (k, slot) in v.iter_mut().enumerate() {
         let jitter = unit(seed, 21, k as u64) - 0.5;
-        let phi = k as f64 * PI / 3.0 + skew * 0.09 * (pat[k] + 0.25 * jitter);
+        let phi = k as f64 * PI / 3.0 + skew * 0.13 * (pat[k] + 0.25 * jitter);
         *slot = (r * phi.cos(), r * phi.sin());
     }
     v
@@ -252,13 +252,13 @@ fn knob(frame: &ModeFrame<'_>, i: usize, default: f32, lo: f32, hi: f32) -> f32 
 
 fn knobs(frame: &ModeFrame<'_>) -> Knobs {
     Knobs {
-        depth: knob(frame, 0, 6.0, 2.0, 12.0).round() as u32,
-        skew: knob(frame, 1, 0.4, 0.0, 1.0) as f64,
+        depth: knob(frame, 0, 7.0, 2.0, 12.0).round() as u32,
+        skew: knob(frame, 1, 0.55, 0.0, 1.0) as f64,
         spin: knob(frame, 2, 0.35, 0.0, 2.0) as f64,
         breath: knob(frame, 3, 0.5, 0.0, 3.0) as f64,
         swell: knob(frame, 4, 0.45, 0.0, 0.8) as f64,
         passage: knob(frame, 5, 0.4, 0.0, 2.0) as f64,
-        fill: knob(frame, 6, 0.7, 0.0, 1.0) as f64,
+        fill: knob(frame, 6, 0.75, 0.0, 1.0) as f64,
         wound: knob(frame, 7, 0.7, 0.0, 1.0) as f64,
     }
 }
@@ -347,8 +347,8 @@ fn draw(frame: &mut ModeFrame<'_>, k: &Knobs) {
     // then spin. All conformal, so the {6,4} tiling stays valid while it breathes.
     let shift_dir = 0.6 + 2.0 * unit(seed, 31, 0);
     let shift = trans_iso((
-        k.skew * 0.6 * shift_dir.cos(),
-        k.skew * 0.6 * shift_dir.sin(),
+        k.skew * 0.78 * shift_dir.cos(),
+        k.skew * 0.78 * shift_dir.sin(),
     ));
     let period = if k.breath > 0.01 { 1.0 / k.breath } else { 1.0e9 };
     let u = (t as f64 / period).fract();
