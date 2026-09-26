@@ -1538,3 +1538,8 @@ fn treatise() {
 fn streamnet_seed_42() {
     insta::assert_snapshot!(render(&["42", "streamnet", "deep"]));
 }
+
+#[test]
+fn moire_seed_42() {
+    insta::assert_snapshot!(render(&["42", "moire", "moss"]));
+}
