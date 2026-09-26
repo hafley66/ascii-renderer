@@ -2,7 +2,7 @@ use std::collections::{HashMap, VecDeque};
 use std::f64::consts::{PI, TAU};
 
 use crate::_0_profile::measure_layer;
-use crate::color::lerp_color;
+use crate::color::{hsl_to_rgb, lerp_color};
 use crate::opts::param_f32;
 use crate::pp::{pp_line, pp_put};
 use crate::registry::{AnimKind, Mode, ModeFrame, Param};
@@ -13,17 +13,27 @@ pub(super) struct Hyperhex3;
 pub(super) static MODE: Hyperhex3 = Hyperhex3;
 
 const NAME: &str = "hyperhex-3";
-const HELP: &str = "hyperhex-3: hyperbolic {6,4} tiling [depth] [skew] [spin] [breath] [swell] [passage] [fill] [wound]";
+const HELP: &str = "hyperhex-3: hyperbolic {6,4} tiling in four acts [depth] [skew] [spin] [breath] [swell] [passage] [fill] [wound] [act] [ghost] [horizon]";
+
+/// Below this screen edge length a cell is too small to read; skip its fill and arcs.
+const EDGE_MIN: f32 = 4.0;
+
+/// Only the largest cells get their geodesic outlines drawn, so the fill lattice
+/// stays legible instead of being erased by a thicket of small arcs.
+const ARC_MIN: f32 = 5.0;
 
 const PARAMS: &[Param] = &[
-    param!("DEPTH", "reflection depth", 2.0, 12.0, 7.0, 1.0),
+    param!("DEPTH", "reflection depth", 2.0, 12.0, 4.0, 1.0),
     param!("SKEW", "asymmetry shift", 0.0, 1.0, 0.55, 0.01),
     param!("SPIN", "spin rad/s", 0.0, 2.0, 0.35, 0.01),
     param!("BREATH", "breath rate", 0.0, 3.0, 0.5, 0.05),
     param!("SWELL", "swell amplitude", 0.0, 0.8, 0.45, 0.01),
     param!("PASSAGE", "passage speed", 0.0, 2.0, 0.4, 0.01),
-    param!("FILL", "interior fill", 0.0, 1.0, 0.75, 0.01),
+    param!("FILL", "interior fill", 0.0, 1.0, 0.62, 0.01),
     param!("WOUND", "wound strength", 0.0, 1.0, 0.7, 0.01),
+    param!("ACT", "act period s", 8.0, 60.0, 40.0, 1.0),
+    param!("GHOST", "ghost dual", 0.0, 1.0, 0.5, 0.01),
+    param!("HORIZON", "star horizon", 0.0, 1.0, 0.6, 0.01),
 ];
 
 /// Deterministic per-cell value, independent of the frame RNG stream.
@@ -37,6 +47,11 @@ fn splitmix(mut z: u64) -> u64 {
 fn unit(seed: u64, layer: u64, idx: u64) -> f64 {
     let h = splitmix(seed ^ splitmix(layer.wrapping_mul(0x9E37_79B9_7F4A_7C15) ^ idx));
     ((h >> 11) as f64) / ((1u64 << 53) as f64)
+}
+
+fn smoothstep(a: f32, b: f32, x: f32) -> f32 {
+    let t = ((x - a) / (b - a)).clamp(0.0, 1.0);
+    t * t * (3.0 - 2.0 * t)
 }
 
 type C = (f64, f64);
@@ -167,16 +182,15 @@ fn circle_through(p: C, q: C) -> Option<(C, f64)> {
     Some(((x, y), r2.sqrt()))
 }
 
-/// Fundamental hexagon of the {6,4} tiling: interior angle pi/2, centre angle pi/6.
-/// `skew` perturbs the vertex angles so the tiling is not regular.
-fn fundamental(skew: f64, seed: u64) -> [C; 6] {
-    let r = ((PI / 6.0).cos() / (PI / 6.0).sin() * (PI / 4.0).cos() / (PI / 4.0).sin()).acosh();
-    let pat = [0.0, 1.0, -0.9, 1.0, -1.0, 0.7];
+/// Fundamental hexagon of the {6,4} tiling: circumradius acosh(cos(pi/4)/sin(pi/6))
+/// projected into the disk. `skew` rigidly rotates the seed tile, keeping it regular.
+fn fundamental(skew: f64) -> [C; 6] {
+    let big_r = ((PI / 4.0).cos() / (PI / 6.0).sin()).acosh();
+    let rho = (big_r / 2.0).tanh();
     let mut v = [(0.0, 0.0); 6];
     for (k, slot) in v.iter_mut().enumerate() {
-        let jitter = unit(seed, 21, k as u64) - 0.5;
-        let phi = k as f64 * PI / 3.0 + skew * 0.13 * (pat[k] + 0.25 * jitter);
-        *slot = (r * phi.cos(), r * phi.sin());
+        let phi = k as f64 * PI / 3.0 + skew * 0.35;
+        *slot = (rho * phi.cos(), rho * phi.sin());
     }
     v
 }
@@ -185,23 +199,50 @@ struct Tile {
     m: Iso,
     depth: u32,
     par: u8,
+    parent: Option<usize>,
+    hops_a: u32,
+    hops_b: u32,
+}
+
+/// BFS distances in the reflection graph.
+fn bfs(adj: &[Vec<usize>], start: usize) -> Vec<u32> {
+    let mut d = vec![u32::MAX; adj.len()];
+    d[start] = 0;
+    let mut q: VecDeque<usize> = VecDeque::new();
+    q.push_back(start);
+    while let Some(u) = q.pop_front() {
+        for &v in &adj[u] {
+            if d[v] == u32::MAX {
+                d[v] = d[u] + 1;
+                q.push_back(v);
+            }
+        }
+    }
+    d
 }
 
 fn build_tiling(
-    seed: u64,
     depth: u32,
     skew: f64,
     min_edge: f32,
     s: f32,
 ) -> Vec<Tile> {
-    let fund = fundamental(skew, seed);
+    let fund = fundamental(skew);
     let mut tiles: Vec<Tile> = Vec::new();
     let mut seen: HashMap<(i64, i64), ()> = HashMap::new();
-    let mut queue: VecDeque<(Iso, u32, u8)> = VecDeque::new();
-    queue.push_back((id_iso(), 0, 0));
+    let mut queue: VecDeque<(Iso, u32, u8, Option<usize>)> = VecDeque::new();
+    queue.push_back((id_iso(), 0, 0, None));
     seen.insert((0, 0), ());
-    while let Some((m, d, par)) = queue.pop_front() {
-        tiles.push(Tile { m, depth: d, par });
+    while let Some((m, d, par, parent)) = queue.pop_front() {
+        let idx = tiles.len();
+        tiles.push(Tile {
+            m,
+            depth: d,
+            par,
+            parent,
+            hops_a: 0,
+            hops_b: 0,
+        });
         if d >= depth {
             continue;
         }
@@ -223,8 +264,42 @@ fn build_tiling(
                 continue;
             }
             seen.insert(key, ());
-            queue.push_back((nm, d + 1, par ^ 1));
+            queue.push_back((nm, d + 1, par ^ 1, Some(idx)));
         }
+    }
+
+    // Undirected adjacency over the reflection tree, then two wave origins on
+    // opposite sides of the deepest ring: contagion spreads from both and meets.
+    let n = tiles.len();
+    let mut adj: Vec<Vec<usize>> = vec![Vec::new(); n];
+    for i in 0..n {
+        if let Some(p) = tiles[i].parent {
+            adj[i].push(p);
+            adj[p].push(i);
+        }
+    }
+    let maxd = tiles.iter().map(|t| t.depth).max().unwrap_or(0);
+    let (mut a, mut b) = (0usize, 0usize);
+    let (mut ax, mut bx) = (f64::MAX, f64::MIN);
+    for i in 0..n {
+        if tiles[i].depth != maxd {
+            continue;
+        }
+        let cen = apply(&tiles[i].m, (0.0, 0.0));
+        if cen.0 < ax {
+            ax = cen.0;
+            a = i;
+        }
+        if cen.0 > bx {
+            bx = cen.0;
+            b = i;
+        }
+    }
+    let ha = bfs(&adj, a);
+    let hb = bfs(&adj, b);
+    for i in 0..n {
+        tiles[i].hops_a = ha[i];
+        tiles[i].hops_b = hb[i];
     }
     tiles
 }
@@ -238,6 +313,9 @@ struct Knobs {
     passage: f64,
     fill: f64,
     wound: f64,
+    act: f64,
+    ghost: f64,
+    horizon: f64,
 }
 
 fn knob(frame: &ModeFrame<'_>, i: usize, default: f32, lo: f32, hi: f32) -> f32 {
@@ -252,15 +330,74 @@ fn knob(frame: &ModeFrame<'_>, i: usize, default: f32, lo: f32, hi: f32) -> f32 
 
 fn knobs(frame: &ModeFrame<'_>) -> Knobs {
     Knobs {
-        depth: knob(frame, 0, 7.0, 2.0, 12.0).round() as u32,
+        depth: knob(frame, 0, 4.0, 2.0, 12.0).round() as u32,
         skew: knob(frame, 1, 0.55, 0.0, 1.0) as f64,
         spin: knob(frame, 2, 0.35, 0.0, 2.0) as f64,
         breath: knob(frame, 3, 0.5, 0.0, 3.0) as f64,
         swell: knob(frame, 4, 0.45, 0.0, 0.8) as f64,
         passage: knob(frame, 5, 0.4, 0.0, 2.0) as f64,
-        fill: knob(frame, 6, 0.75, 0.0, 1.0) as f64,
+        fill: knob(frame, 6, 0.62, 0.0, 1.0) as f64,
         wound: knob(frame, 7, 0.7, 0.0, 1.0) as f64,
+        act: knob(frame, 8, 40.0, 8.0, 60.0) as f64,
+        ghost: knob(frame, 9, 0.5, 0.0, 1.0) as f64,
+        horizon: knob(frame, 10, 0.6, 0.0, 1.0) as f64,
     }
+}
+
+/// Four overlapping act windows with partition-of-unity weights.
+struct Mood {
+    wc: f64,
+    wh: f64,
+    wf: f64,
+    wr: f64,
+    amp: f64,
+    aa: C,
+    u: f64,
+}
+
+fn act_weight(iu: f64, c: f64) -> f64 {
+    let x = 0.5 * (1.0 + (TAU * (iu - c)).cos());
+    x * x * x * x
+}
+
+fn mood(t: f64, k: &Knobs) -> Mood {
+    let period = if k.breath > 0.01 { 1.0 / k.breath } else { 1.0e9 };
+    let u = (t / period).fract();
+    let env = gauss(u, 0.10, 0.045) + 0.65 * gauss(u, 0.28, 0.05);
+    let iu = (t / k.act).rem_euclid(1.0);
+    let (mut wc, mut wh, mut wf, mut wr) = (
+        act_weight(iu, 0.125),
+        act_weight(iu, 0.375),
+        act_weight(iu, 0.625),
+        act_weight(iu, 0.875),
+    );
+    let sum = wc + wh + wf + wr;
+    if sum > 1e-9 {
+        wc /= sum;
+        wh /= sum;
+        wf /= sum;
+        wr /= sum;
+    }
+    let gain = 0.35 * wc + 1.0 * wh + 0.40 * wf + 0.50 * wr;
+    let amp = (k.swell * env * gain).min(0.85);
+    let aa = (amp * (k.passage * t).cos(), amp * (k.passage * t).sin());
+    Mood {
+        wc,
+        wh,
+        wf,
+        wr,
+        amp,
+        aa,
+        u,
+    }
+}
+
+/// Conformal view for a clock time, so the ghost layer can be sampled at a lag.
+fn view(m: &Mood, k: &Knobs, shift: &Iso, t: f64) -> Iso {
+    compose(
+        &rot_iso(k.spin * t),
+        &compose(&trans_iso(m.aa), shift),
+    )
 }
 
 struct DrawTile {
@@ -271,6 +408,10 @@ struct DrawTile {
     edge: f32,
     col: Color,
     band: f32,
+    m: Iso,
+    parent_dt: Option<usize>,
+    hops_a: u32,
+    hops_b: u32,
 }
 
 /// Even-odd point-in-polygon on the straight screen frame of a tile.
@@ -290,15 +431,20 @@ fn point_in_poly(px: f32, py: f32, v: &[(i32, i32); 6]) -> bool {
     inside
 }
 
-fn draw_geodesic(grid: &mut Grid, p: C, q: C, cx0: f32, cy0: f32, s: f32, fg: Color) {
+/// Draw the geodesic arc from `p` to `q`, skipping a fraction `gap` at each end
+/// so fracture acts leave visible openings between cells.
+fn draw_geodesic(grid: &mut Grid, p: C, q: C, cx0: f32, cy0: f32, s: f32, fg: Color, gap: f64) {
     let to_x = |z: C| (cx0 + s * z.0 as f32).round() as i32;
     let to_y = |z: C| (cy0 + s * 0.5 * z.1 as f32).round() as i32;
-    let Some((c, r)) = circle_through(p, q) else {
-        pp_line(grid, to_x(p), to_y(p), to_x(q), to_y(q), fg);
-        return;
+    let (cc, r) = match circle_through(p, q) {
+        Some(v) => v,
+        None => {
+            pp_line(grid, to_x(p), to_y(p), to_x(q), to_y(q), fg);
+            return;
+        }
     };
-    let tp = (p.1 - c.1).atan2(p.0 - c.0);
-    let tq = (q.1 - c.1).atan2(q.0 - c.0);
+    let tp = (p.1 - cc.1).atan2(p.0 - cc.0);
+    let tq = (q.1 - cc.1).atan2(q.0 - cc.0);
     let mut d = tq - tp;
     while d > PI {
         d -= TAU;
@@ -306,21 +452,29 @@ fn draw_geodesic(grid: &mut Grid, p: C, q: C, cx0: f32, cy0: f32, s: f32, fg: Co
     while d < -PI {
         d += TAU;
     }
-    let mid = (c.0 + r * (tp + 0.5 * d).cos(), c.1 + r * (tp + 0.5 * d).sin());
+    let mid = (cc.0 + r * (tp + 0.5 * d).cos(), cc.1 + r * (tp + 0.5 * d).sin());
     if cabs2(mid) > 1.0 {
         d += if d > 0.0 { -TAU } else { TAU };
     }
     let chord = (((p.0 - q.0) as f32 * s).powi(2) + ((p.1 - q.1) as f32 * s * 0.5).powi(2)).sqrt();
-    let n = ((chord * 1.4).ceil() as i64).clamp(2, 40);
-    let mut prev = (to_x(p), to_y(p));
-    pp_put(grid, prev.0, prev.1, '.', fg);
-    for i in 1..=n {
-        let a = tp + d * (i as f64) / (n as f64);
-        let zx = c.0 + r * a.cos();
-        let zy = c.1 + r * a.sin();
-        let cur = (to_x((zx, zy)), to_y((zx, zy)));
-        pp_line(grid, prev.0, prev.1, cur.0, cur.1, fg);
-        prev = cur;
+    let n = ((chord * 1.4).ceil() as i64).clamp(2, 48);
+    let lo = (gap * n as f64).round() as i64;
+    let hi = ((1.0 - gap) * n as f64).round() as i64;
+    if hi - lo < 1 {
+        return;
+    }
+    let mut prev: Option<(i32, i32)> = None;
+    for i in lo..=hi {
+        let f = i as f64 / n as f64;
+        let a = tp + d * f;
+        let cur = (
+            to_x((cc.0 + r * a.cos(), cc.1 + r * a.sin())),
+            to_y((cc.0 + r * a.cos(), cc.1 + r * a.sin())),
+        );
+        if let Some(pv) = prev {
+            pp_line(grid, pv.0, pv.1, cur.0, cur.1, fg);
+        }
+        prev = Some(cur);
     }
 }
 
@@ -332,16 +486,20 @@ fn draw(frame: &mut ModeFrame<'_>, k: &Knobs) {
     let seed = frame.seed;
     let grid = &mut *frame.grid;
     let pal = frame.palette;
-    let t = frame.time;
+    let t = frame.time as f64;
 
     let s = (w as f32 * 0.5).min(h as f32) * 0.94;
     let cx0 = w as f32 * 0.5;
     let cy0 = h as f32 * 0.5;
-    let fund = fundamental(k.skew, seed);
+    let fund = fundamental(k.skew);
 
     let tiles = measure_layer(NAME, "topology", || {
-        build_tiling(seed, k.depth, k.skew, 1.1, s)
+        build_tiling(k.depth, k.skew, 1.1, s)
     });
+
+    let mood_t = mood(t, k);
+    let lag = 1.0;
+    let mood_g = mood(t - lag, k);
 
     // Fixed asymmetric shift, then a Mobius translation on a heartbeat envelope,
     // then spin. All conformal, so the {6,4} tiling stays valid while it breathes.
@@ -350,19 +508,55 @@ fn draw(frame: &mut ModeFrame<'_>, k: &Knobs) {
         k.skew * 0.78 * shift_dir.cos(),
         k.skew * 0.78 * shift_dir.sin(),
     ));
-    let period = if k.breath > 0.01 { 1.0 / k.breath } else { 1.0e9 };
-    let u = (t as f64 / period).fract();
-    let env = gauss(u, 0.10, 0.045) + 0.65 * gauss(u, 0.28, 0.05);
-    let amp = (k.swell * env).min(0.85);
-    let aa = (
-        amp * (k.passage * t as f64).cos(),
-        amp * (k.passage * t as f64).sin(),
-    );
-    let g = compose(&rot_iso(k.spin * t as f64), &compose(&trans_iso(aa), &shift));
+    let g = view(&mood_t, k, &shift, t);
+    let gg = view(&mood_g, k, &shift, t - lag);
+
+    // Depth story: warm at the centre, cold at the rim, wound in an off-palette hue.
+    let warm = hsl_to_rgb(18.0, 0.78, 0.60);
+    let cold = hsl_to_rgb(212.0, 0.72, 0.62);
+    let wound_col = hsl_to_rgb(((seed as f64) % 360.0 + 168.0) % 360.0, 0.90, 0.58);
+    let wound_hot = hsl_to_rgb(((seed as f64) % 360.0 + 168.0) % 360.0, 1.0, 0.72);
+
+    // Act modulation: fracture pushes cells outward and guts the edges;
+    // reassembly pulls them back. Heartbeat keeps the strong breathing.
+    let drift = (mood_t.wf - 0.5 * mood_t.wr) * 0.30;
+    let gap = mood_t.wf * 0.35;
+    let fill_gain = (0.5 * mood_t.wc + 1.0 * mood_t.wh + 0.35 * mood_t.wf + 0.9 * mood_t.wr)
+        .clamp(0.0, 1.0) as f32;
+
+    // Contagion front from two opposite origins; they interfere when they meet.
+    let wound_on = k.wound > 0.05 && mood_t.u > 0.40 && mood_t.u < 0.66;
+    let wphase = ((mood_t.u - 0.40) / 0.26).clamp(0.0, 1.0);
+    let max_hops = tiles
+        .iter()
+        .map(|tl| tl.hops_a.max(tl.hops_b))
+        .max()
+        .unwrap_or(1) as f64;
+    let front = wphase * (max_hops + 2.0);
+
     let mut dt: Vec<DrawTile> = Vec::with_capacity(tiles.len());
+    let mut pos = vec![usize::MAX; tiles.len()];
+    const BINS: usize = 128;
+    let mut density = vec![0.0f32; BINS];
+
     measure_layer(NAME, "frame", || {
-        for tile in &tiles {
-            let m2 = compose(&g, &tile.m);
+        for (ti, tile) in tiles.iter().enumerate() {
+            let base = compose(&g, &tile.m);
+            let cen = apply(&base, (0.0, 0.0));
+            let rr = cabs2(cen).sqrt();
+            let m2 = if drift.abs() > 1e-5 {
+                let dir = if rr > 1e-9 { (cen.0 / rr, cen.1 / rr) } else { (0.0, 0.0) };
+                let mut mag = drift * (0.18 + 0.82 * rr);
+                if mag > 0.0 && rr + mag > 1.35 {
+                    mag = (1.35 - rr).max(0.0);
+                }
+                if mag < 0.0 && rr + mag < 0.02 {
+                    mag = -(rr - 0.02);
+                }
+                compose(&trans_iso((dir.0 * mag, dir.1 * mag)), &base)
+            } else {
+                base
+            };
             let mut uv = [(0.0, 0.0); 6];
             let mut v = [(0, 0); 6];
             for (idx, slot) in uv.iter_mut().enumerate() {
@@ -383,61 +577,129 @@ fn draw(frame: &mut ModeFrame<'_>, k: &Knobs) {
                 continue;
             }
             let dep = tile.depth as f32 / k.depth.max(1) as f32;
-            let band = (dep * 0.7 + t * 0.18).rem_euclid(1.0);
-            let mut col = lerp_color(pal[1], pal[3], band);
-            if tile.par == 1 {
-                col = lerp_color(col, pal[2], 0.4);
-            }
-            let fade = (1.0 - dep * 0.55).clamp(0.25, 1.0);
+            let band = (dep * 0.7 + t as f32 * 0.18).rem_euclid(1.0);
+            let depth_t = smoothstep(0.0, 1.0, rr as f32);
+            let mut col = lerp_color(warm, cold, depth_t);
+            col = lerp_color(col, pal[1 + tile.par as usize], 0.35);
+            let fade = (1.0 - dep * 0.4).clamp(0.3, 1.0);
             col = lerp_color(pal[0], col, fade);
-            let cen = apply(&m2, (0.0, 0.0));
+            let sx = (cx0 + s * cen.0 as f32).round() as i32;
+            let sy = (cy0 + s * 0.5 * cen.1 as f32).round() as i32;
+            let ang = ((sy as f32 - cy0) as f64).atan2((sx as f32 - cx0) as f64);
+            let bin = (((ang + PI) / TAU) * BINS as f64) as usize % BINS;
+            density[bin] += 1.0;
+            pos[ti] = dt.len();
+            let parent_dt = tile.parent.map(|p| pos[p]).filter(|&p| p != usize::MAX);
             dt.push(DrawTile {
                 uv,
                 v,
-                cx: (cx0 + s * cen.0 as f32).round() as i32,
-                cy: (cy0 + s * 0.5 * cen.1 as f32).round() as i32,
+                cx: sx,
+                cy: sy,
                 edge,
                 col,
                 band,
+                m: tile.m,
+                parent_dt,
+                hops_a: tile.hops_a,
+                hops_b: tile.hops_b,
             });
         }
     });
 
-    let large: Vec<usize> = dt
-        .iter()
-        .enumerate()
-        .filter(|(_, tile)| tile.edge >= 2.0)
-        .map(|(i, _)| i)
-        .collect();
-    let cycle = (t as f64 / period).floor() as u64;
-    let wound_active = k.wound > 0.05 && !large.is_empty() && u > 0.40 && u < 0.62;
-    let wound_idx = if wound_active {
-        large[(unit(seed, 41, cycle) * large.len() as f64) as usize % large.len()]
-    } else {
-        usize::MAX
-    };
+    let dmax = density.iter().copied().fold(1.0f32, f32::max);
 
     measure_layer(NAME, "ground", || {
+        let hz = k.horizon as f32;
+        let dpx = -mood_t.aa.0 as f32 * s * 0.35;
+        let dpy = -mood_t.aa.1 as f32 * s * 0.5 * 0.35;
         for y in 0..h {
             for x in 0..w {
-                let dx = (x as f32 * 2.0 - w as f32) / w as f32;
-                let dy = (y as f32 - h as f32 * 0.5) / h as f32;
-                let d = (dx * dx + dy * dy).sqrt().min(1.0);
-                let bg = lerp_color(pal[0], pal[2], d * 0.30);
-                let dust = unit(seed, 10, (y * w + x) as u64) > 0.99;
-                let ch = if dust { '.' } else { ' ' };
-                grid[y][x] = Cell::with_bg(ch, lerp_color(pal[0], pal[1], 0.5), bg);
+                let zx = (x as f32 + 0.5 - cx0) / s;
+                let zy = (y as f32 + 0.5 - cy0) / (0.5 * s);
+                let d = (zx * zx + zy * zy).sqrt();
+                if d > 1.0 {
+                    let hx = (x as f32 - dpx).round() as i64;
+                    let hy = (y as f32 - dpy).round() as i64;
+                    let hv = splitmix(
+                        seed ^ (hx as u64).wrapping_mul(0x9E37_79B9_7F4A_7C15)
+                            ^ (hy as u64).wrapping_mul(0xC2B2_AE3D_27D4_EB4F),
+                    );
+                    let rv = ((hv >> 11) as f64) / ((1u64 << 53) as f64);
+                    let fade = (1.0 - (d - 1.0) / 1.7).clamp(0.12, 1.0);
+                    let bg = lerp_color(pal[0], pal[2], 0.10 * fade);
+                    if hz > 0.02 && rv > 0.9962 {
+                        let bright = hz * fade;
+                        let ch = if rv > 0.9992 {
+                            '*'
+                        } else if rv > 0.9985 {
+                            '+'
+                        } else {
+                            '.'
+                        };
+                        let fg = lerp_color(pal[0], pal[4], 0.65 * bright + 0.1);
+                        grid[y][x] = Cell::with_bg(ch, fg, bg);
+                    } else {
+                        grid[y][x] = Cell::with_bg(' ', pal[0], bg);
+                    }
+                } else {
+                    let ang = ((y as f32 + 0.5 - cy0) as f64).atan2((x as f32 + 0.5 - cx0) as f64);
+                    let bin = (((ang + PI) / TAU) * BINS as f64) as usize % BINS;
+                    let dens = density[bin] / dmax;
+                    let base = lerp_color(pal[0], cold, d * d * 0.32);
+                    let corona = smoothstep(0.55, 0.98, d) * dens * hz;
+                    let bg = lerp_color(base, warm, corona * 0.7);
+                    let dust = unit(seed, 10, (y * w + x) as u64) > 0.992;
+                    let ch = if dust { '.' } else { ' ' };
+                    grid[y][x] = Cell::with_bg(ch, lerp_color(pal[0], pal[1], 0.5), bg);
+                }
+            }
+        }
+    });
+
+    measure_layer(NAME, "ghost", || {
+        if k.ghost <= 0.03 {
+            return;
+        }
+        let col = lerp_color(pal[0], pal[2], 0.22 + 0.45 * k.ghost as f32);
+        for tile in &dt {
+            let Some(pi) = tile.parent_dt else { continue };
+            if tile.edge < EDGE_MIN {
+                continue;
+            }
+            let parent = &dt[pi];
+            let a = apply(&compose(&gg, &tile.m), (0.0, 0.0));
+            let b = apply(&compose(&gg, &parent.m), (0.0, 0.0));
+            pp_line(
+                grid,
+                (cx0 + s * a.0 as f32).round() as i32,
+                (cy0 + s * 0.5 * a.1 as f32).round() as i32,
+                (cx0 + s * b.0 as f32).round() as i32,
+                (cy0 + s * 0.5 * b.1 as f32).round() as i32,
+                col,
+            );
+        }
+    });
+
+    measure_layer(NAME, "edges", || {
+        for tile in &dt {
+            if tile.edge < ARC_MIN {
+                continue;
+            }
+            let ec = lerp_color(tile.col, pal[4], 0.30);
+            for i in 0..6 {
+                draw_geodesic(grid, tile.uv[i], tile.uv[(i + 1) % 6], cx0, cy0, s, ec, gap);
             }
         }
     });
 
     measure_layer(NAME, "fill", || {
         const RAMP: &[u8] = b" .:-=+*#%@";
-        if k.fill <= 0.05 {
+        let fill = (k.fill * fill_gain as f64) as f32;
+        if fill <= 0.05 {
             return;
         }
-        for (ti, tile) in dt.iter().enumerate() {
-            if tile.edge < 2.0 {
+        for tile in dt.iter() {
+            if tile.edge < EDGE_MIN {
                 continue;
             }
             let (mut x0, mut x1) = (i32::MAX, i32::MIN);
@@ -458,7 +720,10 @@ fn draw(frame: &mut ModeFrame<'_>, k: &Knobs) {
                 let dy = (y - tile.cy) as f32;
                 rad = rad.max((dx * dx + dy * dy).sqrt());
             }
-            let wounded = ti == wound_idx;
+            let fa = (tile.hops_a as f64 - front).abs() < 0.75;
+            let fb = (tile.hops_b as f64 - front).abs() < 0.75;
+            let wounded = wound_on && (fa || fb);
+            let both = fa && fb;
             for y in y0..=y1 {
                 for x in x0..=x1 {
                     if !point_in_poly(x as f32 + 0.5, y as f32 + 0.5, &tile.v) {
@@ -466,31 +731,28 @@ fn draw(frame: &mut ModeFrame<'_>, k: &Knobs) {
                     }
                     let dx = (x - tile.cx) as f32;
                     let dy = (y - tile.cy) as f32;
-                    let dnorm = ((dx * dx + dy * dy).sqrt() / rad).min(1.0);
-                    let mut inten = (1.0 - dnorm) * k.fill as f32;
-                    if wounded {
-                        inten = 1.0 - inten;
-                    }
-                    if inten < 0.06 {
+                    let shape = (1.0 - (dx * dx + dy * dy).sqrt() / rad).clamp(0.0, 1.0);
+                    let core = shape;
+                    let (energy, col) = if wounded {
+                        let ws = (1.0 - shape) * k.wound as f32;
+                        let col = if both { wound_hot } else { wound_col };
+                        (ws, col)
+                    } else {
+                        let inten = shape * fill;
+                        let bright = 0.55 + 0.45 * (tile.band * std::f32::consts::TAU).sin();
+                        (
+                            core,
+                            lerp_color(pal[0], tile.col, (0.30 + 0.70 * inten) * (0.6 + 0.4 * bright)),
+                        )
+                    };
+                    let shown = if wounded { energy } else { shape * fill };
+                    if shown < 0.05 {
                         continue;
                     }
-                    let gi = ((inten * (RAMP.len() as f32 - 1.0)).round() as usize).min(RAMP.len() - 1);
-                    let col = if wounded {
-                        pal[4]
-                    } else {
-                        let bright = 0.55 + 0.45 * (tile.band * std::f32::consts::TAU).sin();
-                        lerp_color(pal[0], tile.col, (0.35 + 0.65 * inten) * bright)
-                    };
+                    let gi = ((energy * (RAMP.len() as f32 - 1.0)).round() as usize)
+                        .min(RAMP.len() - 1);
                     pp_put(grid, x, y, RAMP[gi] as char, col);
                 }
-            }
-        }
-    });
-
-    measure_layer(NAME, "edges", || {
-        for tile in &dt {
-            for i in 0..6 {
-                draw_geodesic(grid, tile.uv[i], tile.uv[(i + 1) % 6], cx0, cy0, s, tile.col);
             }
         }
     });
