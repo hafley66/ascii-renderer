@@ -1,8 +1,9 @@
 use crossterm::style::Color;
 
 use crate::_0_profile::measure_layer;
-use crate::color::{darken, rgb};
+use crate::color::{darken, lerp_color, rgb};
 use crate::opts::param_f32;
+use crate::pp::pp_hash2;
 use crate::registry::{AnimKind, Mode, ModeFrame, Param};
 use crate::types::{Cell, Grid};
 
@@ -57,9 +58,22 @@ impl Mode for Semaphore {
         let speech = speech_at(DIALOGUES[story], time * knobs.signal);
         let horizon = (h as f32 * 0.62) as usize;
         let colors = Colors::new(frame.palette);
+        let boat_x = ((0.27 + 0.46 * (time * knobs.boat / 105.0).min(1.0)) * w as f32) as i32;
+        let boat_y = horizon as i32 + (h as f32 * 0.13) as i32
+            + (time * 1.7).sin().round() as i32;
+        let heat = if speech.done { 0.28 } else { 0.38 + speech.turn as f32 * 0.12 };
+        let clock = time * knobs.signal;
+        let flash = [25.4, 45.1, 63.7]
+            .iter().any(|event| (clock - event).abs() < 0.12);
+        let mut light = vec![0.0; w * h];
         measure_layer(NAME, "night", || night(frame.grid, w, h, horizon, colors));
+        measure_layer(NAME, "beams", || beam_field(&mut light, w, h, horizon, boat_x, boat_y, time, &speech, knobs));
+        measure_layer(NAME, "storm", || weather(frame.grid, &light, w, h, horizon, time, frame.seed, heat * knobs.storm, flash, colors));
+        measure_layer(NAME, "sea", || sea(frame.grid, &light, w, h, horizon, time, heat * knobs.storm, flash, colors));
         measure_layer(NAME, "towers", || towers(frame.grid, w, horizon, &speech, colors, knobs.glow));
+        measure_layer(NAME, "boat", || boat(frame.grid, &light, w, h, boat_x, boat_y, time, colors));
         measure_layer(NAME, "captions", || caption(frame.grid, w, h, &speech, DIALOGUES[story], colors));
+        if flash { measure_layer(NAME, "lightning", || negative(frame.grid, w, h)); }
     }
 }
 
@@ -134,7 +148,8 @@ impl Colors {
 
 fn put(grid: &mut Grid, x: i32, y: i32, ch: char, fg: Color) {
     if y >= 0 && (y as usize) < grid.len() && x >= 0 && (x as usize) < grid[y as usize].len() {
-        grid[y as usize][x as usize] = Cell::with_bg(ch, fg, grid[y as usize][x as usize].bg);
+        let bg = grid[y as usize][x as usize].bg;
+        grid[y as usize][x as usize] = Cell::with_bg(ch, fg, bg);
     }
 }
 
@@ -146,6 +161,121 @@ fn night(grid: &mut Grid, w: usize, h: usize, horizon: usize, colors: Colors) {
         }
     }
     for x in 0..w { put(grid, x as i32, horizon as i32, '_', darken(colors.stone, 38)); }
+    let cloud = darken(colors.stone, 48);
+    for x in 2..w.saturating_sub(2) {
+        let ridge = 2.5 + (x as f32 * 0.075).sin() * 1.2 + (x as f32 * 0.19).cos() * 0.5;
+        if (x % 7) < 4 { put(grid, x as i32, ridge.round() as i32, '_', cloud); }
+    }
+}
+
+fn beam_field(light: &mut [f32], w: usize, h: usize, horizon: usize, boat_x: i32, boat_y: i32, time: f32, speech: &Speech, knobs: Knobs) {
+    let lamp_y = (horizon as f32 * 0.29) as i32 + 2;
+    let sway = time * 0.48 * knobs.sweep;
+    for side in 0..2 {
+        let source_x = if side == 0 { w as f32 * 0.1 } else { w as f32 * 0.9 };
+        let target_x = if speech.turn >= 6 || speech.done {
+            boat_x as f32
+        } else if side == 0 {
+            w as f32 * 0.64
+        } else {
+            w as f32 * 0.36
+        };
+        let target_y = if speech.turn >= 6 || speech.done {
+            boat_y as f32
+        } else {
+            h as f32 * (0.49 + 0.12 * (sway + side as f32 * 2.4).sin())
+        };
+        let dx = target_x - source_x;
+        let dy = (target_y - lamp_y as f32) * 2.0;
+        let len = (dx * dx + dy * dy).sqrt().max(1.0);
+        let power = if speech.done { 1.0 }
+            else if speech.turn % 2 == side && speech.pulse { 1.0 }
+            else { 0.11 } * knobs.glow;
+        for y in 0..h.saturating_sub(3) {
+            for x in 0..w {
+                let px = x as f32 - source_x;
+                let py = (y as f32 - lamp_y as f32) * 2.0;
+                let along = (px * dx + py * dy) / len;
+                if along <= 0.0 || along >= len * 1.05 { continue; }
+                let across = (px * dy - py * dx).abs() / len;
+                let radius = (0.9 + along * 0.115) * knobs.beam;
+                if across >= radius { continue; }
+                let fill = 1.0 - across / radius;
+                let strength = fill * fill * (1.0 - along / len * 0.28) * power;
+                let index = y * w + x;
+                light[index] = (light[index] + strength).min(1.0);
+            }
+        }
+    }
+}
+
+fn weather(grid: &mut Grid, light: &[f32], w: usize, _h: usize, horizon: usize, time: f32, seed: u64, storm: f32, flash: bool, colors: Colors) {
+    let drift = (time * (2.0 + storm)).floor() as i32;
+    for y in 2..horizon {
+        for x in 0..w {
+            let lit = if flash { 1.0 } else { light[y * w + x] };
+            if lit < 0.09 { continue; }
+            let noise = pp_hash2(x as i32 + drift, y as i32 * 3 - drift, seed);
+            let rain = (storm * 0.09 * lit).min(0.24);
+            if noise < rain {
+                let ch = if storm > 0.7 { '/' } else { '|' };
+                put(grid, x as i32, y as i32, ch, lerp_color(colors.stone, colors.ink, lit));
+            } else if noise < rain + lit * 0.15 {
+                put(grid, x as i32, y as i32, '.', darken(colors.lamp, 90));
+            }
+        }
+    }
+}
+
+fn sea(grid: &mut Grid, light: &[f32], w: usize, h: usize, horizon: usize, time: f32, storm: f32, flash: bool, colors: Colors) {
+    for y in horizon + 1..h.saturating_sub(3) {
+        for x in 0..w {
+            let lit = if flash { 1.0 } else { light[y * w + x] };
+            if lit < 0.16 { continue; }
+            let wave = (x as f32 * 0.37 + y as f32 * 1.68 + time * (0.65 + storm * 0.3)).sin();
+            let fold = (x as f32 * 0.11 - y as f32 * 0.61 + time * 0.27).cos();
+            if wave + fold * 0.27 > 0.84 {
+                let fg = lerp_color(colors.stone, colors.ink, (lit * 0.82).min(1.0));
+                put(grid, x as i32, y as i32, if lit > 0.55 { '~' } else { '_' }, fg);
+            }
+        }
+    }
+}
+
+fn boat(grid: &mut Grid, light: &[f32], w: usize, h: usize, x: i32, y: i32, time: f32, colors: Colors) {
+    let lit = if x >= 0 && y >= 0 && (x as usize) < w && (y as usize) < h {
+        light[y as usize * w + x as usize]
+    } else { 0.0 };
+    let hull = lerp_color(colors.stone, colors.ink, (lit + 0.22).min(1.0));
+    put(grid, x, y - 3, '|', hull);
+    put(grid, x - 1, y - 2, '/', hull);
+    put(grid, x, y - 2, '|', hull);
+    put(grid, x + 1, y - 2, '\\', hull);
+    put(grid, x, y - 1, '|', hull);
+    for (i, ch) in "\\_____/".chars().enumerate() {
+        put(grid, x - 3 + i as i32, y, ch, hull);
+    }
+    if lit > 0.27 {
+        let wake = if (time * 3.0).sin() > 0.0 { '~' } else { '_' };
+        put(grid, x - 5, y + 1, wake, colors.stone);
+        put(grid, x + 5, y + 1, wake, colors.stone);
+    }
+}
+
+fn invert(color: Color) -> Color {
+    match color {
+        Color::Rgb { r, g, b } => rgb(255 - r, 255 - g, 255 - b),
+        other => other,
+    }
+}
+
+fn negative(grid: &mut Grid, w: usize, h: usize) {
+    for row in grid.iter_mut().take(h) {
+        for cell in row.iter_mut().take(w) {
+            cell.fg = invert(cell.fg);
+            cell.bg = invert(cell.bg);
+        }
+    }
 }
 
 fn towers(grid: &mut Grid, w: usize, horizon: usize, speech: &Speech, colors: Colors, glow: f32) {
