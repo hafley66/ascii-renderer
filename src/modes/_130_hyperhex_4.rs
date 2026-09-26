@@ -641,17 +641,24 @@ fn draw(frame: &mut ModeFrame<'_>, k: &Knobs) {
         let hz = k.horizon as f32;
         let dpx = -mood_t.aa.0 as f32 * s * 0.35;
         let dpy = -mood_t.aa.1 as f32 * s * 0.5 * 0.35;
+        let denom = 0.5 * s;
         for y in 0..h {
+            // Row-dependent terms are constant across x; hoisting them leaves every
+            // per-cell float expression identical to before.
+            let zy = (y as f32 + 0.5 - cy0) / denom;
+            let zy2 = zy * zy;
+            let ay = (y as f32 + 0.5 - cy0) as f64;
+            let hy = (y as f32 - dpy).round() as i64;
+            let hyk = (hy as u64).wrapping_mul(0xC2B2_AE3D_27D4_EB4F);
+            let gy = &mut grid[y];
             for x in 0..w {
-                let zx = (x as f32 + 0.5 - cx0) / s;
-                let zy = (y as f32 + 0.5 - cy0) / (0.5 * s);
-                let d = (zx * zx + zy * zy).sqrt();
+                let xc = x as f32 + 0.5 - cx0;
+                let zx = xc / s;
+                let d = (zx * zx + zy2).sqrt();
                 if d > 1.0 {
                     let hx = (x as f32 - dpx).round() as i64;
-                    let hy = (y as f32 - dpy).round() as i64;
                     let hv = splitmix(
-                        seed ^ (hx as u64).wrapping_mul(0x9E37_79B9_7F4A_7C15)
-                            ^ (hy as u64).wrapping_mul(0xC2B2_AE3D_27D4_EB4F),
+                        seed ^ (hx as u64).wrapping_mul(0x9E37_79B9_7F4A_7C15) ^ hyk,
                     );
                     let rv = ((hv >> 11) as f64) / ((1u64 << 53) as f64);
                     let fade = (1.0 - (d - 1.0) / 1.7).clamp(0.12, 1.0);
@@ -666,12 +673,12 @@ fn draw(frame: &mut ModeFrame<'_>, k: &Knobs) {
                             '.'
                         };
                         let fg = lerp_color(pal[0], pal[4], 0.65 * bright + 0.1);
-                        grid[y][x] = Cell::with_bg(ch, fg, bg);
+                        gy[x] = Cell::with_bg(ch, fg, bg);
                     } else {
-                        grid[y][x] = Cell::with_bg(' ', pal[0], bg);
+                        gy[x] = Cell::with_bg(' ', pal[0], bg);
                     }
                 } else {
-                    let ang = ((y as f32 + 0.5 - cy0) as f64).atan2((x as f32 + 0.5 - cx0) as f64);
+                    let ang = ay.atan2(xc as f64);
                     let bin = (((ang + PI) / TAU) * BINS as f64) as usize % BINS;
                     let dens = density[bin] / dmax;
                     let base = lerp_color(pal[0], cold, d * d * 0.32);
@@ -679,7 +686,7 @@ fn draw(frame: &mut ModeFrame<'_>, k: &Knobs) {
                     let bg = lerp_color(base, warm, corona * 0.7);
                     let dust = unit(seed, 10, (y * w + x) as u64) > 0.992;
                     let ch = if dust { '.' } else { ' ' };
-                    grid[y][x] = Cell::with_bg(ch, lerp_color(pal[0], pal[1], 0.5), bg);
+                    gy[x] = Cell::with_bg(ch, lerp_color(pal[0], pal[1], 0.5), bg);
                 }
             }
         }
