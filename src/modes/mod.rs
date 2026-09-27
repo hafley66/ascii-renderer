@@ -65,9 +65,9 @@ mod _118_semaphore;
 mod _130_hyperhex_4;
 mod _131_hyperhex_5;
 mod _132_hyperhex_6;
+mod _133_breathhex;
 
 #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
-
 pub(crate) fn register_all(registry: &mut crate::registry::ModeRegistry) {
     registry.add(&_30_illuminarium::MODE);
     registry.add(&_31_qwen_cathedral::MODE);
@@ -134,4 +134,5 @@ pub(crate) fn register_all(registry: &mut crate::registry::ModeRegistry) {
     registry.add(&_130_hyperhex_4::MODE);
     registry.add(&_131_hyperhex_5::MODE);
     registry.add(&_132_hyperhex_6::MODE);
+    registry.add(&_133_breathhex::MODE);
 }
