@@ -1,0 +1,531 @@
+use crate::_0_profile::measure_layer;
+use crate::color::{darken, lerp_color, lighten};
+use crate::opts::param_f32;
+use crate::registry::{AnimKind, Mode, ModeFrame, Param};
+use crate::types::{Cell, Grid};
+use crossterm::style::Color;
+use rayon::prelude::*;
+use std::cell::RefCell;
+
+pub(super) struct BreathHex;
+pub(super) static MODE: BreathHex = BreathHex;
+
+const NAME: &str = "breathhex";
+const HELP: &str = "breathhex: breathing hex tiling [SPAN] [GAIN] [CURVE] \
+                    [BREATH] [RATE] [ASYM] [WALL] [DRIFT]";
+
+const TAU: f32 = std::f32::consts::TAU;
+const SQ3_2: f32 = 0.866_025_4;
+const FRAC_PI_2: f32 = std::f32::consts::FRAC_PI_2;
+const PAR_MIN: usize = 20_480;
+const RAMP: [char; 5] = [',', '.', ':', '=', '#'];
+const EDGES: [char; 4] = ['-', '/', '|', '\\'];
+
+const PARAMS: &[Param] = &[
+    param!("SPAN", "cells across centre", 5.0, 48.0, 9.0, 1.0),
+    param!("GAIN", "shrink gradient", 0.1, 3.0, 0.8, 0.05),
+    param!("CURVE", "map bend", -1.0, 1.0, 0.4, 0.05),
+    param!("BREATH", "amplitude", 0.0, 0.5, 0.3, 0.05),
+    param!("RATE", "breaths per sec", 0.0, 2.0, 0.5, 0.05),
+    param!("ASYM", "phase per radius", 0.0, 6.0, 2.0, 0.1),
+    param!("WALL", "wall width", 0.02, 0.4, 0.14, 0.01),
+    param!("DRIFT", "map motion", 0.0, 1.0, 0.6, 0.05),
+];
+
+struct Knobs {
+    span: f32,
+    gain: f32,
+    curve: f32,
+    breath: f32,
+    rate: f32,
+    asym: f32,
+    wall: f32,
+    drift: f32,
+}
+
+fn knobs(args: &[String], pv: Option<&[f32]>) -> Knobs {
+    let mut v = [0.0f32; 8];
+    for (i, p) in PARAMS.iter().enumerate() {
+        let raw = args
+            .get(i + 4)
+            .and_then(|s| s.parse::<f32>().ok())
+            .or_else(|| pv.and_then(|vals| vals.get(i).copied()))
+            .unwrap_or_else(|| param_f32(p.key, p.default));
+        v[i] = raw.clamp(p.min, p.max);
+    }
+    Knobs {
+        span: v[0],
+        gain: v[1],
+        curve: v[2],
+        breath: v[3],
+        rate: v[4],
+        asym: v[5],
+        wall: v[6],
+        drift: v[7],
+    }
+}
+
+#[derive(Clone, Copy)]
+struct Cx {
+    re: f32,
+    im: f32,
+}
+
+impl Cx {
+    fn add(self, o: Cx) -> Cx {
+        Cx {
+            re: self.re + o.re,
+            im: self.im + o.im,
+        }
+    }
+    fn mul(self, o: Cx) -> Cx {
+        Cx {
+            re: self.re * o.re - self.im * o.im,
+            im: self.re * o.im + self.im * o.re,
+        }
+    }
+    fn norm(self) -> f32 {
+        (self.re * self.re + self.im * self.im).sqrt()
+    }
+}
+
+fn mix(seed: u64, m: i32, n: i32) -> u64 {
+    let mut z = seed
+        ^ (m as u64).wrapping_mul(0x9E37_79B9_7F4A_7C15)
+        ^ (n as u64).wrapping_mul(0xC2B2_AE3D_27D4_EB4F);
+    z = (z ^ (z >> 30)).wrapping_mul(0xBF58_476D_1CE4_E5B9);
+    z = (z ^ (z >> 27)).wrapping_mul(0x94D0_49BB_1331_11EB);
+    z ^ (z >> 31)
+}
+
+fn unit(seed: u64, m: i32, n: i32) -> f32 {
+    (mix(seed, m, n) >> 40) as f32 / (1u64 << 24) as f32
+}
+
+#[derive(Clone, Copy)]
+struct MapCfg {
+    gain: f32,
+    curve: Cx,
+    z0: Cx,
+    zoom: f32,
+    spin: f32,
+}
+
+#[derive(Clone, Copy)]
+struct MapPt {
+    hx: f32,
+    hy: f32,
+    fim: f32,
+    fpre: f32,
+    fpim: f32,
+}
+
+fn map_pt(x: f32, y: f32, wf: f32, mc: &MapCfg) -> MapPt {
+    let q = Cx {
+        re: (x - mc.z0.re) / wf,
+        im: (y - mc.z0.im) / wf,
+    };
+    let cq2 = mc.curve.mul(q.mul(q));
+    let fre = mc.gain * (q.re + cq2.re) + mc.zoom;
+    let fim = mc.gain * (q.im + cq2.im) + mc.spin;
+    let wm = fre.exp();
+    let fp0 = Cx { re: 1.0, im: 0.0 }.add(q.mul(mc.curve).mul(Cx { re: 2.0, im: 0.0 }));
+    let fp = Cx { re: mc.gain * fp0.re, im: mc.gain * fp0.im };
+    MapPt {
+        hx: wm * fim.cos(),
+        hy: wm * fim.sin(),
+        fim,
+        fpre: fp.re,
+        fpim: fp.im,
+    }
+}
+
+fn lattice_of(hx: f32, hy: f32, lat_x: f32, lat_y: f32) -> (i32, i32) {
+    let u = hx / lat_x;
+    let v = hy / lat_y;
+    (((u + v) * 0.5).round() as i32, ((u - v) * 0.5).round() as i32)
+}
+
+struct Geo {
+    cfg: MapCfg,
+    rh: f32,
+    lat_x: f32,
+    lat_y: f32,
+    breath: Vec<f32>,
+    lo_m: i32,
+    lo_n: i32,
+    nm: i32,
+    nn: i32,
+    breath_amp: f32,
+    wall_gap: f32,
+    gate2: f32,
+}
+
+impl Geo {
+    fn breath_at(&self, m: i32, n: i32) -> f32 {
+        let mi = m.clamp(self.lo_m, self.lo_m + self.nm - 1) - self.lo_m;
+        let ni = n.clamp(self.lo_n, self.lo_n + self.nn - 1) - self.lo_n;
+        self.breath[(mi * self.nn + ni) as usize]
+    }
+}
+
+fn build_geometry(w: usize, h: usize, seed: u64, t: f32, k: &Knobs) -> Geo {
+    let wf = w as f32;
+    let hu = h as f32 * 2.0;
+    let gain = k.gain.max(0.05);
+    let psi = unit(seed, 3, 0) * TAU;
+    let curve = Cx {
+        re: k.curve * psi.cos(),
+        im: k.curve * psi.sin(),
+    };
+    let z0 = Cx {
+        re: -0.25 * wf,
+        im: 1.25 * hu,
+    };
+    let still = MapCfg {
+        gain,
+        curve,
+        z0,
+        zoom: 0.0,
+        spin: 0.0,
+    };
+    let ctr = map_pt(0.5 * wf, 0.5 * hu, wf, &still);
+    let fp_len = Cx {
+        re: ctr.fpre,
+        im: ctr.fpim,
+    }
+    .norm()
+    .max(1e-6);
+    let h_len = (ctr.hx * ctr.hx + ctr.hy * ctr.hy).sqrt().max(1e-6);
+    let dh = fp_len * h_len / wf;
+    let rh = (wf * dh / (3.0 * k.span.max(1.0))).max(1e-4);
+
+    let cfg = MapCfg {
+        gain,
+        curve,
+        z0,
+        zoom: k.drift * 0.35 * (TAU * 0.09 * t).sin(),
+        spin: k.drift * 0.55 * t,
+    };
+
+    let (mut lo_m, mut hi_m) = (i32::MAX, i32::MIN);
+    let (mut lo_n, mut hi_n) = (i32::MAX, i32::MIN);
+    let lat_x = 1.5 * rh;
+    let lat_y = SQ3_2 * rh;
+    for y in 0..h {
+        for x in [0usize, w - 1] {
+            let p = map_pt(x as f32 + 0.5, y as f32 * 2.0 + 1.0, wf, &cfg);
+            let (m, n) = lattice_of(p.hx, p.hy, lat_x, lat_y);
+            lo_m = lo_m.min(m);
+            hi_m = hi_m.max(m);
+            lo_n = lo_n.min(n);
+            hi_n = hi_n.max(n);
+        }
+    }
+    for x in 0..w {
+        for y in [0usize, h - 1] {
+            let p = map_pt(x as f32 + 0.5, y as f32 * 2.0 + 1.0, wf, &cfg);
+            let (m, n) = lattice_of(p.hx, p.hy, lat_x, lat_y);
+            lo_m = lo_m.min(m);
+            hi_m = hi_m.max(m);
+            lo_n = lo_n.min(n);
+            hi_n = hi_n.max(n);
+        }
+    }
+    lo_m -= 3;
+    lo_n -= 3;
+    let nm = (hi_m - lo_m + 1 + 6).max(1);
+    let nn = (hi_n - lo_n + 1 + 6).max(1);
+
+    let base = TAU * k.rate * t;
+    let wdir = unit(seed, 7, 0) * TAU;
+    let wave = (wdir.cos(), wdir.sin());
+    let wk = k.asym / rh;
+    let mut breath = vec![0.0f32; (nm * nn) as usize];
+    for mi in 0..nm {
+        for ni in 0..nn {
+            let m = lo_m + mi;
+            let n = lo_n + ni;
+            let sx = lat_x * (m + n) as f32;
+            let sy = lat_y * (m - n) as f32;
+            let jit = (unit(seed, m, n) - 0.5) * TAU * 0.45;
+            let ph = base + wk * (sx * wave.0 + sy * wave.1) + jit;
+            breath[(mi * nn + ni) as usize] = ph.sin();
+        }
+    }
+
+    Geo {
+        cfg,
+        rh,
+        lat_x,
+        lat_y,
+        breath,
+        lo_m,
+        lo_n,
+        nm,
+        nn,
+        breath_amp: k.breath,
+        wall_gap: 2.0 * k.wall * rh,
+        gate2: (2.8 * rh) * (2.8 * rh),
+    }
+}
+
+#[derive(Clone, Copy)]
+struct Px {
+    glyph: u8,
+    lvl: f32,
+}
+
+thread_local! {
+    static SCRATCH: RefCell<Vec<Px>> = const { RefCell::new(Vec::new()) };
+}
+
+fn fill_row(out: &mut [Px], y: usize, wf: f32, g: &Geo) {
+    let y_phys = y as f32 * 2.0 + 1.0;
+    for (x, px) in out.iter_mut().enumerate() {
+        let p = map_pt(x as f32 + 0.5, y_phys, wf, &g.cfg);
+        let (mm, nn) = lattice_of(p.hx, p.hy, g.lat_x, g.lat_y);
+        let mut best_e = f32::MAX;
+        let mut sec_e = f32::MAX;
+        let mut b_lv = 0.0f32;
+        let mut b_d = 0.0f32;
+        let mut b_sx = 0.0f32;
+        let mut b_sy = 0.0f32;
+        let mut s_sx = 0.0f32;
+        let mut s_sy = 0.0f32;
+        for dm in -2i32..=2 {
+            for dn in -2i32..=2 {
+                let m = mm + dm;
+                let n = nn + dn;
+                let sx = g.lat_x * (m + n) as f32;
+                let sy = g.lat_y * (m - n) as f32;
+                let dx = p.hx - sx;
+                let dy = p.hy - sy;
+                let d2 = dx * dx + dy * dy;
+                if d2 > g.gate2 {
+                    continue;
+                }
+                let lv = g.breath_at(m, n);
+                let d = d2.sqrt();
+                let e = d - g.rh * (1.0 + g.breath_amp * lv);
+                if e < best_e {
+                    sec_e = best_e;
+                    s_sx = b_sx;
+                    s_sy = b_sy;
+                    best_e = e;
+                    b_lv = lv;
+                    b_d = d;
+                    b_sx = sx;
+                    b_sy = sy;
+                } else if e < sec_e {
+                    sec_e = e;
+                    s_sx = sx;
+                    s_sy = sy;
+                }
+            }
+        }
+        if sec_e - best_e < g.wall_gap {
+            let arg_fp = p.fpim.atan2(p.fpre);
+            let th = (s_sy - b_sy).atan2(s_sx - b_sx) + FRAC_PI_2 - arg_fp - p.fim;
+            let cs = th.cos();
+            let sn = th.sin();
+            let ac = cs.abs();
+            let asn = sn.abs();
+            let glyph = if ac >= asn * 1.3 {
+                0
+            } else if asn >= ac * 1.3 {
+                2
+            } else if cs * sn >= 0.0 {
+                1
+            } else {
+                3
+            };
+            *px = Px {
+                glyph,
+                lvl: b_lv,
+            };
+        } else {
+            let denom = g.rh * (1.0 + g.breath_amp * b_lv);
+            let rn = (b_d / denom).min(1.0);
+            let mix = 0.55 * b_lv + 0.45 * (1.0 - rn);
+            let idx = ((mix * 5.0) as usize).min(4);
+            *px = Px {
+                glyph: 4 + idx as u8,
+                lvl: b_lv,
+            };
+        }
+    }
+}
+
+fn draw(grid: &mut Grid, w: usize, h: usize, seed: u64, pal: &[Color; 5], t: f32, k: &Knobs) {
+    if w == 0 || h == 0 {
+        return;
+    }
+    let geo = measure_layer(NAME, "sites", || build_geometry(w, h, seed, t, k));
+    let wf = w as f32;
+    measure_layer(NAME, "tiles", || {
+        SCRATCH.with(|rc| {
+            let mut buf = rc.borrow_mut();
+            if buf.len() < w * h {
+                buf.resize(w * h, Px { glyph: 4, lvl: 0.5 });
+            }
+            let rows = &mut buf[..w * h];
+            if w * h >= PAR_MIN {
+                rows.par_chunks_mut(w)
+                    .enumerate()
+                    .for_each(|(y, row)| fill_row(row, y, wf, &geo));
+            } else {
+                rows.chunks_mut(w)
+                    .enumerate()
+                    .for_each(|(y, row)| fill_row(row, y, wf, &geo));
+            }
+        });
+    });
+    measure_layer(NAME, "paint", || {
+        SCRATCH.with(|rc| {
+            let buf = rc.borrow();
+            for (y, row) in grid.iter_mut().enumerate().take(h) {
+                for (x, cell) in row.iter_mut().enumerate().take(w) {
+                    let px = buf[y * w + x];
+                    if px.glyph < 4 {
+                        let ch = EDGES[px.glyph as usize];
+                        let fg = lighten(pal[4], (30.0 + 70.0 * px.lvl) as u8);
+                        *cell = Cell::with_bg(ch, fg, darken(pal[3], 90));
+                    } else {
+                        let ch = RAMP[(px.glyph - 4) as usize];
+                        let fg = lerp_color(pal[1], pal[3], px.lvl);
+                        let bg = lerp_color(pal[0], pal[1], 0.08 + 0.18 * px.lvl);
+                        *cell = Cell::with_bg(ch, fg, bg);
+                    }
+                }
+            }
+        });
+    });
+}
+
+impl Mode for BreathHex {
+    fn name(&self) -> &'static str {
+        NAME
+    }
+    fn help(&self) -> &'static str {
+        HELP
+    }
+    fn animation(&self) -> AnimKind {
+        AnimKind::Iterate
+    }
+    fn params(&self) -> &'static [Param] {
+        PARAMS
+    }
+    fn render(&self, frame: &mut ModeFrame<'_>) {
+        let k = knobs(&frame.args, frame.param_values);
+        draw(
+            frame.grid,
+            frame.width,
+            frame.height,
+            frame.seed,
+            frame.palette,
+            frame.time,
+            &k,
+        );
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::color::make_palette;
+    use rand::rngs::StdRng;
+    use rand::SeedableRng;
+    use std::time::Instant;
+
+    fn snap(w: usize, h: usize, seed: u64, t: f32, args: &[&str]) -> String {
+        let mut grid = vec![vec![Cell::blank(); w]; h];
+        let pal = make_palette(seed);
+        let mut rng = StdRng::seed_from_u64(seed);
+        let av: Vec<String> = args.iter().map(|s| (*s).to_string()).collect();
+        MODE.render(&mut ModeFrame {
+            grid: &mut grid,
+            width: w,
+            height: h,
+            seed,
+            palette: &pal,
+            rng: &mut rng,
+            time: t,
+            args: &av,
+            param_values: None,
+        });
+        grid
+            .iter()
+            .map(|row| row.iter().map(|c| c.ch).collect::<String>())
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
+
+    #[test]
+    fn breathhex_80x24() {
+        let text = snap(80, 24, 42, 0.0, &[]);
+        insta::assert_snapshot!("breathhex_80x24", text);
+    }
+
+    #[test]
+    fn breathhex_80x24_t6() {
+        let text = snap(80, 24, 42, 6.0, &[]);
+        insta::assert_snapshot!("breathhex_80x24_t6", text);
+    }
+
+    #[test]
+    fn determinism() {
+        let a = snap(80, 24, 42, 3.0, &[]);
+        let b = snap(80, 24, 42, 3.0, &[]);
+        assert_eq!(a, b, "same inputs must render identical frames");
+    }
+
+    #[test]
+    fn seed_sensitivity() {
+        let a = snap(80, 24, 42, 0.0, &[]);
+        let b = snap(80, 24, 43, 0.0, &[]);
+        assert_ne!(a, b, "a different seed must move the tiling");
+    }
+
+    #[test]
+    fn time_sensitivity() {
+        let a = snap(80, 24, 42, 0.0, &[]);
+        let b = snap(80, 24, 42, 2.5, &[]);
+        assert_ne!(a, b, "the clock must animate the tiling");
+    }
+
+    #[test]
+    fn frame_cost() {
+        let (w, h) = (200usize, 60usize);
+        let mut g = vec![vec![Cell::blank(); w]; h];
+        let pal = make_palette(42);
+        let mut rng = StdRng::seed_from_u64(42);
+        let n = 60u32;
+        let mut worst = 0.0f64;
+        let start = Instant::now();
+        for i in 0..n {
+            let t = i as f32 * 0.06;
+            let mark = Instant::now();
+            MODE.render(&mut ModeFrame {
+                grid: &mut g,
+                width: w,
+                height: h,
+                seed: 42,
+                palette: &pal,
+                rng: &mut rng,
+                time: t,
+                args: &[],
+                param_values: None,
+            });
+            worst = worst.max(mark.elapsed().as_secs_f64() * 1000.0);
+        }
+        let avg = start.elapsed().as_secs_f64() * 1000.0 / n as f64;
+        eprintln!(
+            "breathhex frame_cost 200x60: avg {:.3} ms, worst {:.3} ms",
+            avg, worst
+        );
+        if !cfg!(debug_assertions) {
+            assert!(avg < 6.0, "frame_cost {:.3} ms exceeds 6 ms", avg);
+        }
+    }
+}
