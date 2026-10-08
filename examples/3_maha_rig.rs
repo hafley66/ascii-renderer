@@ -20,7 +20,7 @@ const RIG: &[Joint] = &[
     j("pelvis", None, 0.0, 6.35, 0.0, 0.0),
     j("spine", Some(0), 0.0, 1.8, 0.0, 0.7),
     j("chest", Some(1), 0.0, 1.6, 0.1, 0.9),
-    j("neck", Some(2), 0.0, 1.3, 0.32, 0.42),
+    j("neck", Some(2), 0.0, 1.3, 0.32, 0.5),
     j("head", Some(3), 0.0, 1.25, 0.2, 0.42),
     j("crown", Some(4), 0.0, 1.05, -0.25, 0.14),
     j("r_shoulder", Some(2), -1.95, 0.25, -0.05, 0.45),
@@ -98,6 +98,8 @@ const KEYS: &[Key] = &[
         // wrists go slack: hands drop in toward the thigh and curl slightly forward
         ("r_wrist", r(10.0, -14.0)), ("l_wrist", r(10.0, -14.0)),
         ("r_hip", r(0.0, 3.0)), ("l_hip", r(0.0, 3.0)),
+        // the monk-demon read: head bowed a few degrees over the trap mass
+        ("neck", r(14.0, 0.0)),
     ]},
     Key { name: "K1 R foot plants", bob: -0.25, rots: &[
         ("pelvis", tw(8.0)), ("spine", tw(-8.0)), ("chest", tw(-10.0)),
@@ -270,7 +272,15 @@ fn shapes(world: &[Mat4], pos: &[Vec3], t: Tweak) -> Vec<Shape> {
             jt.parent.map(|p| {
                 let core = CORE_JOINTS.contains(&jt.name);
                 // the skull tapers to a cone at the crown (refs #1, #5); other bones are straight capsules
-                let r1 = if jt.name == "crown" { RIG[p].radius } else { jt.radius };
+                // the skull tapers to a cone at the crown (refs #1, #5); other bones are straight capsules,
+                // except the neck: a straight column (the chest sphere flares the base naturally)
+                let r1 = if jt.name == "crown" {
+                    RIG[p].radius
+                } else if jt.name == "neck" {
+                    jt.radius
+                } else {
+                    RIG[p].radius
+                };
                 Shape { core, bone: p, ..cone(pos[p], pos[i], r1, jt.radius, Kind::Body) }
             })
         })
@@ -300,7 +310,7 @@ fn shapes(world: &[Mat4], pos: &[Vec3], t: Tweak) -> Vec<Shape> {
             // upper bundle runs skull base to acromion at about 45 degrees; lower ones fan down the back
             // origin at C7 height (chest frame y0.95 = world 10.70), clear of the jaw: the fan
             // crests beside the neck, never over it
-            let origin = at(CHEST, side * (0.40 - 0.12 * f), 0.95 - 1.9 * f + t.trap_height * (1.0 - f), -0.15 - 0.5 * f);
+            let origin = at(CHEST, side * (0.40 - 0.12 * f), 1.15 - 1.9 * f + t.trap_height * (1.0 - f), -0.15 - 0.5 * f);
             let insert = at(CHEST, side * (1.85 - 0.3 * f + t.trap_reach), 0.4 - 0.1 * f - t.trap_slope, -0.1 - 0.3 * f);
             let r = 0.34 - 0.12 * f + t.trap_mass;
             // swells in the middle of the slope (a belly), not a straight-sided capsule
