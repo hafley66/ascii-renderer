@@ -21,7 +21,7 @@ const RIG: &[Joint] = &[
     j("spine", Some(0), 0.0, 1.8, 0.0, 0.7),
     j("chest", Some(1), 0.0, 1.6, 0.1, 0.9),
     j("neck", Some(2), 0.0, 1.3, 0.32, 0.5),
-    j("head", Some(3), 0.0, 0.62, 0.2, 0.42),
+    j("head", Some(3), 0.0, 0.62, 0.2, 0.32),
     j("crown", Some(4), 0.0, 1.05, -0.25, 0.14),
     j("r_shoulder", Some(2), -1.95, 0.25, -0.05, 0.45),
     j("r_elbow", Some(6), 0.0, -2.4, 0.0, 0.4),
@@ -276,12 +276,21 @@ fn shapes(world: &[Mat4], pos: &[Vec3], t: Tweak) -> Vec<Shape> {
         })
         .collect();
     let at = |m: usize, x: f32, y: f32, z: f32| world[m].transform_point3(Vec3::new(x, y, z));
-    // long narrow face (goat-skull read): brow down to a square grin, jaw no wider than the face
-    out.push(cone(at(HEAD, 0.0, 0.35, 0.3), at(HEAD, 0.0, -0.2, 0.45), 0.3, 0.27, Kind::Body).on(HEAD));
+    // Mahoraga skull (refs #2, #4, #5): tall narrow wedge, heavy brow, cheek flare, wide square grin.
+    // Cranium leans back from a broad brow to a narrow keel at the crown.
+    out.push(cone(at(HEAD, 0.0, 0.34, 0.26), at(CROWN, 0.0, 0.02, 0.04), 0.36, 0.16, Kind::Body).on(HEAD));
+    out.push(detail(at(HEAD, 0.0, 0.34, 0.44), at(CROWN, 0.0, 0.0, 0.16), 0.11, 0.07).on(HEAD));
     for side in [-1.0, 1.0] {
-        out.push(cone(at(HEAD, side * 0.2, 0.0, 0.1), at(HEAD, side * 0.13, -0.45, 0.42), 0.17, 0.16, Kind::Body).on(HEAD));
+        out.push(cone(at(HEAD, side * 0.05, 0.2, 0.5), at(HEAD, side * 0.3, 0.32, 0.4), 0.13, 0.13, Kind::Body).on(HEAD));
+        out.push(cone(at(HEAD, side * 0.16, 0.12, 0.42), at(HEAD, side * 0.32, -0.16, 0.32), 0.15, 0.19, Kind::Body).on(HEAD));
     }
-    out.push(cone(at(HEAD, -0.1, -0.47, 0.45), at(HEAD, 0.1, -0.47, 0.45), 0.16, 0.16, Kind::Body).on(HEAD));
+    out.push(cone(at(HEAD, 0.0, 0.2, 0.46), at(HEAD, 0.0, -0.22, 0.5), 0.2, 0.19, Kind::Body).on(HEAD));
+    out.push(cone(at(HEAD, 0.0, -0.2, 0.47), at(HEAD, 0.0, -0.3, 0.46), 0.27, 0.25, Kind::Body).on(HEAD));
+    for k in 0..4 {
+        let dx = -0.15 + k as f32 * 0.1;
+        out.push(detail(at(HEAD, dx, -0.21, 0.62), at(HEAD, dx, -0.29, 0.6), 0.06, 0.06).on(HEAD));
+    }
+    out.push(cone(at(HEAD, 0.0, -0.34, 0.42), at(HEAD, 0.0, -0.56, 0.34), 0.19, 0.15, Kind::Body).on(HEAD));
     // head-tail: segmented, tapering, arcs up off the back of the skull then back and down past the
     // left shoulder with a curl at the end (refs #2, #6); segments meet in creases so the bands ink
     let tail = TAIL;
@@ -290,8 +299,6 @@ fn shapes(world: &[Mat4], pos: &[Vec3], t: Tweak) -> Vec<Shape> {
         let r = 0.3 - 0.03 * k as f32;
         out.push(detail(at(HEAD, a.0, a.1, a.2), at(HEAD, b.0, b.1, b.2), r, r * 0.88).on(HEAD));
     }
-    // cranial ridge: a keel from brow up over the long skull
-    out.push(cone(at(HEAD, 0.0, 0.25, 0.42), at(CROWN, 0.0, 0.0, 0.05), 0.2, 0.12, Kind::Body).on(HEAD));
     for side in [-1.0, 1.0] {
         let (shoulder, elbow) = if side < 0.0 { (R_SHOULDER, R_ELBOW) } else { (L_SHOULDER, L_ELBOW) };
         // trapezius as a fan of bundles: spine origins (skull base down to upper back) to clavicle/acromion
