@@ -97,7 +97,10 @@ const KEYS: &[Key] = &[
         ("r_elbow", r(26.0, -12.0)), ("l_elbow", r(26.0, -12.0)),
         // wrists go slack: hands drop in toward the thigh and curl slightly forward
         ("r_wrist", r(14.0, -18.0)), ("l_wrist", r(14.0, -18.0)),
-        ("r_hip", r(0.0, 3.0)), ("l_hip", r(0.0, 3.0)),
+        // feet shoulder-width with the toes turned out a touch, knees unlocked
+        ("r_hip", r(0.0, 8.0)), ("l_hip", r(0.0, 8.0)),
+        ("r_knee", r(-6.0, 0.0)), ("l_knee", r(-6.0, 0.0)),
+        ("r_ankle", r(0.0, 7.0)), ("l_ankle", r(0.0, 7.0)),
     ]},
     Key { name: "K1 R foot plants", bob: -0.25, rots: &[
         ("pelvis", tw(8.0)), ("spine", tw(-8.0)), ("chest", tw(-10.0)),
@@ -328,8 +331,8 @@ fn shapes(world: &[Mat4], pos: &[Vec3], t: Tweak) -> Vec<Shape> {
         let cap = at(shoulder, side * (0.06 + t.delt_out + t.delt_cap * 0.4), 0.0 + t.delt_cap * 0.5, 0.0);
         out.push(cone(cap, cap + Vec3::Y * 0.01, 0.42 + t.delt_cap * 0.42, 0.42 + t.delt_cap * 0.42, Kind::Body).on(shoulder));
         // pec: sternal head thick and low at the midline, clavicular head along the collarbone; creased
-        out.push(detail(at(CHEST, side * 0.14, -0.05, 0.66), at(CHEST, side * 1.4, 0.1, 0.44), 0.6, 0.34).belly(0.16).on(CHEST));
-        out.push(detail(at(CHEST, side * 0.16, 0.45, 0.62), at(CHEST, side * 1.3, 0.4, 0.42), 0.4, 0.28).belly(0.1).on(CHEST));
+        out.push(detail(at(CHEST, side * 0.34, -0.05, 0.66), at(CHEST, side * 1.4, 0.1, 0.44), 0.5, 0.34).belly(0.13).on(CHEST));
+        out.push(detail(at(CHEST, side * 0.3, 0.45, 0.62), at(CHEST, side * 1.3, 0.4, 0.42), 0.36, 0.28).belly(0.1).on(CHEST));
         // pec insertion: a short tendon onto the humerus at the armpit
         out.push(detail(at(CHEST, side * 1.3, 0.05, 0.4), at(CHEST, side * 1.62, 0.1, 0.12), 0.24, 0.15).on(CHEST));
         // lats: wings flaring out and back behind him at ~45 deg (seen from above), from the armpit
@@ -368,10 +371,10 @@ fn shapes(world: &[Mat4], pos: &[Vec3], t: Tweak) -> Vec<Shape> {
         // ribcage barrel: full convex sides from the armpit down, so pec and lat are bridged by rib, not a pit
         out.push(core(at(CHEST, side * 0.7, -0.15, -0.2), at(CHEST, side * 0.55, -1.5, -0.15), 0.78, 0.5).on(CHEST));
         // serratus: fingers on the barrel surface under the armpit, slanting forward-down
-        for k in 0..3 {
-            let y = -0.45 - k as f32 * 0.35;
-            let out_x = 1.45 - k as f32 * 0.08;
-            out.push(detail(at(CHEST, side * out_x, y, 0.0), at(CHEST, side * (out_x - 0.25), y - 0.25, 0.5), 0.15, 0.12).on(CHEST));
+        for k in 0..4 {
+            let y = -0.35 - k as f32 * 0.32;
+            let out_x = 1.5 - k as f32 * 0.1;
+            out.push(detail(at(CHEST, side * out_x, y, 0.15), at(CHEST, side * (out_x - 0.3), y - 0.28, 0.55), 0.2, 0.14).on(CHEST));
         }
         // back: erector columns either side of the spine groove, scapula blade muscles, teres major to the armpit
         out.push(detail(at(CHEST, side * 0.27, -0.7, -0.78), at(CHEST, side * 0.25, -3.1, -0.6), 0.25, 0.3).on(CHEST));
