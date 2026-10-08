@@ -325,8 +325,9 @@ fn shapes(world: &[Mat4], pos: &[Vec3], t: Tweak) -> Vec<Shape> {
         // delt cap: a ball on the acromion that swells up and out, not along the arm
         let cap = at(shoulder, side * (0.06 + t.delt_out + t.delt_cap * 0.4), 0.0 + t.delt_cap * 0.5, 0.0);
         out.push(cone(cap, cap + Vec3::Y * 0.01, 0.35 + t.delt_cap * 0.35, 0.35 + t.delt_cap * 0.35, Kind::Body).on(shoulder));
-        // pec shelf: a heavy slab from sternum to armpit, underside overhangs the ribs
-        out.push(core(at(CHEST, side * 0.25, 0.25, 0.62), at(CHEST, side * 1.45, 0.3, 0.3), 0.55, 0.5).on(CHEST));
+        // pec: sternal head thick and low at the midline, clavicular head along the collarbone; creased
+        out.push(detail(at(CHEST, side * 0.12, -0.3, 0.62), at(CHEST, side * 1.35, 0.02, 0.34), 0.5, 0.28).belly(0.14).on(CHEST));
+        out.push(detail(at(CHEST, side * 0.14, 0.32, 0.55), at(CHEST, side * 1.2, 0.3, 0.3), 0.36, 0.24).belly(0.1).on(CHEST));
         // lats: wings flaring out and back behind him at ~45 deg (seen from above), from the armpit
         // down to a narrow waist (refs: shoulders ~2x waist)
         out.push(core(at(CHEST, side * 1.35, -0.1, -0.7), at(CHEST, side * 0.6, -1.7, -0.25), 0.6, 0.3).on(CHEST));
@@ -351,12 +352,12 @@ fn shapes(world: &[Mat4], pos: &[Vec3], t: Tweak) -> Vec<Shape> {
         let knee = if side < 0.0 { 15 } else { 19 };
         out.push(cone(at(knee, 0.0, -0.45, -0.18), at(knee, 0.0, -1.9, -0.05), 0.62, 0.42, Kind::Body).on(knee));
     }
-    // eight-pack: 4 rows x 2, shrinking toward the navel; linea alba and tendinous rows are the creases
+    // eight-pack: 4 rows x 2 pads, each a block shrinking toward the navel; bordering pads ink
     for row in 0..4 {
-        let y = -0.6 - row as f32 * 0.5;
-        let (z, r) = (0.72 - row as f32 * 0.07, 0.24 - row as f32 * 0.012);
+        let y = -0.45 - row as f32 * 0.52;
+        let (z, r, hl) = (0.72 - row as f32 * 0.05, 0.27 - row as f32 * 0.02, 0.17 - row as f32 * 0.01);
         for side in [-1.0, 1.0] {
-            out.push(detail(at(CHEST, side * 0.21, y + 0.08, z), at(CHEST, side * 0.24, y - 0.08, z), r, r).on(CHEST));
+            out.push(detail(at(CHEST, side * 0.27, y + hl, z), at(CHEST, side * 0.27, y - hl, z), r, r).on(CHEST));
         }
     }
     for side in [-1.0, 1.0] {
@@ -1141,7 +1142,7 @@ fn mesh_json(key: &Frame, voxel: f32, cycle: bool) -> String {
         m.pos.iter().enumerate().map(|(i, w)| if i < body_verts { nearest_shape(*w, &body) } else { usize::MAX >> 1 }).collect();
     let kind: Vec<u8> = (0..m.pos.len()).map(|i| (i >= body_verts) as u8).collect();
     // crease: concavity of the field (negative Laplacian of the SDF ~ valley between two masses)
-    let e = 0.08;
+    let e = 0.16;
     let crease: Vec<String> = m
         .pos
         .iter()
