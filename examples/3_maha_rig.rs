@@ -317,8 +317,8 @@ fn shapes(world: &[Mat4], pos: &[Vec3], t: Tweak) -> Vec<Shape> {
             cone(
                 at(shoulder, side * (0.04 + t.delt_out), -0.1, 0.03),
                 at(shoulder, side * (0.06 + t.delt_out * 0.5), -1.0 - t.delt_length, 0.03),
-                0.5 + t.delt_mass,
-                0.37 + t.delt_mass * 0.2,
+                0.6 + t.delt_mass,
+                0.42 + t.delt_mass * 0.2,
                 Kind::Body,
             )
             .belly(0.12)
@@ -326,10 +326,10 @@ fn shapes(world: &[Mat4], pos: &[Vec3], t: Tweak) -> Vec<Shape> {
         );
         // delt cap: a ball on the acromion that swells up and out, not along the arm
         let cap = at(shoulder, side * (0.06 + t.delt_out + t.delt_cap * 0.4), 0.0 + t.delt_cap * 0.5, 0.0);
-        out.push(cone(cap, cap + Vec3::Y * 0.01, 0.35 + t.delt_cap * 0.35, 0.35 + t.delt_cap * 0.35, Kind::Body).on(shoulder));
+        out.push(cone(cap, cap + Vec3::Y * 0.01, 0.42 + t.delt_cap * 0.42, 0.42 + t.delt_cap * 0.42, Kind::Body).on(shoulder));
         // pec: sternal head thick and low at the midline, clavicular head along the collarbone; creased
-        out.push(detail(at(CHEST, side * 0.12, -0.3, 0.62), at(CHEST, side * 1.35, 0.02, 0.42), 0.5, 0.28).belly(0.14).on(CHEST));
-        out.push(detail(at(CHEST, side * 0.14, 0.32, 0.6), at(CHEST, side * 1.2, 0.3, 0.38), 0.36, 0.24).belly(0.1).on(CHEST));
+        out.push(detail(at(CHEST, side * 0.14, -0.05, 0.66), at(CHEST, side * 1.4, 0.1, 0.44), 0.6, 0.34).belly(0.16).on(CHEST));
+        out.push(detail(at(CHEST, side * 0.16, 0.45, 0.62), at(CHEST, side * 1.3, 0.4, 0.42), 0.4, 0.28).belly(0.1).on(CHEST));
         // pec insertion: a short tendon onto the humerus at the armpit
         out.push(detail(at(CHEST, side * 1.3, 0.05, 0.4), at(CHEST, side * 1.62, 0.1, 0.12), 0.24, 0.15).on(CHEST));
         // lats: wings flaring out and back behind him at ~45 deg (seen from above), from the armpit
@@ -358,10 +358,10 @@ fn shapes(world: &[Mat4], pos: &[Vec3], t: Tweak) -> Vec<Shape> {
     }
     // eight-pack: 4 rows x 2 rectus blocks; the gaps between blocks ink the linea alba and rows
     for row in 0..4 {
-        let y = -0.5 - row as f32 * 0.58;
-        let (z, r) = (0.8 - row as f32 * 0.05, 0.22 - row as f32 * 0.02);
+        let y = -0.35 - row as f32 * 0.65;
+        let (z, r) = (0.82 - row as f32 * 0.04, 0.22);
         for side in [-1.0, 1.0] {
-            out.push(detail(at(CHEST, side * 0.28, y + 0.1, z), at(CHEST, side * 0.28, y - 0.1, z), r, r).on(CHEST));
+            out.push(detail(at(CHEST, side * 0.3, y + 0.08, z), at(CHEST, side * 0.3, y - 0.08, z), r, r).on(CHEST));
         }
     }
     for side in [-1.0, 1.0] {
@@ -380,7 +380,7 @@ fn shapes(world: &[Mat4], pos: &[Vec3], t: Tweak) -> Vec<Shape> {
         // lat insertion twists forward onto the humerus
         out.push(detail(at(CHEST, side * 1.5, -0.25, -0.5), at(CHEST, side * 1.68, 0.05, -0.15), 0.2, 0.13).on(CHEST));
         // external oblique: ribs to the hip crest, overhangs the sash
-        out.push(detail(at(CHEST, side * 0.78, -1.4, 0.2), at(CHEST, side * 0.72, -3.0, 0.3), 0.3, 0.34).on(CHEST));
+        out.push(detail(at(CHEST, side * 0.8, -1.2, 0.35), at(CHEST, side * 0.72, -3.0, 0.4), 0.34, 0.4).on(CHEST));
     }
     // hakama: cinched at the sash on the hip, flares to the knee
     out.push(cone(at(PELVIS, 0.0, 0.25, 0.0), at(PELVIS, 0.0, -3.3, 0.1), 1.25, 1.8, Kind::Skirt).on(PELVIS));
