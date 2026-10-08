@@ -332,8 +332,8 @@ fn shapes(world: &[Mat4], pos: &[Vec3], t: Tweak) -> Vec<Shape> {
         out.push(detail(at(CHEST, side * 0.14, 0.32, 0.55), at(CHEST, side * 1.2, 0.3, 0.3), 0.36, 0.24).belly(0.1).on(CHEST));
         // lats: wings flaring out and back behind him at ~45 deg (seen from above), from the armpit
         // down to a narrow waist (refs: shoulders ~2x waist)
-        out.push(core(at(CHEST, side * 1.35, -0.1, -0.7), at(CHEST, side * 0.6, -1.7, -0.25), 0.6, 0.3).on(CHEST));
-        out.push(core(at(CHEST, side * 1.45, -0.3, -0.55), at(CHEST, side * 0.9, -1.3, -0.45), 0.42, 0.34).on(CHEST));
+        out.push(detail(at(CHEST, side * 1.4, 0.0, -0.65), at(CHEST, side * 0.55, -1.9, -0.4), 0.58, 0.28).belly(0.1).on(CHEST));
+        out.push(detail(at(CHEST, side * 1.3, -0.45, -0.75), at(CHEST, side * 0.85, -1.6, -0.55), 0.4, 0.3).on(CHEST));
         // biceps peak in front, triceps horseshoe behind
         out.push(cone(at(shoulder, 0.0, -0.8, 0.18), at(shoulder, 0.0, -1.7, 0.15), 0.52, 0.4, Kind::Body).on(shoulder));
         out.push(cone(at(shoulder, 0.0, -0.6, -0.16), at(shoulder, 0.0, -1.9, -0.12), 0.46, 0.32, Kind::Body).on(shoulder));
@@ -864,11 +864,30 @@ fn surface(caps: &[Shape], voxel: f32) -> Surface {
         .collect();
     let mut buf = SurfaceNetsBuffer::default();
     surface_nets(&sdf, &grid, [0; 3], [dims[0] - 1, dims[1] - 1, dims[2] - 1], &mut buf);
-    Surface {
-        pos: buf.positions.iter().map(|p| origin + Vec3::from_array(*p) * voxel).collect(),
-        nrm: buf.normals.iter().map(|n| Vec3::from_array(*n).normalize_or(Vec3::Y)).collect(),
-        idx: buf.indices,
+    let idx = buf.indices;
+    let mut pos: Vec<Vec3> = buf.positions.iter().map(|p| origin + Vec3::from_array(*p) * voxel).collect();
+    let nrm: Vec<Vec3> = buf.normals.iter().map(|n| Vec3::from_array(*n).normalize_or(Vec3::Y)).collect();
+    // Laplacian pass knocks the voxel staircase off the exported mesh so the outline hull stays clean.
+    let mut adj: Vec<Vec<u32>> = vec![Vec::new(); pos.len()];
+    for t in idx.chunks_exact(3) {
+        for k in 0..3 {
+            let (a, b) = (t[k], t[(k + 1) % 3]);
+            adj[a as usize].push(b);
+            adj[b as usize].push(a);
+        }
     }
+    for _ in 0..2 {
+        let mut next = pos.clone();
+        for i in 0..pos.len() {
+            if adj[i].is_empty() {
+                continue;
+            }
+            let avg = adj[i].iter().map(|&j| pos[j as usize]).sum::<Vec3>() / adj[i].len() as f32;
+            next[i] = pos[i].lerp(avg, 0.5);
+        }
+        pos = next;
+    }
+    Surface { pos, nrm, idx }
 }
 
 fn floats(vs: &[Vec3]) -> String {
