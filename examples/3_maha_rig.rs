@@ -93,10 +93,10 @@ const fn tw(yaw: f32) -> Rot {
 const KEYS: &[Key] = &[
     // Arms hang straight down from shoulders broad enough to clear the lats; elbows soft and a touch forward.
     Key { name: "K0 stand", bob: 0.0, rots: &[
-        ("r_shoulder", r(4.0, 3.0)), ("l_shoulder", r(4.0, 3.0)),
-        ("r_elbow", r(14.0, 0.0)), ("l_elbow", r(14.0, 0.0)),
+        ("r_shoulder", r(8.0, 10.0)), ("l_shoulder", r(8.0, 10.0)),
+        ("r_elbow", r(26.0, 0.0)), ("l_elbow", r(26.0, 0.0)),
         // wrists go slack: hands drop in toward the thigh and curl slightly forward
-        ("r_wrist", r(10.0, -14.0)), ("l_wrist", r(10.0, -14.0)),
+        ("r_wrist", r(14.0, -18.0)), ("l_wrist", r(14.0, -18.0)),
         ("r_hip", r(0.0, 3.0)), ("l_hip", r(0.0, 3.0)),
     ]},
     Key { name: "K1 R foot plants", bob: -0.25, rots: &[
@@ -330,6 +330,8 @@ fn shapes(world: &[Mat4], pos: &[Vec3], t: Tweak) -> Vec<Shape> {
         // pec: sternal head thick and low at the midline, clavicular head along the collarbone; creased
         out.push(detail(at(CHEST, side * 0.12, -0.3, 0.62), at(CHEST, side * 1.35, 0.02, 0.34), 0.5, 0.28).belly(0.14).on(CHEST));
         out.push(detail(at(CHEST, side * 0.14, 0.32, 0.55), at(CHEST, side * 1.2, 0.3, 0.3), 0.36, 0.24).belly(0.1).on(CHEST));
+        // pec insertion: a short tendon onto the humerus at the armpit
+        out.push(detail(at(CHEST, side * 1.3, 0.05, 0.4), at(CHEST, side * 1.62, 0.1, 0.12), 0.24, 0.15).on(CHEST));
         // lats: wings flaring out and back behind him at ~45 deg (seen from above), from the armpit
         // down to a narrow waist (refs: shoulders ~2x waist)
         out.push(detail(at(CHEST, side * 1.4, 0.0, -0.65), at(CHEST, side * 0.55, -1.9, -0.4), 0.58, 0.28).belly(0.1).on(CHEST));
@@ -364,7 +366,7 @@ fn shapes(world: &[Mat4], pos: &[Vec3], t: Tweak) -> Vec<Shape> {
     }
     for side in [-1.0, 1.0] {
         // ribcage barrel: full convex sides from the armpit down, so pec and lat are bridged by rib, not a pit
-        out.push(core(at(CHEST, side * 0.7, -0.15, -0.2), at(CHEST, side * 0.6, -1.5, -0.15), 0.78, 0.58).on(CHEST));
+        out.push(core(at(CHEST, side * 0.7, -0.15, -0.2), at(CHEST, side * 0.55, -1.5, -0.15), 0.78, 0.5).on(CHEST));
         // serratus: fingers on the barrel surface under the armpit, slanting forward-down
         for k in 0..3 {
             let y = -0.45 - k as f32 * 0.35;
@@ -375,6 +377,8 @@ fn shapes(world: &[Mat4], pos: &[Vec3], t: Tweak) -> Vec<Shape> {
         out.push(detail(at(CHEST, side * 0.27, -0.7, -0.78), at(CHEST, side * 0.25, -3.1, -0.6), 0.25, 0.3).on(CHEST));
         out.push(detail(at(CHEST, side * 0.7, 0.15, -0.8), at(CHEST, side * 0.95, -0.5, -0.8), 0.36, 0.3).on(CHEST));
         out.push(detail(at(CHEST, side * 1.0, -0.5, -0.85), at(CHEST, side * 1.65, -0.15, -0.45), 0.28, 0.24).on(CHEST));
+        // lat insertion twists forward onto the humerus
+        out.push(detail(at(CHEST, side * 1.5, -0.25, -0.5), at(CHEST, side * 1.68, 0.05, -0.15), 0.2, 0.13).on(CHEST));
         // external oblique: ribs to the hip crest, overhangs the sash
         out.push(detail(at(CHEST, side * 0.78, -1.4, 0.2), at(CHEST, side * 0.72, -3.0, 0.3), 0.3, 0.34).on(CHEST));
     }
