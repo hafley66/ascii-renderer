@@ -182,7 +182,7 @@ const WALK_KEYS = SPEC.map(s => s[1]).filter(k => !BODY_KEYS.includes(k) && !VIE
 const PRESETS = {
   'taking the domain': {speed: 0.5, armSwing: 18, pelvisTwist: 12, torsoTwist: 8, weightShift: 0.3, hipDrop: 4, headStab: 1, headLook: 0, bodyDrift: 0.15, stepJitter: 0.12, footJitter: 0.08, armVar: 0.3, buffet: 0.6, buffetRate: 0.3, bracing: 0.8},
   'drunk on cursed energy': {weightShift: 0.45, hipDrop: 7, counterLean: 1, torsoTwist: 18, stepJitter: 0.3, footJitter: 0.25, bodyDrift: 0.8, headLook: 10},
-  'wading through fire': {speed: 0.4, lean: 8, liftRatio: 0.16, weightShift: 0.25, armSpread: 20, elbowRest: 18},
+  'wading through fire': {speed: 0.4, strideRatio: 1.0, duty: 0.68, liftRatio: 0.16, kneeLoad: 22, kneeMid: 9, heelStrike: 18, toeRoll: 38, weightShift: 0.3, hipDrop: 4, shoulderSway: 2.5, pelvisTwist: 4, torsoTwist: 8, lean: 8, armSwing: 14, armSpread: 20, elbowRest: 18},
   'shoulder-led': {torsoTwist: 26, spineShare: 0.3, pelvisTwist: 1, weightShift: 0.12, armSwing: 18},
   'hip-led swagger': {pelvisTwist: 12, weightShift: 0.3, hipDrop: 4, torsoTwist: 8, armSwing: 16},
   'after the adaptation': {speed: 0.5, weightShift: 0.2, hipDrop: 2.5, torsoTwist: 15, bodyDrift: 0.4, headLook: 12},
