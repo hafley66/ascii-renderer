@@ -249,7 +249,7 @@ impl Shape {
 
 // Torso, neck, traps, delts melt together; limbs and head stay crisp so the arm gap and head read.
 const CORE_JOINTS: &[&str] = &["spine", "chest", "neck"];
-const TRAP_BUNDLES: usize = 4;
+const TRAP_BUNDLES: usize = 5;
 
 // Bones as capsules, plus muscle masses parented to chest/shoulder/pelvis frames so they ride the pose.
 // Blend-shape offsets for the traps; zero is the authored body.
@@ -312,7 +312,7 @@ fn shapes(world: &[Mat4], pos: &[Vec3], t: Tweak) -> Vec<Shape> {
             let insert = at(CHEST, side * (1.85 - 0.3 * f + t.trap_reach), 0.4 - 0.1 * f - t.trap_slope, -0.1 - 0.3 * f);
             let r = 0.58 - 0.18 * f + t.trap_mass;
             // swells in the middle of the slope (a belly), not a straight-sided capsule
-            out.push(core(origin, insert, r, r * 0.8).belly(0.2).on(CHEST));
+            out.push(detail(origin, insert, r, r * 0.8).belly(0.2).on(CHEST));
         }
         // sternocleidomastoid: a cord from behind the ear to the sternum notch, framing the neck
         out.push(detail(at(CHEST, side * 0.13, 1.38, 0.1), at(CHEST, side * 0.07, 0.5, 0.5), 0.13, 0.11).on(CHEST));
@@ -378,7 +378,7 @@ fn shapes(world: &[Mat4], pos: &[Vec3], t: Tweak) -> Vec<Shape> {
         }
         // back: erector columns either side of the spine groove, scapula blade muscles, teres major to the armpit
         out.push(detail(at(CHEST, side * 0.27, -0.7, -0.78), at(CHEST, side * 0.25, -3.1, -0.6), 0.25, 0.3).on(CHEST));
-        out.push(detail(at(CHEST, side * 0.7, 0.15, -0.8), at(CHEST, side * 0.95, -0.5, -0.8), 0.36, 0.3).on(CHEST));
+        out.push(detail(at(CHEST, side * 0.72, 0.2, -0.8), at(CHEST, side * 0.98, -0.6, -0.8), 0.42, 0.34).on(CHEST));
         out.push(detail(at(CHEST, side * 1.0, -0.5, -0.85), at(CHEST, side * 1.65, -0.15, -0.45), 0.28, 0.24).on(CHEST));
         // lat insertion twists forward onto the humerus
         out.push(detail(at(CHEST, side * 1.5, -0.25, -0.5), at(CHEST, side * 1.68, 0.05, -0.15), 0.2, 0.13).on(CHEST));
