@@ -381,12 +381,12 @@ const bodyMeshes = [
   skinned(body, new THREE.MeshBasicMaterial({color: 0xffc89a, wireframe: true}), WIRE),
   skinned(body, new THREE.MeshBasicMaterial({color: 0xffc89a, wireframe: true, transparent: true, opacity: 0.07, depthTest: false}), WIRE),
   skinned(body, new THREE.MeshBasicMaterial({color: 0xfbf1e8, side: THREE.DoubleSide}), CONT),
-  skinned(bodyHull, new THREE.MeshBasicMaterial({color: 0x3a140e, side: THREE.BackSide}), CONT),
+  skinned(bodyHull, new THREE.MeshBasicMaterial({color: 0x3a140e, side: THREE.BackSide, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 4}), CONT),
 ];
 const skirtMats = [
   new THREE.MeshBasicMaterial({color: 0x7fb8a6, wireframe: true, transparent: true}),
   new THREE.MeshBasicMaterial({color: 0x44564f, side: THREE.DoubleSide, transparent: true, depthWrite: false}),
-  new THREE.MeshBasicMaterial({color: 0x3a140e, side: THREE.BackSide, transparent: true, depthWrite: false}),
+  new THREE.MeshBasicMaterial({color: 0x3a140e, side: THREE.BackSide, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 4}),
 ];
 const skirtMeshes = [skinned(skirt, skirtMats[0], WIRE), skinned(skirt, skirtMats[1], CONT), skinned(skirtHull, skirtMats[2], CONT)];
 
