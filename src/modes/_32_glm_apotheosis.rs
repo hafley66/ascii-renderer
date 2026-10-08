@@ -2,6 +2,48 @@
 //   written by: opencode:z-ai/glm-5.3-flash (session ses_faa7, 2026-08-31)
 //   first commit: 399cd15 2026-08-30 by opencode:z-ai/glm-5.3-flash; co-author Chris Hafley
 //   editors: claude:claude-opus-5, opencode:deepseek/deepseek-v4-flash-0731, opencode:z-ai/glm-5.3-flash
+//   init prompt (session ses_faa7):
+//     boop-start: no recipe in /Users/chrishafley/projects/ascii-renderer/.boop-
+//     worktrees/feature/glm53f-max-apotheosis, nothing to warm
+//     setup is done; do not run installs or builds to get started; build only what you change.
+//
+//     # GLM 5.3 Flash max art lane
+//
+//     Read `AGENTS.md`, `.agents/skills/add-mode/SKILL.md`, its lifecycle reference, and
+//     `.agents/skills/add-animation/SKILL.md` completely before editing.
+//
+//     Add one standalone animated mode named `glm-apotheosis` in exactly
+//     `src/modes/_32_glm_apotheosis.rs`.
+//
+//     ## Ownership boundary
+//
+//     - Own `src/modes/_32_glm_apotheosis.rs` and its generated snapshots under
+//     `src/modes/snapshots/`.
+//     - Run `scripts/0_generate_modes.sh`; its resulting edit to generated `src/modes/mod.rs` is
+//     allowed.
+//     - Do not edit any other Rust source, existing snapshot, manifest, skill, or documentation file.
+//     - Do not use `#[path]`, `automod`, `inventory`, constructor registration, unsafe code, or
+//     nondeterministic entropy.
+//
+//     ## Implementation contract
+//
+//     - Implement the repository's object-safe `Mode` trait for a zero-sized `GlmApotheosisMode` and
+//     expose `pub(super) static MODE`.
+//     - Render through `ModeFrame` using dimensions, seed, palette, seeded RNG, time, positional
+//     arguments, and live `param_f32` values.
+//     - Return `AnimKind::Iterate` and declare a file-owned static parameter slice with at least 10
+//     useful, independently visible knobs. Keep `Param.default` values identical to renderer
+//     fallbacks.
+//     - Make each frame a pure deterministic function of explicit inputs. Identical inputs must
+//     produce identical cells regardless of prior frames.
+//     - Make a fixed seed visibly change the composition, and make nonzero time visibly animate it.
+//     - Bound all recursion, trails, particles, geometry, and grid writes by dimensions and clamped
+//     knob values.
+//     - Preserve display width and use the repository's existing grid, palette, color, and drawing
+//     utilities.
+//
+//     ## Visual target
+//     ... (15 more lines: boop db chat ses_faa77dcf4ffer8UDw8s7oWWYeF)
 // end attribution
 use crossterm::style::Color;
 use rand::RngExt;

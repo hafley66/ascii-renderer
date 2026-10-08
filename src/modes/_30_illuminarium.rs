@@ -2,6 +2,27 @@
 //   written by: omp:deepseek/deepseek-v4.1-flash (session 01a0ab59, 2026-09-16)
 //   first commit: bb2e710 2026-08-30; co-author OpenAI Codex
 //   editors: omp:deepseek/deepseek-v4.1-flash
+//   init prompt (session 01a0ab59):
+//     make art, make it efficient, make it cool, make it have knobs, good luck. make the random
+//     variance of the knobs also give strongly distinct styles when randomized that is how i primarily
+//     run this thing in anim mode with random. good luck
+//   prompt before first write (session 01a0ab59):
+//     # /load-session
+//
+//     Resume work from a saved session.
+//
+//     ## Instructions
+//
+//     1. If `` is provided:
+//        - If it's a filename, read `chat_log/.md` directly
+//        - If it's a partial match, Glob `chat_log/**.md` to find it
+//
+//     2. If no argument:
+//        - Read `chat_log/LATEST.md` directly
+//
+//     3. Read the session file and internalize:
+//        - **Goal**: What we're working on
+//     ... (14 more lines: boop db chat 01a0ab59-9106-7000-abe4-337b71d1de5d)
 // end attribution
 use crossterm::style::Color;
 use rand::RngExt;

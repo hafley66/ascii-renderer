@@ -2,6 +2,10 @@
 //   written by: claude:claude-opus-5-5@medium (session e5066c61, 2026-09-22, branch main)
 //   first commit: 31d538b 2026-09-22 by claude:claude-opus-5-5@medium; co-author Claude Opus 5.5 (1M context)
 //   editors: claude:claude-opus-5-5@medium
+//   init prompt (session e5066c61):
+//     hey can u make art in this  repo? try not to look at latest ones in psat 3 days, try to keep it
+//     efficient, have fun be avant garde but try not to be too
+//       influence buy the previous ones
 // end attribution
 //! Treatise: an endless graphic score in the manner of Cardew. A lifeline runs through
 //! circles, bent staves, numbers and wedges; what the playhead has sounded crumbles to dust.

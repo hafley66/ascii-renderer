@@ -2,6 +2,10 @@
 //   written by: omp:deepseek/deepseek-v4.1-flash (session 01a0ab59, 2026-09-16)
 //   first commit: 050ce06 2026-09-16 by omp:deepseek/deepseek-v4.1-flash; co-author Chris Hafley
 //   editors: omp:deepseek/deepseek-v4.1-flash
+//   init prompt (session 01a0ab59):
+//     make art, make it efficient, make it cool, make it have knobs, good luck. make the random
+//     variance of the knobs also give strongly distinct styles when randomized that is how i primarily
+//     run this thing in anim mode with random. good luck
 // end attribution
 //! Prismata: one kaleidoscopic interference field read through five engraving
 //! dialects and seven structural forms. Per frame: a field pass plus four paint

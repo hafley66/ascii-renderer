@@ -2,6 +2,11 @@
 //   written by: omp:xiaomi/mimo-v2.6-flash (session 01a0c6ba, 2026-09-22)
 //   first commit: 6258f61 2026-09-21 by omp:xiaomi/mimo-v2.6-flash; co-author Chris Hafley
 //   editors: omp:xiaomi/mimo-v2.6-flash
+//   init prompt (session 01a0c6ba):
+//     hello, please make really intense and avant garde art algorithm in this repo. you may read other
+//     impl's but be careful! they will bias you on this journey. some have great ideas, some do not
+//     (the more recent past day or 2 are rough dont look at them). pelase get ur first good few
+//     renders of max code complete and then test with similar perf harness inrepo
 // end attribution
 //! Wada: Newton's method on a Mobius-twisted plane. Every basin edge is
 //! shared by three territories at once; orbit traps spark where a wandering

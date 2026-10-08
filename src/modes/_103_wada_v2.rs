@@ -2,6 +2,15 @@
 //   written by: omp:xiaomi/mimo-v2.6-flash (session 01a0c6ba, 2026-09-22)
 //   first commit: 8e4c55c 2026-09-21 by omp:xiaomi/mimo-v2.6-flash; co-author Chris Hafley
 //   editors: omp:xiaomi/mimo-v2.6-flash
+//   init prompt (session 01a0c6ba):
+//     hello, please make really intense and avant garde art algorithm in this repo. you may read other
+//     impl's but be careful! they will bias you on this journey. some have great ideas, some do not
+//     (the more recent past day or 2 are rough dont look at them). pelase get ur first good few
+//     renders of max code complete and then test with similar perf harness inrepo
+//   prompt before first write (session 01a0c6ba):
+//     i love what u did here. can u commit all of this, i dont like changing something that worked.
+//     can u just copy paste this into the next numbered thing and call it _v2? and the different here
+//     is that rendering should use braille/pseudo higher way of rendering that is not image protos
 // end attribution
 //! Wada v2: the same Mobius-warped Newton plane, but every cell rasterizes as
 //! a braille bitmap. Eight subcell samples per cell resolve coastlines at 2x4

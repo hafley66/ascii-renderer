@@ -2,6 +2,48 @@
 //   written by: omp:DeepSeek-v4.1-Flash-EXL3 (session 01a0df67, 2026-09-26)
 //   first commit: f82eda5 2026-09-26 by claude:claude-opus-5-5@medium; co-author Claude Opus 5.5 (1M context)
 //   editors: omp:DeepSeek-v4.1-Flash-EXL3
+//   init prompt (session 01a0df67):
+//     boop-start: no recipe in /Users/chrishafley/projects/ascii-renderer/.boop-
+//     worktrees/perf/ds41-perf-112-115, nothing to warm
+//     setup is done; do not run installs or builds to get started; build only what you change.
+//
+//     # ds41: optimize moire, hyperhex, hyperhex-2, hyperhex-3
+//
+//     You work in `$PWD`, a git worktree of ascii-renderer. You wrote these four modes in earlier
+//     rounds:
+//     - `src/modes/_112_moire.rs`
+//     - `src/modes/_113_hyperhex.rs`
+//     - `src/modes/_114_hyperhex_2.rs`
+//     - `src/modes/_115_hyperhex_3.rs`
+//
+//     Make each one render faster. The pictures must stay the same.
+//
+//     ## Gates
+//
+//     1. **Byte-identical output.** Each mode's committed snapshots must not change: `_80x24`, `_t6`,
+//     `_wound`, or whatever that mode has. After every change, `cargo insta test -- modes::_11X_` must
+//     pass with NO `.snap.new`.
+//        - If one optimization cannot keep bytes identical (for example float summation order), stop
+//     and put it in a separate commit whose message explains the visual diff. The diff must be at most
+//     a few cells. Never run `cargo insta accept` for a change you did not intend.
+//     2. **Measure before and after** in release, at two sizes, 200x60 and 400x120, averaging 60
+//     frames at t = 0..60. Put a `#[test] #[ignore]` bench per mode in its own file, `mod bench`, that
+//     prints `ms/frame`. Run it with:
+//
+//            CARGO_BUILD_JOBS=4 cargo test --release -- --ignored --nocapture modes::_11X_
+//
+//        Record baseline and final numbers in `art/prompts/11X_<name>.md` under `## Perf`.
+//     3. **Per-layer attribution.** Every painter is already wrapped in `measure_layer`. Use
+//     `ASCII_PROFILE=1 ASCII_PROFILE_LAYERS=1` (see `src/_0_profile.rs`) or the bench to find the
+//     hottest layer first. Optimize the hottest layer, re-measure, repeat.
+//     4. **Keep the existing `frame_cost` test's 6 ms budget.** Lower it only if the new time leaves a
+//     3x margin.
+//
+//     ## Where the time likely goes
+//
+//     Check each of these; don't assume.
+//     - Per-cell work that could be per-tile. The {p,q} tiling is generated breadth-first every frame;
+//     ... (36 more lines: boop db chat 01a0df67-d26f-7000-bc4d-d3c52cf493de)
 // end attribution
 use crate::_0_profile::measure_layer;
 use crate::color::lerp_color;

@@ -2,6 +2,10 @@
 //   written by: claude:claude-fable-5-1@high (session 0d5bc79c, 2026-09-17, branch main)
 //   first commit: e9ef969 2026-09-17 by claude:claude-fable-5-1@high; co-author Claude Fable 5.1
 //   editors: claude:claude-fable-5-1@high
+//   init prompt (session 0d5bc79c):
+//     hey go ham make art, spawn opus to make art in a worktree, 2 of them, burn my usage limits lmfao
+//   prompt before first write (session 0d5bc79c):
+//     and u mate
 // end attribution
 //! Rosette: a cathedral rose window. Each cell folds into one wedge of an N-fold
 //! kaleidoscope; lead lines cut a ring-and-petal field into panes a sun sweeps.

@@ -2,6 +2,14 @@
 //   written by: opencode:glm-5.3 (session ses_faa3, 2026-08-31)
 //   first commit: 68c3662 2026-08-30 by opencode:glm-5.3; co-author Chris Hafley
 //   editors: claude:claude-opus-5, opencode:deepseek/deepseek-v4-flash-0731, opencode:glm-5.3
+//   init prompt (session ses_faa3):
+//     boop-start: no recipe in /Users/chrishafley/projects/ascii-renderer/.boop-worktrees/feature/zai-
+//     glm53-auto-art, nothing to warm
+//     setup is done; do not run installs or builds to get started; build only what you change.
+//
+//     make beautiful algorithmic randomly seeded multiinput art that i can knob around in later. make
+//     the animations beautiful, make the most ornate and complex thing in this repo, good luck, then
+//     commit (dont touch/break existnog thingies)
 // end attribution
 use crossterm::style::Color;
 use rand::RngExt;

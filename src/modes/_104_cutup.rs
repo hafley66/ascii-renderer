@@ -2,6 +2,16 @@
 //   written by: omp:xiaomi/mimo-v2.6-flash (session 01a0c6ba, 2026-09-22)
 //   first commit: 1ff7710 2026-09-22 by omp:xiaomi/mimo-v2.6-flash; co-author Chris Hafley
 //   editors: omp:xiaomi/mimo-v2.6-flash
+//   init prompt (session 01a0c6ba):
+//     hello, please make really intense and avant garde art algorithm in this repo. you may read other
+//     impl's but be careful! they will bias you on this journey. some have great ideas, some do not
+//     (the more recent past day or 2 are rough dont look at them). pelase get ur first good few
+//     renders of max code complete and then test with similar perf harness inrepo
+//   prompt before first write (session 01a0c6ba):
+//     hello! please make some avant garde art in this repo. try to keep it efficient, but really draw
+//     anything you want i do this to ping the default space of an ai model like yourself. have fun
+//     with it, some ground ruleS: go hard, go avant, or not, and then stress test to within acceptable
+//     levels. good luck! try to keep code consistent with that around it
 // end attribution
 //! Cutup: a woodblock landscape torn into a collage. Fragments of the print shift,
 //! mirror and invert over bare paper under a misregistered key impression.

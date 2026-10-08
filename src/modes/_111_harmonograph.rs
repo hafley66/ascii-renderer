@@ -2,6 +2,17 @@
 //   written by: omp:glm-5.3-flash (session 01a0d4d9, 2026-09-24)
 //   first commit: e4c7c74 2026-09-24 by omp:glm-5.3-flash; co-author Chris Hafley
 //   editors: omp:glm-5.3-flash
+//   init prompt (session 01a0d4d9):
+//     yo
+//   prompt before first write (session 01a0d4d9):
+//     make art! ignore others tests failing it happens, this is an open air debris garden of me and ai
+//     art. do not read the others art it will taint you. i run this with animations and random knobs
+//     and seed hitting right arrow and back (b) and save(s) so lets keep that in mind. we want
+//     beautiful render frames and beautiful variability across the knob-space. try un peu performance
+//     test, and use the ascii canvas. u will see filenames of other art, try to avoid it the best u
+//     can, good luck! make somehting beautiful, a scene, a maths, an illusion, algorithmic form and
+//     essence. you have been gifted and blessed with the spark of computer science and intelligence,
+//     lets see what is in there! no pressure, good luck!
 // end attribution
 /*
 AI art prompt sequence, verbatim:

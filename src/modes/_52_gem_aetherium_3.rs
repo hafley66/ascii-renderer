@@ -2,6 +2,23 @@
 //   written by: omp:deepseek/deepseek-v4.1-flash (session 01a0abed, 2026-09-16)
 //   first commit: 0e915e9 2026-09-07; co-author Chris Hafley
 //   editors: omp:deepseek/deepseek-v4.1-flash
+//   init prompt (session 01a0abed):
+//     Complete assignment thoroughly:
+//
+//     # Target
+//     `src/modes/_52_gem_aetherium_3.rs` (764 lines, mode name `gem-aetherium-3`). Only this file.
+//     This mode backs the exact-ANSI-totals regression fixture, so byte-for-byte identical output is
+//     mandatory.
+//
+//     # Change
+//     Read the file, find the `Mode::render` -> draw path, identify 3 to 8 contiguous per-frame phases
+//     in paint order, and wrap each with `measure_layer("gem-aetherium-3", "<phase>", || { ... });`.
+//     Add `use crate::_0_profile::measure_layer;`. Follow the API and conventions in the shared
+//     context exactly. Zero behaviour change.
+//
+//     # Acceptance
+//     Your report lists each added call with its layer name and wrapped line range, the estimated
+//     coverage of the draw, and any section you could not wrap with the reason.
 // end attribution
 //! Celestial engraving with bounded animated ink. Independent of Gem 1 and 2.
 //! Per frame: O(W*H + R*min(3*(W+H),4096) + M*log(M)), M <= 638.
