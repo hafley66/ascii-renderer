@@ -2,6 +2,48 @@
 //   written by: claude:claude-opus-5 (session f4c77e27, 2026-09-03, branch main)
 //   first commit: 5986c5d 2026-08-31; co-author OpenAI Codex
 //   editors: claude:claude-opus-5
+//   init prompt (session f4c77e27):
+//     Repo: /Users/chrishafley/projects/ascii-renderer (Rust, branch main). Other agents edit other
+//     files in this same working tree concurrently. You own ONLY: `src/modes/_31_qwen_cathedral.rs`,
+//     `src/modes/_32_glm_apotheosis.rs`, `src/modes/_33_cosmograph.rs`,
+//     `src/modes/_34_gemini_astrolabe.rs`, `src/modes/_35_hyperloom.rs`,
+//     `src/modes/_36_aetherforge.rs`, and `perf/results/{qwen-cathedral,glm-apotheosis,cosmograph,gem-
+//     aetherium,hyperloom,aetherforge}.md`. Touch nothing else.
+//
+//     Build isolation: prefix every cargo command with
+//     `CARGO_TARGET_DIR=/private/tmp/claude-501/-Users-chrishafley-projects-ascii-
+//     renderer/f4c77e27-2e2f-464f-b16b-3f2675f87a24/scratchpad/target-modesdir`.
+//
+//     Context: the perf sweep (`perf/results/SUMMARY.md`, per-mode files in `perf/results/`, harness
+//     doc `perf/README.md`) at 2000x1000 shows one layer dominating each of these modes:
+//
+//     | mode | fps | hotspot layer | share |
+//     | --- | ---: | --- | ---: |
+//     | cosmograph | 10 | nebula | 57.5% |
+//     | gem-aetherium | 12 | background | 97.4% |
+//     | hyperloom | 16 | spectral_field | 95.3% |
+//     | glm-apotheosis | 20 | background | 80.4% |
+//     | aetherforge | 24 | star_metal | 94.8% |
+//     | qwen-cathedral | 25 | background | 78.4% |
+//
+//     Each hotspot is a full-grid per-cell pass, typically several noise/trig calls per cell. Layer
+//     wraps are `measure_layer("<mode>", "<layer>", || ...)`; grep for them to find each painter.
+//
+//     Task: optimize the hotspot layer of each of the six modes with byte-identical output. Order:
+//     cosmograph nebula, gem-aetherium background, then the rest.
+//     1. Read the hotspot painter. Identify per-cell work that is constant per row, per frame, or
+//     separable (f(x)*g(y), cos recurrences along a row, noise octaves that depend on fewer inputs
+//     than they are called with). Hoist, tabulate per row/column, or replace repeated transcendental
+//     calls with recurrences that give the identical f32/f64 result. Prefer exact equivalence over
+//     approximations.
+//     2. Hard rule: `cargo test` passes with zero `.snap.new` files. Check with `ls
+//     src/snapshots/*.snap.new tests/snapshots/*.snap.new src/modes/snapshots/*.snap.new 2>/dev/null`.
+//     A float reorder that changes any glyph is a failure; restore the original evaluation order for
+//     that term or drop that change.
+//     3. Validate each mode:
+//     ```
+//     cargo test 2>&1 | grep -E "^test result"
+//     ... (12 more lines: boop db chat f4c77e27-2e2f-464f-b16b-3f2675f87a24/agent-ae0fd3004b1d21512)
 // end attribution
 use crossterm::style::Color;
 use rand::rngs::StdRng;

@@ -2,6 +2,22 @@
 //   written by: omp:deepseek/deepseek-v4.1-flash (session 01a0abed, 2026-09-16)
 //   first commit: 08de6d2 2026-09-05; co-author Chris Hafley
 //   editors: omp:deepseek/deepseek-v4.1-flash
+//   init prompt (session 01a0abed):
+//     Complete assignment thoroughly:
+//
+//     # Target
+//     `src/modes/_45_chimera_shadow_garden.rs` (451 lines, mode name `chimera-shadow-garden`). Only
+//     this file.
+//
+//     # Change
+//     Read the file, find the `Mode::render` -> draw path, identify 3 to 8 contiguous per-frame phases
+//     in paint order, and wrap each with `measure_layer("chimera-shadow-garden", "<phase>", || { ...
+//     });`. Add `use crate::_0_profile::measure_layer;`. Follow the API and conventions in the shared
+//     context exactly. Zero behaviour change.
+//
+//     # Acceptance
+//     Your report lists each added call with its layer name and wrapped line range, the estimated
+//     coverage of the draw, and any section you could not wrap with the reason.
 // end attribution
 use crate::_0_profile::measure_layer;
 use crate::color::{darken, lerp_color};

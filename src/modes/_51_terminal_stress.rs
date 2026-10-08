@@ -2,6 +2,23 @@
 //   written by: omp:deepseek/deepseek-v4.1-flash (session 01a0abed, 2026-09-16)
 //   first commit: 12e3517 2026-09-07; co-author Chris Hafley
 //   editors: omp:deepseek/deepseek-v4.1-flash
+//   init prompt (session 01a0abed):
+//     Complete assignment thoroughly:
+//
+//     # Target
+//     `src/modes/_51_terminal_stress.rs` (176 lines, mode name `terminal-stress`). Only this file.
+//     This is the mode the E2E `max-400x200` case drives, and it emits the largest payloads in the
+//     suite, so its hotspots must become visible.
+//
+//     # Change
+//     Read the file, find the `Mode::render` -> draw path, identify 3 to 8 contiguous per-frame phases
+//     in paint order, and wrap each with `measure_layer("terminal-stress", "<phase>", || { ... });`.
+//     Add `use crate::_0_profile::measure_layer;`. Follow the API and conventions in the shared
+//     context exactly. Zero behaviour change.
+//
+//     # Acceptance
+//     Your report lists each added call with its layer name and wrapped line range, the estimated
+//     coverage of the draw, and any section you could not wrap with the reason.
 // end attribution
 //! O(width * height) terminal-output stress; fixed 256-entry stack wave table.
 //! Frame-owned inputs only. Density/churn/color/background maxima increase output

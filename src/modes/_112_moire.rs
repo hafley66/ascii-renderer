@@ -2,6 +2,48 @@
 //   written by: omp:DeepSeek-v4.1-Flash-EXL3 (session 01a0dbc5, 2026-09-26)
 //   first commit: 3fadbd9 2026-09-26 by omp:DeepSeek-v4.1-Flash-EXL3; co-author Chris Hafley
 //   editors: omp:DeepSeek-v4.1-Flash-EXL3
+//   init prompt (session 01a0dbc5):
+//     boop-start: no recipe in /Users/chrishafley/projects/ascii-renderer/.boop-
+//     worktrees/feature/ds41-art-1, nothing to warm
+//     setup is done; do not run installs or builds to get started; build only what you change.
+//
+//     # Brief: make one new art mode without looking at the others
+//
+//     You work in `$PWD`, a git worktree of ascii-renderer. Make ONE new standalone mode, your own
+//     idea.
+//
+//     ## The user's words, verbatim, in order
+//
+//     1. > how can i use it to go make art in a worktree taint and asll but asked not to look too hard
+//     at others
+//     2. > try not to look at latest ones in psat 3 days, try to keep it efficient, have fun be avant
+//     garde but try not to be too influence buy the previous ones
+//     3. > thats okay only ur stuff matters skip not ur stuff
+//     4. > dont want u tainted
+//
+//     ## Read ONLY these
+//
+//     | Path | For |
+//     | --- | --- |
+//     | `.claude/skills/add-mode/SKILL.md` | the file skeleton and wiring rules. It names two
+//     reference modes; do NOT open them. |
+//     | `src/registry.rs` lines 1-140 | `Param`, `param!`, `AnimKind`, `ModeFrame`, `Mode` |
+//     | `src/types.rs`, `src/color.rs`, `src/pp.rs` | grid, color, drawing helpers |
+//     | `src/opts.rs` `param_f32`, `rand_knob` only | knob reads |
+//     | `src/_0_profile.rs` `measure_layer` only | layer timers (required by the registry gate) |
+//     | `AGENTS.md` "Ground rules" | repo rules |
+//
+//     ## Do NOT read
+//
+//     Any other file under `src/modes/` except the one you create and the generated `mod.rs` diff; any
+//     `snapshots/` directory except your own; `art/`, `briefs/` (other than this one), `chat_log/`,
+//     `plans/`,
+//     `perf/`, `docs/`, `examples/`, `lanes/`, `*_REPORT.md`, `PERF.md`, the `## Modes` list in
+//     `CLAUDE.md`
+//     (append your name to it without studying it), and git history (`git log -p`, `git show` of other
+//     commits).
+//     If a compile error points into another mode, fix your file, not by reading theirs.
+//     ... (24 more lines: boop db chat 01a0dbc5-bc91-7000-92d1-093fb1acc601)
 // end attribution
 use crate::_0_profile::measure_layer;
 use crate::color::lerp_color;

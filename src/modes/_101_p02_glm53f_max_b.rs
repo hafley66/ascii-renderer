@@ -2,6 +2,52 @@
 //   written by: omp:glm-5.3-flash (session 01a0bd1b, 2026-09-20)
 //   first commit: 6f1f801 2026-09-20 by omp:glm-5.3-flash; co-author Chris Hafley
 //   editors: omp:glm-5.3-flash
+//   init prompt (session 01a0bd1b):
+//     boop-start: no recipe in /Users/chrishafley/projects/ascii-renderer/.boop-
+//     worktrees/art/p02-glm53f-max-b, nothing to warm
+//     setup is done; do not run installs or builds to get started; build only what you change.
+//
+//     # Crazy art one-shot, prompt 2
+//
+//     Create the most visually ambitious finished artwork this repository can support.
+//
+//     Work through inspection, implementation, visual refinement, validation, and commits in one lane.
+//     Continue until the mode is integrated into the generated registry, renders correctly, passes its
+//     required tests, and has a finished visual identity. Do not stop after planning, scaffolding, a
+//     proof of concept, or a single successful render.
+//
+//     ## Plan first, then move
+//
+//     Your first act is a plan, before you write any implementation code. Open it with the visual
+//     thesis in one paragraph: what the artwork is, why it is immediately recognizable, and which
+//     bounded generative system produces it. Then stratify your intended game plan into 4 to 6 ordered
+//     commit checkpoints. For each checkpoint state:
+//
+//     - goal: one line, what the checkpoint advances in the artwork
+//     - deliverable: what exists and works when it lands
+//     - files: the paths you will touch
+//     - commit: the exact commit subject you will use
+//     - validation: the exact command you will run and the result you expect
+//     - yield: the receipt shape you will send at that checkpoint
+//
+//     Send the plan to your parent through Boop (`boop beep parent --no-wait '<plan>'`) and end your
+//     turn; the parent's reply is your go signal and resumes you. Do not edit a file before that go.
+//     Then take your own plan and move with it: at every checkpoint, finish the work, run its
+//     validation, commit, send the receipt below the same way, and end your turn again. Start the next
+//     checkpoint only when the parent replies. Idle time between checkpoints is expected; the parent
+//     resumes you when it is ready.
+//
+//     Checkpoints exist for course correction. If reality diverges from the plan (blocker, better
+//     structure, scope change), yield immediately with what changed, why, and the amended remaining
+//     checkpoints. Never silently re-plan.
+//
+//     Receipt at every yield:
+//
+//     ... (314 more lines: boop db chat 01a0bd1b-af47-7000-b285-3cf5fefeb766)
+//   prompt before first write (session 01a0bd1b):
+//     [boop m-fc4e0716 from herd] Go: plan approved. Execute checkpoint 1 now. At every checkpoint:
+//     finish, validate, commit, hail the receipt with boop beep parent --no-wait, then end your turn
+//     for the next go. Keep briefs/p02__glm53f-max-b.PROMPTS.md current and verbatim.
 // end attribution
 //! Shamsa: looking up into a Safavid dome. Girih rosettes interlace across
 //! muqarnas tiers while a lantern light sweeps the vault. Design: briefs/shamsa.md.

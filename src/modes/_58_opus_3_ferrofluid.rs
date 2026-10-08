@@ -2,6 +2,48 @@
 //   written by: claude:claude-opus-5 (session b20e954a, 2026-09-18, branch HEAD)
 //   first commit: be82e44 2026-09-18; co-author OpenAI Codex
 //   editors: claude:claude-opus-5
+//   init prompt (session b20e954a):
+//     Write one new ASCII art mode in the Rust project at /Users/chrishafley/projects/ascii-renderer.
+//     You are proving an Opus model can produce original generative terminal art in Rust.
+//
+//     ## Files you own, and nothing else
+//     - CREATE `src/modes/_58_<your_mode_name>.rs`
+//     - EDIT `src/modes/mod.rs`, exactly two lines: a `mod _58_<name>;` near line 30 and a
+//     `registry.add(&_58_<name>::MODE);` near line 61
+//     - CREATE snapshot files under `src/modes/snapshots/` as the test produces them
+//
+//     Touch no other file. Other agents hold `src/cli.rs`, `src/registry.rs`, `src/opts.rs`,
+//     `src/morph.rs`. The modern mode pattern needs none of them.
+//
+//     ## Naming
+//     Existing model-named modes: `opus-1-quasicrystal`, `opus-2-quasicrystal`, `opus-1-trees`,
+//     `opus-1-forest`, `opus-2-trees`, `opus-2-forest`, plus `sonnet-*`, `haiku-*`, `fable-*`. Yours
+//     is `opus-3-<subject>`. Pick the subject yourself. Do not repeat a quasicrystal, a tree, or a
+//     forest. Aim for something the 57 existing modes do not already cover; read `src/modes/mod.rs`
+//     for the full roster before choosing.
+//
+//     ## Read these first
+//     - `/Users/chrishafley/projects/ascii-renderer/CLAUDE.md` - the project's own rules, including
+//     the snapshot test law
+//     - `src/modes/_55_rosette.rs` (568 lines) - a compact exemplar of the MODE struct, the painter
+//     signature, and parameter handling
+//     - `src/modes/_57_reef.rs` (1423 lines) - a larger exemplar
+//     - `perf/INSTRUMENT.md` - the `measure_layer` timer requirement
+//
+//     ## Hard requirements
+//     1. Deterministic for a fixed seed. Same seed, same grid, every run.
+//     2. Every painter wrapped in `measure_layer("<mode-name>", "<layer>", || ...)`. The registry gate
+//     fails a registered mode with no timers.
+//     3. At least one `insta` snapshot test at 80x24 with a fixed seed, in-module, following the
+//     `grid_to_string` helper shown in CLAUDE.md.
+//     4. `cargo insta` may be absent. Accept a new snapshot with `mv src/modes/snapshots/*.snap.new
+//     src/modes/snapshots/*.snap` only AFTER you have read the rendered output and confirmed it looks
+//     like art rather than noise or blank space.
+//
+//     ## Validation, run all three, paste real output
+//     ```
+//     cd /Users/chrishafley/projects/ascii-renderer
+//     ... (20 more lines: boop db chat b20e954a-2623-46f6-b6cc-2845f9ff87a4/agent-a96469f3625545617)
 // end attribution
 //! opus-3-ferrofluid -- iron filings on a glass plate over drifting bar magnets.
 //! @comment-ok: authorship header required by the mode brief

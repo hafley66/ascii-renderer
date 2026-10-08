@@ -2,6 +2,48 @@
 //   written by: opencode:z-ai/glm-5.3-flash (session ses_fa9b, 2026-08-31)
 //   first commit: 43f3403 2026-08-31; co-author OpenAI Codex
 //   editors: claude:claude-opus-5, opencode:deepseek/deepseek-v4-flash-0731, opencode:z-ai/glm-5.3-flash
+//   init prompt (session ses_fa9b):
+//     boop-start: no recipe in /Users/chrishafley/projects/ascii-renderer/.boop-
+//     worktrees/feature/glm53f-hyperloom-variation, nothing to warm
+//     setup is done; do not run installs or builds to get started; build only what you change.
+//
+//     # GLM 5.3 Flash max task: variegate Hyperloom
+//
+//     Work only in the current lane worktree. The base commit already contains the new generated-
+//     registry mode `hyperloom` in `src/modes/_35_hyperloom.rs`.
+//
+//     User request, preserved as the creative direction:
+//
+//     > make another ultra turbo baller animation/new thing again, and have glm53f refine and
+//     add/variagate its own animation also
+//
+//     Make a substantial creative refinement to Hyperloom and add a clearly model-designed animation
+//     variation or phase behavior. Inspect the existing renderer first. Preserve its canonical mode
+//     name, generated-registry architecture, deterministic seed contract, all existing modes, and
+//     bounded tiny-grid behavior.
+//
+//     Ownership is limited to:
+//
+//     - `src/modes/_35_hyperloom.rs`
+//     - its Hyperloom snapshot files in `src/modes/snapshots/`
+//
+//     Do not edit generated `src/modes/mod.rs`, shared runtime files, other modes, AGENTS.md, PERF.md,
+//     Cargo files, or chat logs. Do not create REPORT.md.
+//
+//     Requirements:
+//
+//     1. Add visible topology or motion behavior, not a constant-only adjustment. The new behavior
+//     must depend deterministically on explicit frame inputs and animate through `frame.time`.
+//     2. Add or extend file-owned live parameters only when the visual behavior needs them. Keep
+//     parameter keys unique and defaults identical between `PARAMS` and parsing fallbacks.
+//     3. Add deterministic tests that prove the new variation changes output, remains seed-sensitive,
+//     moves with time, and terminates on tiny grids and parameter extrema.
+//     4. Inspect snapshot diffs before accepting any updated snapshots.
+//     5. Use a lane-local target directory for all Cargo commands:
+//        `export CARGO_TARGET_DIR="$PWD/target-glm53f-hyperloom"`
+//     6. Run `scripts/0_generate_modes.sh --check`, focused Hyperloom tests, and the full `cargo test`
+//     suite.
+//     ... (4 more lines: boop db chat ses_fa9b23b9affe3aekZzVUenRMzM)
 // end attribution
 use crossterm::style::Color;
 use rand::rngs::StdRng;

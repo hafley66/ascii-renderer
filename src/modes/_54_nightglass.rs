@@ -2,6 +2,10 @@
 //   written by: omp:deepseek/deepseek-v4.1-flash (session 01a0acc7, 2026-09-17)
 //   first commit: 722beb2 2026-09-16 by omp:deepseek/deepseek-v4.1-flash; co-author Chris Hafley
 //   editors: omp:deepseek/deepseek-v4.1-flash
+//   init prompt (session 01a0acc7):
+//     hey make a new piece of art that is beautiful in 1 frarme and while animating, good luck
+//   prompt before first write (session 01a0acc7):
+//     (continue)
 // end attribution
 //! Nightglass: rain on a window over a sleeping city. One reusable RGBA scratch
 //! holds the outside scene; a compose pass turns it into cells, then lens passes

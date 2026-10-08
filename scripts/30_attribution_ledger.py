@@ -4,6 +4,8 @@
 Joins two sources:
   - git history: first commit adding each path, its author and Co-Authored-By trailers
   - boop agent_cmd: the session whose `git commit` ran within 5 min before that commit
+  - boop agent_lane / agent_turn: that session's brief or first user message (init prompt), and
+    the last user message before the file was written, for --annotate
   - boop db (~/.agent/boop.db): agent_touch write/edit rows for this repo and its
     worktrees, with harness (agent_session), model (agent_usage per turn, else the
     session's dominant model, else the lane's spawn model) and effort (agent_session_attr)
@@ -21,6 +23,7 @@ import os
 import re
 import subprocess
 import sys
+import textwrap
 from collections import defaultdict
 from datetime import datetime, timezone
 
@@ -124,6 +127,37 @@ def git_first_commits():
     return first
 
 
+def session_prompts(sessions):
+    """Per session: the lane brief if boop spawned it, and every real user message with its ts."""
+    if not sessions:
+        return {}, {}
+    ids = ",".join("'" + x.replace("'", "''") + "'" for x in sessions)
+    turns = defaultdict(list)
+    for r in boop(f"""
+        SELECT ds.value AS session, t.ts, t.said FROM agent_turn t
+        JOIN dict_session ds ON ds.id = t.session_id
+        WHERE ds.value IN ({ids}) AND t.role = 'user' AND t.source_class != 'harness'
+          AND t.said IS NOT NULL AND ltrim(t.said) NOT LIKE '<%'
+          AND t.said NOT LIKE 'This is a transport readiness probe%'
+        ORDER BY t.session_id, t.turn"""):
+        turns[r["session"]].append(r)
+    briefs = {r["session"]: r["body"] for r in boop(f"""
+        SELECT ds.value AS session, m.body FROM agent_lane l
+        JOIN dict_session ds ON ds.id = l.lane_id
+        JOIN markdown_cache m ON m.markdown_id = l.brief_markdown_id
+        WHERE ds.value IN ({ids})""")}
+    return turns, briefs
+
+
+def pick_prompts(origin, ts, turns, briefs):
+    """(init, trigger): the session's opening prompt, and the last one before the piece was written."""
+    msgs = turns.get(origin, [])
+    init = briefs.get(origin) or (msgs[0]["said"] if msgs else None)
+    before = [m for m in msgs if ts is None or m["ts"] <= ts]
+    trigger = before[-1]["said"] if before else None
+    return init, (trigger if trigger and trigger.strip() != (init or "").strip() else None)
+
+
 def commit_sessions(commits, window_ms=300_000):
     """For each commit, the boop session whose `git commit` ran closest before it."""
     cmds = boop(COMMIT_SQL)
@@ -168,7 +202,19 @@ def is_entrypoint(f):
         return bool(MODE_RE.search(fh.read()))
 
 
-def annotate(f, row, editors):
+PROMPT_LINES = 40
+
+
+def quote(label, text, origin, cap):
+    body = []
+    for para in text.strip().splitlines():
+        body += textwrap.wrap(para, 96) or [""]
+    if len(body) > cap:
+        body = body[:cap] + [f"... ({len(body) - cap} more lines: boop db chat {origin})"]
+    return [f"//   {label} (session {origin[:8]}):"] + [f"//     {b}".rstrip() for b in body]
+
+
+def annotate(f, row, editors, origin=None, init=None, trigger=None):
     _, sha, gdate, coauthor, commit_by, creator, session, bdate, branch = row[:9]
     lines = [BEGIN]
     if creator:
@@ -182,6 +228,10 @@ def annotate(f, row, editors):
         lines.append("//   first commit: none (untracked)")
     if editors:
         lines.append(f"//   editors: {editors}")
+    if init:
+        lines += quote("init prompt", init, origin, PROMPT_LINES)
+    if trigger:
+        lines += quote("prompt before first write", trigger, origin, 15)
     lines.append(END)
     path = os.path.join(REPO, f)
     with open(path) as fh:
@@ -211,7 +261,7 @@ def main():
     if args.all_editors:
         cols.append("boop_editors")
 
-    rows = []
+    rows, pending = [], []
     for f in sorted(repo_files()):
         if not f.startswith(args.prefix):
             continue
@@ -225,13 +275,19 @@ def main():
                who(c) if c else "", (c.get("session") or "")[:8], day(c["ts"]) if c else "",
                c.get("branch") or ""]
         editors = ", ".join(sorted({who(r) for r in t}))
+        cb = by_commit.get(g.get("sha"), {})
+        origin = c.get("session") or cb.get("session")
+        origin_ts = c.get("ts") if c.get("session") else cb.get("ts")
         if args.all_editors:
             row.append(editors)
         rows.append(row)
         if args.annotate and is_entrypoint(f):
-            annotate(f, row, editors)
+            pending.append((f, row, editors, origin, origin_ts))
 
     if args.annotate:
+        turns, briefs = session_prompts({p[3] for p in pending if p[3]})
+        for f, row, editors, origin, ts in pending:
+            annotate(f, row, editors, origin, *pick_prompts(origin, ts, turns, briefs))
         return
 
     if args.format == "tsv":

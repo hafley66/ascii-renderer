@@ -2,6 +2,48 @@
 //   written by: omp:mimo-v2.6-flash (session 01a0e02e, 2026-09-27)
 //   first commit: 80fef16 2026-09-26 by claude:claude-opus-5-5@medium; co-author Claude Opus 5.5 (1M context)
 //   editors: omp:glm-5.3-flash, omp:mimo-v2.6-flash, omp:qwen3.8-27b
+//   init prompt (session 01a0e02e):
+//     boop-start: no recipe in /Users/chrishafley/projects/ascii-renderer/.boop-
+//     worktrees/feature/mimo-breathhex, nothing to warm
+//     setup is done; do not run installs or builds to get started; build only what you change.
+//
+//     # mimo-art-1: breathhex, a new mode
+//
+//     You work in `$PWD`, a git worktree of ascii-renderer.
+//
+//     ## User direction, verbatim
+//
+//     - "i want highly dynamic breathing hexagon assymetric non euclidaen tiling"
+//     - "Ask it for breathing hexagons again, but don't have them be inside of a trapped circle"
+//
+//     Earlier rounds put the tiling inside a Poincare disk: a circle with empty space around it. This
+//     piece must not have that.
+//
+//     The tiling fills the entire terminal, edge to edge. There is no visible boundary circle, no rim,
+//     no horizon, and no empty background around the tiling.
+//
+//     ## Ways to do it
+//
+//     Take any of these, or a better one.
+//
+//     - **Upper half-plane model.** The screen is a window into H^2 that scrolls and zooms. Cells
+//     shrink toward one edge, and that edge is off-screen.
+//     - **Band model.** A strip that runs past both screen edges and pans along the geodesic axis.
+//     - **Oversized Poincare disk.** The disk is far larger than the screen, so every corner lies
+//     inside it. Breathing is a hyperbolic translation, a Mobius drift, rather than scaling.
+//     - **Non-hyperbolic.** Spherical or elliptic hexagons, or a Euclidean hex grid pushed through a
+//     time-varying conformal map such as exp, a power, or a Joukowski map. It must still read as
+//     hexagons that breathe.
+//
+//     Asymmetric means breathing is not uniform: cells or regions inhale out of phase, as a wave, or
+//     with rotated phase.
+//
+//     ## Scope
+//
+//     - Create `src/modes/_133_breathhex.rs` (mode `breathhex`) and `art/prompts/133_breathhex.md`,
+//     and add its snapshots.
+//     - Add a `mod` line and a `registry.add` line to `src/modes/mod.rs`. Append `breathhex` to the
+//     ... (25 more lines: boop db chat 01a0e02e-a474-7000-a22d-d57db6427767)
 // end attribution
 use crate::_0_profile::measure_layer;
 use crate::color::{darken, lerp_color, lighten};

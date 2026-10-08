@@ -2,6 +2,23 @@
 //   written by: omp:deepseek/deepseek-v4.1-flash (session 01a0abed, 2026-09-16)
 //   first commit: 6587035 2026-09-05; co-author Chris Hafley
 //   editors: omp:deepseek/deepseek-v4.1-flash
+//   init prompt (session 01a0abed):
+//     Complete assignment thoroughly:
+//
+//     # Target
+//     `src/modes/_48_astra_jurassic_park.rs` (1258 lines, mode name `astra-jurassic-park`). Only this
+//     file. The file is large, so prioritise the per-cell loops in the draw path over rare/one-time
+//     setup.
+//
+//     # Change
+//     Read the file, find the `Mode::render` -> draw path, identify 3 to 8 contiguous per-frame phases
+//     in paint order, and wrap each with `measure_layer("astra-jurassic-park", "<phase>", || { ...
+//     });`. Add `use crate::_0_profile::measure_layer;`. Follow the API and conventions in the shared
+//     context exactly. Zero behaviour change.
+//
+//     # Acceptance
+//     Your report lists each added call with its layer name and wrapped line range, the estimated
+//     coverage of the draw, and any section you could not wrap with the reason.
 // end attribution
 //! Astra's Fern Valley preserve: deterministic identities, terrain lanes and gaits.
 //! Every frame is evaluated independently from its explicit inputs.

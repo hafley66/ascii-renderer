@@ -2,6 +2,48 @@
 //   written by: omp:DeepSeek-v4.1-Flash-EXL3 (session 01a0ddc3, 2026-09-26)
 //   first commit: e9e9de8 2026-09-26 by omp:DeepSeek-v4.1-Flash-EXL3; co-author Chris Hafley
 //   editors: omp:DeepSeek-v4.1-Flash-EXL3
+//   init prompt (session 01a0ddc3):
+//     boop-start: no recipe in /Users/chrishafley/projects/ascii-renderer/.boop-
+//     worktrees/feature/ds41-art-2, nothing to warm
+//     setup is done; do not run installs or builds to get started; build only what you change.
+//
+//     # ds41-art-2: hyperhex-3, round three
+//
+//     You work in `$PWD`, a git worktree of ascii-renderer. Your branch starts from `68bbed0`.
+//
+//     ## Starting point
+//
+//     `src/modes/_115_hyperhex_3.rs` (mode `hyperhex-3`) is a copy of `hyperhex-2` from round two. It
+//     already has:
+//     - a true {6,4} hyperbolic tiling: four hexagons meet at each vertex
+//     - curved edges drawn as arcs
+//     - breathing that moves the tiling in and out
+//     - solid cell fills
+//     - one "wound" cell per breath cycle
+//     - a sheared, off-centre view
+//
+//     ## Scope
+//
+//     - Edit ONLY `src/modes/_115_hyperhex_3.rs`, `art/prompts/115_hyperhex_3.md`, and the hyperhex-3
+//     snapshots.
+//     - Do not touch `_112_moire`, `_113_hyperhex`, `_114_hyperhex_2`, `mod.rs`, or `CLAUDE.md`.
+//     - Read no other file under `src/modes/`.
+//     - Do not read `tests/snapshot_modes.rs`.
+//     - You may read these helpers:
+//       - `.claude/skills/add-mode/SKILL.md`
+//       - `src/registry.rs` lines 1-140
+//       - `src/types.rs`, `src/color.rs`, `src/pp.rs`
+//       - `src/opts.rs`
+//       - `src/_0_profile.rs`
+//
+//     ## User direction, verbatim
+//
+//     - "really stretch it and avoid boring"
+//     - "cooperate and making something _you_ like"
+//
+//     ## Round-three ideas from the coordinator
+//
+//     ... (59 more lines: boop db chat 01a0ddc3-b00b-7000-88dd-373abc3a5a80)
 // end attribution
 use std::cell::RefCell;
 use std::collections::{HashMap, VecDeque};
