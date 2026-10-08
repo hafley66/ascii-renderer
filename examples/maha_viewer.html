@@ -76,7 +76,7 @@ function orient(k) {
 // (anime line art draws the borders between muscles, not shading). Only in valleys: ?crease= sets
 // how deep the fillet must be, so colinear bone capsules along a limb get no ring cut. Nudged out along the normal.
 const inkMat = new THREE.LineBasicMaterial({color: 0x5a1a10});
-const INK_CREASE = +(q.get('crease') || 1.2);
+const INK_CREASE = +(q.get('crease') || 0.6);
 function seamSegments(idx, P, N, owner, crease) {
   // Seam graph: nodes are cut mesh edges (edge midpoints) or triple-junction triangle centres.
   const pos = new Map(), adj = new Map();
