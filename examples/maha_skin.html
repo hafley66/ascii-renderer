@@ -76,6 +76,7 @@ const SPEC = [
   ['arms', 'armCross', 'arm cross in', 0, 30, 0.5, 6],
   ['arms', 'armSpread', 'arm spread', 0, 40, 0.5, 11],
   ['arms', 'elbowRest', 'elbow rest', 0, 60, 0.5, 26],
+  ['arms', 'elbowTuck', 'elbow tuck in', 0, 30, 0.5, 12],
   ['arms', 'elbowSwing', 'elbow fwd bend', 0, 80, 0.5, 20],
   ['arms', 'wristFlex', 'wrist curl', -30, 50, 0.5, 16],
   ['arms', 'wristLag', 'hand trails swing', 0, 40, 0.5, 10],
@@ -139,6 +140,7 @@ const TIPS = {
   armCross: 'Forward-swinging arm moves in toward the midline; the back arm flares out.',
   armSpread: 'Arms held out from the body at rest, in degrees.',
   elbowRest: 'Elbow bend at rest, in degrees.',
+  elbowTuck: 'Elbow tuck at rest: how far the forearm angles back in toward the thigh, in degrees.',
   elbowSwing: 'Extra elbow bend on the forward swing, in degrees.',
   wristFlex: 'Hand curl at rest, in degrees.',
   wristLag: 'Hand trailing behind the arm swing, in degrees.',
@@ -472,7 +474,7 @@ function walkRots(ph) {
   const swingSize = side => K.armSwing * (1 + K.armVar * (hash(Math.floor(legCycle(side)), 11) - 0.5));
   const arm = (side, f, df) => ({
     [`${side}_shoulder`]: [K.armBias + swingSize(side) * f, K.armSpread - K.armCross * f, 0],
-    [`${side}_elbow`]: [K.elbowRest + K.elbowSwing * Math.max(0, f), 0, 0],
+    [`${side}_elbow`]: [K.elbowRest + K.elbowSwing * Math.max(0, f), -K.elbowTuck, 0],
     [`${side}_wrist`]: [K.wristFlex - K.wristLag * df, 0, 0],
   });
   return {
