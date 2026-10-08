@@ -94,7 +94,7 @@ const KEYS: &[Key] = &[
     // Arms hang straight down from shoulders broad enough to clear the lats; elbows soft and a touch forward.
     Key { name: "K0 stand", bob: 0.0, rots: &[
         ("r_shoulder", r(8.0, 10.0)), ("l_shoulder", r(8.0, 10.0)),
-        ("r_elbow", r(26.0, 0.0)), ("l_elbow", r(26.0, 0.0)),
+        ("r_elbow", r(26.0, -12.0)), ("l_elbow", r(26.0, -12.0)),
         // wrists go slack: hands drop in toward the thigh and curl slightly forward
         ("r_wrist", r(14.0, -18.0)), ("l_wrist", r(14.0, -18.0)),
         ("r_hip", r(0.0, 3.0)), ("l_hip", r(0.0, 3.0)),
@@ -102,28 +102,28 @@ const KEYS: &[Key] = &[
     Key { name: "K1 R foot plants", bob: -0.25, rots: &[
         ("pelvis", tw(8.0)), ("spine", tw(-8.0)), ("chest", tw(-10.0)),
         ("r_shoulder", r(-30.0, 15.0)), ("l_shoulder", r(32.0, 13.0)),
-        ("r_elbow", r(6.0, 0.0)), ("l_elbow", r(35.0, 0.0)),
+        ("r_elbow", r(6.0, -8.0)), ("l_elbow", r(35.0, -8.0)),
         ("r_hip", r(24.0, 3.0)), ("r_knee", r(-4.0, 0.0)),
         ("l_hip", r(-18.0, 3.0)), ("l_knee", r(-24.0, 0.0)),
     ]},
     Key { name: "K2 passing", bob: 0.2, rots: &[
         ("pelvis", tw(-2.0)), ("chest", tw(3.0)),
         ("r_shoulder", r(-4.0, 16.0)), ("l_shoulder", r(6.0, 15.0)),
-        ("r_elbow", r(12.0, 0.0)), ("l_elbow", r(18.0, 0.0)),
+        ("r_elbow", r(12.0, -8.0)), ("l_elbow", r(18.0, -8.0)),
         ("r_hip", r(-4.0, 3.0)), ("r_knee", r(-4.0, 0.0)),
         ("l_hip", r(18.0, 3.0)), ("l_knee", r(-50.0, 0.0)),
     ]},
     Key { name: "K3 L foot plants", bob: -0.25, rots: &[
         ("pelvis", tw(-8.0)), ("spine", tw(8.0)), ("chest", tw(10.0)),
         ("l_shoulder", r(-30.0, 15.0)), ("r_shoulder", r(32.0, 13.0)),
-        ("l_elbow", r(6.0, 0.0)), ("r_elbow", r(35.0, 0.0)),
+        ("l_elbow", r(6.0, -8.0)), ("r_elbow", r(35.0, -8.0)),
         ("l_hip", r(24.0, 3.0)), ("l_knee", r(-4.0, 0.0)),
         ("r_hip", r(-18.0, 3.0)), ("r_knee", r(-24.0, 0.0)),
     ]},
     Key { name: "K4 passing", bob: 0.2, rots: &[
         ("pelvis", tw(2.0)), ("chest", tw(-3.0)),
         ("l_shoulder", r(-4.0, 16.0)), ("r_shoulder", r(6.0, 15.0)),
-        ("l_elbow", r(12.0, 0.0)), ("r_elbow", r(18.0, 0.0)),
+        ("l_elbow", r(12.0, -8.0)), ("r_elbow", r(18.0, -8.0)),
         ("l_hip", r(-4.0, 3.0)), ("l_knee", r(-4.0, 0.0)),
         ("r_hip", r(18.0, 3.0)), ("r_knee", r(-50.0, 0.0)),
     ]},
