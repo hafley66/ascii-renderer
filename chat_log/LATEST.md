@@ -1,1 +1,1 @@
-20260918.0.rust-ink-ascii-foundation.md
+20261008.0.mahoraga-sculpt-detail.md
