@@ -20,8 +20,8 @@ const RIG: &[Joint] = &[
     j("pelvis", None, 0.0, 6.35, 0.0, 0.0),
     j("spine", Some(0), 0.0, 1.8, 0.0, 0.7),
     j("chest", Some(1), 0.0, 1.6, 0.1, 0.9),
-    j("neck", Some(2), 0.0, 1.3, 0.32, 0.5),
-    j("head", Some(3), 0.0, 1.25, 0.2, 0.32),
+    j("neck", Some(2), 0.0, 1.3, 0.32, 0.46),
+    j("head", Some(3), 0.0, 0.62, 0.2, 0.32),
     j("crown", Some(4), 0.0, 1.05, -0.25, 0.14),
     j("r_shoulder", Some(2), -1.95, 0.25, -0.05, 0.45),
     j("r_elbow", Some(6), 0.0, -2.4, 0.0, 0.4),
@@ -97,8 +97,6 @@ const KEYS: &[Key] = &[
         ("r_elbow", r(26.0, -12.0)), ("l_elbow", r(26.0, -12.0)),
         // wrists go slack: hands drop in toward the thigh and curl slightly forward
         ("r_wrist", r(14.0, -18.0)), ("l_wrist", r(14.0, -18.0)),
-        // head bowed a few degrees over the trap mass (the monk-demon read)
-        ("neck", r(14.0, 0.0)),
         // feet shoulder-width with the toes turned out a touch, knees unlocked
         ("r_hip", r(0.0, 8.0)), ("l_hip", r(0.0, 8.0)),
         ("r_knee", r(-6.0, 0.0)), ("l_knee", r(-6.0, 0.0)),
@@ -274,15 +272,8 @@ fn shapes(world: &[Mat4], pos: &[Vec3], t: Tweak) -> Vec<Shape> {
         .filter_map(|(i, jt)| {
             jt.parent.map(|p| {
                 let core = CORE_JOINTS.contains(&jt.name);
-                // the skull tapers to a cone at the crown (refs #1, #5); other bones are straight capsules,
-                // except the neck: a straight column (the chest sphere flares the base naturally)
-                let r1 = if jt.name == "crown" {
-                    RIG[p].radius
-                } else if jt.name == "neck" {
-                    jt.radius
-                } else {
-                    RIG[p].radius
-                };
+                // the skull tapers to a cone at the crown (refs #1, #5); other bones are straight capsules
+                let r1 = if jt.name == "crown" { RIG[p].radius } else { jt.radius };
                 Shape { core, bone: p, ..cone(pos[p], pos[i], r1, jt.radius, Kind::Body) }
             })
         })
@@ -316,11 +307,10 @@ fn shapes(world: &[Mat4], pos: &[Vec3], t: Tweak) -> Vec<Shape> {
         // trapezius as a fan of bundles: spine origins (skull base down to upper back) to clavicle/acromion
         for k in 0..TRAP_BUNDLES {
             let f = k as f32 / (TRAP_BUNDLES - 1) as f32;
-            // origin at C7 height (chest frame y0.95 = world 10.70), clear of the jaw: the fan
-            // crests beside the neck, never over it
-            let origin = at(CHEST, side * (0.40 - 0.12 * f), 1.15 - 1.9 * f + t.trap_height * (1.0 - f), -0.15 - 0.5 * f);
+            // upper bundle runs skull base to acromion at about 45 degrees; lower ones fan down the back
+            let origin = at(CHEST, side * (0.3 - 0.1 * f), 2.05 - 1.9 * f + t.trap_height * (1.0 - f), -0.15 - 0.5 * f);
             let insert = at(CHEST, side * (1.85 - 0.3 * f + t.trap_reach), 0.4 - 0.1 * f - t.trap_slope, -0.1 - 0.3 * f);
-            let r = 0.34 - 0.12 * f + t.trap_mass;
+            let r = 0.58 - 0.18 * f + t.trap_mass;
             // swells in the middle of the slope (a belly), not a straight-sided capsule
             out.push(detail(origin, insert, r, r * 0.8).belly(0.2).on(CHEST));
         }
@@ -1352,8 +1342,8 @@ fn main() {
         let rest = Frame::from_key(&KEYS[0]);
         let s = posed(&rest);
         let trunk: Vec<Shape> = s.caps.iter().filter(|c| ![6, 7, 8, 10, 11, 12].contains(&c.bone) && c.kind != Kind::Skirt).copied().collect();
-        for i in 0..46 {
-            let y = 14.0 - i as f32 * 0.25;
+        for i in 0..30 {
+            let y = 11.0 - i as f32 * 0.25;
             let mut x = 0.0;
             for k in 0..200 { let xx = k as f32 * 0.02; if (0..40).any(|z| scene_sdf(Vec3::new(xx, y, -2.0 + z as f32 * 0.1), &trunk) < 0.0) { x = xx; } }
             println!("{y:5.2} {x:4.2} {}", "#".repeat((x * 20.0) as usize));
@@ -1361,7 +1351,7 @@ fn main() {
         return;
     }
     if which == "owner" {
-        // which shapes contribute at a point: names + signed distances
+        // which shapes contribute at a point: names + signed distances (main's debug tool)
         let rest = Frame::from_key(&KEYS[0]);
         let s = posed(&rest);
         let pts: Vec<Vec3> = std::env::args().skip(2).collect::<Vec<_>>().chunks(3).map(|c| Vec3::new(c[0].parse().unwrap(), c[1].parse().unwrap(), c[2].parse().unwrap())).collect();
