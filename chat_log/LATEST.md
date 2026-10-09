@@ -1,1 +1,1 @@
-20260924.0.mahoraga-sculpt-pass.md
+20261008.0.mahoraga-sculpt-detail.md
