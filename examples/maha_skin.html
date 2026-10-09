@@ -71,13 +71,14 @@ const SPEC = [
   ['torso', 'headLock', 'head level (spine IK)', 0, 1, 0.01, 1],
   ['torso', 'headSteady', 'head holds line (spine IK)', 0, 1, 0.01, 0.6],
   ['torso', 'neckShare', 'neck share of the fix', 0, 1, 0.01, 0.4],
-  ['arms', 'armSwing', 'arm swing', 0, 60, 0.5, 9],
-  ['arms', 'armBias', 'swing biased back', -20, 10, 0.5, -6],
-  ['arms', 'armCross', 'arm cross in', 0, 30, 0.5, 3],
-  ['arms', 'armSpread', 'arm spread', 0, 40, 0.5, 13],
-  ['arms', 'elbowRest', 'elbow rest', 0, 60, 0.5, 12],
+  ['arms', 'armSwing', 'arm swing', 0, 60, 0.5, 12],
+  ['arms', 'armBias', 'swing biased back', -20, 10, 0.5, -2],
+  ['arms', 'armCross', 'arm cross in', 0, 30, 0.5, 6],
+  ['arms', 'armSpread', 'arm spread', 0, 40, 0.5, 11],
+  ['arms', 'elbowRest', 'elbow rest', 0, 60, 0.5, 26],
+  ['arms', 'elbowTuck', 'elbow tuck in', 0, 30, 0.5, 12],
   ['arms', 'elbowSwing', 'elbow fwd bend', 0, 80, 0.5, 20],
-  ['arms', 'wristFlex', 'wrist curl', -30, 50, 0.5, 8],
+  ['arms', 'wristFlex', 'wrist curl', -30, 50, 0.5, 16],
   ['arms', 'wristLag', 'hand trails swing', 0, 40, 0.5, 10],
   ['traps', 'trapHeight', 'trap height', -1, 2, 0.01, 0],
   ['traps', 'trapMass', 'trap mass', -1.5, 2.5, 0.01, 0],
@@ -139,6 +140,7 @@ const TIPS = {
   armCross: 'Forward-swinging arm moves in toward the midline; the back arm flares out.',
   armSpread: 'Arms held out from the body at rest, in degrees.',
   elbowRest: 'Elbow bend at rest, in degrees.',
+  elbowTuck: 'Elbow tuck at rest: how far the forearm angles back in toward the thigh, in degrees.',
   elbowSwing: 'Extra elbow bend on the forward swing, in degrees.',
   wristFlex: 'Hand curl at rest, in degrees.',
   wristLag: 'Hand trailing behind the arm swing, in degrees.',
@@ -180,7 +182,7 @@ const WALK_KEYS = SPEC.map(s => s[1]).filter(k => !BODY_KEYS.includes(k) && !VIE
 const PRESETS = {
   'taking the domain': {speed: 0.5, armSwing: 18, pelvisTwist: 12, torsoTwist: 8, weightShift: 0.3, hipDrop: 4, headStab: 1, headLook: 0, bodyDrift: 0.15, stepJitter: 0.12, footJitter: 0.08, armVar: 0.3, buffet: 0.6, buffetRate: 0.3, bracing: 0.8},
   'drunk on cursed energy': {weightShift: 0.45, hipDrop: 7, counterLean: 1, torsoTwist: 18, stepJitter: 0.3, footJitter: 0.25, bodyDrift: 0.8, headLook: 10},
-  'wading through fire': {speed: 0.4, lean: 8, liftRatio: 0.16, weightShift: 0.25, armSpread: 20, elbowRest: 18},
+  'wading through fire': {speed: 0.4, strideRatio: 1.0, duty: 0.68, liftRatio: 0.16, kneeLoad: 22, kneeMid: 9, heelStrike: 18, toeRoll: 38, weightShift: 0.3, hipDrop: 4, shoulderSway: 2.5, pelvisTwist: 4, torsoTwist: 8, lean: 8, armSwing: 14, armSpread: 20, elbowRest: 18},
   'shoulder-led': {torsoTwist: 26, spineShare: 0.3, pelvisTwist: 1, weightShift: 0.12, armSwing: 18},
   'hip-led swagger': {pelvisTwist: 12, weightShift: 0.3, hipDrop: 4, torsoTwist: 8, armSwing: 16},
   'after the adaptation': {speed: 0.5, weightShift: 0.2, hipDrop: 2.5, torsoTwist: 15, bodyDrift: 0.4, headLook: 12},
@@ -381,12 +383,12 @@ const bodyMeshes = [
   skinned(body, new THREE.MeshBasicMaterial({color: 0xffc89a, wireframe: true}), WIRE),
   skinned(body, new THREE.MeshBasicMaterial({color: 0xffc89a, wireframe: true, transparent: true, opacity: 0.07, depthTest: false}), WIRE),
   skinned(body, new THREE.MeshBasicMaterial({color: 0xfbf1e8, side: THREE.DoubleSide}), CONT),
-  skinned(bodyHull, new THREE.MeshBasicMaterial({color: 0x3a140e, side: THREE.BackSide}), CONT),
+  skinned(bodyHull, new THREE.MeshBasicMaterial({color: 0x3a140e, side: THREE.BackSide, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 4}), CONT),
 ];
 const skirtMats = [
   new THREE.MeshBasicMaterial({color: 0x7fb8a6, wireframe: true, transparent: true}),
   new THREE.MeshBasicMaterial({color: 0x44564f, side: THREE.DoubleSide, transparent: true, depthWrite: false}),
-  new THREE.MeshBasicMaterial({color: 0x3a140e, side: THREE.BackSide, transparent: true, depthWrite: false}),
+  new THREE.MeshBasicMaterial({color: 0x3a140e, side: THREE.BackSide, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 4}),
 ];
 const skirtMeshes = [skinned(skirt, skirtMats[0], WIRE), skinned(skirt, skirtMats[1], CONT), skinned(skirtHull, skirtMats[2], CONT)];
 
@@ -472,7 +474,7 @@ function walkRots(ph) {
   const swingSize = side => K.armSwing * (1 + K.armVar * (hash(Math.floor(legCycle(side)), 11) - 0.5));
   const arm = (side, f, df) => ({
     [`${side}_shoulder`]: [K.armBias + swingSize(side) * f, K.armSpread - K.armCross * f, 0],
-    [`${side}_elbow`]: [K.elbowRest + K.elbowSwing * Math.max(0, f), 0, 0],
+    [`${side}_elbow`]: [K.elbowRest + K.elbowSwing * Math.max(0, f), -K.elbowTuck, 0],
     [`${side}_wrist`]: [K.wristFlex - K.wristLag * df, 0, 0],
   });
   return {

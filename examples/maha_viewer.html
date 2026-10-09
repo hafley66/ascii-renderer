@@ -76,7 +76,7 @@ function orient(k) {
 // (anime line art draws the borders between muscles, not shading). Only in valleys: ?crease= sets
 // how deep the fillet must be, so colinear bone capsules along a limb get no ring cut. Nudged out along the normal.
 const inkMat = new THREE.LineBasicMaterial({color: 0x5a1a10});
-const INK_CREASE = +(q.get('crease') || 1.2);
+const INK_CREASE = +(q.get('crease') || 0.6);
 function seamSegments(idx, P, N, owner, crease) {
   // Seam graph: nodes are cut mesh edges (edge midpoints) or triple-junction triangle centres.
   const pos = new Map(), adj = new Map();
@@ -143,7 +143,7 @@ const built = KEYS.map(k => {
   for (let i = 0; i < hull.length; i++) hull[i] += nrm[i] * 0.07;
   const hg = new THREE.BufferGeometry();
   hg.setAttribute('position', new THREE.BufferAttribute(hull, 3)); hg.setIndex(idx);
-  cont.add(new THREE.Mesh(hg, new THREE.MeshBasicMaterial({color: 0x3a140e, side: THREE.BackSide})));
+  cont.add(new THREE.Mesh(hg, new THREE.MeshBasicMaterial({color: 0x3a140e, side: THREE.BackSide, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 4})));
   for (const l of k.lines) {
     const g = new THREE.BufferGeometry().setFromPoints(l.pts.map(q => new THREE.Vector3(...q)));
     wire.add(new THREE.Line(g, new THREE.LineBasicMaterial({color: l.kind === 'wheel' ? 0xf0b848 : 0xdfe8f0})));

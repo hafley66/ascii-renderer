@@ -21,7 +21,7 @@ const RIG: &[Joint] = &[
     j("spine", Some(0), 0.0, 1.8, 0.0, 0.7),
     j("chest", Some(1), 0.0, 1.6, 0.1, 0.9),
     j("neck", Some(2), 0.0, 1.3, 0.32, 0.5),
-    j("head", Some(3), 0.0, 1.25, 0.2, 0.42),
+    j("head", Some(3), 0.0, 1.25, 0.2, 0.32),
     j("crown", Some(4), 0.0, 1.05, -0.25, 0.14),
     j("r_shoulder", Some(2), -1.95, 0.25, -0.05, 0.45),
     j("r_elbow", Some(6), 0.0, -2.4, 0.0, 0.4),
@@ -93,39 +93,42 @@ const fn tw(yaw: f32) -> Rot {
 const KEYS: &[Key] = &[
     // Arms hang straight down from shoulders broad enough to clear the lats; elbows soft and a touch forward.
     Key { name: "K0 stand", bob: 0.0, rots: &[
-        ("r_shoulder", r(4.0, 3.0)), ("l_shoulder", r(4.0, 3.0)),
-        ("r_elbow", r(14.0, 0.0)), ("l_elbow", r(14.0, 0.0)),
+        ("r_shoulder", r(8.0, 10.0)), ("l_shoulder", r(8.0, 10.0)),
+        ("r_elbow", r(26.0, -12.0)), ("l_elbow", r(26.0, -12.0)),
         // wrists go slack: hands drop in toward the thigh and curl slightly forward
-        ("r_wrist", r(10.0, -14.0)), ("l_wrist", r(10.0, -14.0)),
-        ("r_hip", r(0.0, 3.0)), ("l_hip", r(0.0, 3.0)),
-        // the monk-demon read: head bowed a few degrees over the trap mass
+        ("r_wrist", r(14.0, -18.0)), ("l_wrist", r(14.0, -18.0)),
+        // head bowed a few degrees over the trap mass (the monk-demon read)
         ("neck", r(14.0, 0.0)),
+        // feet shoulder-width with the toes turned out a touch, knees unlocked
+        ("r_hip", r(0.0, 8.0)), ("l_hip", r(0.0, 8.0)),
+        ("r_knee", r(-6.0, 0.0)), ("l_knee", r(-6.0, 0.0)),
+        ("r_ankle", r(0.0, 7.0)), ("l_ankle", r(0.0, 7.0)),
     ]},
     Key { name: "K1 R foot plants", bob: -0.25, rots: &[
         ("pelvis", tw(8.0)), ("spine", tw(-8.0)), ("chest", tw(-10.0)),
         ("r_shoulder", r(-30.0, 15.0)), ("l_shoulder", r(32.0, 13.0)),
-        ("r_elbow", r(6.0, 0.0)), ("l_elbow", r(35.0, 0.0)),
+        ("r_elbow", r(6.0, -8.0)), ("l_elbow", r(35.0, -8.0)),
         ("r_hip", r(24.0, 3.0)), ("r_knee", r(-4.0, 0.0)),
         ("l_hip", r(-18.0, 3.0)), ("l_knee", r(-24.0, 0.0)),
     ]},
     Key { name: "K2 passing", bob: 0.2, rots: &[
         ("pelvis", tw(-2.0)), ("chest", tw(3.0)),
         ("r_shoulder", r(-4.0, 16.0)), ("l_shoulder", r(6.0, 15.0)),
-        ("r_elbow", r(12.0, 0.0)), ("l_elbow", r(18.0, 0.0)),
+        ("r_elbow", r(12.0, -8.0)), ("l_elbow", r(18.0, -8.0)),
         ("r_hip", r(-4.0, 3.0)), ("r_knee", r(-4.0, 0.0)),
         ("l_hip", r(18.0, 3.0)), ("l_knee", r(-50.0, 0.0)),
     ]},
     Key { name: "K3 L foot plants", bob: -0.25, rots: &[
         ("pelvis", tw(-8.0)), ("spine", tw(8.0)), ("chest", tw(10.0)),
         ("l_shoulder", r(-30.0, 15.0)), ("r_shoulder", r(32.0, 13.0)),
-        ("l_elbow", r(6.0, 0.0)), ("r_elbow", r(35.0, 0.0)),
+        ("l_elbow", r(6.0, -8.0)), ("r_elbow", r(35.0, -8.0)),
         ("l_hip", r(24.0, 3.0)), ("l_knee", r(-4.0, 0.0)),
         ("r_hip", r(-18.0, 3.0)), ("r_knee", r(-24.0, 0.0)),
     ]},
     Key { name: "K4 passing", bob: 0.2, rots: &[
         ("pelvis", tw(2.0)), ("chest", tw(-3.0)),
         ("l_shoulder", r(-4.0, 16.0)), ("r_shoulder", r(6.0, 15.0)),
-        ("l_elbow", r(12.0, 0.0)), ("r_elbow", r(18.0, 0.0)),
+        ("l_elbow", r(12.0, -8.0)), ("r_elbow", r(18.0, -8.0)),
         ("l_hip", r(-4.0, 3.0)), ("l_knee", r(-4.0, 0.0)),
         ("r_hip", r(18.0, 3.0)), ("r_knee", r(-50.0, 0.0)),
     ]},
@@ -248,7 +251,7 @@ impl Shape {
 
 // Torso, neck, traps, delts melt together; limbs and head stay crisp so the arm gap and head read.
 const CORE_JOINTS: &[&str] = &["spine", "chest", "neck"];
-const TRAP_BUNDLES: usize = 4;
+const TRAP_BUNDLES: usize = 5;
 
 // Bones as capsules, plus muscle masses parented to chest/shoulder/pelvis frames so they ride the pose.
 // Blend-shape offsets for the traps; zero is the authored body.
@@ -271,7 +274,6 @@ fn shapes(world: &[Mat4], pos: &[Vec3], t: Tweak) -> Vec<Shape> {
         .filter_map(|(i, jt)| {
             jt.parent.map(|p| {
                 let core = CORE_JOINTS.contains(&jt.name);
-                // the skull tapers to a cone at the crown (refs #1, #5); other bones are straight capsules
                 // the skull tapers to a cone at the crown (refs #1, #5); other bones are straight capsules,
                 // except the neck: a straight column (the chest sphere flares the base naturally)
                 let r1 = if jt.name == "crown" {
@@ -286,12 +288,21 @@ fn shapes(world: &[Mat4], pos: &[Vec3], t: Tweak) -> Vec<Shape> {
         })
         .collect();
     let at = |m: usize, x: f32, y: f32, z: f32| world[m].transform_point3(Vec3::new(x, y, z));
-    // long narrow face (goat-skull read): brow down to a square grin, jaw no wider than the face
-    out.push(cone(at(HEAD, 0.0, 0.35, 0.3), at(HEAD, 0.0, -0.2, 0.45), 0.3, 0.27, Kind::Body).on(HEAD));
+    // Mahoraga skull (refs #2, #4, #5): tall narrow wedge, heavy brow, cheek flare, wide square grin.
+    // Cranium leans back from a broad brow to a narrow keel at the crown.
+    out.push(cone(at(HEAD, 0.0, 0.34, 0.26), at(CROWN, 0.0, 0.02, 0.04), 0.36, 0.16, Kind::Body).on(HEAD));
+    out.push(detail(at(HEAD, 0.0, 0.34, 0.44), at(CROWN, 0.0, 0.0, 0.16), 0.11, 0.07).on(HEAD));
     for side in [-1.0, 1.0] {
-        out.push(cone(at(HEAD, side * 0.2, 0.0, 0.1), at(HEAD, side * 0.13, -0.45, 0.42), 0.17, 0.16, Kind::Body).on(HEAD));
+        out.push(cone(at(HEAD, side * 0.05, 0.2, 0.5), at(HEAD, side * 0.3, 0.32, 0.4), 0.13, 0.13, Kind::Body).on(HEAD));
+        out.push(cone(at(HEAD, side * 0.16, 0.12, 0.42), at(HEAD, side * 0.32, -0.16, 0.32), 0.15, 0.19, Kind::Body).on(HEAD));
     }
-    out.push(cone(at(HEAD, -0.1, -0.47, 0.45), at(HEAD, 0.1, -0.47, 0.45), 0.16, 0.16, Kind::Body).on(HEAD));
+    out.push(cone(at(HEAD, 0.0, 0.2, 0.46), at(HEAD, 0.0, -0.22, 0.5), 0.2, 0.19, Kind::Body).on(HEAD));
+    out.push(cone(at(HEAD, 0.0, -0.2, 0.47), at(HEAD, 0.0, -0.3, 0.46), 0.27, 0.25, Kind::Body).on(HEAD));
+    for k in 0..4 {
+        let dx = -0.15 + k as f32 * 0.1;
+        out.push(detail(at(HEAD, dx, -0.21, 0.62), at(HEAD, dx, -0.29, 0.6), 0.06, 0.06).on(HEAD));
+    }
+    out.push(cone(at(HEAD, 0.0, -0.34, 0.42), at(HEAD, 0.0, -0.56, 0.34), 0.19, 0.15, Kind::Body).on(HEAD));
     // head-tail: segmented, tapering, arcs up off the back of the skull then back and down past the
     // left shoulder with a curl at the end (refs #2, #6); segments meet in creases so the bands ink
     let tail = TAIL;
@@ -300,28 +311,27 @@ fn shapes(world: &[Mat4], pos: &[Vec3], t: Tweak) -> Vec<Shape> {
         let r = 0.3 - 0.03 * k as f32;
         out.push(detail(at(HEAD, a.0, a.1, a.2), at(HEAD, b.0, b.1, b.2), r, r * 0.88).on(HEAD));
     }
-    // cranial ridge: a keel from brow up over the long skull
-    out.push(cone(at(HEAD, 0.0, 0.25, 0.42), at(CROWN, 0.0, 0.0, 0.05), 0.2, 0.12, Kind::Body).on(HEAD));
     for side in [-1.0, 1.0] {
         let (shoulder, elbow) = if side < 0.0 { (R_SHOULDER, R_ELBOW) } else { (L_SHOULDER, L_ELBOW) };
         // trapezius as a fan of bundles: spine origins (skull base down to upper back) to clavicle/acromion
         for k in 0..TRAP_BUNDLES {
             let f = k as f32 / (TRAP_BUNDLES - 1) as f32;
-            // upper bundle runs skull base to acromion at about 45 degrees; lower ones fan down the back
             // origin at C7 height (chest frame y0.95 = world 10.70), clear of the jaw: the fan
             // crests beside the neck, never over it
             let origin = at(CHEST, side * (0.40 - 0.12 * f), 1.15 - 1.9 * f + t.trap_height * (1.0 - f), -0.15 - 0.5 * f);
             let insert = at(CHEST, side * (1.85 - 0.3 * f + t.trap_reach), 0.4 - 0.1 * f - t.trap_slope, -0.1 - 0.3 * f);
             let r = 0.34 - 0.12 * f + t.trap_mass;
             // swells in the middle of the slope (a belly), not a straight-sided capsule
-            out.push(core(origin, insert, r, r * 0.8).belly(0.2).on(CHEST));
+            out.push(detail(origin, insert, r, r * 0.8).belly(0.2).on(CHEST));
         }
+        // sternocleidomastoid: a cord from behind the ear to the sternum notch, framing the neck
+        out.push(detail(at(CHEST, side * 0.13, 1.38, 0.1), at(CHEST, side * 0.07, 0.5, 0.5), 0.13, 0.11).on(CHEST));
         out.push(
             cone(
                 at(shoulder, side * (0.04 + t.delt_out), -0.1, 0.03),
                 at(shoulder, side * (0.06 + t.delt_out * 0.5), -1.0 - t.delt_length, 0.03),
-                0.5 + t.delt_mass,
-                0.37 + t.delt_mass * 0.2,
+                0.6 + t.delt_mass,
+                0.42 + t.delt_mass * 0.2,
                 Kind::Body,
             )
             .belly(0.12)
@@ -329,13 +339,16 @@ fn shapes(world: &[Mat4], pos: &[Vec3], t: Tweak) -> Vec<Shape> {
         );
         // delt cap: a ball on the acromion that swells up and out, not along the arm
         let cap = at(shoulder, side * (0.06 + t.delt_out + t.delt_cap * 0.4), 0.0 + t.delt_cap * 0.5, 0.0);
-        out.push(cone(cap, cap + Vec3::Y * 0.01, 0.35 + t.delt_cap * 0.35, 0.35 + t.delt_cap * 0.35, Kind::Body).on(shoulder));
-        // pec shelf: a heavy slab from sternum to armpit, underside overhangs the ribs
-        out.push(core(at(CHEST, side * 0.25, 0.25, 0.62), at(CHEST, side * 1.45, 0.3, 0.3), 0.55, 0.5).on(CHEST));
+        out.push(cone(cap, cap + Vec3::Y * 0.01, 0.42 + t.delt_cap * 0.42, 0.42 + t.delt_cap * 0.42, Kind::Body).on(shoulder));
+        // pec: sternal head thick and low at the midline, clavicular head along the collarbone; creased
+        out.push(detail(at(CHEST, side * 0.34, -0.05, 0.66), at(CHEST, side * 1.4, 0.1, 0.44), 0.5, 0.34).belly(0.13).on(CHEST));
+        out.push(detail(at(CHEST, side * 0.3, 0.45, 0.62), at(CHEST, side * 1.3, 0.4, 0.42), 0.36, 0.28).belly(0.1).on(CHEST));
+        // pec insertion: a short tendon onto the humerus at the armpit
+        out.push(detail(at(CHEST, side * 1.3, 0.05, 0.4), at(CHEST, side * 1.62, 0.1, 0.12), 0.24, 0.15).on(CHEST));
         // lats: wings flaring out and back behind him at ~45 deg (seen from above), from the armpit
         // down to a narrow waist (refs: shoulders ~2x waist)
-        out.push(core(at(CHEST, side * 1.35, -0.1, -0.7), at(CHEST, side * 0.6, -1.7, -0.25), 0.6, 0.3).on(CHEST));
-        out.push(core(at(CHEST, side * 1.45, -0.3, -0.55), at(CHEST, side * 0.9, -1.3, -0.45), 0.42, 0.34).on(CHEST));
+        out.push(detail(at(CHEST, side * 1.4, 0.0, -0.65), at(CHEST, side * 0.55, -1.9, -0.4), 0.58, 0.28).belly(0.1).on(CHEST));
+        out.push(detail(at(CHEST, side * 1.3, -0.45, -0.75), at(CHEST, side * 0.85, -1.6, -0.55), 0.4, 0.3).on(CHEST));
         // biceps peak in front, triceps horseshoe behind
         out.push(cone(at(shoulder, 0.0, -0.8, 0.18), at(shoulder, 0.0, -1.7, 0.15), 0.52, 0.4, Kind::Body).on(shoulder));
         out.push(cone(at(shoulder, 0.0, -0.6, -0.16), at(shoulder, 0.0, -1.9, -0.12), 0.46, 0.32, Kind::Body).on(shoulder));
@@ -356,29 +369,31 @@ fn shapes(world: &[Mat4], pos: &[Vec3], t: Tweak) -> Vec<Shape> {
         let knee = if side < 0.0 { 15 } else { 19 };
         out.push(cone(at(knee, 0.0, -0.45, -0.18), at(knee, 0.0, -1.9, -0.05), 0.62, 0.42, Kind::Body).on(knee));
     }
-    // eight-pack: 4 rows x 2, shrinking toward the navel; linea alba and tendinous rows are the creases
+    // eight-pack: 4 rows x 2 rectus blocks; the gaps between blocks ink the linea alba and rows
     for row in 0..4 {
-        let y = -0.6 - row as f32 * 0.5;
-        let (z, r) = (0.72 - row as f32 * 0.07, 0.24 - row as f32 * 0.012);
+        let y = -0.35 - row as f32 * 0.65;
+        let (z, r) = (0.82 - row as f32 * 0.04, 0.22);
         for side in [-1.0, 1.0] {
-            out.push(detail(at(CHEST, side * 0.21, y + 0.08, z), at(CHEST, side * 0.24, y - 0.08, z), r, r).on(CHEST));
+            out.push(detail(at(CHEST, side * 0.3, y + 0.08, z), at(CHEST, side * 0.3, y - 0.08, z), r, r).on(CHEST));
         }
     }
     for side in [-1.0, 1.0] {
         // ribcage barrel: full convex sides from the armpit down, so pec and lat are bridged by rib, not a pit
-        out.push(core(at(CHEST, side * 0.7, -0.15, -0.2), at(CHEST, side * 0.6, -1.5, -0.15), 0.78, 0.58).on(CHEST));
+        out.push(core(at(CHEST, side * 0.7, -0.15, -0.2), at(CHEST, side * 0.55, -1.5, -0.15), 0.78, 0.5).on(CHEST));
         // serratus: fingers on the barrel surface under the armpit, slanting forward-down
-        for k in 0..3 {
-            let y = -0.45 - k as f32 * 0.35;
-            let out_x = 1.45 - k as f32 * 0.08;
-            out.push(detail(at(CHEST, side * out_x, y, 0.0), at(CHEST, side * (out_x - 0.25), y - 0.25, 0.5), 0.15, 0.12).on(CHEST));
+        for k in 0..4 {
+            let y = -0.35 - k as f32 * 0.32;
+            let out_x = 1.5 - k as f32 * 0.1;
+            out.push(detail(at(CHEST, side * out_x, y, 0.15), at(CHEST, side * (out_x - 0.3), y - 0.28, 0.55), 0.2, 0.14).on(CHEST));
         }
         // back: erector columns either side of the spine groove, scapula blade muscles, teres major to the armpit
         out.push(detail(at(CHEST, side * 0.27, -0.7, -0.78), at(CHEST, side * 0.25, -3.1, -0.6), 0.25, 0.3).on(CHEST));
-        out.push(detail(at(CHEST, side * 0.7, 0.15, -0.8), at(CHEST, side * 0.95, -0.5, -0.8), 0.36, 0.3).on(CHEST));
+        out.push(detail(at(CHEST, side * 0.72, 0.2, -0.8), at(CHEST, side * 0.98, -0.6, -0.8), 0.42, 0.34).on(CHEST));
         out.push(detail(at(CHEST, side * 1.0, -0.5, -0.85), at(CHEST, side * 1.65, -0.15, -0.45), 0.28, 0.24).on(CHEST));
+        // lat insertion twists forward onto the humerus
+        out.push(detail(at(CHEST, side * 1.5, -0.25, -0.5), at(CHEST, side * 1.68, 0.05, -0.15), 0.2, 0.13).on(CHEST));
         // external oblique: ribs to the hip crest, overhangs the sash
-        out.push(detail(at(CHEST, side * 0.78, -1.4, 0.2), at(CHEST, side * 0.72, -3.0, 0.3), 0.3, 0.34).on(CHEST));
+        out.push(detail(at(CHEST, side * 0.8, -1.2, 0.35), at(CHEST, side * 0.72, -3.0, 0.4), 0.34, 0.4).on(CHEST));
     }
     // hakama: cinched at the sash on the hip, flares to the knee
     out.push(cone(at(PELVIS, 0.0, 0.25, 0.0), at(PELVIS, 0.0, -3.3, 0.1), 1.25, 1.8, Kind::Skirt).on(PELVIS));
@@ -866,11 +881,30 @@ fn surface(caps: &[Shape], voxel: f32) -> Surface {
         .collect();
     let mut buf = SurfaceNetsBuffer::default();
     surface_nets(&sdf, &grid, [0; 3], [dims[0] - 1, dims[1] - 1, dims[2] - 1], &mut buf);
-    Surface {
-        pos: buf.positions.iter().map(|p| origin + Vec3::from_array(*p) * voxel).collect(),
-        nrm: buf.normals.iter().map(|n| Vec3::from_array(*n).normalize_or(Vec3::Y)).collect(),
-        idx: buf.indices,
+    let idx = buf.indices;
+    let mut pos: Vec<Vec3> = buf.positions.iter().map(|p| origin + Vec3::from_array(*p) * voxel).collect();
+    let nrm: Vec<Vec3> = buf.normals.iter().map(|n| Vec3::from_array(*n).normalize_or(Vec3::Y)).collect();
+    // Laplacian pass knocks the voxel staircase off the exported mesh so the outline hull stays clean.
+    let mut adj: Vec<Vec<u32>> = vec![Vec::new(); pos.len()];
+    for t in idx.chunks_exact(3) {
+        for k in 0..3 {
+            let (a, b) = (t[k], t[(k + 1) % 3]);
+            adj[a as usize].push(b);
+            adj[b as usize].push(a);
+        }
     }
+    for _ in 0..2 {
+        let mut next = pos.clone();
+        for i in 0..pos.len() {
+            if adj[i].is_empty() {
+                continue;
+            }
+            let avg = adj[i].iter().map(|&j| pos[j as usize]).sum::<Vec3>() / adj[i].len() as f32;
+            next[i] = pos[i].lerp(avg, 0.5);
+        }
+        pos = next;
+    }
+    Surface { pos, nrm, idx }
 }
 
 fn floats(vs: &[Vec3]) -> String {
@@ -1146,7 +1180,7 @@ fn mesh_json(key: &Frame, voxel: f32, cycle: bool) -> String {
         m.pos.iter().enumerate().map(|(i, w)| if i < body_verts { nearest_shape(*w, &body) } else { usize::MAX >> 1 }).collect();
     let kind: Vec<u8> = (0..m.pos.len()).map(|i| (i >= body_verts) as u8).collect();
     // crease: concavity of the field (negative Laplacian of the SDF ~ valley between two masses)
-    let e = 0.08;
+    let e = 0.16;
     let crease: Vec<String> = m
         .pos
         .iter()
@@ -1324,6 +1358,7 @@ fn main() {
             for k in 0..200 { let xx = k as f32 * 0.02; if (0..40).any(|z| scene_sdf(Vec3::new(xx, y, -2.0 + z as f32 * 0.1), &trunk) < 0.0) { x = xx; } }
             println!("{y:5.2} {x:4.2} {}", "#".repeat((x * 20.0) as usize));
         }
+        return;
     }
     if which == "owner" {
         // which shapes contribute at a point: names + signed distances
@@ -1339,8 +1374,6 @@ fn main() {
             }
         }
         return;
-    }
-    if false {
     }
     if which == "html" {
         let path = "docs/maha_rig/rig.html";
