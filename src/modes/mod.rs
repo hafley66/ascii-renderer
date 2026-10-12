@@ -35,6 +35,7 @@ mod _61_fma;
 mod _62_gothic_icons;
 mod _63_gothic_circles;
 mod _64_slice_2;
+mod _65_tidepool;
 mod _100_p01_crazy_astra_high;
 mod _100_p01_crazy_opus_high;
 mod _100_p01_crazy_sol_high;
@@ -66,6 +67,7 @@ mod _130_hyperhex_4;
 mod _131_hyperhex_5;
 mod _132_hyperhex_6;
 mod _133_breathhex;
+mod _134_opus_5_5_prothesis;
 
 #[cfg_attr(feature = "function-trace", tracing::instrument(level = "trace", target = "ascii_renderer::functions", skip_all))]
 pub(crate) fn register_all(registry: &mut crate::registry::ModeRegistry) {
@@ -104,6 +106,7 @@ pub(crate) fn register_all(registry: &mut crate::registry::ModeRegistry) {
     registry.add(&_62_gothic_icons::MODE);
     registry.add(&_63_gothic_circles::MODE);
     registry.add(&_64_slice_2::MODE);
+    registry.add(&_65_tidepool::MODE);
     registry.add(&_100_p01_crazy_astra_high::MODE);
     registry.add(&_100_p01_crazy_opus_high::MODE);
     registry.add(&_100_p01_crazy_sol_high::MODE);
@@ -135,4 +138,5 @@ pub(crate) fn register_all(registry: &mut crate::registry::ModeRegistry) {
     registry.add(&_131_hyperhex_5::MODE);
     registry.add(&_132_hyperhex_6::MODE);
     registry.add(&_133_breathhex::MODE);
+    registry.add(&_134_opus_5_5_prothesis::MODE);
 }

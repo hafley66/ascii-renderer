@@ -1543,3 +1543,13 @@ fn streamnet_seed_42() {
 fn moire_seed_42() {
     insta::assert_snapshot!(render(&["42", "moire", "moss"]));
 }
+
+#[test]
+fn opus_5_5_prothesis_seed_42() {
+    insta::assert_snapshot!(render(&["42", "opus-5-5-prothesis", "bone"]));
+}
+
+#[test]
+fn tidepool_seed_42() {
+    insta::assert_snapshot!(render(&["42", "tidepool", "reef"]));
+}

@@ -19,6 +19,8 @@ generate() {
             files+=("$modes_dir/$filename")
         done < <(
             for file in "${discovered[@]}"; do
+                # Bench stubs are #[path]-included by their mode modules.
+                case "${file##*/}" in *_bench.rs) continue;; esac
                 printf '%s\n' "${file##*/}"
             done | LC_ALL=C sort -t_ -k2,2n -k2,2 -k3
         )
