@@ -1558,3 +1558,13 @@ fn tidepool_seed_42() {
 fn riverlight_seed_42() {
     insta::assert_snapshot!(render(&["42", "riverlight", "night"]));
 }
+
+#[test]
+fn lagoon_seed_42() {
+    insta::assert_snapshot!(render(&["42", "lagoon", "deep"]));
+}
+
+#[test]
+fn lagoon_moonlit_t7() {
+    insta::assert_snapshot!(render_t(&["42", "lagoon", "moss", "0.2", "1", "1.2", "0.3", "1.6", "0.8", "1", "1.4", "190", "0.6"], "7"));
+}
