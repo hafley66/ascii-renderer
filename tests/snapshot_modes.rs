@@ -1568,3 +1568,8 @@ fn lagoon_seed_42() {
 fn lagoon_moonlit_t7() {
     insta::assert_snapshot!(render_t(&["42", "lagoon", "moss", "0.2", "1", "1.2", "0.3", "1.6", "0.8", "1", "1.4", "190", "0.6"], "7"));
 }
+
+#[test]
+fn nightveil_seed_42() {
+    insta::assert_snapshot!(render(&["42", "nightveil", "moss"]));
+}
