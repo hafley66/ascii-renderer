@@ -1543,3 +1543,8 @@ fn streamnet_seed_42() {
 fn moire_seed_42() {
     insta::assert_snapshot!(render(&["42", "moire", "moss"]));
 }
+
+#[test]
+fn nightveil_seed_42() {
+    insta::assert_snapshot!(render(&["42", "nightveil", "moss"]));
+}

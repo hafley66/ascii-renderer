@@ -35,6 +35,7 @@ mod _61_fma;
 mod _62_gothic_icons;
 mod _63_gothic_circles;
 mod _64_slice_2;
+mod _65_nightveil;
 mod _100_p01_crazy_astra_high;
 mod _100_p01_crazy_opus_high;
 mod _100_p01_crazy_sol_high;
@@ -104,6 +105,7 @@ pub(crate) fn register_all(registry: &mut crate::registry::ModeRegistry) {
     registry.add(&_62_gothic_icons::MODE);
     registry.add(&_63_gothic_circles::MODE);
     registry.add(&_64_slice_2::MODE);
+    registry.add(&_65_nightveil::MODE);
     registry.add(&_100_p01_crazy_astra_high::MODE);
     registry.add(&_100_p01_crazy_opus_high::MODE);
     registry.add(&_100_p01_crazy_sol_high::MODE);
