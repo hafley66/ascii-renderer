@@ -30,6 +30,9 @@ generate() {
         for file in "${files[@]}"; do
             local module
             module=$(basename "$file" .rs)
+            # Bench harnesses are included by their owner mode's tests, never
+            # by the registry: they reach MODE through `use super::*`.
+            [[ "$module" == *_bench ]] && continue
             echo "mod $module;"
         done
         echo
@@ -38,6 +41,7 @@ generate() {
         for file in "${files[@]}"; do
             local module
             module=$(basename "$file" .rs)
+            [[ "$module" == *_bench ]] && continue
             echo "    registry.add(&$module::MODE);"
         done
         echo '}'
