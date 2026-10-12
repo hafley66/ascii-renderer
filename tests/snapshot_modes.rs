@@ -1553,3 +1553,8 @@ fn opus_5_5_prothesis_seed_42() {
 fn tidepool_seed_42() {
     insta::assert_snapshot!(render(&["42", "tidepool", "reef"]));
 }
+
+#[test]
+fn riverlight_seed_42() {
+    insta::assert_snapshot!(render(&["42", "riverlight", "night"]));
+}
