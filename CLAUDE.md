@@ -86,4 +86,4 @@ Numbered-file convention per user prefs. Key modules:
 - Never remove or break existing modes. Only add.
 - Expose tuning knobs as CLI args, don't hardcode.
 - Commit at each milestone for rewind points.
-, tidepool
+, riverlight
