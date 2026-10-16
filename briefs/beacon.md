@@ -1,0 +1,46 @@
+# beacon
+
+## Layer coverage
+
+```
+# layer coverage: 400x120, theme moss, seed 42, dt 0.06, 3 reps, release
+
+| mode | layers | calls/frame | attributed | nested | thin |
+| --- | ---: | ---: | ---: | --- | --- |
+| beacon | 6 | 6.0 | 98.6% | no | no |
+
+1 modes reported: 0 thin under 85 percent, 0 nested over 100 percent, 0 with no timers at all
+```
+
+## Knob sweep (2000x1000, 2s per run, dt 0.06, theme moss)
+
+```
+| knob at max | frames | fps | avg ms | p50 ms | p99 ms | max ms | vs baseline |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| baseline | 28 | 14.0 | 71.66 | 71.27 | 73.23 | 73.27 | 1.00x |
+| STARS=0.5 | 25 | 12.3 | 80.99 | 80.63 | 83.12 | 83.64 | 1.13x |
+| MOON=8 | 28 | 13.9 | 72.12 | 71.47 | 74.36 | 79.13 | 1.01x |
+| SWELL=2 | 28 | 13.9 | 71.92 | 71.23 | 74.79 | 75.43 | 1.00x |
+| HUE=360 | 28 | 13.9 | 71.85 | 71.31 | 73.65 | 74.22 | 1.00x |
+| FLICK=1 | 28 | 13.9 | 71.79 | 71.43 | 73.74 | 73.82 | 1.00x |
+| SPIN=1.5 | 28 | 13.9 | 71.75 | 71.35 | 73.62 | 73.69 | 1.00x |
+| GLOW=2 | 28 | 14.0 | 71.55 | 71.40 | 73.23 | 73.61 | 1.00x |
+| TOWER=0.95 | 29 | 14.0 | 71.28 | 71.00 | 73.31 | 73.57 | 0.99x |
+| BEAM=0.7 | 29 | 14.1 | 70.77 | 70.34 | 72.41 | 72.70 | 0.99x |
+| TIDE=0.85 | 33 | 16.1 | 62.02 | 61.70 | 63.78 | 63.85 | 0.87x |
+
+worst: STARS=0.5
+
+## hotspots at STARS=0.5: 25 frames, 12.4 fps
+
+| layer | calls/frame | avg us | max us | share of frame |
+| --- | ---: | ---: | ---: | ---: |
+| sky | 1.0 | 42945.3 | 44374.0 | 53.1% |
+| sea | 1.0 | 36867.0 | 38217.5 | 45.6% |
+| tower | 1.0 | 25.8 | 41.1 | 0.0% |
+| rocks | 1.0 | 0.6 | 0.9 | 0.0% |
+| buoy | 1.0 | 0.2 | 0.5 | 0.0% |
+| lamp | 1.0 | 0.2 | 0.2 | 0.0% |
+```
+
+Raw output: perf/results/beacon.md. Frame cost 200x60 release: avg 0.442 ms, worst 0.656 ms.

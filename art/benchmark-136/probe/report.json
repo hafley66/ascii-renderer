@@ -1,0 +1,14 @@
+{
+ "pty_winsize": true,
+ "phases": {
+  "pre_animate_bytes": 79472,
+  "animate_window_a_bytes": 560336,
+  "animate_window_b_bytes": 541477,
+  "animate_window_a_sha": "3f45eb841bd51279",
+  "animate_window_b_sha": "9bb49a4e08669245"
+ },
+ "total_bytes": 1193613,
+ "exited": true,
+ "exit_status": 0,
+ "frames_moved": true
+}
