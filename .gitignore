@@ -16,3 +16,4 @@ __pycache__/
 /perf/results/*.ansi
 /perf/results/*.sample.txt
 *.log
+art/jev/
